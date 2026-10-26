@@ -162,6 +162,100 @@
         "sha256": "19f52276eecacacfa0f3b4b30adb4dbeaf083099941c6a62c0c9cf39c53ed3a6",
         "outcome": "非法 stamp 被拒（exit 2，未写文件）；正确 stamp 复现字节一致（sha256 19f52276eeca…）"
       }
+    },
+    {
+      "id": "R5-S1",
+      "batch": "R5",
+      "step": "record_case 支持 candidate 模式：装前被拒（`dsh plugin add`）也要能落成可复算案例",
+      "changed": [
+        "scripts/record_case.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：candidate 模式不伪造 profile——只读 runtime manifest + 候选 manifest，直接走 admission；payload 标 mode/command=check，profile 取报告里的真实 profile 名以便修复命令可复制",
+        "reproducibility": "PASS：同一 stamp 重跑，产物逐字节稳定；输入仍逐个记 sha256",
+        "licence": "PASS：无新依赖；输入仍是 npm 公开元数据",
+        "ssot": "PASS：新增产物由 record_case 产出，produced_by/generated_at/schema_version 齐全，gate ssot + verdict-contract 绿",
+        "adversary": "反例构造：(1) 忘记给 profile_manifest → 现在报「case.json references a missing input file」，不再抛 node:path 的 validateString 崩溃；(2) 把候选 manifest 改成满足运行时的版本 → hit 变 miss（判据来自声明而非巧合）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-10849 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-10849-2026-10-26T00-00-00.000Z.json",
+        "sha256": "d639c6b580fbf0b88db286489f9235d59a2655e99f69c9ecc5be8137bd1f6543",
+        "outcome": "hit：command=check，mode=candidate，blocked 且点名 ^0.0.1-rc.1 peer 不含 0.2.1-rc.2"
+      }
+    },
+    {
+      "id": "R5-S2",
+      "batch": "R5",
+      "step": "CASE-11012：升级后 MCP 工具整体消失（transitive 依赖停在上一 rc + 精确 peer）",
+      "changed": [
+        "data/cases/CASE-11012/case.json",
+        "data/cases/CASE-11012/profile-package.json",
+        "data/cases/CASE-11012/profile-cordis.patch.yml",
+        "data/cases/CASE-11012/runtime-dsh.json",
+        "data/cases/CASE-11012/plugin-mcp-client.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告里 5 条被排除的猜测（Windows 沙箱/Chrome 版本/配置丢失/Crashpad 码/连接失败）都记进 case.json#user_hypotheses，我们的结论只落在「精确 peer 不满足」这一条",
+        "reproducibility": "PASS：manifest 逐字节来自 npm registry（dsh@0.2.1-rc.3 / dsh-mcp-client@0.2.1-rc.2），离线可复现",
+        "licence": "PASS：npm 公开元数据，MIT；已登记 vendor-manifest",
+        "ssot": "PASS：hit 判据 = blocked + row 名 + peer key；不含人工裁定",
+        "adversary": "反例构造：(1) 若把 runtime 改回 0.2.1-rc.2 → 该行不再被禁（验证结论绑定在版本差上）；(2) 若删掉 row → 无结论（说明 finding 来自行而非 bundle）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-11012 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-11012-2026-10-26T00-00-00.000Z.json",
+        "sha256": "2fa1d160a1ea36a046943b7cb36465901dd34d834082c754d1f49afd0b48b494",
+        "outcome": "hit：row mcp-client 被点名，8 个精确 peer 全部不含 0.2.1-rc.3"
+      }
+    },
+    {
+      "id": "R5-S3",
+      "batch": "R5",
+      "step": "CASE-8202：上一代插件装进新运行时（caret peer 0.1.x vs 0.2.0）",
+      "changed": [
+        "data/cases/CASE-8202/case.json",
+        "data/cases/CASE-8202/profile-package.json",
+        "data/cases/CASE-8202/profile-cordis.patch.yml",
+        "data/cases/CASE-8202/runtime-dsh.json",
+        "data/cases/CASE-8202/plugin-mcp-client.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告是「装了不兼容版本 → 无法添加 MCP」；本案例建模为该安装完成后的状态，偏差写进 deviations（上游现在会拒装）",
+        "reproducibility": "PASS：manifest 来自 npm（dsh@0.2.0-rc.1 / mcp-client@0.1.0-rc.7）",
+        "licence": "PASS：仅 npm 公开元数据（MIT），已登记 vendor-manifest upstream-dsh；未引入第三方代码或数据文件",
+        "ssot": "PASS：hit 判据同上，仍可重算",
+        "adversary": "反例构造：把 peer 改为 ^0.2.0-rc.1 → 不再命中（说明判定确实读的是声明区间）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-8202 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-8202-2026-10-26T00-00-00.000Z.json",
+        "sha256": "1db883baf7c69366943a324b042774c738501500eeb456839587ad43ca6728b5",
+        "outcome": "hit：row mcp-client 被点名，^0.1.0-rc.7 不含 0.2.0-rc.1"
+      }
+    },
+    {
+      "id": "R5-S4",
+      "batch": "R5",
+      "step": "CASE-10849：未钉版本的 `dsh plugin add` 命中失步的 npm latest（0.0.1-rc.1）",
+      "changed": [
+        "data/cases/CASE-10849/case.json",
+        "data/cases/CASE-10849/runtime-dsh.json",
+        "data/cases/CASE-10849/plugin-mcp-client.json"
+      ],
+      "review": {
+        "correctness": "PASS：上游确实拒装，因此用 candidate 模式（不伪造 profile）；报告里的 dist-tags 与 requirements 原文都记进 case.json",
+        "reproducibility": "PASS：manifest 来自 npm（dsh@0.2.1-rc.2 / mcp-client@0.0.1-rc.1）",
+        "licence": "PASS：仅 npm 公开元数据（MIT），已登记 vendor-manifest upstream-dsh；未引入第三方代码或数据文件",
+        "ssot": "PASS：产物 command=check，与 CLI `check` 同一引擎路径",
+        "adversary": "反例构造：若把 label.requirement_key 换成报告里不存在的 peer → 立刻 miss（证明命中不是靠宽松匹配）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-10849 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-10849-2026-10-26T00-00-00.000Z.json",
+        "sha256": "d639c6b580fbf0b88db286489f9235d59a2655e99f69c9ecc5be8137bd1f6543",
+        "outcome": "hit：4 条 ^0.0.1-rc.1 peer 全部不含 0.2.1-rc.2"
+      }
     }
   ]
 }

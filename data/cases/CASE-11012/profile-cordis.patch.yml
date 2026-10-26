@@ -1,0 +1,5 @@
+# CASE-11012 reconstruction: the MCP row registered in the profile patch layer.
+# The reporter used a stdio Playwright server and a Telegram server; both hang off
+# this one row, which is why every mcp__* tool disappeared together.
+- id: mcp-client
+  name: '@deepseek-ai/dsh-mcp-client'

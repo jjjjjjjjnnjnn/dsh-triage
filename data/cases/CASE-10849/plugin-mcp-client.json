@@ -1,0 +1,93 @@
+{
+  "bugs": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/issues"
+  },
+  "dist": {
+    "shasum": "675ab1dcebfc69565e840d988d06c8620f76b022",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh-mcp-client/-/dsh-mcp-client-0.0.1-rc.1.tgz",
+    "fileCount": 11,
+    "integrity": "sha512-YPsOvuWFmWl1Pai+9FrsDLNuWFuMXIEZHn9uXJFqDfo/dTyJRZuYFM+jbs5g9eGEKhHgqXibsgeCm4Px1tb4DQ==",
+    "signatures": [
+      {
+        "sig": "MEYCIQDBoD/h8s8jH9eLOfaYwBTQQYvgjw/sPlqWh34EEKtOqwIhAMPpK3V7mRfIGf00i2ckmWqR2nGevVCZLdi/b+ghATeX",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 42579
+  },
+  "main": "lib/index.js",
+  "name": "@deepseek-ai/dsh-mcp-client",
+  "type": "module",
+  "_from": "file:/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-mcp-client-0.0.1-rc.1.tgz",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "BSD-3-Clause",
+  "_npmUser": {
+    "name": "imccyu",
+    "email": "imccyu@gmail.com"
+  },
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness#readme",
+  "_resolved": "/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-mcp-client-0.0.1-rc.1.tgz",
+  "_integrity": "sha512-YPsOvuWFmWl1Pai+9FrsDLNuWFuMXIEZHn9uXJFqDfo/dTyJRZuYFM+jbs5g9eGEKhHgqXibsgeCm4Px1tb4DQ==",
+  "repository": {
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "type": "git",
+    "directory": "packages/mcp/mcp-client"
+  },
+  "_npmVersion": "11.16.0",
+  "description": "MCP client bridge: connects to MCP servers and registers their tools on ctx.tools",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "imccyu",
+      "email": "imccyu@gmail.com"
+    },
+    {
+      "name": "tianyicui-deepseek",
+      "email": "tianyi@deepseek.com"
+    }
+  ],
+  "_nodeVersion": "24.18.0",
+  "dependencies": {
+    "zod": "^4.4.3",
+    "@deepseek-ai/schemastery": "^3.18.1-rc.1",
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.1",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-subprocess": "^0.0.1-rc.1",
+    "@modelcontextprotocol/server-everything": "^2026.7.4",
+    "@modelcontextprotocol/server-filesystem": "^2026.7.4"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.1",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-subprocess": "^0.0.1-rc.1"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-mcp-client_0.0.1-rc.1_1786390695722_0.14013406964165442",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@deepseek-ai/dsh-mcp-client@0.0.1-rc.1",
+  "version": "0.0.1-rc.1"
+}

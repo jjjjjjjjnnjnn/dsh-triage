@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "CASE-8202",
+  "title": "A previous-generation MCP client installed into a newer runtime: caret peers on 0.1.x cannot be satisfied by 0.2.x",
+  "mode": "profile",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8202",
+    "author": "MaoJianwei",
+    "reported_at": "2026-09-29",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "plugin": "@deepseek-ai/dsh-mcp-client",
+    "plugin_version": "0.1.0-rc.7",
+    "runtime_after": "0.2.0-rc.1",
+    "symptom": "user could not add an MCP server at all; installing @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 was rejected as incompatible with dsh 0.2.0-rc.1",
+    "runtime_trace": "the package declares @deepseek-ai/dsh-* peer ranges at ^0.1.0-rc.7, which a 0.2.0 runtime cannot satisfy; the version is already shipped inside dsh itself",
+    "user_hypotheses": [
+      "MCP needs a separate install step (it does not: 0.2.0-rc.1 bundles it)"
+    ],
+    "root_cause": "caret peers on 0.1.x vs runtime 0.2.0-rc.1 -> admission denies every @deepseek-ai/dsh-* requirement",
+    "fix_verified_by_responder": "remove the separately installed package; an MCP server is then just a cordis.patch.yml entry at the built-in version"
+  },
+  "profile": {
+    "name": "web",
+    "bundles": []
+  },
+  "inputs": {
+    "profile_manifest": "profile-package.json",
+    "profile_patch": "profile-cordis.patch.yml",
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-mcp-client": "plugin-mcp-client.json"
+    }
+  },
+  "label": {
+    "kind": "row-admission",
+    "entry_id": "mcp-client",
+    "module": "@deepseek-ai/dsh-mcp-client",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-llm"
+  },
+  "deviations": [
+    "the original failure happened at install time; this case models the state after such an install (which upstream now refuses) so the same engine path is exercised",
+    "bundles omitted; no full dependency install"
+  ]
+}

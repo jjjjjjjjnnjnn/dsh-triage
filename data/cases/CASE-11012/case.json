@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "CASE-11012",
+  "title": "MCP tools silently disappear after in-app upgrade: transitive plugin stuck on the previous rc with exact peers",
+  "mode": "profile",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11012",
+    "author": "lybym",
+    "reported_at": "2026-10-25",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "plugin": "@deepseek-ai/dsh-mcp-client",
+    "plugin_version": "0.2.1-rc.2",
+    "runtime_before": "0.2.1-rc.2",
+    "runtime_after": "0.2.1-rc.3",
+    "symptom": "after the in-app upgrade to 0.2.1-rc.3 every mcp__<server>__* tool disappeared; the stdio child was never spawned; nothing user-discoverable was logged (logs.db empty)",
+    "runtime_trace": "the upgrade reinstalled profile deps pinned to rc.3 but left the transitive @deepseek-ai/dsh-mcp-client at 0.2.1-rc.2; the plugin has no engines.dsh and pins every @deepseek-ai/dsh-* peer to the exact version 0.2.1-rc.2, so the boot compatibility gate rejected it before spawn",
+    "user_hypotheses": [
+      "Windows agent sandbox blocking the MCP child (ruled out: harness spawns it outside the sandbox)",
+      "Chrome 156 / Playwright incompatibility (ruled out: stdio JSON-RPC probe worked end to end)",
+      "config loss in cordis.patch.yml (ruled out: entry and paths intact)",
+      "Crashpad 0xFFFF7001 misread as a sandbox denial (documented red herring)"
+    ],
+    "root_cause": "exact @deepseek-ai/dsh-* peer pins on 0.2.1-rc.2 vs runtime 0.2.1-rc.3 -> admission rejects the row pre-spawn",
+    "fix_verified_by_reporter": "pnpm add --save-exact @deepseek-ai/dsh-mcp-client@0.2.1-rc.3 -> restart -> tools returned in new sessions"
+  },
+  "profile": {
+    "name": "desktop",
+    "bundles": []
+  },
+  "inputs": {
+    "profile_manifest": "profile-package.json",
+    "profile_patch": "profile-cordis.patch.yml",
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-mcp-client": "plugin-mcp-client.json"
+    }
+  },
+  "label": {
+    "kind": "row-admission",
+    "entry_id": "mcp-client",
+    "module": "@deepseek-ai/dsh-mcp-client",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-llm"
+  },
+  "deviations": [
+    "bundles omitted: the report is about one MCP row in cordis.patch.yml",
+    "the transitive install is modelled as a directly resolved version (real manifest bytes; the pnpm lockfile itself is not reproduced)",
+    "node_modules is reconstructed from the published manifests, not a full install",
+    "the reporter verified the fix on their machine; this case cannot re-verify the symptom disappearing"
+  ]
+}

@@ -57,6 +57,15 @@ try {
 const core = await import(fileUrl('packages/core/dist/index.js'))
 const plugin = await import(fileUrl('packages/plugin/dist/load.js'))
 
+/**
+ * Two shapes of case:
+ *  - `profile`   an existing installation (default): reproduce the declared layer
+ *                and run the full `why` engine (bundle + row + collision).
+ *  - `candidate` a pre-install rejection (`dsh plugin add` refused): there is no
+ *                profile row, so the verdict is admission on the candidate manifest.
+ */
+const mode = spec.mode === 'candidate' ? 'candidate' : 'profile'
+
 /* ------------------------------ sandbox build ------------------------------ */
 
 const sandbox = join(tmpdir(), 'dsh-triage-case', caseId)
@@ -70,13 +79,11 @@ mkdirSync(join(dshHome, 'profiles', 'node_modules'), { recursive: true })
 
 const inputs = []
 const readInput = (fileName) => {
+  if (typeof fileName !== 'string') throw new Error(`case.json references a missing input file: ${String(fileName)}`)
   const text = readFileSync(abs(join(caseDir, fileName)), 'utf8')
   inputs.push({ file: `${caseDir}/${fileName}`, sha256: sha256(text) })
   return text
 }
-
-writeFileSync(join(profileDir, 'package.json'), readInput(spec.inputs.profile_manifest), 'utf8')
-writeFileSync(join(profileDir, 'cordis.patch.yml'), readInput(spec.inputs.profile_patch), 'utf8')
 
 /** Write one published manifest into the layout a real import would resolve. */
 const installManifest = (fileName) => {
@@ -89,50 +96,101 @@ const installManifest = (fileName) => {
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'package.json'), text, 'utf8')
 }
-installManifest(spec.inputs.runtime_manifest)
-for (const fileName of Object.values(spec.inputs.plugin_manifests ?? {})) installManifest(fileName)
+
+const redactRoots = [homedir(), tmpdir(), sandbox]
+let realEnv
+let fingerprint
+let verdicts = []
+let collisions = []
+let rows = []
+let claims = []
+let composition = { layers: [], profilePatch: { text: null }, homePatch: { text: null }, errors: [] }
+
+if (mode === 'profile') {
+  writeFileSync(join(profileDir, 'package.json'), readInput(spec.inputs.profile_manifest), 'utf8')
+  writeFileSync(join(profileDir, 'cordis.patch.yml'), readInput(spec.inputs.profile_patch), 'utf8')
+  installManifest(spec.inputs.runtime_manifest)
+  for (const fileName of Object.values(spec.inputs.plugin_manifests ?? {})) installManifest(fileName)
+}
 
 /* -------------------------------- verdicts -------------------------------- */
 
-const env = await core.loadEnv({ dshHome, profile: profileName })
-if (!env.ok) {
-  process.stderr.write(`the reproduced profile is unreadable: ${env.error.code} — ${env.error.detail}\n`)
-  process.exit(3)
-}
-const realEnv = env.value
-const redactRoots = [homedir(), tmpdir(), dshHome]
-const fingerprint = core.redactEnv(realEnv, redactRoots)
-const composition = await plugin.loadComposition(realEnv, dshHome)
+if (mode === 'profile') {
+  const env = await core.loadEnv({ dshHome, profile: profileName })
+  if (!env.ok) {
+    process.stderr.write(`the reproduced profile is unreadable: ${env.error.code} — ${env.error.detail}\n`)
+    process.exit(3)
+  }
+  realEnv = env.value
+  fingerprint = core.redactEnv(realEnv, redactRoots)
+  composition = await plugin.loadComposition(realEnv, dshHome)
 
-const claims = []
-for (const layer of composition.layers) {
-  if (layer.patchText === null) continue
-  const parsed = core.parsePatchYaml(layer.patchText)
-  if (!parsed.ok) continue
-  claims.push(...core.extractEntryClaims(parsed.value, `bundle:${layer.name}`))
-}
-for (const [text, source] of [
-  [composition.profilePatch.text, 'patch:profile'],
-  [composition.homePatch.text, 'patch:home'],
-]) {
-  if (text === null) continue
-  const parsed = core.parsePatchYaml(text)
-  if (!parsed.ok) continue
-  claims.push(...core.extractEntryClaims(parsed.value, source))
+  claims = collectClaims(composition)
+  verdicts = composition.layers.map((layer) =>
+    core.verdictFromAdmission({
+      subject: { name: layer.name, version: layer.version, kind: 'plugin' },
+      env: fingerprint,
+      admission: core.evaluateAdmission(layer.manifest, realEnv.dsh),
+      generatedAt: stamp,
+    }),
+  )
+  collisions = core.findEntryIdCollisions(claims)
+  verdicts.push(...core.verdictsFromCollisions({ env: fingerprint, collisions, generatedAt: stamp }))
+  rows = await plugin.resolveRows(realEnv, core.rowTargets(claims))
+  verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generatedAt: stamp }))
+} else {
+  // Candidate mode: no installation exists, so there is no profile to read.
+  const runtimeText = readInput(spec.inputs.runtime_manifest)
+  const runtimeManifest = JSON.parse(runtimeText)
+  const runtimeVersion = typeof runtimeManifest.version === 'string' ? runtimeManifest.version : null
+  realEnv = {
+    dsh: runtimeVersion,
+    node: process.versions.node,
+    platform: process.platform,
+    arch: process.arch,
+    // The reporter's profile name (so the fix command is copy-pasteable); a
+    // candidate has no profile of its own, hence the explicit placeholder.
+    profile: spec.reported?.profile ?? '<profile>',
+    profileDir: redactRoots[2],
+    bundles: [],
+    installed: runtimeVersion === null ? [] : [{ name: '@deepseek-ai/dsh', version: runtimeVersion }],
+  }
+  fingerprint = core.redactEnv(realEnv, redactRoots)
+
+  for (const fileName of Object.values(spec.inputs.plugin_manifests ?? {})) {
+    const manifestText = readInput(fileName)
+    const manifest = JSON.parse(manifestText)
+    verdicts.push(
+      core.verdictFromAdmission({
+        subject: { name: String(manifest.name), version: typeof manifest.version === 'string' ? manifest.version : null, kind: 'plugin' },
+        env: fingerprint,
+        admission: core.evaluateAdmission(manifest, runtimeVersion),
+        generatedAt: stamp,
+      }),
+    )
+  }
 }
 
-const verdicts = composition.layers.map((layer) =>
-  core.verdictFromAdmission({
-    subject: { name: layer.name, version: layer.version, kind: 'plugin' },
-    env: fingerprint,
-    admission: core.evaluateAdmission(layer.manifest, realEnv.dsh),
-    generatedAt: stamp,
-  }),
-)
-const collisions = core.findEntryIdCollisions(claims)
-verdicts.push(...core.verdictsFromCollisions({ env: fingerprint, collisions, generatedAt: stamp }))
-const rows = await plugin.resolveRows(realEnv, core.rowTargets(claims))
-verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generatedAt: stamp }))
+function collectClaims(layer) {
+  const collected = []
+  for (const bundle of layer.layers) {
+    if (bundle.patchText === null) continue
+    const parsed = core.parsePatchYaml(bundle.patchText)
+    if (!parsed.ok) continue
+    collected.push(...core.extractEntryClaims(parsed.value, `bundle:${bundle.name}`))
+  }
+  for (const [text, source] of [
+    [layer.profilePatch.text, 'patch:profile'],
+    [layer.homePatch.text, 'patch:home'],
+  ]) {
+    if (text === null) continue
+    const parsed = core.parsePatchYaml(text)
+    if (!parsed.ok) continue
+    collected.push(...core.extractEntryClaims(parsed.value, source))
+  }
+  return collected
+}
+
 
 /* ------------------------------ hit judgement ------------------------------ */
 
@@ -142,17 +200,17 @@ verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generat
  */
 function judgeHit(label) {
   const index = verdicts.findIndex((verdict) => {
-    const scope = verdict.reasons.find((reason) => reason.messageId === 'admission.row-scope')
-    const rowsNamed = String(scope?.params?.['rows'] ?? '')
-      .split(', ')
-      .filter((rowId) => rowId !== '')
-    return (
-      verdict.conclusion === 'blocked' &&
-      verdict.subject.name === label.module &&
-      rowsNamed.includes(label.entry_id) &&
-      verdict.reasons.some(
-        (reason) => reason.code === label.reason_code && reason.params?.['key'] === label.requirement_key,
-      )
+    if (verdict.conclusion !== 'blocked' || verdict.subject.name !== label.module) return false
+    // A profile case must name the row; a candidate case has no row by definition.
+    if (label.entry_id !== undefined) {
+      const scope = verdict.reasons.find((reason) => reason.messageId === 'admission.row-scope')
+      const rowsNamed = String(scope?.params?.['rows'] ?? '')
+        .split(', ')
+        .filter((rowId) => rowId !== '')
+      if (!rowsNamed.includes(label.entry_id)) return false
+    }
+    return verdict.reasons.some(
+      (reason) => reason.code === label.reason_code && reason.params?.['key'] === label.requirement_key,
     )
   })
   if (index === -1) {
@@ -160,7 +218,10 @@ function judgeHit(label) {
       verdict: 'miss',
       expected: label,
       matched: null,
-      why: 'no blocked verdict named the labelled row with the labelled unmet requirement',
+      why:
+        label.entry_id === undefined
+          ? 'no blocked verdict named the labelled module with the labelled unmet requirement'
+          : 'no blocked verdict named the labelled row with the labelled unmet requirement',
     }
   }
   const matchedVerdict = verdicts[index]
@@ -177,7 +238,7 @@ function judgeHit(label) {
         params: reason.params ?? {},
       })),
     },
-    why: 'the labelled row is named and the labelled requirement is the one that failed',
+    why: 'the labelled target is named and the labelled requirement is the one that failed',
   }
 }
 
@@ -191,7 +252,8 @@ const payload = {
   schema_version: 1,
   produced_by: 'scripts/record_case.mjs',
   generated_at: stamp,
-  command: 'why',
+  command: mode === 'candidate' ? 'check' : 'why',
+  mode,
   status: 'ok',
   case: {
     id: spec.id,
@@ -199,7 +261,10 @@ const payload = {
     source: spec.source,
     reported: spec.reported,
     deviations: spec.deviations ?? [],
-    reproduced: { dsh_home: core.redactPath(dshHome, redactRoots), profile: profileName, bundles: fingerprint.bundles },
+    reproduced:
+      mode === 'candidate'
+        ? { runtime: fingerprint.dsh, profile: '(candidate: no installation existed)' }
+        : { dsh_home: core.redactPath(dshHome, redactRoots), profile: profileName, bundles: fingerprint.bundles },
   },
   inputs,
   env: fingerprint,

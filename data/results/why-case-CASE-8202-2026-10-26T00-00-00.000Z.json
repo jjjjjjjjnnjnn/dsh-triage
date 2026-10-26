@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T00:00:00.000Z",
+  "command": "why",
+  "mode": "profile",
+  "status": "ok",
+  "case": {
+    "id": "CASE-8202",
+    "title": "A previous-generation MCP client installed into a newer runtime: caret peers on 0.1.x cannot be satisfied by 0.2.x",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8202",
+      "author": "MaoJianwei",
+      "reported_at": "2026-09-29",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "plugin": "@deepseek-ai/dsh-mcp-client",
+      "plugin_version": "0.1.0-rc.7",
+      "runtime_after": "0.2.0-rc.1",
+      "symptom": "user could not add an MCP server at all; installing @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 was rejected as incompatible with dsh 0.2.0-rc.1",
+      "runtime_trace": "the package declares @deepseek-ai/dsh-* peer ranges at ^0.1.0-rc.7, which a 0.2.0 runtime cannot satisfy; the version is already shipped inside dsh itself",
+      "user_hypotheses": [
+        "MCP needs a separate install step (it does not: 0.2.0-rc.1 bundles it)"
+      ],
+      "root_cause": "caret peers on 0.1.x vs runtime 0.2.0-rc.1 -> admission denies every @deepseek-ai/dsh-* requirement",
+      "fix_verified_by_responder": "remove the separately installed package; an MCP server is then just a cordis.patch.yml entry at the built-in version"
+    },
+    "deviations": [
+      "the original failure happened at install time; this case models the state after such an install (which upstream now refuses) so the same engine path is exercised",
+      "bundles omitted; no full dependency install"
+    ],
+    "reproduced": {
+      "dsh_home": "~\\home",
+      "profile": "web",
+      "bundles": []
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-8202/profile-package.json",
+      "sha256": "ed4aa9d0b696a10a950eb06e1518d0d62107dd0b4611da8a576930ca0073332d"
+    },
+    {
+      "file": "data/cases/CASE-8202/profile-cordis.patch.yml",
+      "sha256": "aa2df0db04a744a87921c200e8f5597c1330a1260aea36735f5cec74aafd275b"
+    },
+    {
+      "file": "data/cases/CASE-8202/runtime-dsh.json",
+      "sha256": "b06723fc37e224013f78464a78c5662b6579c4d9be9843bf0c29039f3ea87cb4"
+    },
+    {
+      "file": "data/cases/CASE-8202/plugin-mcp-client.json",
+      "sha256": "24aab0ae6854a370412ac7b652d8594b6c60a7431fc180d8e61a786501df4322"
+    }
+  ],
+  "env": {
+    "dsh": "0.2.0-rc.1",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "~\\home\\profiles\\web",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.0-rc.1"
+      },
+      {
+        "name": "@deepseek-ai/dsh-mcp-client",
+        "version": "0.1.0-rc.7"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-mcp-client",
+        "version": "0.1.0-rc.7",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.0-rc.1",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\home\\profiles\\web",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.0-rc.1"
+          },
+          {
+            "name": "@deepseek-ai/dsh-mcp-client",
+            "version": "0.1.0-rc.7"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "mcp-client",
+            "module": "@deepseek-ai/dsh-mcp-client",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-attachment",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subprocess",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-timeout",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-mcp-client@0.1.0-rc.7",
+          "method": "declared-range",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "patch:profile",
+          "method": "patch-parse",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "row(s) mcp-client"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\home\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "dsh 0.2.0-rc.1"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile web allow-version @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 --dsh-version 0.2.0-rc.1 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "mcp-client",
+            "owners": "patch:profile"
+          },
+          "note": "disable row \"mcp-client\" in patch:profile when @deepseek-ai/dsh-mcp-client is no longer needed"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 6,
+            "runtime": "0.2.0-rc.1"
+          },
+          "note": "6 requirement(s) exclude 0.2.0-rc.1; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.0-rc.1",
+            "profile": "web"
+          },
+          "note": "install a plugin build whose declarations include 0.2.0-rc.1 (profile: web)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T00:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 1,
+    "rows": 1
+  },
+  "summary": {
+    "blocked": 1
+  },
+  "hit": {
+    "verdict": "hit",
+    "expected": {
+      "kind": "row-admission",
+      "entry_id": "mcp-client",
+      "module": "@deepseek-ai/dsh-mcp-client",
+      "reason_code": "admission-denied-peer",
+      "requirement_key": "@deepseek-ai/dsh-llm"
+    },
+    "matched": {
+      "verdict_index": 0,
+      "conclusion": "blocked",
+      "subject": {
+        "name": "@deepseek-ai/dsh-mcp-client",
+        "version": "0.1.0-rc.7",
+        "kind": "entry"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "mcp-client",
+            "module": "@deepseek-ai/dsh-mcp-client",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-attachment",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subprocess",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-timeout",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.1.0-rc.7",
+            "runtime": "0.2.0-rc.1"
+          }
+        }
+      ]
+    },
+    "why": "the labelled target is named and the labelled requirement is the one that failed"
+  },
+  "errors": []
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "CASE-10849",
+  "title": "Unpinned `dsh plugin add` resolves an out-of-step npm `latest` tag and gets rejected as incompatible",
+  "mode": "candidate",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10849",
+    "author": "xanthropic",
+    "reported_at": "2026-10-24",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "profile": "web",
+    "plugin": "@deepseek-ai/dsh-mcp-client",
+    "plugin_version": "0.0.1-rc.1",
+    "runtime_after": "0.2.1-rc.2",
+    "symptom": "`dsh plugin --profile web add @deepseek-ai/dsh-mcp-client` (unpinned) was rejected: the package's npm latest tag points at 0.0.1-rc.1, whose @deepseek-ai/dsh-* peers are ^0.0.1-rc.1",
+    "runtime_trace": "npm dist-tags are out of step inside the scope: mcp-client latest=0.0.1-rc.1 while dsh latest=0.2.1-rc.2; the install message named the unmet requirements",
+    "user_hypotheses": [
+      "the MCP client needs a separate install (it does not: pinning the matching version installs cleanly and the tools register)"
+    ],
+    "root_cause": "an unpinned spec resolved a first-release candidate whose peer ranges exclude the running 0.2.1-rc.2",
+    "fix_verified_by_reporter": "`dsh plugin --profile web add @deepseek-ai/dsh-mcp-client@0.2.1-rc.2` then 35 mcp__chrome__* tools registered on arm64 Linux"
+  },
+  "inputs": {
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-mcp-client": "plugin-mcp-client.json"
+    }
+  },
+  "label": {
+    "kind": "candidate-admission",
+    "module": "@deepseek-ai/dsh-mcp-client",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-llm"
+  },
+  "deviations": [
+    "no installation existed (upstream refused it), so this case is recorded in `candidate` mode: admission on the manifest that the unpinned spec resolved",
+    "the dist-tag resolution itself is not re-simulated; the resolved version comes from the report and its real published manifest"
+  ]
+}

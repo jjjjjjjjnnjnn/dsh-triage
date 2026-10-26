@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T00:00:00.000Z",
+  "command": "check",
+  "mode": "candidate",
+  "status": "ok",
+  "case": {
+    "id": "CASE-10849",
+    "title": "Unpinned `dsh plugin add` resolves an out-of-step npm `latest` tag and gets rejected as incompatible",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10849",
+      "author": "xanthropic",
+      "reported_at": "2026-10-24",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "profile": "web",
+      "plugin": "@deepseek-ai/dsh-mcp-client",
+      "plugin_version": "0.0.1-rc.1",
+      "runtime_after": "0.2.1-rc.2",
+      "symptom": "`dsh plugin --profile web add @deepseek-ai/dsh-mcp-client` (unpinned) was rejected: the package's npm latest tag points at 0.0.1-rc.1, whose @deepseek-ai/dsh-* peers are ^0.0.1-rc.1",
+      "runtime_trace": "npm dist-tags are out of step inside the scope: mcp-client latest=0.0.1-rc.1 while dsh latest=0.2.1-rc.2; the install message named the unmet requirements",
+      "user_hypotheses": [
+        "the MCP client needs a separate install (it does not: pinning the matching version installs cleanly and the tools register)"
+      ],
+      "root_cause": "an unpinned spec resolved a first-release candidate whose peer ranges exclude the running 0.2.1-rc.2",
+      "fix_verified_by_reporter": "`dsh plugin --profile web add @deepseek-ai/dsh-mcp-client@0.2.1-rc.2` then 35 mcp__chrome__* tools registered on arm64 Linux"
+    },
+    "deviations": [
+      "no installation existed (upstream refused it), so this case is recorded in `candidate` mode: admission on the manifest that the unpinned spec resolved",
+      "the dist-tag resolution itself is not re-simulated; the resolved version comes from the report and its real published manifest"
+    ],
+    "reproduced": {
+      "runtime": "0.2.1-rc.2",
+      "profile": "(candidate: no installation existed)"
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-10849/runtime-dsh.json",
+      "sha256": "6394bce7d2689c70e1cebb4b65965cd28c6d01709086826e617b9be67c0e0ea8"
+    },
+    {
+      "file": "data/cases/CASE-10849/plugin-mcp-client.json",
+      "sha256": "f2dda23b3f5665d104a3044cbed0bc43d022533ec7031b6b936c97979f2eb034"
+    }
+  ],
+  "env": {
+    "dsh": "0.2.1-rc.2",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "~",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.1-rc.2"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-mcp-client",
+        "version": "0.0.1-rc.1",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subprocess",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-mcp-client@0.0.1-rc.1",
+          "method": "declared-range",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~",
+          "method": "profile-scan",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "dsh 0.2.1-rc.2"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile web allow-version @deepseek-ai/dsh-mcp-client@0.0.1-rc.1 --dsh-version 0.2.1-rc.2 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 4,
+            "runtime": "0.2.1-rc.2"
+          },
+          "note": "4 requirement(s) exclude 0.2.1-rc.2; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.1-rc.2",
+            "profile": "web"
+          },
+          "note": "install a plugin build whose declarations include 0.2.1-rc.2 (profile: web)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T00:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 0,
+    "rows": 0
+  },
+  "summary": {
+    "blocked": 1
+  },
+  "hit": {
+    "verdict": "hit",
+    "expected": {
+      "kind": "candidate-admission",
+      "module": "@deepseek-ai/dsh-mcp-client",
+      "reason_code": "admission-denied-peer",
+      "requirement_key": "@deepseek-ai/dsh-llm"
+    },
+    "matched": {
+      "verdict_index": 0,
+      "conclusion": "blocked",
+      "subject": {
+        "name": "@deepseek-ai/dsh-mcp-client",
+        "version": "0.0.1-rc.1",
+        "kind": "plugin"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subprocess",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    "why": "the labelled target is named and the labelled requirement is the one that failed"
+  },
+  "errors": []
+}
