@@ -96,7 +96,9 @@ test('why --json attributes a denial and redacts the profile path', () => {
     const payload = JSON.parse(result.stdout)
 
     assert.equal(payload.command, 'why')
-    assert.equal(payload.verdicts.length, 1, 'one bundle, one verdict')
+    // One verdict for the bundle, one for the module its row imports: upstream
+    // admits per row, so a bundle-level answer alone would hide a dead row.
+    assert.equal(payload.verdicts.length, 2, 'bundle + row')
 
     const [verdict] = payload.verdicts
     assert.equal(verdict.conclusion, 'blocked')
@@ -113,6 +115,107 @@ test('why --json attributes a denial and redacts the profile path', () => {
     // Privacy: JSON is shareable, so the home directory must not leak.
     assert.ok(verdict.env.profileDir.startsWith('~'), `profileDir not redacted: ${verdict.env.profileDir}`)
     assert.ok(!result.stdout.includes(fixture.home.replaceAll('\\', '\\\\')), 'raw home path leaked into JSON')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('why attributes a dead row mounted in the profile patch (CASE-11080 shape)', () => {
+  const fixture = buildFixture()
+  try {
+    // A row that is NOT a bundle layer: exactly how the reported case mounted
+    // `@deepseek-ai/dsh-hooks-claude-code` in `cordis.patch.yml`.
+    writeFileSync(
+      join(fixture.dshHome, 'profiles', 'web', 'cordis.patch.yml'),
+      "- id: hooks-claude-code\n  name: '@deepseek-ai/pinned-hooks'\n",
+    )
+    mkdirSync(join(fixture.dshHome, 'profiles', 'node_modules', '@deepseek-ai', 'pinned-hooks'), { recursive: true })
+    writeFileSync(
+      join(fixture.dshHome, 'profiles', 'node_modules', '@deepseek-ai', 'pinned-hooks', 'package.json'),
+      JSON.stringify({
+        name: '@deepseek-ai/pinned-hooks',
+        version: '0.2.1-rc.2',
+        peerDependencies: { '@deepseek-ai/dsh-llm': '0.2.1-rc.1' },
+      }),
+    )
+
+    const result = runCli(
+      ['why', '--json', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z'],
+      fixture,
+    )
+    assert.equal(result.status, 0, result.stderr)
+    const payload = JSON.parse(result.stdout)
+
+    const row = payload.verdicts.find((verdict: { subject: { name: string } }) => verdict.subject.name === '@deepseek-ai/pinned-hooks')
+    assert.ok(row, 'the row-level verdict must exist even though no bundle failed on it')
+    assert.equal(row.conclusion, 'blocked')
+    assert.equal(row.subject.kind, 'entry')
+
+    const scope = row.reasons.find((reason: { messageId: string }) => reason.messageId === 'admission.row-scope')
+    assert.equal(scope?.params?.rows, 'hooks-claude-code', 'output must name the exact row to fix')
+
+    const peer = row.reasons.find((reason: { code: string }) => reason.code === 'admission-denied-peer')
+    assert.equal(peer?.params?.key, '@deepseek-ai/dsh-llm')
+    assert.ok(
+      row.remediation.some((item: { kind: string; params?: { id?: string } }) => item.kind === 'disable-entry' && item.params?.id === 'hooks-claude-code'),
+    )
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('a relative row is judged against its own package, never the profile manifest', () => {
+  const fixture = buildFixture()
+  try {
+    // A local (non-registry) plugin mounted by relative path, pinned to the old build.
+    const localDir = join(fixture.dshHome, 'profiles', 'web', 'packages', 'local-hooks')
+    mkdirSync(localDir, { recursive: true })
+    writeFileSync(
+      join(localDir, 'package.json'),
+      JSON.stringify({
+        name: 'local-hooks',
+        version: '0.2.1-rc.2',
+        peerDependencies: { '@deepseek-ai/dsh-llm': '0.2.1-rc.1' },
+      }),
+    )
+    writeFileSync(join(localDir, 'host.js'), 'export const name = "local-hooks"\n')
+    writeFileSync(
+      join(fixture.dshHome, 'profiles', 'web', 'cordis.patch.yml'),
+      '- id: local-hooks-row\n  name: ./packages/local-hooks/host.js\n',
+    )
+
+    const result = runCli(
+      ['why', '--json', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z'],
+      fixture,
+    )
+    assert.equal(result.status, 0, result.stderr)
+    const payload = JSON.parse(result.stdout)
+    const row = payload.verdicts.find((verdict: { subject: { name: string } }) => verdict.subject.name === './packages/local-hooks/host.js')
+    assert.ok(row, 'relative rows must be attributed too')
+    assert.equal(row.conclusion, 'blocked')
+    assert.equal(row.subject.version, '0.2.1-rc.2', 'version comes from the row package, not the profile')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('why stays silent for a row whose package is not installed (no invented finding)', () => {
+  const fixture = buildFixture()
+  try {
+    writeFileSync(
+      join(fixture.dshHome, 'profiles', 'web', 'cordis.patch.yml'),
+      "- id: ghost-row\n  name: 'dsh-plugin-that-was-removed'\n",
+    )
+    const result = runCli(
+      ['why', '--json', '--all', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z'],
+      fixture,
+    )
+    assert.equal(result.status, 0, result.stderr)
+    const payload = JSON.parse(result.stdout)
+    const ghost = payload.verdicts.find((verdict: { subject: { name: string } }) => verdict.subject.name === 'dsh-plugin-that-was-removed')
+    assert.ok(ghost, 'a missing package is a finding, not silence')
+    assert.equal(ghost.conclusion, 'unknown', 'never claim a missing package is fine')
+    assert.deepEqual(ghost.missingEvidence, ['missing.row-module'])
   } finally {
     rmSync(fixture.root, { recursive: true, force: true })
   }

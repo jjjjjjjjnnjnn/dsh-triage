@@ -147,6 +147,33 @@ export function findEntryIdCollisions(claims: readonly EntryClaim[]): readonly E
   return collisions
 }
 
+/** One row that imports a module; groups and config-only overrides are excluded. */
+export interface RowTarget {
+  readonly rowId: string
+  readonly module: string
+  readonly source: string
+}
+
+/**
+ * Keep the rows that actually import something.
+ *
+ * A row without `name` only patches config/disabled of an existing row, and a
+ * group row has no module either — neither can be admitted or rejected on its
+ * own, so evaluating them would invent findings.
+ */
+export function rowTargets(claims: readonly EntryClaim[]): readonly RowTarget[] {
+  const seen = new Set<string>()
+  const out: RowTarget[] = []
+  for (const claim of claims) {
+    if (claim.name === null || claim.group || claim.disabled) continue
+    const key = `${claim.source}\u0000${claim.id}\u0000${claim.name}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ rowId: claim.id, module: claim.name, source: claim.source })
+  }
+  return out
+}
+
 /** Group claims by owner, preserving deterministic order. */
 export function groupClaimsBySource(claims: readonly EntryClaim[]): ReadonlyMap<string, readonly EntryClaim[]> {
   const grouped = new Map<string, EntryClaim[]>()

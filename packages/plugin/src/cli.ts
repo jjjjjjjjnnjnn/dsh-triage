@@ -25,8 +25,10 @@ import {
   redactEnv,
   redactVerdict,
   renderVerdict,
+  rowTargets,
   verdictFromAdmission,
   verdictsFromCollisions,
+  verdictsFromRowAdmission,
   type Conclusion,
   type EntryClaim,
   type EnvFingerprint,
@@ -35,12 +37,18 @@ import {
 } from '@dsh-triage/core'
 import { buildProbePlan } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
-import { loadComposition } from './load.js'
+import { loadComposition, resolveRows } from './load.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
 const EXIT_USAGE = 2
 const EXIT_UNAVAILABLE = 3
+
+/**
+ * Terminal output stays readable: a profile that mounts 80 rows pinned to the
+ * previous build must not print 80 cards. `--json` always carries everything.
+ */
+const MAX_RENDERED_VERDICTS = 20
 
 interface Flags {
   readonly json: boolean
@@ -155,6 +163,12 @@ async function commandWhy(flags: Flags): Promise<number> {
   const collisions = findEntryIdCollisions(claims)
   verdicts.push(...verdictsFromCollisions({ env, collisions, generatedAt: stamp }))
 
+  // Row-level admission (CASE-11080): upstream disables the *row's module*, not
+  // the bundle, so a pinned peer that the new runtime no longer satisfies turns a
+  // working profile into a silent one. Bundles alone answered "no denials" here.
+  const rows = await resolveRows(env, rowTargets(claims))
+  verdicts.push(...verdictsFromRowAdmission({ env, rows, generatedAt: stamp }))
+
   const findings = verdicts.filter((verdict) => (flags.all ? true : verdict.conclusion !== 'go'))
 
   if (flags.json) {
@@ -170,16 +184,21 @@ async function commandWhy(flags: Flags): Promise<number> {
   }
 
   process.stdout.write(
-    `scanned ${composition.layers.length} bundles · ${claims.length} loader rows · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`,
+    `scanned ${composition.layers.length} bundles · ${claims.length} loader rows · ${rows.length} import targets · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`,
   )
   for (const error of bannerErrors) process.stdout.write(`warn  ${error}\n`)
   if (findings.length === 0) {
-    process.stdout.write('no denials or collisions found in the declared layer.\n')
+    process.stdout.write('no denials or collisions found in the declared layer or its rows.\n')
     process.stdout.write('run `dsh-triage audit` to see the capability ledger, or `dsh-triage check <pkg>` before installing.\n')
     return EXIT_OK
   }
-  for (const verdict of findings) {
+  for (const verdict of findings.slice(0, MAX_RENDERED_VERDICTS)) {
     process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n\n`)
+  }
+  if (findings.length > MAX_RENDERED_VERDICTS) {
+    process.stdout.write(
+      `… ${findings.length - MAX_RENDERED_VERDICTS} more finding(s); pass --json for the full list.\n`,
+    )
   }
   if (findings.some((verdict) => verdict.conclusion === 'unknown')) {
     process.stdout.write(

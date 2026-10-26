@@ -9,8 +9,8 @@
  */
 
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import type { EnvFingerprint } from '@dsh-triage/core'
+import { dirname, join, resolve } from 'node:path'
+import type { EnvFingerprint, RowDeclaration, RowTarget } from '@dsh-triage/core'
 
 export interface BundleLayer {
   readonly name: string
@@ -142,6 +142,78 @@ async function readTextOrNull(path: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+/* --------------------------- row-level attribution --------------------------- */
+
+/**
+ * Resolve each row's module to the `package.json` that a real import would use:
+ * the profile's own `node_modules` first, then the shared `profiles/node_modules`
+ * (pnpm `nodeLinker: hoisted`). A miss stays a miss — we never guess a version,
+ * because a guessed version would turn "unknown" into a confident answer.
+ */
+export async function resolveRows(
+  env: EnvFingerprint,
+  targets: readonly RowTarget[],
+): Promise<readonly RowDeclaration[]> {
+  // `profileDir` is `<dshHome>/profiles/<name>`, so the shared pnpm root that a
+  // profile actually resolves through is its *parent* `node_modules`.
+  const sharedModules = join(dirname(env.profileDir), 'node_modules')
+  const roots = [join(env.profileDir, 'node_modules'), sharedModules]
+  const cache = new Map<string, { manifest: unknown; version: string | null } | null>()
+  const out: RowDeclaration[] = []
+
+  for (const target of targets) {
+    const cached = cache.get(target.module)
+    const resolved = cached === undefined ? await resolveModuleManifest(env.profileDir, target.module, roots) : cached
+    cache.set(target.module, resolved)
+    out.push({
+      rowId: target.rowId,
+      module: target.module,
+      source: target.source,
+      manifest: resolved === null ? null : resolved.manifest,
+      version: resolved === null ? null : resolved.version,
+    })
+  }
+  return out
+}
+
+async function resolveModuleManifest(
+  profileDir: string,
+  specifier: string,
+  roots: readonly string[],
+): Promise<{ manifest: unknown; version: string | null } | null> {
+  const dirs: string[] = []
+  if (specifier.startsWith('.') || resolve(specifier) === specifier) {
+    // Relative/absolute rows point inside the profile tree; walk up to the
+    // nearest manifest, mirroring how the loader resolves a local module. The
+    // profile root is excluded on purpose: its own `package.json` is the
+    // consumer manifest, not the row's package, and judging the row against it
+    // would silently pass a plugin that declares nothing.
+    let current = resolve(profileDir, specifier)
+    for (let depth = 0; depth < 8; depth += 1) {
+      if (current === resolve(profileDir)) break
+      dirs.push(current)
+      const parent = dirname(current)
+      if (parent === current) break
+      current = parent
+    }
+  } else {
+    const packageName = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0] ?? specifier
+    for (const root of roots) dirs.push(join(root, ...packageName.split('/')))
+  }
+
+  for (const dir of dirs) {
+    const text = await readTextOrNull(join(dir, 'package.json'))
+    if (text === null) continue
+    try {
+      const manifest: unknown = JSON.parse(text)
+      return { manifest, version: readVersion(manifest) }
+    } catch {
+      return null
+    }
+  }
+  return null
 }
 
 function describe(error: unknown): string {

@@ -11,6 +11,7 @@
 
 import { gt, minVersion } from 'semver'
 import type { AdmissionResult } from './admission.js'
+import { evaluateAdmission } from './admission.js'
 import type { EntryCollision } from './ledger.js'
 import { catalogFor, format, type Locale } from './messages.js'
 import type {
@@ -178,6 +179,157 @@ export function verdictsFromCollisions(input: CollisionVerdictInput): readonly V
       generatedAt: input.generatedAt,
     }),
   )
+}
+
+/** One patch row that names an importable module, with its resolved package.json. */
+export interface RowDeclaration {
+  readonly rowId: string
+  /** Bare module specifier the row imports, e.g. `@deepseek-ai/dsh-hooks-claude-code`. */
+  readonly module: string
+  /** Patch layer that declares the row, e.g. `patch:profile` or `bundle:@deepseek-ai/dsh-base`. */
+  readonly source: string
+  /** Resolved `package.json` of the module; `null` when the package is not installed here. */
+  readonly manifest: unknown | null
+  readonly version: string | null
+}
+
+export interface RowAdmissionInput {
+  readonly env: EnvFingerprint
+  readonly rows: readonly RowDeclaration[]
+  readonly generatedAt: string
+}
+
+/**
+ * Row-level admission attribution.
+ *
+ * WHY THIS EXISTS (CASE-11080): upstream admits or rejects **each loader row's
+ * module**, not each bundle. A row mounted in `cordis.patch.yml` that pins a peer
+ * version the running build no longer satisfies is disabled at startup, and the
+ * only trace is one stderr line ("disabling profile plugin row … incompatible
+ * with dsh …"). Evaluating bundles alone answered "no denials" for a profile
+ * whose hooks had silently stopped firing — a false negative, and exactly the
+ * failure this product exists to catch.
+ *
+ * Rows are grouped by module so a bundle that pins one package in 20 rows yields
+ * one verdict that names every affected row, instead of 20 near-identical cards.
+ */
+export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Verdict[] {
+  const runtime = input.env.dsh
+  // Without a runtime version every row would be `unknown`; the bundle verdicts
+  // already say that once, so row-level noise would add nothing.
+  if (runtime === null || runtime.trim() === '') return []
+
+  const out: Verdict[] = []
+  for (const [module, rows] of groupRowsByModule(input.rows)) {
+    const first = rows[0]
+    if (first === undefined) continue
+    const rowIds = rows.map((row) => row.rowId).join(', ')
+    const sources = [...new Set(rows.map((row) => row.source))].sort((a, b) => a.localeCompare(b))
+    const subject: VerdictSubject = { name: module, version: first.version, kind: 'entry' }
+    const scopeReason: Reason = {
+      code: 'admission-row-scope',
+      severity: 'info',
+      messageId: 'admission.row-scope',
+      params: { rows: rowIds, module, source: sources.join(', ') },
+    }
+    const rowEvidence: Evidence = {
+      id: 'row',
+      tier: 'declared',
+      source: sources[0] ?? 'patch',
+      method: 'patch-parse',
+      at: input.generatedAt,
+      detail: `row(s) ${rowIds}`,
+    }
+    const runtimeEvidence: Evidence = {
+      id: 'runtime',
+      tier: 'measured-local',
+      source: input.env.profileDir,
+      method: 'profile-scan',
+      at: input.generatedAt,
+      detail: `dsh ${runtime}`,
+    }
+
+    if (first.manifest === null) {
+      out.push(
+        finish({
+          subject,
+          env: input.env,
+          conclusion: 'unknown',
+          confidence: { level: 'low', basis: 'declared' },
+          reasons: [
+            scopeReason,
+            {
+              code: 'admission-row-missing',
+              severity: 'warn',
+              messageId: 'admission.row-missing',
+              params: { rows: rowIds, module },
+            },
+          ],
+          evidence: [rowEvidence, runtimeEvidence],
+          remediation: [
+            {
+              kind: 'remove-plugin',
+              messageId: 'remediation.remove-plugin',
+              note: `row(s) ${rowIds} import ${module}, which is not installed under this profile`,
+            },
+          ],
+          missingEvidence: ['missing.row-module'],
+          generatedAt: input.generatedAt,
+        }),
+      )
+      continue
+    }
+
+    const admission = evaluateAdmission(first.manifest, runtime)
+    // Admitted / unconstrained / indeterminate rows stay silent: the bundle-level
+    // verdict already covers them, and repeating "fine" for 80 rows is noise.
+    if (admission.status !== 'denied') continue
+
+    out.push(
+      finish({
+        subject,
+        env: input.env,
+        conclusion: 'blocked',
+        confidence: { level: 'high', basis: 'declared' },
+        reasons: [scopeReason, ...admission.unmet.map((requirement) => unmetReason(requirement, runtime))],
+        evidence: [
+          {
+            id: 'admission',
+            tier: 'declared',
+            source: `${module}@${first.version ?? 'unknown'}`,
+            method: 'declared-range',
+            at: input.generatedAt,
+            detail: admission.mode,
+          },
+          rowEvidence,
+          runtimeEvidence,
+        ],
+        remediation: [
+          ...remediationForDenial(admission.unmet, runtime, input.env.profile, subject),
+          ...rows.map((row) => ({
+            kind: 'disable-entry' as const,
+            messageId: 'remediation.disable-entry' as const,
+            params: { id: row.rowId, owners: row.source },
+            note: `disable row "${row.rowId}" in ${row.source} when ${module} is no longer needed`,
+          })),
+        ],
+        missingEvidence: [],
+        generatedAt: input.generatedAt,
+      }),
+    )
+  }
+  return out
+}
+
+function groupRowsByModule(rows: readonly RowDeclaration[]): ReadonlyMap<string, readonly RowDeclaration[]> {
+  const grouped = new Map<string, RowDeclaration[]>()
+  for (const row of rows) {
+    const bucket = grouped.get(row.module)
+    if (bucket === undefined) grouped.set(row.module, [row])
+    else bucket.push(row)
+  }
+  for (const bucket of grouped.values()) bucket.sort((a, b) => a.rowId.localeCompare(b.rowId))
+  return new Map([...grouped.entries()].sort(([a], [b]) => a.localeCompare(b)))
 }
 
 /** Merge verdicts into one: worst conclusion wins, evidence/reasons/remediation are unioned. */

@@ -37,16 +37,17 @@ export { evaluateAdmission, evaluateRange, isAdmissionPeer, readEnginesDsh } fro
 export type { LoadEnvInput, ProfileManifest } from './env.js'
 export { defaultDshHome, loadEnv, parseProfileManifest, profileDirOf, resolveProfileDir } from './env.js'
 
-export type { EntryClaim, EntryCollision } from './ledger.js'
-export { extractEntryClaims, findEntryIdCollisions, groupClaimsBySource, parsePatchYaml } from './ledger.js'
+export type { EntryClaim, EntryCollision, RowTarget } from './ledger.js'
+export { extractEntryClaims, findEntryIdCollisions, groupClaimsBySource, parsePatchYaml, rowTargets } from './ledger.js'
 
-export type { AdmissionVerdictInput, CollisionVerdictInput } from './verdict.js'
+export type { AdmissionVerdictInput, CollisionVerdictInput, RowAdmissionInput, RowDeclaration } from './verdict.js'
 export {
   conclusionRank,
   mergeVerdicts,
   renderVerdict,
   verdictFromAdmission,
   verdictsFromCollisions,
+  verdictsFromRowAdmission,
 } from './verdict.js'
 
 export type { Locale, MessageCatalog } from './messages.js'
