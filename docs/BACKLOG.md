@@ -5,10 +5,11 @@
 
 | ID | 任务 | 里程碑 | 角色 | 依赖 | 验收判据 | 状态 |
 |---|---|---|---|---|---|---|
-| T-101 | 真实案例验收：把「MCP 工具静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；修复后症状消失；`data/results/why-case-*.json` | ⛔ 阻塞：等 HUMAN 提供 插件名/版本/dsh 版本/症状（退出条件：一次命中并落盘） |
+| T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | ✅ **CASE-11080 命中**（`data/cases/CASE-11080/`，2026-10-26）。D1 门槛是 10 例 ≥8 命中，目前 **1/1**，案例数未达标 |
+| T-104 | 再收 9 例真实案例（凑满 D1 门槛 10 例） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | ⬜ 建议下一批（讨论区/issue 已证明可挖到） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
-| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | `audit` 显示 active/failed/null；与静态声明交叉校验 | ⬜ |
+| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **契约就绪，实现待领**（沙箱 `data/results/upstream-0.2.1-rc.3-*.json` 已证明服务存在、`fiberPhase` 枚举实测） |
 | T-202 | 运行时命名空间快照（tools/commands/settings/skills） | M2-a | implementer | T-201 | 快照落 `data/results/ns-*.json` + 哈希 | ⬜ |
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
 | T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ⬜ |
@@ -26,7 +27,20 @@
 
 ---
 
-## R3 已修（本轮，证据见 `audit/AUDIT_2026-10-26_R3.md`）
+## R4 已交付（本轮，证据见 `data/results/why-case-CASE-11080-*.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-101 | 真实案例命中：升级后 `cordis.patch.yml` 的行被静默禁用（peer 钉旧版本） | ✅ |
+| A7/A8 | **行级 admission 归因**：此前只按 bundle 判，patch 里的 row 逃检（假阴）；未安装模块只能 `unknown` | ✅ |
+| NEW | `scripts/record_case.mjs`：案例输入固化 + 隔离复现 + 机器可算命中判定 + SSOT | ✅ |
+| NEW | `scripts/bootstrap_upstream.mjs`：0.2.x 隔离运行时（不写 `~/.dsh`）+ 契约实测 SSOT | ✅ |
+| NEW | `docs/specs/M2-inventory.md`：`pluginInventory` 契约、相位映射、P1/P2/P3 传输路径、负对照 | ✅ |
+| 测试 | +4 单测（`tests/unit/rows.test.ts`）+3 e2e（row 命中、相对路径 row、缺失包不判 go）= 56 条 | ✅ |
+
+---
+
+## R3 已修（证据见 `audit/AUDIT_2026-10-26_R3.md`）
 
 | 审核 ID | 内容 | 状态 |
 |---|---|---|

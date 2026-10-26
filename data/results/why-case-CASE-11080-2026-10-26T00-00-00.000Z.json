@@ -50,11 +50,11 @@
     },
     {
       "file": "data/cases/CASE-11080/runtime-dsh.json",
-      "sha256": "7d8cce487d999bc2317c089c05acd86f169b885680082d0f118c90dc11de9505"
+      "sha256": "955228ec1935eb5f4ef9e9d491c9c8ba5b9f9e7641ab992a33be26d9c011d243"
     },
     {
       "file": "data/cases/CASE-11080/plugin-hooks-claude-code.json",
-      "sha256": "728704edf0089a1af5a6d0a90b44626f6f35fefbf8567762b012d53fd319d164"
+      "sha256": "01f1152a8e1fb150d4bddfd47d43575b1f431a2754c50d9363abf2894bab7130"
     }
   ],
   "env": {

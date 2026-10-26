@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: v0.1.0-skeleton (2026-10-26)｜当前批次：**R3 · 项目审核 + 交接**（14 项修复，见 `audit/AUDIT_2026-10-26_R3.md`）
+> **Stand**: R4 (2026-10-26)｜当前批次：**R4 · 真实案例验收 + 行级归因 + 0.2.x 解阻塞**（T-101 命中，新增 A7/A8 判据，见 `data/cases/CASE-11080/`）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -24,14 +24,13 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/
 | 项 | 状态 |
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
-| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ⛔**（等 HUMAN 提供案例） |
+| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（1 例命中，未达 10 例门槛）** · **M2-a 契约 ✅ / 实现 ⬜** |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
-| CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 7/7）· `release readiness`（tag 触发，实测打包 + `--publish` 检查） |
-| 里程碑标签 | `v0.1.0-skeleton`（tag → release readiness 绿，可发布就绪；npm 仍未登录） |
-| 规模 | 47 测试 · 7 门禁 · 6 角色卡 · 3+1 模板 |
-| 本轮交付 | 审核 14 项修复（SSOT 脱敏、假 API 删除、重复 reason、i18n 修复文案、门禁加严、Windows CI、e2e CLI 测试、release-pack 门、NOTICE、kickoff 模板） |
-| 证据 | `data/results/why-2026-10-26T00-00-00.000Z.json`（156 行 / 0 冲突 / sha256 `19d71672c033…`） |
-| 审核报告 | `audit/AUDIT_2026-10-26_R3.md`（结论 NEEDS WORK → 已修 → READY，附 4 项 blocked） |
+| CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 7/7）· `release readiness`（tag 触发） |
+| 规模 | 56 测试 · 7 门禁 · 6 角色卡 · 3+1 模板 · 1 个真实案例 |
+| 本轮交付 | **T-101 真实案例命中**（CASE-11080）；**行级 admission 归因**（此前只看 bundle → patch 里的 row 逃检，假阴）；`record_case` / `bootstrap_upstream` 两个真跑脚本；`docs/specs/M2-inventory.md` 契约锁定；6 条新测试（4 单测 + 2 e2e 负对照） |
+| 证据 | `data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json`（`hit.verdict=hit`，sha256 `19f52276eeca…`）· `data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测相位契约，7/7 checks）· `data/results/why-2026-10-26T00-00-00.000Z.json`（本机 profile，2 go / 0 冲突） |
+| 案例输入 | `data/cases/CASE-11080/`（真实 npm manifest + 重建声明层 + 机器可算 label + 偏差披露） |
 
 ---
 
@@ -42,7 +41,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
 **验收标准**：第二条输出 `ALL GREEN · 7 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 7/7`。
-满足即环境可信，接着领 **T-201（接入 `pluginInventory` 相位）**：`docs/BACKLOG.md` → 按 `.agents/prompts/task-packet.md` 列允许改动文件后再动手。
+满足即环境可信，接着领 **T-201（按 `docs/specs/M2-inventory.md` §4 的 P1+P2 路径实现相位台账）**：`docs/BACKLOG.md` → 按 `.agents/prompts/task-packet.md` 列允许改动文件后再动手。
+
 
 ---
 

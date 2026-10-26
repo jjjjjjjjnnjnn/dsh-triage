@@ -8,3 +8,5 @@
 # SSOT results must keep LF so hashes stay stable across platforms
 data/results/*.json text eol=lf
 data/gold/*.json text eol=lf
+# Case inputs are hashed into the SSOT record: a fresh clone must reproduce the same sha256
+data/cases/** text eol=lf
