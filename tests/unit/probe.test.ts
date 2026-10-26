@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
+import { isAbsolute, join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { test } from 'node:test'
 import { buildProbePlan, validateProbePlan } from '@dsh-triage/probe'
 
-const workRoot = 'C:/Temp/dsh-triage-probe'
-const realDshHome = 'C:/Users/test/.dsh'
+// Platform-independent absolute paths: CI runs on Linux, dev on Windows.
+const workRoot = join(tmpdir(), 'dsh-triage-probe')
+const realDshHome = join(tmpdir(), 'dsh-triage-real-home', '.dsh')
 
 test('probe plan is deterministic for the same candidate', () => {
   const a = buildProbePlan({ candidate: 'dsh-cost-meter', realDshHome, workRoot })
@@ -35,6 +38,7 @@ test('the plan always isolates DSH_HOME and documents cleanup', () => {
   const plan = buildProbePlan({ candidate: 'x', realDshHome, workRoot })
   assert.ok(plan.ok)
   if (!plan.ok) return
+  assert.ok(isAbsolute(plan.value.sandboxHome), 'sandbox path must be absolute on this platform')
   for (const step of plan.value.steps.filter((item) => item.id !== 'cleanup')) {
     assert.equal(step.env.DSH_HOME, plan.value.sandboxHome, `${step.id} must set DSH_HOME`)
   }
