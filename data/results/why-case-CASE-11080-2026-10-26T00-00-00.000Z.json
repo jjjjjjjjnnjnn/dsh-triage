@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T00:00:00.000Z",
+  "command": "why",
+  "status": "ok",
+  "case": {
+    "id": "CASE-11080",
+    "title": "Upgrading DSH silently disables version-mismatched profile plugins",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11080",
+      "author": "Yebeimu",
+      "reported_at": "2026-10-26",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "plugin": "@deepseek-ai/dsh-hooks-claude-code",
+      "plugin_version": "0.2.1-rc.2",
+      "runtime_before": "0.2.1-rc.2",
+      "runtime_after": "0.2.1-rc.3",
+      "symptom": "hooks stopped firing (delete guard, per-prompt routing note, post-edit structure check); the row mounted in cordis.patch.yml never loaded; nothing in the UI",
+      "runtime_trace": "di_loader_list reported phase=no-fiber disabled=true; the only explanation was one stderr line: 'dsh: disabling profile plugin row ... incompatible with dsh ...'",
+      "user_hypotheses": [
+        "absolute path instead of a relative module specifier",
+        "move the row to the end of the patch file",
+        "remove the plugin's inject declaration (this one broke the runtime and needed manual recovery)"
+      ],
+      "root_cause": "the row's module pins exact @deepseek-ai/dsh-* peers on 0.2.1-rc.2; the running build is 0.2.1-rc.3, so admission disables the row"
+    },
+    "deviations": [
+      "bundles omitted: the report is about one row mounted in cordis.patch.yml, so dsh-base/dsh-web-app are left out to keep the composition minimal",
+      "node_modules is reconstructed from the real published manifests (npm registry), not a full dependency install"
+    ],
+    "reproduced": {
+      "dsh_home": "~",
+      "profile": "case11080",
+      "bundles": []
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-11080/profile-package.json",
+      "sha256": "5532cf893a7ad6af1fefd7ec59b79ffe629d314516f140f98073afc03a97e586"
+    },
+    {
+      "file": "data/cases/CASE-11080/profile-cordis.patch.yml",
+      "sha256": "3923b075051d7a74f9b8c276fe0a0f2a38183f96598317512f5de3cc81943de1"
+    },
+    {
+      "file": "data/cases/CASE-11080/runtime-dsh.json",
+      "sha256": "7d8cce487d999bc2317c089c05acd86f169b885680082d0f118c90dc11de9505"
+    },
+    {
+      "file": "data/cases/CASE-11080/plugin-hooks-claude-code.json",
+      "sha256": "728704edf0089a1af5a6d0a90b44626f6f35fefbf8567762b012d53fd319d164"
+    }
+  ],
+  "env": {
+    "dsh": "0.2.1-rc.3",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "case11080",
+    "profileDir": "~\\profiles\\case11080",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.1-rc.3"
+      },
+      {
+        "name": "@deepseek-ai/dsh-hooks-claude-code",
+        "version": "0.2.1-rc.2"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-hooks-claude-code",
+        "version": "0.2.1-rc.2",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.3",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "case11080",
+        "profileDir": "~\\profiles\\case11080",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.3"
+          },
+          {
+            "name": "@deepseek-ai/dsh-hooks-claude-code",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "hooks-claude-code",
+            "module": "@deepseek-ai/dsh-hooks-claude-code",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-hook-protocol",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session-projection",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subagent",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-working-directory",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-hooks-claude-code@0.2.1-rc.2",
+          "method": "declared-range",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "patch:profile",
+          "method": "patch-parse",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "row(s) hooks-claude-code"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\case11080",
+          "method": "profile-scan",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "dsh 0.2.1-rc.3"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile case11080 allow-version @deepseek-ai/dsh-hooks-claude-code@0.2.1-rc.2 --dsh-version 0.2.1-rc.3 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "hooks-claude-code",
+            "owners": "patch:profile"
+          },
+          "note": "disable row \"hooks-claude-code\" in patch:profile when @deepseek-ai/dsh-hooks-claude-code is no longer needed"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 8,
+            "runtime": "0.2.1-rc.3"
+          },
+          "note": "8 requirement(s) exclude 0.2.1-rc.3; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.1-rc.3",
+            "profile": "case11080"
+          },
+          "note": "install a plugin build whose declarations include 0.2.1-rc.3 (profile: case11080)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T00:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 1,
+    "rows": 1
+  },
+  "summary": {
+    "blocked": 1
+  },
+  "hit": {
+    "verdict": "hit",
+    "expected": {
+      "kind": "row-admission",
+      "entry_id": "hooks-claude-code",
+      "module": "@deepseek-ai/dsh-hooks-claude-code",
+      "reason_code": "admission-denied-peer",
+      "requirement_key": "@deepseek-ai/dsh-llm"
+    },
+    "matched": {
+      "verdict_index": 0,
+      "conclusion": "blocked",
+      "subject": {
+        "name": "@deepseek-ai/dsh-hooks-claude-code",
+        "version": "0.2.1-rc.2",
+        "kind": "entry"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "hooks-claude-code",
+            "module": "@deepseek-ai/dsh-hooks-claude-code",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-hook-protocol",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session-projection",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-subagent",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-working-directory",
+            "range": "0.2.1-rc.2",
+            "runtime": "0.2.1-rc.3"
+          }
+        }
+      ]
+    },
+    "why": "the labelled row is named and the labelled requirement is the one that failed"
+  },
+  "errors": []
+}

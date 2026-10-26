@@ -1,0 +1,13 @@
+{
+  "name": "case11080",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-hooks-claude-code": "0.2.1-rc.2"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": []
+    }
+  }
+}

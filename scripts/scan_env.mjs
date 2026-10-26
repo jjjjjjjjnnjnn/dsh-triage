@@ -88,6 +88,11 @@ const verdicts = composition.layers.map((layer) =>
 const collisions = core.findEntryIdCollisions(claims)
 verdicts.push(...core.verdictsFromCollisions({ env: fingerprint, collisions, generatedAt: stamp }))
 
+// Row-level admission: the same attribution the CLI does, so the SSOT and the
+// interactive output can never disagree about why a row was disabled.
+const rows = await plugin.resolveRows(realEnv, core.rowTargets(claims))
+verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generatedAt: stamp }))
+
 const summary = verdicts.reduce(
   (acc, verdict) => ({ ...acc, [verdict.conclusion]: (acc[verdict.conclusion] ?? 0) + 1 }),
   {},

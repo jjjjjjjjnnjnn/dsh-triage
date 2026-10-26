@@ -1,0 +1,4 @@
+# CASE-11080 reconstruction: the single row the reporter mounted in
+# `cordis.patch.yml`. Nothing else is added — no bundle layers, no extra rows.
+- id: hooks-claude-code
+  name: '@deepseek-ai/dsh-hooks-claude-code'

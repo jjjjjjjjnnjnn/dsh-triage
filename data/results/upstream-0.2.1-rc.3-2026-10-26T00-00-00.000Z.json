@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/bootstrap_upstream.mjs",
+  "generated_at": "2026-10-26T00:00:00.000Z",
+  "status": "ok",
+  "note": "runtime installed; profile skeleton written (no node_modules yet — `dsh plugin add` inside the sandbox is the next step for a bootable profile)",
+  "limits": [
+    "the sandbox profile has no node_modules: this script proves the runtime and its contract, not a bootable app",
+    "no credentials are copied or injected; nothing outside the temp sandbox is written",
+    "phase seen here is the contract, not a live sample: reading it needs a running Host (T-201)"
+  ],
+  "requested_version": "0.2.1-rc.3",
+  "sandbox": {
+    "root": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3",
+    "install": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3\\install",
+    "dsh_home": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3\\home",
+    "profile": "upstream"
+  },
+  "dry_run": false,
+  "registry": {
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.1-rc.3.tgz",
+    "integrity": "sha512-H+E9HLnHf7fJqzen84Z9Bq8ggb5xbrcbyhZjXTJLE9NabHr3zteGvTRvdvGkxPl4ov80is4WLglFmSo+/olJjg=="
+  },
+  "inventory": {
+    "package": "@deepseek-ai/dsh-host-plugin-inventory",
+    "version": "0.2.1-rc.3",
+    "remote": "pluginInventory/list",
+    "fiber_phase": [
+      null,
+      "failed",
+      "pending",
+      "active",
+      "loading",
+      "unloading"
+    ]
+  },
+  "smoke": {
+    "status": "ok",
+    "output": "0.2.1-rc.3"
+  },
+  "checks": [
+    {
+      "id": "registry",
+      "ok": true,
+      "detail": "published https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.1-rc.3.tgz"
+    },
+    {
+      "id": "npm-install",
+      "ok": true,
+      "detail": "already installed (pass --force to reinstall)"
+    },
+    {
+      "id": "installed-version",
+      "ok": true,
+      "detail": "0.2.1-rc.3"
+    },
+    {
+      "id": "plugin-inventory-present",
+      "ok": true,
+      "detail": "0.2.1-rc.3"
+    },
+    {
+      "id": "pluginInventory/list",
+      "ok": true,
+      "detail": "<sandbox>\\install\\node_modules\\@deepseek-ai\\dsh-host-plugin-inventory\\lib\\typert.remote-client.js"
+    },
+    {
+      "id": "fiberPhase",
+      "ok": true,
+      "detail": " | failed | pending | active | loading | unloading"
+    },
+    {
+      "id": "dsh --version",
+      "ok": true,
+      "detail": "0.2.1-rc.3"
+    }
+  ]
+}
