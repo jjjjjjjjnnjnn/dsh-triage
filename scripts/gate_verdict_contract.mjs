@@ -15,7 +15,7 @@ const TIERS = new Set(['declared', 'scanned', 'measured-registry', 'measured-loc
 const CONCLUSIONS = new Set(['go', 'risky', 'blocked', 'unknown'])
 const SEVERITIES = new Set(['block', 'warn', 'info'])
 const CONFIDENCE = new Set(['low', 'medium', 'high'])
-const MESSAGE_ID = /^(admission|collision|remediation|missing)\.[a-z0-9.-]+$/
+const MESSAGE_ID = /^(admission|collision|runtime|remediation|missing)\.[a-z0-9.-]+$/
 
 /** Extract the catalogue keys from the single source of truth for user-facing text. */
 function readMessageCatalog() {

@@ -1,0 +1,365 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/render_inventory.mjs",
+  "generated_at": "2026-10-27T00:00:00.000Z",
+  "command": "audit --snapshot",
+  "sample": {
+    "kind": "fixture",
+    "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+    "sampled_at": "2026-10-26T00:00:00.000Z",
+    "profile": "desktop",
+    "note": "synthetic snapshot: exercises the phase table, not a live observation of this machine"
+  },
+  "env": {
+    "dsh": "0.2.1-rc.2",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "desktop",
+    "profileDir": "~\\profiles\\desktop",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.1-rc.2"
+      }
+    ]
+  },
+  "inventory": {
+    "management_available": true,
+    "unknown_keys": [],
+    "entries": [
+      {
+        "entry_id": "hooks-claude-code",
+        "module": "@deepseek-ai/dsh-hooks-claude-code",
+        "enabled": false,
+        "phase": null
+      },
+      {
+        "entry_id": "mcp-client",
+        "module": "@deepseek-ai/dsh-mcp-client",
+        "enabled": true,
+        "phase": "active"
+      },
+      {
+        "entry_id": "preset-row",
+        "module": "@deepseek-ai/dsh-agent-preset",
+        "enabled": true,
+        "phase": "active"
+      },
+      {
+        "entry_id": "session",
+        "module": "@deepseek-ai/dsh-session",
+        "enabled": true,
+        "phase": "pending"
+      },
+      {
+        "entry_id": "tools",
+        "module": "@deepseek-ai/dsh-tools",
+        "enabled": true,
+        "phase": null
+      }
+    ],
+    "missing": [
+      {
+        "entryId": "mcp-resources",
+        "module": "@deepseek-ai/dsh-mcp-resources"
+      }
+    ],
+    "undeclared": [
+      {
+        "entry_id": "preset-row",
+        "module": "@deepseek-ai/dsh-agent-preset",
+        "phase": "active"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-hooks-claude-code",
+        "version": null,
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "risky",
+      "confidence": {
+        "level": "medium",
+        "basis": "measured-local"
+      },
+      "reasons": [
+        {
+          "code": "runtime.disabled",
+          "severity": "warn",
+          "messageId": "runtime.disabled",
+          "params": {
+            "entryId": "hooks-claude-code",
+            "module": "@deepseek-ai/dsh-hooks-claude-code",
+            "phase": "none"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "inventory",
+          "tier": "measured-local",
+          "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "phase=none enabled=false"
+        },
+        {
+          "id": "inventory-profile",
+          "tier": "measured-local",
+          "source": "desktop",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "sampled from profile desktop"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "hooks-claude-code",
+            "owners": "patch:profile"
+          },
+          "note": "disable entry \"hooks-claude-code\" in the later patch layer once \"@deepseek-ai/dsh-hooks-claude-code\" is no longer needed"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": null,
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "measured-local"
+      },
+      "reasons": [
+        {
+          "code": "runtime.no-fiber",
+          "severity": "block",
+          "messageId": "runtime.no-fiber",
+          "params": {
+            "entryId": "tools",
+            "module": "@deepseek-ai/dsh-tools"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "inventory",
+          "tier": "measured-local",
+          "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "phase=none enabled=true"
+        },
+        {
+          "id": "inventory-profile",
+          "tier": "measured-local",
+          "source": "desktop",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "sampled from profile desktop"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "tools",
+            "owners": "patch:profile"
+          },
+          "note": "disable entry \"tools\" in the later patch layer once \"@deepseek-ai/dsh-tools\" is no longer needed"
+        },
+        {
+          "kind": "report",
+          "messageId": "remediation.report",
+          "note": "report entry \"tools\" (@deepseek-ai/dsh-tools) to the plugin author; profile \"desktop\" has a runtime sample proving it"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-mcp-resources",
+        "version": null,
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "unknown",
+      "confidence": {
+        "level": "low",
+        "basis": "measured-local"
+      },
+      "reasons": [
+        {
+          "code": "runtime.missing-entry",
+          "severity": "warn",
+          "messageId": "runtime.missing-entry",
+          "params": {
+            "entryId": "mcp-resources",
+            "module": "@deepseek-ai/dsh-mcp-resources"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "inventory",
+          "tier": "measured-local",
+          "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "declared but not in the snapshot: mcp-resources"
+        },
+        {
+          "id": "inventory-profile",
+          "tier": "measured-local",
+          "source": "desktop",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "sampled from profile desktop"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an isolated probe (M3) can decide whether \"@deepseek-ai/dsh-mcp-resources\" would register in a clean profile"
+        }
+      ],
+      "missingEvidence": [
+        "missing.fiber"
+      ],
+      "generatedAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-agent-preset",
+        "version": null,
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "risky",
+      "confidence": {
+        "level": "low",
+        "basis": "measured-local"
+      },
+      "reasons": [
+        {
+          "code": "runtime.undeclared-entry",
+          "severity": "info",
+          "messageId": "runtime.undeclared-entry",
+          "params": {
+            "entryId": "preset-row",
+            "module": "@deepseek-ai/dsh-agent-preset"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "inventory",
+          "tier": "measured-local",
+          "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "running but not declared: preset-row"
+        },
+        {
+          "id": "inventory-profile",
+          "tier": "measured-local",
+          "source": "desktop",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "sampled from profile desktop"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "report",
+          "messageId": "remediation.report",
+          "note": "report entry \"preset-row\" (@deepseek-ai/dsh-agent-preset) to the plugin author; profile \"desktop\" has a runtime sample proving it"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T00:00:00.000Z"
+    }
+  ],
+  "summary": {
+    "risky": 2,
+    "blocked": 1,
+    "unknown": 1
+  },
+  "discarded": false
+}

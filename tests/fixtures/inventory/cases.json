@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "why": "Locks the phase→conclusion table of docs/specs/M2-inventory.md §3, and the two negative controls of §6, to something a gate can re-run. Each case is a snapshot fragment plus what the engine must say about it. The gate mutates one expectation to prove it is not vacuous.",
+  "profile": "web",
+  "sampled_at": "2026-10-26T12:00:00.000Z",
+  "cases": [
+    {
+      "id": "active-is-silent",
+      "spec": "§3 row 1: active → no verdict (the bundle verdict owns it)",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "active" }]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "transient-is-silent",
+      "spec": "§3 row 6: pending/loading/unloading are transient, repeated sampling would flap",
+      "declared": [{ "entryId": "session", "module": "@deepseek-ai/dsh-session" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "session", "moduleName": "@deepseek-ai/dsh-session", "enabled": true, "fiberPhase": "pending" }
+        ]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "failed-fiber",
+      "spec": "§6 row 4: fiberPhase failed → blocked + disable-entry",
+      "declared": [{ "entryId": "hooks-claude-code", "module": "@deepseek-ai/dsh-hooks-claude-code" }],
+      "snapshot": {
+        "entries": [
+          {
+            "entryId": "hooks-claude-code",
+            "moduleName": "@deepseek-ai/dsh-hooks-claude-code",
+            "enabled": true,
+            "fiberPhase": "failed"
+          }
+        ]
+      },
+      "expect": { "conclusion": "blocked", "code": "runtime.fiber-failed" }
+    },
+    {
+      "id": "no-fiber-but-enabled",
+      "spec": "§6 row 2: fiberPhase null + enabled true → blocked (this is the CASE-11080 shape)",
+      "declared": [{ "entryId": "hooks-claude-code", "module": "@deepseek-ai/dsh-hooks-claude-code" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "hooks-claude-code", "moduleName": "@deepseek-ai/dsh-hooks-claude-code", "enabled": true, "fiberPhase": null }
+        ]
+      },
+      "expect": { "conclusion": "blocked", "code": "runtime.no-fiber" }
+    },
+    {
+      "id": "no-fiber-and-disabled",
+      "spec": "§6 row 3: fiberPhase null + enabled false → risky, wording must say explicitly disabled",
+      "declared": [{ "entryId": "mcp-client", "module": "@deepseek-ai/dsh-mcp-client" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "mcp-client", "moduleName": "@deepseek-ai/dsh-mcp-client", "enabled": false, "fiberPhase": null }
+        ]
+      },
+      "expect": { "conclusion": "risky", "code": "runtime.disabled" }
+    },
+    {
+      "id": "disabled-wins-over-phase",
+      "spec": "§3 last row: enabled false wins over any phase — a deliberate disable is not a crash",
+      "declared": [{ "entryId": "mcp-client", "module": "@deepseek-ai/dsh-mcp-client" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "mcp-client", "moduleName": "@deepseek-ai/dsh-mcp-client", "enabled": false, "fiberPhase": "active" }
+        ]
+      },
+      "expect": { "conclusion": "risky", "code": "runtime.disabled" }
+    },
+    {
+      "id": "declared-not-running",
+      "spec": "§6 row 1: declared but absent from the snapshot → unknown, never silent",
+      "declared": [
+        { "entryId": "tools", "module": "@deepseek-ai/dsh-tools" },
+        { "entryId": "mcp-client", "module": "@deepseek-ai/dsh-mcp-client" }
+      ],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "active" }]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.missing-entry" }
+    },
+    {
+      "id": "running-not-declared",
+      "spec": "§3 last row: running but no layer declares it → risky (info level, likely a preset)",
+      "declared": [],
+      "snapshot": {
+        "entries": [
+          { "entryId": "preset-row", "moduleName": "@deepseek-ai/dsh-agent-preset", "enabled": true, "fiberPhase": "active" }
+        ]
+      },
+      "expect": { "conclusion": "risky", "code": "runtime.undeclared-entry" }
+    },
+    {
+      "id": "renamed-phase-is-refused",
+      "spec": "§6 row 5: an upstream rename must fail loudly, not degrade to 'no problems found'",
+      "declared": [],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "sleeping" }]
+      },
+      "expect": { "error": "inventory-invalid" }
+    },
+    {
+      "id": "missing-module-name-is-refused",
+      "spec": "defensive parse: an entry without a module name cannot be attributed, so it is refused",
+      "declared": [],
+      "snapshot": { "entries": [{ "entryId": "tools", "enabled": true, "fiberPhase": "active" }] },
+      "expect": { "error": "inventory-invalid" }
+    },
+    {
+      "id": "wrapped-export-is-accepted",
+      "spec": "P2 transport: the file may be the raw snapshot or the P1 wrapper {snapshot, sampled_at, profile}",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "sampled_at": "2026-10-25T08:00:00.000Z",
+        "profile": "desktop",
+        "snapshot": {
+          "managementAvailable": true,
+          "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": null }]
+        }
+      },
+      "expect": { "conclusion": "blocked", "code": "runtime.no-fiber" }
+    }
+  ]
+}

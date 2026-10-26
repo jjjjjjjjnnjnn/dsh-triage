@@ -23,6 +23,7 @@ export type CoreErrorCode =
   | 'manifest-invalid'
   | 'manifest-missing'
   | 'patch-invalid'
+  | 'inventory-invalid'
   | 'runtime-version-unknown'
   | 'io-error'
 

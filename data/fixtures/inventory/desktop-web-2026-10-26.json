@@ -1,0 +1,43 @@
+{
+  "note": "SYNTHETIC snapshot. It is shaped after the real pluginInventory/list contract (docs/specs/M2-inventory.md §2) so the phase table can be exercised, but it is NOT an observation of any machine. A live sample requires a bootable 0.2.x profile — still blocked (T-201 B1).",
+  "kind": "fixture",
+  "sampled_at": "2026-10-26T00:00:00.000Z",
+  "profile": "desktop",
+  "snapshot": {
+    "managementAvailable": true,
+    "entries": [
+      {
+        "entryId": "tools",
+        "moduleName": "@deepseek-ai/dsh-tools",
+        "enabled": true,
+        "fiberPhase": null,
+        "meta": { "title": "Tools" }
+      },
+      {
+        "entryId": "mcp-client",
+        "moduleName": "@deepseek-ai/dsh-mcp-client",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      {
+        "entryId": "hooks-claude-code",
+        "moduleName": "@deepseek-ai/dsh-hooks-claude-code",
+        "enabled": false,
+        "fiberPhase": null
+      },
+      {
+        "entryId": "session",
+        "moduleName": "@deepseek-ai/dsh-session",
+        "enabled": true,
+        "fiberPhase": "pending"
+      },
+      {
+        "entryId": "preset-row",
+        "moduleName": "@deepseek-ai/dsh-agent-preset",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": { "title": "Agent preset" }
+      }
+    ]
+  }
+}

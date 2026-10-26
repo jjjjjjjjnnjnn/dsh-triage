@@ -50,6 +50,24 @@ export {
   verdictsFromRowAdmission,
 } from './verdict.js'
 
+export type {
+  DeclaredRow,
+  FiberPhase,
+  InventoryEntry,
+  InventoryMeta,
+  InventorySnapshot,
+  InventoryVerdictInput,
+  PhaseConclusion,
+} from './inventory.js'
+export {
+  FIBER_PHASES,
+  compareInventory,
+  isFiberPhase,
+  parseInventorySnapshot,
+  phaseConclusion,
+  verdictsFromInventory,
+} from './inventory.js'
+
 export type { Locale, MessageCatalog } from './messages.js'
 export { catalogFor, format } from './messages.js'
 

@@ -96,7 +96,7 @@
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / remediation.* / missing.*` | 正则（禁内联散文） |
+| `reasons[].messageId` 形如 `admission.* / collision.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3） |
 | 行级 verdict：`subject.kind === "entry"` 时 `reasons` 必含 `admission-row-scope`，且其 `params.rows` 非空 | 单测 `tests/unit/rows.test.ts` |
 | `blocked` / `risky` ⇒ `remediation.length ≥ 1` 且每项有 `note` | 条件断言 |
 | `unknown` ⇒ `missingEvidence.length ≥ 1` | 条件断言 |

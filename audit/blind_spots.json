@@ -100,6 +100,13 @@
       "cannot_see": "D1 的 10 个 label 由实现方自己写、自己匹配、自己审计：机器能校验的是「label 与 verdict 一致」，不是「label 与真实根因一致」。ROADMAP 的 D1 原话是「人工标注 10 例」，目前没有独立签署",
       "mitigation": "T-111：独立 verifier 只凭 case.json + 输入 manifest 复核并签署 label_verified_by；R7 起新案例先签后跑。在此之前对外只能说「机器可复算的命中率」，不能说「人工标注验收通过」",
       "owner": "process/verifier"
+    },
+    {
+      "id": "BS-15",
+      "area": "runtime-inventory",
+      "cannot_see": "相位层（M2-a P2）目前的证据是**合成快照**：本机没有可启动的 0.2.x profile，所以 `audit --snapshot` 从未读过真实 Host 的 pluginInventory。spec §5 的 B1/B2 只验证了「表与解析器」，没验证「这台机器上某行真的处于 no-fiber」。另外 agentPresets 维度未实现（同一 entry 在不同 preset 下相位可不同）",
+      "mitigation": "产物强制 `sample.kind=synthetic|live`；对外只能说「相位表已实现」。T-201 P1（Host 内取相位）与 T-112（preset 维度）是解锁条件；真机样本出现后必须与合成样本并列而非替换",
+      "owner": "core/inventory"
     }
   ]
 }

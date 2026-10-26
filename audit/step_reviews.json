@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R6 (2026-10-26)",
+  "stand": "R7 (2026-10-27)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -492,6 +492,104 @@
         "artifact": "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json",
         "sha256": "72d66bf28274a3468d11b62076d66e59ba4bf1b80cb3d8d2329e5fed7f5cb51a",
         "outcome": "hit：blocked，与 R4 产物同一根因（行级 admission 拒绝），产物 schema 已跟上当前脚本"
+      }
+    },
+    {
+      "id": "R7-S1",
+      "batch": "R7",
+      "step": "M2-a P2：相位层落地（防御式解析 + 相位→结论映射 + 中英文案 + 新门 inventory-contract）",
+      "changed": [
+        "packages/core/src/inventory.ts",
+        "packages/core/src/index.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/result.ts",
+        "scripts/gate_inventory_contract.mjs",
+        "scripts/render_inventory.mjs",
+        "tests/fixtures/inventory/cases.json",
+        "data/fixtures/inventory/desktop-web-2026-10-26.json",
+        "audit/gate_ledger.json",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：映射逐行对齐 docs/specs/M2-inventory.md §3（active/瞬态静默、failed→blocked、null+enabled→blocked、null+disabled→risky、disabled 覆盖相位、缺项→unknown、未声明→risky）；空快照不静默",
+        "reproducibility": "PASS：解析与判定是纯函数，同输入同输出；相位证据带 sampledAt 与 profile，产物 sha256 可重算（render_inventory + gate 都能重放）",
+        "licence": "PASS：无网络、无第三方依赖；snapshot 夹具是自造的结构样本，未引入上游代码或数据文件",
+        "ssot": "PASS：render_inventory.mjs 产出 data/results/inventory-*.json（produced_by/generated_at/schema_version + .sha256），并在 sample.kind=synthetic 里自曝不是真机采样",
+        "adversary": "反例三连：① 把 fiberPhase 改成上游没有的 sleeping → 解析直接拒绝（inventory-invalid），不会退化成「一切正常」；② 删掉某 entry 的 moduleName → 拒绝（无法归因就不猜）；③ 快照为空数组 → 每个声明行出 unknown 而不是静默"
+      },
+      "real_test": {
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
+        "sha256": "9e1d2d95c47f639eaeeb71ff6df40d4603a1a987a228dbcb4f5eb0ead1e945a1",
+        "outcome": "5 entries · 1 missing · 1 undeclared · {risky:2, blocked:1, unknown:1}（synthetic 样本，非真机）"
+      }
+    },
+    {
+      "id": "R7-S2",
+      "batch": "R7",
+      "step": "CLI：`audit --snapshot` 把相位接到用户命令上（含 12 条新断言：单测 10 + e2e 3，含脱敏与 exit 3）",
+      "changed": [
+        "packages/plugin/src/cli.ts",
+        "tests/unit/inventory.test.ts",
+        "tests/e2e/inventory-cli.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`--snapshot` 只在 audit 生效；行列表旁显示 phase；声明有而快照无 → missing 段；快照有而无人声明 → undeclared 段；不给 --snapshot 时输出与 R6 完全一致（inventory:null）",
+        "reproducibility": "PASS：e2e 用 mkdtemp 沙盒 + 固定 --stamp，三条断言（相位/缺项/拒绝）都可重复；不写真实 ~/.dsh",
+        "licence": "PASS：只读夹具与沙盒；JSON 输出经 redactPath 处理，快照路径落 ~ 开头",
+        "ssot": "PASS：CLI 与 render_inventory 走同一个 core 函数，文本与 JSON 同源；e2e 断言 JSON 里的 missing/verdicts 与文本含义一致",
+        "adversary": "反例：把快照里的 fiberPhase 改成上游已改名的值 → CLI exit 3 且 stderr 点名该值，绝不打印「no runtime finding」；把 declared 行从快照删掉 → 出现 unknown 而非静默"
+      },
+      "real_test": {
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
+        "sha256": "9e1d2d95c47f639eaeeb71ff6df40d4603a1a987a228dbcb4f5eb0ead1e945a1",
+        "outcome": "同一引擎路径：CLI 与脚本对同一快照给出同一结论（e2e 3 条 + 单测 10 条全过）"
+      }
+    },
+    {
+      "id": "R7-S3",
+      "batch": "R7",
+      "step": "R7 门禁自证：9 门全绿（含新门 inventory-contract），并把结果写成可重算产物",
+      "changed": [
+        "audit/step_reviews.json",
+        "scripts/gate_inventory_contract.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "review": {
+        "correctness": "PASS：9 门 exit 0；新门真的在查（fixtures 逐条回放 + 上游枚举比对 + 中英文案存在性），不是占位门",
+        "reproducibility": "PASS：`--record --stamp` 固定时间戳；产物只含门 id/脚本/退出码，重跑字节一致",
+        "licence": "PASS：门禁零第三方依赖、零网络；产物不含路径与凭据",
+        "ssot": "PASS：产物 produced_by=scripts/gate.mjs，与本轮 inventory 产物并列；gate_governance 已校验门表与 scripts/ 一一对应",
+        "adversary": "反例：把 fixtures 的第一条期望结论翻转 → 新门 --mutate 立刻 exit 1（已实测），说明这门的「绿」有内容"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T00-00-00.000Z.json",
+        "sha256": "8a2e96a3813890e8170cba861c6f610c1ae47ea47a98da4d365bc95a12ff7a67",
+        "outcome": "ALL GREEN · 9 gates（ok=true）"
+      }
+    },
+    {
+      "id": "R7-S4",
+      "batch": "R7",
+      "step": "R7 负对照：9/9 门各自被注入违规后必须 FAIL",
+      "changed": [
+        "audit/step_reviews.json",
+        "audit/AUDIT_2026-10-27_R7.md"
+      ],
+      "review": {
+        "correctness": "PASS：每门各注入一种违规（新门翻转 fixture 期望、ssot 改哈希、step-review 抹 adversary 轴…），9/9 全部 CAUGHT；套件在 9/9 时 exit 0",
+        "reproducibility": "PASS：`--mutate --record` 固定 stamp，产物与正常产物分开命名，可对比",
+        "licence": "PASS：注入只发生在内存/临时路径，不写仓内源码；产物不含路径与凭据",
+        "ssot": "PASS：mode=mutate 与同轮正常产物并列被 step_reviews 引用，无孤儿",
+        "adversary": "反例：只跑正常套件（HANDOFF 坑表第 5 条）无法区分「查过」与「空转」；本条与 R7-S3 成对存在才成立"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T00-00-00.000Z.json",
+        "sha256": "aab1598f570e397b979509f61f66a89ddc588faf18a911146aadf07e9c9db086",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }
   ]

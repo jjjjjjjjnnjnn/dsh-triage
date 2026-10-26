@@ -49,6 +49,19 @@
 - SessionID：待 HUMAN 回填
 - 备注：仓库为 private；首推后仍需 HUMAN 决定是否转 public 与 npm 发布时机
 
+### 2026-10-27 R7｜M2-a P2 相位层落地（`audit --snapshot` + 新门 `inventory-contract`）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/core/src/{inventory,index,messages,result}.ts`、`packages/plugin/src/cli.ts`、`scripts/{gate_inventory_contract,render_inventory}.mjs`（新）、`tests/{unit/inventory,e2e/inventory-cli}.test.ts`（新）、`tests/fixtures/inventory/cases.json`、`data/fixtures/inventory/desktop-web-2026-10-26.json`、`data/results/{inventory,gates,gates-mutate}-2026-10-27*.json`、`audit/{step_reviews,gate_ledger,blind_spots,AUDIT_2026-10-27_R7}.json|md`、`docs/{HANDOFF,BACKLOG,ROADMAP,06-roadmap,08-conventions,05-verdict-contract,AI_HANDOVER}.md`、`docs/specs/M2-inventory.md`、`AGENTS.md`、`INDEX.md`、`README*.md`、`.agents/prompts/kickoff.md`
+- 取证：相位映射逐行照抄 `docs/specs/M2-inventory.md` §3（该表在 R4 已锁定）；上游枚举来自 `data/results/upstream-*.json`（沙箱实测 `fiber_phase` 五个值）
+- 结果：**P2 交付**——`audit --snapshot` 能按行显示相位、列出「声明了但没跑」与「在跑但没人声明」，空快照/未知相位/缺名字都**报错或 unknown，绝不静默**
+- 人工决策：HUMAN 同意「npm 占位发布由本人执行、仓库暂不转 public、本轮不碰 T-103/T-110」；未新增授权
+- 审核：`audit/AUDIT_2026-10-27_R7.md`（B1–B5 逐条对照、3 条偏差、6 向对抗性反例）
+- 门禁：`verify` **75 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`audit/step_reviews.json` 共 24 步
+- 过程中的真实缺陷：新结论用了 `runtime.*` 命名空间，被 `verdict-contract` 门的 messageId 白名单当场拦下 → 同步 `docs/05` 契约表 + 门正则（对齐 R4 已锁 spec，不是放宽阈值）；另修了一个 `for (const [a, b] of …)` 漏括号的语法错
+- SessionID：待 HUMAN 回填
+- 备注：**P1 与真机采样仍阻塞**（无 0.2.x 可启动 profile，`BS-15`）；对外只能说「相位表已实现」，不能说「实测过这台机器」
+
 ### 2026-10-26 R6｜D1 案例补齐（10 例 / 9 命中）+ 命中率脚本化 + 盲区修正
 
 - 生成者：DeepSeek V4.1 Flash（主会话，兼 researcher / implementer / verifier / adversary）

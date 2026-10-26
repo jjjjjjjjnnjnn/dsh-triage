@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R6 (2026-10-26)",
+  "stand": "R7 (2026-10-27)",
   "rules": {
     "registration": "scripts/ 下每个 gate_*.mjs 必须在此登记；反之此表里的 script 必须存在（gate_governance 校验）",
     "negative_control": "每道门单独跑 --mutate 必须 exit 1；套件 node scripts/gate.mjs --mutate 只在全部 CAUGHT 时 exit 0（有 MISSED 即 exit 1）",
@@ -62,6 +62,14 @@
       "negative_control": "node scripts/gate_release_pack.mjs --mutate → 必须 exit 1（注入缺失文件）",
       "requires_build": true,
       "owner": "release"
+    },
+    {
+      "id": "inventory-contract",
+      "script": "scripts/gate_inventory_contract.mjs",
+      "enforces": "相位→结论映射与 docs/specs/M2-inventory.md §3 一致（fixtures 逐行复算）；data/results/upstream-*.json 记录的 fiberPhase 枚举不得出现引擎不认识的值；每个 runtime.* reason 在中英两套文案里都存在",
+      "negative_control": "node scripts/gate_inventory_contract.mjs --mutate → 必须 exit 1（翻转第一条 fixture 的期望结论）",
+      "requires_build": true,
+      "owner": "core"
     },
     {
       "id": "step-review",

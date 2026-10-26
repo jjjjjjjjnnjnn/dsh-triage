@@ -12,26 +12,32 @@
  * Exit codes: 0 ok · 1 findings (only with --strict) · 2 usage · 3 unavailable
  */
 
+import { readFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import {
+  compareInventory,
   evaluateAdmission,
   extractEntryClaims,
   findEntryIdCollisions,
   groupClaimsBySource,
   loadEnv,
+  parseInventorySnapshot,
   parsePatchYaml,
   redactEnv,
+  redactPath,
   redactVerdict,
   renderVerdict,
   rowTargets,
   verdictFromAdmission,
   verdictsFromCollisions,
+  verdictsFromInventory,
   verdictsFromRowAdmission,
   type Conclusion,
   type EntryClaim,
   type EnvFingerprint,
+  type InventorySnapshot,
   type Locale,
   type Verdict,
 } from '@dsh-triage/core'
@@ -61,6 +67,8 @@ interface Flags {
   readonly locale: Locale
   /** Keep absolute paths in `--json` output (default: redact to `~`). */
   readonly noRedact: boolean
+  /** Runtime inventory snapshot (`pluginInventory/list` export) to judge phases from. */
+  readonly snapshot: string | null
 }
 
 interface Parsed {
@@ -87,6 +95,7 @@ Flags
   --locale <en|zh>      output language (default: zh, or $DSH_TRIAGE_LOCALE)
   --no-redact           keep absolute paths in --json output (default: redact to ~)
   --stamp <iso>         fixed timestamp for reproducible output
+  --snapshot <file>     (audit) judge runtime phases from a pluginInventory snapshot
   --execute             (probe) really run the plan — not implemented before M3
   --help                this text
 
@@ -264,6 +273,37 @@ async function commandAudit(flags: Flags): Promise<number> {
   const collisions = findEntryIdCollisions(claims)
   const artifacts = await discoverLocalArtifacts({ root: env.profileDir })
 
+  /* --------------------------- runtime inventory --------------------------- */
+
+  let snapshot: InventorySnapshot | null = null
+  let inventoryVerdicts: readonly Verdict[] = []
+  let diff: { readonly missing: readonly { entryId: string; module: string | null }[]; readonly undeclared: readonly InventorySnapshot['entries'][number][] } = {
+    missing: [],
+    undeclared: [],
+  }
+  const declared = claims.map((claim) => ({ entryId: claim.id, module: claim.name }))
+
+  if (flags.snapshot !== null) {
+    const source = flags.noRedact ? flags.snapshot : redactPath(flags.snapshot, [homedir(), resolveDshHome(flags), tmpdir()])
+    let raw: unknown
+    try {
+      raw = JSON.parse(readFileSync(flags.snapshot, 'utf8'))
+    } catch (error) {
+      process.stderr.write(`cannot read snapshot ${source}: ${error instanceof Error ? error.message : String(error)}\n`)
+      return EXIT_UNAVAILABLE
+    }
+    const parsed = parseInventorySnapshot(raw, { source, sampledAt: stampOf(flags), profile: env.profile })
+    if (!parsed.ok) {
+      // A renamed upstream field must fail loudly: silently dropping the layer
+      // would turn "I could not read the phases" into "no problems found".
+      process.stderr.write(`snapshot rejected: ${parsed.error.code} — ${parsed.error.detail}\n`)
+      return EXIT_UNAVAILABLE
+    }
+    snapshot = parsed.value
+    inventoryVerdicts = verdictsFromInventory({ env, snapshot, declared, generatedAt: stampOf(flags) })
+    diff = compareInventory(snapshot, declared)
+  }
+
   if (flags.json) {
     writeJson({
       schema_version: 1,
@@ -277,9 +317,34 @@ async function commandAudit(flags: Flags): Promise<number> {
         bytes: artifact.bytes,
         note: artifact.note,
       })),
+      inventory:
+        snapshot === null
+          ? null
+          : {
+              sampled_at: snapshot.sampledAt,
+              profile: snapshot.profile,
+              source: snapshot.source,
+              management_available: snapshot.managementAvailable,
+              unknown_keys: snapshot.unknownKeys,
+              entries: snapshot.entries.map((entry) => ({
+                entry_id: entry.entryId,
+                module: entry.moduleName,
+                enabled: entry.enabled,
+                phase: entry.fiberPhase,
+              })),
+              missing: diff.missing,
+              undeclared: diff.undeclared.map((entry) => ({
+                entry_id: entry.entryId,
+                module: entry.moduleName,
+                phase: entry.fiberPhase,
+              })),
+              verdicts: safeVerdicts(flags, inventoryVerdicts),
+            },
       errors: composition.errors,
     })
-    return collisions.length === 0 ? EXIT_OK : EXIT_FINDINGS
+    return collisions.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+      ? EXIT_OK
+      : EXIT_FINDINGS
   }
 
   process.stdout.write(`capability ledger · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`)
@@ -288,7 +353,12 @@ async function commandAudit(flags: Flags): Promise<number> {
     for (const claim of list) {
       const flagsText = [claim.group ? 'group' : null, claim.disabled ? 'disabled' : null].filter(Boolean).join(', ')
       const suffix = flagsText === '' ? '' : `  [${flagsText}]`
-      process.stdout.write(`  ${claim.id}${claim.name === null ? '' : `  ->  ${claim.name}`}${suffix}\n`)
+      const phase = snapshot === null ? null : snapshot.entries.find((entry) => entry.entryId === claim.id)
+      const phaseText =
+        phase === undefined || phase === null
+          ? ''
+          : `  phase=${phase.fiberPhase ?? 'none'}${phase.enabled ? '' : ' (disabled)'}`
+      process.stdout.write(`  ${claim.id}${claim.name === null ? '' : `  ->  ${claim.name}`}${suffix}${phaseText}\n`)
     }
   }
   process.stdout.write(`\ncollisions: ${collisions.length}\n`)
@@ -301,7 +371,36 @@ async function commandAudit(flags: Flags): Promise<number> {
       process.stdout.write(`  [${artifact.kind}] ${artifact.path} (${artifact.bytes} B) — ${artifact.note}\n`)
     }
   }
-  return collisions.length === 0 ? EXIT_OK : EXIT_FINDINGS
+  if (snapshot !== null) {
+    process.stdout.write(
+      `\nruntime inventory · sampled ${snapshot.sampledAt} · profile ${snapshot.profile ?? 'unknown'} · ${snapshot.entries.length} entries\n`,
+    )
+    if (snapshot.unknownKeys.length > 0) {
+      process.stdout.write(`warn  snapshot has keys this build does not know: ${snapshot.unknownKeys.join(', ')}\n`)
+    }
+    process.stdout.write(`  declared but not running: ${diff.missing.length}\n`)
+    for (const row of diff.missing) process.stdout.write(`    ${row.entryId}  ->  ${row.module ?? '(no module)'}\n`)
+    process.stdout.write(`  running but not declared: ${diff.undeclared.length}\n`)
+    for (const entry of diff.undeclared) {
+      process.stdout.write(`    ${entry.entryId}  ->  ${entry.moduleName}  phase=${entry.fiberPhase ?? 'none'}\n`)
+    }
+    if (inventoryVerdicts.length === 0) {
+      process.stdout.write('  every sampled entry is either active or transient; no runtime finding.\n')
+    } else {
+      process.stdout.write('\n')
+      for (const verdict of inventoryVerdicts.slice(0, MAX_RENDERED_VERDICTS)) {
+        process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n\n`)
+      }
+      if (inventoryVerdicts.length > MAX_RENDERED_VERDICTS) {
+        process.stdout.write(
+          `… ${inventoryVerdicts.length - MAX_RENDERED_VERDICTS} more finding(s); pass --json for the full list.\n`,
+        )
+      }
+    }
+  }
+  return collisions.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+    ? EXIT_OK
+    : EXIT_FINDINGS
 }
 
 async function commandProbe(flags: Flags, spec: string | undefined): Promise<number> {
@@ -443,6 +542,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let stamp: string | null = null
   let locale: Locale = defaultLocale()
   let noRedact = false
+  let snapshot: string | null = null
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -497,6 +597,12 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         stamp = value
         break
       }
+      case '--snapshot': {
+        const value = takeValue()
+        if (value === null) return null
+        snapshot = value
+        break
+      }
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -508,9 +614,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  if (help) return { command: 'help', positionals: [], flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact } }
+  if (help) return { command: 'help', positionals: [], flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot } }
   const command = positionals.shift() ?? 'help'
-  return { command, positionals, flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact } }
+  return { command, positionals, flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot } }
 }
 
 function splitFlag(token: string): readonly [string, string | null] {
