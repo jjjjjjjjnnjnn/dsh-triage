@@ -1,20 +1,20 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: v0.1.0-skeleton (2026-10-26)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R5 (2026-10-26)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
-| **真实案例** | `data/cases/CASE-11080/` | T-101 首个命中案例：输入 / 机器可算 label / 偏差披露 / 复现方式 |
+| **真实案例** | `data/cases/CASE-*/` | 4 例：`CASE-11080`（升级后行被静默禁用）· `CASE-11012`（MCP 工具整体消失/传递依赖漂移）· `CASE-8202`（上一代插件进新运行时）· `CASE-10849`（npm dist-tag 失步 → 未钉版本被拒） |
 | **复现脚本** | `scripts/record_case.mjs` | 案例 → 隔离沙盒 → verdicts → `data/results/why-case-*.json` + `.sha256` + `hit` |
 | **上游沙盒** | `scripts/bootstrap_upstream.mjs` | 0.2.x 隔离运行时 + `pluginInventory` 契约实测（不写真实 DSH home） |
 | **执行计划** | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 指标看板 + 分发时间线 + kill criteria |
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-26_R4.md`（最新）· `audit/AUDIT_2026-10-26_R3.md` | 四轴 + 对抗性；R4：7 项缺陷已修 + 5 项遗留；R3：14 项修复 |
+| **审核报告** | `audit/AUDIT_2026-10-26_R5.md`（最新）· `R4` · `R3` | 四轴 + 对抗性；R5：案例扩容 + 过期信息清理；R4：7 项缺陷已修；R3：14 项修复 |
 | **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |

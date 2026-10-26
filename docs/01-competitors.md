@@ -1,6 +1,6 @@
 # 01 · 竞品与上游归因（实测，2026-10-26）
 
-> **Stand**: v0.1.0-skeleton (2026-10-26) | 数据来源：npm registry API（周下载 = `last-week` 窗口）、GitHub API、dsh.so 站点与数据接口、上游 npm 包 README。C 级（推测）结论一律不入表。
+> **Stand**: R5 (2026-10-26) | 数据来源：npm registry API（周下载 = `last-week` 窗口）、GitHub API、dsh.so 站点与数据接口、上游 npm 包 README。C 级（推测）结论一律不入表。
 
 ## 1. 生态体量
 

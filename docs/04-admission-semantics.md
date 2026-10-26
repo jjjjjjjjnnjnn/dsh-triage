@@ -1,6 +1,6 @@
 # 04 · Admission 语义（对等基准）
 
-> **Stand**: v0.1.0-skeleton (2026-10-26) | 实现：`packages/core/src/admission.ts` | 金标：`data/gold/admission-cases.json` | 门禁：`scripts/gate_admission_parity.mjs`
+> **Stand**: R5 (2026-10-26) | 实现：`packages/core/src/admission.ts` | 金标：`data/gold/admission-cases.json` | 门禁：`scripts/gate_admission_parity.mjs`
 
 ## 1. 上游原文（唯一真相源）
 

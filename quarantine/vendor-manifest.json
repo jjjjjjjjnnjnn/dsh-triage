@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "v0.1.0-skeleton (2026-10-26)",
+  "stand": "R5 (2026-10-26)",
   "why": "外部数据源与参考实现的许可真相源。任何 packages/ 代码引用前必须在此登记。",
   "entries": [
     {

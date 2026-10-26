@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R4 (2026-10-26)｜当前批次：**R4 · 真实案例验收 + 行级归因 + 0.2.x 解阻塞**（T-101 命中，新增 A7/A8 判据，见 `data/cases/CASE-11080/`）
+> **Stand**: R5 (2026-10-26)｜当前批次：**R5 · 真实案例扩容 + 全量过期信息清理 + 交接**（4 例复现 4 命中；8 门 8-8；新增 candidate 模式）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -24,14 +24,14 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/
 | 项 | 状态 |
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
-| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（1 例命中，未达 10 例门槛）** · **M2-a 契约 ✅ / 实现 ⬜** |
+| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 🟨 4/10 例（4 命中）** · **M2-a 契约 ✅ / 实现 ⬜**（未破例：D1 未达标不进入 M2） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 8/8）· `release readiness`（tag 触发） |
-| 规模 | 57 测试 · **8 门禁** · 6 角色卡 · 3+1 模板 · 1 个真实案例 |
+| 规模 | 57 测试 · **8 门禁** · 6 角色卡 · 3+1 模板 · **4 个真实案例**（4 命中） |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **T-101 真实案例命中**（CASE-11080）；**行级 admission 归因**（此前只看 bundle → patch 里的 row 逃检，假阴）；`record_case` / `bootstrap_upstream` 两个真跑脚本；`docs/specs/M2-inventory.md` 契约锁定；**新门 `step-review`**（7→8 门，负对照 8/8）；6 条新测试 + 2 条 e2e 负对照 |
-| 证据 | `data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json`（`hit.verdict=hit`，sha256 `19f52276eeca…`）· `data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测相位契约，7/7 checks）· `data/results/gates-mutate-2026-10-26T00-00-00.000Z.json`（8/8 CAUGHT）· `data/results/why-2026-10-26T00-00-00.000Z.json`（本机 profile，2 go / 0 冲突） |
-| 审核报告 | `audit/AUDIT_2026-10-26_R4.md`（7 项真实缺陷已修 + 5 项遗留带 owner） |
+| 本轮交付 | **案例 1→4**（CASE-11080/11012/8202/10849，覆盖 patch 行 / 传递依赖漂移 / 上一代插件 / npm dist-tag 四种形态，全部命中）；`record_case` 新增 **candidate 模式**（装前被拒也能落案例）；**全量过期信息清理**（19 文件 Stand 行 + 6 处错数字，原文归档 `_archive/2026-10-26_stale-status-before-R5.md`） |
+| 证据 | `data/results/why-case-CASE-{11080,11012,8202,10849}-2026-10-26T00-00-00.000Z.json`（全部 `hit.verdict=hit`）· `data/results/upstream-0.2.1-rc.3-*.json`（相位契约实测）· `data/results/gates-mutate-*.json`（8/8 CAUGHT）· `data/results/why-2026-10-26T00-00-00.000Z.json`（本机 profile 0 误报） |
+| 审核报告 | `audit/AUDIT_2026-10-26_R5.md`（本轮）· `AUDIT_2026-10-26_R4.md` · `AUDIT_2026-10-26_R3.md` |
 | 案例输入 | `data/cases/CASE-11080/`（真实 npm manifest + 重建声明层 + 机器可算 label + 偏差披露） |
 
 ---
@@ -117,7 +117,10 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 | 项 | owner | 退出条件 |
 |---|---|---|
+| **D1 未达门槛**：真实案例 4/10（需 ≥8 命中） | HUMAN + researcher | 补到 10 例且 ≥8 命中；HUMAN 已明确**不破例**，因此 T-201 在凑满前不开工 |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
 | 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public` |
-| M1 真实案例验收（T-101） | HUMAN + Verifier | 提供插件名/版本/dsh 版本/症状 → `why` 一次命中 → 落 `data/results/why-case-*.json` |
-| 0.2.x 真机 profile 未装 | Implementer（M3） | 本机装 `0.2.1-rc.2` profile 并跑通一次 probe |
+| 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe |
+| `audit` 与 `why` 行级结论不一致（T-105） | implementer | 两命令对同一 profile 交叉一致（e2e 断言） |
+| T-103 金标扩容（冻结区） | HUMAN 签字后 implementer | 6 条新金标进 `data/gold/`，parity 门绿 |
+| 双 roadmap 重叠（`docs/06-roadmap.md` vs `docs/ROADMAP.md`） | HUMAN 决定 | 合并或明确分工后归档其一（T-110，需签字，因为要删文档） |

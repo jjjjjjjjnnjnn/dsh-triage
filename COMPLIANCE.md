@@ -1,6 +1,6 @@
 # Compliance（本仓隐私与许可）
 
-> **Stand**: v0.1.0-skeleton (2026-10-26)
+> **Stand**: R5 (2026-10-26)
 
 1. **100% 本地优先**：判断全链（admission / env / ledger / verdict）在本机完成，默认零网络。任何远程信号（npm registry、dsh.so、hub catalog）必须显式开启或缓存命中，且结果里标注 `source`。
 2. **不读凭据**：不读取 `~/.dsh/credentials*`、`~/.dsh/profiles/*/credentials*`、环境变量中的 API Key；probe 隔离目录内也不注入真实凭据。

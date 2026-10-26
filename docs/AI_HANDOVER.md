@@ -1,6 +1,6 @@
 # AI_HANDOVER · 接手清单
 
-> **Stand**: v0.1.0-skeleton (2026-10-26)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`
+> **Stand**: R5 (2026-10-26)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`
 
 ## 1. 五分钟检查（禁跳过）
 
@@ -23,7 +23,7 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
   - 失败分类 → `docs/03-failure-taxonomy.md`
   - 信号与许可 → `docs/02-signal-sources.md` + `quarantine/vendor-manifest.json`
   - 工程约定 → `docs/08-conventions.md`
-- **当前状态**：M0 完成（骨架 + 7 门 + 引擎 + CLI 基础版），M1 进行中（admission 对等已由金标锁定）。
+- **当前状态**：M0 ✅（8 门 / 57 测试）· M1 金标对等 ✅ · M1 真实案例验收进行中（**4/10 例，4 命中**，见 `data/cases/`）· M2-a 契约已锁定，实现未开始。**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）。
 
 ## 3. 防幻觉规则（本仓特有）
 

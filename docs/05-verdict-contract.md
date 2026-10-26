@@ -1,6 +1,6 @@
 # 05 · Verdict 契约
 
-> **Stand**: v0.1.0-skeleton (2026-10-26) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
+> **Stand**: R5 (2026-10-26) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
 
 ## 1. 为什么要有契约
 

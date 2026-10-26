@@ -5,8 +5,8 @@
 
 | ID | 任务 | 里程碑 | 角色 | 依赖 | 验收判据 | 状态 |
 |---|---|---|---|---|---|---|
-| T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | ✅ **CASE-11080 命中**（`data/cases/CASE-11080/`，2026-10-26）。D1 门槛是 10 例 ≥8 命中，目前 **1/1**，案例数未达标 |
-| T-104 | 再收 9 例真实案例（凑满 D1 门槛 10 例） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | ⬜ 建议下一批（讨论区/issue 已证明可挖到） |
+| T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | 🟨 **4/10 例（4 命中）**：CASE-11080/11012/8202/10849；HUMAN 明确不破例，凑满前不进 M2 |
+| T-104 | 再收 6 例真实案例（把 D1 门槛凑到 10 例 ≥8 命中） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | 🟨 进行中（已 4 例；候选池见 `audit/AUDIT_2026-10-26_R5.md` §4） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **契约就绪，实现待领**（沙箱 `data/results/upstream-0.2.1-rc.3-*.json` 已证明服务存在、`fiberPhase` 枚举实测） |

@@ -2,7 +2,7 @@
 
 **分诊台 / Triage** · `github.com/jjjjjjjjnnjnn/dsh-triage`
 
-> **Status**: `v0.1.0-skeleton` (M0). The engine + gates + CLI skeleton are in this repo; the Web panel, probe runner and badges land per [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status**: `R5` — 4 real cases replayed (4 hits), row-level admission attribution, 8 machine-enforced gates. The Web panel, probe runner and badges land per [`docs/ROADMAP.md`](docs/ROADMAP.md).
 > DSH (DeepSeek Harness) already tells you whether a plugin *installs*. Nobody tells you whether it will *work* — with **your** dsh version, **your** OS, and **your** other 12 plugins.
 
 ## The problem we take seriously
