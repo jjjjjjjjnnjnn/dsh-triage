@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "CASE-8751",
+  "title": "Upgrading the runtime while the profile keeps official @deepseek-ai/dsh-* at 0.1.5-rc.3 disables the `session` row",
+  "mode": "profile",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8751",
+    "author": "mengxy",
+    "reported_at": "2026-10-03",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "plugin": "@deepseek-ai/dsh-session",
+    "plugin_version": "0.1.5-rc.3",
+    "runtime_before": "0.1.5-rc.3",
+    "runtime_after": "0.2.0-rc.2",
+    "symptom": "after the runtime upgrade the Web app does not come up: `dsh: startup failed: 3 required plugins did not activate`; 18 plugins wait for services (agent-loop → sessions, webserver → webStartup, connection → webRuntime, ...), and the browser shows ~22 client plugins pending",
+    "runtime_trace": "one stderr line per stale row: `dsh: disabling profile plugin row \"session\": Plugin @deepseek-ai/dsh-session@0.1.5-rc.3 is incompatible with dsh 0.2.0-rc.2: peerDependencies {...}`. The startup summary only names the symptom (`typert-loader: ... codec has no create() factory`), never the stale profile",
+    "user_hypotheses": [
+      "a third-party plugin with a mismatched peer range breaks boot (ruled out by the reporter: only dsh-mobile-theme@0.5.0 installed, the UI renders with 0 console errors)",
+      "the front end is buggy (ruled out: the server exits before the browser is served)",
+      "the service did not start (it is the consequence, not the cause)"
+    ],
+    "root_cause": "the profile still resolves official @deepseek-ai/dsh-* at 0.1.5-rc.3, whose @deepseek-ai/dsh-* peers are pinned to the 0.1.5 line; against the 0.2.0-rc.2 runtime every staled row is denied by the admission preflight",
+    "fix_verified_by_reporter": "reproduced in an isolated home with `DSH_HOME=<tmp> dsh plugin --profile web add @deepseek-ai/dsh-web-app@0.1.5-rc.3` then `npm i -g @deepseek-ai/dsh@0.2.0-rc.2`; the reporter offers to test a patch"
+  },
+  "profile": {
+    "name": "web",
+    "bundles": []
+  },
+  "inputs": {
+    "profile_manifest": "profile-package.json",
+    "profile_patch": "profile-cordis.patch.yml",
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-session": "plugin-dsh-session.json"
+    }
+  },
+  "label": {
+    "kind": "row-admission",
+    "entry_id": "session",
+    "module": "@deepseek-ai/dsh-session",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-scope",
+    "requirement_key_source": "derived-from-reported-manifest"
+  },
+  "deviations": [
+    "the report's message elides the requirement map (`peerDependencies {...}`); the key used here (@deepseek-ai/dsh-scope) is the only @deepseek-ai/dsh* peer that dsh-session@0.1.5-rc.3 declares at all, so it is necessarily the unmet requirement behind the line quoted in the report — see plugin-dsh-session.json",
+    "only one of the stale rows (`session`) is reproduced; the report says one such line exists per stale row and leaves the others unnamed",
+    "bundles omitted: the stale bundle (@deepseek-ai/dsh-web-app@0.1.5-rc.3) is modelled as a directly resolved row module, because the published bundle patch is not reproduced",
+    "the `typert-loader` codec failure and the browser-side pending list are downstream of the same denial and are not modelled"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "CASE-10364",
+  "title": "A third-party plugin's dependency hoists dsh-tools@0.0.1-rc.1 into the profile and the `tools` row is disabled, so the desktop host cannot boot",
+  "mode": "profile",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10364",
+    "author": "Lykdef",
+    "reported_at": "2026-10-20",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "plugin": "@deepseek-ai/dsh-tools",
+    "plugin_version": "0.0.1-rc.1",
+    "runtime_before": "0.2.1-rc.2",
+    "runtime_after": "0.2.1-rc.2",
+    "symptom": "after installing dsh-pdf@0.1.0 the desktop app never starts: `DesktopHostFatalError: dsh: startup failed: 1 required plugin did not activate`, with eight plugins waiting for the `tools` service (agent-loop, tool-working-directory, timeout-policy, spill-policy, session-checkpoint-policy, mcp-resources, cordis-host-runner, cordis-inspect-providers); disabling third-party plugins and reinstalling did not help",
+    "runtime_trace": "dsh: disabling profile plugin row \"tools\": Plugin @deepseek-ai/dsh-tools@0.0.1-rc.1 is incompatible with dsh 0.2.1-rc.2",
+    "user_hypotheses": [
+      "the desktop installer is broken (no: the profile copy is the module the row resolves to)",
+      "reinstalling the desktop app fixes it (no: the hoisted copy is recreated with the plugin)"
+    ],
+    "root_cause": "dsh-pdf@0.1.0 declares @deepseek-ai/dsh-tools ^0.0.1-rc.1 under dependencies, so pnpm places 0.0.1-rc.1 at <profile>/node_modules/@deepseek-ai/dsh-tools; profile-level names win over the installation copy, so the in-box `tools` row resolves to a three-generations-old manifest and is denied",
+    "fix_verified_by_reporter": "the thread's source-level reply: remove the copy's source (uninstall the plugin, prune the profile) or install it as a link whose package.json declares dsh-tools under peerDependencies; `dsh plugin allow-version` is explicitly the wrong remedy"
+  },
+  "profile": {
+    "name": "desktop",
+    "bundles": []
+  },
+  "inputs": {
+    "profile_manifest": "profile-package.json",
+    "profile_patch": "profile-cordis.patch.yml",
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-tools": "plugin-dsh-tools.json",
+      "dsh-pdf": "plugin-dsh-pdf.json"
+    }
+  },
+  "label": {
+    "kind": "row-admission",
+    "entry_id": "tools",
+    "module": "@deepseek-ai/dsh-tools",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-agent",
+    "requirement_key_source": "derived-from-reported-manifest"
+  },
+  "deviations": [
+    "the report does not print the requirement map; the key used here (@deepseek-ai/dsh-agent) is the first @deepseek-ai/dsh* peer of dsh-tools@0.0.1-rc.1 in stable key order, and all nine of its peers are pinned to ^0.0.1-rc.1, so every one of them is unmet against 0.2.1-rc.2 — see plugin-dsh-tools.json",
+    "the `tools` row belongs to the in-box base bundle; it is re-mounted in the profile patch layer so the case stays a one-row reconstruction",
+    "bundles omitted: dsh-base / dsh-web-app are left out to keep the composition minimal",
+    "dsh-pdf@0.1.0 is materialised as the declaring manifest (its dependencies are what put the copy in place), but only the copy it hoists is what the verdict reads",
+    "the silent sibling shape the reply describes (a version-compatible old copy that instead splits TOOL_RUNTIME_SCHEDULER) is not modelled"
+  ]
+}

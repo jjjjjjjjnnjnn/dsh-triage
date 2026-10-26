@@ -1,0 +1,7 @@
+# CASE-7590 reconstruction: both plugins install and are mounted; they fail at runtime.
+# Neither package declares any @deepseek-ai/dsh* peer, so there is nothing for a
+# declaration-level gate to judge — this is the negative sample.
+- id: dsh-im
+  name: '@xmanrui/dsh-im'
+- id: modlens
+  name: '@liustack/modlens'

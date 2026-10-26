@@ -1,0 +1,92 @@
+{
+  "bugs": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/issues"
+  },
+  "dist": {
+    "shasum": "6d2a38f84d7a25b503215a2b66d4b68ea755d6cf",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh-code-runtime-worker-thread/-/dsh-code-runtime-worker-thread-0.1.5-rc.3.tgz",
+    "fileCount": 13,
+    "integrity": "sha512-mf3nZpwRtP47YGhZ3SpyNMB5/AT0Q1tSUnPK7pyenk7LFioNY97LSBUbdwDwerhm1EXI+5oox+l4voXbN539WA==",
+    "signatures": [
+      {
+        "sig": "MEYCIQDglwlJ7Aqw05u8YNoWltbiKWLg2/awLeTtsULJYyUeyAIhAKqhhRTsFpintUtQOjx/Wo1Xqv+ly2/6TlpsawKPyFIM",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEQCIERN3325n2Ko5gfhsac0utsS9I0dqdO7fKtxU1Eisjj6AiA7TzLbv0yNVvF79ATIGOixvYa8XY7/hbAI0AQfghAAcQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 114735
+  },
+  "main": "lib/index.js",
+  "name": "@deepseek-ai/dsh-code-runtime-worker-thread",
+  "type": "module",
+  "_from": "file:/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-code-runtime-worker-thread-0.1.5-rc.3.tgz",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./worker": {
+      "types": "./lib/types/worker.d.ts",
+      "default": "./lib/worker.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "_npmUser": {
+    "name": "imccyu",
+    "email": "imccyu@gmail.com"
+  },
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness#readme",
+  "_resolved": "/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-code-runtime-worker-thread-0.1.5-rc.3.tgz",
+  "_integrity": "sha512-mf3nZpwRtP47YGhZ3SpyNMB5/AT0Q1tSUnPK7pyenk7LFioNY97LSBUbdwDwerhm1EXI+5oox+l4voXbN539WA==",
+  "repository": {
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "type": "git",
+    "directory": "packages/code-runtime/code-runtime-worker-thread"
+  },
+  "_npmVersion": "11.19.0",
+  "description": "Worker-thread implementation of the DeepSeek Harness code-execution seam",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "imccyu",
+      "email": "imccyu@gmail.com"
+    },
+    {
+      "name": "tianyicui-deepseek",
+      "email": "tianyi@deepseek.com"
+    }
+  ],
+  "_nodeVersion": "24.20.0",
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.2",
+    "@deepseek-ai/dsh-util-values": "^0.1.5-rc.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "_hasShrinkwrap": false,
+  "readmeFilename": "README.zh.md",
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-session": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-timeout": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-code-runtime": "^0.1.5-rc.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-session": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-timeout": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-code-runtime": "^0.1.5-rc.3"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-code-runtime-worker-thread_0.1.5-rc.3_1790056111933_0.6999567945580234",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.3",
+  "version": "0.1.5-rc.3"
+}

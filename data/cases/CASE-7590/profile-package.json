@@ -1,0 +1,14 @@
+{
+  "name": "web",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.7-alpha.2",
+    "@xmanrui/dsh-im": "4.26.0",
+    "@liustack/modlens": "3.26.3"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": []
+    }
+  }
+}

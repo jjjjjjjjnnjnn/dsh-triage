@@ -1,0 +1,103 @@
+{
+  "bugs": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/issues"
+  },
+  "dist": {
+    "shasum": "9e4a2272d080ec6406f36ad20b7abce1b38f98bf",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh-hooks-claude-code/-/dsh-hooks-claude-code-0.0.1-rc.5.tgz",
+    "fileCount": 10,
+    "integrity": "sha512-fhtvoTX2aBM7AkqyLyZfPczE6rbIJaG9g91GzRInzGUYZIEiUrdIwb1Pzui5CHDNfwwVNgXom1eujDPkMQ4w8g==",
+    "signatures": [
+      {
+        "sig": "MEUCIE6CzxEDl/JwL8e4XexIaBjiUn8qZ25ZjqxESuRRdQjwAiEA//JqwVbOW/bQU2e/FPrcZd9MQ2GD4wcqXQym+IM3TOk=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 48952
+  },
+  "main": "lib/index.js",
+  "name": "@deepseek-ai/dsh-hooks-claude-code",
+  "type": "module",
+  "_from": "file:/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-hooks-claude-code-0.0.1-rc.5.tgz",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "BSD-3-Clause",
+  "_npmUser": {
+    "name": "imccyu",
+    "email": "imccyu@gmail.com"
+  },
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness#readme",
+  "_resolved": "/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-hooks-claude-code-0.0.1-rc.5.tgz",
+  "_integrity": "sha512-fhtvoTX2aBM7AkqyLyZfPczE6rbIJaG9g91GzRInzGUYZIEiUrdIwb1Pzui5CHDNfwwVNgXom1eujDPkMQ4w8g==",
+  "repository": {
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "type": "git",
+    "directory": "packages/hooks/hooks-claude-code"
+  },
+  "_npmVersion": "11.16.0",
+  "description": "Bridge plugin: run a Claude Code hooks.json / settings hook config on the DeepSeek Harness interception seams",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "imccyu",
+      "email": "imccyu@gmail.com"
+    },
+    {
+      "name": "tianyicui-deepseek",
+      "email": "tianyi@deepseek.com"
+    }
+  ],
+  "_nodeVersion": "24.18.0",
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1-rc.4"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.4",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-agent": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-shell": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-session": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-subagent": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-agent-loop": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-bash-local": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-hook-protocol": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-subprocess-local": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-agent-loop-testkit": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-session-persistence": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-session-persistence-jsonl": "^0.0.1-rc.5"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.4",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-agent": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-session": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-subagent": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-hook-protocol": "^0.0.1-rc.5",
+    "@deepseek-ai/dsh-session-persistence": "^0.0.1-rc.5"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-hooks-claude-code_0.0.1-rc.5_1786574220436_0.0018464657138121954",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@deepseek-ai/dsh-hooks-claude-code@0.0.1-rc.5",
+  "version": "0.0.1-rc.5"
+}

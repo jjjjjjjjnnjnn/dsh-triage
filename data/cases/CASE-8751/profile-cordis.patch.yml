@@ -1,0 +1,5 @@
+# CASE-8751 reconstruction: one of the stale official rows the report names.
+# The profile kept the 0.1.5-rc.3 copy while the runtime moved to 0.2.0-rc.2, so the
+# row's module resolves to a build whose @deepseek-ai/dsh* peers are pinned to 0.1.5.
+- id: session
+  name: '@deepseek-ai/dsh-session'

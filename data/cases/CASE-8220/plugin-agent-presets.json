@@ -1,0 +1,134 @@
+{
+  "bugs": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/issues"
+  },
+  "dist": {
+    "shasum": "d5d1722cba688907b70ab3eaece911474e0d5895",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh-agent-presets/-/dsh-agent-presets-0.1.5-rc.3.tgz",
+    "fileCount": 45,
+    "integrity": "sha512-DO8DIPCcvit58/rfNT7d2n38fafZ7WCTobeCnImaHd3rb3n/mu+e1X3OA/NB5bsAijTLYofyz9lMygIDamMIig==",
+    "signatures": [
+      {
+        "sig": "MEQCIBZf0642OLYRL9KgORj/EfG5cDjWUwGrLWPGolNMfy/kAiBaVbwimLx9k1DCn0657QYjeVRWBwN9F49hS8q+DuxYFg==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEYCIQD5e+Wib453TD3+um35e+B7u+FfNr377aviYZO9lPfaUQIhAI7TupZGR04DX7OKrbLy/vt21m5lGoTCqWgCymia5SEA",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 514177
+  },
+  "main": "lib/index.js",
+  "name": "@deepseek-ai/dsh-agent-presets",
+  "type": "module",
+  "_from": "file:/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-agent-presets-0.1.5-rc.3.tgz",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./remote": {
+      "types": "./lib/typert.remote-client.d.ts",
+      "default": "./lib/typert.remote-client.js"
+    },
+    "./typert": {
+      "types": "./lib/typert.host.d.ts",
+      "default": "./lib/typert.host.js"
+    },
+    "./display": {
+      "types": "./lib/types/display.d.ts",
+      "default": "./lib/types/display.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "_npmUser": {
+    "name": "imccyu",
+    "email": "imccyu@gmail.com"
+  },
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness#readme",
+  "_resolved": "/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-agent-presets-0.1.5-rc.3.tgz",
+  "_integrity": "sha512-DO8DIPCcvit58/rfNT7d2n38fafZ7WCTobeCnImaHd3rb3n/mu+e1X3OA/NB5bsAijTLYofyz9lMygIDamMIig==",
+  "repository": {
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "type": "git",
+    "directory": "packages/preset/agent-presets"
+  },
+  "_npmVersion": "11.19.0",
+  "description": "Per-session agent composition from preset cordis.yml files for the DeepSeek Harness",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "imccyu",
+      "email": "imccyu@gmail.com"
+    },
+    {
+      "name": "tianyicui-deepseek",
+      "email": "tianyi@deepseek.com"
+    }
+  ],
+  "_nodeVersion": "24.20.0",
+  "dependencies": {
+    "zod": "^4.4.3",
+    "js-yaml": "^4.1.0",
+    "@deepseek-ai/schemastery": "3.18.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "_hasShrinkwrap": false,
+  "readmeFilename": "README.zh.md",
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-llm": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-agent": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-scope": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-tools": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-session": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-settings": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-agent-loop": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-home-paths": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-invariants": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-atomic-write": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-settings-file": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-system-prompt": "^0.1.5-rc.3",
+    "@deepseek-ai/cordis-plugin-group": "1.0.2",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.5-rc.3",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.3",
+    "@deepseek-ai/cordis-plugin-include": "1.0.7",
+    "@deepseek-ai/dsh-session-projection": "^0.1.5-rc.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-agent": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-scope": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-tools": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-session": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-settings": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-home-paths": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-invariants": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-atomic-write": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-system-prompt": "^0.1.5-rc.3",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.5-rc.3",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.3",
+    "@deepseek-ai/cordis-plugin-include": "1.0.7",
+    "@deepseek-ai/dsh-session-projection": "^0.1.5-rc.3"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-agent-presets_0.1.5-rc.3_1790055877349_0.09967725092793267",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@deepseek-ai/dsh-agent-presets@0.1.5-rc.3",
+  "version": "0.1.5-rc.3"
+}

@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T12:00:00.000Z",
+  "command": "why",
+  "mode": "profile",
+  "status": "ok",
+  "case": {
+    "id": "CASE-7590",
+    "title": "Two third-party plugins that declare no peers fail on removed runtime APIs after the 0.1.7-alpha.2 upgrade",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/7590",
+      "author": "EricWidth",
+      "reported_at": "2026-09-23",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "plugin": "@liustack/modlens",
+      "plugin_version": "3.26.3",
+      "runtime_before": "0.1.6-alpha.2",
+      "runtime_after": "0.1.7-alpha.2",
+      "symptom": "after upgrading to 0.1.7-alpha.2 two plugins no longer activate: @xmanrui/dsh-im fails with `Error: cannot get property \"webServer\" without inject` and activates no channel; @liustack/modlens logs `[modlens] settings namespace skipped: TypeError: scope.settings.register is not a function`, so its settings UI never registers. Removing both plugins makes `dsh web` start cleanly",
+      "runtime_trace": "no admission line at all: the packages install fine and the failure surfaces as a runtime TypeError inside the plugin (client/connection/src/rpc-host.ts:192 for dsh-im)",
+      "user_hypotheses": [
+        "dsh-im does not declare the webServer dependency the new Cordis inject mechanism requires",
+        "modlens still calls the pre-keyed-slot settings API (settings.register)",
+        "downgrading to 0.1.6-alpha.2 fixes modlens (it does not — the reporter verified the error persists, so it is not version-specific)"
+      ],
+      "root_cause": "runtime API drift: dsh-im never declares the webServer service it injects, and modlens calls scope.settings.register, which the keyed slot system replaced; neither package declares any @deepseek-ai/dsh* peer, so no declaration-level gate can see it",
+      "fix_verified_by_reporter": "removing both plugins restores a clean start (workaround, not a fix); the reporter asks the authors to support 0.1.7+"
+    },
+    "deviations": [
+      "this case is expected to MISS, and is recorded as a negative sample: the label states the real root cause (a removed runtime API), which our engine cannot express — it can only judge declared peers, and these packages declare none",
+      "@xmanrui/dsh-im version is not stated in the report; 4.26.0 is the newest release published before the report date (2026-09-23T06:34Z), taken from the registry's publish times",
+      "@liustack/modlens 3.26.3 is the version the report names ('updated to the latest 3.26.3') and the newest at report time",
+      "the `webServer without inject` half is about a missing service declaration, not an unmet peer range; unstated in the label because a single label can only name one root cause",
+      "the failures are runtime TypeError paths; no admission verdict can name them without stderr attribution (T-102) or an isolated probe (M3)"
+    ],
+    "reproduced": {
+      "dsh_home": "~\\home",
+      "profile": "web",
+      "bundles": []
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-7590/profile-package.json",
+      "sha256": "d2f73ad99d7a48c8162386030108ee9c081a9be9f10fa353a1afa4cdcc97506a"
+    },
+    {
+      "file": "data/cases/CASE-7590/profile-cordis.patch.yml",
+      "sha256": "e543e4c576c9265466fde59c9a4cc9f08d513a358f03eddef4c71a292fcaa83f"
+    },
+    {
+      "file": "data/cases/CASE-7590/runtime-dsh.json",
+      "sha256": "c61de8fcc4031b5cba1c3239313a43284823a6a1588488bf0c1a70971f82eca6"
+    },
+    {
+      "file": "data/cases/CASE-7590/plugin-dsh-im.json",
+      "sha256": "1c005001ca623a42a059a40eb781aa643ce3962bced3470125825e3f130eb624"
+    },
+    {
+      "file": "data/cases/CASE-7590/plugin-modlens.json",
+      "sha256": "4a70098e8e3ef8c9c16943927ce3458ffb0fe9dcdb5865874ae9809dddf9bd22"
+    }
+  ],
+  "env": {
+    "dsh": "0.1.7-alpha.2",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "~\\home\\profiles\\web",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.1.7-alpha.2"
+      },
+      {
+        "name": "@liustack/modlens",
+        "version": "3.26.3"
+      },
+      {
+        "name": "@xmanrui/dsh-im",
+        "version": "4.26.0"
+      }
+    ]
+  },
+  "verdicts": [],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 2,
+    "rows": 2
+  },
+  "summary": {},
+  "hit": {
+    "verdict": "miss",
+    "expected": {
+      "kind": "runtime-api-drift",
+      "entry_id": "modlens",
+      "module": "@liustack/modlens",
+      "reason_code": "runtime-api-removed",
+      "requirement_key": "settings.register",
+      "requirement_key_source": "report-explicit"
+    },
+    "matched": null,
+    "why": "no blocked verdict named the labelled row with the labelled unmet requirement"
+  },
+  "errors": []
+}

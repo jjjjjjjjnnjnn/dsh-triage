@@ -1,0 +1,217 @@
+{
+  "bin": {
+    "dsh-im": "bin/dsh-im.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ],
+      "platform": "web"
+    },
+    "compatibility": {
+      "dsh": "0.1.7-alpha.1",
+      "profiles": [
+        "web"
+      ],
+      "dshReleases": {
+        "0.1.7-alpha.1": "compatible"
+      }
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/xmanrui/dsh-im/issues"
+  },
+  "dist": {
+    "shasum": "5fca2a4dbaf06facf154dc06e44741fa725a3432",
+    "tarball": "https://registry.npmjs.org/@xmanrui/dsh-im/-/dsh-im-4.26.0.tgz",
+    "fileCount": 401,
+    "integrity": "sha512-AMWpTQvgMAKwzRmtSbpwsPdyMpdEw76IPI17doy5FLQ7BOJCHs3iJyXEmKLBIu4XchjBkUMaEejj1OTcMhV6Wg==",
+    "signatures": [
+      {
+        "sig": "MEUCIEWTwKh1vMRyhMrma9x+4XdYaQ4c1N7pCW+TubDc8c4GAiEA+LFg1c0kyFS6I5HeADFos6O83jv3OKdIGuT+D8S0GaM=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEQCIBqMs1Q8zTmWCf7HI4ZMHNxXqGLTiRVosmMqPs3VCC3aAiAZ+m49aQybIeAPmVpI2/fo2g7JkSXrJYxOTcVdjJnTJQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 20632236
+  },
+  "main": "./lib/index.js",
+  "name": "@xmanrui/dsh-im",
+  "type": "module",
+  "_from": "file:/private/tmp/dsh-im-v4.26.0-release.XTMQe0/xmanrui-dsh-im-4.26.0.tgz",
+  "author": {
+    "url": "https://github.com/xmanrui",
+    "name": "xmanrui"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.mjs test/channels/*/*.test.mjs",
+    "build": "node plugin-src/client/build.mjs && node plugin-src/host/build.mjs",
+    "check": "npm run build && npm test && node scripts/verify-package.mjs"
+  },
+  "_npmUser": {
+    "name": "xmanrui",
+    "email": "longmanr307@gmail.com"
+  },
+  "homepage": "https://github.com/xmanrui/dsh-im#readme",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "ai-agent",
+    "im",
+    "instant-messaging",
+    "chatbot",
+    "feishu",
+    "lark",
+    "wechat",
+    "wecom",
+    "dingtalk",
+    "qq",
+    "slack",
+    "telegram",
+    "discord",
+    "whatsapp",
+    "imessage",
+    "matrix",
+    "ai-office"
+  ],
+  "_resolved": "/private/tmp/dsh-im-v4.26.0-release.XTMQe0/xmanrui-dsh-im-4.26.0.tgz",
+  "_integrity": "sha512-AMWpTQvgMAKwzRmtSbpwsPdyMpdEw76IPI17doy5FLQ7BOJCHs3iJyXEmKLBIu4XchjBkUMaEejj1OTcMhV6Wg==",
+  "repository": {
+    "url": "git+https://github.com/xmanrui/dsh-im.git",
+    "type": "git"
+  },
+  "_npmVersion": "11.17.0",
+  "description": "把十二种 IM 渠道和公网 AI Office 接入本机 DeepSeek Harness。 Connect twelve IM channels and a public AI Office to a local DeepSeek Harness.",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "maintainers": [
+    {
+      "name": "xmanrui",
+      "email": "longmanr307@gmail.com"
+    }
+  ],
+  "_nodeVersion": "24.19.0",
+  "contributors": [
+    {
+      "url": "https://github.com/C3H3-AI",
+      "name": "C3H3-AI"
+    },
+    {
+      "url": "https://github.com/divingleee",
+      "name": "divingleee"
+    },
+    {
+      "url": "https://github.com/Chan-0312",
+      "name": "Chan-0312"
+    },
+    {
+      "url": "https://github.com/BuvkB",
+      "name": "BuvkB"
+    },
+    {
+      "url": "https://github.com/masucc",
+      "name": "masucc"
+    },
+    {
+      "url": "https://github.com/cherryFloris",
+      "name": "cherryFloris"
+    },
+    {
+      "url": "https://github.com/geekyfoxlab",
+      "name": "geekyfoxlab"
+    },
+    {
+      "url": "https://github.com/grloper",
+      "name": "grloper"
+    },
+    {
+      "url": "https://github.com/baijian",
+      "name": "baijian"
+    },
+    {
+      "url": "https://github.com/lyzhu86",
+      "name": "lyzhu86"
+    },
+    {
+      "url": "https://github.com/Librazy",
+      "name": "Librazy"
+    },
+    {
+      "url": "https://github.com/johnslee1207-commits",
+      "name": "Johnslee1207"
+    },
+    {
+      "url": "https://github.com/Dong09",
+      "name": "Dong09"
+    },
+    {
+      "url": "https://github.com/wings1848",
+      "name": "wings1848"
+    },
+    {
+      "url": "Phil",
+      "name": "Zhe"
+    }
+  ],
+  "dependencies": {
+    "qrcode": "1.5.4",
+    "undici": "7.29.0",
+    "imapflow": "^2.0.5",
+    "mailparser": "^3.9.28",
+    "nodemailer": "^10.0.10",
+    "@matrix-org/olm": "3.2.15",
+    "dingtalk-stream": "2.1.4",
+    "@wecom/aibot-node-sdk": "1.0.7",
+    "@tencent-connect/qqbot-nodejs": "1.0.4",
+    "@tencent-connect/qqbot-connector": "1.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "react": "18.3.1",
+    "semver": "7.8.5",
+    "esbuild": "0.25.9",
+    "react-dom": "18.3.1",
+    "https-proxy-agent": "5.0.1",
+    "@deepseek-ai/cordis": "4.0.1",
+    "react-test-renderer": "18.3.1",
+    "@larksuiteoapi/node-sdk": "1.73.0",
+    "@whiskeysockets/baileys": "7.0.0-rc14"
+  },
+  "optionalDependencies": {
+    "sharp": "0.35.4",
+    "@tencent-qqmail/agently-cli": "^1.0.18"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-im_4.26.0_1790135624265_0.8498157100361099",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@xmanrui/dsh-im@4.26.0",
+  "version": "4.26.0"
+}

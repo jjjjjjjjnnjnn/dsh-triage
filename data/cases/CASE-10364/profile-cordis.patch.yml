@@ -1,0 +1,6 @@
+# CASE-10364 reconstruction: the in-box `tools` row, re-mounted in the profile patch
+# layer. dsh-pdf@0.1.0 declares @deepseek-ai/dsh-tools ^0.0.1-rc.1 under dependencies,
+# so <profile>/node_modules/@deepseek-ai/dsh-tools is 0.0.1-rc.1 — and the row name
+# resolves there before it ever reaches the installation copy.
+- id: tools
+  name: '@deepseek-ai/dsh-tools'

@@ -1,0 +1,429 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T12:00:00.000Z",
+  "command": "why",
+  "mode": "profile",
+  "status": "ok",
+  "case": {
+    "id": "CASE-10759",
+    "title": "A plugin's dependency hoists dsh-tools@0.2.0-rc.2 into the profile, so the in-box `tools` row is disabled and the host cannot boot",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10759",
+      "author": "unattributed in the report body",
+      "reported_at": "2026-10-24",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "plugin": "@deepseek-ai/dsh-tools",
+      "plugin_version": "0.2.0-rc.2",
+      "runtime_before": "0.2.1-rc.2",
+      "runtime_after": "0.2.1-rc.2",
+      "symptom": "after `dsh plugin --profile desktop add dsh-livedocs` the window flashes and exits; `1 required plugin did not activate`, `agent-loop (required) → tools missing`; then DSH resets the profile (bundles → base+web-app, cordis.patch.yml → []) and every third-party plugin disappears",
+      "runtime_trace": "dsh: disabling profile plugin row \"tools\": Plugin @deepseek-ai/dsh-tools@0.2.0-rc.2 is incompatible with dsh 0.2.1-rc.2: requirements {\"@deepseek-ai/dsh-agent\":\"0.2.0-rc.2\", ...}",
+      "user_hypotheses": [
+        "the runtime package is simply missing (it is not: it is shadowed by the profile copy)",
+        "reinstalling the plugin fixes it (it does not: the hoisted copy comes back)"
+      ],
+      "root_cause": "dsh-livedocs declares @deepseek-ai/dsh-tools in dependencies (not peerDependencies), so pnpm materialises 0.2.0-rc.2 at <profile>/node_modules/@deepseek-ai/dsh-tools; the resolved row module then fails the version rule against the 0.2.1-rc.2 runtime",
+      "fix_verified_by_reporter": "not stated by the reporter; the thread documents the boot-failure → profile-reset chain"
+    },
+    "deviations": [
+      "the `tools` row belongs to the in-box `@deepseek-ai/dsh-base` bundle, not to the profile patch; it is re-mounted in the profile patch layer so the case stays a one-row reconstruction (profile rows and bundle rows resolve through the same resolver, so the attribution is unchanged)",
+      "bundles omitted: dsh-base / dsh-web-app are left out to keep the composition minimal",
+      "the hoisting plugin's own version (`dsh-livedocs`) is not stated in the report, so its manifest is not reproduced; only the copy it produces (dsh-tools@0.2.0-rc.2, the module the row actually resolves to) is materialised",
+      "the report was written before dsh-tools@0.2.1-rc.x was published; the input is the 0.2.0-rc.2 manifest the message names, not today's newest",
+      "the profile reset (bundles → 2, cordis.patch.yml → []) is a separate defect and is not modelled"
+    ],
+    "reproduced": {
+      "dsh_home": "~\\home",
+      "profile": "desktop",
+      "bundles": []
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-10759/profile-package.json",
+      "sha256": "201b4844d066ee275b96cca2ce737fda79564f226ca2b6a0e8f311905c53de46"
+    },
+    {
+      "file": "data/cases/CASE-10759/profile-cordis.patch.yml",
+      "sha256": "c3a76728c153bd4b0f02165a8786c5be74a92d719b915f1939d63cac3b6df89a"
+    },
+    {
+      "file": "data/cases/CASE-10759/runtime-dsh.json",
+      "sha256": "6394bce7d2689c70e1cebb4b65965cd28c6d01709086826e617b9be67c0e0ea8"
+    },
+    {
+      "file": "data/cases/CASE-10759/plugin-dsh-tools.json",
+      "sha256": "94cb32d518bae8ec89b7582329c9e5ca9a6eef2a225aa863696e82558402fa81"
+    }
+  ],
+  "env": {
+    "dsh": "0.2.1-rc.2",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "desktop",
+    "profileDir": "~\\home\\profiles\\desktop",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.1-rc.2"
+      },
+      {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": "0.2.0-rc.2"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": "0.2.0-rc.2",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\home\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-tools",
+            "version": "0.2.0-rc.2"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-ptc-runtime",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-sandbox",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-sandbox-policy",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-scope",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-system-prompt",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-user-approval",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-tools@0.2.0-rc.2",
+          "method": "declared-range",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "patch:profile",
+          "method": "patch-parse",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "row(s) tools"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\home\\profiles\\desktop",
+          "method": "profile-scan",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "dsh 0.2.1-rc.2"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile desktop allow-version @deepseek-ai/dsh-tools@0.2.0-rc.2 --dsh-version 0.2.1-rc.2 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "tools",
+            "owners": "patch:profile"
+          },
+          "note": "disable row \"tools\" in patch:profile when @deepseek-ai/dsh-tools is no longer needed"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 10,
+            "runtime": "0.2.1-rc.2"
+          },
+          "note": "10 requirement(s) exclude 0.2.1-rc.2; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.1-rc.2",
+            "profile": "desktop"
+          },
+          "note": "install a plugin build whose declarations include 0.2.1-rc.2 (profile: desktop)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T12:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 1,
+    "rows": 1
+  },
+  "summary": {
+    "blocked": 1
+  },
+  "hit": {
+    "verdict": "hit",
+    "expected": {
+      "kind": "row-admission",
+      "entry_id": "tools",
+      "module": "@deepseek-ai/dsh-tools",
+      "reason_code": "admission-denied-peer",
+      "requirement_key": "@deepseek-ai/dsh-agent",
+      "requirement_key_source": "report-explicit"
+    },
+    "matched": {
+      "verdict_index": 0,
+      "conclusion": "blocked",
+      "subject": {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": "0.2.0-rc.2",
+        "kind": "entry"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-ptc-runtime",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-sandbox",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-sandbox-policy",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-scope",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-system-prompt",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-user-approval",
+            "range": "0.2.0-rc.2",
+            "runtime": "0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    "why": "the labelled target is named and the labelled requirement is the one that failed"
+  },
+  "errors": []
+}

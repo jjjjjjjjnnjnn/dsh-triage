@@ -1,0 +1,105 @@
+{
+  "bugs": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/issues"
+  },
+  "dist": {
+    "shasum": "4bd287147e4445c7d514eceacbebc94cb305f9a7",
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh-tools/-/dsh-tools-0.0.1-rc.1.tgz",
+    "fileCount": 27,
+    "integrity": "sha512-mrtq+UXc6UVidrGo4GM8RAH0Gqc4iFOmtPeQAz59Phhjl3EmzkFI0Mo6dQlHQamrc2J9jppPtGtUzW9qHmwxDQ==",
+    "signatures": [
+      {
+        "sig": "MEYCIQDN1NQuVYRT0cd2NJ3bMsbm+oKNczazdTWZq5sDw66LcAIhANlR0EharH6FtX7PazQq7lveWFW1ekCf5ZyM1hEPgA8s",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 500769
+  },
+  "main": "lib/index.js",
+  "name": "@deepseek-ai/dsh-tools",
+  "type": "module",
+  "_from": "file:/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-tools-0.0.1-rc.1.tgz",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./package.json": "./package.json",
+    "./presentation": {
+      "types": "./lib/types/presentation.d.ts",
+      "default": "./lib/types/presentation.js"
+    }
+  },
+  "license": "BSD-3-Clause",
+  "_npmUser": {
+    "name": "imccyu",
+    "email": "imccyu@gmail.com"
+  },
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness#readme",
+  "_resolved": "/home/runner/work/deepseek-harness/deepseek-harness/dist/npm/deepseek-ai-dsh-tools-0.0.1-rc.1.tgz",
+  "_integrity": "sha512-mrtq+UXc6UVidrGo4GM8RAH0Gqc4iFOmtPeQAz59Phhjl3EmzkFI0Mo6dQlHQamrc2J9jppPtGtUzW9qHmwxDQ==",
+  "repository": {
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "type": "git",
+    "directory": "packages/core/tools"
+  },
+  "_npmVersion": "11.16.0",
+  "description": "Tool registry and execution pipeline for the DeepSeek Harness",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "imccyu",
+      "email": "imccyu@gmail.com"
+    },
+    {
+      "name": "tianyicui-deepseek",
+      "email": "tianyi@deepseek.com"
+    }
+  ],
+  "_nodeVersion": "24.18.0",
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1-rc.1"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.1",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-agent": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-scope": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-session": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-code-runtime": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-system-prompt": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-user-approval": "^0.0.1-rc.1"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1-rc.1",
+    "@deepseek-ai/dsh-llm": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-agent": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-scope": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-session": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-invariants": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-code-runtime": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-system-prompt": "^0.0.1-rc.1",
+    "@deepseek-ai/dsh-user-approval": "^0.0.1-rc.1"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-tools_0.0.1-rc.1_1786390656615_0.3937133969852884",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@deepseek-ai/dsh-tools@0.0.1-rc.1",
+  "version": "0.0.1-rc.1"
+}

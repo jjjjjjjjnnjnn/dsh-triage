@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_case.mjs",
+  "generated_at": "2026-10-26T12:00:00.000Z",
+  "command": "check",
+  "mode": "candidate",
+  "status": "ok",
+  "case": {
+    "id": "CASE-8220",
+    "title": "The installer judges back-compat shim rows that the bundle itself disables, so `dsh plugin add` is rejected and rolled back",
+    "source": {
+      "kind": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8220",
+      "author": "T-Auto",
+      "reported_at": "2026-09-29",
+      "retrieved_at": "2026-10-26",
+      "evidence_tier": "declared"
+    },
+    "reported": {
+      "profile": "web",
+      "plugin": "@deepseek-ai/dsh-tui",
+      "plugin_version": "0.1.5-rc.3",
+      "runtime_after": "0.2.0-rc.1",
+      "symptom": "`dsh plugin add` of the TUI plugin fails on 0.2.0-rc.1 with two incompatibility messages naming packages the user never asked for, and the installation is rolled back (package.json, pnpm-lock.yaml and node_modules restored). Users read it as the installer 'misreporting dependency versions'",
+      "runtime_trace": "@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.3 与 DSH 0.2.0-rc.1 不兼容（要求 @deepseek-ai/dsh-code-runtime ^0.1.5-rc.3, @deepseek-ai/dsh-session ^0.1.5-rc.3, @deepseek-ai/dsh-timeout ^0.1.5-rc.3）; @deepseek-ai/dsh-agent-presets@0.1.5-rc.3 与 DSH 0.2.0-rc.1 不兼容（要求 @deepseek-ai/dsh-agent, dsh-atomic-write, dsh-invariants, dsh-home-paths, dsh-scope, dsh-session, dsh-session-projection, dsh-settings, dsh-system-prompt, dsh-typert-protocol, dsh-tools — all ^0.1.5-rc.3）",
+      "user_hypotheses": [
+        "the installer misreads dependency versions (close: it reads the right manifests from the wrong rows)",
+        "the packages are actually needed by 0.2.0-rc.1 (they are not: the rows are disabled shims)"
+      ],
+      "root_cause": "bundleComponentManifests collects every row.name from the bundle's composed insert patches without consulting `disabled`/`!!js`, so the two pre-rename shim rows are judged by evaluatePluginCompatibility even though the startup preflight skips them",
+      "fix_verified_by_reporter": "none verified in the report; the source path is pinned (boot/plugin-manager/src/operations.ts:249 vs boot/app-boot/src/compatibility-preflight.ts:122)"
+    },
+    "deviations": [
+      "candidate mode: the installer refused the operation and rolled it back, so nothing was installed and there is no profile to replay",
+      "both rejected modules are materialised as candidate manifests (the label names one); the report names the same three unmet peers for the worker-thread shim, which is why the requirement key is unambiguous",
+      "the `disabled: !!js(...)` row semantics are not modelled — the case tests what the defendant actually judged (the two manifests), which is exactly the defect the report describes",
+      "the rollback path (package.json / lockfile / node_modules restore) is not modelled"
+    ],
+    "reproduced": {
+      "runtime": "0.2.0-rc.1",
+      "profile": "(candidate: no installation existed)"
+    }
+  },
+  "inputs": [
+    {
+      "file": "data/cases/CASE-8220/runtime-dsh.json",
+      "sha256": "b06723fc37e224013f78464a78c5662b6579c4d9be9843bf0c29039f3ea87cb4"
+    },
+    {
+      "file": "data/cases/CASE-8220/plugin-code-runtime-worker-thread.json",
+      "sha256": "3e5a5f18ce18a2dba7d7d3ad352534fabe5bac82dfcca5257bd17101739e2643"
+    },
+    {
+      "file": "data/cases/CASE-8220/plugin-agent-presets.json",
+      "sha256": "30102a9511b57274cc47b897771ac2fe483f12fc05e812a0786539b65f9d4266"
+    }
+  ],
+  "env": {
+    "dsh": "0.2.0-rc.1",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "~",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.0-rc.1"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-code-runtime-worker-thread",
+        "version": "0.1.5-rc.3",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.0-rc.1",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.0-rc.1"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-code-runtime",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-timeout",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.3",
+          "method": "declared-range",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~",
+          "method": "profile-scan",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "dsh 0.2.0-rc.1"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile web allow-version @deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.3 --dsh-version 0.2.0-rc.1 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 3,
+            "runtime": "0.2.0-rc.1"
+          },
+          "note": "3 requirement(s) exclude 0.2.0-rc.1; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.0-rc.1",
+            "profile": "web"
+          },
+          "note": "install a plugin build whose declarations include 0.2.0-rc.1 (profile: web)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T12:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-agent-presets",
+        "version": "0.1.5-rc.3",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.0-rc.1",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.0-rc.1"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-atomic-write",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-home-paths",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-invariants",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-scope",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session-projection",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-settings",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-system-prompt",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-typert-protocol",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-agent-presets@0.1.5-rc.3",
+          "method": "declared-range",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~",
+          "method": "profile-scan",
+          "at": "2026-10-26T12:00:00.000Z",
+          "detail": "dsh 0.2.0-rc.1"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile web allow-version @deepseek-ai/dsh-agent-presets@0.1.5-rc.3 --dsh-version 0.2.0-rc.1 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 11,
+            "runtime": "0.2.0-rc.1"
+          },
+          "note": "11 requirement(s) exclude 0.2.0-rc.1; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.0-rc.1",
+            "profile": "web"
+          },
+          "note": "install a plugin build whose declarations include 0.2.0-rc.1 (profile: web)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T12:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "scanned": {
+    "bundles": 0,
+    "entries": 0,
+    "rows": 0
+  },
+  "summary": {
+    "blocked": 2
+  },
+  "hit": {
+    "verdict": "hit",
+    "expected": {
+      "kind": "candidate-admission",
+      "module": "@deepseek-ai/dsh-code-runtime-worker-thread",
+      "reason_code": "admission-denied-peer",
+      "requirement_key": "@deepseek-ai/dsh-code-runtime",
+      "requirement_key_source": "report-explicit"
+    },
+    "matched": {
+      "verdict_index": 0,
+      "conclusion": "blocked",
+      "subject": {
+        "name": "@deepseek-ai/dsh-code-runtime-worker-thread",
+        "version": "0.1.5-rc.3",
+        "kind": "plugin"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-code-runtime",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-timeout",
+            "range": "^0.1.5-rc.3",
+            "runtime": "0.2.0-rc.1"
+          }
+        }
+      ]
+    },
+    "why": "the labelled target is named and the labelled requirement is the one that failed"
+  },
+  "errors": []
+}

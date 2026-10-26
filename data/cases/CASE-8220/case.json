@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "id": "CASE-8220",
+  "title": "The installer judges back-compat shim rows that the bundle itself disables, so `dsh plugin add` is rejected and rolled back",
+  "mode": "candidate",
+  "source": {
+    "kind": "github-discussion",
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8220",
+    "author": "T-Auto",
+    "reported_at": "2026-09-29",
+    "retrieved_at": "2026-10-26",
+    "evidence_tier": "declared"
+  },
+  "reported": {
+    "profile": "web",
+    "plugin": "@deepseek-ai/dsh-tui",
+    "plugin_version": "0.1.5-rc.3",
+    "runtime_after": "0.2.0-rc.1",
+    "symptom": "`dsh plugin add` of the TUI plugin fails on 0.2.0-rc.1 with two incompatibility messages naming packages the user never asked for, and the installation is rolled back (package.json, pnpm-lock.yaml and node_modules restored). Users read it as the installer 'misreporting dependency versions'",
+    "runtime_trace": "@deepseek-ai/dsh-code-runtime-worker-thread@0.1.5-rc.3 与 DSH 0.2.0-rc.1 不兼容（要求 @deepseek-ai/dsh-code-runtime ^0.1.5-rc.3, @deepseek-ai/dsh-session ^0.1.5-rc.3, @deepseek-ai/dsh-timeout ^0.1.5-rc.3）; @deepseek-ai/dsh-agent-presets@0.1.5-rc.3 与 DSH 0.2.0-rc.1 不兼容（要求 @deepseek-ai/dsh-agent, dsh-atomic-write, dsh-invariants, dsh-home-paths, dsh-scope, dsh-session, dsh-session-projection, dsh-settings, dsh-system-prompt, dsh-typert-protocol, dsh-tools — all ^0.1.5-rc.3）",
+    "user_hypotheses": [
+      "the installer misreads dependency versions (close: it reads the right manifests from the wrong rows)",
+      "the packages are actually needed by 0.2.0-rc.1 (they are not: the rows are disabled shims)"
+    ],
+    "root_cause": "bundleComponentManifests collects every row.name from the bundle's composed insert patches without consulting `disabled`/`!!js`, so the two pre-rename shim rows are judged by evaluatePluginCompatibility even though the startup preflight skips them",
+    "fix_verified_by_reporter": "none verified in the report; the source path is pinned (boot/plugin-manager/src/operations.ts:249 vs boot/app-boot/src/compatibility-preflight.ts:122)"
+  },
+  "inputs": {
+    "runtime_manifest": "runtime-dsh.json",
+    "plugin_manifests": {
+      "@deepseek-ai/dsh-code-runtime-worker-thread": "plugin-code-runtime-worker-thread.json",
+      "@deepseek-ai/dsh-agent-presets": "plugin-agent-presets.json"
+    }
+  },
+  "label": {
+    "kind": "candidate-admission",
+    "module": "@deepseek-ai/dsh-code-runtime-worker-thread",
+    "reason_code": "admission-denied-peer",
+    "requirement_key": "@deepseek-ai/dsh-code-runtime",
+    "requirement_key_source": "report-explicit"
+  },
+  "deviations": [
+    "candidate mode: the installer refused the operation and rolled it back, so nothing was installed and there is no profile to replay",
+    "both rejected modules are materialised as candidate manifests (the label names one); the report names the same three unmet peers for the worker-thread shim, which is why the requirement key is unambiguous",
+    "the `disabled: !!js(...)` row semantics are not modelled — the case tests what the defendant actually judged (the two manifests), which is exactly the defect the report describes",
+    "the rollback path (package.json / lockfile / node_modules restore) is not modelled"
+  ]
+}

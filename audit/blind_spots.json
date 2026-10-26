@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "v0.1.0-skeleton (2026-10-26)",
+  "stand": "R6 (2026-10-26)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -65,6 +65,27 @@
       "cannot_see": "门 `step-review` 只能验证「有结论、有产物、哈希对得上」，验不了结论是不是真诚的（套话也能过长度校验）",
       "mitigation": "四轴 + 对抗性由独立上下文的 reviewer 先各自上报（禁互相参考）；每轮把「本轮最可能被质疑的一条」写进 `audit/AUDIT_*.md`；连续两轮被 adversary 抓到同类套话，则该轴判为无效",
       "owner": "process/reviewer"
+    },
+    {
+      "id": "BS-10",
+      "area": "verdict/rows",
+      "cannot_see": "一个不声明任何 @deepseek-ai/dsh* peer 的行，目前既不判 go 也不出 unknown，而是一行结论都不出（CASE-7590：2 行 → 0 verdict）。用户会把静默读成「没问题」，这与铁律 1「证据不足只能出 unknown」不一致",
+      "mitigation": "T-107：行级在 admission 为 indeterminate 时产出 unknown + missingEvidence（点名「该包未声明任何 dsh peer」），并加负对照测试；在此之前，`why` 文案不得声称「已检查通过」",
+      "owner": "core/verdict"
+    },
+    {
+      "id": "BS-11",
+      "area": "verdict/rows",
+      "cannot_see": "包遮蔽只在副本被 hoist 到 <profile>/node_modules 时可见（CASE-10364/10759 正是这种形态）。真正嵌套在插件自身 node_modules（pnpm isolated linker / link: 安装）的旧副本，静态解析看不到",
+      "mitigation": "R5 曾把 CASE-10364 预判为「嵌套不可见 → miss」，实抓正文与其源码级回复后证伪；后续统一口径：先看 profile 层解析结果，再由 M2/bundle 相位与 M3 probe 覆盖隔离副本",
+      "owner": "core/verdict"
+    },
+    {
+      "id": "BS-12",
+      "area": "process/evidence",
+      "cannot_see": "命中判据含 requirement_key，而报告常把 requirement map 省略成 `{...}`：10 例里 2 例的 key 由报告点名的那份真 manifest 推导，4 例早于该字段。因此「hit」不等于「报告逐字给出了这个 key」",
+      "mitigation": "D1 产物强制输出 label_key_sources（report-explicit / derived-from-reported-manifest / unstated），并对 derived 情形要求「同一 failure 家族的全部 peer 都失败」才允许据此判定；AUDIT 每轮复述该分层",
+      "owner": "process/verifier"
     }
   ]
 }

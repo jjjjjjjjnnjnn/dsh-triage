@@ -1,0 +1,76 @@
+{
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/sunshine-lang/dsh-pdf/issues"
+  },
+  "dist": {
+    "shasum": "e4258d9a253b20a34de13c2be34e38219bab3726",
+    "tarball": "https://registry.npmjs.org/dsh-pdf/-/dsh-pdf-0.1.0.tgz",
+    "fileCount": 9,
+    "integrity": "sha512-Di+lZz4+IQYk5yh7c6qmFTbOl6uyDt1J7O/hCXq1hiCkGKuxN3U5uiid75PDccI3l4LZn95d5p1C/j3VgvfaJg==",
+    "signatures": [
+      {
+        "sig": "MEYCIQDKWOw3cH5b58VcnTqHFX2FjBuRoK+tmgSbsIcitVsxSQIhALHFKNc4ct0klu/QryHIsxU2cgo06HaPpkydmb4vFUoU",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "unpackedSize": 19545
+  },
+  "main": "lib/index.js",
+  "name": "dsh-pdf",
+  "type": "module",
+  "types": "lib/index.d.ts",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "gitHead": "c40ef446fd4fbaca4b3807ab5bc7f960d562a3a9",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "_npmUser": {
+    "name": "xiaoyd7up",
+    "email": "1621354073@qq.com"
+  },
+  "homepage": "https://github.com/sunshine-lang/dsh-pdf",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "pdf"
+  ],
+  "repository": {
+    "url": "git+https://github.com/sunshine-lang/dsh-pdf.git",
+    "type": "git"
+  },
+  "_npmVersion": "10.9.8",
+  "description": "PDF toolbox for DeepSeek Harness: extract text, metadata, and page ranges from PDF files (local parsing, no API key).",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "xiaoyd7up",
+      "email": "1621354073@qq.com"
+    }
+  ],
+  "_nodeVersion": "22.23.1",
+  "dependencies": {
+    "pdfjs-dist": "^6.2.108",
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.1",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "_hasShrinkwrap": false,
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
+  },
+  "_npmOperationalInternal": {
+    "tmp": "tmp/dsh-pdf_0.1.0_1786687303988_0.9188040521588727",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "dsh-pdf@0.1.0",
+  "version": "0.1.0"
+}

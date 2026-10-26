@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R4 (2026-10-26)",
+  "stand": "R6 (2026-10-26)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -255,6 +255,221 @@
         "artifact": "data/results/why-case-CASE-10849-2026-10-26T00-00-00.000Z.json",
         "sha256": "d639c6b580fbf0b88db286489f9235d59a2655e99f69c9ecc5be8137bd1f6543",
         "outcome": "hit：4 条 ^0.0.1-rc.1 peer 全部不含 0.2.1-rc.2"
+      }
+    },
+    {
+      "id": "R6-S1",
+      "batch": "R6",
+      "step": "CASE-10201：hooks 桥的 npm latest 失步（0.0.1-rc.5），未钉版本安装被拒 → candidate 命中",
+      "changed": [
+        "data/cases/CASE-10201/case.json",
+        "data/cases/CASE-10201/plugin-hooks-claude-code.json",
+        "data/cases/CASE-10201/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告与跟帖各自给出拒装原文（plugin 名、版本、运行时三件俱全）；label 的 requirement key 取自报告逐条列出的 peer（dsh-agent 在列）",
+        "reproducibility": "PASS：两份输入是 npm 公开版本文档（0.2.1-rc.2 / 0.0.1-rc.5），sha256 进产物 inputs[]；同 stamp 重跑逐字节一致",
+        "licence": "PASS：仅 npm 公开元数据（MIT）；未引入第三方源码；沙箱在 tmpdir，未写真实 ~/.dsh",
+        "ssot": "PASS：产物走 check 路径（candidate 模式），与 CLI check 同一 admission 引擎，command=mode=candidate",
+        "adversary": "反例：把 label.requirement_key 换成报告未列出的 @deepseek-ai/dsh-web-app → 判定立刻 miss，证明命中不是宽松匹配"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-10201 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-10201-2026-10-26T12-00-00.000Z.json",
+        "sha256": "4e1801125aabffccf0df34c64077ddb07ba5c380cb167d860568fc345657f9ee",
+        "outcome": "hit：blocked，点名 hooks-claude-code@0.0.1-rc.5 与 8 条 unmet peer（含 dsh-agent）"
+      }
+    },
+    {
+      "id": "R6-S2",
+      "batch": "R6",
+      "step": "CASE-10759：插件 dependency 把 dsh-tools@0.2.0-rc.2 hoist 进 profile，tools 行被禁 → 行级命中",
+      "changed": [
+        "data/cases/CASE-10759/case.json",
+        "data/cases/CASE-10759/profile-package.json",
+        "data/cases/CASE-10759/profile-cordis.patch.yml",
+        "data/cases/CASE-10759/plugin-dsh-tools.json",
+        "data/cases/CASE-10759/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告逐字给出 disabling row 文案与 requirements 首项 dsh-agent；行的模块由 profile node_modules 解析得出，与报告同一对象",
+        "reproducibility": "PASS：profile 清单、patch 行与 manifest 全部固化；解析根与上游一致（profile 优先于安装副本），同 stamp 重跑一致",
+        "licence": "PASS：仅 npm 公开元数据（MIT）+ 公开讨论文本引用；未读凭据、未复制插件代码",
+        "ssot": "PASS：why 路径产出 1 条 row-admission blocked，rows=1，与 inputs 层声明一致",
+        "adversary": "反例：把 profile 里的 dsh-tools 换成与运行时同版本的 0.2.1-rc.2 → 结论消失，证明命中绑定在真实版本差上"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-10759 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-10759-2026-10-26T12-00-00.000Z.json",
+        "sha256": "4b1a3d446fd897681f8dd2ecb8030f8861edcaeb8141aa1761830a36ce199132",
+        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.2.0-rc.2 + dsh-agent 精确钉定"
+      }
+    },
+    {
+      "id": "R6-S3",
+      "batch": "R6",
+      "step": "CASE-8751：只升运行时、profile 留 0.1.5-rc.3 官方包 → session 行被禁（多行同因）",
+      "changed": [
+        "data/cases/CASE-8751/case.json",
+        "data/cases/CASE-8751/profile-package.json",
+        "data/cases/CASE-8751/profile-cordis.patch.yml",
+        "data/cases/CASE-8751/plugin-dsh-session.json",
+        "data/cases/CASE-8751/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告点名被禁的 session 行与 dsh-session@0.1.5-rc.3；该版本唯一的 dsh peer 是 dsh-scope ^0.1.5-rc.3，key 无歧义",
+        "reproducibility": "PASS：runtime 0.2.0-rc.2 与 session 0.1.5-rc.3 均为 registry 实测快照，输入 sha256 落产物",
+        "licence": "PASS：npm 公开元数据（MIT）+ 讨论原文引用；未复制上游源码，只引用报告给出的路径",
+        "ssot": "PASS：一条 row-admission blocked 对应报告的一行 stderr；「每行一条」的聚合问题登记为 F4",
+        "adversary": "反例：把 runtime 改回 0.1.5-rc.3 → 不再 blocked；把 key 换成该包并不声明的 dsh-llm → miss"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-8751 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-8751-2026-10-26T12-00-00.000Z.json",
+        "sha256": "b1ca460e320b42354c629499a2a28af1fee70c752b1f019dc0e6c339fca64cfa",
+        "outcome": "hit：blocked，点名 session 行 + dsh-session@0.1.5-rc.3 + dsh-scope ^0.1.5-rc.3"
+      }
+    },
+    {
+      "id": "R6-S4",
+      "batch": "R6",
+      "step": "CASE-8220：安装器判了 bundle 自己 disabled 的兼容 shim 行 → 安装回滚；candidate 命中",
+      "changed": [
+        "data/cases/CASE-8220/case.json",
+        "data/cases/CASE-8220/plugin-code-runtime-worker-thread.json",
+        "data/cases/CASE-8220/plugin-agent-presets.json",
+        "data/cases/CASE-8220/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告给出两个被拒包与三条明确的 ^0.1.5-rc.3 要求；引擎命中的 key（dsh-code-runtime）在报告逐条列出之内",
+        "reproducibility": "PASS：两个被拒包的 manifest 与 runtime 0.2.0-rc.1 均固化；candidate 模式不需要 profile，可离线重放",
+        "licence": "PASS：仅公开元数据（MIT）；报告引用的源码路径只作引用，未落第三方代码",
+        "ssot": "PASS：产物 2 条 blocked（两个被拒包），与报告「两个包、同一次安装被回滚」数量一致",
+        "adversary": "反例：主张「disabled 行该跳过，所以本案应判 miss」→ 被否：本案测的是上游安装器的真实行为，我们复算的正是它读的那两份 manifest"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-8220 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-8220-2026-10-26T12-00-00.000Z.json",
+        "sha256": "595da44fcb91feccf9958694c12cf37d1515e878367effae0436a0b25951850f",
+        "outcome": "hit：2 条 blocked，分别点名 worker-thread 与 agent-presets 的 unmet peer"
+      }
+    },
+    {
+      "id": "R6-S5",
+      "batch": "R6",
+      "step": "CASE-10364：dsh-pdf 的 dependency 把 dsh-tools@0.0.1-rc.1 带进 profile → tools 行被禁、桌面起不来",
+      "changed": [
+        "data/cases/CASE-10364/case.json",
+        "data/cases/CASE-10364/profile-package.json",
+        "data/cases/CASE-10364/profile-cordis.patch.yml",
+        "data/cases/CASE-10364/plugin-dsh-tools.json",
+        "data/cases/CASE-10364/plugin-dsh-pdf.json",
+        "data/cases/CASE-10364/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：报告给出 disabling row 原文；hoist 机制由跟帖的源码级回复（profile-resolution 优先级）佐证，非我们推测",
+        "reproducibility": "PASS：dsh-pdf@0.1.0 与 dsh-tools@0.0.1-rc.1 均取自 registry；声明者与被引入副本分开保存，可独立复核",
+        "licence": "PASS：仅公开元数据（MIT）；未复制 dsh-pdf 源码，仅存其 manifest",
+        "ssot": "PASS：row-admission 点名 tools 行 + dsh-tools@0.0.1-rc.1；与 R6-S2 构成同机制不同版本的交叉验证",
+        "adversary": "反例：若声明改成 peerDependency（不落 profile 副本）→ 结论消失，证明命中来自副本而不是叙事"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-10364 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-10364-2026-10-26T12-00-00.000Z.json",
+        "sha256": "73063a8c2806d9a7c18c09efb801d8f6e3e44b44a1c66ceb308fac7600168eaa",
+        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.0.1-rc.1 + dsh-agent ^0.0.1-rc.1"
+      }
+    },
+    {
+      "id": "R6-S6",
+      "batch": "R6",
+      "step": "CASE-7590：两个不声明 peer 的插件在运行期因 API 漂移挂掉 → 如实记录为 miss 负样本",
+      "changed": [
+        "data/cases/CASE-7590/case.json",
+        "data/cases/CASE-7590/profile-package.json",
+        "data/cases/CASE-7590/profile-cordis.patch.yml",
+        "data/cases/CASE-7590/plugin-dsh-im.json",
+        "data/cases/CASE-7590/plugin-modlens.json",
+        "data/cases/CASE-7590/runtime-dsh.json"
+      ],
+      "review": {
+        "correctness": "PASS：两条真实错误（webServer inject / settings.register）与包版本取自报告；dsh-im 版本按报告前后的 publish time 选取并在 deviations 披露",
+        "reproducibility": "PASS：三份 manifest 固化；runtime 0.1.7-alpha.2 与报告一致；同 stamp 重跑一致",
+        "licence": "PASS：仅公开元数据 + 报告引用；无凭据、无源码复制",
+        "ssot": "PASS：产物如实记录 0 verdict / 2 rows，miss 未被上调成 hit（这正是 D1 诚实性的证据）",
+        "adversary": "反例：换成任意 peer key 仍然 miss（两个包都不声明 peer）→ 证明 miss 不是标签失误，而是能力缺口（F1 / T-107）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-7590 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-7590-2026-10-26T12-00-00.000Z.json",
+        "sha256": "19f599c84f624d3d25765ecfc75025a03abc57278e80193ba1c6c01e7c5796f8",
+        "outcome": "miss：0 条结论、2 行被扫描 → 记录为「声明层无信息 + 运行期失败」的负样本"
+      }
+    },
+    {
+      "id": "R6-S7",
+      "batch": "R6",
+      "step": "scripts/d1_report.mjs：把 D1 命中率从叙述变成可重算产物（9/10 PASSED），并加 5 条契约测试",
+      "changed": [
+        "scripts/d1_report.mjs",
+        "tests/governance/d1-report.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：只从 why-case-*.json 汇总，不自行判定；同一 case 的重复产物按 newest generated_at 去重并列入 superseded",
+        "reproducibility": "PASS：固定 --stamp 重跑逐字节一致（测试断言）；同一 case 不会被双计",
+        "licence": "PASS：零第三方依赖、零网络，只读仓内产物；与门禁「可离线运行」的要求一致",
+        "ssot": "PASS：产物含 produced_by/generated_at/schema_version + .sha256；测试从产物反向点数并与发布总数比对",
+        "adversary": "反例：手改 hit.verdict 为 maybe → exit 2 不出报告；只有 1 例全命中 → gate.passed=false（样本量门槛不可绕）"
+      },
+      "real_test": {
+        "command": "node scripts/d1_report.mjs --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/d1-2026-10-26T12-00-00.000Z.json",
+        "sha256": "707d2a636a0841a70b91682d52fc326e9b588addf658fb6b0e72c22278ba85f9",
+        "outcome": "PASSED：9/10 hit，key sources {derived:2, report-explicit:4, unstated:4}"
+      }
+    },
+    {
+      "id": "R6-S8",
+      "batch": "R6",
+      "step": "本轮门禁自证：8 门全绿 + 负对照 8/8 CAUGHT，结果本身写成可重算产物",
+      "changed": [
+        "audit/step_reviews.json",
+        "scripts/d1_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：8 门全部 exit 0，且逐门 mutate 都被 CAUGHT；未放宽任何阈值、未改 gate_ledger 的 negative_control",
+        "reproducibility": "PASS：`--record --stamp` 固定时间戳，重跑得到同一份产物；sha256 与本条记录一致",
+        "licence": "PASS：门禁零第三方依赖、零网络；产物只含门禁 id/脚本/退出码",
+        "ssot": "PASS：产物 produced_by=scripts/gate.mjs，与本轮 6 个案例产物 + D1 产物同处 data/results 且互不覆盖",
+        "adversary": "反例：若某门被架空（如 d1 报告被手改），ssot 门的 sha256 与本条记录对不上 → 门必红；mutate 产物另外证明每门都能 FAIL"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-26T12-00-00.000Z.json",
+        "sha256": "83696105cb202d84109e580c50c704afc6e7e4e0faf9ef1ed3555ac709550832",
+        "outcome": "ALL GREEN · 8 gates（ok=true）"
+      }
+    },
+    {
+      "id": "R6-S9",
+      "batch": "R6",
+      "step": "负对照落盘：同一套门的注入违规 8/8 被抓，证明「绿」不是「没查」",
+      "changed": [
+        "audit/step_reviews.json",
+        "audit/AUDIT_2026-10-26_R6.md"
+      ],
+      "review": {
+        "correctness": "PASS：每门各注入一种违规（如 step-review 抹掉 adversary 轴、ssot 改哈希），全部 CAUGHT；套件在 8/8 时 exit 0",
+        "reproducibility": "PASS：`--mutate --record` 固定 stamp 后产物可重算；与正常产物分开命名（gates-mutate-*）",
+        "licence": "PASS：注入只发生在内存/临时路径，不写仓内源码；产物不含路径与凭据",
+        "ssot": "PASS：产物 mode=mutate，与正常产物并列可对比；两条都被 step_reviews 引用，无孤儿",
+        "adversary": "反例：只跑正常套件不跑 --mutate（HANDOFF 坑表第 5 条）→ 无法区分「查过」与「空转」；本条就是为了堵这个洞"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-26T12-00-00.000Z.json",
+        "sha256": "75be9e5eafdd479963679d94a241004637f772798f3d059cc98e989e2cf78007",
+        "outcome": "NEGATIVE CONTROL PASSED · 8/8 gates caught their injected violation"
       }
     }
   ]

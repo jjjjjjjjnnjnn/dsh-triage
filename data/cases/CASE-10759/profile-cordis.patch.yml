@@ -1,0 +1,6 @@
+# CASE-10759 reconstruction: the row that gets disabled is the in-box `tools` row
+# (packages/bundle/base/cordis.patch.yml:499 upstream). It is re-mounted here in the
+# profile patch layer because what matters to the verdict is which package the name
+# resolves to under <profile>/node_modules — and that copy (0.2.0-rc.2) is present.
+- id: tools
+  name: '@deepseek-ai/dsh-tools'
