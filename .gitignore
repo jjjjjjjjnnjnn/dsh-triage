@@ -1,8 +1,8 @@
 # --- Node / pnpm ---
 node_modules/
 *.tsbuildinfo
-dist/
-lib/
+**/dist/
+packages/*/lib/
 .pnpm-store/
 
 # --- local runtime scratch (never committed) ---
