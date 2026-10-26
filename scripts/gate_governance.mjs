@@ -113,6 +113,25 @@ await runGate('governance', async ({ checks, mutate }) => {
   }
   checks.add('no-credentials', suspicious.length === 0, suspicious.slice(0, 5).join(', ') || 'clean')
 
+  // 6b. Privacy: committed SSOT must not contain user-home paths.
+  // `data/results` is meant to be publishable, so a leaked `C:\Users\<name>` would
+  // end up in git history forever (found via tests/e2e + fixed by redact.ts).
+  const homePatterns = [
+    /[A-Za-z]:\\\\Users\\\\/,
+    /[A-Za-z]:\\Users\\/,
+    /\/home\/[a-z0-9._-]+\//i,
+    /\/Users\/[A-Za-z0-9._-]+\//,
+  ]
+  const leaked = []
+  for (const entry of listDir('data/results').filter((item) => item.isFile && item.name.endsWith('.json'))) {
+    const text = readText(`data/results/${entry.name}`)
+    for (const pattern of homePatterns) {
+      if (pattern.test(text)) leaked.push(`data/results/${entry.name}:${pattern.source}`)
+    }
+  }
+  if (mutate) leaked.push('data/results/injected.json:leak-simulation')
+  checks.add('results-privacy', leaked.length === 0, leaked.slice(0, 3).join(', ') || 'no home paths in SSOT')
+
   // 7. Agent framework completeness (.agents/README.md §4).
   const roleFiles = listDir('.agents/roles')
     .filter((entry) => entry.isFile && entry.name.endsWith('.md'))

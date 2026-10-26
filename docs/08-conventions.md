@@ -80,12 +80,31 @@ plugin (CLI / DSH entry)  →  probe
 3. **必须**实现 `--mutate` 且该模式必须 exit 1；
 4. CI 会跑两次：正常（必须绿）+ mutate（必须红）。
 
+## 9. 序列化边界（隐私与可分享性）
+
+**规则**：任何离开本机的输出（`data/results/**`、`--json`、未来徽章/索引源）必须在**序列化边界**脱敏，而不是在引擎里改路径。
+
+| 面 | 是否脱敏 | 实现 |
+|---|---|---|
+| `data/results/*.json`（会进公开仓） | **必须** | `scripts/scan_env.mjs` → `core.redactVerdict` |
+| CLI `--json`（会被贴进 issue） | **默认脱敏**，`--no-redact` 可关 | `packages/plugin/src/cli.ts#safeVerdicts` |
+| CLI 文本输出（本机显示） | 不脱敏（便于本地复制路径） | `renderVerdict` |
+| `docs/07-environment.md`（machine 记录） | 不脱敏（按项目约定集中存放） | 人工维护 |
+
+脱敏范围包括 `env.profileDir` **与** `evidence[].source`（R3 审核的真事故：只脱敏前者仍会泄露 home）。回归保护：`gate_governance` 的 `results-privacy` + `tests/e2e/cli.test.ts`。
+
+## 10. 新增门禁的两条硬要求（R3 起）
+
+1. **必须能被注入故障打红**（`--mutate`），且 `gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · N/N`；
+2. 若门禁需要构建产物，在 `audit/gate_ledger.json` 里标 `requires_build: true`，`--fast` 会跳过它。
+
 ## 7. 评审清单（提交前自检）
 
-- [ ] `pnpm run verify` 全绿（build → typecheck → test → gate 6 门）
-- [ ] `node scripts/gate.mjs --mutate` 全部 CAUGHT
+- [ ] `pnpm run verify` 全绿（build → typecheck → test → gate 7 门）
+- [ ] `node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 7/7`
 - [ ] 新结论带证据 tier 与 remediation / missingEvidence
-- [ ] 没有新增 `any`、没有 `catch {}`、没有内联用户文案
+- [ ] 没有新增 `any`、没有 `catch {}`、没有内联用户文案（文案进 `messages.ts`）
+- [ ] 新输出面已按 §9 在序列化边界脱敏
 - [ ] `INDEX.md` / `AGENTS.md` 架构图 / `audit/AI_DISCLOSURE_LOG.md` 已同步
 - [ ] 若要删除文件：已 `git mv` 进 `_archive/` 并登记
 - [ ] 若新增数据源/依赖：`vendor-manifest.json` + `COMPLIANCE.md` 已更新

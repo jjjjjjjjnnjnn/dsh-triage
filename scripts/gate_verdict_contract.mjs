@@ -9,7 +9,7 @@
  * Negative control: `--mutate` injects a `blocked` verdict with no remediation.
  */
 
-import { Checks, listDir, readJson, readText, runGate } from './lib/kit.mjs'
+import { listDir, readJson, readText, runGate } from './lib/kit.mjs'
 
 const TIERS = new Set(['declared', 'scanned', 'measured-registry', 'measured-local', 'inferred'])
 const CONCLUSIONS = new Set(['go', 'risky', 'blocked', 'unknown'])
@@ -17,10 +17,20 @@ const SEVERITIES = new Set(['block', 'warn', 'info'])
 const CONFIDENCE = new Set(['low', 'medium', 'high'])
 const MESSAGE_ID = /^(admission|collision|remediation|missing)\.[a-z0-9.-]+$/
 
+/** Extract the catalogue keys from the single source of truth for user-facing text. */
+function readMessageCatalog() {
+  const source = readText('packages/core/src/messages.ts')
+  const keys = new Set()
+  for (const match of source.matchAll(/^\s*'([a-zA-Z][\w.-]+)':/gm)) {
+    keys.add(match[1])
+  }
+  return keys
+}
+
 const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
 const isStringArray = (value) => Array.isArray(value) && value.every((item) => typeof item === 'string')
 
-function validateVerdict(verdict, where) {
+function validateVerdict(verdict, where, catalog) {
   const problems = []
   if (verdict === null || typeof verdict !== 'object') return [`${where}: verdict is not an object`]
   if (verdict.schemaVersion !== 1) problems.push(`${where}: schemaVersion must be 1`)
@@ -65,6 +75,10 @@ function validateVerdict(verdict, where) {
       if (!SEVERITIES.has(reason?.severity)) problems.push(`${where}: reasons[${index}].severity invalid`)
       if (!MESSAGE_ID.test(String(reason?.messageId))) {
         problems.push(`${where}: reasons[${index}].messageId must be a catalogue id, not prose`)
+      } else if (!catalog.has(reason.messageId)) {
+        // Catches the classic "added a reason, forgot the copy" bug: the CLI would
+        // render `?admission.foo` instead of failing loudly.
+        problems.push(`${where}: reasons[${index}].messageId "${reason.messageId}" is missing from messages.ts`)
       }
     }
   }
@@ -75,6 +89,9 @@ function validateVerdict(verdict, where) {
     for (const [index, item] of remediation.entries()) {
       if (!isNonEmptyString(item?.kind)) problems.push(`${where}: remediation[${index}].kind missing`)
       if (!isNonEmptyString(item?.note)) problems.push(`${where}: remediation[${index}].note missing`)
+      if (item?.messageId !== undefined && !catalog.has(item.messageId)) {
+        problems.push(`${where}: remediation[${index}].messageId "${item.messageId}" is missing from messages.ts`)
+      }
     }
   }
 
@@ -92,6 +109,9 @@ function validateVerdict(verdict, where) {
 }
 
 await runGate('verdict-contract', async ({ checks, mutate }) => {
+  const catalog = readMessageCatalog()
+  checks.require('message-catalog', catalog.size >= 15, `${catalog.size} catalogue keys`)
+
   const files = listDir('data/results')
     .filter((entry) => entry.isFile && entry.name.endsWith('.json'))
     .map((entry) => `data/results/${entry.name}`)
@@ -126,7 +146,7 @@ await runGate('verdict-contract', async ({ checks, mutate }) => {
 
   for (const { verdict, where } of verdicts) {
     const label = `${where}:${String(verdict?.subject?.name ?? '?')}`
-    const problems = validateVerdict(verdict, label)
+    const problems = validateVerdict(verdict, label, catalog)
     checks.add(`verdict:${label}`, problems.length === 0, problems.slice(0, 3).join(' | '))
   }
 

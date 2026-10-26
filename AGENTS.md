@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: v0.1.0-skeleton (2026-10-26)｜M0 ✅（44 测试 / 6 门全绿 / 6/6 CAUGHT）· M1 金标对等 ✅ · M1 真实案例验收 🟡
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: v0.1.0-skeleton (2026-10-26)｜M0 ✅（47 测试 / 7 门全绿 / 7/7 CAUGHT）· M1 金标对等 ✅ · M1 真实案例验收 ⛔（等 HUMAN 输入）· R3 审核 14 项已修（`audit/AUDIT_2026-10-26_R3.md`）
 > **Mission**: 做 DSH 生态里「装之前判断该不该装、装完坏了定位为什么」的判断层，并靠真实失败数据成为默认安装件 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）

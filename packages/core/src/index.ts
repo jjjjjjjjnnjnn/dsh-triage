@@ -32,7 +32,7 @@ export type {
   Requirement,
   RequirementFailure,
 } from './admission.js'
-export { evaluateAdmission, evaluateRange, isAdmissionPeer, readDshPeerRequirements, readEnginesDsh } from './admission.js'
+export { evaluateAdmission, evaluateRange, isAdmissionPeer, readEnginesDsh } from './admission.js'
 
 export type { LoadEnvInput, ProfileManifest } from './env.js'
 export { defaultDshHome, loadEnv, parseProfileManifest, profileDirOf, resolveProfileDir } from './env.js'
@@ -51,3 +51,5 @@ export {
 
 export type { Locale, MessageCatalog } from './messages.js'
 export { catalogFor, format } from './messages.js'
+
+export { redactEnv, redactPath, redactVerdict } from './redact.js'

@@ -16,7 +16,7 @@
 
 | 周 | 阶段 | 交付物 | 出口门禁（可证伪） | 人力 |
 |---|---|---|---|---|
-| W0 | **M0 骨架** ✅ | 治理 / 6 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 6 门 mutate 全 CAUGHT | 已完成 |
+| W0 | **M0 骨架** ✅ | 治理 / 7 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 7 门 mutate 全 CAUGHT | 已完成 |
 | W1 | **M1 收口** | 21 条金标 + `why` 归因 + 真实案例验收 | 真实案例一次命中根因（点名行 = 真实根因，修复后症状消失） | 1 agent |
 | W2 | **M2-a 运行时台账** | `pluginInventory` 相位 + tools/commands/settings 快照 | `audit` 能显示每行相位；与 patch 静态声明交叉校验 | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |

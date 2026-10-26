@@ -90,11 +90,11 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
     port,
     steps: [
       {
-        id: 'sandbox-init',
-        argv: [dshBin, 'plugin', '--profile', profile, '--version'],
+        id: 'runtime-check',
+        argv: [dshBin, '--version'],
         env,
         cwd: sandboxHome,
-        note: 'initializes an empty sandbox profile without touching the real one',
+        note: 'records the sandbox runtime; the install step initializes the profile on first use',
       },
       {
         id: 'install',

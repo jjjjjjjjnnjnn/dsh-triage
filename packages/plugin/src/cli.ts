@@ -12,7 +12,7 @@
  * Exit codes: 0 ok · 1 findings (only with --strict) · 2 usage · 3 unavailable
  */
 
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import {
@@ -22,6 +22,8 @@ import {
   groupClaimsBySource,
   loadEnv,
   parsePatchYaml,
+  redactEnv,
+  redactVerdict,
   renderVerdict,
   verdictFromAdmission,
   verdictsFromCollisions,
@@ -49,6 +51,8 @@ interface Flags {
   readonly profile: string
   readonly stamp: string | null
   readonly locale: Locale
+  /** Keep absolute paths in `--json` output (default: redact to `~`). */
+  readonly noRedact: boolean
 }
 
 interface Parsed {
@@ -73,6 +77,7 @@ Flags
   --profile <name>      profile name (default: web)
   --dsh-home <path>     override $DSH_HOME (default: ~/.dsh)
   --locale <en|zh>      output language (default: zh, or $DSH_TRIAGE_LOCALE)
+  --no-redact           keep absolute paths in --json output (default: redact to ~)
   --stamp <iso>         fixed timestamp for reproducible output
   --execute             (probe) really run the plan — not implemented before M3
   --help                this text
@@ -114,7 +119,7 @@ async function commandEnv(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
   if (flags.json) {
-    writeJson({ schema_version: 1, env })
+    writeJson({ schema_version: 1, env: safeEnv(flags, env) })
     return EXIT_OK
   }
   process.stdout.write(`dsh        ${env.dsh ?? 'unknown'}\n`)
@@ -156,8 +161,8 @@ async function commandWhy(flags: Flags): Promise<number> {
     writeJson({
       schema_version: 1,
       command: 'why',
-      env,
-      verdicts: findings,
+      env: safeEnv(flags, env),
+      verdicts: safeVerdicts(flags, findings),
       errors: bannerErrors,
       scanned: { bundles: composition.layers.length, entries: claims.length },
     })
@@ -220,7 +225,7 @@ async function commandCheck(flags: Flags, spec: string | undefined): Promise<num
   })
 
   if (flags.json) {
-    writeJson({ schema_version: 1, command: 'check', verdict, admission })
+    writeJson({ schema_version: 1, command: 'check', verdict: safeVerdicts(flags, [verdict])[0], admission })
     return exitFor(flags, [verdict])
   }
   process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n`)
@@ -244,7 +249,7 @@ async function commandAudit(flags: Flags): Promise<number> {
     writeJson({
       schema_version: 1,
       command: 'audit',
-      env,
+      env: safeEnv(flags, env),
       claims: [...grouped.entries()].map(([source, list]) => ({ source, entries: list })),
       collisions,
       localArtifacts: artifacts.map((artifact) => ({
@@ -392,6 +397,21 @@ function writeJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
 }
 
+/**
+ * JSON output is meant to be pasted into issues, so it is redacted by default.
+ * Text output keeps real paths (local display only); `--no-redact` opts out.
+ */
+function safeEnv(flags: Flags, env: EnvFingerprint): EnvFingerprint {
+  if (flags.noRedact) return env
+  return redactEnv(env, [homedir(), resolveDshHome(flags)])
+}
+
+function safeVerdicts(flags: Flags, verdicts: readonly Verdict[]): readonly Verdict[] {
+  if (flags.noRedact) return verdicts
+  const roots = [homedir(), resolveDshHome(flags)]
+  return verdicts.map((verdict) => redactVerdict(verdict, roots))
+}
+
 function parseArgs(argv: readonly string[]): Parsed | null {
   const positionals: string[] = []
   let json = false
@@ -403,6 +423,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let profile = 'web'
   let stamp: string | null = null
   let locale: Locale = defaultLocale()
+  let noRedact = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -431,6 +452,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         break
       case '--execute':
         execute = true
+        break
+      case '--no-redact':
+        noRedact = true
         break
       case '--help':
       case '-h':
@@ -465,9 +489,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  if (help) return { command: 'help', positionals: [], flags: { json, all, strict, execute, dshHome, profile, stamp, locale } }
+  if (help) return { command: 'help', positionals: [], flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact } }
   const command = positionals.shift() ?? 'help'
-  return { command, positionals, flags: { json, all, strict, execute, dshHome, profile, stamp, locale } }
+  return { command, positionals, flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact } }
 }
 
 function splitFlag(token: string): readonly [string, string | null] {

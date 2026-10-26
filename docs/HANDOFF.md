@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: v0.1.0-skeleton (2026-10-26)｜当前批次：**R2 · 命名 + 路线 + Agent 框架**
+> **Stand**: v0.1.0-skeleton (2026-10-26)｜当前批次：**R3 · 项目审核 + 交接**（14 项修复，见 `audit/AUDIT_2026-10-26_R3.md`）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -12,7 +12,7 @@ git status --short                  # 必须干净；有未提交改动先问来
 git log --oneline -3
 pnpm install --frozen-lockfile
 pnpm run verify                     # build → typecheck → test → gate，必须全绿
-node scripts/gate.mjs --mutate      # 每道门必须 CAUGHT（证明门不是装饰）
+node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/7
 ```
 
 基线不绿 → **先修基线，不叠加新功能**。
@@ -24,12 +24,13 @@ node scripts/gate.mjs --mutate      # 每道门必须 CAUGHT（证明门不是�
 | 项 | 状态 |
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
-| 里程碑 | **M0 ✅**（44 测试 / 6 门全绿 / 6/6 CAUGHT）· **M1 🟡**（金标对等 ✅，真实案例验收 ⬜） |
-| 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，默认分支 `main`） |
-| CI | 绿：`verify (node 22/24)` + `gates can fail`（负对照 6/6 CAUGHT）· `release readiness` 仅在 tag 触发 |
-| 上游基线 | `@deepseek-ai/dsh` **0.2.1-rc.2**（本机 profile 实测 0.1.0-rc.6） |
-| 本轮交付 | 命名与仓库、`docs/ROADMAP.md`、`docs/BACKLOG.md`、`.agents/{README,roles×6,prompts×3,rules/adversarial_review}` |
-| 证据 | `data/results/why-2026-10-26T00-00-00.000Z.json`（156 行 / 0 冲突 / sha256 随行） |
+| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ⛔**（等 HUMAN 提供案例） |
+| 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
+| CI | `verify (node 22/24)` + `verify (windows, node 24)` + `gates can fail`（负对照 7/7）· `release readiness` 仅 tag 触发 |
+| 规模 | 47 测试 · 7 门禁 · 6 角色卡 · 3+1 模板 |
+| 本轮交付 | 审核 14 项修复（SSOT 脱敏、假 API 删除、重复 reason、i18n 修复文案、门禁加严、Windows CI、e2e CLI 测试、release-pack 门、NOTICE、kickoff 模板） |
+| 证据 | `data/results/why-2026-10-26T00-00-00.000Z.json`（156 行 / 0 冲突 / sha256 `19d71672c033…`） |
+| 审核报告 | `audit/AUDIT_2026-10-26_R3.md`（结论 NEEDS WORK → 已修 → READY，附 4 项 blocked） |
 
 ---
 
@@ -39,8 +40,8 @@ node scripts/gate.mjs --mutate      # 每道门必须 CAUGHT（证明门不是�
 pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
-**验收标准**：两次命令都成功，且 `gate --mutate` 输出 6 行 `CAUGHT`（不是 `MISSED`）。
-看到 `CAUGHT` = 你接手的环境是可信的，可以开始领任务（`docs/BACKLOG.md` → 推荐 **T-101**）。
+**验收标准**：第二条输出 `ALL GREEN · 7 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 7/7`。
+满足即环境可信，接着领 **T-201（接入 `pluginInventory` 相位）**：`docs/BACKLOG.md` → 按 `.agents/prompts/task-packet.md` 列允许改动文件后再动手。
 
 ---
 
@@ -48,15 +49,17 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 | 症状 | 原因 | 处置 |
 |---|---|---|
-| `node --test` 报找不到模块 | 没 `pnpm build`（包导出指向 `dist/`） | 先构建再测 |
+| `node --test` 找不到模块 | 没 `pnpm build`（包导出指向 `dist/`） | 先构建再测 |
 | 标准 profile 报 27 条「entry id 冲突」 | 把「纯覆写」当撞车 | 已修，见 `docs/adr/0002`；别回退该判定 |
-| `yaml` 解析把 `!!js` 当错误 | 未用 `parseDocument` + `doc.errors` | 已修，见 `packages/core/src/ledger.ts` |
+| `yaml` 把 `!!js` 当错误 | 未用 `parseDocument` + `doc.errors` | 已修（`core/ledger.ts`） |
 | 提交标题带 `` | PowerShell 5.1 `Out-File -Encoding utf8` 写 BOM | 用 `git commit -m`，别用 `-F` 接 BOM 文件 |
-| 门禁「全绿」但什么都没查 | 没跑 `--mutate` | 每轮必跑（CI 也跑两次） |
-| CI 报找不到 `scripts/lib/kit.mjs` | `.gitignore` 的 `lib/` 匹配任意层级，把 `scripts/lib/` 吞了 | 已改为 `**/dist/` + `packages/*/lib/`（ADR-worthy，见下） |
-| CI 里 probe 测试失败 | 测试硬编码 `C:/Temp`，POSIX 下不算绝对路径 | 改为 `tmpdir()` + `join()`，并断言 `isAbsolute` |
-| 误以为 `gate.mjs --mutate` 要 exit 1 | 单门 `--mutate` 才 exit 1；套件「全 CAUGHT」才 exit 0 | 看最后一行 `NEGATIVE CONTROL PASSED` |
-| 中文控制台乱码 | 控制台编码 ≠ 文件编码（文件是 UTF-8 无 BOM） | 用 Node 读文件判断，不看控制台 |
+| 门禁「全绿」但什么都没查 | 没跑 `--mutate` | 每轮必跑（CI 也跑） |
+| CI 报找不到 `scripts/lib/kit.mjs` | `.gitignore` 的 `lib/` 匹配任意层级 | 已改 `**/dist/` + `packages/*/lib/` |
+| `probe` 测试在 Linux 全红 | 硬编码 `C:/Temp`，POSIX 下非绝对路径 | 用 `tmpdir()` + `join()` |
+| 误以为 `gate.mjs --mutate` 要 exit 1 | 单门才 exit 1；套件全 CAUGHT 才 exit 0 | 认最后一行 `NEGATIVE CONTROL PASSED` |
+| SSOT 里出现 `C:\Users\<名>` | 只脱敏了 `env.profileDir`，漏了 `evidence[].source` | 已修 `redactVerdict` + `results-privacy` 门 |
+| `npm` 命令刷 `Unknown project config` | `.npmrc` 放了 pnpm 专属键 | 已迁到 `pnpm-workspace.yaml` |
+| Windows 上 `spawn('npm')` 报 EINVAL | 不能直接 spawn `.cmd` | 走 `ComSpec /c`（见 `gate_release_pack.mjs`） |
 
 ---
 
@@ -87,9 +90,22 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 | 需要 | 看 |
 |---|---|
+| 新会话开工指令 | `.agents/prompts/kickoff.md`（整块粘进新会话即可） |
 | 领任务 / 派活 | `docs/BACKLOG.md` + `.agents/prompts/task-packet.md` |
 | 审核 | `.agents/roles/reviewer.md` + `.agents/prompts/review-packet.md` |
 | 对抗性证伪 | `.agents/roles/adversary.md` + `.agents/rules/adversarial_review.md` |
 | 代码约定 | `docs/08-conventions.md` |
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
+| 本轮审核结论 | `audit/AUDIT_2026-10-26_R3.md` |
+
+---
+
+## 8. 已知 blocked（带 owner + 退出条件）
+
+| 项 | owner | 退出条件 |
+|---|---|---|
+| npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
+| 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public` |
+| M1 真实案例验收（T-101） | HUMAN + Verifier | 提供插件名/版本/dsh 版本/症状 → `why` 一次命中 → 落 `data/results/why-case-*.json` |
+| 0.2.x 真机 profile 未装 | Implementer（M3） | 本机装 `0.2.1-rc.2` profile 并跑通一次 probe |

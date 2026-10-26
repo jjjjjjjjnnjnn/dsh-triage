@@ -54,6 +54,14 @@
       "negative_control": "node scripts/gate_release.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "release"
+    },
+    {
+      "id": "release-pack",
+      "script": "scripts/gate_release_pack.mjs",
+      "enforces": "用 npm pack --dry-run 实测发布内容：必需文件齐全、不夹带 src/tests、包体 <2MB、bundle patch 带 compat- 前缀",
+      "negative_control": "node scripts/gate_release_pack.mjs --mutate → 必须 exit 1（注入缺失文件）",
+      "requires_build": true,
+      "owner": "release"
     }
   ]
 }

@@ -48,3 +48,14 @@
 - 人工决策：HUMAN 指定「起名 + private 仓库 + 路线 + agent 框架」
 - SessionID：待 HUMAN 回填
 - 备注：仓库为 private；首推后仍需 HUMAN 决定是否转 public 与 npm 发布时机
+
+### 2026-10-26 R3｜项目审核 + 交接（14 项修复）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，四轴 + 对抗性自查）
+- 范围：见 `audit/AUDIT_2026-10-26_R3.md` §6 改动面（core 5 文件 / probe / plugin CLI / 4 个 gate 脚本 / 新门 release-pack / e2e 测试 / NOTICE / kickoff 模板 / .npmrc 与 pnpm-workspace / CI Windows job）
+- 关键发现：**A1 SSOT 泄露 home 路径**（`evidence[].source` 未脱敏）——由新加的 e2e 测试当场抓到；修法 = 序列化边界 `redactVerdict` + `gate_governance#results-privacy`
+- 其它：删除会撒谎的公开 API（A2）、重复 reason（A3）、英文修复文案（A4）、门禁不校验文案 id（A5）、`produced_by` 未校验（A6）、probe 首步语义（A7）、`.npmrc` npm 告警（A8）、无打包内容校验（A9）、CI 无 Windows（A10）、无 e2e（A11）、坑表缺失（A12）
+- 审核：四轴 READY；对抗性四反假设逐条回答（见审核报告 §3）
+- 人工决策：无（均按既有铁律修复）；4 项 blocked 需 HUMAN（npm 登录 / 转 public / 真实案例 / 0.2.x 真机）
+- SessionID：待 HUMAN 回填
+- 备注：门禁由 6 → 7；测试 44 → 47；SSOT 重新生成并脱敏（sha256 `19d71672c033…`）

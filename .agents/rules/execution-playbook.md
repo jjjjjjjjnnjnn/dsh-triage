@@ -67,7 +67,7 @@ pnpm run verify             # 基线必须全绿；不绿先修基线，不叠�
 - 判据：<spec 路径>（判据编号）
 - 负对照：<命令>（必须 FAIL）
 - 证据：data/results/...（sha256）
-- 门禁：build / typecheck / test <n> / gate 6 门
+- 门禁：build / typecheck / test <n> / gate 7 门
 - 同步：<文件清单>
 - 诚实边界：未做 / 未验证 / 已知风险
 ```

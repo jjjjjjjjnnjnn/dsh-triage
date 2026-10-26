@@ -1,0 +1,38 @@
+dsh-triage (分诊台 / Triage)
+https://github.com/jjjjjjjjnnjnn/dsh-triage
+
+Copyright (c) 2026 DSH-Addition contributors
+Licensed under the MIT License (see LICENSE).
+
+This product consumes and references third-party facts and documents:
+
+1. DeepSeek Harness (@deepseek-ai/dsh and related packages)
+   Copyright DeepSeek
+   License: MIT
+   Use: admission semantics, loader/plugin-manager behaviour and public
+   documentation are mirrored as executable contracts. No source code is copied;
+   the semantics are re-implemented and locked by golden fixtures.
+
+2. dsh.so plugin registry (https://www.dsh.so)
+   Data licence: Creative Commons Attribution 4.0 International (CC BY 4.0)
+   Use: install-verification levels (L1–L5), security tier and download/star
+   rankings are consumed as *priors* and are always surfaced with the tier
+   `measured-registry` and an attribution to dsh.so. Their conclusions are never
+   reworded into stronger claims (e.g. "works on your machine").
+
+3. npm registry (https://registry.npmjs.org)
+   Use: package metadata only (version, engines, peerDependencies, deprecation,
+   publish time). Tarballs are never redistributed by this project.
+
+4. omdsh-dev/dsh-hub-workshop catalog (dsh-hub-index/v0.4)
+   License: MIT (repository)
+   Use: hub inclusion status and manifest conventions (read-only).
+
+5. Reference implementations consulted for failure modes and boundaries:
+   - lxzy-7/dsh-plugin-guard (MIT) — boot-level health check cannot see a white screen
+   - nzl153/dsh-preflight (licence unknown, archived) — static preflight was absorbed upstream
+   - LX2000WASD/dsh-web-plugin-manager (archived) — duplicate loader row id breaks boot
+   No code from these projects is included. See quarantine/vendor-manifest.json.
+
+This project provides NO security assurance. Malware and supply-chain auditing is
+out of scope; see COMPLIANCE.md §5.

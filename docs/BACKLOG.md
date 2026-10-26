@@ -5,7 +5,7 @@
 
 | ID | 任务 | 里程碑 | 角色 | 依赖 | 验收判据 | 状态 |
 |---|---|---|---|---|---|---|
-| T-101 | 真实案例验收：把「MCP 工具静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；修复后症状消失；`data/results/why-case-*.json` | ⬜ |
+| T-101 | 真实案例验收：把「MCP 工具静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；修复后症状消失；`data/results/why-case-*.json` | ⛔ 阻塞：等 HUMAN 提供 插件名/版本/dsh 版本/症状（退出条件：一次命中并落盘） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | `audit` 显示 active/failed/null；与静态声明交叉校验 | ⬜ |
@@ -23,6 +23,25 @@
 | T-601 | 上架文案（zh/en）+ 提交 3 渠道 | 1.0 | arbiter | 功能完成 | `gate_release --publish` 绿 + 2 渠道收录 | ⬜ |
 | T-602 | 案例帖 ×3（消失的工具 / 白屏 / 升级后起不来） | 增长 | researcher | T-101 | 每篇含真实 SSOT 证据 | ⬜ |
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
+
+---
+
+## R3 已修（本轮，证据见 `audit/AUDIT_2026-10-26_R3.md`）
+
+| 审核 ID | 内容 | 状态 |
+|---|---|---|
+| A1 | SSOT 泄露 home 路径（`evidence[].source`）→ `redactVerdict` + `results-privacy` 门 | ✅ |
+| A2 | 删除会撒谎的公开 API `readDshPeerRequirements` | ✅ |
+| A3 | admitted verdict 重复渲染同一文案 → 新增 `admission.declared-only` | ✅ |
+| A4 | 修复文案硬编码英文 → `Remediation.messageId/params` + 本地化渲染 | ✅ |
+| A5 | 门禁校验 messageId 必须存在于 `messages.ts` | ✅ |
+| A6 | `gate_ssot` 校验 `produced_by` 指向真实脚本 | ✅ |
+| A7 | probe 首步语义修正（`runtime-check`） | ✅ |
+| A8 | `.npmrc` 去掉 pnpm 专属键（消除 npm 告警） | ✅ |
+| A9 | 新门 `release-pack`：实测 `npm pack` 内容 | ✅ |
+| A10 | CI 增加 Windows job | ✅ |
+| A11 | 新增 e2e CLI 测试（含脱敏断言） | ✅ |
+| A12 | 坑表补 3 条真实故障 | ✅ |
 
 ---
 

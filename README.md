@@ -20,11 +20,15 @@ DSH's own docs say it plainly: a denied row becomes a detached `disabled: true` 
 
 ```
 $ dsh-triage why
-DENIED  dsh-web-search-pro@1.4.2
-        reason   @deepseek-ai/dsh-tools >=0.2.0-rc.2 <0.2.1-0  (your runtime: 0.2.1-rc.2)
-        effect   row dropped at admission → 6 tools missing from your model
-        fix      dsh plugin --profile web add dsh-web-search-pro@1.5.0
-                 or: dsh plugin --profile web allow-version dsh-web-search-pro@1.4.2 --dsh-version 0.2.1-rc.2 --accept-risk
+BLOCKED  dsh-web-search-pro@0.2.1 — 不可用
+  env      dsh 0.1.0-rc.6 · win32/x64 · profile web
+  reason   peer @deepseek-ai/dsh-tools@>=0.2.0-rc.2 <0.2.1-0 不含 0.1.0-rc.6
+  ...      9 more reason(s); pass --json for the full list
+  fix      [allow-version] 为这个精确版本对记录一次显式豁免 -> dsh plugin --profile web allow-version dsh-web-search-pro@0.2.1 --dsh-version 0.1.0-rc.6 --accept-risk
+  fix      [pin-version] 改装一个声明含 0.1.0-rc.6 的版本（profile: web）
+  fix      [probe] 豁免只绕过声明；行为仍未实测
+  fix      [upgrade-dsh] 升级 DSH：10 条要求需要更新的运行时（至少 0.2.0-rc.2，当前 0.1.0-rc.6）
+  evidence declared:admission, measured-local:runtime
 ```
 
 - **`why`** — attribute "disappeared tools / white screen / won't boot" to a specific row, with the fix command. Deterministic, offline, read-only.

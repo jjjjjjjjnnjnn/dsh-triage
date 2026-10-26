@@ -10,10 +10,11 @@
 | C2 | 四个包可构建（core/signals/probe/plugin） | `pnpm run build` |
 | C3 | 类型严格（strict + noUncheckedIndexedAccess + erasableSyntaxOnly） | `pnpm run typecheck` |
 | C4 | 单测与契约测试全绿 | `pnpm run test` |
-| C5 | 6 道门禁全绿 | `pnpm run gate` |
+| C5 | 7 道门禁全绿 | `pnpm run gate` |
 | C6 | **每道门禁都能 FAIL**（负对照） | `node scripts/gate.mjs --mutate` |
-| C7 | 真跑落盘 SSOT（本机 profile 扫描） | `node scripts/scan_env.mjs` |
+| C7 | 真跑落盘 SSOT（本机 profile 扫描，路径已脱敏） | `node scripts/scan_env.mjs` |
 | C8 | 治理台账机器可校验 | `tests/governance/ledgers.test.ts` |
+| C9 | 端到端 CLI 契约（无需真装 DSH） | `tests/e2e/cli.test.ts` |
 
 ## 2. 负对照设计（证明门不是装饰）
 

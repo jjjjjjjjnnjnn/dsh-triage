@@ -21,11 +21,11 @@
 
 ```
 $ dsh-triage why
-拒绝    dsh-web-search-pro@1.4.2
-       原因   @deepseek-ai/dsh-tools >=0.2.0-rc.2 <0.2.1-0（你的运行时：0.2.1-rc.2）
-       影响   admission 阶段整行被摘除 → 你的模型少了 6 个工具
-       修复   dsh plugin --profile web add dsh-web-search-pro@1.5.0
-              或：dsh plugin --profile web allow-version dsh-web-search-pro@1.4.2 --dsh-version 0.2.1-rc.2 --accept-risk
+拒绝    dsh-web-search-pro@0.2.1
+       原因   peer @deepseek-ai/dsh-tools@>=0.2.0-rc.2 <0.2.1-0 不含 0.1.0-rc.6
+       ...    还有 9 条原因；加 --json 看完整列表
+       修复   为这个精确版本对记录一次显式豁免 -> dsh plugin --profile web allow-version dsh-web-search-pro@0.2.1 --dsh-version 0.1.0-rc.6 --accept-risk
+              改装一个声明含 0.1.0-rc.6 的版本 / 升级 DSH
 ```
 
 - **`why`**：把「工具消失 / 白屏 / 起不来」定位到具体某一行，并给出可直接执行的修复命令。确定性、离线、只读。
@@ -58,7 +58,7 @@ packages/core      admission 语义 / 环境指纹 / 能力台账 / verdict（�
 packages/signals   npm registry · dsh.so · hub catalog · 本机工具产物（带证据等级）
 packages/probe     隔离实测计划与执行器（M3）
 packages/plugin    dsh-triage：profile bundle + patch + bin CLI + Web 面板（M4）
-scripts/           六道门禁 + 真跑落盘（零依赖，永远可跑）
+scripts/           七道门禁 + 真跑落盘（零依赖，永远可跑）
 data/gold          人工签署的金标夹具（admission 对等基准）
 data/results       SSOT：脚本产出 JSON + .sha256
 ```

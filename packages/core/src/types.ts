@@ -54,8 +54,12 @@ export interface Remediation {
   readonly kind: RemediationKind
   /** Exact command the user can copy, when one exists. */
   readonly command?: string
-  /** Why this remediation is suggested. Rendered verbatim. */
+  /** Machine-stable English summary (also the fallback when no catalogue id is set). */
   readonly note: string
+  /** Catalogue id for localized rendering; required for user-facing surfaces. */
+  readonly messageId?: string
+  /** Interpolation values for {@link messageId}. */
+  readonly params?: Readonly<Record<string, string | number>>
 }
 
 export interface Reason {

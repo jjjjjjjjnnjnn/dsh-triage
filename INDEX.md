@@ -9,7 +9,9 @@
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
 | **执行计划** | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 指标看板 + 分发时间线 + kill criteria |
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
-| **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 3 个模板 + 5 条硬性校验 |
+| **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
+| **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
+| **审核报告** | `audit/AUDIT_2026-10-26_R3.md` | 四轴 + 对抗性；14 项修复 + 4 项 blocked |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
 | 设计地图 | `docs/DESIGN-MAP.md` | 六层架构 / 门与证据矩阵 / 数据模型 / 分发位 |
@@ -28,7 +30,7 @@
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
 | 隔离实测 | `packages/probe/src/`（plan） | M3：默认 dry-run，独立 DSH_HOME |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
-| 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 6 门：admission 对等 / verdict 契约 / SSOT / 治理 / 命名 / 发布 |
+| 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 7 门：admission 对等 / verdict 契约 / SSOT / 治理 / 命名 / 发布 |
 | 真跑落盘 | `scripts/scan_env.mjs` | 扫本机 profile → `data/results/*.json` + `.sha256` |
 | 测试 | `tests/` | `node --test`（TS 直跑，零测试框架依赖） |
 | 金标 | `data/gold/admission-cases.json` | 真实 npm 声明快照 + 人工签署 |

@@ -28,6 +28,26 @@ jobs:
       - run: pnpm run test
       - run: pnpm run gate
 
+  # Windows is the primary developer platform for this project; path handling and
+  # `.gitignore`/line-ending bugs only show up here (see docs/HANDOFF.md pitfalls).
+  verify-windows:
+    name: verify (windows, node 24)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run gate
+
   negative-control:
     name: gates can fail
     runs-on: ubuntu-latest
@@ -63,4 +83,6 @@ jobs:
           node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: node scripts/gate_release_pack.mjs
       - run: node scripts/gate_release.mjs --publish

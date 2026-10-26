@@ -9,7 +9,7 @@
     "platform": "win32",
     "arch": "x64",
     "profile": "web",
-    "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+    "profileDir": "~\\profiles\\web",
     "bundles": [
       "@deepseek-ai/dsh-base",
       "@deepseek-ai/dsh-web-app"
@@ -43,7 +43,7 @@
         "platform": "win32",
         "arch": "x64",
         "profile": "web",
-        "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+        "profileDir": "~\\profiles\\web",
         "bundles": [
           "@deepseek-ai/dsh-base",
           "@deepseek-ai/dsh-web-app"
@@ -80,7 +80,7 @@
         {
           "code": "admission-declared-only",
           "severity": "info",
-          "messageId": "admission.admitted",
+          "messageId": "admission.declared-only",
           "params": {
             "runtime": "0.1.0-rc.6"
           }
@@ -98,7 +98,7 @@
         {
           "id": "runtime",
           "tier": "measured-local",
-          "source": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+          "source": "~\\profiles\\web",
           "method": "profile-scan",
           "at": "2026-10-26T00:00:00.000Z",
           "detail": "dsh 0.1.0-rc.6"
@@ -121,7 +121,7 @@
         "platform": "win32",
         "arch": "x64",
         "profile": "web",
-        "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+        "profileDir": "~\\profiles\\web",
         "bundles": [
           "@deepseek-ai/dsh-base",
           "@deepseek-ai/dsh-web-app"
@@ -158,7 +158,7 @@
         {
           "code": "admission-declared-only",
           "severity": "info",
-          "messageId": "admission.admitted",
+          "messageId": "admission.declared-only",
           "params": {
             "runtime": "0.1.0-rc.6"
           }
@@ -176,7 +176,7 @@
         {
           "id": "runtime",
           "tier": "measured-local",
-          "source": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+          "source": "~\\profiles\\web",
           "method": "profile-scan",
           "at": "2026-10-26T00:00:00.000Z",
           "detail": "dsh 0.1.0-rc.6"

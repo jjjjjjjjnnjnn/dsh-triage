@@ -1,4 +1,9 @@
 packages:
   - 'packages/*'
 
+# Mirror a DSH profile's install policy: peers are not auto-installed and peer
+# mismatches are warnings, not hard failures (see docs/07-environment.md).
+autoInstallPeers: false
+strictPeerDependencies: false
+
 onlyBuiltDependencies: []

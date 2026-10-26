@@ -112,8 +112,8 @@ export function readEnginesDsh(manifest: unknown): EnginesReading {
   return { kind: 'range', value: dsh }
 }
 
-/** Peer requirements that participate in admission, in stable key order. */
-export function readDshPeerRequirements(manifest: unknown): readonly Requirement[] {
+/** Peer package names that participate in admission, in stable key order. */
+function peerRequirements(manifest: unknown): readonly { key: string; range: string }[] {
   if (manifest === null || typeof manifest !== 'object') {
     return []
   }
@@ -121,18 +121,10 @@ export function readDshPeerRequirements(manifest: unknown): readonly Requirement
   if (peers === null || typeof peers !== 'object') {
     return []
   }
-  const entries = Object.entries(peers as Record<string, unknown>)
+  return Object.entries(peers as Record<string, unknown>)
     .filter(([key]) => isAdmissionPeer(key))
     .sort(([a], [b]) => a.localeCompare(b))
-  return entries.map(([key, value]) => {
-    const evaluated = evaluateRange(value, '0.0.0')
-    return {
-      key,
-      range: typeof value === 'string' ? value : String(value),
-      satisfied: evaluated.failure === null,
-      failure: evaluated.failure,
-    }
-  })
+    .map(([key, value]) => ({ key, range: typeof value === 'string' ? value : String(value) }))
 }
 
 /**
@@ -187,7 +179,7 @@ export function evaluateAdmission(manifest: unknown, runtime: string | null): Ad
     }
   }
 
-  const peerKeys = readDshPeerKeys(manifest)
+  const peerKeys = peerRequirements(manifest)
   if (peerKeys.length === 0) {
     return {
       status: 'unconstrained',
@@ -210,18 +202,4 @@ export function evaluateAdmission(manifest: unknown, runtime: string | null): Ad
     unmet,
     indeterminateReason: null,
   }
-}
-
-function readDshPeerKeys(manifest: unknown): readonly { key: string; range: string }[] {
-  if (manifest === null || typeof manifest !== 'object') {
-    return []
-  }
-  const peers = (manifest as { peerDependencies?: unknown }).peerDependencies
-  if (peers === null || typeof peers !== 'object') {
-    return []
-  }
-  return Object.entries(peers as Record<string, unknown>)
-    .filter(([key]) => isAdmissionPeer(key))
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => ({ key, range: typeof value === 'string' ? value : String(value) }))
 }

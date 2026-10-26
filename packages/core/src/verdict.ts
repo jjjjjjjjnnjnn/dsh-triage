@@ -71,7 +71,7 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
         { code: 'admission-indeterminate', severity: 'info', messageId: 'admission.indeterminate', params: { runtime } },
       ],
       evidence,
-      remediation: [{ kind: 'report', note: 'cannot resolve the DSH runtime version for this profile' }],
+      remediation: [{ kind: 'report', messageId: 'remediation.report', note: 'cannot resolve the DSH runtime version for this profile' }],
       missingEvidence: ['missing.runtime'],
       generatedAt,
     })
@@ -87,7 +87,7 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
         { code: 'admission-unconstrained', severity: 'warn', messageId: 'admission.unconstrained', params: { runtime } },
       ],
       evidence,
-      remediation: [{ kind: 'probe', note: 'declaration is absent; only an isolated probe can resolve behaviour' }],
+      remediation: [{ kind: 'probe', messageId: 'remediation.probe', note: 'declaration is absent; only an isolated probe can resolve behaviour' }],
       missingEvidence: ['missing.admission', 'missing.probe'],
       generatedAt,
     })
@@ -104,7 +104,7 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
         {
           code: 'admission-declared-only',
           severity: 'info',
-          messageId: 'admission.admitted',
+          messageId: 'admission.declared-only',
           params: { runtime },
         },
       ],
@@ -164,9 +164,15 @@ export function verdictsFromCollisions(input: CollisionVerdictInput): readonly V
       remediation: [
         {
           kind: 'disable-entry',
+          messageId: 'remediation.disable-entry',
+          params: { id: collision.id, owners: collision.owners.join(', ') },
           note: `set \`disabled: true\` on entry "${collision.id}" in the later patch layer, or remove one of: ${collision.owners.join(', ')} (definitions: ${collision.names.join(' vs ')})`,
         },
-        { kind: 'report', note: 'upstream boots fail outright on duplicate loader entry ids' },
+        {
+          kind: 'report',
+          messageId: 'remediation.report',
+          note: 'upstream boots fail outright on duplicate loader entry ids',
+        },
       ],
       missingEvidence: [],
       generatedAt: input.generatedAt,
@@ -222,11 +228,18 @@ export function renderVerdict(verdict: Verdict, locale: Locale): string {
     lines.push(`  reason   ${message(catalog, reason.messageId, reason.params)}`)
   }
   if (verdict.reasons.length > MAX_RENDERED_REASONS) {
-    lines.push(`  ...      ${verdict.reasons.length - MAX_RENDERED_REASONS} more reason(s); pass --json for the full list`)
+    lines.push(
+      `  ...      ${message(catalog, 'ui.more-reasons', { count: verdict.reasons.length - MAX_RENDERED_REASONS })}`,
+    )
   }
   for (const remediation of verdict.remediation) {
     const command = remediation.command === undefined ? '' : ` -> ${remediation.command}`
-    lines.push(`  fix      [${remediation.kind}] ${remediation.note}${command}`)
+    // Localized copy when available; the English `note` stays as machine-stable fallback.
+    const text =
+      remediation.messageId === undefined
+        ? remediation.note
+        : message(catalog, remediation.messageId, remediation.params)
+    lines.push(`  fix      [${remediation.kind}] ${text}${command}`)
   }
   for (const missing of verdict.missingEvidence) {
     lines.push(`  missing  ${message(catalog, missing)}`)
@@ -286,18 +299,32 @@ function remediationForDenial(
   const out: Remediation[] = []
 
   const malformed = unmet.filter((requirement) => requirement.failure !== null)
-  if (malformed.length > 0) {
-    out.push({
-      kind: 'pin-version',
-      note: `${malformed.length} declaration(s) are unusable (${[...new Set(malformed.map((r) => r.failure))].join(', ')}); pin an explicit version instead of relying on them`,
-    })
-  }
 
   const parsed = unmet
     .filter((requirement) => requirement.failure === null)
     .map((requirement) => ({ requirement, lower: minVersion(requirement.range, true) }))
   const newer = parsed.filter((entry) => entry.lower !== null && gt(entry.lower, runtime))
   const older = parsed.filter((entry) => entry.lower === null || !gt(entry.lower, runtime))
+
+  if (malformed.length > 0) {
+    out.push({
+      kind: 'pin-version',
+      messageId: 'remediation.pin-version-unusable',
+      params: {
+        count: malformed.length,
+        failures: [...new Set(malformed.map((r) => r.failure))].join(', '),
+        runtime,
+      },
+      note: `${malformed.length} declaration(s) are unusable (${[...new Set(malformed.map((r) => r.failure))].join(', ')}); install a build that declares a range including ${runtime}`,
+    })
+  } else {
+    out.push({
+      kind: 'pin-version',
+      messageId: 'remediation.pin-version',
+      params: { runtime, profile },
+      note: `install a plugin build whose declarations include ${runtime} (profile: ${profile})`,
+    })
+  }
 
   if (newer.length > 0) {
     const highest = newer
@@ -306,26 +333,31 @@ function remediationForDenial(
       .sort((a, b) => (gt(a, b) ? -1 : 1))[0]
     out.push({
       kind: 'upgrade-dsh',
+      messageId: 'remediation.upgrade-dsh',
+      params: { count: newer.length, runtime, highest: highest?.version ?? 'unknown' },
       note: `${newer.length} requirement(s) need a newer DSH (highest lower bound: ${highest?.version ?? 'unknown'}); this profile runs ${runtime}`,
     })
   }
   if (older.length > 0) {
     out.push({
       kind: 'downgrade-dsh',
+      messageId: 'remediation.downgrade-dsh',
+      params: { count: older.length, runtime },
       note: `${older.length} requirement(s) exclude ${runtime}; either upgrade the plugin or stay on a runtime it declares`,
     })
   }
 
   out.push({
-    kind: 'pin-version',
-    note: `install a plugin build whose declarations include ${runtime} (profile: ${profile})`,
-  })
-  out.push({
     kind: 'allow-version',
     command: allowVersionCommand(subject, runtime, profile),
+    messageId: 'remediation.allow-version',
     note: 'explicit exemption for this exact plugin version and runtime version',
   })
-  out.push({ kind: 'probe', note: 'an exemption bypasses the declaration only; behaviour is still unproven' })
+  out.push({
+    kind: 'probe',
+    messageId: 'remediation.probe',
+    note: 'an exemption bypasses the declaration only; behaviour is still unproven',
+  })
   return out
 }
 

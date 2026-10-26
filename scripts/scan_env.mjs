@@ -29,9 +29,13 @@ const dshHome = argOf('--dsh-home', process.env.DSH_HOME ?? join(process.env.USE
 
 const core = await import(fileUrl('packages/core/dist/index.js'))
 const plugin = await import(fileUrl('packages/plugin/dist/load.js'))
+const { homedir } = await import('node:os')
 
 const env = await core.loadEnv({ dshHome, profile })
 mkdirSync(abs('data/results'), { recursive: true })
+
+/** Everything written to disk is redacted: `data/results` may be published. */
+const redactRoots = [homedir(), dshHome]
 
 if (!env.ok) {
   const payload = {
@@ -40,8 +44,8 @@ if (!env.ok) {
     generated_at: stamp,
     status: 'skipped',
     reason: env.error.code,
-    detail: env.error.detail,
-    dsh_home: dshHome,
+    detail: core.redactPath(env.error.detail, redactRoots),
+    dsh_home: core.redactPath(dshHome, redactRoots),
     profile,
     verdicts: [],
   }
@@ -50,8 +54,10 @@ if (!env.ok) {
   process.exit(0)
 }
 
-const fingerprint = env.value
-const composition = await plugin.loadComposition(fingerprint, dshHome)
+// IO uses the real paths; only the serialized fingerprint is redacted.
+const realEnv = env.value
+const fingerprint = core.redactEnv(realEnv, redactRoots)
+const composition = await plugin.loadComposition(realEnv, dshHome)
 
 const claims = []
 for (const layer of composition.layers) {
@@ -74,7 +80,7 @@ const verdicts = composition.layers.map((layer) =>
   core.verdictFromAdmission({
     subject: { name: layer.name, version: layer.version, kind: 'plugin' },
     env: fingerprint,
-    admission: core.evaluateAdmission(layer.manifest, fingerprint.dsh),
+    admission: core.evaluateAdmission(layer.manifest, realEnv.dsh),
     generatedAt: stamp,
   }),
 )
@@ -95,7 +101,7 @@ writeResult(
     generated_at: stamp,
     status: 'ok',
     env: fingerprint,
-    verdicts,
+    verdicts: verdicts.map((verdict) => core.redactVerdict(verdict, redactRoots)),
     collisions,
     summary,
     scanned: { bundles: composition.layers.length, entries: claims.length },

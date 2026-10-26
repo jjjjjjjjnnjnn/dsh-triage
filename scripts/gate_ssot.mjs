@@ -8,7 +8,7 @@
  * Negative control: `--mutate` corrupts the hash of the first result.
  */
 
-import { listDir, readText, runGate, sha256 } from './lib/kit.mjs'
+import { exists, listDir, readText, runGate, sha256 } from './lib/kit.mjs'
 
 await runGate('ssot', async ({ checks, mutate }) => {
   const entries = listDir('data/results').filter((entry) => entry.isFile && entry.name.endsWith('.json'))
@@ -35,6 +35,13 @@ await runGate('ssot', async ({ checks, mutate }) => {
       `fields:${entry.name}`,
       structural,
       structural ? `${payload.produced_by} @ ${payload.generated_at}` : 'need produced_by(scripts/…), generated_at ISO, schema_version 1',
+    )
+
+    // The producer must actually exist — otherwise the file is unattributable.
+    checks.add(
+      `producer:${entry.name}`,
+      typeof payload.produced_by === 'string' && exists(payload.produced_by),
+      String(payload.produced_by ?? ''),
     )
 
     const hashPath = `${path}.sha256`

@@ -23,7 +23,7 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
   - 失败分类 → `docs/03-failure-taxonomy.md`
   - 信号与许可 → `docs/02-signal-sources.md` + `quarantine/vendor-manifest.json`
   - 工程约定 → `docs/08-conventions.md`
-- **当前状态**：M0 完成（骨架 + 6 门 + 引擎 + CLI 基础版），M1 进行中（admission 对等已由金标锁定）。
+- **当前状态**：M0 完成（骨架 + 7 门 + 引擎 + CLI 基础版），M1 进行中（admission 对等已由金标锁定）。
 
 ## 3. 防幻觉规则（本仓特有）
 
