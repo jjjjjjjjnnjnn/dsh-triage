@@ -29,9 +29,9 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 8/8）· `release readiness`（tag 触发） |
 | 规模 | **62 测试** · **8 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **D1 通过**：+6 例（CASE-10201/10759/10364/8751/8220 命中，CASE-7590 为负样本）；**新增 `scripts/d1_report.mjs`**（命中率→可重算产物，含 `label_key_sources` 证据分层）；+5 契约测试；3 条新盲区（BS-10/11/12）；纠正 R5 对 #10364 的过强判断 |
-| 证据 | `data/results/d1-2026-10-26T12-00-00.000Z.json`（`gate.passed=true`，9/10）· `why-case-CASE-{10201,10759,10364,8751,8220,7590}-2026-10-26T12-00-00.000Z.json`（5 hit / 1 miss）· `gates-*.json`（8 门全绿）· `gates-mutate-*.json`（8/8 CAUGHT） |
-| 审核报告 | `audit/AUDIT_2026-10-26_R6.md`（本轮）· `AUDIT_2026-10-26_R5.md` · `R4` · `R3` |
+| 本轮交付 | **D1 通过**：+6 例（CASE-10201/10759/10364/8751/8220 命中，CASE-7590 为负样本）；**新增 `scripts/d1_report.mjs`**（命中率→可重算产物，含 `label_key_sources` 证据分层）；+5 契约测试；5 条新盲区（BS-10…BS-14）；纠正 R5 对 #10364 的过强判断；**独立对抗性复核后当场修 3 项**（CASE-11080 重放、`dsh.compatibility` 措辞、2 例来源字段） |
+| 证据 | `data/results/d1-2026-10-26T12-00-00.000Z.json`（`gate.passed=true`，9/10）· `why-case-CASE-{10201,10759,10364,8751,8220,7590,11080}-2026-10-26T12-00-00.000Z.json`（6 hit / 1 miss）· `gates-*.json`（8 门全绿）· `gates-mutate-*.json`（8/8 CAUGHT）；共 17 个产物、20 个已审步骤 |
+| 审核报告 | `audit/AUDIT_2026-10-26_R6.md`（本轮；§10 = 独立上下文复核）· `AUDIT_2026-10-26_R5.md` · `R4` · `R3` |
 | 未通过的门槛 | 无（D1 本轮通过；D2–D4 尚未到点） |
 
 ---
@@ -114,18 +114,21 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 代码约定 | `docs/08-conventions.md` |
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
-| 本轮审核结论 | `audit/AUDIT_2026-10-26_R4.md`（R4）· `audit/AUDIT_2026-10-26_R3.md`（R3） |
+| 本轮审核结论 | `audit/AUDIT_2026-10-26_R6.md`（R6，含 §10 独立复核）· `AUDIT_2026-10-26_R5.md` · `R4` · `R3` |
 | 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256） |
 
 ---
 
-## 8. 已知 blocked（带 owner + 退出条件）
+## 8. 仍未解除的项（带 owner + 退出条件）
+
+> **D1 已于 R6 通过**（9/10，`data/results/d1-2026-10-26T12-00-00.000Z.json`），因此下表不含 D1；但 D1 的标签目前是**实现方自证**（`BS-14` / T-111），对外口径只能是「机器可复算的命中率」。
 
 | 项 | owner | 退出条件 |
 |---|---|---|
-| **D1 已通过**（9/10，R6） | — | 已完成；阈值未放宽（≥8/10），1 个 miss 如实保留（CASE-7590） |
 | `T-107` 无声明行静默（`BS-10`）：不声明任何 dsh peer 的行一行结论都不出 | implementer | 行级产出 `unknown` + `missingEvidence`，并有「静默即红」的负对照测试 |
+| `T-108` 未读的声明通道（`BS-13`）：`dsh.compatibility` / `dshReleases` | implementer | 读成次要证据并与 peer 结论分列；tier 不得越级 |
 | `T-109` npm dist-tag 失步（`dsh-tools` latest=0.0.1-rc.1，而已发布 0.2.1-rc.x） | implementer | `check --explain` 显示 latest / next / 已发布最新 三者差异，tier 不得越级 |
+| `T-111` label 自证（`BS-14`）：9 个命中无独立签署 | verifier + implementer | R7 起新案例由独立上下文签署 `label_verified_by` |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
 | 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public`（建议等 D2 后再定） |
 | 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe |

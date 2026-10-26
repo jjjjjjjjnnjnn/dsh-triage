@@ -47,7 +47,7 @@
     "requirement_key_source": "derived-from-reported-manifest"
   },
   "deviations": [
-    "the report does not print the requirement map; the key used here (@deepseek-ai/dsh-agent) is the first @deepseek-ai/dsh* peer of dsh-tools@0.0.1-rc.1 in stable key order, and all nine of its peers are pinned to ^0.0.1-rc.1, so every one of them is unmet against 0.2.1-rc.2 — see plugin-dsh-tools.json",
+    "the report does not print the requirement map; the key used here (@deepseek-ai/dsh-agent) is the first @deepseek-ai/dsh* peer of dsh-tools@0.0.1-rc.1 in stable key order, and all eight of its @deepseek-ai/dsh* peers are pinned to ^0.0.1-rc.1, so every one of them is unmet against 0.2.1-rc.2 — see plugin-dsh-tools.json (its ninth peer, @deepseek-ai/cordis, is not part of admission by project rule)",
     "the `tools` row belongs to the in-box base bundle; it is re-mounted in the profile patch layer so the case stays a one-row reconstruction",
     "bundles omitted: dsh-base / dsh-web-app are left out to keep the composition minimal",
     "dsh-pdf@0.1.0 is materialised as the declaring manifest (its dependencies are what put the copy in place), but only the copy it hoists is what the verdict reads",

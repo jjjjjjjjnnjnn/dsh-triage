@@ -27,7 +27,7 @@
     {
       "id": "CASE-10201",
       "artifact": "data/results/why-case-CASE-10201-2026-10-26T12-00-00.000Z.json",
-      "artifact_sha256": "4e1801125aabffccf0df34c64077ddb07ba5c380cb167d860568fc345657f9ee",
+      "artifact_sha256": "849229845408ec285caf7c86404b434e94ae8147aa725e11b75b908ec244a343",
       "generated_at": "2026-10-26T12:00:00.000Z",
       "mode": "candidate",
       "verdict": "hit",
@@ -44,7 +44,7 @@
     {
       "id": "CASE-10364",
       "artifact": "data/results/why-case-CASE-10364-2026-10-26T12-00-00.000Z.json",
-      "artifact_sha256": "73063a8c2806d9a7c18c09efb801d8f6e3e44b44a1c66ceb308fac7600168eaa",
+      "artifact_sha256": "5e6e9caae575bb13273a1e4de80b811a315cfa366e1f12ff60183a45a534f565",
       "generated_at": "2026-10-26T12:00:00.000Z",
       "mode": "profile",
       "verdict": "hit",
@@ -62,7 +62,7 @@
     {
       "id": "CASE-10759",
       "artifact": "data/results/why-case-CASE-10759-2026-10-26T12-00-00.000Z.json",
-      "artifact_sha256": "4b1a3d446fd897681f8dd2ecb8030f8861edcaeb8141aa1761830a36ce199132",
+      "artifact_sha256": "6f5f0621ef90c17cd343d394bc37f70591b20d58693f2dd442822db8f3fb0b63",
       "generated_at": "2026-10-26T12:00:00.000Z",
       "mode": "profile",
       "verdict": "hit",
@@ -112,10 +112,10 @@
     },
     {
       "id": "CASE-11080",
-      "artifact": "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json",
-      "artifact_sha256": "19f52276eecacacfa0f3b4b30adb4dbeaf083099941c6a62c0c9cf39c53ed3a6",
-      "generated_at": "2026-10-26T00:00:00.000Z",
-      "mode": "",
+      "artifact": "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "72d66bf28274a3468d11b62076d66e59ba4bf1b80cb3d8d2329e5fed7f5cb51a",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "profile",
       "verdict": "hit",
       "label": {
         "kind": "row-admission",
@@ -125,12 +125,12 @@
         "requirement_key": "@deepseek-ai/dsh-llm"
       },
       "matched_module": "@deepseek-ai/dsh-hooks-claude-code",
-      "why": "the labelled row is named and the labelled requirement is the one that failed"
+      "why": "the labelled target is named and the labelled requirement is the one that failed"
     },
     {
       "id": "CASE-7590",
       "artifact": "data/results/why-case-CASE-7590-2026-10-26T12-00-00.000Z.json",
-      "artifact_sha256": "19f599c84f624d3d25765ecfc75025a03abc57278e80193ba1c6c01e7c5796f8",
+      "artifact_sha256": "8bf3bf66b636e816b812c662da21ebb4e2630c19b47bb5d7e007584b474f90b3",
       "generated_at": "2026-10-26T12:00:00.000Z",
       "mode": "profile",
       "verdict": "miss",
@@ -198,5 +198,7 @@
       "why": "the labelled target is named and the labelled requirement is the one that failed"
     }
   ],
-  "superseded": []
+  "superseded": [
+    "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json"
+  ]
 }

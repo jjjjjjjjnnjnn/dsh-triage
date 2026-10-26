@@ -86,6 +86,20 @@
       "cannot_see": "命中判据含 requirement_key，而报告常把 requirement map 省略成 `{...}`：10 例里 2 例的 key 由报告点名的那份真 manifest 推导，4 例早于该字段。因此「hit」不等于「报告逐字给出了这个 key」",
       "mitigation": "D1 产物强制输出 label_key_sources（report-explicit / derived-from-reported-manifest / unstated），并对 derived 情形要求「同一 failure 家族的全部 peer 都失败」才允许据此判定；AUDIT 每轮复述该分层",
       "owner": "process/verifier"
+    },
+    {
+      "id": "BS-13",
+      "area": "admission-parity",
+      "cannot_see": "admission 只读 peerDependencies / engines.dsh（这是与上游对等的口径），但插件还可能声明 dsh.compatibility.dsh 与 dshReleases（CASE-7590 的 @xmanrui/dsh-im 就写了 0.1.7-alpha.1 / compatible）。这类声明我们完全没读，于是「插件什么都没声明」的说法在数据上是错的",
+      "mitigation": "T-108：把 dsh.compatibility / dshReleases 读成次要证据（tier 不得越级、不得单独判 blocked），在 verdict 里与 peer 结论分列；未读之前，文案只能说「未声明 @deepseek-ai/dsh* peer」，不能说「未声明任何兼容信息」",
+      "owner": "core/admission"
+    },
+    {
+      "id": "BS-14",
+      "area": "process/evidence",
+      "cannot_see": "D1 的 10 个 label 由实现方自己写、自己匹配、自己审计：机器能校验的是「label 与 verdict 一致」，不是「label 与真实根因一致」。ROADMAP 的 D1 原话是「人工标注 10 例」，目前没有独立签署",
+      "mitigation": "T-111：独立 verifier 只凭 case.json + 输入 manifest 复核并签署 label_verified_by；R7 起新案例先签后跑。在此之前对外只能说「机器可复算的命中率」，不能说「人工标注验收通过」",
+      "owner": "process/verifier"
     }
   ]
 }

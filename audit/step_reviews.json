@@ -276,8 +276,8 @@
       "real_test": {
         "command": "node scripts/record_case.mjs --case CASE-10201 --stamp 2026-10-26T12:00:00.000Z",
         "artifact": "data/results/why-case-CASE-10201-2026-10-26T12-00-00.000Z.json",
-        "sha256": "4e1801125aabffccf0df34c64077ddb07ba5c380cb167d860568fc345657f9ee",
-        "outcome": "hit：blocked，点名 hooks-claude-code@0.0.1-rc.5 与 8 条 unmet peer（含 dsh-agent）"
+        "sha256": "849229845408ec285caf7c86404b434e94ae8147aa725e11b75b908ec244a343",
+        "outcome": "hit：blocked，点名 hooks-claude-code@0.0.1-rc.5 与 8 条 unmet peer（含 dsh-agent）；来源方的日期/作者已按页面 UTC 时间与作者名修正"
       }
     },
     {
@@ -301,8 +301,8 @@
       "real_test": {
         "command": "node scripts/record_case.mjs --case CASE-10759 --stamp 2026-10-26T12:00:00.000Z",
         "artifact": "data/results/why-case-CASE-10759-2026-10-26T12-00-00.000Z.json",
-        "sha256": "4b1a3d446fd897681f8dd2ecb8030f8861edcaeb8141aa1761830a36ce199132",
-        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.2.0-rc.2 + dsh-agent 精确钉定"
+        "sha256": "6f5f0621ef90c17cd343d394bc37f70591b20d58693f2dd442822db8f3fb0b63",
+        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.2.0-rc.2 + dsh-agent 精确钉定；作者由页面补全为 WhichWitchWin"
       }
     },
     {
@@ -376,8 +376,8 @@
       "real_test": {
         "command": "node scripts/record_case.mjs --case CASE-10364 --stamp 2026-10-26T12:00:00.000Z",
         "artifact": "data/results/why-case-CASE-10364-2026-10-26T12-00-00.000Z.json",
-        "sha256": "73063a8c2806d9a7c18c09efb801d8f6e3e44b44a1c66ceb308fac7600168eaa",
-        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.0.1-rc.1 + dsh-agent ^0.0.1-rc.1"
+        "sha256": "5e6e9caae575bb13273a1e4de80b811a315cfa366e1f12ff60183a45a534f565",
+        "outcome": "hit：blocked，点名 tools 行 + dsh-tools@0.0.1-rc.1 + dsh-agent ^0.0.1-rc.1；已修正「九个 peer 全部 ^0.0.1-rc.1」的口径（cordis 不参与 admission）"
       }
     },
     {
@@ -402,8 +402,8 @@
       "real_test": {
         "command": "node scripts/record_case.mjs --case CASE-7590 --stamp 2026-10-26T12:00:00.000Z",
         "artifact": "data/results/why-case-CASE-7590-2026-10-26T12-00-00.000Z.json",
-        "sha256": "19f599c84f624d3d25765ecfc75025a03abc57278e80193ba1c6c01e7c5796f8",
-        "outcome": "miss：0 条结论、2 行被扫描 → 记录为「声明层无信息 + 运行期失败」的负样本"
+        "sha256": "8bf3bf66b636e816b812c662da21ebb4e2630c19b47bb5d7e007584b474f90b3",
+        "outcome": "miss：0 条结论、2 行被扫描；已纠正「什么都不声明」的措辞（dsh-im 带 dsh.compatibility 通道，我们尚未读）"
       }
     },
     {
@@ -424,8 +424,8 @@
       "real_test": {
         "command": "node scripts/d1_report.mjs --stamp 2026-10-26T12:00:00.000Z",
         "artifact": "data/results/d1-2026-10-26T12-00-00.000Z.json",
-        "sha256": "707d2a636a0841a70b91682d52fc326e9b588addf658fb6b0e72c22278ba85f9",
-        "outcome": "PASSED：9/10 hit，key sources {derived:2, report-explicit:4, unstated:4}"
+        "sha256": "b998b7cc95b04be87e59332ec031da1fe2fab34430a63aa44e6476edaa7d27f8",
+        "outcome": "PASSED：9/10 hit，key sources {derived:2, report-explicit:4, unstated:4}；含 CASE-11080 的 R6 重放产物"
       }
     },
     {
@@ -470,6 +470,28 @@
         "artifact": "data/results/gates-mutate-2026-10-26T12-00-00.000Z.json",
         "sha256": "75be9e5eafdd479963679d94a241004637f772798f3d059cc98e989e2cf78007",
         "outcome": "NEGATIVE CONTROL PASSED · 8/8 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R6-S10",
+      "batch": "R6",
+      "step": "CASE-11080 用当前脚本重放（旧产物来自已不存在的脚本版本），让 10/10 案例在同一版本下可复算",
+      "changed": [
+        "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json",
+        "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：重放结论与 R4 历史产物一致（blocked / hooks-claude-code 行 / admission-denied-peer），差异只在产物 schema 字段（mode、脱敏后的 profileDir、why 文案）",
+        "reproducibility": "PASS：R6 产物由当前 record_case 生成，同 stamp 重跑逐字节一致；R4 产物保留原样（禁改历史），仍被 R4 步骤引用",
+        "licence": "PASS：输入未变（CASE-11080 的 manifest 与重建层不变），仅重跑；未引入新数据源",
+        "ssot": "PASS：d1_report 按 newest generated_at 取用 R6 产物，R4 产物进入 superseded 列表——两代产物都可见，不静默覆盖",
+        "adversary": "反例：若重放变成 miss，则说明引擎在 R5/R6 之间被改坏；实际仍 hit，证明 R4 的命中可被当前代码复现（此前 10 例里只有 9 例能重放）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-11080 --stamp 2026-10-26T12:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json",
+        "sha256": "72d66bf28274a3468d11b62076d66e59ba4bf1b80cb3d8d2329e5fed7f5cb51a",
+        "outcome": "hit：blocked，与 R4 产物同一根因（行级 admission 拒绝），产物 schema 已跟上当前脚本"
       }
     }
   ]

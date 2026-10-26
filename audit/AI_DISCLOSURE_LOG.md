@@ -56,7 +56,8 @@
 - 取证：6 篇上游 Discussions（作者/日期/正文逐条抄进 `case.json#source`、`#reported`），其中 #10364 的回复是源码级定位（profile-resolution 优先级），用于纠正 R5 的过强判断
 - 结果：**D1 通过 9/10**（`gate.passed=true`，`hit_rate=0.9`）；1 个 miss 是**有意保留**的负样本（CASE-7590：两个插件不声明任何 peer，失败在运行期 API 漂移）
 - 人工决策：HUMAN 选择「按 6 例方案推进」「D1 若 7/10 则如实报不达标并回退 F2/F3」「签字项由 agent 按项目状态自行裁定」；据此裁定：**本轮不授权 T-103 金标扩容（冻结区）与 T-110 双 roadmap 合并**，npm 占位发布 / 仓库转 public 留给 HUMAN 且不阻塞 D1
-- 审核：`audit/AUDIT_2026-10-26_R6.md`（5 项发现 + 6 条风险登记 + 6 向对抗性反例）；证据强度分层 `label_key_sources` 进产物（report-explicit 4 / derived 2 / unstated 4）
+- 审核：`audit/AUDIT_2026-10-26_R6.md`（5 项发现 + 8 条风险登记 + 6 向对抗性反例）；证据强度分层 `label_key_sources` 进产物（report-explicit 4 / derived 2 / unstated 4）
+- 独立复核：另起只读、不看实现的 adversary 会话逐字节重放全部产物 → **CONFIRMED**；当场修 3 项（CASE-11080 旧产物不可重放 → 用当前脚本重放并保留旧产物；「dsh-im 什么都不声明」过强 → 补 `BS-13`/T-108；2 例日期 + 1 例作者名）；结构性限制登记为 `BS-14`/T-111（label 目前自证），对外口径改为「机器可复算的命中率」
 - 门禁：`verify` 62 测试 / 8 门全绿；`--mutate` 8/8 CAUGHT；`audit/step_reviews.json` 共 19 步
 - SessionID：待 HUMAN 回填
 - 备注：不得把「9/10」写成「归因已完全成立」——miss 揭示的是声明层的信息上限；T-107（无声明行不得静默）与 T-109（dist-tag 失步信号）是它直接产出的需求

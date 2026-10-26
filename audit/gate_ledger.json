@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R5 (2026-10-26)",
+  "stand": "R6 (2026-10-26)",
   "rules": {
     "registration": "scripts/ 下每个 gate_*.mjs 必须在此登记；反之此表里的 script 必须存在（gate_governance 校验）",
     "negative_control": "每道门单独跑 --mutate 必须 exit 1；套件 node scripts/gate.mjs --mutate 只在全部 CAUGHT 时 exit 0（有 MISSED 即 exit 1）",
