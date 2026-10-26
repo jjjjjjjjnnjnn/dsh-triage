@@ -72,6 +72,22 @@ export function sha256(content) {
   return createHash('sha256').update(content).digest('hex')
 }
 
+/**
+ * Validate a `--stamp` value before it reaches `generated_at`.
+ *
+ * WHY: the stamp is hashed into every SSOT artifact, so an accidental
+ * filename-style stamp (`2026-10-26T00-00-00.000Z`, which `Date.parse` also
+ * accepts loosely) silently produces an artifact that no longer reproduces the
+ * committed hash. Real incident: `record_case.mjs --stamp 2026-10-26T00-00-00.000Z`
+ * rewrote a case result with a different sha. Fail loudly instead.
+ */
+export function isoStamp(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value)) {
+    return null
+  }
+  return Number.isNaN(Date.parse(value)) ? null : value
+}
+
 export function relFromRoot(absolutePath) {
   return relative(repoRoot(), absolutePath).replaceAll('\\', '/')
 }

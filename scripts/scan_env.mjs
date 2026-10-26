@@ -15,7 +15,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { abs, fileUrl, repoRoot, sha256 } from './lib/kit.mjs'
+import { abs, fileUrl, isoStamp, repoRoot, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -23,7 +23,12 @@ const argOf = (name, fallback) => {
   return index === -1 ? fallback : (argv[index + 1] ?? fallback)
 }
 
-const stamp = argOf('--stamp', new Date().toISOString())
+const rawStamp = argOf('--stamp', new Date().toISOString())
+const stamp = isoStamp(rawStamp)
+if (stamp === null) {
+  process.stderr.write(`invalid --stamp "${rawStamp}": expected ISO-8601, e.g. 2026-10-26T00:00:00.000Z\n`)
+  process.exit(2)
+}
 const profile = argOf('--profile', 'web')
 const dshHome = argOf('--dsh-home', process.env.DSH_HOME ?? join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.dsh'))
 

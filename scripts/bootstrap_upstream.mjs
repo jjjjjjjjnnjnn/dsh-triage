@@ -27,7 +27,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { abs, sha256 } from './lib/kit.mjs'
+import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -36,10 +36,16 @@ const argOf = (name, fallback) => {
 }
 
 const version = argOf('--version', '0.2.1-rc.2')
-const stamp = argOf('--stamp', new Date().toISOString())
+const rawStamp = argOf('--stamp', new Date().toISOString())
+const stamp = isoStamp(rawStamp)
 const profile = argOf('--profile', 'upstream')
 const dryRun = argv.includes('--dry-run')
 const force = argv.includes('--force')
+
+if (stamp === null) {
+  process.stderr.write(`invalid --stamp "${rawStamp}": expected ISO-8601, e.g. 2026-10-26T00:00:00.000Z\n`)
+  process.exit(2)
+}
 
 const sandbox = join(tmpdir(), 'dsh-triage-env', version)
 const installDir = join(sandbox, 'install')

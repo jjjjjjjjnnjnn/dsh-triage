@@ -137,6 +137,31 @@
         "sha256": "0474a7b739f96fbcae190d723761a68abb7d875a7943b847c9c9e055b90cb109",
         "outcome": "ok：8 门在 --mutate 下全部 CAUGHT（含本门），产物记录每门 id/exitCode/ok，不含耗时以保证可重算"
       }
+    },
+    {
+      "id": "R4-S6",
+      "batch": "R4",
+      "step": "`--stamp` 必须是 ISO-8601：拒绝「文件名字符串当时间戳」，因为时间戳会被哈希进 SSOT",
+      "changed": [
+        "scripts/lib/kit.mjs",
+        "scripts/record_case.mjs",
+        "scripts/scan_env.mjs",
+        "scripts/bootstrap_upstream.mjs",
+        "scripts/gate.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`isoStamp()` 用正则 + Date.parse 双重校验；四个入口（record_case / scan_env / bootstrap_upstream / gate --record）统一在落盘前拒绝并 exit 2",
+        "reproducibility": "PASS：用正确 stamp 重跑 record_case，产物 sha256 回到 19f52276eeca…（与本轮已提交版本逐字节一致），`git status` 对该文件为空 —— 这就是「同输入同输出」的实证",
+        "licence": "PASS：只改校验函数，无新依赖、无新数据源",
+        "ssot": "PASS：校验发生在任何写入之前，因此非法调用不会产生半成品产物；既有 4 个产物未受影响，gate ssot / step-review 仍绿",
+        "adversary": "反例构造：(1) 用 `2026-10-26T00-00-00.000Z`（Date.parse 宽松接受）→ 被正则挡下，exit 2；(2) `--stamp ''` → 同样 exit 2；(3) 不带 `--stamp` → 回落当前时间（默认行为，不是漏洞，但意味着默认产物不可复算，故 SSOT 记录里必须写 `--stamp`）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-11080 --stamp 2026-10-26T00-00-00.000Z  (expect exit 2) ; node scripts/record_case.mjs --case CASE-11080 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json",
+        "sha256": "19f52276eecacacfa0f3b4b30adb4dbeaf083099941c6a62c0c9cf39c53ed3a6",
+        "outcome": "非法 stamp 被拒（exit 2，未写文件）；正确 stamp 复现字节一致（sha256 19f52276eeca…）"
+      }
     }
   ]
 }

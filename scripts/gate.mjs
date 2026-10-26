@@ -14,7 +14,7 @@
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { abs, readJson, repoRoot, sha256 } from './lib/kit.mjs'
+import { abs, isoStamp, readJson, repoRoot, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
 const fast = argv.includes('--fast')
@@ -22,7 +22,12 @@ const mutate = argv.includes('--mutate')
 const json = argv.includes('--json')
 const record = argv.includes('--record')
 const stampIndex = argv.indexOf('--stamp')
-const stamp = stampIndex === -1 ? new Date().toISOString() : (argv[stampIndex + 1] ?? new Date().toISOString())
+const rawStamp = stampIndex === -1 ? new Date().toISOString() : (argv[stampIndex + 1] ?? new Date().toISOString())
+const stamp = isoStamp(rawStamp)
+if (stamp === null) {
+  process.stderr.write(`invalid --stamp "${rawStamp}": expected ISO-8601, e.g. 2026-10-26T00:00:00.000Z\n`)
+  process.exit(2)
+}
 
 const ledger = readJson('audit/gate_ledger.json')
 const gates = (ledger.gates ?? []).filter((gate) => !(fast && gate.requires_build))

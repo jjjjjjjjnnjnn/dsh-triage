@@ -23,7 +23,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { abs, fileUrl, sha256 } from './lib/kit.mjs'
+import { abs, fileUrl, isoStamp, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -32,11 +32,16 @@ const argOf = (name, fallback) => {
 }
 
 const caseId = argOf('--case', null)
-const stamp = argOf('--stamp', new Date().toISOString())
+const rawStamp = argOf('--stamp', new Date().toISOString())
+const stamp = isoStamp(rawStamp)
 const keepSandbox = argv.includes('--keep')
 
 if (caseId === null || caseId.trim() === '') {
   process.stderr.write('usage: node scripts/record_case.mjs --case <ID> [--stamp <iso>] [--keep]\n')
+  process.exit(2)
+}
+if (stamp === null) {
+  process.stderr.write(`invalid --stamp "${rawStamp}": expected ISO-8601, e.g. 2026-10-26T00:00:00.000Z\n`)
   process.exit(2)
 }
 
