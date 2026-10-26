@@ -12,12 +12,17 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { readJson, repoRoot } from './lib/kit.mjs'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { abs, readJson, repoRoot, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
 const fast = argv.includes('--fast')
 const mutate = argv.includes('--mutate')
 const json = argv.includes('--json')
+const record = argv.includes('--record')
+const stampIndex = argv.indexOf('--stamp')
+const stamp = stampIndex === -1 ? new Date().toISOString() : (argv[stampIndex + 1] ?? new Date().toISOString())
 
 const ledger = readJson('audit/gate_ledger.json')
 const gates = (ledger.gates ?? []).filter((gate) => !(fast && gate.requires_build))
@@ -69,6 +74,33 @@ if (json) {
   )
 } else {
   process.stdout.write(`\n${failed.length === 0 ? 'ALL GREEN' : `${failed.length} GATE(S) FAILED`} · ${gates.length} gates\n`)
+}
+
+if (record) {
+  // A gate run is itself evidence: `audit/step_reviews.json` cites this file, so
+  // the claim "the suite was green" is recomputable instead of a pasted log.
+  // Durations are deliberately excluded — including them would make the artifact
+  // unreproducible, which is exactly the failure mode this project forbids.
+  const payload = {
+    schema_version: 1,
+    produced_by: 'scripts/gate.mjs',
+    generated_at: stamp,
+    mode: mutate ? 'mutate' : 'normal',
+    fast,
+    ok: failed.length === 0,
+    gates: results.map((result) => ({
+      id: result.id,
+      script: result.script,
+      exitCode: result.exitCode,
+      ok: result.ok,
+    })),
+  }
+  const text = `${JSON.stringify(payload, null, 2)}\n`
+  mkdirSync(abs('data/results'), { recursive: true })
+  const name = `gates-${mutate ? 'mutate-' : ''}${stamp.replaceAll(':', '-')}.json`
+  writeFileSync(abs(join('data/results', name)), text, 'utf8')
+  writeFileSync(abs(join('data/results', `${name}.sha256`)), sha256(text), 'utf8')
+  process.stdout.write(`ssot data/results/${name} sha256=${sha256(text).slice(0, 12)}…\n`)
 }
 process.exitCode = failed.length === 0 ? 0 : 1
 

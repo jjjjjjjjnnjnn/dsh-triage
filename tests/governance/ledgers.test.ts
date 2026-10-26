@@ -23,6 +23,32 @@ test('every gate declares a negative control', () => {
   }
 })
 
+test('every finished step is reviewed on five axes with a recomputable artifact', () => {
+  const payload = readJson('audit/step_reviews.json') as {
+    steps: {
+      id: string
+      changed: string[]
+      review: Record<string, string>
+      real_test: { command: string; artifact: string; sha256: string; outcome: string }
+    }[]
+  }
+  assert.ok(payload.steps.length >= 1, 'expected at least one reviewed step')
+  const axes = ['correctness', 'reproducibility', 'licence', 'ssot', 'adversary']
+  for (const step of payload.steps) {
+    assert.match(step.id, /^[A-Z]+\d+-S\d+$/, `${step.id} id shape`)
+    for (const file of step.changed) {
+      assert.ok(readFileSync(new URL(file, root)).length > 0, `${step.id}: changed file ${file} must exist`)
+    }
+    for (const axis of axes) {
+      assert.ok((step.review[axis] ?? '').length > 12, `${step.id}: review.${axis} must be a verdict`)
+    }
+    const text = read(step.real_test.artifact)
+    assert.equal(step.real_test.sha256.length, 64, `${step.id}: sha256 must be recorded`)
+    assert.ok(step.real_test.command.length > 0)
+    assert.ok(text.includes(step.real_test.sha256) === false) // sanity: hash is not inside its own artifact
+  }
+})
+
 test('AI disclosure log has at least one round with a session slot', () => {
   const log = read('audit/AI_DISCLOSURE_LOG.md')
   assert.ok(log.includes('### '), 'expected at least one round entry')

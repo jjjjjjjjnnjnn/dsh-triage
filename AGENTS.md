@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: v0.1.0-skeleton (2026-10-26)｜M0 ✅（47 测试 / 7 门全绿 / 7/7 CAUGHT）· M1 金标对等 ✅ · M1 真实案例验收 ⛔（等 HUMAN 输入）· R3 审核 14 项已修（`audit/AUDIT_2026-10-26_R3.md`）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: R4 (2026-10-26)｜M0 ✅（47 测试 / 7 门 / 7-7 CAUGHT）· M1 金标对等 ✅ · M1 真实案例验收 ✅ 1 例命中（门槛 10 例未达）· **8 门全绿 / 8-8 CAUGHT**（R4：行级归因 + 每步审核机器化，`audit/AUDIT_2026-10-26_R4.md`）
 > **Mission**: 做 DSH 生态里「装之前判断该不该装、装完坏了定位为什么」的判断层，并靠真实失败数据成为默认安装件 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
@@ -32,7 +32,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── prompts/                   # task-packet / review-packet / handoff-packet
 │   └── rules/                     # integrity / reproducibility / agent_collaboration / execution-playbook / adversarial_review
 ├── .github/workflows/ci.yml       # 门禁 CI（正常 + 负对照 + 发布检查）
-├── audit/                         # AI 披露 + 机器强制台账（gate_ledger / blind_spots，tests/governance 校验）
+├── audit/                         # AI 披露 + 机器强制台账（gate_ledger / blind_spots / step_reviews，tests/governance 校验）
 ├── backup/BACKUP_POLICY.md        # 快照策略（snapshots/ 同名 + .sha256）
 ├── _archive/ARCHIVE_MANIFEST.md   # 只进不出归档索引
 ├── quarantine/                    # 外部产物隔离区（双门制）+ vendor-manifest（许可真相源）
@@ -58,7 +58,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
 │   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：计划生成 + 执行器（独立 DSH_HOME）
 │   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板 + bin CLI
-├── scripts/                       # 门禁（gate_*）+ 真跑落盘（scan_env / record_case / bootstrap_upstream）
+├── scripts/                       # 门禁（gate_*，8 门）+ 真跑落盘（scan_env / record_case / bootstrap_upstream）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）
 ├── AGENTS.md / PROJECT_RULES.md / INDEX.md / COMPLIANCE.md / LICENSE(MIT)
 └── package.json / pnpm-workspace.yaml / tsconfig*.json / .npmrc / .editorconfig

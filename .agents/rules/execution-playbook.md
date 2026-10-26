@@ -25,6 +25,20 @@ pnpm run verify             # 基线必须全绿；不绿先修基线，不叠�
 | 8 | 文档同步 | 见 §4 | 漏同步 = 未完成 |
 | 9 | commit | 提交信息含同步清单 | 禁 force-push |
 
+### 1b. 每「一步」做完的必做动作（机器强制）
+
+「一步」= 一次有产出的改动（一个功能点 / 一个判据 / 一个脚本 / 一个案例），不是「一轮」。
+每一步完成**立刻**做两件事，并在 `audit/step_reviews.json` 追加一条（`gate step-review` 会重算 sha256，改不动也补不了）：
+
+1. **审核**：四轴各写一句结论（正确性 / 可复现 / 合规许可 / SSOT 一致）+ **对抗性**：写清你尝试构造的反例与结果；只写「看着没问题」视为缺项。
+2. **真实模拟测试**：真跑一条命令（不是 mock、不是思考实验），把产物落在 `data/results/`，记录 `command` / `artifact` / `sha256` / `outcome`。
+
+```powershell
+node scripts/gate_step_review.mjs          # 增量自检：缺轴/孤儿产物/哈希不符 → 红
+node scripts/gate.mjs --record --stamp <iso>   # 整轮留痕：把门禁结果本身也写成 SSOT
+```
+
+
 ## 2. 命令约定（Windows / 中文路径）
 
 - 一律 UTF-8：`chcp 65001`；Node 脚本用 `node -X` 无必要，直接 `node`。
@@ -46,6 +60,7 @@ pnpm run verify             # 基线必须全绿；不绿先修基线，不叠�
 
 | 改了什么 | 必须同步 |
 |---|---|
+| 每一步（任何有产出的改动） | `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256） |
 | `packages/` `scripts/` `tests/` | `AGENTS.md` 架构图 + `INDEX.md` + `audit/AI_DISCLOSURE_LOG.md` + `PROJECT_RULES.md` 路线状态 |
 | 判据 / 阈值 / verdict 契约 | `docs/05-verdict-contract.md` + `docs/specs/*` + `audit/gate_ledger.json` |
 | 新依赖 / 新许可 / 新数据源 | `quarantine/vendor-manifest.json` + `COMPLIANCE.md` + `docs/02-signal-sources.md` |

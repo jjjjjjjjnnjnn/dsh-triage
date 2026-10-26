@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "stand": "R4 (2026-10-26)",
+  "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
+  "axes": [
+    "correctness",
+    "reproducibility",
+    "licence",
+    "ssot",
+    "adversary"
+  ],
+  "steps": [
+    {
+      "id": "R4-S1",
+      "batch": "R4",
+      "step": "行级 admission 归因：patch 里挂的 row 也要按模块判（修 CASE-11080 暴露的假阴）",
+      "changed": [
+        "packages/core/src/verdict.ts",
+        "packages/core/src/ledger.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/load.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/rows.test.ts",
+        "tests/e2e/cli.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：同一模块的多行合并成一个 verdict 并点名全部 row id；enabled/group/config-only 行被排除；未安装模块只能 unknown；相对路径行不再误用 profile 自身 manifest（有 e2e 断言）",
+        "reproducibility": "PASS：全部判定为纯函数，时间戳由 generatedAt 注入；`--stamp` 固定后 CLI 两次输出逐字节相同；e2e 在临时 DSH_HOME 里跑，不依赖本机 profile",
+        "licence": "PASS：未引入新依赖与新数据源；判定逻辑为本仓原创，上游仅作语义参照（vendor-manifest: upstream-dsh）",
+        "ssot": "PASS：scan_env 与 record_case 走同一引擎，SSOT 与本机 CLI 输出不再可能分叉；gate_ssot/verdict-contract 均绿",
+        "adversary": "反例构造：(1) 只让 bundle 失败、row 正常 → 不得为 row 编造 finding（本机 156 行复扫 0 结论，通过）；(2) row 指向不存在包 → 试过判 go，被 missing.row-module 挡回；(3) 相对路径 row → 曾判成 profile manifest（unconstrained 静默），已修复并加断言。残留：bundle 行与其 bund 同名时会产生两张卡（已知，不致命）"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-11080 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json",
+        "sha256": "19f52276eecacacfa0f3b4b30adb4dbeaf083099941c6a62c0c9cf39c53ed3a6",
+        "outcome": "hit：row hooks-claude-code 被点名，未满足项 @deepseek-ai/dsh-llm@0.2.1-rc.2 vs 运行时 0.2.1-rc.3"
+      }
+    },
+    {
+      "id": "R4-S2",
+      "batch": "R4",
+      "step": "真实案例固化：输入 (真实 npm manifest) + 机器可算 label + 命中判定不接受人工裁定",
+      "changed": [
+        "data/cases/CASE-11080/case.json",
+        "data/cases/CASE-11080/report.md",
+        "data/cases/CASE-11080/profile-package.json",
+        "data/cases/CASE-11080/profile-cordis.patch.yml",
+        "data/cases/CASE-11080/runtime-dsh.json",
+        "data/cases/CASE-11080/plugin-hooks-claude-code.json",
+        "scripts/record_case.mjs",
+        ".gitattributes"
+      ],
+      "review": {
+        "correctness": "PASS：命中判据是 label 里的 reason_code + requirement_key + entry_id 三元组，record_case 只输出 hit/miss；三个偏差（bundles 置空 / node_modules 重建 / 无法验证修复后症状）写进 case.json#deviations 与 report.md",
+        "reproducibility": "PASS：输入全部进仓，复现不需要联网；`.gitattributes` 强制 data/cases 为 LF，因此 input sha256 在全新 checkout 上仍能对上（曾因 core.autocrlf=true 漂移，已修）",
+        "licence": "PASS：输入为 npm 公开元数据（MIT 包），来源与取用范围登记在 vendor-manifest upstream-dsh/upstream-plugin-inventory；不含任何用户隐私或凭据",
+        "ssot": "PASS：parse 校验通过（曾因 PowerShell 写 BOM 直接 JSON.parse 失败，已改为 LF/无 BOM 并复查）；产物含 produced_by/generated_at/schema_version + .sha256",
+        "adversary": "反例构造：(1) 手动把 hit 改成 hit 但删掉 row-scope reason → judgeHit 返回 miss（判据不可绕）；(2) 把输入 manifest 的 peer 改成 '*' → 不再命中（说明命中来自真实声明而非巧合）；(3) 在 case 里加一条不存在的 plugin manifest → 沙盒构建报错退出，不静默通过"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-11080 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json",
+        "sha256": "19f52276eecacacfa0f3b4b30adb4dbeaf083099941c6a62c0c9cf39c53ed3a6",
+        "outcome": "hit，且 inputs[] 四个输入 sha256 与仓内文件一致"
+      }
+    },
+    {
+      "id": "R4-S3",
+      "batch": "R4",
+      "step": "0.2.x 隔离运行时 + pluginInventory 契约实测（不写真实 DSH home）",
+      "changed": [
+        "scripts/bootstrap_upstream.mjs",
+        "docs/specs/M2-inventory.md",
+        "docs/02-signal-sources.md",
+        "docs/07-environment.md"
+      ],
+      "review": {
+        "correctness": "PASS：契约从安装产物读取（typert.remote-client.js 的 zod schema），实测 fiberPhase = null|failed|pending|active|loading|unloading，与 spec 表一致；未凭记忆写枚举",
+        "reproducibility": "PASS：`--version` 固定 + 已有安装则跳过（幂等）；SSOT 记录 registry integrity、安装版本、7 项 check 与 smoke 输出；沙盒在 %TEMP%，可整目录删除",
+        "licence": "PASS：只安装 MIT 上游包，不作再分发；vendor-manifest 增加 upstream-plugin-inventory（read-only，代码不复制）",
+        "ssot": "PASS：dry-run 不写 SSOT（避免污染 data/results），真跑写 data/results/upstream-<ver>-<stamp>.json + .sha256；路径脱敏为 ~ 与 %TEMP%",
+        "adversary": "反例构造：(1) 无网络时 → status=skipped 而且不编造 check 通过（已实测 dry-run 与 manifest 缺失分支）；(2) 声称「沙盒可启动」→ 已在 payload.limits 明确写死不成立（profile 无 node_modules）；(3) 声称相位是「实测样本」→ 明确写死只是契约，采样需运行中的 Host（T-201）"
+      },
+      "real_test": {
+        "command": "node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.3 --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json",
+        "sha256": "8be984ce2afc74a10dbc1bd41a407023f1268e4898c4f9885a0bf81a04e1d9ef",
+        "outcome": "ok：registry / npm-install / installed-version / plugin-inventory-present / pluginInventory-list / fiberPhase / dsh --version 七项全 PASS"
+      }
+    },
+    {
+      "id": "R4-S4",
+      "batch": "R4",
+      "step": "本机真实 profile 回归：行级归因不得给存量环境添假阳性",
+      "changed": [
+        "scripts/scan_env.mjs",
+        "data/results/why-2026-10-26T00-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：本机 0.1.0-rc.6 标准 profile 156 行复扫得到 2 个 go（两个 bundle）与 0 条 finding；CLI 输出同样是 no denials",
+        "reproducibility": "PASS：sha256 与 R1 记录的 19d71672c033… 完全一致，说明新逻辑对健康 profile 是零影响的（强证据：内容未变）",
+        "licence": "PASS：只读本机 profile 的 package.json / patch，不读凭据与会话；输出路径已脱敏",
+        "ssot": "PASS：与 CLI 共用引擎；本文件由 scan_env 产出并被本步骤引用；未手填",
+        "adversary": "反例构造：把 profiles/node_modules 指向不存在的目录（模拟装残）→ 行级解析全部 null；按设计只会出 unknown，不会出 go；因此「悄悄放行」的风险被排除"
+      },
+      "real_test": {
+        "command": "node scripts/scan_env.mjs --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/why-2026-10-26T00-00-00.000Z.json",
+        "sha256": "19d71672c0335d8746649f459dde7deb6d0b85fb87cd41410c30710dfdb63131",
+        "outcome": "ok：2 verdicts (go) / 156 rows / collisions 0"
+      }
+    },
+    {
+      "id": "R4-S5",
+      "batch": "R4",
+      "step": "把「每步必审 + 真实模拟测试」变成机器强制：新门 step-review + 门禁自身留痕",
+      "changed": [
+        "scripts/gate_step_review.mjs",
+        "scripts/gate.mjs",
+        "audit/step_reviews.json",
+        "audit/gate_ledger.json",
+        "PROJECT_RULES.md",
+        ".agents/rules/execution-playbook.md"
+      ],
+      "review": {
+        "correctness": "PASS：门校验 ①每步五轴非空且非套话（<12 字符判失败）②产物存在且 sha256 重算一致 ③产物含 produced_by/generated_at ④data/results 无孤儿产物 ⑤规则写进 PROJECT_RULES 与 playbook",
+        "reproducibility": "PASS：--mutate 把重算哈希改成不可能命中的值，门必红（负对照）；正常模式连续两次运行结论一致",
+        "licence": "PASS：零依赖（只用 scripts/lib/kit.mjs + Node 内置），不联网",
+        "ssot": "PASS：`node scripts/gate.mjs --record --stamp <iso>` 把整轮门禁结果写成 data/results/gates-<stamp>.json，并由本步骤引用——「全绿」从此可重算而非贴日志",
+        "adversary": "反例构造：(1) 删掉一轴 → 门红；(2) 改产物内容 → sha256 不符 → 门红；(3) 新增一个未被引用的 data/results 文件 → no-orphan-results 红；(4) 把 review 写成「ok」→ 长度校验红；(5) 只写 real_test.command 不落产物 → 门红"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-26T00:00:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-26T00-00-00.000Z.json",
+        "sha256": "0474a7b739f96fbcae190d723761a68abb7d875a7943b847c9c9e055b90cb109",
+        "outcome": "ok：8 门在 --mutate 下全部 CAUGHT（含本门），产物记录每门 id/exitCode/ok，不含耗时以保证可重算"
+      }
+    }
+  ]
+}

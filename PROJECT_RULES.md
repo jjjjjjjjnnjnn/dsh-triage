@@ -16,6 +16,7 @@
 8. **联动同步（Sync Rule）**：改 `packages/` `scripts/` `tests/` → 同步 `AGENTS.md` 架构图 + `INDEX.md` + `audit/AI_DISCLOSURE_LOG.md`；改结构 → 同步 `docs/DESIGN-MAP.md`；加文档 → 登记 `INDEX.md`。
 9. **命名安全（硬性）**：不得占用上游 loader row id（`plugin-manager`/`tools`/`session`/`llm`/`web`/`permission`/`plugin-market`）与服务名；本仓所有 loader row 前缀 `compat-`，服务名以 `compat` 起头。`gate_namespace` 校验。
 10. **许可与数据来源**：只用 MIT / CC BY 4.0 等可再分发数据；引用 dsh.so 数据必须署名（CC BY 4.0），npm 元数据按 registry 条款；`vendor-manifest.json` 是许可真相源。
+11. **每步必审 + 真实模拟测试（机器强制）**：任何一步有产出的改动（代码 / 判据 / 脚本 / 案例 / 文档性结论）完成后，必须①四轴审核（正确性 / 可复现 / 合规许可 / SSOT 一致）+ 对抗性反例，②真跑一次可重算的测试并把产物落 `data/results/`。两条都写进 `audit/step_reviews.json`，由 `scripts/gate_step_review.mjs`（门 `step-review`）重算 sha256 校验：产物被改过、缺一轴、或「只贴 stdout」，门必红。禁事后补写台账。
 
 ---
 

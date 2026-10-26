@@ -62,6 +62,14 @@
       "negative_control": "node scripts/gate_release_pack.mjs --mutate → 必须 exit 1（注入缺失文件）",
       "requires_build": true,
       "owner": "release"
+    },
+    {
+      "id": "step-review",
+      "script": "scripts/gate_step_review.mjs",
+      "enforces": "audit/step_reviews.json：每一步都有四轴 + 对抗性结论，且 real_test 产物的 sha256 可重算；data/results 下不得存在未被审核步骤引用的孤儿产物",
+      "negative_control": "node scripts/gate_step_review.mjs --mutate → 必须 exit 1（把产物的 sha256 换成不可能命中的值）",
+      "requires_build": false,
+      "owner": "process"
     }
   ]
 }
