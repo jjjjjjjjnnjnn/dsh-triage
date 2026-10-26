@@ -49,6 +49,18 @@
 - SessionID：待 HUMAN 回填
 - 备注：仓库为 private；首推后仍需 HUMAN 决定是否转 public 与 npm 发布时机
 
+### 2026-10-26 R6｜D1 案例补齐（10 例 / 9 命中）+ 命中率脚本化 + 盲区修正
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 researcher / implementer / verifier / adversary）
+- 范围：`data/cases/CASE-{10201,10759,10364,8751,8220,7590}/*`（新，共 13 份 npm 真实 manifest + 4 份 profile 重建层）、`scripts/d1_report.mjs`（新）、`tests/governance/d1-report.test.ts`（新，5 条）、`data/results/{d1,gates,gates-mutate,why-case-*}-2026-10-26T12-00-00.000Z.json`、`audit/step_reviews.json`（R6-S1…S9）、`audit/AUDIT_2026-10-26_R6.md`、`audit/blind_spots.json`（BS-10/11/12 + stand）、`docs/{HANDOFF,ROADMAP,BACKLOG,AI_HANDOVER}.md`、`AGENTS.md`、`INDEX.md`、`README.md`、`README.zh-CN.md`
+- 取证：6 篇上游 Discussions（作者/日期/正文逐条抄进 `case.json#source`、`#reported`），其中 #10364 的回复是源码级定位（profile-resolution 优先级），用于纠正 R5 的过强判断
+- 结果：**D1 通过 9/10**（`gate.passed=true`，`hit_rate=0.9`）；1 个 miss 是**有意保留**的负样本（CASE-7590：两个插件不声明任何 peer，失败在运行期 API 漂移）
+- 人工决策：HUMAN 选择「按 6 例方案推进」「D1 若 7/10 则如实报不达标并回退 F2/F3」「签字项由 agent 按项目状态自行裁定」；据此裁定：**本轮不授权 T-103 金标扩容（冻结区）与 T-110 双 roadmap 合并**，npm 占位发布 / 仓库转 public 留给 HUMAN 且不阻塞 D1
+- 审核：`audit/AUDIT_2026-10-26_R6.md`（5 项发现 + 6 条风险登记 + 6 向对抗性反例）；证据强度分层 `label_key_sources` 进产物（report-explicit 4 / derived 2 / unstated 4）
+- 门禁：`verify` 62 测试 / 8 门全绿；`--mutate` 8/8 CAUGHT；`audit/step_reviews.json` 共 19 步
+- SessionID：待 HUMAN 回填
+- 备注：不得把「9/10」写成「归因已完全成立」——miss 揭示的是声明层的信息上限；T-107（无声明行不得静默）与 T-109（dist-tag 失步信号）是它直接产出的需求
+
 ### 2026-10-26 R5｜案例扩容到 4 例（全命中）+ 过期信息清理 + 交接
 
 - 生成者：DeepSeek V4.1 Flash（主会话，兼 researcher / implementer / verifier / adversary）

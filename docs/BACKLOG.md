@@ -5,11 +5,13 @@
 
 | ID | 任务 | 里程碑 | 角色 | 依赖 | 验收判据 | 状态 |
 |---|---|---|---|---|---|---|
-| T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | 🟨 **4/10 例（4 命中）**：CASE-11080/11012/8202/10849；HUMAN 明确不破例，凑满前不进 M2 |
-| T-104 | 再收 6 例真实案例（把 D1 门槛凑到 10 例 ≥8 命中） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | 🟨 进行中（已 4 例；候选池见 `audit/AUDIT_2026-10-26_R5.md` §4） |
+| T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | ✅ **D1 通过：10/10 例，9 命中 / 1 有意 miss**（`data/results/d1-2026-10-26T12-00-00.000Z.json` → `gate.passed=true`） |
+| T-104 | 再收 6 例真实案例（把 D1 门槛凑到 10 例 ≥8 命中） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | ✅ 2026-10-26 收齐：CASE-10201/10759/10364/8751/8220（hit）+ CASE-7590（miss 负样本）；R6 审核见 `audit/AUDIT_2026-10-26_R6.md` |
+| T-107 | 行级 `unknown`：admission 为 indeterminate 的行不得静默 | M2-a | implementer | — | 不声明任何 `@deepseek-ai/dsh*` peer 的行产出 `unknown` + `missingEvidence`；负对照：静默即红 | ⬜ R6 发现 F1 / `BS-10`（CASE-7590 产出 0 verdict） |
+| T-109 | npm dist-tag 失步信号进 `check --explain`（T-701 子项） | M2 | implementer | — | 能显示「latest=X / next=Y / 已发布最新=Z」并标 tier；不得据此越级判 blocked | ⬜ R6 发现 F2（`dsh-tools` latest=0.0.1-rc.1 而 0.2.1-rc.x 已发布） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
-| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **契约就绪，实现待领**（沙箱 `data/results/upstream-0.2.1-rc.3-*.json` 已证明服务存在、`fiberPhase` 枚举实测） |
+| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | ⬜ **可开工（D1 已于 2026-10-26 通过，9/10）**；沙箱 `data/results/upstream-0.2.1-rc.3-*.json` 已证明服务存在、`fiberPhase` 枚举实测 |
 | T-202 | 运行时命名空间快照（tools/commands/settings/skills） | M2-a | implementer | T-201 | 快照落 `data/results/ns-*.json` + 哈希 | ⬜ |
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
 | T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ⬜ R4 审核遗留（`audit/AUDIT_2026-10-26_R4.md` §5） |
@@ -29,7 +31,20 @@
 
 ---
 
-## R4 已交付（本轮，证据见 `data/results/why-case-CASE-11080-*.json`）
+## R6 已交付（本轮，证据见 `data/results/d1-2026-10-26T12-00-00.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-104 | **+6 例真实案例**：10201 / 10759 / 10364 / 8751 / 8220 全命中，7590 为有意保留的 miss 负样本 | ✅ |
+| D1 | **9/10 hit = 90% ≥ 80%**，判定由 `scripts/d1_report.mjs` 从产物汇总（不再手写数字） | ✅ |
+| NEW | `scripts/d1_report.mjs`：D1 命中率 → `data/results/d1-*.json` + `.sha256`；含 `label_key_sources` 分层（report-explicit / derived / unstated） | ✅ |
+| NEW | `tests/governance/d1-report.test.ts`（5 条）：反向点数、重复产物去重、非法 hit 值拒绝、短样本必红、同 stamp 逐字节一致 | ✅ |
+| FIX | R5 对 #10364 的「嵌套 `node_modules` 不可见」判断被实抓正文证伪（实为 hoist 到 profile 层，可见）→ 修正为 `BS-11` | ✅ |
+| NEW | 盲区 `BS-10`（无声明行静默 → T-107）/ `BS-11`（遮蔽可见性边界）/ `BS-12`（命中 key 的证据强度分层） | ✅ |
+
+---
+
+## R4 已交付（证据见 `data/results/why-case-CASE-11080-*.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|
