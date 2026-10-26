@@ -100,8 +100,9 @@ plugin (CLI / DSH entry)  →  probe
 
 ## 7. 评审清单（提交前自检）
 
-- [ ] `pnpm run verify` 全绿（build → typecheck → test → gate 7 门）
-- [ ] `node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 7/7`
+- [ ] `pnpm run verify` 全绿（build → typecheck → test → gate 8 门）
+- [ ] `node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 8/8`
+- [ ] 本步已登记 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256）
 - [ ] 新结论带证据 tier 与 remediation / missingEvidence
 - [ ] 没有新增 `any`、没有 `catch {}`、没有内联用户文案（文案进 `messages.ts`）
 - [ ] 新输出面已按 §9 在序列化边界脱敏

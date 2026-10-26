@@ -12,7 +12,7 @@ git status --short                  # 必须干净；有未提交改动先问来
 git log --oneline -3
 pnpm install --frozen-lockfile
 pnpm run verify                     # build → typecheck → test → gate，必须全绿
-node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/7
+node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/8
 ```
 
 基线不绿 → **先修基线，不叠加新功能**。
@@ -26,10 +26,12 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（1 例命中，未达 10 例门槛）** · **M2-a 契约 ✅ / 实现 ⬜** |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
-| CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 7/7）· `release readiness`（tag 触发） |
-| 规模 | 56 测试 · 7 门禁 · 6 角色卡 · 3+1 模板 · 1 个真实案例 |
-| 本轮交付 | **T-101 真实案例命中**（CASE-11080）；**行级 admission 归因**（此前只看 bundle → patch 里的 row 逃检，假阴）；`record_case` / `bootstrap_upstream` 两个真跑脚本；`docs/specs/M2-inventory.md` 契约锁定；6 条新测试（4 单测 + 2 e2e 负对照） |
-| 证据 | `data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json`（`hit.verdict=hit`，sha256 `19f52276eeca…`）· `data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测相位契约，7/7 checks）· `data/results/why-2026-10-26T00-00-00.000Z.json`（本机 profile，2 go / 0 冲突） |
+| CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 8/8）· `release readiness`（tag 触发） |
+| 规模 | 57 测试 · **8 门禁** · 6 角色卡 · 3+1 模板 · 1 个真实案例 |
+| 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
+| 本轮交付 | **T-101 真实案例命中**（CASE-11080）；**行级 admission 归因**（此前只看 bundle → patch 里的 row 逃检，假阴）；`record_case` / `bootstrap_upstream` 两个真跑脚本；`docs/specs/M2-inventory.md` 契约锁定；**新门 `step-review`**（7→8 门，负对照 8/8）；6 条新测试 + 2 条 e2e 负对照 |
+| 证据 | `data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json`（`hit.verdict=hit`，sha256 `19f52276eeca…`）· `data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测相位契约，7/7 checks）· `data/results/gates-mutate-2026-10-26T00-00-00.000Z.json`（8/8 CAUGHT）· `data/results/why-2026-10-26T00-00-00.000Z.json`（本机 profile，2 go / 0 冲突） |
+| 审核报告 | `audit/AUDIT_2026-10-26_R4.md`（7 项真实缺陷已修 + 5 项遗留带 owner） |
 | 案例输入 | `data/cases/CASE-11080/`（真实 npm manifest + 重建声明层 + 机器可算 label + 偏差披露） |
 
 ---
@@ -40,8 +42,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/
 pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
-**验收标准**：第二条输出 `ALL GREEN · 7 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 7/7`。
+**验收标准**：第二条输出 `ALL GREEN · 8 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 8/8`。
 满足即环境可信，接着领 **T-201（按 `docs/specs/M2-inventory.md` §4 的 P1+P2 路径实现相位台账）**：`docs/BACKLOG.md` → 按 `.agents/prompts/task-packet.md` 列允许改动文件后再动手。
+
+> 每一步做完，先追加 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256），再跑 `node scripts/gate_step_review.mjs`。漏了它，`pnpm run verify` 会红。
 
 
 ---
@@ -61,6 +65,11 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | SSOT 里出现 `C:\Users\<名>` | 只脱敏了 `env.profileDir`，漏了 `evidence[].source` | 已修 `redactVerdict` + `results-privacy` 门 |
 | `npm` 命令刷 `Unknown project config` | `.npmrc` 放了 pnpm 专属键 | 已迁到 `pnpm-workspace.yaml` |
 | Windows 上 `spawn('npm')` 报 EINVAL | 不能直接 spawn `.cmd` | 走 `ComSpec /c`（见 `gate_release_pack.mjs`） |
+| 以为「只判 bundle 就够了」，结果 `why` 说 no denials 而用户的工具确实没了 | 上游按 **row 的模块** 判 admission，`cordis.patch.yml` 里挂的行逃过 bundle 级检查 | 已修行级归因（CASE-11080）；新增行必须走 `rowTargets`/`resolveRows`，别绕过 |
+| 从 GitHub 找不到上游 issue | `deepseek-ai/deepseek-harness` 的 `has_issues=false`，只有 Discussions | 抓 `https://github.com/<repo>/discussions`（HTML 可读）；GraphQL 需 token |
+| 案例 JSON 一读就 `JSON.parse` 失败 | PowerShell `Set-Content -Encoding utf8` 写 **BOM** | 用 Node 写/读；或先剥 `\uFEFF` |
+| 全新 clone 后 input sha256 对不上 | `core.autocrlf=true` 把 LF 变 CRLF | `data/cases/** eol=lf`（已在 `.gitattributes`） |
+| 想用「贴 stdout」当一步的证据 | 门 `step-review` 只认 `data/results/` 里可重算 sha256 的产物 | `node scripts/gate.mjs --record --stamp <iso>` 把门禁结果本身也写成产物 |
 
 ---
 
@@ -98,7 +107,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 代码约定 | `docs/08-conventions.md` |
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
-| 本轮审核结论 | `audit/AUDIT_2026-10-26_R3.md` |
+| 本轮审核结论 | `audit/AUDIT_2026-10-26_R4.md`（R4）· `audit/AUDIT_2026-10-26_R3.md`（R3） |
+| 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256） |
 
 ---
 

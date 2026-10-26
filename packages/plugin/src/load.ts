@@ -200,6 +200,9 @@ async function resolveModuleManifest(
     }
   } else {
     const packageName = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0] ?? specifier
+    // A bare specifier with no package name (e.g. an absolute POSIX path seen on
+    // Windows) must not resolve to the node_modules root itself.
+    if (packageName.trim() === '' || packageName === '@') return null
     for (const root of roots) dirs.push(join(root, ...packageName.split('/')))
   }
 

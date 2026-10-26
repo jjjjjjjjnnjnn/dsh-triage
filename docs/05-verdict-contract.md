@@ -54,8 +54,42 @@
 }
 ```
 
-## 3. 强制不变量
+## 2b. 行级 verdict（R4 起，`kind: "entry"`）
 
+上游是按 **loader row 的模块**做 admission 的，所以「bundle 通过」不等于「行能跑」。行级 verdict 的形态：
+
+```jsonc
+{
+  "subject": { "name": "@deepseek-ai/dsh-hooks-claude-code", "version": "0.2.1-rc.2", "kind": "entry" },
+  "conclusion": "blocked",
+  "confidence": { "level": "high", "basis": "declared" },
+  "reasons": [
+    { "code": "admission-row-scope", "severity": "info", "messageId": "admission.row-scope",
+      "params": { "rows": "hooks-claude-code", "module": "@deepseek-ai/dsh-hooks-claude-code", "source": "patch:profile" } },
+    { "code": "admission-denied-peer", "severity": "block", "messageId": "admission.unmet.peer",
+      "params": { "key": "@deepseek-ai/dsh-llm", "range": "0.2.1-rc.2", "runtime": "0.2.1-rc.3" } }
+  ],
+  "evidence": [
+    { "id": "admission", "tier": "declared", "source": "@deepseek-ai/dsh-hooks-claude-code@0.2.1-rc.2", "method": "declared-range", "at": "…" },
+    { "id": "row", "tier": "declared", "source": "patch:profile", "method": "patch-parse", "detail": "row(s) hooks-claude-code", "at": "…" },
+    { "id": "runtime", "tier": "measured-local", "source": "<profileDir>", "method": "profile-scan", "at": "…" }
+  ],
+  "remediation": [
+    { "kind": "allow-version", "command": "dsh plugin --profile <p> allow-version …" },
+    { "kind": "disable-entry", "params": { "id": "hooks-claude-code", "owners": "patch:profile" } }
+  ],
+  "missingEvidence": []
+}
+```
+
+规则：
+
+- 同一模块被多行引入 → **一个** verdict，`reasons[0].params.rows` 列出全部 row id（不刷屏，但可定位）；
+- 模块未安装 → `unknown` + `missingEvidence: ["missing.row-module"]`，禁止判 `go`；
+- 声明满足当前运行时 → **不产生** verdict（「没消息」不是 finding）；
+- `severity: info` 的 `admission-row-scope` 必须排第一，保证文本渲染（只显示前 3 条）时行号不会被截掉。
+
+## 3. 强制不变量
 | 不变量 | 门禁检查 |
 |---|---|
 | `conclusion ∈ {go, risky, blocked, unknown}` | 枚举 |
@@ -63,6 +97,7 @@
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
 | `reasons[].messageId` 形如 `admission.* / collision.* / remediation.* / missing.*` | 正则（禁内联散文） |
+| 行级 verdict：`subject.kind === "entry"` 时 `reasons` 必含 `admission-row-scope`，且其 `params.rows` 非空 | 单测 `tests/unit/rows.test.ts` |
 | `blocked` / `risky` ⇒ `remediation.length ≥ 1` 且每项有 `note` | 条件断言 |
 | `unknown` ⇒ `missingEvidence.length ≥ 1` | 条件断言 |
 | 输出确定性：同输入同输出（时间戳由调用方注入 `generatedAt`） | 单测重复渲染比对 |

@@ -51,6 +51,20 @@
       "cannot_see": "npm 周下载量受 CI 镜像、频繁发版、镜像站抓取影响，不等于真实用户数",
       "mitigation": "增长看板同时看徽章曝光 / 索引源添加 / Agent 工具调用三个领先指标；对外只写「npm 周下载」口径",
       "owner": "docs/market"
+    },
+    {
+      "id": "BS-08",
+      "area": "verdict/rows",
+      "cannot_see": "行级归因只看「声明 + 安装位置」：看不见 import 是否成功、apply 是否抛错、工具是否真的注册。声明通过但运行期挂掉的行，在 R4 里仍然没有结论（不是 go，但也不是 blocked）",
+      "mitigation": "T-201 接 pluginInventory 相位（failed / no-fiber）+ T-102 读 stderr 归因 + M3 probe；只有声明证据时必须保持「仅声明通过」措辞，不得暗示已跑通",
+      "owner": "core/verdict"
+    },
+    {
+      "id": "BS-09",
+      "area": "process",
+      "cannot_see": "门 `step-review` 只能验证「有结论、有产物、哈希对得上」，验不了结论是不是真诚的（套话也能过长度校验）",
+      "mitigation": "四轴 + 对抗性由独立上下文的 reviewer 先各自上报（禁互相参考）；每轮把「本轮最可能被质疑的一条」写进 `audit/AUDIT_*.md`；连续两轮被 adversary 抓到同类套话，则该轴判为无效",
+      "owner": "process/reviewer"
     }
   ]
 }
