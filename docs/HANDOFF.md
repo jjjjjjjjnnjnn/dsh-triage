@@ -25,7 +25,8 @@ node scripts/gate.mjs --mutate      # 每道门必须 CAUGHT（证明门不是�
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
 | 里程碑 | **M0 ✅**（44 测试 / 6 门全绿 / 6/6 CAUGHT）· **M1 🟡**（金标对等 ✅，真实案例验收 ⬜） |
-| 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private） |
+| 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，默认分支 `main`） |
+| CI | 绿：`verify (node 22/24)` + `gates can fail`（负对照 6/6 CAUGHT）· `release readiness` 仅在 tag 触发 |
 | 上游基线 | `@deepseek-ai/dsh` **0.2.1-rc.2**（本机 profile 实测 0.1.0-rc.6） |
 | 本轮交付 | 命名与仓库、`docs/ROADMAP.md`、`docs/BACKLOG.md`、`.agents/{README,roles×6,prompts×3,rules/adversarial_review}` |
 | 证据 | `data/results/why-2026-10-26T00-00-00.000Z.json`（156 行 / 0 冲突 / sha256 随行） |
