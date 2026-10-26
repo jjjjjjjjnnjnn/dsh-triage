@@ -7,6 +7,9 @@
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
+| **真实案例** | `data/cases/CASE-11080/` | T-101 首个命中案例：输入 / 机器可算 label / 偏差披露 / 复现方式 |
+| **复现脚本** | `scripts/record_case.mjs` | 案例 → 隔离沙盒 → verdicts → `data/results/why-case-*.json` + `.sha256` + `hit` |
+| **上游沙盒** | `scripts/bootstrap_upstream.mjs` | 0.2.x 隔离运行时 + `pluginInventory` 契约实测（不写真实 DSH home） |
 | **执行计划** | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 指标看板 + 分发时间线 + kill criteria |
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
@@ -25,7 +28,7 @@
 | 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 |
 | 路线 | `docs/06-roadmap.md` | M0–M5 周级拆解 + 下载量阶梯 + 分发动作 |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
-| 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md` | 判据先行、负对照、诚实边界 |
+| 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
 | 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict） | 纯函数、零网络、可离线 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
 | 隔离实测 | `packages/probe/src/`（plan） | M3：默认 dry-run，独立 DSH_HOME |

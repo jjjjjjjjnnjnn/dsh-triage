@@ -48,6 +48,17 @@
       "recorded_at": "2026-10-26"
     },
     {
+      "id": "upstream-plugin-inventory",
+      "kind": "reference-docs",
+      "name": "@deepseek-ai/dsh-host-plugin-inventory",
+      "source": "https://www.npmjs.com/package/@deepseek-ai/dsh-host-plugin-inventory",
+      "license": "MIT",
+      "used_for": "S2 运行时台账契约：pluginInventory/list 的字段、fiberPhase 枚举、agentPresets 结构（docs/specs/M2-inventory.md）",
+      "usage": "只读契约复刻，代码不复制；字段以安装产物重新读取为准（scripts/bootstrap_upstream.mjs 落 SSOT）",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-26"
+    },
+    {
       "id": "ref-guard",
       "kind": "reference-impl",
       "name": "lxzy-7/dsh-plugin-guard",

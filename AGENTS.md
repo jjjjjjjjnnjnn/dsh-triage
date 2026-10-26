@@ -38,6 +38,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 ├── quarantine/                    # 外部产物隔离区（双门制）+ vendor-manifest（许可真相源）
 ├── data/
 │   ├── gold/admission-cases.json  # 金标夹具（admission 语义对等基准，人工签署）
+│   ├── cases/CASE-*/              # 真实案例：输入 manifest + 机器可算 label + 偏差披露
 │   ├── raw/                       # 原始证据（git 忽略重物）
 │   └── results/                   # SSOT：脚本真跑 JSON + .sha256
 ├── docs/
@@ -50,14 +51,14 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── 03-failure-taxonomy.md 04-admission-semantics.md 05-verdict-contract.md
 │   ├── 06-roadmap.md 07-environment.md 08-conventions.md
 │   ├── adr/                       # 决策记录（Result 优先 / 覆写不是撞车 / 零依赖门禁）
-│   ├── specs/M0-skeleton.md M1-why.md
+│   ├── specs/M0-skeleton.md M1-why.md M2-inventory.md
 │   └── market/listing_zh.md       # 上架文案
 ├── packages/
 │   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / verdict 组装（纯函数、可离线）
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
 │   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：计划生成 + 执行器（独立 DSH_HOME）
 │   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板 + bin CLI
-├── scripts/                       # 门禁（gate_*）+ 真跑落盘（scan_env）
+├── scripts/                       # 门禁（gate_*）+ 真跑落盘（scan_env / record_case / bootstrap_upstream）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）
 ├── AGENTS.md / PROJECT_RULES.md / INDEX.md / COMPLIANCE.md / LICENSE(MIT)
 └── package.json / pnpm-workspace.yaml / tsconfig*.json / .npmrc / .editorconfig

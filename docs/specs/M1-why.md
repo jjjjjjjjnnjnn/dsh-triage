@@ -16,8 +16,14 @@
 | A4 | entry id 撞车能被点名（跨 bundle 与同源） | 构造两份 patch 冲突 → `why` 报 `blocked` |
 | A5 | 全程零网络、只读本机 | 断网运行仍成功；`~/.dsh` mtime 不变 |
 | A6 | 输出确定性 | `--stamp` 固定 → 两次输出逐字节相同 |
+| A7 | **行级归因**：`cordis.patch.yml` 里挂的 row 也要按模块判 admission，不能只看 bundle | 构造「patch row 钉旧 peer + 新运行时」→ 出现 `kind: entry` 的 `blocked`，且 `admission.row-scope` 点名 row id |
+| A8 | 未安装的 row 模块只能出 `unknown` + `missing.row-module`，不得判 `go` | 构造指向不存在包的 row → `--json` 里 `conclusion: unknown` |
 
 ## 3. 真实案例验收（必须做，否则不算完成）
+
+> **首个案例已验收：CASE-11080（2026-10-26）**——`data/cases/CASE-11080/`（输入 + 标注 + 偏差披露），
+> 证据 `data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json`（`hit.verdict = hit`）。
+> 该案例暴露了一个真实缺口并已修复：此前只按 **bundle** 判 admission，`cordis.patch.yml` 里挂的行永远逃过检查 → 判据 A7。
 
 选一个**真实发生**的「工具静默消失」案例（自述或社区 issue），要求：
 
@@ -28,6 +34,8 @@
 
 **未命中**时禁止调参糊过去，必须写清：缺哪个信号、需要 probe 还是需要 S2 台账。
 
+**无法复现原作者机器时**：用真实已发布 manifest 重建声明层，并在 `case.json#deviations` 中逐条披露偏差；命中判据必须是**机器可算**的（`label` 里写死 reason code + 模块名 + row id），不得人工裁定。
+
 ## 4. 负对照
 
 | 场景 | 期望 |
@@ -36,6 +44,9 @@
 | 插件无任何声明 | 结论 `unknown` + `missing.probe`，不得写成 `go` |
 | 运行时版本读不到 | 结论 `unknown` + `missing.runtime`，不得默认放行 |
 | 两个 bundle 同 id | `blocked` + 点名两个 owner |
+| patch row 指向未安装的包 | `unknown` + `missing.row-module`，不得静默 |
+| patch row 声明满足当前运行时 | 不产生行级 verdict（不制造噪音） |
+| 同模块被多行引入 | 合并成一个 verdict，点名全部 row id |
 
 ## 5. 已知盲区
 

@@ -7,7 +7,7 @@
 | 层 | 名称 | 内容 | 包/位置 |
 |---|---|---|---|
 | **L0** | 数据与契约 | admission 语义、verdict 契约、金标夹具、消息目录 | `core/src/admission.ts` `types.ts` `messages.ts` `data/gold/` |
-| **L1** | 判断引擎 | 判定 → 原因 → 证据 → 替代方案（纯函数、离线） | `core/src/verdict.ts` `ledger.ts` |
+| **L1** | 判断引擎 | 判定 → 原因 → 证据 → 替代方案（纯函数、离线）；**bundle 级 + 行级**两路 admission 归因 | `core/src/verdict.ts` `ledger.ts` |
 | **L2** | 信号适配 | 本机契约 / 注册表 / 外部工具产物（tier 明确） | `signals/src/*` |
 | **L3** | 编排与界面 | CLI、DSH 装载行、Web 面板（M4）、Agent 工具（M4） | `plugin/src/*` |
 | **L4** | 实测 | 隔离 `DSH_HOME` 的计划与执行 | `probe/src/*` |
@@ -38,6 +38,7 @@ ProbeRun ────────┘        │
 
 - `EnvFingerprint`：谁的机器（dsh/node/os/profile/bundles/installed）
 - `CapabilityClaim`：EntryClaim（id/name/disabled/group/source/depth）
+- `RowDeclaration`（R4）：patch row 的模块 + 解析到的包清单/版本（行级 admission 的输入）
 - `ProbeRun`（M3）：stages + outcome + durationMs
 - `Verdict`：结论 + 证据 + 替代方案
 

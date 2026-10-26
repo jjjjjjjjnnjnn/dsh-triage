@@ -48,9 +48,27 @@ node packages/plugin/dist/cli.js env
 # 真跑落 SSOT（读本机 profile）
 node scripts/scan_env.mjs
 
+# 真实案例复现（隔离沙盒，输入已固化在 data/cases/<ID>/）
+node scripts/record_case.mjs --case CASE-11080
+
+# 0.2.x 隔离运行时（不写 ~/.dsh；可随时删）
+node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.3
+
 # 门禁负对照（每道门都必须 FAIL）
 node scripts/gate.mjs --mutate
 ```
+
+## 4b. 0.2.x 沙盒（M2 前置）
+
+本机 profile 是 `0.1.0-rc.6`，没有 `pluginInventory`。运行时信号只能在隔离环境里开发：
+
+| 项 | 值 |
+|---|---|
+| 位置 | `%TEMP%\dsh-triage-env\<version>\`（`install/` 装包，`home/` 是 `DSH_HOME`） |
+| 建立 | `node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.3` |
+| 证据 | `data/results/upstream-<version>-<stamp>.json` + `.sha256`（含安装版本、`pluginInventory` 存在性、`fiberPhase` 枚举、`dsh --version` 冒烟） |
+| 清理 | 直接删 `%TEMP%\dsh-triage-env` |
+| 边界 | 不注入任何真实凭据；不改真实 `~/.dsh`；不作安全结论 |
 
 ## 5. 已知环境陷阱
 
