@@ -26,7 +26,8 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 7/
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ⛔**（等 HUMAN 提供案例） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
-| CI | `verify (node 22/24)` + `verify (windows, node 24)` + `gates can fail`（负对照 7/7）· `release readiness` 仅 tag 触发 |
+| CI | **5 job 全绿**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 7/7）· `release readiness`（tag 触发，实测打包 + `--publish` 检查） |
+| 里程碑标签 | `v0.1.0-skeleton`（tag → release readiness 绿，可发布就绪；npm 仍未登录） |
 | 规模 | 47 测试 · 7 门禁 · 6 角色卡 · 3+1 模板 |
 | 本轮交付 | 审核 14 项修复（SSOT 脱敏、假 API 删除、重复 reason、i18n 修复文案、门禁加严、Windows CI、e2e CLI 测试、release-pack 门、NOTICE、kickoff 模板） |
 | 证据 | `data/results/why-2026-10-26T00-00-00.000Z.json`（156 行 / 0 冲突 / sha256 `19d71672c033…`） |
