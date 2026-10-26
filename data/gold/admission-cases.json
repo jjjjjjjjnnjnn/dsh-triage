@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "runtime": "0.2.1-rc.2",
+  "semantics_source": "https://cdn.jsdelivr.net/npm/@deepseek-ai/dsh-app-boot@0.2.1-rc.2/README.md — 'Before a profile imports a plugin, DSH checks its declared DSH requirement…'",
+  "semantics_rules": [
+    "engines.dsh 存在时：仅由它决定，peerDependencies 全部忽略",
+    "否则：@deepseek-ai/dsh 与所有 @deepseek-ai/dsh-* 的 peer 区间必须全部满足（AND）",
+    "prerelease 参与区间匹配（semver includePrerelease=true）",
+    "空 / 非法 / workspace: 形式的 engines.dsh 视为不兼容",
+    "完全没有声明（无 engines.dsh 且无 dsh* peer）= 无约束（unconstrained）",
+    "@deepseek-ai/cordis 等非 dsh 作用域的 peer 不参与 admission 判定"
+  ],
+  "signature": {
+    "signed_by": "agent-recorded (待 HUMAN 复核)",
+    "signed_at": "2026-10-26",
+    "note": "real-* 用例的 manifest 来自 npm registry 原文快照；expected 由语义规则推导，并与 dsh.so 页面独立核对 1 例（dsh-cost-meter：页面标注 '当前 dsh 0.2.1-rc.2 在支持范围内'，与本表一致）"
+  },
+  "cases": [
+    {
+      "id": "syn-engines-decides",
+      "kind": "synthetic",
+      "manifest": {
+        "engines": { "dsh": ">=0.2.0-rc.1 <0.3.0-0" },
+        "peerDependencies": { "@deepseek-ai/dsh-tools": "^0.1.0-rc.6" }
+      },
+      "expect": { "status": "admitted" },
+      "why": "engines.dsh 优先，过期的 peer 区间被忽略"
+    },
+    {
+      "id": "syn-peers-all-match",
+      "kind": "synthetic",
+      "manifest": {
+        "peerDependencies": {
+          "@deepseek-ai/dsh": "^0.2.0-rc.1",
+          "@deepseek-ai/dsh-tools": ">=0.2.1-rc.1 <0.3.0-0"
+        }
+      },
+      "expect": { "status": "admitted" },
+      "why": "所有 dsh* peer 均满足"
+    },
+    {
+      "id": "syn-peer-one-fails",
+      "kind": "synthetic",
+      "manifest": {
+        "peerDependencies": {
+          "@deepseek-ai/dsh": "^0.2.0-rc.1",
+          "@deepseek-ai/dsh-agent": ">=0.2.1-rc.3"
+        }
+      },
+      "expect": { "status": "denied", "unmet": ["@deepseek-ai/dsh-agent"] },
+      "why": "AND 语义：任一条不满足即拒绝，且要能指名是哪一条"
+    },
+    {
+      "id": "syn-engines-excludes-runtime",
+      "kind": "synthetic",
+      "manifest": { "engines": { "dsh": "^0.1.0-rc.6 || ^0.1.1-rc.1" } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "旧基线声明：升级到 0.2.x 后在 admission 阶段被摘掉（静默消失的典型成因）"
+    },
+    {
+      "id": "syn-no-declaration",
+      "kind": "synthetic",
+      "manifest": {},
+      "expect": { "status": "unconstrained" },
+      "why": "完全无声明 = 无约束，admission 放行（也是本项目的分辨力边界）"
+    },
+    {
+      "id": "syn-empty-engines-range",
+      "kind": "synthetic",
+      "manifest": { "engines": { "dsh": "" } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "空区间视为不兼容（注意：semver 会把空串当 *，必须显式特判）"
+    },
+    {
+      "id": "syn-invalid-engines-range",
+      "kind": "synthetic",
+      "manifest": { "engines": { "dsh": "workspace:^" } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "engines.dsh 不允许 workspace 协议"
+    },
+    {
+      "id": "syn-malformed-engines-type",
+      "kind": "synthetic",
+      "manifest": { "engines": { "dsh": 2026 } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "非字符串 engines.dsh 属畸形清单，判不兼容"
+    },
+    {
+      "id": "syn-cordis-peer-ignored",
+      "kind": "synthetic",
+      "manifest": { "peerDependencies": { "@deepseek-ai/cordis": "^4.0.1" } },
+      "expect": { "status": "unconstrained" },
+      "why": "非 dsh 作用域 peer 不参与 admission 判定"
+    },
+    {
+      "id": "syn-prerelease-participates",
+      "kind": "synthetic",
+      "manifest": { "peerDependencies": { "@deepseek-ai/dsh": "^0.2.0" } },
+      "expect": { "status": "admitted" },
+      "why": "prerelease 参与匹配：^0.2.0 覆盖 0.2.1-rc.2（includePrerelease=true 的语义细节，需锁死）"
+    },
+    {
+      "id": "syn-exact-pin-other-version",
+      "kind": "synthetic",
+      "manifest": { "peerDependencies": { "@deepseek-ai/dsh": "0.2.0-rc.2" } },
+      "expect": { "status": "denied", "unmet": ["@deepseek-ai/dsh"] },
+      "why": "精确钉死别的 rc 版本"
+    },
+    {
+      "id": "syn-or-list-admits",
+      "kind": "synthetic",
+      "manifest": { "engines": { "dsh": ">=0.2.1-rc.1 <0.3.0-0 || >=0.2.0-rc.2 <0.2.1-0" } },
+      "expect": { "status": "admitted" },
+      "why": "OR 列表任意一段命中即可放行：这是 rc 抖动期最常见的兜底写法"
+    },
+    {
+      "id": "syn-workspace-peer",
+      "kind": "synthetic",
+      "manifest": { "peerDependencies": { "@deepseek-ai/dsh": "workspace:^" } },
+      "expect": { "status": "denied", "unmet": ["@deepseek-ai/dsh"] },
+      "why": "workspace 协议只在源码工作区内成立；对已安装的第三方插件视为不可满足"
+    },
+    {
+      "id": "real-dsh-cost-meter@1.9.41",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-cost-meter",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "engines": { "dsh": ">=0.2.0-rc.1 <0.3.0-0", "node": ">=20" },
+        "peerDependencies": {
+          "@deepseek-ai/dsh-home-paths": ">=0.2.0-rc.1 <0.3.0-0 || >=0.2.1-0 <0.3.0-0",
+          "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.1 <0.3.0-0 || >=0.2.1-0 <0.3.0-0"
+        }
+      },
+      "expect": { "status": "admitted" },
+      "why": "engines 决定 → 放行；dsh.so 页面独立标注『当前 dsh 0.2.1-rc.2 在支持范围内』，与本判定一致"
+    },
+    {
+      "id": "real-dsh-mnemon@0.5.35",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-mnemon",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "engines": { "dsh": ">=0.2.0-rc.2 <0.2.1-0 || >=0.2.1-rc.1 <0.3.0-0", "node": ">=20" },
+        "peerDependencies": {
+          "react": "^18.2.0",
+          "@deepseek-ai/cordis": "^4.0.4",
+          "@deepseek-ai/dsh-app-boot": ">=0.2.0-rc.2 <0.2.1-0 || >=0.2.1-rc.1 <0.3.0-0"
+        }
+      },
+      "expect": { "status": "admitted" },
+      "why": "engines 优先且双段区间覆盖 0.2.1-rc.2"
+    },
+    {
+      "id": "real-dsh-tiddlywiki@0.33.4",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-tiddlywiki",
+      "recorded_at": "2026-10-26",
+      "manifest": { "engines": { "dsh": ">=0.2.1-rc.3", "node": ">=22" } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "要求比当前运行时更新的 rc（『超前声明』，在当前版本上会被拒）"
+    },
+    {
+      "id": "real-dsh-github-copilot@0.4.1",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-github-copilot",
+      "recorded_at": "2026-10-26",
+      "manifest": { "engines": { "dsh": "0.2.0-rc.2", "node": ">=22.19.0" } },
+      "expect": { "status": "denied", "unmet": ["dsh"] },
+      "why": "精确钉死 0.2.0-rc.2，升级到 0.2.1-rc.2 后失配"
+    },
+    {
+      "id": "real-dsh-find-plugin@0.4.0",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-find-plugin",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "peerDependencies": {
+          "@deepseek-ai/cordis": "^4.0.1",
+          "@deepseek-ai/dsh-tools": "^0.1.0-rc.6 || ^0.1.1-rc.1 || ^0.1.2-alpha.2 || ^0.1.3-alpha.2 || ^0.1.5-alpha.1 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1"
+        }
+      },
+      "expect": { "status": "denied", "unmet": ["@deepseek-ai/dsh-tools"] },
+      "why": "无 engines.dsh，靠 peer 判定；peer 只覆盖 0.1.x"
+    },
+    {
+      "id": "real-huanlin-better-locale@0.4.3",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/@huanlin%2Fdsh-plugin-better-locale",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "engines": { "node": ">=22.0.0" },
+        "peerDependencies": {
+          "@deepseek-ai/cordis": "^4.0.1",
+          "@deepseek-ai/dsh-client-locale": "^0.1.5-rc.2"
+        }
+      },
+      "expect": { "status": "denied", "unmet": ["@deepseek-ai/dsh-client-locale"] },
+      "why": "只有 node engines，无 dsh 声明 → 走 peer；peer 钉死 0.1.5-rc.2 线"
+    },
+    {
+      "id": "real-dsh-plugin-wallpaper-engine@1.4.0",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-plugin-wallpaper-engine",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "engines": { "dsh": "^0.2.0-rc.1", "node": ">=22.12.0" },
+        "peerDependencies": {
+          "react": "^18.2.0",
+          "@deepseek-ai/cordis": "^4.0.4",
+          "@deepseek-ai/dsh-client-runtime": ">=0.1.5-rc.1"
+        }
+      },
+      "expect": { "status": "admitted" },
+      "why": "engines ^0.2.0-rc.1 覆盖 0.2.1-rc.2；宽松 peer 被忽略"
+    },
+    {
+      "id": "real-dsh-perm-gate@5.3.3",
+      "kind": "real",
+      "source": "https://registry.npmjs.org/dsh-perm-gate",
+      "recorded_at": "2026-10-26",
+      "manifest": {
+        "engines": {
+          "dsh": "0.1.0-rc.2 || 0.1.0-rc.3 || 0.1.0-rc.6 || 0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2 || 0.1.2-rc.1 || 0.1.5-rc.1 || 0.1.5-rc.2 || 0.1.5-rc.3 || 0.1.7-rc.1 || 0.1.7-rc.2 || 0.2.0-rc.1 || 0.2.0-rc.2 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3",
+          "node": ">=24"
+        }
+      },
+      "expect": { "status": "admitted" },
+      "why": "显式枚举每个 rc（含当前 0.2.1-rc.2）——声明覆盖率高的写法，也是维护成本最高的写法"
+    }
+  ]
+}

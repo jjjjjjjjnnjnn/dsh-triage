@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.zip binary
+*.tgz binary
+
+# SSOT results must keep LF so hashes stay stable across platforms
+data/results/*.json text eol=lf
+data/gold/*.json text eol=lf

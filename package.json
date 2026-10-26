@@ -1,0 +1,29 @@
+{
+  "name": "dsh-addition",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "typecheck": "tsc -p tsconfig.tests.json --noEmit",
+    "test": "node --test --test-reporter=spec \"tests/**/*.test.ts\"",
+    "gate": "node scripts/gate.mjs",
+    "gate:fast": "node scripts/gate.mjs --fast",
+    "scan:env": "node scripts/scan_env.mjs",
+    "verify": "pnpm run build && pnpm run typecheck && pnpm run test && pnpm run gate",
+    "cli": "node packages/plugin/dist/cli.js"
+  },
+  "devDependencies": {
+    "@dsh-triage/core": "workspace:*",
+    "@dsh-triage/probe": "workspace:*",
+    "@dsh-triage/signals": "workspace:*",
+    "@types/node": "^24.10.1",
+    "@types/semver": "^7.7.1",
+    "typescript": "^5.9.3"
+  }
+}

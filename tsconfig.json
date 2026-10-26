@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/signals" },
+    { "path": "packages/probe" },
+    { "path": "packages/plugin" }
+  ]
+}

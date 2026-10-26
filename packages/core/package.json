@@ -1,0 +1,31 @@
+{
+  "name": "@dsh-triage/core",
+  "version": "0.1.0",
+  "description": "Judgment engine for DeepSeek Harness plugins: admission parity, environment fingerprint, capability ledger, verdict assembly. Pure, offline, deterministic.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE-ME/dsh-addition.git",
+    "directory": "packages/core"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "dependencies": {
+    "semver": "^7.7.3",
+    "yaml": "^2.8.1"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}

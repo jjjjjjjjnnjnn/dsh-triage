@@ -1,0 +1,30 @@
+{
+  "name": "@dsh-triage/signals",
+  "version": "0.1.0",
+  "description": "Tiered signal adapters for dsh-triage: npm registry, dsh.so registry, hub catalog, and local tool artifacts. Every signal carries provenance; nothing is merged silently.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE-ME/dsh-addition.git",
+    "directory": "packages/signals"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "dependencies": {
+    "@dsh-triage/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}

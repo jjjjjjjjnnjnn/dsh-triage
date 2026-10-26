@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "stand": "v0.1.0-skeleton (2026-10-26)",
+  "why": "外部数据源与参考实现的许可真相源。任何 packages/ 代码引用前必须在此登记。",
+  "entries": [
+    {
+      "id": "upstream-dsh",
+      "kind": "reference-docs",
+      "name": "DeepSeek Harness (@deepseek-ai/*)",
+      "source": "https://github.com/deepseek-ai/deepseek-harness",
+      "license": "MIT",
+      "used_for": "admission 语义 / loader 行为 / plugin-manager 与 app-boot 文档语义复刻",
+      "usage": "思想与契约复刻，代码不复制；语义引用处标注包名+版本",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "dsh-so-registry",
+      "kind": "data-api",
+      "name": "dsh.so plugin registry data API",
+      "source": "https://www.dsh.so/zh/data/",
+      "license": "CC BY 4.0",
+      "used_for": "L1–L5 安装/运行验证等级、安全档、npm 下载与星标榜（作为 measured-registry 信号）",
+      "usage": "必须署名 dsh.so；不得改变其结论含义；不得声称由其背书",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "npm-registry",
+      "kind": "data-api",
+      "name": "npm registry",
+      "source": "https://registry.npmjs.org/",
+      "license": "npm registry terms",
+      "used_for": "包元数据：version / engines / peerDependencies / deprecated / time",
+      "usage": "仅元数据，不缓存 tarball；快照写 data/raw（git 忽略）",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "omdsh-hub-catalog",
+      "kind": "data-api",
+      "name": "omdsh-dev/dsh-hub-workshop catalog (dsh-hub-index/v0.4)",
+      "source": "https://raw.githubusercontent.com/omdsh-dev/dsh-hub-workshop/main/catalog.json",
+      "license": "MIT (repository)",
+      "used_for": "hub 收录状态与 manifest 口径",
+      "usage": "只读；按字段原义使用",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "ref-guard",
+      "kind": "reference-impl",
+      "name": "lxzy-7/dsh-plugin-guard",
+      "source": "https://github.com/lxzy-7/dsh-plugin-guard",
+      "license": "MIT (per repository LICENSE)",
+      "used_for": "事故报告格式与 boot 级健康检查的边界认知（不复制代码）",
+      "usage": "read-only：只参考「健康检查看不见白屏」等结论",
+      "commercial_ok": false,
+      "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "ref-preflight-archived",
+      "kind": "reference-impl",
+      "name": "nzl153/dsh-preflight (archived 2026-09)",
+      "source": "https://github.com/nzl153/dsh-preflight",
+      "license": "UNKNOWN",
+      "used_for": "失败分类法与「静态预检被上游吸收」的历史证据",
+      "usage": "read-only：只引用其 README 的结论与检查项清单，代码禁抄",
+      "commercial_ok": false,
+      "recorded_at": "2026-10-26"
+    }
+  ]
+}

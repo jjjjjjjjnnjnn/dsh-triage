@@ -1,0 +1,149 @@
+#!/usr/bin/env node
+/**
+ * Gate: governance.
+ *
+ * Keeps the repository from rotting: index references must resolve, the gate
+ * registry must match `scripts/`, ledgers must exist, quarantine entries must be
+ * complete, and no credential-shaped string may enter the tree.
+ *
+ * Negative control: `--mutate` registers a phantom path in the reference list.
+ */
+
+import { Checks, exists, listDir, readJson, readText, runGate } from './lib/kit.mjs'
+
+// Files that legitimately contain credential-shaped prose (documentation of the rule itself).
+const SECRET_SCAN_SKIP = new Set(['COMPLIANCE.md', 'audit/AI_DISCLOSURE_LOG.md', 'scripts/gate_governance.mjs'])
+
+await runGate('governance', async ({ checks, mutate }) => {
+  checks.require('agents-md', exists('AGENTS.md'))
+  checks.require('project-rules', exists('PROJECT_RULES.md'))
+  checks.require('index-md', exists('INDEX.md'))
+  checks.require('compliance', exists('COMPLIANCE.md'))
+  checks.require('license', exists('LICENSE'))
+
+  // 1. INDEX.md table rows reference real paths.
+  const index = readText('INDEX.md')
+  const referenced = []
+  for (const line of index.split(/\r?\n/)) {
+    if (!line.startsWith('|')) continue
+    for (const match of line.matchAll(/`([^`]+)`/g)) {
+      const candidate = match[1]
+      if (!looksLikePath(candidate)) continue
+      if (candidate.includes('*')) continue
+      referenced.push(candidate)
+    }
+  }
+  const uniqueReferences = [...new Set(referenced)]
+  const phantom = mutate ? 'docs/does-not-exist.md' : null
+  const broken = uniqueReferences.filter((path) => !exists(stripAnchor(path)))
+  const mutatedBroken = phantom !== null && !exists(phantom) ? [phantom] : []
+  checks.add(
+    'index-references',
+    broken.length + mutatedBroken.length === 0,
+    [...broken, ...mutatedBroken].slice(0, 5).join(', ') || `${uniqueReferences.length} references ok`,
+  )
+
+  // 2. Gate registry <-> scripts/ parity.
+  const ledger = readJson('audit/gate_ledger.json')
+  const registered = new Set((ledger.gates ?? []).map((gate) => gate.script))
+  const onDisk = listDir('scripts')
+    .filter((entry) => entry.isFile && /^gate_.*\.mjs$/.test(entry.name) && entry.name !== 'gate.mjs')
+    .map((entry) => `scripts/${entry.name}`)
+  const missingOnDisk = [...registered].filter((script) => !exists(script))
+  const missingInLedger = onDisk.filter((script) => !registered.has(script))
+  checks.add(
+    'gate-registry',
+    missingOnDisk.length === 0 && missingInLedger.length === 0,
+    [...missingOnDisk.map((s) => `missing:${s}`), ...missingInLedger.map((s) => `unregistered:${s}`)].join(', ') ||
+      `${onDisk.length} gates`,
+  )
+  for (const gate of ledger.gates ?? []) {
+    checks.add(`gate-meta:${gate.id}`, Boolean(gate.enforces && gate.negative_control), `negative control: ${gate.negative_control ?? 'none'}`)
+  }
+
+  // 3. Audit ledgers.
+  const disclosure = readText('audit/AI_DISCLOSURE_LOG.md')
+  checks.require('disclosure-entries', disclosure.split(/\r?\n/).filter((line) => line.startsWith('### ')).length >= 1)
+  const blindSpots = readJson('audit/blind_spots.json')
+  const spots = Array.isArray(blindSpots.blind_spots) ? blindSpots.blind_spots : []
+  checks.require('blind-spots', spots.length >= 3, `${spots.length} entries`)
+  for (const spot of spots) {
+    checks.add(
+      `blind-spot:${spot.id}`,
+      Boolean(spot.area && spot.cannot_see && spot.mitigation && spot.owner),
+      spot.id,
+    )
+  }
+
+  // 4. Archive manifest rows must exist on disk (archive-only removals).
+  const archive = readText('_archive/ARCHIVE_MANIFEST.md')
+  const archiveRows = archive
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('|') && !line.includes('---') && !line.includes('尚未归档'))
+  const archiveProblems = []
+  for (const row of archiveRows) {
+    const cells = row.split('|').map((cell) => cell.trim())
+    const archivedPath = cells[3]
+    if (archivedPath === undefined || archivedPath === '' || archivedPath === '归档路径') continue
+    if (!exists(archivedPath)) archiveProblems.push(archivedPath)
+  }
+  checks.add('archive-manifest', archiveProblems.length === 0, archiveProblems.join(', ') || 'no dangling entries')
+
+  // 5. Quarantine manifest completeness.
+  const vendor = readJson('quarantine/vendor-manifest.json')
+  const vendorEntries = Array.isArray(vendor.entries) ? vendor.entries : []
+  checks.require('vendor-manifest', vendorEntries.length >= 1, `${vendorEntries.length} entries`)
+  for (const entry of vendorEntries) {
+    checks.add(
+      `vendor:${entry.id}`,
+      Boolean(entry.id && entry.name && entry.source && entry.license && entry.used_for && entry.usage && typeof entry.commercial_ok === 'boolean'),
+      entry.id,
+    )
+  }
+
+  // 6. Credential-shaped strings.
+  const suspicious = []
+  const patterns = [/sk-[A-Za-z0-9]{20,}/, /ghp_[A-Za-z0-9]{20,}/, /AIza[0-9A-Za-z_-]{20,}/, /-----BEGIN (RSA|OPENSSH) PRIVATE KEY-----/]
+  for (const file of scanTargets()) {
+    if (SECRET_SCAN_SKIP.has(file)) continue
+    const text = readText(file)
+    for (const pattern of patterns) {
+      if (pattern.test(text)) suspicious.push(`${file}:${pattern.source}`)
+    }
+  }
+  checks.add('no-credentials', suspicious.length === 0, suspicious.slice(0, 5).join(', ') || 'clean')
+})
+
+function looksLikePath(value) {
+  if (value.startsWith('http') || value.startsWith('#') || value.startsWith('@')) return false
+  return value.includes('/') || /\.(md|json|mjs|ts|yml|yaml|txt)$/.test(value)
+}
+
+function stripAnchor(value) {
+  return value.split('#')[0] ?? value
+}
+
+function scanTargets() {
+  const targets = []
+  for (const root of ['docs', 'packages', 'scripts', 'tests', 'audit', '.agents']) {
+    collect(root, targets)
+  }
+  for (const entry of listDir('')) {
+    if (entry.isFile && /\.(md|json|ya?ml)$/.test(entry.name)) targets.push(entry.name)
+  }
+  return targets
+}
+
+function collect(relativePath, out) {
+  for (const entry of listDir(relativePath)) {
+    const next = `${relativePath}/${entry.name}`
+    if (entry.isDirectory) {
+      if (entry.name === 'node_modules' || entry.name === 'dist') continue
+      collect(next, out)
+    } else if (entry.isFile && /\.(md|json|mjs|ts|ya?ml)$/.test(entry.name)) {
+      out.push(next)
+    }
+  }
+}
+
+void Checks

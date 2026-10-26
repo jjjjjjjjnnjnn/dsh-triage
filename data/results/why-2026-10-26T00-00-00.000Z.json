@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/scan_env.mjs",
+  "generated_at": "2026-10-26T00:00:00.000Z",
+  "status": "ok",
+  "env": {
+    "dsh": "0.1.0-rc.6",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app"
+    ],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.1.0-rc.6"
+      },
+      {
+        "name": "@deepseek-ai/dsh-base",
+        "version": "0.1.0-rc.6"
+      },
+      {
+        "name": "@deepseek-ai/dsh-web-app",
+        "version": "0.1.0-rc.6"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-base",
+        "version": "0.1.0-rc.6",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "go",
+      "confidence": {
+        "level": "medium",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-admitted",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        },
+        {
+          "code": "admission-declared-only",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-base@0.1.0-rc.6",
+          "method": "declared-range",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-web-app",
+        "version": "0.1.0-rc.6",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "go",
+      "confidence": {
+        "level": "medium",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-admitted",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        },
+        {
+          "code": "admission-declared-only",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-web-app@0.1.0-rc.6",
+          "method": "declared-range",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "C:\\Users\\rongj\\.dsh\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-26T00:00:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "summary": {
+    "go": 2
+  },
+  "scanned": {
+    "bundles": 2,
+    "entries": 156
+  },
+  "errors": []
+}

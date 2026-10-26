@@ -1,0 +1,55 @@
+{
+  "name": "dsh-triage",
+  "version": "0.1.0",
+  "description": "The judgment layer for DeepSeek Harness plugins: attribute why a plugin silently disappeared, judge a candidate against your exact environment, and keep a capability ledger. Offline, read-only, evidence-first.",
+  "type": "module",
+  "bin": {
+    "dsh-triage": "./dist/cli.js",
+    "dsht": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "default": "./dist/host.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "cordis.patch.yml", "README.md"],
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "compat",
+    "diagnostics",
+    "plugin-health",
+    "triage"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/REPLACE-ME/dsh-addition.git",
+    "directory": "packages/plugin"
+  },
+  "engines": {
+    "node": ">=22.19",
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@dsh-triage/core": "workspace:*",
+    "@dsh-triage/probe": "workspace:*",
+    "@dsh-triage/signals": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}

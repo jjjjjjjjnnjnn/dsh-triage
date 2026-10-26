@@ -1,0 +1,12 @@
+# dsh-triage profile patch layer.
+#
+# Rules (enforced by scripts/gate_namespace.mjs):
+# - every row id MUST be prefixed `compat-` (never reuse an upstream row id:
+#   `plugin-manager`, `tools`, `session`, `llm`, `web`, `permission`, `plugin-market`);
+# - the module specifier must resolve from this package only;
+# - no `config` keys that shadow upstream services.
+- id: compat-verdict
+  name: dsh-triage/host
+  config:
+    # Reserved for M4: which localized catalogue the Web panel renders.
+    locale: auto

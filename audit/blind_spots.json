@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "stand": "v0.1.0-skeleton (2026-10-26)",
+  "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
+  "blind_spots": [
+    {
+      "id": "BS-01",
+      "area": "admission-parity",
+      "cannot_see": "只能判断「声明区间 vs 运行时」。对 29% 无任何声明的插件（实测样本 n=195）完全无分辨力",
+      "mitigation": "结论降级为 unknown 并要求 probe；README/UI 明示「声明不可判 ≠ 不可用」",
+      "owner": "core/admission"
+    },
+    {
+      "id": "BS-02",
+      "area": "admission-parity",
+      "cannot_see": "peer 语义以 npm semver + includePrerelease 复刻，若上游改用自研区间实现或改变 prerelease 处理，可能出现系统性偏差",
+      "mitigation": "金标夹具带 recorded_at + 上游文档引用；每次升级 DSH 基线必须重跑 parity 门并核对变更",
+      "owner": "core/admission"
+    },
+    {
+      "id": "BS-03",
+      "area": "probe",
+      "cannot_see": "HTTP / 返回 200 不代表前端可用（白屏/黑屏仍 200，见 dsh-plugin-guard README 实测）",
+      "mitigation": "probe 必须叠加 client render 信号与命名空间增量 diff，单靠健康检查不得判 go",
+      "owner": "probe"
+    },
+    {
+      "id": "BS-04",
+      "area": "ledger",
+      "cannot_see": "静态提取只能看到「显式声明」的能力；运行期动态注册（按配置决定名字）看不到 → 可能漏报冲突",
+      "mitigation": "运行期用 tools.schemas()/commands.list()/settings.describe() 快照作为第二来源，冲突结论标注来源与置信度",
+      "owner": "core/ledger"
+    },
+    {
+      "id": "BS-05",
+      "area": "verdict",
+      "cannot_see": "本机实测只覆盖「这台机器、这个 Node、这个 OS」，不能外推到其他用户",
+      "mitigation": "结论里写死 env 指纹；跨用户结论只来自回流聚合且标注样本量",
+      "owner": "core/verdict"
+    },
+    {
+      "id": "BS-06",
+      "area": "signals",
+      "cannot_see": "dsh.so 的 L4/L5 是干净沙盒单一环境实测；与本机组合无关，不能当作「你会成功」的证据",
+      "mitigation": "tier 标为 measured-registry（非 local），UI 文案禁止写成「已验证可用」",
+      "owner": "signals/dshso"
+    },
+    {
+      "id": "BS-07",
+      "area": "growth",
+      "cannot_see": "npm 周下载量受 CI 镜像、频繁发版、镜像站抓取影响，不等于真实用户数",
+      "mitigation": "增长看板同时看徽章曝光 / 索引源添加 / Agent 工具调用三个领先指标；对外只写「npm 周下载」口径",
+      "owner": "docs/market"
+    }
+  ]
+}
