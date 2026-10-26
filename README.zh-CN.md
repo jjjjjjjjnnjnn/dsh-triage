@@ -1,6 +1,8 @@
-# dsh-triage — DSH 插件判断层
+# dsh-triage — DSH 插件判断层（分诊台）
 
-> **状态**：`v0.1.0-skeleton`（M0）。本仓已有判断引擎 + 门禁 + CLI 骨架；Web 面板、隔离实测、徽章按 [`docs/06-roadmap.md`](docs/06-roadmap.md) 落地。
+**分诊台 / Triage** · [`github.com/jjjjjjjjnnjnn/dsh-triage`](https://github.com/jjjjjjjjnnjnn/dsh-triage)
+
+> **状态**：`v0.1.0-skeleton`（M0）。本仓已有判断引擎 + 门禁 + CLI 骨架；Web 面板、隔离实测、徽章按 [`docs/ROADMAP.md`](docs/ROADMAP.md) 落地。
 >
 > DSH 已经能告诉你插件**装不装得上**。没有人告诉你它在你**这套环境**里**跑不跑得对**——你的 dsh 版本、你的系统、你另外那 12 个插件。
 

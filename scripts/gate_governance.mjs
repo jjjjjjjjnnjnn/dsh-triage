@@ -112,6 +112,49 @@ await runGate('governance', async ({ checks, mutate }) => {
     }
   }
   checks.add('no-credentials', suspicious.length === 0, suspicious.slice(0, 5).join(', ') || 'clean')
+
+  // 7. Agent framework completeness (.agents/README.md §4).
+  const roleFiles = listDir('.agents/roles')
+    .filter((entry) => entry.isFile && entry.name.endsWith('.md'))
+    .map((entry) => `.agents/roles/${entry.name}`)
+  checks.require('agent-roles', roleFiles.length >= 5, `${roleFiles.length} role cards`)
+  const requiredSections = ['## 输入', '## 输出', '## 禁区', '## 验收']
+  for (const [index, role] of roleFiles.entries()) {
+    const raw = readText(role)
+    const text = mutate && index === 0 ? raw.replace('## 验收', '## 已删除') : raw
+    const missing = requiredSections.filter((section) => !text.includes(section))
+    checks.add(`role:${role}`, missing.length === 0, missing.join(', ') || 'ok')
+  }
+
+  const promptFiles = listDir('.agents/prompts')
+    .filter((entry) => entry.isFile && entry.name.endsWith('.md'))
+    .map((entry) => `.agents/prompts/${entry.name}`)
+  checks.require('agent-prompts', promptFiles.length >= 3, `${promptFiles.length} templates`)
+  for (const [index, prompt] of promptFiles.entries()) {
+    const raw = readText(prompt)
+    const text = mutate && index === 0 ? raw.replace('## 模板', '## 空') : raw
+    checks.add(`prompt:${prompt}`, text.includes('## 模板'), 'missing ## 模板 section')
+  }
+
+  checks.add(
+    'agents-entry-linked',
+    readText('AGENTS.md').includes('.agents/README.md'),
+    'AGENTS.md must link .agents/README.md',
+  )
+
+  const handoff = readText('docs/HANDOFF.md')
+  checks.add(
+    'handoff-sections',
+    handoff.includes('## 2. 当前批次') && handoff.includes('## 3. 下一位 agent 的第一件事'),
+    'HANDOFF.md needs 当前批次 + 第一件事',
+  )
+  checks.add('handoff-command', /```powershell[\s\S]{10,}?```/.test(handoff), 'first task must be a runnable command block')
+
+  checks.add(
+    'disclosure-session-slot',
+    disclosure.includes('SessionID'),
+    'AI_DISCLOSURE_LOG.md must carry a SessionID field',
+  )
 })
 
 function looksLikePath(value) {

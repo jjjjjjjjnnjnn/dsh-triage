@@ -19,7 +19,11 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "cordis.patch.yml", "README.md"],
+  "files": [
+    "dist",
+    "cordis.patch.yml",
+    "README.md"
+  ],
   "license": "MIT",
   "keywords": [
     "dsh",
@@ -32,7 +36,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/REPLACE-ME/dsh-addition.git",
+    "url": "git+https://github.com/jjjjjjjjnnjnn/dsh-triage.git",
     "directory": "packages/plugin"
   },
   "engines": {

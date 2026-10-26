@@ -11,11 +11,14 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/REPLACE-ME/dsh-addition.git",
+    "url": "git+https://github.com/jjjjjjjjnnjnn/dsh-triage.git",
     "directory": "packages/core"
   },
   "engines": {

@@ -36,3 +36,15 @@
 - 人工决策：无（按 `integrity.md` 既有条款修正）
 - SessionID：待 HUMAN 回填
 - 备注：此轮暴露的通用风险已登记为 `audit/blind_spots.json` BS-04（静态提取看不到运行期注册），并推动「预期 FAIL 的负对照」写进铁律 4
+
+### 2026-10-26 R2｜命名 + 仓库 + 路线 + Agent 框架
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- 范围：`docs/ROADMAP.md`、`docs/BACKLOG.md`、`docs/HANDOFF.md`、`.agents/{README,roles/*,prompts/*,rules/adversarial_review}.md`、`AGENTS.md`、`INDEX.md`、`scripts/gate_governance.mjs`、`tests/governance/ledgers.test.ts`、四个 `package.json` 的 repository 字段、双 README 品牌行
+- 命名决策：产品/仓名 **dsh-triage**，中文品牌「分诊台」；理由=语义精确（分诊=判断严重度与优先级）、短、可发音、npm 未占用
+- 框架：6 张角色卡（researcher/implementer/verifier/reviewer/adversary/arbiter）+ 3 个模板 + 对抗性四反假设；**框架完整性进机器校验**（角色四节、模板一节、交接两节、SessionID 槽位）
+- 参考来源：`oh_my_3Dcharacter/.agents/rules/*`、`Jufo-2026-ContextRobustness/.agents/rules/*`（仅借鉴结构，未复制代码；许可见 `quarantine/vendor-manifest.json`）
+- 审核：主会话自审；`gate_governance` 新增 5 类校验并通过 --mutate 负对照
+- 人工决策：HUMAN 指定「起名 + private 仓库 + 路线 + agent 框架」
+- SessionID：待 HUMAN 回填
+- 备注：仓库为 private；首推后仍需 HUMAN 决定是否转 public 与 npm 发布时机

@@ -59,3 +59,32 @@ test('README states the honest boundaries (no security guarantee) in both langua
   assert.match(zh, /不提供安全背书/)
   assert.match(en, /do \*\*not\*\* provide security assurances/i)
 })
+
+test('agent role cards are complete (输入/输出/禁区/验收)', () => {
+  const dir = new URL('.agents/roles/', root)
+  const files = readdirSync(dir).filter((name) => name.endsWith('.md'))
+  assert.ok(files.length >= 5, `expected >=5 role cards, got ${files.length}`)
+  for (const file of files) {
+    const text = readFileSync(new URL(file, dir), 'utf8')
+    for (const section of ['## 输入', '## 输出', '## 禁区', '## 验收']) {
+      assert.ok(text.includes(section), `${file} missing ${section}`)
+    }
+  }
+})
+
+test('prompt templates all expose a 模板 section', () => {
+  const dir = new URL('.agents/prompts/', root)
+  const files = readdirSync(dir).filter((name) => name.endsWith('.md'))
+  assert.ok(files.length >= 3, `expected >=3 templates, got ${files.length}`)
+  for (const file of files) {
+    assert.ok(readFileSync(new URL(file, dir), 'utf8').includes('## 模板'), `${file} missing 模板`)
+  }
+})
+
+test('handoff entry has a current batch and one runnable first task', () => {
+  const handoff = read('docs/HANDOFF.md')
+  assert.ok(handoff.includes('## 2. 当前批次'))
+  assert.ok(handoff.includes('## 3. 下一位 agent 的第一件事'))
+  assert.match(handoff, /```powershell/)
+  assert.ok(read('AGENTS.md').includes('.agents/README.md'), 'AGENTS.md must link the agent framework')
+})
