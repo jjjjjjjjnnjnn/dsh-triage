@@ -2,7 +2,7 @@
 
 **分诊台 / Triage** · `github.com/jjjjjjjjnnjnn/dsh-triage`
 
-> **Status**: `R6` — **10 real cases replayed (9 hits, 1 deliberate miss)**; the D1 decision gate is now machine-judged from `data/results/d1-*.json`; row-level admission attribution, 8 machine-enforced gates. The Web panel, probe runner and badges land per [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status**: `R7` — **10 real cases replayed (9 hits, 1 deliberate miss)**; the D1 decision gate is machine-judged from `data/results/d1-*.json`; row-level admission plus **runtime phase attribution** (`audit --snapshot`, M2-a P2); 9 machine-enforced gates. The Web panel, probe runner and badges land per [`docs/ROADMAP.md`](docs/ROADMAP.md).
 > DSH (DeepSeek Harness) already tells you whether a plugin *installs*. Nobody tells you whether it will *work* — with **your** dsh version, **your** OS, and **your** other 12 plugins.
 
 ## The problem we take seriously

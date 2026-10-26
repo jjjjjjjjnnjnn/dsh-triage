@@ -1,7 +1,7 @@
 # spec · M2-a 运行时台账（`pluginInventory` 相位）
 
-> **Stand**: R4 (2026-10-26)｜上游基线 `@deepseek-ai/dsh@0.2.1-rc.2`，取证同时覆盖 `0.2.1-rc.3`｜状态：契约已锁定（A 级），实现未开始（T-201 待领）
-> 证据：`data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测）＋ npm tarball 原文（见 §2 来源列）
+> **Stand**: R7 (2026-10-27)｜上游基线 `@deepseek-ai/dsh@0.2.1-rc.2`，取证同时覆盖 `0.2.1-rc.3`｜状态：契约已锁定（A 级）；**P2 已交付**（`audit --snapshot` + 门 `inventory-contract` + `scripts/render_inventory.mjs`），**P1 与真机采样仍待**（见 §8）
+> 证据：`data/results/upstream-0.2.1-rc.3-2026-10-26T00-00-00.000Z.json`（沙箱实测）＋ `data/results/inventory-2026-10-27T00-00-00.000Z.json`（合成样本判定）＋ npm tarball 原文（见 §2 来源列）
 
 ## 1. 为什么需要这一层
 
@@ -97,3 +97,15 @@ P1/P2 的 schema 校验必须是**防御式**的：未知字段进 `raw` 不猜�
 - 相位是**采样瞬间**的事实，不适合回答「昨晚为什么挂了」——那需要 M3 的 probe 与（后续）事故报告；
 - `agentPresets` 只在部署组合了 preset roster 时出现，缺失不等于没有插件；
 - 不能从相位推断「工具是否可用」：工具可能注册在 `active` 的插件里，而它自身抛错（需 tools/commands 快照，T-202）。
+
+## 8. 实现记录（R7，2026-10-27）
+
+| 层 | 状态 | 代码 / 证据 |
+|---|---|---|
+| P1 进程内（`ctx.pluginInventory.list()`） | ⬜ **未实现** | 需要真实 cordis 类型 + 可启动 Host；本机无 0.2.x 真机 profile。退出条件见 `docs/HANDOFF.md` §8 |
+| P2 快照文件（`audit --snapshot <file>`） | ✅ 已交付 | `packages/core/src/inventory.ts` + `packages/plugin/src/cli.ts`；`tests/unit/inventory.test.ts`（10）+ `tests/e2e/inventory-cli.test.ts`（3） |
+| 判定产物 | ✅ 已交付 | `scripts/render_inventory.mjs` → `data/results/inventory-2026-10-27T00-00-00.000Z.json`（`sample.kind=synthetic`） |
+| 门 `inventory-contract` | ✅ 已交付 | `scripts/gate_inventory_contract.mjs`：fixtures 回放 §3、上游 `fiberPhase` 枚举比对、中英文案存在性；`--mutate` 可打红 |
+| `agentPresets` 维度（§3 硬约束 3） | ⬜ **未实现** | 当前把 `agentPresets` 当未知键（进 `unknownKeys`），保守地不进结论；T-112 |
+
+**验证边界（必读）**：§5 的 B1/B2 只用**合成样本**验证了「相位表 + 解析器 + diff」，**没有**验证真实 Host 的采样。因此对外只能说「相位表已实现」，不能说「实测过这台机器」。合成样本：`data/fixtures/inventory/desktop-web-2026-10-26.json`。

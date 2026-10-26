@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R6 (2026-10-26)｜当前批次：**R6 · D1 案例补齐（4/10 → 9/10，机器判定通过）+ 计分脚本化**（10 例 / 9 命中 / 1 有意 miss；62 测试；8 门 8-8）
+> **Stand**: R7 (2026-10-27)｜当前批次：**R7 · M2-a P2 相位层落地**（`audit --snapshot` + 新门 `inventory-contract`；75 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -24,15 +24,15 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/
 | 项 | 状态 |
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
-| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中）** · **M2-a 契约 ✅ / 实现可开工**（T-201） |
+| 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中）** · **M2-a P2 ✅ / P1 待真机**（T-201） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
-| CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 8/8）· `release readiness`（tag 触发） |
-| 规模 | **62 测试** · **8 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
+| CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
+| 规模 | **75 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **D1 通过**：+6 例（CASE-10201/10759/10364/8751/8220 命中，CASE-7590 为负样本）；**新增 `scripts/d1_report.mjs`**（命中率→可重算产物，含 `label_key_sources` 证据分层）；+5 契约测试；5 条新盲区（BS-10…BS-14）；纠正 R5 对 #10364 的过强判断；**独立对抗性复核后当场修 3 项**（CASE-11080 重放、`dsh.compatibility` 措辞、2 例来源字段） |
-| 证据 | `data/results/d1-2026-10-26T12-00-00.000Z.json`（`gate.passed=true`，9/10）· `why-case-CASE-{10201,10759,10364,8751,8220,7590,11080}-2026-10-26T12-00-00.000Z.json`（6 hit / 1 miss）· `gates-*.json`（8 门全绿）· `gates-mutate-*.json`（8/8 CAUGHT）；共 17 个产物、20 个已审步骤 |
-| 审核报告 | `audit/AUDIT_2026-10-26_R6.md`（本轮；§10 = 独立上下文复核）· `AUDIT_2026-10-26_R5.md` · `R4` · `R3` |
-| 未通过的门槛 | 无（D1 本轮通过；D2–D4 尚未到点） |
+| 本轮交付 | **M2-a P2**：`packages/core/src/inventory.ts`（防御式解析 + 相位→结论映射 + 声明/运行 diff）+ `audit --snapshot` + **新门 `inventory-contract`**（9 门）+ `scripts/render_inventory.mjs` + 13 条测试（单测 10 / e2e 3）；`verdict-contract` 的 messageId 白名单新增 `runtime.*` 命名空间（对齐 R4 已锁 spec，不是放宽阈值） |
+| 证据 | `data/results/inventory-2026-10-27T00-00-00.000Z.json`（5 entries / 1 missing / 1 undeclared / {risky2, blocked1, unknown1}，`sample.kind=synthetic`）· `gates-2026-10-27T00-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 20 个产物、24 个已审步骤 |
+| 审核报告 | `audit/AUDIT_2026-10-27_R7.md`（本轮）· `AUDIT_2026-10-26_R6.md`（含 §10 独立复核）· `R5` · `R4` · `R3` |
+| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 的真机采样未验证**（无 0.2.x 可启动 profile，见 §8） |
 
 ---
 
@@ -42,11 +42,17 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/
 pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
-**验收标准**：第二条输出 `ALL GREEN · 8 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 8/8`。
-满足即环境可信，接着领 **T-201（按 `docs/specs/M2-inventory.md` §4 的 P1+P2 路径实现相位台账）**：`docs/BACKLOG.md` → 按 `.agents/prompts/task-packet.md` 列允许改动文件后再动手。
+**验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
+满足即环境可信，接着**二选一**（都不需要新的许可）：
 
-> D1 已于 R6 通过（9/10，见 `data/results/d1-2026-10-26T12-00-00.000Z.json`），M2 不再被门禁阻塞。
-> 先把 `node scripts/d1_report.mjs --stamp <iso>` 跑一次复算命中率，确认与交接数字一致，再改任何代码。
+1. **T-112**（`agentPresets` 维度）：同一 entry 在不同 preset 下相位不同，当前保守地不进结论。按 `docs/specs/M2-inventory.md` §3 硬约束 3 实现，先写负对照。
+2. **T-202**（namespace 快照）：`tools/commands/settings/skills` 的运行期快照，落 `data/results/ns-*.json` + 哈希。
+
+先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
+
+> D1 已于 R6 通过（9/10，见 `data/results/d1-2026-10-26T12-00-00.000Z.json`）；M2-a P2 已于 R7 交付（`data/results/inventory-2026-10-27T00-00-00.000Z.json`）。
+> 复核口径两条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp <iso>`。
+> **P1 与真机相位采样仍阻塞**：本机没有可启动的 0.2.x profile（见 §8）。没有真机样本前，对外只能说「相位表已实现」，不能说「实测过这台机器」。
 
 > 每一步做完，先追加 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256），再跑 `node scripts/gate_step_review.mjs`。漏了它，`pnpm run verify` 会红。
 
@@ -77,6 +83,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 用 PowerShell 改 `.mjs` 脚本，跑起来报语法错 / 门禁读到怪字符 | `Set-Content -Encoding utf8` 在 PS 5.1 下写 **BOM**（R6 实际踩到 `scripts/d1_report.mjs`） | 改代码只用编辑器/Node：`node -e "…writeFileSync(p, t.replace(/^\uFEFF/,''),'utf8')"`；提交前看首字节是否是 `EF BB BF` |
 | 新脚本按传参目录跑，报 `ENOENT ...\<repo>\C:\Users\…` | `scripts/lib/kit.mjs` 的 `abs()` 是 **repo-root 相对**，直接把绝对路径塞进去会被拼接 | 传参路径先判 `isAbsolute()` 再决定是否 `abs()`（见 `scripts/d1_report.mjs` 的 `pathFor`） |
 | `npm view`/registry 拿某个具体版本的 manifest 返回 **406** | 只发 `Accept: application/vnd.npm.install-v1+json` 时，版本端点不支持 | 具体版本用 `Accept: application/json`；packument 才用 install-v1 |
+| 新写了一条 `reason`，`verdict-contract` 门报 “messageId must be a catalogue id” | 门里 `MESSAGE_ID` 是**白名单正则**（`admission|collision|runtime|remediation|missing`），新命名空间要同时改门 + `docs/05-verdict-contract.md` | 新增命名空间时三处同改：`messages.ts` 文案、`gate_verdict_contract.mjs` 正则、`docs/05` §契约表；这不是放宽阈值，是对齐已锁 spec |
+| 给 `for (const [a, b] of [...])` 漏了 `]`，Node 只报 “Unexpected token 'of'” | 解构语法；报错位置指向 `of` 容易误导 | 写完 pair 循环先跑 `node --check <file>`（或直接跑一次 `tsc -b`） |
 
 ---
 
@@ -129,6 +137,10 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `T-108` 未读的声明通道（`BS-13`）：`dsh.compatibility` / `dshReleases` | implementer | 读成次要证据并与 peer 结论分列；tier 不得越级 |
 | `T-109` npm dist-tag 失步（`dsh-tools` latest=0.0.1-rc.1，而已发布 0.2.1-rc.x） | implementer | `check --explain` 显示 latest / next / 已发布最新 三者差异，tier 不得越级 |
 | `T-111` label 自证（`BS-14`）：9 个命中无独立签署 | verifier + implementer | R7 起新案例由独立上下文签署 `label_verified_by` |
+| `T-201 P1`：Host 内 `compat_inventory` 工具（相位真机来源） | implementer | 本机可启动 0.2.x profile → P1 导出的快照喂给 `audit --snapshot` 与 Host 内结论一致 |
+| `B1/B2` 真机采样（`BS-15`）：相位层目前只有合成样本 | verifier | 产出一份 `sample.kind=live` 的 `data/results/inventory-*.json`，与合成样本并列 |
+| `T-112` preset 维度：同一 entry 在不同 preset 下相位不同 | implementer | 分开出结论，禁取「最乐观值」；`conditional` 行标 `unknown` |
+| 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe（同时解锁 P1 与 B1） |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
 | 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public`（建议等 D2 后再定） |
 | 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe |

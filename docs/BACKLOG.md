@@ -13,7 +13,8 @@
 | T-111 | label 独立签署：`label_verified_by` 字段 + 独立 verifier 流程 | 流程 | verifier + implementer | — | R7 起新案例先由独立上下文复核并签署；`d1_report` 输出已签/未签比例 | ⬜ R6 独立复核发现 A9 / `BS-14`（D1 目前是自证） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
-| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | ⬜ **可开工（D1 已于 2026-10-26 通过，9/10）**；沙箱 `data/results/upstream-0.2.1-rc.3-*.json` 已证明服务存在、`fiberPhase` 枚举实测 |
+| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **P2 已交付（2026-10-27）**：`audit --snapshot` + 门 `inventory-contract` + 13 条测试；**P1 待真机**（需 0.2.x 可启动 profile）；B1/B2 目前只有合成样本 |
+| T-112 | `agentPresets` 维度：同一 entry 在不同 preset 下相位不同，必须分开出结论 | M2-a | implementer | T-201 | 不取「最乐观值」；只有 `conditional` 的 preset 行标 `unknown` + 需会话上下文 | ⬜ R7 发现（`BS-15`，spec §3 硬约束 3 未实现） |
 | T-202 | 运行时命名空间快照（tools/commands/settings/skills） | M2-a | implementer | T-201 | 快照落 `data/results/ns-*.json` + 哈希 | ⬜ |
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
 | T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ⬜ R4 审核遗留（`audit/AUDIT_2026-10-26_R4.md` §5） |
@@ -33,7 +34,20 @@
 
 ---
 
-## R6 已交付（本轮，证据见 `data/results/d1-2026-10-26T12-00-00.000Z.json`）
+## R7 已交付（本轮，证据见 `data/results/inventory-2026-10-27T00-00-00.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-201 P2 | 相位层：`packages/core/src/inventory.ts`（防御式解析 + 相位→结论映射 + 声明/运行 diff） | ✅ |
+| CLI | `dsh-triage audit --snapshot <file>`：行旁相位、missing/undeclared 两段、结论卡；无 `--snapshot` 时行为不变 | ✅ |
+| NEW | 门 **`inventory-contract`**（9 门）：fixtures 逐行回放 spec §3 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性；`--mutate` 可打红 | ✅ |
+| NEW | `scripts/render_inventory.mjs`：把一次相位判定写成 SSOT（`sample.kind` 自曝 synthetic/live） | ✅ |
+| 测试 | +13（单测 10 + e2e 3），总 **75**；套件 9 门 / `--mutate` 9/9 | ✅ |
+| 未做 | P1（Host 内取相位）、真机样本、`agentPresets` 维度（T-112） | ⬜ 见 `audit/AUDIT_2026-10-27_R7.md` §3 |
+
+---
+
+## R6 已交付（证据见 `data/results/d1-2026-10-26T12-00-00.000Z.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|

@@ -6,7 +6,7 @@
 
 | 阶段 | 周 | 交付 | 出口门禁（可验收） |
 |---|---|---|---|
-| **M0 骨架** ✅ | W0 | 目录、治理、8 道门禁、pnpm 工作区、core/signals/probe/plugin 可构建 | `pnpm run verify` 全绿；8 门在 `--mutate` 下**全部能 FAIL**（负对照） |
+| **M0 骨架** ✅ | W0 | 目录、治理、9 道门禁、pnpm 工作区、core/signals/probe/plugin 可构建 | `pnpm run verify` 全绿；9 门在 `--mutate` 下**全部能 FAIL**（负对照） |
 | **M1 admission 对等** | W1 | `core/admission` + 21 条金标（13 synthetic + 8 real）+ `scan_env` 真跑 SSOT | 金标 100% 对等；`data/results/why-*.json` 落盘带哈希 |
 | **M2 `why` 归因** | W2 | 被拒行 / import 失败 / 能力缺失 + 修复命令；S2 运行时台账接入 | 在真实「工具消失」案例上**一次命中根因**（见 `specs/M1-why.md` 判据） |
 | **M3 隔离实测** | W3–W4 | `probe` 执行器：独立 `DSH_HOME`、boot/http/render/inventory/namespace-diff、失败清理 | 单次 ≤20s；能稳定复现一个「装了就白屏」的案例；默认 dry-run |

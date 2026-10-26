@@ -2,7 +2,7 @@
 
 **分诊台 / Triage** · [`github.com/jjjjjjjjnnjnn/dsh-triage`](https://github.com/jjjjjjjjnnjnn/dsh-triage)
 
-> **状态**：`R6` —— **10 个真实案例已复现（9 命中 / 1 有意 miss）**，D1 决策门以 `data/results/d1-*.json` 机器判定通过；行级 admission 归因、8 道门禁机器强制。Web 面板、隔离实测、徽章按 [`docs/ROADMAP.md`](docs/ROADMAP.md) 落地。
+> **状态**：`R7` —— **10 个真实案例已复现（9 命中 / 1 有意 miss）**，D1 决策门以 `data/results/d1-*.json` 机器判定通过；行级 admission 归因 + **运行时相位归因**（`audit --snapshot`，M2-a P2）、9 道门禁机器强制。Web 面板、隔离实测、徽章按 [`docs/ROADMAP.md`](docs/ROADMAP.md) 落地。
 >
 > DSH 已经能告诉你插件**装不装得上**。没有人告诉你它在你**这套环境**里**跑不跑得对**——你的 dsh 版本、你的系统、你另外那 12 个插件。
 

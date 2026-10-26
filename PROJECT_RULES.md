@@ -35,7 +35,7 @@
 
 | 阶段 | 名字 | 交付物 | 出口门禁 | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
-| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（2026-10-26；现为 **8 门 / 8-8 CAUGHT**，门数随 R4 增长） |
+| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（2026-10-26；现为 **9 门 / 9-9 CAUGHT**，门数随里程碑增长） |
 | **M1** | admission 对等 | `core/admission` + `data/gold/admission-cases.json`（21 条：13 synthetic + 8 npm 真快照） | 金标 100% 对等；负对照可复现 FAIL | 🟡 对等已锁死；**真实案例验收阻塞**（T-101 等 HUMAN 输入，见 `docs/HANDOFF.md` §8） |
 | **M2** | `why` 归因 | `dsh-triage why`：拒绝行 / import 失败 / 能力缺失 + 修复命令 | 在真实「工具消失」案例上一次命中根因 | — |
 | **M3** | 隔离实测 | `probe`：独立 `DSH_HOME` 装候选 → boot/http/inventory/namespace-diff | 单次 ≤20s；失败自动清理；默认 dry-run | — |

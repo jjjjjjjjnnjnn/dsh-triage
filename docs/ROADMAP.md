@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）12 周
 
-> **Stand**: R6 (2026-10-26) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R7 (2026-10-27) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**执行计划**；判据细节以 `docs/specs/*` 为准，增长细节以 `docs/06-roadmap.md` 为准。
 
 ---
@@ -16,9 +16,9 @@
 
 | 周 | 阶段 | 交付物 | 出口门禁（可证伪） | 人力 |
 |---|---|---|---|---|
-| W0 | **M0 骨架** ✅ | 治理 / 7 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 7 门 mutate 全 CAUGHT | 已完成 |
-| W1 | **M1 收口** | 21 条金标 + `why` 归因 + 真实案例验收 | 真实案例一次命中根因（点名行 = 真实根因，修复后症状消失） | 1 agent |
-| W2 | **M2-a 运行时台账** | `pluginInventory` 相位 + tools/commands/settings 快照 | `audit` 能显示每行相位；与 patch 静态声明交叉校验 | 1 |
+| W0 | **M0 骨架** ✅ | 治理 / 9 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 9 门 mutate 全 CAUGHT | 已完成 |
+| W1 | **M1 收口** ✅ | 21 条金标 + `why` 归因 + 10 例真实案例 | 真实案例 ≥8/10 命中 —— **R6 达成 9/10**（`data/results/d1-*.json`） | 已完成 |
+| W2 | **M2-a 运行时台账** | 🟨 `pluginInventory` 相位：**P2 已交付**（`audit --snapshot` + 门 `inventory-contract`），P1 待真机；tools/commands/settings 快照未开始（T-202） | `audit` 能显示每行相位；与 patch 静态声明交叉校验 —— 合成样本已过，**真机采样未验证** | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |
 | W4 | **M3 probe 执行器** | 独立 `DSH_HOME` 装 → boot → http → render → inventory → namespace-diff | 单次 ≤20s；稳定复现 1 例「装了就白屏」；失败必清理 | 2（并行） |
 | W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮 | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |
