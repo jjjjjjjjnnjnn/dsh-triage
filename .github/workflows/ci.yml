@@ -43,15 +43,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      # Every gate must exit non-zero under --mutate. If this step succeeds,
-      # at least one gate is vacuously green and the build fails on purpose.
+      # Negative control: each gate is run with --mutate and MUST reject its injected
+      # violation. The suite exits 0 only when every gate was CAUGHT; a gate that
+      # stays green (vacuous) makes this step fail on purpose.
       - name: every gate must catch its injected violation
-        run: |
-          if node scripts/gate.mjs --mutate; then
-            echo "::error::at least one gate stayed green under --mutate"
-            exit 1
-          fi
-          echo "all gates rejected their injected violation"
+        run: node scripts/gate.mjs --mutate
 
   release-check:
     name: release readiness

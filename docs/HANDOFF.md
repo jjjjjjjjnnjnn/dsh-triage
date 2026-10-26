@@ -52,6 +52,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `yaml` 解析把 `!!js` 当错误 | 未用 `parseDocument` + `doc.errors` | 已修，见 `packages/core/src/ledger.ts` |
 | 提交标题带 `` | PowerShell 5.1 `Out-File -Encoding utf8` 写 BOM | 用 `git commit -m`，别用 `-F` 接 BOM 文件 |
 | 门禁「全绿」但什么都没查 | 没跑 `--mutate` | 每轮必跑（CI 也跑两次） |
+| CI 报找不到 `scripts/lib/kit.mjs` | `.gitignore` 的 `lib/` 匹配任意层级，把 `scripts/lib/` 吞了 | 已改为 `**/dist/` + `packages/*/lib/`（ADR-worthy，见下） |
+| CI 里 probe 测试失败 | 测试硬编码 `C:/Temp`，POSIX 下不算绝对路径 | 改为 `tmpdir()` + `join()`，并断言 `isAbsolute` |
+| 误以为 `gate.mjs --mutate` 要 exit 1 | 单门 `--mutate` 才 exit 1；套件「全 CAUGHT」才 exit 0 | 看最后一行 `NEGATIVE CONTROL PASSED` |
 | 中文控制台乱码 | 控制台编码 ≠ 文件编码（文件是 UTF-8 无 BOM） | 用 Node 读文件判断，不看控制台 |
 
 ---

@@ -3,7 +3,7 @@
   "stand": "v0.1.0-skeleton (2026-10-26)",
   "rules": {
     "registration": "scripts/ 下每个 gate_*.mjs 必须在此登记；反之此表里的 script 必须存在（gate_governance 校验）",
-    "negative_control": "每道门必须有可复现的 FAIL 用例，否则视为无效门",
+    "negative_control": "每道门单独跑 --mutate 必须 exit 1；套件 node scripts/gate.mjs --mutate 只在全部 CAUGHT 时 exit 0（有 MISSED 即 exit 1）",
     "threshold_changes": "任何阈值/判据变更需要 spec + HUMAN-SIGN，禁口头放宽"
   },
   "gates": [
@@ -11,7 +11,7 @@
       "id": "admission-parity",
       "script": "scripts/gate_admission_parity.mjs",
       "enforces": "core/admission 判定与 data/gold/admission-cases.json 100% 对等（engines.dsh 优先 → dsh* peer 全 AND → prerelease 参与 → 空/非法区间不兼容）",
-      "negative_control": "node scripts/gate_admission_parity.mjs --mutate expected → 必须 exit 1",
+      "negative_control": "node scripts/gate_admission_parity.mjs --mutate expected → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": true,
       "owner": "core"
     },
@@ -19,7 +19,7 @@
       "id": "verdict-contract",
       "script": "scripts/gate_verdict_contract.mjs",
       "enforces": "data/results/verdict-*.json 与 docs/05-verdict-contract.md 一致：四态结论、evidence[] 必填 tier/source/method/at、blocked 必须给 remediation、unknown 必须给 missing evidence",
-      "negative_control": "node scripts/gate_verdict_contract.mjs --mutate → 必须 exit 1",
+      "negative_control": "node scripts/gate_verdict_contract.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "contract"
     },
@@ -27,7 +27,7 @@
       "id": "ssot",
       "script": "scripts/gate_ssot.mjs",
       "enforces": "data/results/*.json 含 produced_by / generated_at / schema_version，且存在同名 .sha256 并与内容一致",
-      "negative_control": "node scripts/gate_ssot.mjs --mutate → 必须 exit 1",
+      "negative_control": "node scripts/gate_ssot.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "ssot"
     },
@@ -35,7 +35,7 @@
       "id": "governance",
       "script": "scripts/gate_governance.mjs",
       "enforces": "INDEX.md 引用的文件存在；门禁登记完整；AI 披露日志存在；归档清单与实际 _archive 一致；quarantine/vendor-manifest 字段完整；无密钥特征",
-      "negative_control": "node scripts/gate_governance.mjs --mutate → 必须 exit 1",
+      "negative_control": "node scripts/gate_governance.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "governance"
     },
@@ -43,7 +43,7 @@
       "id": "namespace",
       "script": "scripts/gate_namespace.mjs",
       "enforces": "packages/plugin 的 patch 行 id 全部以 compat- 前缀；不得占用上游核心 row id；服务名以 compat 起头；包名符合 @dsh-triage/* 或 dsh-triage",
-      "negative_control": "node scripts/gate_namespace.mjs --mutate → 必须 exit 1",
+      "negative_control": "node scripts/gate_namespace.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "plugin"
     },
@@ -51,7 +51,7 @@
       "id": "release",
       "script": "scripts/gate_release.mjs",
       "enforces": "每个包有 version/license/files/engines；公开包声明 engines.dsh（吃自己的狗粮）；仓库字段指向本仓；无 workspace:* 泄漏到发布依赖",
-      "negative_control": "node scripts/gate_release.mjs --mutate → 必须 exit 1",
+      "negative_control": "node scripts/gate_release.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "release"
     }

@@ -59,10 +59,16 @@ if (json) {
       2,
     )}\n`,
   )
-} else {
+} else if (mutate) {
+  // In mutate mode a non-zero gate exit is the DESIRED outcome, so "ok" here means
+  // the whole negative-control suite passed. Individual gate scripts still exit 1
+  // under --mutate (see audit/gate_ledger.json#negative_control).
+  const caught = results.filter((result) => result.ok).length
   process.stdout.write(
-    `\n${failed.length === 0 ? 'ALL GREEN' : `${failed.length} GATE(S) FAILED`} · ${gates.length} gates${mutate ? ' · negative control mode' : ''}\n`,
+    `\n${failed.length === 0 ? `NEGATIVE CONTROL PASSED · ${caught}/${gates.length} gates caught their injected violation` : `NEGATIVE CONTROL FAILED · ${failed.length} gate(s) stayed green (vacuous)`}\n`,
   )
+} else {
+  process.stdout.write(`\n${failed.length === 0 ? 'ALL GREEN' : `${failed.length} GATE(S) FAILED`} · ${gates.length} gates\n`)
 }
 process.exitCode = failed.length === 0 ? 0 : 1
 
