@@ -180,9 +180,18 @@
     {
       "id": "BS-25",
       "area": "probe/readiness-window",
-      "cannot_see": "「起得来但还没开始服务」与「起不来」在探针里长得一样：矩阵实测 `dsh-whale-widget@0.4.2`（7.2MB、带 web client）在 12.3s 写出样本，随后 5s 内 Host 从未打印 `?token=` URL，`fetch failed` → 结论 `blocked`；同时探针自己的 hook 报 `cannot get required service \"loader\" in inactive context`。这两件事都指向「树还没进入 active」，不一定是插件坏了。当前 http 就绪窗口（样本后 5s）对慢候选偏短，且 hook 早于树 active 时会把自己的失败算成候选失败",
-      "mitigation": "R16 起把形状记下来：`render.reason` 写明「Host 没打印 URL」，矩阵 `shapes` 区分 `boot-sampled:failed`；下一步 T-308 把就绪窗口改成「Host 打印 URL 为准 + 上限可配」，并让 hook 在 `inactive context` 时重试而不是直接失败（重试耗尽 → unknown + missing.inventory，不得算 blocked）",
-      "owner": "probe"
+      "cannot_see": "「起得来但还没开始服务」与「起不来」在探针里长得一样。R16 把它归因到「树还没 active」；R17 实测后知道是**四种**形状：(a) hook 读到 `inactive context`（我们的 fiber 被 unload，Cordis 之后会重跑 apply）；(b) 样本 `settled:false`（树还在动）；(c) launcher 打印 `startup failed`（Host 自己起不来）；(d) 探针自己选的端口被 OS 排除段拒绝（EACCES），webserver 行失败、整棵树 pending。前三者与候选的关系是「未知」或「Host 的判定」，第四者与候选**完全无关**",
+      "mitigation": "R17（T-308）已把它拆开：① 端口每次向 OS 申请（`findFreePort`），产物记 `sandbox.port_origin`，绑定失败且端口是我们自己选的 → `unknown` + `probe.port-unavailable`；② 判定引入 `valid / unsettled / unreadable`，只有 `valid` 能出 `blocked`，其余 `unknown` + `missing.inventory`；③ 候选行 `pending/loading` 不再当 `row-inactive`；④ `startup failed` 照抄 launcher 原文并提前收敛；⑤ 不可判样本允许被后一次 apply 覆盖（代际保护）。负对照 N19–N25。剩余：延迟 >15s 的 `slow-overrun` 真机夹具、Linux 等价排除段未测",
+      "owner": "probe",
+      "status": "resolved (R17)",
+      "resolved_by": "R17-S1..S6: packages/probe/src/{host,exec}.ts + hooks/inventory-hook.mjs + tests/unit/probe-exec.test.ts (N19-N25) + tests/fixtures/probe/slow-plugin; 真机证据 data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json (go, 6.8s) 与 probe-slow-normal-* (settled=true)"
+    },
+    {
+      "id": "BS-26",
+      "area": "probe/readiness-window",
+      "cannot_see": "「慢到超过 settle 预算」的真机形状没有夹具：判定层有 N19 单测（`settled:false` → unknown），但没有任何一个真机插件证明「延迟 >15s 的候选会得到 unknown 而不是 blocked」。同时 `settled:false` 的替换等待（默认 20s）是否足够也没测",
+      "mitigation": "不得把 N19 的单测说成「真机已验证」。补全路径：加一个延迟 20s 的 `slow-overrun` 夹具，真跑一次确认期望 `unknown`（不是 `blocked`，也不是 `go`）",
+      "owner": "probe/host"
     }
   ]
 }

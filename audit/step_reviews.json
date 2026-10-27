@@ -2209,6 +2209,197 @@
         "sha256": "e43962a97b46e821db27c720bdf7715e40243c0e0df388d77d17c0996725f9d7",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 200）"
       }
+    },
+    {
+      "id": "R17-S1",
+      "batch": "R17",
+      "step": "T-308 事实先行：五次真跑把「blocked」拆成四种形状，并抓到端口自伤缺陷；端口改为向 OS 申请",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：同一候选五次真跑得到三种不同形状（8.7s 的 inactive-context / 10.2s 的好样本但无 URL / 126s 无样本 + startup failed）；`netsh` 列出本机 TCP 53461–53560 被排除，Node 直接 bind 53506 复现 EACCES；换 `findFreePort()` 后同一候选 `go`（5.9–6.8s，HTTP 401，行 active）",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --candidate dsh-whale-widget@0.4.2 --dsh-main <sandbox>/…/bin.js --install <sandbox>/install` 可重放；端口每次不同但写进产物（`sandbox.port_origin=allocated`、`sandbox.port`），所以「这次用哪个端口」可审计",
+        "licence": "PASS：只用 `node:net`，零新依赖；候选仍是 ADR-0004 的 pin + 临时沙盒 + 跑完即删，源码不进仓",
+        "ssot": "PASS：产物新增 `sandbox.port_origin` / `sandbox.port` / `boot.bind_failed_ports` / `boot.url_printed`，本步引用 `probe-registry-whale-*`；旧产物未改",
+        "adversary": "反例一（本轮最贵）：端口排除段在会话中途变化 —— 15:05 同一候选还能起来，15:20 之后连续三次 EACCES，所以「换一个固定端口」不是修复，必须每次向 OS 申请。反例二：申请与 Host 绑定之间有竞态，届时由 `probe.port-unavailable` 把它记成探针环境问题（N23），而不是插件失败"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-whale-widget@0.4.2 --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label registry-whale --expect go --stamp 2026-10-27T17:05:00.000Z",
+        "artifact": "data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json",
+        "sha256": "80d1ea29123f3d19465bbd2bca45de438bec7886c8842a70667b9d96411df384",
+        "outcome": "go（boot→sample 6.8s / HTTP 401 / 行 active / port_origin=allocated；R16 同一候选是 blocked）"
+      }
+    },
+    {
+      "id": "R17-S2",
+      "batch": "R17",
+      "step": "hook 时序：`inactive context` 是「我们的 fiber 被 unload」，改为代际保护 + 记录 settled/attempts/applies",
+      "changed": [
+        "packages/probe/hooks/inventory-hook.mjs",
+        "packages/probe/src/exec.ts"
+      ],
+      "review": {
+        "correctness": "PASS：读 `@deepseek-ai/cordis` 的 `_getImpl`/`_refresh`/`_setEpoch`/`_unload` 确认：注入服务缺失时 `fiber.store` 被置空，服务回来后 Cordis **重跑 apply**；因此不做「同一 dead ctx 重试」，而是①旧 task 只在自己仍 active 且是最新代际时写文件②Host 允许后一次 apply 覆盖出可判样本。产物已带 `settled/attempts/applies`",
+        "reproducibility": "PASS：三条新字段在真机产物里可读（`inventory.settled=true / attempts=1 / applies=1`）；判定侧用假 payload 覆盖 settled 缺失、error code 未知等形状（`readSample` 单测）",
+        "licence": "PASS：hook 是仓内文件，随 `@dsh-triage/probe` 发布；无第三方代码、无新依赖",
+        "ssot": "PASS：`inventory.error_code` / `settled` / `attempts` / `applies` 进产物；`excluded` 仍剔除探针行；本步引用 `probe-slow-normal-*`",
+        "adversary": "反例一：第一版若在同一个 task 里重试 30s，会白等且必然失败（ctx 已死）——这就是「看起来在修、实际没修」。反例二：旧 task 在新 apply 写出好样本之后把错误写回去，会把好证据覆盖成坏证据；代际保护就是为这个加的。反例三：hook 逻辑跑在沙盒 Host 内，单测只能覆盖 payload 形状与判定，不能覆盖 hook 本身 —— 已在 spec §9 写明，不把单测说成真机验证"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label slow-normal --expect go --stamp 2026-10-27T17:00:00.000Z",
+        "artifact": "data/results/probe-slow-normal-2026-10-27T17-00-00.000Z.json",
+        "sha256": "7125c97d05f5e5fbdb002e0c9ef62548d60e22fd8d82c8bced35791fb2d632e5",
+        "outcome": "go（boot→sample 6.5s / settled=true / 行 active / readiness.waited_ms=32）"
+      }
+    },
+    {
+      "id": "R17-S3",
+      "batch": "R17",
+      "step": "就绪：URL 与端口同轮询 + `readiness` 记 outcome/waited_ms/window_ms/url_seen + startup failed 提前收敛",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/plugin/src/probe-run.ts"
+      ],
+      "review": {
+        "correctness": "PASS：settled 树仍用 5s（阈值未改），unsettled 树用 20s 可配窗口且判定层强制只能 `unknown`；`waited_ms` 实测 10–32ms（命中即返回，健康跑不变慢）；`dsh: startup failed` 一出现就收敛，实测从 126s 降到 ~6s",
+        "reproducibility": "PASS：`--readiness-timeout` / `--unsettled-timeout` 两个 flag 在 CLI 与 `record_probe` 都校验范围（越界 exit 2），N24 要求窗口被调小时如实记 `waited_ms/window_ms`",
+        "licence": "PASS：无新依赖；日志只留首行 + 1.5KB 尾巴，并按 `(?token=)` 正则脱敏，不外发 URL",
+        "ssot": "PASS：`readiness` 六个字段与 `boot.error_tail` 进产物；`sandbox.port_origin` 让「端口是谁选的」可审；本步引用 `probe-registry-whale-*`",
+        "adversary": "反例一：把 unsettled 窗口也拿去判 `blocked`，等于偷偷放宽阈值而没改 spec —— 判定层直接禁止。反例二：`boot` 步骤曾在 `sample === null` 时提前 return，导致 `url_printed/first_line/error_tail` 全空（本轮真踩），已把赋值移到 early return 之前。反例三：`error_tail` 只取 stderr 会漏掉 launcher 打在 stdout 的诊断（本轮真踩），已改为两流拼接"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-whale-widget@0.4.2 --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label registry-whale --expect go --stamp 2026-10-27T17:05:00.000Z",
+        "artifact": "data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json",
+        "sha256": "80d1ea29123f3d19465bbd2bca45de438bec7886c8842a70667b9d96411df384",
+        "outcome": "go（readiness.source=host-url / outcome=served / waited_ms=10 / window_ms=5000 / url_seen=true）"
+      }
+    },
+    {
+      "id": "R17-S4",
+      "batch": "R17",
+      "step": "判定分离：只有 valid 读数能出 blocked；新增 tree-not-settled / startup-failed / port-unavailable 三个原因",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "packages/core/src/messages.ts",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：`measurementState` 把读数分成 valid / unsettled / unreadable；只有 valid 能进 `probe.http-unreachable` 与 `row-inactive`；候选行 `pending/loading/unloading` 走 `unknown`；`startup failed` 用 launcher 原文进 `blocked`；我们自己的端口绑不上走 `unknown`。真机负对照仍红（apply-fail → row-inactive/failed，import-fail → row-inactive/none）",
+        "reproducibility": "PASS：判定是纯函数，`tests/unit/probe-exec.test.ts` 用假 deps 覆盖 N19–N25；历史产物未被改写（新文案只加不改占位符，门 `verdict-contract` 9 门全绿）",
+        "licence": "PASS：文案中英各三条，无第三方文本；`docs/05` §2e 同步命名空间成员",
+        "ssot": "PASS：新增 messageId 只加不改；`missing.inventory` / `missing.probe` 与结论一一对应；本步引用 `probe-red-apply-fail-*`",
+        "adversary": "反例（最重要）：这类修复最容易退化成「什么都是 unknown」——N20（settled + 端口静默）与两条真机负对照就是防它的。反例二：`settled` 缺字段的老 payload 被判 usable，这是有意的向后兼容（否则等于追溯判死历史样本），已写进 `measurementState` 注释。反例三：把「探针自己的端口绑不上」也算插件坏，会把我们自己的 bug 卖成产品结论 —— N23 钉住"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/throw-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-apply-fail --expect blocked --stamp 2026-10-27T17:10:00.000Z",
+        "artifact": "data/results/probe-red-apply-fail-2026-10-27T17-10-00.000Z.json",
+        "sha256": "cfb0f88e13beea462b547c27442a3868d33861b0013eeafc434fc5c73df37e66",
+        "outcome": "blocked + probe.row-inactive（phase=failed）；同批 import 失败见 probe-red-import-fail-*"
+      }
+    },
+    {
+      "id": "R17-S5",
+      "batch": "R17",
+      "step": "慢夹具 + 14 条单测：证明「慢但正常」= go，且迟到的 transient 行不会变成 blocked",
+      "changed": [
+        "tests/fixtures/probe/slow-plugin/package.json",
+        "tests/fixtures/probe/slow-plugin/index.js",
+        "tests/fixtures/probe/slow-plugin/cordis.patch.yml",
+        "tests/unit/probe-exec.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`slow-plugin` 在 apply 里返回一个 6s 后 resolve 的 promise（行保持 loading），真机 boot→sample 6.5s、`settled=true`、`go`；单测 213 条全绿，其中 14 条是 N19–N25 与 sanitize/bind/usable 的纯函数断言",
+        "reproducibility": "PASS：夹具无网络、无第三方代码，`private:true`；`node --test tests/unit/probe-exec.test.ts` = 40 条通过；BOM 曾被 PowerShell 写进三个夹具文件，已用 Node 剥掉并确认首字节",
+        "licence": "PASS：夹具是本仓原创，MIT；不 vendor 任何候选",
+        "ssot": "PASS：夹具路径写进矩阵 plan（`matrix-r17.json`），真机产物 `probe-slow-normal-*` 引用本步；单测不产 SSOT（不是 real_test）",
+        "adversary": "反例一：delay 太小（<1s）的夹具什么也证明不了，树根本来不及动；选 6s 让 settle 路径真的走一遍。反例二：夹具若用 `- id:` 而不是 `insert:`，会被上游静默跳过（R14 的坑），门 `namespace` 的 `rows-are-inserted` 也会红。反例三：真机上「延迟超过 15s settle 预算」的形状仍只有单测，已登记 `BS-26`，不许说成真机已验证"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label slow-normal --expect go --stamp 2026-10-27T17:00:00.000Z",
+        "artifact": "data/results/probe-slow-normal-2026-10-27T17-00-00.000Z.json",
+        "sha256": "7125c97d05f5e5fbdb002e0c9ef62548d60e22fd8d82c8bced35791fb2d632e5",
+        "outcome": "go（expectation_met=true；证明「慢」不再被写成 blocked）"
+      }
+    },
+    {
+      "id": "R17-S6",
+      "batch": "R17",
+      "step": "接线与口径：CLI/记录器 flag + 矩阵 `real_starts`，重测 D2 分母",
+      "changed": [
+        "packages/plugin/src/cli.ts",
+        "scripts/record_probe.mjs",
+        "scripts/record_probe_matrix.mjs",
+        "tests/fixtures/probe/matrix-r17.json"
+      ],
+      "review": {
+        "correctness": "PASS：矩阵 n=7、`expectation_misses=0`、清理 7/7、`real_starts=2`（两个真实候选都 go）、合成失败 5 个都按标注 blocked；boot 6.2–6.9s 全部 within_20s",
+        "reproducibility": "PASS：`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r17.json … --stamp 2026-10-27T17:20:00.000Z` 可重放；摘要内嵌每次产物 sha256；`--out` 支持临时目录",
+        "licence": "PASS：候选与 R16 相同（pin 版本、MIT、临时沙盒、跑完即删）；本轮未新增 vendor 条目",
+        "ssot": "PASS：`summary` 增 `real_starts/real_by_conclusion/synthetic_failures`，并在 HANDOFF/ROADMAP 写明「2 次真实启动不是成功率」；本步引用矩阵产物",
+        "adversary": "反例一：把合成失败混进成功率会让 D2 看起来更差、也可能被拿来讲故事，所以真实启动单列并写进 limits。反例二：允许把 `--readiness-timeout` 调到 1s 相当于允许自欺，N24 要求如实记窗口而不是把它藏起来。反例三：矩阵 `expect` 若沿用 R16 的 `go`（whale 当时是 blocked）就会「靠改期望值变绿」——本轮是判据修好后自然变绿，且另有两个红样本证明判定没被放水"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r17.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T17:20:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-27T17-20-00.000Z.json",
+        "sha256": "5920aa6a8915afd7844a9995225abe65d1ce772b3480530a9398dc7a35153fd9",
+        "outcome": "n=7 / real_starts=2（两次都 go）/ blocked 3（合成）/ cleanup 7-7 / boot 6.2–6.9s"
+      }
+    },
+    {
+      "id": "R17-S7",
+      "batch": "R17",
+      "step": "负对照回归：import 期抛错（phase=null）在新判据下仍是 blocked，没有被降级成 unknown",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "tests/unit/probe-exec.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`broken-plugin`（import 期抛错）真机仍是 `blocked` + `probe.row-inactive`（phase=none），证明「测量失败 → unknown」的修复没有把真实失败一起放过；同批 `settled=true`、HTTP 401、渲染通过，说明树是稳定的，失败确实在候选行上",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --candidate tests/fixtures/probe/broken-plugin … --expect blocked --stamp 2026-10-27T17:15:00.000Z`；与 R14 的同名样本形状一致（boot 13.3s → 6.5s，因为端口修好后不再等启动失败）",
+        "licence": "PASS：本地夹具，无外部代码；沙盒跑完即删",
+        "ssot": "PASS：产物含 `inventory.phase=null` 与 `reasons=probe.row-inactive`；本步引用该产物，消除孤儿",
+        "adversary": "反例：如果按「只要读不到就 unknown」的粗粒度实现，这条真机样本会变成 unknown 并让所有坏插件被放过 —— 这正是 N20/N7 要防的；本步是它在真机上的对照"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/broken-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-import-fail --expect blocked --stamp 2026-10-27T17:15:00.000Z",
+        "artifact": "data/results/probe-red-import-fail-2026-10-27T17-15-00.000Z.json",
+        "sha256": "001f55502b73a8ae0c335321a1b75d74ff9e36cf92ada9dcbdb32a9d444415c8",
+        "outcome": "blocked + probe.row-inactive（phase=none，settled=true，HTTP 401）"
+      }
+    },
+    {
+      "id": "R17-S8",
+      "batch": "R17",
+      "step": "门禁与交接：全链录一次绿、BS-25 关闭 + BS-26 新增、审核报告与披露台账、HANDOFF/INDEX/BACKLOG/ROADMAP 同步",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/specs/M3-probe.md",
+        "audit/AUDIT_2026-10-27_R17.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "audit/blind_spots.json",
+        "_archive/ARCHIVE_MANIFEST.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 213 测试 / 9 门全绿；`node scripts/gate.mjs --mutate` = 9/9 CAUGHT；本轮 84 份产物全部被 97 步台账引用（试录的那份已按规则归档并登记）",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T18:00:00.000Z` 可重放；HANDOFF §1/§3 的命令块可直接执行；矩阵与四份 probe 产物都给了完整命令",
+        "licence": "PASS：SIGNOFF 两条新行把「授权 / 执行 / HUMAN 未逐条看的部分」分列；外部候选沿用 R15/R16 边界且写明未扩大机制",
+        "ssot": "PASS：`data/results` 83 产物全部被引用；BS-25 标 resolved（含真机产物路径）、BS-26 记录「slow-overrun 只有单测」；试录的 gates 快照按「只进不出」归档而非删除",
+        "adversary": "反例一：把「修好判据」写成「D2 达标」是最容易的过度声称 —— HANDOFF/ROADMAP/AUDIT 三处都写「2 次真实启动不是成功率」。反例二：试录门禁得到 FAILED 时若把它当成证据留下，会让审核看起来自相矛盾；已归档并在 manifest 写清原因。反例三：HANDOFF 若只写「端口已修」而不写「排除段会中途变化」，下一位会以为常量端口可用"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T18:00:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-27T18-00-00.000Z.json",
+        "sha256": "c46824c82bb716adf0b3c6b97e1692c738d6eef4ed248cf42355b7de74944faf",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9；pnpm test = 213）"
+      }
     }
   ]
 }

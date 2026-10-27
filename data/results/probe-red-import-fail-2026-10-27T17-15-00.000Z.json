@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-27T17:15:00.000Z",
+  "label": "red-import-fail",
+  "expectation": "blocked",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
+    "package": "triage-probe-fixture-broken",
+    "kind": "path",
+    "resolved": null
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\broken-plugin-cbc4c00c",
+    "profile": "web",
+    "port_origin": "allocated",
+    "port": 53184,
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "preinit": null
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 129,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "ms": 354,
+      "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\broken-plugin-cbc4c00c\\profiles\\web",
+      "exitCode": 0
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "ms": 17822,
+      "detail": "6.5s to sample",
+      "exitCode": null
+    },
+    {
+      "id": "http",
+      "status": "passed",
+      "ms": 0,
+      "detail": "HTTP 401",
+      "exitCode": null
+    },
+    {
+      "id": "render",
+      "status": "passed",
+      "ms": 0,
+      "detail": "rendered: mount root with 1 child(ren), 289 visible chars (1982ms)",
+      "exitCode": null
+    },
+    {
+      "id": "inventory",
+      "status": "passed",
+      "ms": 0,
+      "detail": "include:triage-probe-broken none",
+      "exitCode": null
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 6,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": 354,
+    "bootToSampleMs": 6500,
+    "httpMs": 0,
+    "renderMs": 1982,
+    "cleanupMs": 6
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "id": "http-served",
+      "status": "passed",
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "inventory-active",
+      "status": "failed",
+      "detail": "1 candidate row(s)"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "passed",
+      "detail": "rendered: mount root with 1 child(ren), 289 visible chars"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": "in-process-projection",
+    "entries": 195,
+    "wait_ms": 3351,
+    "settled": true,
+    "error_code": null,
+    "attempts": 1,
+    "applies": 1,
+    "candidate_rows": [
+      {
+        "entryId": "include:triage-probe-broken",
+        "moduleName": "triage-probe-fixture-broken",
+        "phase": null
+      }
+    ],
+    "excluded": [
+      "include:triage-inventory-probe"
+    ],
+    "error": null
+  },
+  "http": {
+    "status": 401,
+    "detail": "HTTP 401"
+  },
+  "boot": {
+    "url_printed": true,
+    "first_line": "dsh: warning: 1 entry did not activate",
+    "error_tail": null,
+    "startup_failed": false,
+    "bind_failed_ports": []
+  },
+  "readiness": {
+    "source": "host-url",
+    "port": 53184,
+    "outcome": "served",
+    "waited_ms": 37,
+    "window_ms": 5000,
+    "url_seen": true
+  },
+  "render": {
+    "status": "rendered",
+    "detail": "mount root with 1 child(ren), 289 visible chars",
+    "ms": 1982,
+    "signals": {
+      "title_length": 16,
+      "ready_state": "complete",
+      "body_children": 4,
+      "root_id": "root",
+      "root_children": 1,
+      "text_length": 289,
+      "html_bytes": 540955
+    }
+  },
+  "install": {
+    "lockfile": {
+      "present": true,
+      "bytes": 385,
+      "sha256": "863b6d865cf37c9f9fa55d38887fb9a6b0199ce63c660bbb07db35bc8f3660af"
+    },
+    "endpoints": []
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "blocked",
+  "confidence": {
+    "level": "high",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-render-ok",
+      "severity": "info",
+      "messageId": "probe.render-ok",
+      "params": {
+        "ms": 1982
+      }
+    },
+    {
+      "code": "probe-row-inactive",
+      "severity": "block",
+      "messageId": "probe.row-inactive",
+      "params": {
+        "row": "include:triage-probe-broken",
+        "phase": "none"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-27T17:15:00.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-install",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
+      "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+      "at": "2026-10-27T17:15:00.000Z"
+    },
+    {
+      "id": "probe-boot",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
+      "method": "boot + in-process-projection inventory sample",
+      "at": "2026-10-27T17:15:00.000Z",
+      "detail": "entries=195 wait_ms=3351"
+    },
+    {
+      "id": "probe-http",
+      "tier": "measured-local",
+      "source": "http://127.0.0.1:53184",
+      "method": "http readiness (redirect: manual)",
+      "at": "2026-10-27T17:15:00.000Z",
+      "detail": "status=401 waited=37ms window=5000ms url_seen=true"
+    },
+    {
+      "id": "probe-render",
+      "tier": "measured-local",
+      "source": "http://127.0.0.1:53184",
+      "method": "headless Chromium + CDP DOM observation",
+      "at": "2026-10-27T17:15:00.000Z",
+      "detail": "mount root with 1 child(ren), 289 visible chars"
+    },
+    {
+      "id": "probe-cleanup",
+      "tier": "measured-local",
+      "source": "sandbox removed · port closed",
+      "method": "directory + port check",
+      "at": "2026-10-27T17:15:00.000Z"
+    }
+  ],
+  "missing_evidence": [],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe"
+  ]
+}

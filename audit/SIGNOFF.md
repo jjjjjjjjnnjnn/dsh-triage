@@ -17,6 +17,9 @@
 | 2026-10-28 | **R15 外部候选取用授权**（ADR-0004：首次在临时沙盒真装并执行第三方 npm 插件） | 会话内原话：选项「授权，按 pin 版本 + 临时沙盒执行」；范围「S1 + T-306 + T-302 + T-305」 | DeepSeek V4.1 Flash：写入 `docs/adr/0004`；只测 3 个公开 MIT 包（`dsh-plugin-model-proxy@0.1.6` / `dsh-cost-meter@1.9.41` / 两个不存在的 spec），全部装进系统临时目录下的沙盒 `DSH_HOME`、跑完即删；候选源码不进仓、不进 `quarantine/`，只登记元数据 | **候选作者与代码可信度**（本仓不判安全，`COMPLIANCE.md` §5）；候选在真实用户组合下的行为；HUMAN 未逐条看安装日志 | `docs/adr/0004-external-candidate-boundary.md` · `quarantine/vendor-manifest.json`（`probe-candidate-*`）· `data/results/probe-registry-*.json` |
 | 2026-10-28 | **R16 沿用上述授权（未扩大）** | 会话内指令「同意，继续」 | DeepSeek V4.1 Flash：新增执行 `dsh-whale-widget@0.4.2`（矩阵里 1 次）与 `dsh-cost-meter@1.9.41`（私有源形状 1 次）；仍全部 pin + 临时沙盒 + 跑完即删；只新增元数据登记，未新增 vendor | 同 R15 行；另外 HUMAN 未逐条复核「矩阵把多少失败算作合成」的标注 | `data/results/probe-matrix-2026-10-27T14-36-20.000Z.json` · `probe-registry-private-2026-10-27T14-33-57.000Z.json` · `audit/AUDIT_2026-10-27_R16.md` |
 
+| 2026-10-27 | **R17 判据改动**：`M3-probe.md` §4 新增「unsettled readiness window（默认 20s，可配，只能出 unknown）」+ `ROADMAP.md` §2 D2 口径（`go/(go+blocked)`，`unknown` 单列） | 会话内原话：「同意，继续，开始进行」（针对附两条待签项的 R17 计划） | DeepSeek V4.1 Flash：settled 树的 5s 判定阈值**未改**；新增窗口只作用于 `settled:false` / 读不到树的形状，且判定层强制只能 `unknown`；D2 口径只改统计分母定义，不改任何判据 | 两条文案与「20s」这个具体数字是否合适；HUMAN 未逐条复核 spec §4/§5 的最终措辞 | `docs/specs/M3-probe.md` §4/§5/§8 · `docs/ROADMAP.md` §2 · `data/results/gates-2026-10-27T18-00-00.000Z.json` |
+| 2026-10-27 | **R17 外部候选**（沿用 ADR-0004 边界，未扩大机制） | 同上会话批准（R17 计划 §3 S1/S7 明确要重跑 whale-widget 与矩阵） | DeepSeek V4.1 Flash：`dsh-whale-widget@0.4.2`、`dsh-plugin-model-proxy@0.1.6`、`dsh-cost-meter@1.9.41`（私有源形状）全部 pin 版本、装进系统临时目录的独立 `DSH_HOME`、跑完即删；候选源码不进仓、不进 `quarantine/`，只登记元数据 | 具体候选清单与「重跑几次」的取舍；本仓仍不判安全性（`COMPLIANCE.md` §5） | `data/results/probe-matrix-2026-10-27T17-20-00.000Z.json` · `probe-registry-whale-2026-10-27T17-05-00.000Z.json` · `audit/AUDIT_2026-10-27_R17.md` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

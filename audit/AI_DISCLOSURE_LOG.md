@@ -232,3 +232,12 @@
 - 人工决策：沿用 R15 的第三方执行授权（pin + 临时沙盒 + 元数据 only），未扩大；未新增冻结区改动
 - SessionID：待 HUMAN 回填
 - 备注：D2 **未判定**；矩阵的「2/6」不是成功率（3 个刻意合成、1 个判据边界）。`serve` 显示的是**已有**产物，不重算结论；设置面板（T-401）与 SEA exe 只有设计。
+
+### 2026-10-27 R17｜T-308「慢 ≠ 坏」：端口自伤缺陷 + 判定分离
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/probe/src/{host,exec,index}.ts`、`packages/probe/hooks/inventory-hook.mjs`、`packages/plugin/src/{cli,probe-run}.ts`、`scripts/{record_probe,record_probe_matrix}.mjs`、`packages/core/src/messages.ts`、`tests/unit/probe-exec.test.ts`、`tests/fixtures/probe/{slow-plugin/*（新）,matrix-r17.json（新）}`、`docs/specs/M3-probe.md`、`docs/{05-verdict-contract,BACKLOG,ROADMAP,HANDOFF}.md`、`INDEX.md`、`audit/{blind_spots.json,step_reviews.json,SIGNOFF.md,AUDIT_2026-10-27_R17.md（新）}`、`data/results/probe-*.json`
+- 起因：HUMAN 指令「交接项目过来，进行下一步计划」→ 选 R17 = T-308（D2 数字不可信，先修判据）
+- 结果：① **发现并修掉一个自伤缺陷**：plan 的哈希端口 53506 落在本机 TCP 排除段 53461–53560，`webserver` 行 EACCES → 整棵树 `startup failed`，正常候选被写成 `blocked`；改为每次向 OS 申请端口后，`dsh-whale-widget@0.4.2` 是 `go`（5.9–6.8s）。② 判定引入 `valid/unsettled/unreadable`：只有 `valid` 能出 `blocked`；候选行 `pending` 不再当死行。③ hook 增代际保护与 `settled/attempts/applies`（`inactive context` = 我们的 fiber 被 unload）。④ `startup failed` 照抄 launcher 原文并提前收敛（126s → ~6s）。⑤ 新夹具 `slow-plugin` 证明「慢但正常」= `go`；矩阵 n=7（真实 2 次全 go，清理 7/7）
+- 实测：213 测试 / 9 门全绿 / `--mutate` 9/9；矩阵 boot 6.2–6.9s（4 次有样本）
+- 过程中的真实缺陷（都由本轮自己抓到）：端口排除段会中途变化（15:05 能起、15:20 起不来）；boot 步骤在 `sample === null` 时提前 return，导致新字段全空（已修赋值顺序）；`error_tail` 只取 stderr，漏掉 launcher 打在 stdout 的诊断（已改为两流拼接）；改 `host.ts` 时忘记 `record_probe` 走的是 `dist/`（重建后才生效）
+- 未做：`slow-overrun`（>15s）真机夹具（`BS-26`）、Linux 端口排除段、D2 判定（R18 / `T-309`）

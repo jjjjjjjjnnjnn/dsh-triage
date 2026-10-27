@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R16 (2026-10-27)｜当前批次：**R16 · 渲染跨平台口径纠正 + CI 真浏览器作业 + 只读证据面板（`serve`）+ T-305b 私有源 + D2 分母矩阵**（200 测试；9 门 9-9）
+> **Stand**: R17 (2026-10-27)｜当前批次：**R17 · T-308「慢 ≠ 坏」+ 端口自伤缺陷（哈希选中 Windows 排除段 53506）+ 就绪窗口/判定分离 + 慢夹具 + D2 分母重测**（213 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -24,17 +24,20 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 项 | 状态 |
 |---|---|
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
-| 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 🟡（R15：白屏可判、就绪有判据；namespace-diff 仍缺）** |
+| 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15 白屏/就绪 + R16 跨平台 + R17 慢≠坏/端口）**；`namespace-diff`（T-303）仍缺（需 T-202a） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · **`render controls (ubuntu, real browser)`（R16）** · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **200 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **19 份 probe/render 真机产物**（R14 一绿两红 / R15 五绿三对照 / R16 一红三对照 + 私有源 + 矩阵） · **88 步台账** |
+| 规模 | **213 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **84 份 SSOT 产物**（probe/render/矩阵/面板/registry） · **97 步台账** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R16 起 **88 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
-| 本轮交付（R16） | **① 口径纠正**：R14/R15 写的「Linux CI 没浏览器」是错的（ubuntu runner 自带 Chrome 155 / Chromium / Edge + xvfb）→ `ADR-0005`。**② CI `render-control`**：先断言 runner 真有浏览器（缺了明确失败），再跑 blank/rendered/error 三份对照，产物写 `$RUNNER_TEMP`。**③ `dsh-triage serve` v0**：零依赖只读证据面板（`packages/plugin/src/serve.ts`），只绑 127.0.0.1、一次性 token + HttpOnly cookie、跨源 403、artifact 名字白名单、`POST` 默认 403（`--allow-execute` 也只回 501）。**④ T-305b**：`--npmrc-registry` 用 profile 级 `.npmrc` 让源真不可达，产物 `install.endpoints` **点名源**（去凭据/查询串）。**⑤ D2 分母工具**：`scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r16.json`，首跑 n=6。**⑥ 新盲区**：`BS-25`/`T-308`（慢候选与坏候选同形） |
+| 本轮交付（R17） | **① 端口自伤缺陷**：`buildProbePlan` 的哈希端口 **53506** 落在本机 Windows 排除段（`netsh`：TCP 53461–53560，且**会话中会变**），沙盒 `webserver` 行 `listen EACCES` → 整棵树 `startup failed`，**正常候选被写成 `blocked`**。改为每次 `findFreePort()` 向 OS 申请，产物记 `sandbox.port_origin`。**② 判定分离**：`valid/unsettled/unreadable` —— 只有 `valid` 能出 `blocked`；候选行 `pending/loading` 不再当死行；`probe.tree-not-settled`。**③ 就绪**：URL 与端口同轮询，`readiness` 记 `outcome/waited_ms/window_ms/url_seen`；settled 树 **5s 阈值未改**，unsettled 树 20s 窗口**只能出 unknown**。**④ hook**：`settled/attempts/applies` + 代际保护（旧 task 不许覆盖新样本）。**⑤ 归因**：`startup failed` 照抄 launcher 原文（`probe.startup-failed`）并提前收敛（126s → ~6s）。**⑥ 新夹具**：`tests/fixtures/probe/slow-plugin`（延迟 6s）真机 `go`。**⑦ D2 分母重测**：矩阵 n=7，`real_starts=2`（两次都 `go`），清理 7/7 |
+| 上一轮交付（R16） | **① 口径纠正**：R14/R15 写的「Linux CI 没浏览器」是错的（ubuntu runner 自带 Chrome 155 / Chromium / Edge + xvfb）→ `ADR-0005`。**② CI `render-control`**：先断言 runner 真有浏览器（缺了明确失败），再跑 blank/rendered/error 三份对照，产物写 `$RUNNER_TEMP`。**③ `dsh-triage serve` v0**：零依赖只读证据面板（`packages/plugin/src/serve.ts`），只绑 127.0.0.1、一次性 token + HttpOnly cookie、跨源 403、artifact 名字白名单、`POST` 默认 403（`--allow-execute` 也只回 501）。**④ T-305b**：`--npmrc-registry` 用 profile 级 `.npmrc` 让源真不可达，产物 `install.endpoints` **点名源**（去凭据/查询串）。**⑤ D2 分母工具**：`scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r16.json`，首跑 n=6。**⑥ 新盲区**：`BS-25`/`T-308`（慢候选与坏候选同形） |
+| 证据（R17） | `probe-registry-whale-2026-10-27T17-05-00.000Z.json`（**R16 同一候选是 blocked → 现在 go**，boot 6.8s，`port_origin=allocated`）· `probe-slow-normal-2026-10-27T17-00-00.000Z.json`（慢但正常 = go，`settled=true`，`waited_ms=32`）· `probe-red-apply-fail-2026-10-27T17-10-00.000Z.json` / `probe-red-import-fail-2026-10-27T17-15-00.000Z.json`（负对照仍 blocked）· `probe-matrix-2026-10-27T17-20-00.000Z.json`（n=7 / real 2 全 go / cleanup 7-7 / boot 6.2–6.9s）· `gates-2026-10-27T18-00-00.000Z.json` |
 | 证据（R16） | `serve-smoke-2026-10-27T14-16-05/07.000Z.json`（面板 8/8，含隐私修复前后）· `probe-registry-private-2026-10-27T14-33-57.000Z.json`（blocked，endpoints=`http://127.0.0.1:1/dsh-cost-meter`，install 78.9s）· `probe-matrix-2026-10-27T14-36-20.000Z.json`（n=6：go 2 / blocked 4，cleanup 6/6，boot 12.3–14.3s，`expectation_misses=1`）· `render-fixture-blank-2026-10-27T14-02-15.000Z.json`（CI 同一命令的本机落盘）· `gates-2026-10-27T14-42-00.000Z.json` |
 | 证据（R15） | `probe-ok-render-2026-10-27T12-57-25.000Z.json`（boot→sample 8.7s，render 1785ms，readiness=host-url）· `probe-registry-ok-…12-59-01`（install 5.4s / boot 7.7s / render 3.9s）· `render-fixture-{blank,rendered,error,blocked}`（四形态对照） |
-| 审核报告 | `audit/AUDIT_2026-10-27_R16.md`（本轮）· `R15`（四轴在 `step_reviews.json` R15-S1…S14）· `AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
-| 未通过的门槛 | **D2 仍未判定**：矩阵首跑 n=6（go 2 / blocked 4、cleanup 6/6、boot 12.3–14.3s），其中 3 个失败是刻意合成、1 个是判据边界（`BS-25`）；**真实分母仍然太小**，且 `T-308` 未修前成功率会被「慢 vs 坏」污染。`T-303`（namespace-diff）仍缺（需 T-202a + ADR + HUMAN 签） |
+| 审核报告 | `audit/AUDIT_2026-10-27_R17.md`（本轮，含「我们的端口撞排除段」对抗性小节）· `AUDIT_2026-10-27_R16.md`· `R15`（四轴在 `step_reviews.json` R15-S1…S14）· `AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
+| 未通过的门槛 | **D2 仍未判定**：判据已修对（慢不再写成坏、端口不再自撞），矩阵 n=7 里真实启动只有 **2 次**（都 `go`，boot 6.2–6.9s，清理 7/7）——这是「起点」不是「成功率」。`T-303`（namespace-diff）仍缺（需 T-202a + ADR + HUMAN 签）。`BS-26`：延迟 >15s 的慢夹具只有单测 |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）；probe 沙盒在 `%TEMP%/dsh-triage-probe/<slug>`、渲染 profile 在 `%TEMP%/dsh-triage-render*`，跑完必删。本机浏览器：Chrome 154 / Edge 146（**`--dump-dom` 在本机不可用，必须走 CDP**） |
+| 交接快照（R17，交付） | T-308 完成（端口自伤 + 判定分离 + 就绪窗口 + hook 代际保护 + startup 归因）· `BS-25` 关闭 / `BS-26` 新增 · 213 测试 / 9 门 / 97 步 / 84 产物 · **对外口径：2 次真实启动不是成功率** |
 | 交接快照（R16，交付） | **T-305b 完成**（profile 级 `.npmrc` → `blocked`，产物点名 `http://127.0.0.1:1/dsh-cost-meter`）· **D2 分母工具** `scripts/record_probe_matrix.mjs` 首跑 n=6（go 2 / blocked 4、cleanup 6/6、boot 12.3–14.3s）· **新盲区 `BS-25`/`T-308`**：慢候选与坏候选在探针里同形 · 200 测试 / 9 门 / 88 步 / 76 产物 |
 | 交接快照（R15 收尾） | R15 = `98c0518`；190 测试 / 9 门；`data/results` 68 产物 / 80 步 |
 | 交接快照（R14 收尾） | R14 = `806f770` + `b29e658` + `1a353ab`；166 测试 / 9 门；54 产物 / 66 步 |
@@ -50,23 +53,25 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**按优先级**（前两条不需要新许可）：
 
-1. **T-308（强烈建议先做）**：把「慢」与「坏」分开 —— 现在就绪判据是「样本后 5s 内探 plan 端口」，而 `BS-25` 实测 `dsh-whale-widget@0.4.2` 12.3s 出样本、5s 内没打印 URL 就被判 `blocked`；同一批里探针 hook 还报 `cannot get required service "loader" in inactive context`。退出条件：以 Host 打印的 URL 为准 + 窗口可配；hook 在 `inactive context` 时重试，耗尽只能 `unknown` + `missing.inventory`；补一条「慢但正常」的夹具（故意延迟启动）证明它不再被写成 blocked。**在它修好之前，D2 的成功率数字一律不可信。**
-2. **D2 样本量**：矩阵工具已就绪（`scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r16.json`）。把真实候选补到 ≥10 次真实启动、≥5 种失败形状，再谈「≥90%」；产物里 `limits[]` 已写明「合成失败不算插件质量」。
+1. **T-309 / D2 分母（先做）**：判据已经修对了，现在缺的是样本量。矩阵工具 + `tests/fixtures/probe/matrix-r17.json` 已就绪，摘要会区分 `real_starts` 与合成失败。退出条件：**≥10 次真实启动 + ≥5 种失败形状**，成功率按 `go/(go+blocked)` 报，`unknown` 单列。**当前 n=7 里真实只有 2 次，不许说成成功率。**
+2. **`BS-26`：慢到超过 settle 预算的真机夹具**（延迟 20s）——N19 目前只有单测。退出条件：真跑得到 `unknown` + `missing.inventory`，既不是 `blocked` 也不是 `go`。
 3. **面板 v1：把 `audit` 接进 `serve`**（`docs/specs/M4-surface.md` §2 / T-406）。需要先把 `cli.ts#commandAudit` 的数据收集抽成 `loadAuditData()`（纯重构，不改判据）；负对照：抽取前后 `audit --json` 逐字节一致。
 4. **DSH 设置面板（M4-a / T-401）**：客户端契约已取证（`M4-surface.md` §1：`dsh.client` + `__ModuleLoader__.load` + row id = settings 命名空间，本仓用 `compat-triage`）。先做「契约不匹配就整块隐藏」的降级。
 5. **T-303 / T-202a**：仍被铁律 4 挡着（会话作用域需要真实凭据），必须先出 ADR 让 HUMAN 签。**不要**用「进程级工具清单」冒充它。
 
-**D2 提醒**：矩阵首跑是 `n=6`（其中 3 个刻意合成失败、1 个是判据边界），**不是**成功率。对外只能说「6 次运行、清理 6/6、boot 12.3–14.3s」。
+**D2 提醒**：矩阵 `n=7` 里真实启动只有 **2 次**（`real_starts=2`，都 `go`），另外 5 个是刻意合成失败。对外只能说「7 次运行、清理 7/7、真实候选 2 次都 go、boot 6.2–6.9s」。
+
+**端口提醒（R17 的教训）**：`buildProbePlan` 的哈希端口只是**偏好**；本机 `netsh int ipv4 show excludedportrange protocol=tcp` 排除 **53461–53560** 且会中途变化。现在 CLI 与 `record_probe` 都会先 `findFreePort()`，产物记 `sandbox.port_origin`。**不要**把端口写死回常量。
 
 **想继续从开源里借**：`docs/09-open-source-borrowing.md` 先看，再动 T-113（attw 矩阵，前置是沙箱实测 loader 解析模式）。**借机制不抄代码**，真抄要先进 `quarantine/` + `vendor-manifest`。
 
 先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
 
-**新会话开箱状态（R16 收尾）**：`git log -1` 就是交接提交，`git status` 干净；200 测试 / 9 门 / `--mutate` 9-9；`data/results` 78 产物全部被 89 步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`，R15 授权过，但只对「临时沙盒 + 元数据 only」有效）。
+**新会话开箱状态（R17 收尾）**：`git log -1` 就是交接提交，`git status` 干净；213 测试 / 9 门 / `--mutate` 9-9；`data/results` 84 产物全部被 97 步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`，R15 授权过，但只对「临时沙盒 + 元数据 only」有效）。
 
 > D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付；R8 补副本来源与重复副本；R9 让「没声明」不再静默；R10 让 dist-tag 失步可见；R12 让相位来自真机（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）并补齐 preset 维度。
-> 复核口径十条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp <iso>`、`node scripts/record_live_inventory.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_registry.mjs --stamp <iso>`、`node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label ok --expect go --browser <chrome> --stamp <iso>`、`node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp <iso>`（另三种：`rendered` / `error` / `blocked`）、`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r16.json --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --stamp <iso>`、`node scripts/record_serve_smoke.mjs --stamp <iso>`。
-> **对外口径（别再说过头）**：真机相位样本来自**仓内沙盒**（0.2.1-rc.4），不是用户的 `~/.dsh`（本机真实 profile 是 0.1.0-rc.6，没有 `pluginInventory`）。可以说「在一台真起的 0.2.1-rc.4 Host 上实测」，不能说「在用户机器上实测」。真机样本里没有 `failed` / `broken preset` / `conditional` 行——这三档只有夹具覆盖。
+> 复核口径十条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp <iso>`、`node scripts/record_live_inventory.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_registry.mjs --stamp <iso>`、`node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label ok --expect go --browser <chrome> --stamp <iso>`（R17 另加 `--readiness-timeout <ms>` / `--unsettled-timeout <ms>`）、`node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp <iso>`（另三种：`rendered` / `error` / `blocked`）、`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r17.json --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --stamp <iso>`、`node scripts/record_serve_smoke.mjs --stamp <iso>`。
+> **对外口径（别再说过头）**：真机相位样本来自**仓内沙盒**（0.2.1-rc.4），不是用户的 `~/.dsh`（本机真实 profile 是 0.1.0-rc.6，没有 `pluginInventory`）。可以说「在一台真起的 0.2.1-rc.4 Host 上实测」，不能说「在用户机器上实测」。真机样本里没有 `failed` / `broken preset` / `conditional` 行——这三档只有夹具覆盖。R17 的 probe 真机样本全部来自这台 Windows 机器；Linux 只跑过渲染对照（CI `render-control`），**没跑过真 probe**。
 
 > 每一步做完，先追加 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256），再跑 `node scripts/gate_step_review.mjs`。漏了它，`pnpm run verify` 会红。
 
@@ -130,6 +135,13 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 以为 `--registry`/env 覆盖能测私有源 | launcher 会把环境变量中和，pnpm 用自己的源 | 私有源形状要走 profile 级配置（T-305b） |
 | `scripts/lib/live.mjs` 报 `ERR_MODULE_NOT_FOUND .../src/render.js` | 它直接 import `host.ts`，而 `host.ts` 新加的 `./render.js` 不会被类型剥离重写成 `.ts` | live.mjs 改为 re-export **构建产物** `packages/probe/dist/host.js`；跑 live 脚本前先 `pnpm build` |
 | PowerShell 里 `node -e "…中文/反引号…"` 直接语法错 | 反引号在 PS 里是转义符，会先被吃掉 | 一次性脚本写成 `%TEMP%\opencode\*.mjs` 再 `node` 执行（R15 又踩一次） |
+| 探针报「Host 起不来 / 超时 / 端口无应答」，候选看起来没问题 | **先查端口有没有落在 OS 排除段**：本机 `netsh int ipv4 show excludedportrange protocol=tcp` = 53461–53560，plan 的哈希选中 53506，Host 的 `webserver` 行 `listen EACCES` → 整棵树 `startup failed`（R17 真踩，正常候选被写成 blocked） | 端口每次都 `findFreePort()`；产物看 `sandbox.port_origin` 与 `boot.bind_failed_ports`；`probe.port-unavailable` = 探针环境问题，不是插件 |
+| 同一个候选一会儿 `go` 一会儿 `blocked` | Windows 的端口排除段**会话中途会变**（R17：15:05 能起、15:20 起不来） | 别把「上次能跑」当成本次能跑；每次看产物里的端口与 `port_origin` |
+| hook 报 `cannot get required service "loader" in inactive context`，以为是「树慢」 | 其实是**我们自己的 fiber 被 unload**（Cordis 把 `fiber.store` 置空），服务回来后它会**重跑 apply** | 别在同一个 dead ctx 里重试；靠代际保护 + 等一份可判样本（R17 的 `isUsableSample`） |
+| 改了 `packages/probe/src/host.ts`，跑 `record_probe` 却没变化 | `record_probe` 与 `live.mjs` 都 import `packages/probe/dist/`（构建产物） | 先 `pnpm build` 再真跑（R17 踩了一次） |
+| 产物里 `boot.url_printed/first_line/error_tail` 全是空 | boot 步骤在 `sample === null` 时**提前 return**，赋值写在 return 之后 | 新字段一律在 early return **之前**赋值（R17 踩了一次，单测没覆盖到） |
+| 想看 launcher 为什么起不来，产物里却只有第一行 | 启动诊断打在 **stdout**，而 `error_tail` 只取了 stderr | 两流拼接后再截断，并对 `?token=` 脱敏（R17 已修） |
+| `Set-Content -Encoding utf8` 给夹具写的 `package.json` 带 BOM，launcher 解析怪 | PS 5.1 的 utf8 一律带 BOM | 写夹具后用 Node 重写并 `replace(/^\uFEFF/,'')`（R17 的 slow-plugin 踩过） |
 
 ---
 
@@ -185,9 +197,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `B1/B2` 静态侧不全（`BS-19`）：launcher 层与运行时动态挂载的行不在声明侧 | implementer | 与 T-202 一起做：给 `undeclared` 分类（动态 / launcher / 探针），而不是只给计数。**R12 已把 195 条噪声降到 3 条并可逐条解释（探针不再被评分）** |
 | `T-202a` **agent/preset 作用域**的工具表面 | implementer | 在会话/组合作用域里读 preset 工具表面。**R14 的 probe 只到进程级（`BS-21` 未变）**；要真实会话须先解决铁律 4（不得读凭据）→ 需要 ADR + HUMAN 签字 |
 | `T-302` probe 的 `client-rendered` 断言 | implementer | ✅ **R15 交付、R16 扩到 Linux**：真浏览器 + CDP；无浏览器 `unmeasured`；CI `render-control` 每轮跑三份对照。剩余：不是视觉回归，canvas/icon-only 只能 `inconclusive` |
-| `T-305` registry 候选的真实安装形状 | implementer | 🟡 **R15 + R16**：真实安装 5.4s / boot 7.7s、E404 与版本不存在 blocked、lockfile 指纹、私有源形状（R16，点名端点）。剩余：真实候选样本仍然少（矩阵 n=6，其中 2 个真） |
+| `T-305` registry 候选的真实安装形状 | implementer | 🟡 **R15 + R16 + R17**：真实安装 2.3–5.4s、boot 6.2–6.9s、E404/版本不存在/私有源都是 `blocked` 且点名源。剩余：真实候选样本仍然少（R17 矩阵 `real_starts=2`）→ `T-309` |
 | `T-305b` 私有源 / 不可达 registry 的真实失败形状 | implementer | ✅ **R16 交付**：`--npmrc-registry` + `install.endpoints` 点名源（`probe-registry-private-2026-10-27T14-33-57.000Z.json`）。剩余：只在 Windows 上跑过这一次 |
-| `T-308` 就绪窗口 / hook 时序（`BS-25`） | implementer | Host 打印 URL 为准 + 窗口可配；hook 在 `inactive context` 重试，耗尽 → `unknown` + `missing.inventory`；补一条「慢但正常」夹具。**修好之前 D2 成功率不可信** |
+| `T-308` 就绪窗口 / hook 时序（`BS-25`） | implementer | ✅ **R17 交付**：端口向 OS 申请 + `valid/unsettled/unreadable` 判定分离 + 就绪同轮询 + hook 代际保护 + `startup failed` 原文归因；慢夹具真机 `go`。**剩余**：延迟 >15s 的 `slow-overrun` 真机夹具（`BS-26`）、Linux 等价排除段未测 |
 | `T-303` probe 的 `namespace-diff` 断言 | verifier | 依赖 T-202a（作用域）才能列「声明了但未注册」的工具 |
 | `T-304` probe 只测空模板 profile | implementer | 用 profile 副本 + 依赖安装跑一次，回答「加到**我的**组合里会不会挂」 |
 | `T-306` 非 web 表面的就绪判据 | implementer | ✅ **R15 已交付（web 面）**：`readiness.source=host-url` + 多端口 cleanup。剩余：tui/headless profile 仍靠 `--no-http` 人工出口 |
