@@ -33,7 +33,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 证据 | `data/results/audit-2026-10-27T12-00-00.000Z.json`（2 rows / 1 duplicate group / 2 verdicts）· `inventory-2026-10-27T00-00-00.000Z.json`（相位层）· `gates-2026-10-27T12-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 23 个产物、30 个已审步骤 |
 | 审核报告 | `audit/AUDIT_2026-10-27_R8.md`（本轮）· `AUDIT_2026-10-27_R7.md` · `AUDIT_2026-10-26_R6.md` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（P1 未实现，见 §8） |
-| 交接快照（R8 收尾） | HEAD = `036ce97`（交接）；R8 主体/修正 = `62a2350` / `7455b62`；`git status` 干净；`pnpm run verify` = **96 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **23 产物 / 30 步**全被引用 |
+| 交接快照（R8 收尾） | R8 主体 = `62a2350`，R8 修正 = `7455b62`，其后只有本文件的交接提交；`git status` 干净；`pnpm run verify` = **96 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **23 产物 / 30 步**全被引用 |
 
 ---
 
