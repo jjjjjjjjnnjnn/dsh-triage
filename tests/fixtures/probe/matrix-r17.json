@@ -1,0 +1,55 @@
+{
+  "note": "R17 D2 denominator, re-measured after the port-selection fix: the probe now asks the OS for a bindable port (this machine excludes TCP 53461-53560). Real candidates are MIT and pinned; nothing is vendored (ADR-0004). `real: true` marks a genuine plugin, which is the only kind that counts toward D2.",
+  "candidates": [
+    {
+      "label": "local-fixture",
+      "spec": "tests/fixtures/probe/ok-plugin",
+      "expect": "go",
+      "shape": "local-path",
+      "real": false
+    },
+    {
+      "label": "slow-normal",
+      "spec": "tests/fixtures/probe/slow-plugin",
+      "expect": "go",
+      "shape": "local-slow-settles",
+      "real": false
+    },
+    {
+      "label": "registry-model-proxy",
+      "spec": "dsh-plugin-model-proxy@0.1.6",
+      "expect": "go",
+      "shape": "real-registry",
+      "real": true
+    },
+    {
+      "label": "registry-whale-widget",
+      "spec": "dsh-whale-widget@0.4.2",
+      "expect": "go",
+      "shape": "real-registry",
+      "real": true
+    },
+    {
+      "label": "synthetic-missing",
+      "spec": "dsh-plugin-triage-missing@0.0.1",
+      "expect": "blocked",
+      "shape": "synthetic-missing-package",
+      "real": false
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "spec": "dsh-plugin-model-proxy@99.99.99",
+      "expect": "blocked",
+      "shape": "synthetic-bogus-version",
+      "real": false
+    },
+    {
+      "label": "synthetic-private-registry",
+      "spec": "dsh-cost-meter@1.9.41",
+      "expect": "blocked",
+      "npmrcRegistry": "http://127.0.0.1:1/",
+      "shape": "synthetic-unreachable-registry",
+      "real": false
+    }
+  ]
+}

@@ -13,14 +13,17 @@ export {
   bootAndSampleHost,
   dshMainOf,
   failureEndpoints,
+  bindFailedPorts,
+  findFreePort,
+  isUsableSample,
   killTree,
   probeHttp,
   readRuntimeVersion,
   removeSandbox,
   runInstall,
+  sanitizeLogLine,
   scrubbedEnv,
   sha256Of,
-  waitForHostUrl,
 } from './host.js'
 export type {
   BootSampleOptions,

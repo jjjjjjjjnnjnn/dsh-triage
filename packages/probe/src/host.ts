@@ -13,7 +13,8 @@
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { extractHostUrl, renderUrl, type HostUrl, type RenderCheck } from './render.js'
 
@@ -53,6 +54,24 @@ export interface BootSampleOptions {
   readonly readinessPort?: number
   /** How long to wait for the port after the sample lands. */
   readonly readinessTimeoutMs?: number
+  /**
+   * Readiness window used when the sample itself says the tree was still moving
+   * (`settled: false`) or the projection could not be read at all.
+   *
+   * WHY A SEPARATE WINDOW (R17 / BS-25): "the tree has not finished composing" and "the
+   * plugin is broken" used to produce the same `blocked` verdict. A settled tree keeps the
+   * 5s budget (unchanged threshold); an unsettled one gets a longer, configurable window
+   * that can only ever produce `unknown` (the judge enforces that, not this layer).
+   */
+  readonly unsettledReadinessMs?: number
+  /**
+   * How long a first sample may be replaced before we accept it.
+   *
+   * Cordis re-applies a plugin when its injected services come back, so an `{error}`
+   * payload written by a task whose context died can be superseded by a healthy sample
+   * from the new apply (measured in R17). We wait for that, bounded.
+   */
+  readonly sampleReplaceWindowMs?: number
   /** Settle time between the sample and the readiness probe, so a binding server is seen. */
   readonly settleMs?: number
   /**
@@ -74,6 +93,14 @@ export interface HostReadiness {
    */
   readonly source: 'host-url' | 'plan-port'
   readonly port: number
+  /** Did the window end with an answer? (`served` and `timeout` are facts, not verdicts.) */
+  readonly outcome: 'served' | 'timeout'
+  /** How long the window actually waited. Recorded so "we waited N s" survives review. */
+  readonly waited_ms: number
+  /** The budget this run used: settled trees keep 5s, unsettled ones get the long window. */
+  readonly window_ms: number
+  /** Did the launcher ever print its own `?token=` URL? */
+  readonly url_seen: boolean
 }
 
 export interface HostObservation {
@@ -82,6 +109,19 @@ export interface HostObservation {
   readonly log_sha256: string
   readonly first_line: string
   readonly error_tail: string | null
+  /**
+   * Did the launcher ever print its own `http://127.0.0.1:<port>/?token=…` line?
+   *
+   * WHY IT IS A SEPARATE FACT (R17): when the hook writes nothing, "the Host is up and our
+   * instrument never ran" and "the Host never came up" produce the same empty file. The URL
+   * line is the only evidence that separates them, and only the first is a measurement
+   * failure (the second is a real `blocked`).
+   */
+  readonly url_printed: boolean
+  /** Did the launcher declare startup failure? Then no sample will ever arrive (R17). */
+  readonly startup_failed: boolean
+  /** Ports the Host log says it could not bind (`listen EACCES: … 127.0.0.1:53506`). */
+  readonly bind_failed_ports: readonly number[]
 }
 
 export interface BootSampleResult {
@@ -117,6 +157,8 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     appArgs = [],
     readinessPort,
     readinessTimeoutMs = 5_000,
+    unsettledReadinessMs = 20_000,
+    sampleReplaceWindowMs = unsettledReadinessMs,
     settleMs = 1_000,
   } = options
   mkdirSync(scratchRoot, { recursive: true })
@@ -167,32 +209,72 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       stderr += String(chunk)
     })
 
-    while (Date.now() - started < timeoutMs && !existsSync(samplePath)) {
-      await new Promise((resolveWait) => setTimeout(resolveWait, 500))
+    /**
+     * Wait for a sample we can actually judge from.
+     *
+     * A file appearing is not enough (R17): the hook can write `{error}` when its context
+     * died mid-compose, and Cordis re-applies the plugin once the services are back — the
+     * next apply overwrites the same file with a healthy sample. So we keep the best sample
+     * we have and wait, bounded, for a better one instead of freezing the first write.
+     */
+    let payload: unknown = null
+    let sampleText: string | null = null
+    let firstSampleAtMs: number | null = null
+    let sampleWrittenAtMs: number | null = null
+    for (;;) {
+      const text = readTextOrNull(samplePath)
+      if (text !== null && text !== sampleText) {
+        sampleText = text
+        payload = parseSample(text)
+        firstSampleAtMs ??= Date.now()
+        sampleWrittenAtMs = mtimeMsOf(samplePath)
+      }
+      const accept = isUsableSample(payload) || Date.now() - started >= timeoutMs
+      const replacedEnough = firstSampleAtMs !== null && Date.now() - firstSampleAtMs >= sampleReplaceWindowMs
+      // `dsh: startup failed: …` is the launcher's own verdict: no sample will follow, and
+      // waiting the whole boot timeout for one costs two minutes per broken candidate (R17).
+      const startupFailed = `${stdout}\n${stderr}`.includes('startup failed')
+      if (accept || replacedEnough || startupFailed) break
+      await new Promise((resolveWait) => setTimeout(resolveWait, 250))
     }
-    const collected = existsSync(samplePath)
-    const seconds = Math.round((Date.now() - started) / 100) / 10
+    const collected = payload !== null
+    const seconds = Math.round(((sampleWrittenAtMs ?? Date.now()) - started) / 100) / 10
     let http: { status: number | null; detail: string } | null = null
     let readiness: HostReadiness | null = null
     let render: RenderCheck | null = null
     let renderSkipped: string | null = null
+    let hostUrl: HostUrl | null = null
     if (collected) {
       // Probe while the Host is alive. A server that binds a moment after the tree
       // settles is normal, so this retries instead of sampling one instant.
       await new Promise((resolveWait) => setTimeout(resolveWait, settleMs))
-      // T-306: the launcher prints its own URL with the token. That line is the readiness
-      // criterion; `--port` is only a fallback for a Host that never prints one.
-      const hostUrl =
-        readinessPort === undefined && options.render === undefined ? null : await waitForHostUrl(() => stdout, 3_000)
-      const effectivePort = hostUrl?.port ?? readinessPort
-      if (effectivePort !== undefined) {
-        readiness = { source: hostUrl === null ? 'plan-port' : 'host-url', port: effectivePort }
+      // One window, two sources (R17): the launcher's own token URL and the planned port
+      // are polled together, because waiting for the URL first (the R15 order) missed a URL
+      // that appeared a moment later and then judged the fallback port.
+      const unsettled = !isUsableSample(payload)
+      const windowMs = unsettled ? unsettledReadinessMs : readinessTimeoutMs
+      if (readinessPort !== undefined || options.render !== undefined) {
         const readinessStarted = Date.now()
         for (;;) {
-          http = await probeHttp(effectivePort, Math.min(readinessTimeoutMs, 2_000))
-          if (http.status !== null) break
-          if (Date.now() - readinessStarted >= readinessTimeoutMs) break
-          await new Promise((resolveWait) => setTimeout(resolveWait, 500))
+          if (hostUrl === null) hostUrl = extractHostUrl(stdout)
+          const port = hostUrl?.port ?? readinessPort
+          if (port !== undefined) {
+            http = await probeHttp(port, Math.min(2_000, windowMs))
+            if (http.status !== null) break
+          }
+          if (Date.now() - readinessStarted >= windowMs) break
+          await new Promise((resolveWait) => setTimeout(resolveWait, 250))
+        }
+        const port = hostUrl?.port ?? readinessPort
+        if (port !== undefined) {
+          readiness = {
+            source: hostUrl === null ? 'plan-port' : 'host-url',
+            port,
+            outcome: http?.status === null || http === null ? 'timeout' : 'served',
+            waited_ms: Date.now() - readinessStarted,
+            window_ms: windowMs,
+            url_seen: hostUrl !== null,
+          }
         }
       }
       if (options.render !== undefined) {
@@ -224,13 +306,16 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       log_sha256: sha256Of(`${stdout}\n${stderr}`),
       // Stderr first, stdout as the real fallback: a healthy `dsh web` prints its URL on
       // stdout, so `?? ` on an always-string value would have hidden it (R15 review finding).
-      first_line: (stderrLine !== '' ? stderrLine : stdoutLine).slice(0, 240),
+      first_line: sanitizeLogLine(stderrLine !== '' ? stderrLine : stdoutLine).slice(0, 240),
       // Kept short and only on failure: a blocked boot must explain itself, but a healthy
-      // one should not carry a log into a publishable artifact.
-      error_tail: collected ? null : stderr.trimEnd().slice(-1500),
+      // one should not carry a log into a publishable artifact. BOTH streams: the launcher
+      // prints its own startup diagnostic on stdout (R17).
+      error_tail: collected ? null : sanitizeLogLine(`${stdout}\n${stderr}`.trimEnd()).slice(-1500),
+      url_printed: extractHostUrl(stdout) !== null,
+      startup_failed: `${stdout}\n${stderr}`.includes('startup failed'),
+      bind_failed_ports: bindFailedPorts(`${stdout}\n${stderr}`),
     }
     if (!collected) return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped }
-    const payload: unknown = JSON.parse(readFileSync(samplePath, 'utf8').replace(/^\uFEFF/, ''))
     return { payload, host, error: null, http, readiness, render, renderSkipped }
   } finally {
     if (child !== null) killTree(child)
@@ -380,15 +465,105 @@ export async function probeHttp(port: number, timeoutMs: number): Promise<HttpPr
   }
 }
 
-/** Poll the captured stdout for the launcher's own URL line (T-306). */
-export async function waitForHostUrl(readStdout: () => string, timeoutMs: number): Promise<HostUrl | null> {
-  const started = Date.now()
-  for (;;) {
-    const found = extractHostUrl(readStdout())
-    if (found !== null) return found
-    if (Date.now() - started >= timeoutMs) return null
-    await new Promise((resolveWait) => setTimeout(resolveWait, 200))
+/**
+ * Strip the launcher's token before any log line can reach an artifact.
+ *
+ * `dsh web: http://127.0.0.1:53052/?token=…` is the one line we want to keep for diagnosis,
+ * and it is also the one line that must never be published. F-2 (R16) taught us that a
+ * single unredacted field is enough to leak; this is that field.
+ */
+export function sanitizeLogLine(line: string): string {
+  return line.replace(/([?&]token=)[^\s"'&]+/gi, '$1<redacted>')
+}
+
+/**
+ * Ports named by a bind failure in the Host log.
+ *
+ * WHY: on this machine `netsh int ipv4 show excludedportrange protocol=tcp` lists
+ * 53461–53560, and the plan's deterministic port landed on **53506**, so the Host's own
+ * `webserver` row died with `listen EACCES`. That failure has nothing to do with the
+ * candidate, and the judge needs the port number to say so (R17).
+ */
+export function bindFailedPorts(log: string): readonly number[] {
+  const found = new Set<number>()
+  for (const match of log.matchAll(/listen (?:EACCES|EADDRINUSE|EADDRNOTAVAIL|EAFNOSUPPORT)[^\n]*?:(\d{2,5})\b/g)) {
+    const port = Number(match[1])
+    if (Number.isInteger(port) && port > 0 && port <= 65_535) found.add(port)
   }
+  return [...found].sort((left, right) => left - right)
+}
+
+/**
+ * A port the OS is willing to hand out right now.
+ *
+ * The deterministic `basePort` in the plan is a *preference*: Windows excludes ranges
+ * dynamically (Hyper-V/WSL reservations change during a session), so a hash-picked port can
+ * be unbindable while a neighbouring one is fine. Binding :0 asks the OS for one it will
+ * actually allow. The port is released immediately; a Host that boots a second later can
+ * still lose the race, which is why the judge also recognises a bind failure on our port.
+ */
+export function findFreePort(): Promise<number | null> {
+  return new Promise((resolvePort) => {
+    const server = createServer()
+    let settled = false
+    const done = (port: number | null): void => {
+      if (settled) return
+      settled = true
+      try {
+        server.close()
+      } catch {
+        // Nothing to close.
+      }
+      resolvePort(port)
+    }
+    server.once('error', () => done(null))
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address()
+      done(address !== null && typeof address === 'object' ? address.port : null)
+    })
+  })
+}
+
+/** Read the sample file, or `null` when it is not there (yet). BOM stripped: PowerShell writes one. */
+function readTextOrNull(path: string): string | null {
+  try {
+    return readFileSync(path, 'utf8').replace(/^\uFEFF/, '')
+  } catch {
+    return null
+  }
+}
+
+/** Write time of the sample, used as the honest "spawn → sample" instant (not "when we polled"). */
+function mtimeMsOf(path: string): number | null {
+  try {
+    return statSync(path).mtimeMs
+  } catch {
+    return null
+  }
+}
+
+function parseSample(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    // Unparseable is a measurement failure, not "zero rows": keep it shaped like the hook's
+    // own error payload so one code path reports both.
+    return { error: { code: 'unparseable', message: 'the sample file is not valid JSON' } }
+  }
+}
+
+/**
+ * Can a verdict rest on this sample?
+ *
+ * `{error}` means the hook could not read the tree (e.g. `inactive context` while the Host
+ * was still composing) and `settled: false` means rows were still moving when it gave up.
+ * Both are measurement failures: the executor must report `unknown`, never `blocked`.
+ */
+export function isUsableSample(payload: unknown): boolean {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return false
+  const record = payload as Record<string, unknown>
+  if (record['error'] !== undefined && record['error'] !== null) return false
+  return record['settled'] !== false
 }
 
 /** Remove the sandbox home and report whether it is really gone. */

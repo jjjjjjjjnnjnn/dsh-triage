@@ -101,6 +101,9 @@ const EN: MessageCatalog = {
     'probe.render-blank': 'the page answered but rendered nothing ({detail}) — a white screen is not a working UI',
     'probe.render-unmeasured': 'the render check could not reach a conclusion ({detail})',
     'probe.port-mismatch': 'the Host printed port {host} while the plan asked for {plan}; the Host wins and both are proven closed',
+    'probe.tree-not-settled': 'the inventory could not be read on a settled tree ({detail}) — "slow" and "broken" are indistinguishable here, so no failure is attributed to the plugin',
+    'probe.startup-failed': 'the Host refused to start with this candidate installed: {detail}',
+    'probe.port-unavailable': 'the probe could not bind 127.0.0.1:{port}, the port it chose for the sandbox; that is the probe environment, not the plugin',
     'ui.more-reasons': '…{count} more reason(s); pass --json for the full list',
   },
 }
@@ -192,6 +195,9 @@ const ZH: MessageCatalog = {
     'probe.render-blank': '页面有应答但什么都没渲染出来（{detail}）——白屏不算能用',
     'probe.render-unmeasured': '渲染检查得不出结论（{detail}）',
     'probe.port-mismatch': 'Host 打印的端口是 {host}，计划里是 {plan}；以 Host 为准，且两个端口都要证明已关',
+    'probe.tree-not-settled': '没能在「树已稳定」时读到 inventory（{detail}）——这里分不出「慢」和「坏」，所以不把失败算到插件头上',
+    'probe.startup-failed': '装上这个候选后 Host 拒绝启动：{detail}',
+    'probe.port-unavailable': '探针没能绑上自己选的端口 127.0.0.1:{port}——这是探针环境的问题，不是插件',
     'ui.more-reasons': '…还有 {count} 条原因；加 --json 看完整列表',
   },
 }

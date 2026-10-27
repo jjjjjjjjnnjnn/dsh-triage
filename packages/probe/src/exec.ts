@@ -57,6 +57,22 @@ export interface ProbeSampleView {
   readonly waitMs: number | null
   /** Set when the hook wrote an error payload instead of a snapshot. */
   readonly error: string | null
+  /**
+   * Machine-readable reason the hook could not read the tree (`inactive-context`,
+   * `projection-missing`, `other`). `null` when the reading succeeded.
+   */
+  readonly errorCode: string | null
+  /**
+   * Whether the hook saw the tree stop moving before it sampled.
+   *
+   * `false` and `null` (older payloads) both mean "this reading cannot support `blocked`":
+   * a row that is still `pending` is not a row that failed (R17 / BS-25).
+   */
+  readonly settled: boolean | null
+  /** Attempts the hook made (1 = first read worked). */
+  readonly attempts: number | null
+  /** Which apply wrote this sample; >1 means Cordis re-applied the plugin (R17). */
+  readonly applies: number | null
   readonly candidateRows: readonly ProbeCandidateRow[]
   /** Probe rows the hook excluded from scoring (its own instrument). */
   readonly excluded: readonly string[]
@@ -77,6 +93,22 @@ export interface ProbeCleanupResult {
   readonly detail: string
 }
 
+/**
+ * Readiness facts, as measured while the Host was still alive (T-306 / R17).
+ *
+ * `outcome` and `waited_ms` are observations: the window may end `timeout` for a settled
+ * tree (a real `blocked`) or for an unsettled one (a measurement failure). Which one it is
+ * is decided in {@link judgeProbe}, not here.
+ */
+export interface ProbeReadiness {
+  readonly source: 'host-url' | 'plan-port'
+  readonly port: number
+  readonly outcome: 'served' | 'timeout'
+  readonly waited_ms: number
+  readonly window_ms: number
+  readonly url_seen: boolean
+}
+
 export interface ProbeRun {
   readonly candidate: { readonly spec: string; readonly package: string }
   readonly dshMain: string
@@ -88,11 +120,25 @@ export interface ProbeRun {
   readonly sample: ProbeSampleView | null
   readonly http: { readonly status: number | null; readonly detail: string } | null
   /** Where the readiness port came from (T-306); `null` when readiness was not requested. */
-  readonly readiness: { readonly source: 'host-url' | 'plan-port'; readonly port: number } | null
+  readonly readiness: ProbeReadiness | null
   /** Client-render observation (T-302); `null` when it did not run. */
   readonly render: RenderCheck | null
   /** Why the render check did not run; `null` when it ran. */
   readonly renderSkipped: string | null
+  /**
+   * Did the Host print its own URL? `false` with `sample === null` is a Host that never came
+   * up (a real `blocked`); `true` is a Host that is serving while our instrument wrote
+   * nothing (a measurement failure, R17).
+   */
+  readonly urlPrinted: boolean
+  /** First log line (token redacted), kept so a "no sample" artifact can explain itself. */
+  readonly firstLine: string | null
+  /** stderr tail on a no-sample boot (token redacted): the launcher's own reason. */
+  readonly errorTail: string | null
+  /** Did the launcher declare `startup failed`? Then the composition never came up. */
+  readonly startupFailed: boolean
+  /** Ports the Host could not bind; if ours is among them the failure is the probe's. */
+  readonly bindFailedPorts: readonly number[]
   readonly cleanup: ProbeCleanupResult
   readonly abortedAt: ProbeStepId | null
 }
@@ -172,11 +218,21 @@ export interface ProbeExecDeps {
     detail: string
     http?: { status: number | null; detail: string } | null
     /** T-306: where the readiness port came from. Absent means "not reported". */
-    readiness?: { source: 'host-url' | 'plan-port'; port: number } | null
+    readiness?: ProbeReadiness | null
     /** T-302: the render observation, when a browser was available. */
     render?: RenderCheck | null
     /** T-302: why the render check did not run (published verbatim). */
     renderSkipped?: string | null
+    /** R17: did the launcher print its URL (i.e. is the Host demonstrably up)? */
+    urlPrinted?: boolean
+    /** R17: first log line, already token-redacted by the Host layer. */
+    firstLine?: string | null
+    /** R17: stderr tail on a no-sample boot, already token-redacted. */
+    errorTail?: string | null
+    /** R17: the launcher declared startup failure (no sample will follow). */
+    startupFailed?: boolean
+    /** R17: ports the Host could not bind (evidence that the failure is ours, not the plugin's). */
+    bindFailedPorts?: readonly number[]
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
   cleanup(input: CleanupInput): Promise<ProbeCleanupResult>
@@ -210,9 +266,14 @@ interface MutableRun {
   timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null }
   sample: ProbeSampleView | null
   http: { status: number | null; detail: string } | null
-  readiness: { source: 'host-url' | 'plan-port'; port: number } | null
+  readiness: ProbeReadiness | null
   render: RenderCheck | null
   renderSkipped: string | null
+  urlPrinted: boolean
+  firstLine: string | null
+  errorTail: string | null
+  startupFailed: boolean
+  bindFailedPorts: readonly number[]
   cleanup: ProbeCleanupResult
   abortedAt: ProbeStepId | null
 }
@@ -232,6 +293,11 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     readiness: null,
     render: null,
     renderSkipped: null,
+    urlPrinted: false,
+    firstLine: null,
+    errorTail: null,
+    startupFailed: false,
+    bindFailedPorts: [],
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
     abortedAt: null,
   }
@@ -311,6 +377,18 @@ async function runSequence(
 
   await runStep(run, deps, 'boot', async () => {
     const boot = await deps.bootAndSample({ plan: input.plan, dshMain: input.dshMain, timeoutMs: timeouts.bootMs })
+    // Boot facts must be recorded BEFORE the no-sample early return (R17): "the Host printed
+    // its URL but the hook wrote nothing" is the difference between a measurement failure and
+    // a blocked boot, and it lives on these fields.
+    if (boot.http !== undefined) run.http = boot.http
+    if (boot.readiness !== undefined) run.readiness = boot.readiness
+    if (boot.render !== undefined) run.render = boot.render
+    if (boot.renderSkipped !== undefined) run.renderSkipped = boot.renderSkipped
+    if (boot.urlPrinted !== undefined) run.urlPrinted = boot.urlPrinted
+    if (boot.firstLine !== undefined) run.firstLine = boot.firstLine
+    if (boot.errorTail !== undefined) run.errorTail = boot.errorTail
+    if (boot.startupFailed !== undefined) run.startupFailed = boot.startupFailed
+    if (boot.bindFailedPorts !== undefined) run.bindFailedPorts = [...boot.bindFailedPorts]
     // `seconds` is the recorder's own clock (spawn → sample). `runStep` measures the same
     // interval and overwrites `bootToSampleMs`, so the 20s budget is judged on one number.
     if (boot.sample === null) return { status: 'failed' as const, detail: boot.detail, exitCode: null }
@@ -319,11 +397,6 @@ async function runSequence(
     // the settle, the readiness probe and the post-kill wait, so the two numbers differ on
     // purpose and only one of them is judged (docs/specs/M3-probe.md §4).
     run.timings.bootToSampleMs = Math.round(boot.seconds * 1000)
-    // Readiness was taken while the Host was alive; keep it for the http step.
-    if (boot.http !== undefined) run.http = boot.http
-    if (boot.readiness !== undefined) run.readiness = boot.readiness
-    if (boot.render !== undefined) run.render = boot.render
-    if (boot.renderSkipped !== undefined) run.renderSkipped = boot.renderSkipped
     return { status: 'passed' as const, detail: `${boot.seconds}s to sample`, exitCode: null }
   })
   if (run.abortedAt !== null) return
@@ -381,6 +454,11 @@ function freeze(run: MutableRun): ProbeRun {
     readiness: run.readiness,
     render: run.render,
     renderSkipped: run.renderSkipped,
+    urlPrinted: run.urlPrinted,
+    firstLine: run.firstLine,
+    errorTail: run.errorTail,
+    startupFailed: run.startupFailed,
+    bindFailedPorts: run.bindFailedPorts,
     cleanup: run.cleanup,
     abortedAt: run.abortedAt,
   }
@@ -435,6 +513,9 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
         .map((item) => (isRecord(item) && typeof item['entryId'] === 'string' ? String(item['entryId']) : null))
         .filter((item): item is string => item !== null)
     : []
+  const settled = typeof record?.['settled'] === 'boolean' ? Boolean(record['settled']) : null
+  const attempts = attemptsOf(record)
+  const applies = readNumber(record?.['applies'])
 
   if (record !== null && record['error'] !== undefined && record['error'] !== null) {
     const error = record['error']
@@ -443,6 +524,12 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
       entries: 0,
       waitMs: readNumber(record['wait_ms']),
       error: isRecord(error) ? String(error['message'] ?? 'hook error') : String(error),
+      // Machine-readable: the judge must not parse prose to tell "could not measure" from
+      // "measured and it is broken".
+      errorCode: isRecord(error) && typeof error['code'] === 'string' ? error['code'] : 'other',
+      settled,
+      attempts,
+      applies,
       candidateRows: [],
       excluded,
     }
@@ -450,7 +537,18 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
 
   const parsed = parseInventorySnapshot(payload, { source: sandboxHome, sampledAt: '' })
   if (!parsed.ok) {
-    return { transport: null, entries: 0, waitMs: readNumber(record?.['wait_ms'] ?? null), error: parsed.error.detail, candidateRows: [], excluded }
+    return {
+      transport: null,
+      entries: 0,
+      waitMs: readNumber(record?.['wait_ms'] ?? null),
+      error: parsed.error.detail,
+      errorCode: 'unreadable',
+      settled,
+      attempts,
+      applies,
+      candidateRows: [],
+      excluded,
+    }
   }
 
   const candidateRows = parsed.value.entries
@@ -463,6 +561,10 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
     entries: parsed.value.entries.length,
     waitMs: readNumber(record?.['wait_ms'] ?? null),
     error: null,
+    errorCode: null,
+    settled,
+    attempts,
+    applies,
     candidateRows,
     excluded,
   }
@@ -549,6 +651,44 @@ export interface JudgeProbeInput {
   readonly declaredRange?: string | null
 }
 
+/** Phases that mean "still moving"; a row in one of these is not a row that failed. */
+const TRANSIENT_PHASES = new Set(['pending', 'loading', 'unloading'])
+
+export type MeasurementState = 'valid' | 'unsettled' | 'unreadable'
+
+/**
+ * What can this reading support? (R17 / BS-25)
+ *
+ * `settled: null` (older payloads without the field) is treated as usable: the probe cannot
+ * retroactively fail a sample it produced before the field existed, and the hook always
+ * writes it now.
+ */
+export function measurementState(sample: ProbeSampleView | null): MeasurementState {
+  if (sample === null) return 'unreadable'
+  if (sample.error !== null) return 'unreadable'
+  if (sample.settled === false) return 'unsettled'
+  return 'valid'
+}
+
+/** Publishable detail for `probe.tree-not-settled`: observations only, no guesses. */
+function measurementDetail(run: ProbeRun): string {
+  const parts: string[] = []
+  const sample = run.sample
+  if (sample !== null) {
+    parts.push(`settled=${String(sample.settled)}`)
+    parts.push(`attempts=${sample.attempts ?? 'unknown'}`)
+    if (sample.errorCode !== null) parts.push(`code=${sample.errorCode}`)
+    if (sample.error !== null) parts.push(sample.error.slice(0, 120))
+    if (sample.candidateRows.length > 0) {
+      parts.push(`rows=${sample.candidateRows.map((row) => `${row.entryId}:${row.phase ?? 'none'}`).join(',')}`)
+    }
+  }
+  if (run.readiness !== null) {
+    parts.push(`readiness=${run.readiness.outcome}(${run.readiness.waited_ms}ms/${run.readiness.window_ms}ms)`)
+  }
+  return parts.join(' · ')
+}
+
 export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
   const { run, at } = input
   const reasons: Reason[] = []
@@ -600,9 +740,50 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
 
   const bootStep = stepOf('boot')
   if (run.sample === null) {
-    if (state.conclusion !== 'blocked') {
+    const ourPortUnbindable = run.bindFailedPorts.includes(run.port)
+    if (bootStep?.status === 'failed' && ourPortUnbindable) {
+      // The Host could not bind the port WE chose (EACCES/EADDRINUSE on 127.0.0.1:<plan>).
+      // That is a probe-environment failure: the candidate was never given a chance (R17 —
+      // this machine excludes TCP 53461-53560 and the plan's hash picked 53506).
+      state.conclusion = 'unknown'
+      state.level = 'medium'
+      missingEvidence.push('missing.probe')
+      reasons.push({
+        code: 'probe-port-unavailable',
+        severity: 'warn',
+        messageId: 'probe.port-unavailable',
+        params: { port: run.port },
+      })
+    } else if (bootStep?.status === 'failed' && run.urlPrinted) {
+      // The Host printed its own URL, so it was up: "the hook wrote nothing" is OUR
+      // instrument failing, not the candidate. N22: unknown + missing.inventory, never blocked.
+      state.conclusion = 'unknown'
+      state.level = 'medium'
+      missingEvidence.push('missing.inventory')
+      reasons.push({
+        code: 'probe-instrument-silent',
+        severity: 'warn',
+        messageId: 'probe.tree-not-settled',
+        params: {
+          detail: `no inventory sample in ${Math.round((run.timings.bootToSampleMs ?? 0) / 1000)}s while the Host was serving`,
+        },
+      })
+    } else if (state.conclusion !== 'blocked' && run.startupFailed) {
+      // The launcher's own verdict, quoted rather than paraphrased: "startup failed: N
+      // required plugins did not activate", plus the first line of its diagnosis.
+      block('probe-startup-failed', 'probe.startup-failed', {
+        detail: (run.firstLine ?? 'the Host refused to start').slice(0, 200),
+      })
+      remediation.push({
+        kind: 'report',
+        messageId: 'remediation.report',
+        note: 'the sandbox Host refused to start with this candidate installed; attach the probe artifact (it carries the launcher diagnostic)',
+      })
+    } else if (state.conclusion !== 'blocked') {
       block('probe-boot-timeout', 'probe.boot-timeout', {
-        seconds: Math.round((run.timings.bootToSampleMs ?? 0) / 100) / 10,
+        // With no sample there is no `bootToSampleMs`; the honest number is how long the boot
+        // step actually waited (R17: the first draft said "within 0s", which read as a bug).
+        seconds: Math.round((bootStep?.ms ?? 0) / 1000),
       })
       remediation.push({ kind: 'report', messageId: 'remediation.report', note: 'the sandbox Host never produced a sample; attach it to the bug report' })
     }
@@ -617,9 +798,48 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
     })
   }
 
+  /**
+   * Can the inventory reading support a `blocked` verdict? (R17 / BS-25)
+   *
+   * - `valid`: the hook read the tree after it stopped moving;
+   * - `unsettled`: rows were still `pending`/`loading` when the budget ran out;
+   * - `unreadable`: the hook could not read the tree at all (`{error}`).
+   *
+   * Only `valid` may attribute a failure to the candidate. The other two are measurement
+   * failures and must end as `unknown` + `missing.inventory` -- that is the whole
+   * "slow is not broken" separation.
+   */
+  const measurement = measurementState(run.sample)
+
+  if (measurement !== 'valid' && run.sample !== null) {
+    state.conclusion = 'unknown'
+    state.level = 'medium'
+    missingEvidence.push('missing.inventory')
+    const unreadable = measurement === 'unreadable' && run.sample.errorCode !== 'inactive-context'
+    reasons.push(
+      unreadable
+        ? {
+            code: 'probe-sample-unreadable',
+            severity: 'warn',
+            messageId: 'probe.sample-unreadable',
+            params: { detail: run.sample.error ?? 'unreadable sample' },
+          }
+        : {
+            code: 'probe-tree-not-settled',
+            severity: 'warn',
+            messageId: 'probe.tree-not-settled',
+            params: { detail: measurementDetail(run) },
+          },
+    )
+  }
+
   const httpSkipped = stepOf('http')?.status === 'skipped'
   if (!httpSkipped) {
-    if (run.http === null || run.http.status === null) {
+    if (measurement !== 'valid') {
+      // The port check ran, but a silent port cannot be attributed to the candidate while
+      // the tree was still composing (or could not be read). The step record keeps what the
+      // probe actually observed; the verdict refuses to turn it into "does not serve".
+    } else if (run.http === null || run.http.status === null) {
       if (state.conclusion !== 'blocked') {
         block('probe-http-unreachable', 'probe.http-unreachable', { port: run.port })
         remediation.push({ kind: 'report', messageId: 'remediation.report', note: 'the Host never answered on the probe port' })
@@ -628,10 +848,14 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
       evidence.push({
         id: 'probe-http',
         tier: 'measured-local',
-        source: `http://127.0.0.1:${run.port}`,
+        source: `http://127.0.0.1:${run.readiness?.port ?? run.port}`,
         method: 'http readiness (redirect: manual)',
         at,
-        detail: `status=${run.http.status}`,
+        detail:
+          `status=${run.http.status}` +
+          (run.readiness === null
+            ? ''
+            : ` waited=${run.readiness.waited_ms}ms window=${run.readiness.window_ms}ms url_seen=${String(run.readiness.url_seen)}`),
       })
     }
   }
@@ -678,59 +902,64 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
     }
   }
 
-  if (state.conclusion !== 'blocked') {
-    if (run.sample?.error !== null && run.sample?.error !== undefined) {
+  if (state.conclusion !== 'blocked' && measurement === 'valid') {
+    const rows = run.sample?.candidateRows ?? []
+    if (rows.length === 0) {
+      block('probe-row-missing', 'probe.row-missing')
+      remediation.push({
+        kind: 'remove-plugin',
+        messageId: 'remediation.remove-plugin',
+        note: 'the candidate installed but produced no row; remove it or report the silent no-op',
+      })
+    } else if (rows.length > 1) {
       state.conclusion = 'unknown'
       state.level = 'medium'
-      reasons.push({ code: 'probe-sample-unreadable', severity: 'warn', messageId: 'probe.sample-unreadable', params: { detail: run.sample.error } })
-      missingEvidence.push('missing.inventory')
+      reasons.push({
+        code: 'probe-row-ambiguous',
+        severity: 'warn',
+        messageId: 'probe.row-ambiguous',
+        params: { count: rows.length, rows: rows.map((row) => row.entryId).join(', ') },
+      })
+      missingEvidence.push('missing.row-identity')
     } else {
-      const rows = run.sample?.candidateRows ?? []
-      if (rows.length === 0) {
-        block('probe-row-missing', 'probe.row-missing')
+      const row = rows[0]
+      if (row !== undefined && row.phase !== null && TRANSIENT_PHASES.has(row.phase)) {
+        // A row still moving at sample time is NOT a row that failed (N21): the phase is a
+        // race, not an outcome. The settle budget is the hook's, and it already reported it.
+        state.conclusion = 'unknown'
+        state.level = 'medium'
+        missingEvidence.push('missing.inventory')
+        reasons.push({
+          code: 'probe-row-unsettled',
+          severity: 'warn',
+          messageId: 'probe.tree-not-settled',
+          params: { detail: `row ${row.entryId} is still ${row.phase}` },
+        })
+      } else if (row !== undefined && row.phase === 'active') {
+        reasons.push({
+          code: 'probe-row-active',
+          severity: 'info',
+          messageId: 'probe.row-active',
+          params: { row: row.entryId },
+        })
+        if (run.http !== null && run.http.status !== null) {
+          reasons.unshift({
+            code: 'probe-served',
+            severity: 'info',
+            messageId: 'probe.served',
+            params: {
+              status: run.http.status,
+              seconds: Math.round((run.timings.bootToSampleMs ?? 0) / 1000),
+            },
+          })
+        }
+      } else if (row !== undefined) {
+        block('probe-row-inactive', 'probe.row-inactive', { row: row.entryId, phase: row.phase ?? 'none' })
         remediation.push({
           kind: 'remove-plugin',
           messageId: 'remediation.remove-plugin',
-          note: 'the candidate installed but produced no row; remove it or report the silent no-op',
+          note: 'the candidate row is declared and admitted but never runs; remove it until the author ships a fix',
         })
-      } else if (rows.length > 1) {
-        state.conclusion = 'unknown'
-        state.level = 'medium'
-        reasons.push({
-          code: 'probe-row-ambiguous',
-          severity: 'warn',
-          messageId: 'probe.row-ambiguous',
-          params: { count: rows.length, rows: rows.map((row) => row.entryId).join(', ') },
-        })
-        missingEvidence.push('missing.row-identity')
-      } else {
-        const row = rows[0]
-        if (row !== undefined && row.phase === 'active') {
-          reasons.push({
-            code: 'probe-row-active',
-            severity: 'info',
-            messageId: 'probe.row-active',
-            params: { row: row.entryId },
-          })
-          if (run.http !== null && run.http.status !== null) {
-            reasons.unshift({
-              code: 'probe-served',
-              severity: 'info',
-              messageId: 'probe.served',
-              params: {
-                status: run.http.status,
-                seconds: Math.round((run.timings.bootToSampleMs ?? 0) / 1000),
-              },
-            })
-          }
-        } else if (row !== undefined) {
-          block('probe-row-inactive', 'probe.row-inactive', { row: row.entryId, phase: row.phase ?? 'none' })
-          remediation.push({
-            kind: 'remove-plugin',
-            messageId: 'remediation.remove-plugin',
-            note: 'the candidate row is declared and admitted but never runs; remove it until the author ships a fix',
-          })
-        }
       }
     }
   }
@@ -806,27 +1035,60 @@ function finishJudgement(
 export function probeAssertions(run: ProbeRun): readonly ProbeAssertionResult[] {
   const step = (id: ProbeStepId): ProbeStepRun | undefined => run.steps.find((item) => item.id === id)
   const httpStep = step('http')
+  const measurement = measurementState(run.sample)
+  const rows = run.sample?.candidateRows ?? []
   return [
-    { id: 'boot-sampled', status: run.sample === null || run.sample.error !== null ? 'failed' : 'passed', detail: run.sample?.error ?? (run.sample === null ? 'no sample' : null) },
     {
+      // `failed` is "nothing was written"; `unmeasured` is "something was written but it is
+      // not a reading" (the hook's own context died). They are different facts (R17).
+      id: 'boot-sampled',
+      status:
+        run.sample === null
+          ? run.urlPrinted
+            ? 'unmeasured'
+            : 'failed'
+          : measurement === 'unreadable'
+            ? 'unmeasured'
+            : 'passed',
+      detail:
+        run.sample === null
+          ? run.urlPrinted
+            ? 'the Host was serving but the probe wrote no sample'
+            : 'no sample'
+          : (run.sample.error ??
+            (run.sample.settled === false ? 'sampled while the tree was still moving (settled=false)' : null)),
+    },
+    {
+      // A silent port measured while the tree was still composing is NOT a failure of the
+      // candidate: it is a reading that cannot answer this question (R17 / BS-25).
       id: 'http-served',
       status:
-        httpStep?.status === 'skipped'
+        httpStep?.status === 'skipped' || measurement !== 'valid'
           ? 'unmeasured'
           : run.http === null || run.http.status === null
             ? 'failed'
             : 'passed',
-      detail: httpStep?.status === 'skipped' ? httpStep.detail : (run.http?.detail ?? 'not probed'),
+      detail:
+        httpStep?.status === 'skipped'
+          ? httpStep.detail
+          : measurement !== 'valid'
+            ? `not attributable: the inventory reading was ${measurement}`
+            : (run.http?.detail ?? 'not probed'),
     },
     {
       id: 'inventory-active',
       status:
-        run.sample === null || run.sample.error !== null
-          ? 'failed'
-          : run.sample.candidateRows.length === 1 && run.sample.candidateRows[0]?.phase === 'active'
+        measurement !== 'valid'
+          ? 'unmeasured'
+          : rows.length === 1 && rows[0]?.phase === 'active'
             ? 'passed'
             : 'failed',
-      detail: run.sample === null ? 'no sample' : `${run.sample.candidateRows.length} candidate row(s)`,
+      detail:
+        measurement !== 'valid'
+          ? `no settled reading (${measurement})`
+          : run.sample === null
+            ? 'no sample'
+            : `${rows.length} candidate row(s)`,
     },
     {
       id: 'cleanup-complete',
@@ -884,6 +1146,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+/**
+ * How many reads the hook needed. The payload carries either the attempt trace (array) or
+ * a count; both are facts, and neither is inferred from the failure text.
+ */
+function attemptsOf(record: Record<string, unknown> | null): number | null {
+  if (record === null) return null
+  const list = record['attempts']
+  if (Array.isArray(list)) return list.length
+  if (typeof list === 'number' && Number.isFinite(list)) return list
+  const error = record['error']
+  if (isRecord(error)) return readNumber(error['attempts'])
+  return null
 }
 
 /**

@@ -50,7 +50,7 @@ import {
   type Verdict,
   type VersionDrift,
 } from '@dsh-triage/core'
-import { buildProbePlan, executeProbe, judgeProbe, probeVerdict } from '@dsh-triage/probe'
+import { buildProbePlan, executeProbe, findFreePort, judgeProbe, probeVerdict } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
 import {
@@ -101,6 +101,10 @@ interface Flags {
   readonly results: string | null
   /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
   readonly allowExecute: boolean
+  /** `probe --execute --readiness-timeout <ms>`: budget for a settled tree (R17). */
+  readonly readinessTimeoutMs: number | null
+  /** `probe --execute --unsettled-timeout <ms>`: window for a tree still composing (R17). */
+  readonly unsettledReadinessMs: number | null
 }
 
 interface Parsed {
@@ -133,6 +137,8 @@ Flags
   --dsh-main <path>     (probe --execute) DSH launcher entry the sandbox boots
   --no-http             (probe --execute) profile serves no web surface; skip readiness
   --browser <path>      (probe --execute) Chromium-family binary for the render check (T-302)
+  --readiness-timeout <ms>  (probe --execute) readiness budget for a settled tree (default 5000)
+  --unsettled-timeout <ms>  (probe --execute) readiness window while the tree is still composing (default 20000)
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
   --results <dir>       (serve) directory of evidence to display (default: ./data/results)
   --allow-execute       (serve) enable actions; without it the panel is read-only
@@ -676,12 +682,17 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   // nothing here reads or writes `~/.dsh`.
   const dshHome = realDshHomeOf(flags.dshHome)
   const candidate = normalizeCandidateSpec(spec)
+  // R17: the plan's port is a hash, and this machine excludes TCP 53461-53560, so the
+  // sandbox webserver died with EACCES on 53506 and the candidate was blamed for it. Ask the
+  // OS for a port it will actually hand out instead of trusting the digest.
+  const freePort = await findFreePort()
   const plan = buildProbePlan({
     candidate,
     realDshHome: dshHome,
     workRoot: probeScratchRoot(),
     profile: flags.profile,
     dshBin: flags.dshMain ?? 'dsh',
+    ...(freePort === null ? {} : { basePort: freePort }),
   })
   if (!plan.ok) {
     process.stderr.write(`cannot build a safe probe plan: ${plan.error.code} (${plan.error.detail})\n`)
@@ -727,7 +738,12 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   const stamp = stampOf(flags)
   const run = await executeProbe(
     { plan: plan.value, dshMain: flags.dshMain, candidatePackage, ...(flags.noHttp ? { skipHttp: true } : {}) },
-    realProbeDeps({ baseEnv: process.env, ...(flags.browser === null ? {} : { browser: flags.browser }) }),
+    realProbeDeps({
+      baseEnv: process.env,
+      ...(flags.browser === null ? {} : { browser: flags.browser }),
+      ...(flags.readinessTimeoutMs === null ? {} : { readinessTimeoutMs: flags.readinessTimeoutMs }),
+      ...(flags.unsettledReadinessMs === null ? {} : { unsettledReadinessMs: flags.unsettledReadinessMs }),
+    }),
   )
   const judgement = judgeProbe({ run, at: stamp })
   const env: EnvFingerprint = {
@@ -955,6 +971,8 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let port: number | null = null
   let results: string | null = null
   let allowExecute = false
+  let readinessTimeoutMs: number | null = null
+  let unsettledReadinessMs: number | null = null
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -1050,6 +1068,22 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--allow-execute':
         allowExecute = true
         break
+      case '--readiness-timeout': {
+        const value = takeValue()
+        if (value === null) return null
+        const parsed = Number(value)
+        if (!Number.isInteger(parsed) || parsed < 1_000 || parsed > 120_000) return null
+        readinessTimeoutMs = parsed
+        break
+      }
+      case '--unsettled-timeout': {
+        const value = takeValue()
+        if (value === null) return null
+        const parsed = Number(value)
+        if (!Number.isInteger(parsed) || parsed < 1_000 || parsed > 300_000) return null
+        unsettledReadinessMs = parsed
+        break
+      }
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -1061,7 +1095,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, readinessTimeoutMs, unsettledReadinessMs }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

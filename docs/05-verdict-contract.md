@@ -138,11 +138,13 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 | 渲染检查得不出结论（浏览器崩了/超时/浏览器错误页/无挂载点）→ 至多 `unknown` + `missing.render`（`probe.render-unmeasured`），不允许判 `go` | 无证据只能 unknown（铁律 1）；R15 复核实测：把 body 子节点当判据会让 Chrome 自己的错误页拿到 `rendered` |
 | 候选行必须**唯一**：0 行 → `blocked`（`probe.row-missing`）；≥2 行 → `unknown`（`probe.row-ambiguous`） | 不猜归属（与 `runtime.ambiguous-entry` 同一条纪律） |
 | 候选行存在但相位不是 `active` → `blocked`（`probe.row-inactive`），并点名相位 | `failed` 与 `null` 是两种失败形状，不许合并成「没起来」 |
+| **测量失败 ≠ 插件失败**（R17 / BS-25）：hook 读不到树（`inactive context`）或树仍在动（`settled:false`）→ `unknown` + `missing.inventory`（`probe.tree-not-settled`），**禁止**判 `blocked` | 只有 `valid` 读数（读到、无 error、`settled:true`）才能把失败归给候选；候选行相位仍是 `pending/loading/unloading` 时同样只能 `unknown`（N19 / N21） |
+| 树已稳定但端口窗口内无应答 → 仍 `blocked`（`probe.http-unreachable`） | 负对照 N20：防止本行上一条把「全都变 unknown」 |
 | 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |
 | 实测运行时不在候选声明区间 → 降为 `unknown`（`probe.runtime-mismatch`） | 结论不可外推到没跑过的运行时 |
 | `evidence[].method` 必须写真实传输 | `boot + <transport> inventory sample`；探针行自身从评分行里剔除 |
 
-命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch`。
+命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.tree-not-settled` / `probe.startup-failed` / `probe.port-unavailable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch`。
 
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |

@@ -1,0 +1,10 @@
+# Slow-but-normal fixture (R17).
+#
+# The delay lives in the bundle patch (not in the probe's overlay), so the candidate really
+# behaves like a real plugin that takes seconds to register. `insert:` is required: a bare
+# `- id:` would patch a non-existent entry and be skipped (R14 / M3-probe.md F3).
+- insert:
+    - id: triage-probe-slow
+      name: triage-probe-fixture-slow
+      config:
+        delayMs: 6000

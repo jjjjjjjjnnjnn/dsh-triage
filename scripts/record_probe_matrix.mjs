@@ -76,6 +76,10 @@ for (const [index, candidate] of plan.candidates.entries()) {
   if (candidate.expect !== undefined) args.push('--expect', String(candidate.expect))
   if (candidate.registry !== undefined) args.push('--registry', String(candidate.registry))
   if (candidate.npmrcRegistry !== undefined) args.push('--npmrc-registry', String(candidate.npmrcRegistry))
+  // R17: a candidate that needs a longer readiness window may ask for one; the default stays
+  // the documented 5s for a settled tree.
+  if (candidate.readinessTimeoutMs !== undefined) args.push('--readiness-timeout', String(candidate.readinessTimeoutMs))
+  if (candidate.unsettledTimeoutMs !== undefined) args.push('--unsettled-timeout', String(candidate.unsettledTimeoutMs))
 
   process.stdout.write(`\n[${index + 1}/${plan.candidates.length}] ${label} ← ${candidate.spec}\n`)
   const started = Date.now()
@@ -98,6 +102,9 @@ for (const [index, candidate] of plan.candidates.entries()) {
     label,
     spec: String(candidate.spec),
     shape: String(candidate.shape ?? 'unspecified'),
+    // `real` marks a candidate that is a genuine plugin rather than a deliberately broken
+    // shape. D2's denominator only counts these (R17).
+    real: candidate.real === true || String(candidate.shape ?? '').startsWith('real'),
     expect: candidate.expect ?? null,
     exit: child.status,
     ms,
@@ -164,6 +171,17 @@ function summarize(entries) {
   return {
     n: entries.length,
     by_conclusion: byConclusion,
+    // D2 is "how often does a real candidate probe cleanly". Synthetic failure shapes are
+    // labelled and excluded from that count instead of being averaged in (R17).
+    real_starts: entries.filter((entry) => entry.real).length,
+    real_by_conclusion: entries
+      .filter((entry) => entry.real)
+      .reduce((out, entry) => {
+        const key = entry.conclusion ?? 'no-artifact'
+        out[key] = (out[key] ?? 0) + 1
+        return out
+      }, {}),
+    synthetic_failures: entries.filter((entry) => !entry.real).length,
     expectation_misses: entries.filter((entry) => !entry.expectation_met).length,
     cleanup_ok: entries.filter((entry) => entry.cleanup_ok === true).length,
     cleanup_checked: entries.filter((entry) => entry.cleanup_ok !== null).length,

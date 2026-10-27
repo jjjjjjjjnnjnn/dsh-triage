@@ -41,101 +41,226 @@ export const inject = ['loader']
 /** Phases that mean "the tree is still moving"; a sample taken now would be a race. */
 const TRANSIENT = new Set(['pending', 'loading', 'unloading'])
 
+/**
+ * How many times Cordis applied this plugin in this Host process.
+ *
+ * WHY IT MATTERS (R17): when a fiber's injected services change, Cordis unloads it
+ * (`fiber.store` becomes `undefined`) and, when they are available again, **re-runs
+ * `apply`**. A task started by an earlier apply therefore keeps running against a dead
+ * context while a newer one is already sampling. Two rules follow:
+ *
+ *   1. a task may only write while its own fiber is still active (`fiber.state === 2`);
+ *   2. only the newest generation may write — otherwise a dying task would overwrite a
+ *      healthy sample with its own error.
+ */
+let applyCount = 0
+let newestGeneration = 0
+
 export function apply(ctx, config = {}) {
   const out = config.out ?? null
   if (out === null) throw new Error('triage-inventory-probe needs config.out')
 
   const selfId = config.selfId ?? 'triage-inventory-probe'
-  const timeoutMs = Number(config.timeoutMs ?? 15000)
+  const settleTimeoutMs = Number(config.timeoutMs ?? 15000)
   const intervalMs = Number(config.intervalMs ?? 250)
+  /** Budget for "the context is not usable yet"; Cordis re-applies when it becomes usable. */
+  const retryMs = Number(config.retryMs ?? 20000)
   /** Resolve upstream's projection from the tree that is actually running, not from ours. */
   const resolveFrom = config.resolveFrom ?? null
   const started = Date.now()
+  const generation = ++applyCount
+  newestGeneration = generation
+  const attempts = []
 
   const write = (payload) => {
     writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
   }
+  const isNewest = () => generation === newestGeneration
 
   // Deliberately not awaited: awaiting inside `apply` would keep our own root fiber in
   // `loading`, and then "no transient entries" could never become true.
   void (async () => {
-    try {
-      const { readPluginInventory } = await loadProjection(resolveFrom)
-      let snapshot = null
-      let selfEntryId = null
-      for (;;) {
-        snapshot = await readPluginInventory(ctx)
-        // Our own row is spelled by the loader, not by us: on a bundled profile it is
-        // `include:triage-inventory-probe`. Matching it by exact id left the probe in the
-        // scored rows (the adversary caught this), so match the tail too.
-        selfEntryId = findSelfEntryId(snapshot.entries, selfId)
-        const moving = snapshot.entries.filter(
-          (entry) => entry.entryId !== selfEntryId && TRANSIENT.has(entry.fiberPhase),
-        )
-        // Preset rows need the same settling condition: a `pending` preset row is just as
-        // transient as a `pending` loader row, and judging it would report a race.
-        const movingPresets = (snapshot.agentPresets ?? []).flatMap((preset) =>
-          (preset.rows ?? []).filter((row) => TRANSIENT.has(row.fiberPhase)),
-        )
-        if ((moving.length === 0 && movingPresets.length === 0) || Date.now() - started >= timeoutMs) break
-        await new Promise((resolve) => setTimeout(resolve, intervalMs))
-      }
-      const sampledAt = new Date().toISOString()
-      const published = withoutProbe(snapshot, selfEntryId)
-      write({
-        kind: 'live',
-        sampled_at: sampledAt,
-        // Who answered, so the artifact never claims a Remote it did not use.
-        transport: 'in-process-projection',
-        method: 'readPluginInventory',
-        profile: config.profile ?? null,
-        runtime_version: config.runtimeVersion ?? null,
-        wait_ms: Date.now() - started,
-        // The published snapshot must be the deployment, not the deployment plus our
-        // instrument: the probe row is recorded here instead of being scored.
-        excluded:
-          selfEntryId === null
-            ? []
-            : [
-                {
-                  entryId: selfEntryId,
-                  reason: 'the probe row itself, mounted through a launcher --patch overlay for this sample only',
-                },
-              ],
-        snapshot: {
-          ...published,
-          // Inside the snapshot on purpose: `audit --snapshot` reads the transport from
-          // here, and a provenance field that only lives beside the data is one nobody
-          // reads (the adversary showed the artifact audited as "unstated").
-          transport: 'in-process-projection',
-        },
-        host_summary: summarize(published),
-        // Facts, not judgements: the registry's own list, plus what this build does not
-        // read yet. `registry: null` means "no tool service composed", which is not the
-        // same answer as "a registry with zero tools".
-        capabilities: readCapabilities(ctx, sampledAt),
-      })
-    } catch (error) {
+    // Phase 1: wait until the projection can be read at all. A read can throw because the
+    // tree is still composing (`inactive context`), which is a MEASUREMENT failure, not a
+    // candidate failure -- the artifact has to be able to say that.
+    let projection = null
+    let snapshot = null
+    for (;;) {
       try {
-        write({
-          kind: 'live',
-          sampled_at: new Date().toISOString(),
-          transport: 'in-process-projection',
-          method: 'readPluginInventory',
-          profile: config.profile ?? null,
-          wait_ms: Date.now() - started,
-          error: {
-            name: error instanceof Error ? error.name : typeof error,
-            message: error instanceof Error ? error.message : String(error),
-            stack_first_line: error instanceof Error ? (error.stack ?? '').split('\n')[0] : '',
-          },
-        })
-      } catch {
-        // Nothing more we can do without a writable out path; the recorder reports the
-        // missing file as a blocker rather than pretending a sample happened.
+        if (projection === null) projection = await loadProjection(resolveFrom)
+        snapshot = await projection.readPluginInventory(ctx)
+        attempts.push({ n: attempts.length + 1, ms: Date.now() - started, ok: true, fiber_state: fiberStateOf(ctx) })
+        break
+      } catch (error) {
+        attempts.push(attemptEntry(attempts.length + 1, Date.now() - started, error, ctx))
+        // A dead context cannot be revived from inside this task: retrying it would only
+        // spin until the budget. The observable facts (state, remaining budget) are kept
+        // so the artifact can say "not measured" instead of "budget exceeded".
+        if (fiberStateOf(ctx) !== 2 || Date.now() - started >= retryMs) break
+        await sleep(Math.min(2_000, 250 * 2 ** Math.min(attempts.length - 1, 3)))
       }
     }
+
+    if (snapshot === null) {
+      writeFailure(config, { out, started, attempts, generation, isNewest, settleTimeoutMs, write })
+      return
+    }
+
+    // Phase 2: wait until no entry is transient. The budget starts at the first successful
+    // read, not at apply time: the retry above already consumed part of the wall clock.
+    const settleStarted = Date.now()
+    let selfEntryId = null
+    let settled = false
+    for (;;) {
+      // Our own row is spelled by the loader, not by us: on a bundled profile it is
+      // `include:triage-inventory-probe`. Matching it by exact id left the probe in the
+      // scored rows (the adversary caught this), so match the tail too.
+      selfEntryId = findSelfEntryId(snapshot.entries, selfId)
+      const moving = snapshot.entries.filter(
+        (entry) => entry.entryId !== selfEntryId && TRANSIENT.has(entry.fiberPhase),
+      )
+      // Preset rows need the same settling condition: a `pending` preset row is just as
+      // transient as a `pending` loader row, and judging it would report a race.
+      const movingPresets = (snapshot.agentPresets ?? []).flatMap((preset) =>
+        (preset.rows ?? []).filter((row) => TRANSIENT.has(row.fiberPhase)),
+      )
+      settled = moving.length === 0 && movingPresets.length === 0
+      if (settled || Date.now() - settleStarted >= settleTimeoutMs) break
+      await sleep(intervalMs)
+      if (!isNewest() || fiberStateOf(ctx) !== 2) break
+      try {
+        snapshot = await readPluginInventoryFrom(projection, ctx)
+      } catch (error) {
+        // Losing the context mid-settle is a measurement failure: keep the last readable
+        // snapshot but mark it unsettled, never as "the tree settled and the row is dead".
+        attempts.push(attemptEntry(attempts.length + 1, Date.now() - started, error, ctx))
+        break
+      }
+    }
+
+    // A newer apply owns the file from here on.
+    if (!isNewest()) return
+
+    const sampledAt = new Date().toISOString()
+    const published = withoutProbe(snapshot, selfEntryId)
+    write({
+      kind: 'live',
+      sampled_at: sampledAt,
+      // Who answered, so the artifact never claims a Remote it did not use.
+      transport: 'in-process-projection',
+      method: 'readPluginInventory',
+      profile: config.profile ?? null,
+      runtime_version: config.runtimeVersion ?? null,
+      wait_ms: Date.now() - started,
+      applies: generation,
+      attempts,
+      // `settled: false` means the sample was taken while rows were still moving. The
+      // executor must not read a transient phase as a dead plugin (R17 / BS-25).
+      settled,
+      settle_timeout_ms: settleTimeoutMs,
+      // The published snapshot must be the deployment, not the deployment plus our
+      // instrument: the probe row is recorded here instead of being scored.
+      excluded:
+        selfEntryId === null
+          ? []
+          : [
+              {
+                entryId: selfEntryId,
+                reason: 'the probe row itself, mounted through a launcher --patch overlay for this sample only',
+              },
+            ],
+      snapshot: {
+        ...published,
+        // Inside the snapshot on purpose: `audit --snapshot` reads the transport from
+        // here, and a provenance field that only lives beside the data is one nobody
+        // reads (the adversary showed the artifact audited as "unstated").
+        transport: 'in-process-projection',
+      },
+      host_summary: summarize(published),
+      // Facts, not judgements: the registry's own list, plus what this build does not
+      // read yet. `registry: null` means "no tool service composed", which is not the
+      // same answer as "a registry with zero tools".
+      capabilities: readCapabilities(ctx, sampledAt),
+    })
   })()
+}
+
+/** Read through the projection we already resolved (kept separate so the catch is explicit). */
+function readPluginInventoryFrom(projection, ctx) {
+  return projection.readPluginInventory(ctx)
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** Cordis fiber states: 0 pending · 1 loading · 2 active · 3 error · 5 unloading. */
+function fiberStateOf(ctx) {
+  const fiber = ctx?.fiber
+  return typeof fiber?.state === 'number' ? fiber.state : null
+}
+
+/**
+ * Why a read failed, in a shape the executor can decide on.
+ *
+ * `inactive-context` is Cordis saying "this context cannot resolve its injected services
+ * right now" -- a measurement failure. Everything else is left unclassified rather than
+ * guessed into a verdict.
+ */
+function classifyError(error) {
+  const message = describe(error)
+  if (/inactive context/i.test(message)) return 'inactive-context'
+  if (/Cannot find module|ERR_MODULE_NOT_FOUND|ERR_PACKAGE_PATH_NOT_EXPORTED/i.test(message)) return 'projection-missing'
+  return 'other'
+}
+
+function attemptEntry(n, ms, error, ctx) {
+  const fiber = ctx?.fiber
+  return {
+    n,
+    ms,
+    ok: false,
+    code: classifyError(error),
+    error: describe(error).slice(0, 240),
+    fiber_state: fiberStateOf(ctx),
+    // Whether this context still holds the injected service. A `false` here is the
+    // difference between "the tree is still composing" and "the projection is missing".
+    store_has_loader:
+      fiber?.store !== undefined && fiber?.store !== null && Object.prototype.hasOwnProperty.call(fiber.store, 'loader'),
+  }
+}
+
+function writeFailure(config, { started, attempts, generation, isNewest, settleTimeoutMs, write }) {
+  if (!isNewest()) return
+  const last = attempts[attempts.length - 1] ?? null
+  try {
+    write({
+      kind: 'live',
+      sampled_at: new Date().toISOString(),
+      transport: 'in-process-projection',
+      method: 'readPluginInventory',
+      profile: config.profile ?? null,
+      runtime_version: config.runtimeVersion ?? null,
+      wait_ms: Date.now() - started,
+      applies: generation,
+      attempts,
+      // Never `true`: nothing was settled, so nothing may be judged from this sample.
+      settled: false,
+      settle_timeout_ms: settleTimeoutMs,
+      error: {
+        name: last?.code ?? 'measurement',
+        message: last?.error ?? 'inventory projection could not be read',
+        // Machine-readable, so the executor does not parse prose.
+        code: last?.code ?? 'other',
+        attempts: attempts.length,
+        fiber_state: last?.fiber_state ?? null,
+        stack_first_line: '',
+      },
+    })
+  } catch {
+    // Nothing more we can do without a writable out path; the recorder reports the
+    // missing file as a blocker rather than pretending a sample happened.
+  }
 }
 
 /** Our own composed entry id, matched by suffix because the loader prefixes group paths. */

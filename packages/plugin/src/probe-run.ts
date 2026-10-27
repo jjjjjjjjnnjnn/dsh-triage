@@ -42,6 +42,16 @@ export interface RealProbeDepsOptions {
   readonly browser?: string | null
   /** Budget for the render check; it is a separate segment, never the boot budget. */
   readonly renderTimeoutMs?: number
+  /**
+   * Readiness budget for a settled tree (R17). Defaults to the 5s in `host.ts`, which is the
+   * documented threshold; changing it here does not change the judge.
+   */
+  readonly readinessTimeoutMs?: number
+  /**
+   * Readiness window for a tree that was still moving when the sample was taken (R17). A run
+   * that ends inside this window can only ever be judged `unknown`.
+   */
+  readonly unsettledReadinessMs?: number
 }
 
 export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps {
@@ -76,6 +86,8 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         // probe would launch the user's browser. Both belong to the probe, not the plugin.
         appArgs: ['--port', String(plan.port), '--no-open'],
         readinessPort: plan.port,
+        ...(options.readinessTimeoutMs === undefined ? {} : { readinessTimeoutMs: options.readinessTimeoutMs }),
+        ...(options.unsettledReadinessMs === undefined ? {} : { unsettledReadinessMs: options.unsettledReadinessMs }),
         // T-302: the DOM check needs the Host's own token URL, so it runs inside the
         // same alive window as the readiness probe.
         render: { browser, ...(options.renderTimeoutMs === undefined ? {} : { timeoutMs: options.renderTimeoutMs }) },
@@ -83,11 +95,21 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
       return {
         sample: boot.payload,
         seconds: boot.host.seconds,
-        detail: boot.error ?? `sampled in ${boot.host.seconds}s (${boot.host.status})`,
+        detail:
+          boot.error === null
+            ? `sampled in ${boot.host.seconds}s (${boot.host.status})`
+            : // A no-sample run has to explain itself: without this line the artifact cannot
+              // tell "the Host was up and our instrument stayed silent" from "nothing started".
+              `${boot.error} · url_printed=${String(boot.host.url_printed)} · first line: ${boot.host.first_line}`,
         http: boot.http,
         readiness: boot.readiness,
         render: boot.render,
         renderSkipped: boot.renderSkipped,
+        urlPrinted: boot.host.url_printed,
+        firstLine: boot.host.first_line,
+        errorTail: boot.host.error_tail,
+        startupFailed: boot.host.startup_failed,
+        bindFailedPorts: boot.host.bind_failed_ports,
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),

@@ -5,7 +5,18 @@ import { tmpdir } from 'node:os'
 import { test } from 'node:test'
 import { buildProbePlan } from '@dsh-triage/probe'
 import type { ProbeExecDeps, ProbeRun, ProbeSampleView } from '@dsh-triage/probe'
-import { executeProbe, failureEndpoints, isCandidateModule, judgeProbe, modulePackageName, probeAssertions, readSample } from '@dsh-triage/probe'
+import {
+  bindFailedPorts,
+  executeProbe,
+  failureEndpoints,
+  isCandidateModule,
+  isUsableSample,
+  judgeProbe,
+  modulePackageName,
+  probeAssertions,
+  readSample,
+  sanitizeLogLine,
+} from '@dsh-triage/probe'
 
 const realDshHome = join(tmpdir(), 'dsh-triage-probe-real', '.dsh')
 const workRoot = join(tmpdir(), 'dsh-triage-probe')
@@ -19,16 +30,42 @@ function plan() {
   return built.value
 }
 
-/** The payload shape `scripts/probe_hooks/inventory-hook.mjs` writes. */
-function hookPayload(entries: Array<{ entryId: string; moduleName: string; fiberPhase: string | null; enabled?: boolean }>) {
-  return {
+/** The payload shape `inventory-hook.mjs` writes (R17 adds `settled`/`attempts`/error code). */
+function hookPayload(
+  entries: Array<{ entryId: string; moduleName: string; fiberPhase: string | null; enabled?: boolean }>,
+  extras: {
+    readonly settled?: boolean
+    readonly error?: string
+    readonly errorCode?: string
+    readonly attempts?: number
+    readonly applies?: number
+    readonly waitMs?: number
+  } = {},
+) {
+  const base = {
     kind: 'live',
     sampled_at: '2026-10-27T00:00:00.000Z',
     transport: 'in-process-projection',
     method: 'readPluginInventory',
     profile: 'probe',
-    wait_ms: 1500,
+    wait_ms: extras.waitMs ?? 1500,
     excluded: [],
+    applies: extras.applies ?? 1,
+    ...(extras.settled === undefined ? {} : { settled: extras.settled }),
+    ...(extras.attempts === undefined
+      ? {}
+      : { attempts: Array.from({ length: extras.attempts }, (_unused, index) => ({ n: index + 1, ok: true })) }),
+  }
+  if (extras.error !== undefined) {
+    return {
+      ...base,
+      settled: extras.settled ?? false,
+      attempts: [{ n: 1, ok: false, code: extras.errorCode ?? 'other', error: extras.error }],
+      error: { code: extras.errorCode ?? 'other', message: extras.error, attempts: 1 },
+    }
+  }
+  return {
+    ...base,
     snapshot: {
       transport: 'in-process-projection',
       entries: entries.map((entry) => ({
@@ -344,7 +381,7 @@ test('the readiness port comes from the Host and cleanup checks every port it us
         seconds: 8.1,
         detail: 'sampled',
         http: { status: 303, detail: 'HTTP 303' },
-        readiness: { source: 'host-url' as const, port: 53997 },
+        readiness: { source: 'host-url' as const, port: 53997, outcome: 'served' as const, waited_ms: 12, window_ms: 5000, url_seen: true },
       }),
       cleanup: async (input) => {
         observed.cleanup = { port: input.port, ...(input.extraPorts === undefined ? {} : { extraPorts: input.extraPorts }) }
@@ -364,7 +401,7 @@ test('a Host port that differs from the plan is reported, and the conclusion fol
         seconds: 8.1,
         detail: 'sampled',
         http: { status: 401, detail: 'HTTP 401' },
-        readiness: { source: 'host-url' as const, port: 53997 },
+        readiness: { source: 'host-url' as const, port: 53997, outcome: 'served' as const, waited_ms: 12, window_ms: 5000, url_seen: true },
         render: renderedCheck,
       }),
     },
@@ -376,3 +413,169 @@ test('a Host port that differs from the plan is reported, and the conclusion fol
   assert.equal(reason?.params?.plan, run.port)
 })
 
+/* --------------------- R17: "slow" is not "broken" (BS-25) ------------------ */
+
+const AT = '2026-10-27T00:00:00.000Z'
+
+test('a sample taken while the tree was still moving cannot block the candidate (N19)', async () => {
+  const { run } = await runWith({
+    sample: hookPayload([{ entryId: 'include:triage-probe-ok', moduleName: CANDIDATE, fiberPhase: 'active' }], {
+      settled: false,
+    }),
+    deps: { probeHttp: async () => ({ status: null, detail: 'fetch failed' }) },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown', 'an unsettled reading is not evidence of a broken plugin')
+  assert.ok(judgement.missingEvidence.includes('missing.inventory'))
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.tree-not-settled'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.http-unreachable'))
+  const byId = new Map(probeAssertions(run).map((item) => [item.id, item.status]))
+  assert.equal(byId.get('http-served'), 'unmeasured', 'a silent port while the tree moves answers nothing')
+  assert.equal(byId.get('inventory-active'), 'unmeasured')
+})
+
+test('a settled tree with a silent port is still blocked (N20)', async () => {
+  const { run } = await runWith({
+    sample: hookPayload([{ entryId: 'include:triage-probe-ok', moduleName: CANDIDATE, fiberPhase: 'active' }], { settled: true }),
+    deps: { probeHttp: async () => ({ status: null, detail: 'ECONNREFUSED' }) },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'blocked', 'the fix must not turn every failure into unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.http-unreachable'))
+})
+
+test('a candidate row that is still pending is a race, not a dead row (N21)', async () => {
+  const { run } = await runWith({
+    sample: hookPayload([{ entryId: 'include:triage-probe-ok', moduleName: CANDIDATE, fiberPhase: 'pending' }], { settled: true }),
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.row-inactive'))
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.tree-not-settled'))
+})
+
+test('a hook that could not read its own context reports a measurement failure, not a plugin one', async () => {
+  const { run } = await runWith({
+    sample: hookPayload([], { error: 'cannot get required service "loader" in inactive context', errorCode: 'inactive-context' }),
+    deps: { probeHttp: async () => ({ status: null, detail: 'fetch failed' }) },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.tree-not-settled'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.http-unreachable'))
+})
+
+test('an unparseable sample keeps its own reason instead of borrowing "not settled"', async () => {
+  const { run } = await runWith({ sample: hookPayload([], { error: 'the sample file is not valid JSON', errorCode: 'unparseable' }) })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.sample-unreadable'))
+})
+
+test('no sample with no Host URL is a blocked boot (N22)', async () => {
+  const { run } = await runWith({
+    sample: null,
+    deps: { bootAndSample: async () => ({ sample: null, seconds: 12, detail: 'no sample', urlPrinted: false }) },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'blocked')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.boot-timeout'))
+})
+
+test('no sample while the Host was serving is a measurement failure (N22b)', async () => {
+  const { run } = await runWith({
+    sample: null,
+    deps: {
+      bootAndSample: async () => ({
+        sample: null,
+        seconds: 12,
+        detail: 'no sample',
+        urlPrinted: true,
+        firstLine: 'dsh web: http://127.0.0.1:1/?token=<redacted>',
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown', 'the Host was up; our instrument was not')
+  assert.ok(judgement.missingEvidence.includes('missing.inventory'))
+  assert.equal(probeAssertions(run).find((item) => item.id === 'boot-sampled')?.status, 'unmeasured')
+})
+
+test('a bind failure on the port the probe chose is never blamed on the candidate (N23)', async () => {
+  const { run } = await runWith({
+    sample: null,
+    deps: {
+      bootAndSample: async () => ({
+        sample: null,
+        seconds: 6,
+        detail: 'no sample',
+        urlPrinted: false,
+        startupFailed: true,
+        firstLine: 'dsh: startup failed: 2 required plugins did not activate',
+        bindFailedPorts: [plan().port],
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.port-unavailable')
+  assert.equal(reason?.params?.port, plan().port)
+  assert.ok(!judgement.reasons.some((item) => item.messageId === 'probe.startup-failed'))
+})
+
+test('a startup failure quotes the launcher instead of paraphrasing it', async () => {
+  const { run } = await runWith({
+    sample: null,
+    deps: {
+      bootAndSample: async () => ({
+        sample: null,
+        seconds: 6,
+        detail: 'no sample',
+        urlPrinted: false,
+        startupFailed: true,
+        firstLine: 'dsh: startup failed: 1 required plugin did not activate',
+        bindFailedPorts: [],
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'blocked')
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.startup-failed')
+  assert.match(String(reason?.params?.detail), /startup failed/)
+})
+
+test('the sample view carries settled/attempts/applies, and older payloads stay usable', async () => {
+  const fresh = readSample(hookPayload([], { settled: true, attempts: 3, applies: 2 }), CANDIDATE, '/sandbox')
+  assert.equal(fresh.settled, true)
+  assert.equal(fresh.attempts, 3)
+  assert.equal(fresh.applies, 2)
+  // A payload written before R17 has no settled flag: it must not be retroactively disqualified.
+  const legacy = readSample(
+    { kind: 'live', wait_ms: 10, excluded: [], snapshot: { transport: 'in-process-projection', entries: [] } },
+    CANDIDATE,
+    '/sandbox',
+  )
+  assert.equal(legacy.settled, null)
+  assert.equal(legacy.errorCode, null)
+})
+
+test('the log sanitiser redacts the launcher token before anything is published', () => {
+  const line = 'dsh web: http://127.0.0.1:53052/?token=abc123secret and more'
+  const sanitised = sanitizeLogLine(line)
+  assert.ok(!sanitised.includes('abc123secret'))
+  assert.match(sanitised, /\?token=<redacted>/)
+})
+
+test('bind failures name the port they could not take', () => {
+  const log = 'Error: listen EACCES: permission denied 127.0.0.1:53506\n    at Server.setupListenHandle'
+  assert.deepEqual(bindFailedPorts(log), [53506])
+  assert.deepEqual(bindFailedPorts('nothing to see'), [])
+})
+
+test('a usable sample is one that was read on a settled tree', () => {
+  assert.equal(isUsableSample({ kind: 'live', settled: true, snapshot: {} }), true)
+  assert.equal(isUsableSample({ kind: 'live', settled: false, snapshot: {} }), false)
+  assert.equal(isUsableSample({ kind: 'live', error: { code: 'inactive-context', message: 'x' } }), false)
+  assert.equal(isUsableSample(null), false)
+})

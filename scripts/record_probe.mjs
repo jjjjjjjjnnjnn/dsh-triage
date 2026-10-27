@@ -29,13 +29,21 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { makeRedactor, redactDeep } from './lib/live.mjs'
-import { buildProbePlan, executeProbe, judgeProbe, runInstall, scrubbedEnv } from '../packages/probe/dist/index.js'
+import { buildProbePlan, executeProbe, findFreePort, judgeProbe, runInstall, scrubbedEnv } from '../packages/probe/dist/index.js'
 import { candidatePackageName, normalizeCandidateSpec, probeScratchRoot, realProbeDeps } from '../packages/plugin/dist/probe-run.js'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
   const index = argv.indexOf(name)
   return index === -1 ? fallback : (argv[index + 1] ?? fallback)
+}
+/** Integer flag in [min, max]; `null` when absent or malformed (caller reports usage). */
+const numberArg = (name, fallback, min, max) => {
+  const raw = argOf(name, null)
+  if (raw === null) return fallback
+  if (!/^\d+$/.test(String(raw))) return null
+  const value = Number(raw)
+  return value >= min && value <= max ? value : null
 }
 const pathFor = (value) => (isAbsolute(value) ? value : resolve(abs('.'), value))
 
@@ -72,6 +80,21 @@ const registryOverride = argOf('--registry', null)
  * fixture first; that fixture is recorded as `sandbox.preinit`, never as the candidate.
  */
 const npmrcRegistry = argOf('--npmrc-registry', null)
+/**
+ * R17: how long to wait for the Host to answer, and how long a tree that is still composing
+ * gets. The second window can only ever produce `unknown` (see `judgeProbe`), so a caller
+ * cannot use it to buy a `blocked`.
+ */
+const readinessTimeoutMs = numberArg('--readiness-timeout', null, 1_000, 120_000)
+const unsettledReadinessMs = numberArg('--unsettled-timeout', null, 1_000, 300_000)
+if (readinessTimeoutMs === null && argv.includes('--readiness-timeout')) {
+  process.stderr.write('--readiness-timeout needs an integer between 1000 and 120000 (ms)\n')
+  process.exit(2)
+}
+if (unsettledReadinessMs === null && argv.includes('--unsettled-timeout')) {
+  process.stderr.write('--unsettled-timeout needs an integer between 1000 and 300000 (ms)\n')
+  process.exit(2)
+}
 
 const candidatePackage = candidatePackageName(candidate)
 if (candidatePackage === null) {
@@ -128,12 +151,14 @@ async function resolveRegistryFacts(spec) {
 
 const resolved = await resolveRegistryFacts(candidate)
 
+const freePort = await findFreePort()
 const plan = buildProbePlan({
   candidate,
   realDshHome,
   workRoot: probeScratchRoot(),
   profile,
   dshBin: dshMain,
+  ...(freePort === null ? {} : { basePort: freePort }),
 })
 if (!plan.ok) {
   process.stderr.write(`probe plan refused: ${plan.error.code} (${plan.error.detail})\n`)
@@ -172,6 +197,8 @@ if (npmrcRegistry !== null) {
 const installFacts = { lockfile: null, endpoints: [] }
 const deps = realProbeDeps({
   ...(browser === null ? {} : { browser }),
+  ...(readinessTimeoutMs === null ? {} : { readinessTimeoutMs }),
+  ...(unsettledReadinessMs === null ? {} : { unsettledReadinessMs }),
   ...(registryOverride === null ? {} : { baseEnv: { ...process.env, NPM_CONFIG_REGISTRY: registryOverride } }),
 })
 const baseInstall = deps.install
@@ -216,6 +243,9 @@ const artifact = {
   sandbox: {
     home: redact(plan.value.sandboxHome),
     profile: plan.value.profile,
+    // R17: was the port asked from the OS (`allocated`) or taken from the plan digest?
+    port_origin: freePort === null ? 'plan-digest' : 'allocated',
+    port: plan.value.port,
     overlap_check: 'disjoint (validateProbePlan)',
     env_scrubbed: true,
     preinit:
@@ -236,12 +266,40 @@ const artifact = {
     transport: run.sample === null ? null : run.sample.transport,
     entries: run.sample === null ? null : run.sample.entries,
     wait_ms: run.sample === null ? null : run.sample.waitMs,
+    // R17: whether the reading can support a verdict at all. `settled:false` and an
+    // `error_code` are what separate "slow" from "broken".
+    settled: run.sample === null ? null : run.sample.settled,
+    error_code: run.sample === null ? null : run.sample.errorCode,
+    attempts: run.sample === null ? null : run.sample.attempts,
+    applies: run.sample === null ? null : run.sample.applies,
     candidate_rows: run.sample === null ? [] : run.sample.candidateRows.map((row) => ({ ...row, moduleName: redact(row.moduleName) })),
     excluded: run.sample === null ? [] : [...run.sample.excluded],
     error: run.sample === null || run.sample.error === null ? null : redact(run.sample.error),
   },
   http: run.http === null ? null : { status: run.http.status, detail: redact(run.http.detail) },
-  readiness: run.readiness === null ? null : { source: run.readiness.source, port: run.readiness.port },
+  // R17: was the Host up at all? `url_printed` is a fact (the launcher printed its URL),
+  // never the URL itself -- the token never enters an artifact.
+  boot: {
+    url_printed: run.urlPrinted,
+    first_line: run.firstLine === null ? null : redact(run.firstLine),
+    // Only on a no-sample boot: the launcher's own reason (e.g. "startup failed: 2 required
+    // plugins did not activate"). Token-redacted in host.ts before it gets here.
+    error_tail: run.errorTail === null ? null : redact(run.errorTail),
+    startup_failed: run.startupFailed,
+    // Ports the Host could not bind. Present even on a sampled run: it is how the artifact
+    // shows that a failure was ours (R17: this machine excludes 53461-53560).
+    bind_failed_ports: [...run.bindFailedPorts],
+  },
+  readiness: run.readiness === null ? null : {
+    source: run.readiness.source,
+    port: run.readiness.port,
+    // R17: "we waited N s" has to survive into the artifact, otherwise a short window and a
+    // dead plugin look the same after the fact.
+    outcome: run.readiness.outcome,
+    waited_ms: run.readiness.waited_ms,
+    window_ms: run.readiness.window_ms,
+    url_seen: run.readiness.url_seen,
+  },
   render:
     run.render === null
       ? { status: 'unmeasured', reason: run.renderSkipped === null ? 'render check not requested' : redact(run.renderSkipped) }
