@@ -50,7 +50,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 满足即环境可信，接着**四选一**（都不需要新许可）：
 
 1. **面板 v1：把 `audit` 接进 `serve`**（设计：`docs/specs/M4-surface.md` §2）。当前只读面板只列 SSOT 产物；`/api/audit` 需要先把 `cli.ts#commandAudit` 里的数据收集抽成 `loadAuditData()`（纯重构，不改判据），面板才能显示「这台机器现在装了什么」。负对照：抽取前后 `audit --json` 逐字节一致。
-2. **T-305b 私有源形状**：先 spike（建 profile → 写 profile 级 `.npmrc` → `dsh plugin add`），确认 launcher 是否读 profile 配置；env 级覆盖已证明无效（F19）。
+2. **T-305b 私有源形状（机制已验证，直接实现）**：`M3-probe.md` F24 —— profile 级 `.npmrc` 会被 launcher 采纳（env 级不会，F19）。实现：`record_probe --npmrc-registry <url>`，顺序是「本地 fixture 初始化 profile → 写 `<profile>/.npmrc` → 装候选 → 落产物」；退出条件：产出一份因「源不可达」而 `blocked` 的 artifact，且能与我们自己的元数据 fetch 失败对齐。
 3. **D2 样本量**：`record_probe_matrix.mjs`（N 个 pin 候选 → 逐条 SSOT + 汇总成功率/耗时分布），把分母做到 ≥10 再谈 ≥90%。
 4. **DSH 设置面板（M4-a / T-401）**：客户端契约已取证（`M4-surface.md` §1：`dsh.client` + `__ModuleLoader__.load` + row id = settings 命名空间）。先做「契约不匹配就整块隐藏」的降级。
 5. **T-303 / T-202a**：仍被铁律 4 挡着（会话作用域需要真实凭据），必须先出 ADR 让 HUMAN 签。**不要**用「进程级工具清单」冒充它。

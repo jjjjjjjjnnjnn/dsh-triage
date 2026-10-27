@@ -42,7 +42,7 @@
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
 | T-304 | probe 对「用户自己的 bundle 集合」取样（现在只测空模板 profile） | M3 | implementer | T-301 | 用 profile 副本 + 依赖安装跑一次，能回答「加到**我的**组合里会不会挂」；当前只能回答「加到模板 profile 里」 | ⬜ R14 诚实边界（`docs/specs/M3-probe.md` §9） |
 | T-305 | registry 候选的安装形状（网络、tarball、私有源） | M3 | implementer | T-301 | 至少一次真实 npm 来源的 probe；记录耗时与失败形状（本轮只有本地路径，0.58–0.64s） | ✅ **R15 完成（部分）**：真实安装 **5.4s**（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）+ E404 / 版本不存在两种 `blocked`；`--resolved` 记 `license/integrity/unpackedSize/lockfile`；F18/F19 发现「装成功 ≠ 走过网络」「env 级 registry 覆盖被中和」→ 私有源形状拆成 `T-305b` |
-| T-305b | 私有源 / 不可达 registry 的失败形状（profile 级配置） | M3 | implementer | T-305 | 用 profile 级 `.npmrc` 或 launcher 配置让 registry 真的不可达，产出 `probe.install-failed` 并点名源 | ⬜ R15 只证明 env 覆盖无效（`M3-probe.md` F19） |
+| T-305b | 私有源 / 不可达 registry 的失败形状（profile 级配置） | M3 | implementer | T-305 | 用 profile 级 `.npmrc` 让 registry 真的不可达，产出 `probe.install-failed` 并点名源 | 🟨 **机制已验证（R16 spike，`M3-probe.md` F24）**：profile 级 `.npmrc` 会被 launcher 采纳（`ERR_PNPM_...NETWORK_ERROR`），env 级不会（F19）。实现 = `record_probe --npmrc-registry <url>`：先用本地 fixture 初始化 profile → 写 `<profile>/.npmrc` → 装候选 → 落产物 |
 | T-306 | 非 web 表面的就绪判据 | M3 | implementer | T-301 | 用 host 自己打印的 URL/端口替代人工 `--no-http` 开关，覆盖 tui/headless profile | ✅ **R15 完成（web 面）**：`extractHostUrl` 从 stdout 取 URL，产物 `readiness.source=host-url`；`cleanup` 证明 Host 用过的**所有**端口都关；非 web 面仍用 `--no-http`，tui/headless 未测 |
 
 ---

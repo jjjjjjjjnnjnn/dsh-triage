@@ -55,6 +55,7 @@
 | F21 | 真实 registry 安装耗时 **5.4s**（450KB / 1 依赖，冷缓存），boot→sample **7.7s**，渲染 **3.9s**，清理 61ms | `data/results/probe-registry-ok-2026-10-27T12-59-01.000Z.json` |
 | F22 | **浏览器错误页有 body 子节点和文本，但没有 `#root`**：指向未监听端口时 Chrome 自己渲染 `ERR_CONNECTION_REFUSED` 页（76 字符），若按 body 子节点判就会拿到 `rendered` —— 所以判定必须要求 `#root`/`#app` 挂载点 | `data/results/render-fixture-error-2026-10-27T13-29-50.000Z.json`（交付后独立复核抓到） |
 | F23 | **卡死的渲染线程不回应 `Runtime.evaluate`**：`while(true)` 页面下第一次实现会无限挂（4s 预算跑了 30s+ 仍不返回）；加命令级超时 + 剩余预算封顶后，15s 预算下 **15.0s** 返回 `inconclusive` | `data/results/render-fixture-blocked-2026-10-27T13-30-00.000Z.json` |
+| F24 | **profile 级 `.npmrc` 会被 launcher 采纳**（T-305b 的机制）：在临时 `DSH_HOME` 里先用本地 fixture 初始化 profile，再写 `<profile>/.npmrc` 为 `registry=http://127.0.0.1:1/`，随后 `dsh plugin --profile web add dsh-cost-meter@1.9.41` **确实失败**：`ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR`，日志写着 `Failed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter`，exit 1。对比 F19：env 级 `NPM_CONFIG_REGISTRY` 被中和，**profile 级不被中和** | spike 2026-10-27（一次性临时 home，未留产物；复现命令就是本格描述的两步）。实现见 `T-305b` |
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
