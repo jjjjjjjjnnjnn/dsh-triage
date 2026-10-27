@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R9 (2026-10-27)",
+  "stand": "R10 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -127,6 +127,13 @@
       "cannot_see": "行级：某行的 peer 区间判定通过，但作者同时在 dsh.compatibility 里写了一个更窄的版本/逐版本状态（例如 dsh: \"0.1.7-alpha.1\"），这一「声明相左」在行级目前不会提示——只有 bundle 级会挂 warn。原因是行级逐行刷 warn 会淹没真正的结论",
       "mitigation": "登记为 T-117：先定「相左」在行级要不要提示、以什么粒度（每模块一条）出现，再实现；在此之前文档明确写「行级仅在 unconstrained 时挂载兼容通道」，不得声称行级已覆盖相左情形",
       "owner": "core/verdict"
+    },
+    {
+      "id": "BS-18",
+      "area": "registry/version-drift",
+      "cannot_see": "dist-tag 事实是**快照**：只能回答「在打 stamp 那一刻 latest 落后」，回答不了「什么时候开始落后、为什么落后」（忘了打标签 vs 故意留旧版本，在 rc 生态里两者都存在）。通道粒度只分「稳定 / 预发布」，不细分 `rc` 与 `nightly`，所以 `latest=1.0.0-rc.5` 遇到 `rc.6-nightly.*` 会判落后（保守方向）。它也完全不能说明最新构建在你的运行时上跑得起来——那是声明层与 M3 probe 的问题。弃用原因不解释，只提示「tag 指向被弃用构建」",
+      "mitigation": "产物带 `generated_at` 与 `.sha256`，并明确标 `tier=measured-registry`；结论侧永不据此改变 `go/blocked`；巡检靠重跑 `record_registry.mjs` 形成时间序列（M5 回流才会做趋势）；对用户的措辞只能是「装裸包名会拿到旧构建」，不能说「旧构建不能用」",
+      "owner": "core/version-drift"
     }
   ]
 }

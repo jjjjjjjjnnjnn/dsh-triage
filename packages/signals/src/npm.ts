@@ -24,6 +24,17 @@ export interface NpmPackument {
   readonly latest: string | null
   readonly versions: ReadonlyMap<string, NpmVersionManifest>
   readonly modified: string | null
+  /**
+   * Every dist-tag the author publishes (`latest`, `next`, `rc`, …).
+   *
+   * WHY (T-109 / CASE-10849): `@deepseek-ai/dsh-tools` had `latest` pointing at
+   * `0.0.1-rc.1` while `0.2.1-rc.x` was already published. A user who installs the
+   * bare name gets the stale build and is then denied by admission — the failure
+   * starts in the tag, not in the range. Reading only `latest` made that invisible.
+   */
+  readonly distTags: Readonly<Record<string, string>>
+  /** Publish timestamps per version (`time` minus `created`/`modified`), ISO strings. */
+  readonly publishedAt: Readonly<Record<string, string>>
 }
 
 export type SignalErrorCode = 'network-error' | 'not-found' | 'invalid-json' | 'invalid-payload' | 'unsupported'
@@ -110,11 +121,15 @@ export function parsePackument(text: string):
   }
   const record = raw as Record<string, unknown>
   const name = typeof record['name'] === 'string' ? record['name'] : ''
-  const distTags = record['dist-tags']
-  const latest =
-    distTags !== null && typeof distTags === 'object' && typeof (distTags as Record<string, unknown>)['latest'] === 'string'
-      ? ((distTags as Record<string, unknown>)['latest'] as string)
-      : null
+  const distTagsRaw = record['dist-tags']
+  const distTags: Record<string, string> = {}
+  if (distTagsRaw !== null && typeof distTagsRaw === 'object') {
+    for (const [tag, version] of Object.entries(distTagsRaw as Record<string, unknown>)) {
+      // `dist-tags` is author-controlled JSON: keep only well-formed entries.
+      if (typeof version === 'string' && version.trim() !== '') distTags[tag] = version.trim()
+    }
+  }
+  const latest = distTags['latest'] ?? null
 
   const versionsRaw = record['versions']
   const versions = new Map<string, NpmVersionManifest>()
@@ -126,7 +141,11 @@ export function parsePackument(text: string):
         version,
         engines: manifestRecord['engines'],
         peerDependencies: manifestRecord['peerDependencies'],
-        deprecated: typeof manifestRecord['deprecated'] === 'string' ? manifestRecord['deprecated'] : undefined,
+        deprecated: manifestRecord['deprecated'] === undefined
+          ? undefined
+          : typeof manifestRecord['deprecated'] === 'string' && manifestRecord['deprecated'].trim() !== ''
+            ? manifestRecord['deprecated']
+            : undefined,
       })
     }
   }
@@ -137,7 +156,16 @@ export function parsePackument(text: string):
       ? ((time as Record<string, unknown>)['modified'] as string)
       : null
 
-  return { ok: true, value: { name, latest, versions, modified } }
+  const publishedAt: Record<string, string> = {}
+  if (time !== null && typeof time === 'object') {
+    for (const [version, value] of Object.entries(time as Record<string, unknown>)) {
+      // `created` / `modified` are package-level keys, not versions.
+      if (version === 'created' || version === 'modified') continue
+      if (typeof value === 'string' && value.trim() !== '') publishedAt[version] = value
+    }
+  }
+
+  return { ok: true, value: { name, latest, versions, modified, distTags, publishedAt } }
 }
 
 /** Evidence describing the npm facts that a verdict rested on. */

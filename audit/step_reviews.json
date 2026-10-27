@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R9 (2026-10-27)",
+  "stand": "R10 (2026-10-27)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -905,6 +905,90 @@
         "artifact": "data/results/why-2026-10-27T18-20-00.000Z.json",
         "sha256": "337737381953881b8b7cf21057f6e1e36571e4803aae20dc2fb856a8742e9da1",
         "outcome": "156 rows → 4 verdicts：{\"go\":2,\"unknown\":2}，2 条 unknown 均为未声明 peer 的行（hmr / timer）"
+      }
+    },
+    {
+      "id": "R10-S1",
+      "batch": "R10",
+      "step": "T-109 + T-115：dist-tag 失步判据与区间形状（同通道比较、排除 deprecated、结论不越级），并把真机 registry 事实落成 SSOT",
+      "changed": [
+        "packages/core/src/version-drift.ts",
+        "packages/core/src/verdict.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/index.ts",
+        "packages/signals/src/npm.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_registry.mjs",
+        "scripts/gate_verdict_contract.mjs",
+        "tests/unit/version-drift.test.ts",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：`judgeVersionDrift` 按 `latest` 的稳定性分支比较（预发布→比最新已发布；稳定版→只比最新稳定版，更新的预发布另报 `prerelease-ahead`），`deprecated` 版本排除；`judgeRangeShape` 用 `validRange` 展开后逐 `||` 分支判上界。复核后修掉 4 个真洞：① `=1.2.3` / `1.2.3 || 4.5.6` 曾被误判 `unbounded`（假警告）；② `latest` 指向未发布版本时曾输出 `none` + 「指向最新已发布」的假话（新增 `latest-unpublished`）；③ `deprecated: \"\"`（npm 解除弃用的写法）曾被当成弃用（`parsePackument` 改为仅非空字符串算弃用）；④ 渲染按插入顺序切片，导致本轮头条 warn 被两条 info 挤掉（改为按 block>warn>info 稳定排序，并保持 `admission-row-scope` 置顶）",
+        "reproducibility": "PASS：`node scripts/record_registry.mjs --stamp 2026-10-27T19:00:00.000Z` 同一 registry 状态下重跑字节一致（重跑两次 sha256 均为 64be043d…）；产物带 `generated_at` + `.sha256`，并明确 `tier=measured-registry`（是快照，不是趋势）",
+        "licence": "PASS：只读 npm registry 元数据（packument / dist-tags / time），不下载 tarball、不执行任何包；零第三方代码；`deprecated` 语义只做排除、不解释原因",
+        "ssot": "PASS：产物 `registry-2026-10-27T19-00-00.000Z.json` 含 produced_by/generated_at/schema_version；真机结论（三个核心包 latest 落后）可直接从 `packages[].drift` 复算；旧产物（why-case / d1 / inventory）因 `registryDrift` 只在 `check` 传入而逐字节不变",
+        "adversary": "反例：① 稳定 latest + 更新预发布 → `prerelease-ahead`，不算失步；② 最新版被标 deprecated → 排除，不推荐安装；③ latest 缺失/非法/无发布版本 → `latest-missing`/`unknown`/`unknown`；④ registry 失步而 admission 通过 → 仍 `go`；⑤ registry 失步而 admission 拒绝 → 仍 `blocked`；⑥ `why`/`audit` 不传 registry 事实 → 输出不变（旧 SSOT 不被改写）；⑦ `=1.2.3` / 精确版并集 → `exact`/`bounded`（不得报无上界）；⑧ tag 指向未发布版本、tag 指向被弃用版本 → 分别 `latest-unpublished` / `latest-deprecated`；⑨ `deprecated: \"\"` → 不算弃用；⑩ 渲染顺序：admitted + 落后 tag 时 warn 必须出现在前三条"
+      },
+      "real_test": {
+        "command": "node scripts/record_registry.mjs --stamp 2026-10-27T19:00:00.000Z",
+        "artifact": "data/results/registry-2026-10-27T19-00-00.000Z.json",
+        "sha256": "64be043d98e18b84592c2f183bd9bb7f56948c3e8529cebcf4432e25cd7665fb",
+        "outcome": "3 个包全部 latest-behind：dsh-tools / dsh-base latest=0.0.1-rc.1、dsh latest=0.2.1-rc.2，三者 next=0.2.1-rc.4（39/38/39 个已发布版本）"
+      }
+    },
+    {
+      "id": "R10-S2",
+      "batch": "R10",
+      "step": "CLI 接线：check --explain 打印 registry 事实、--json 增结构化 registry.drift；新命名空间 registry.* 三处同改（文案/门白名单/docs 05）",
+      "changed": [
+        "packages/plugin/src/cli.ts",
+        "packages/core/src/messages.ts",
+        "scripts/gate_verdict_contract.mjs",
+        "docs/05-verdict-contract.md",
+        "INDEX.md",
+        "packages/signals/src/npm.ts",
+        "packages/core/src/verdict.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`check` 在 `verdictFromAdmission` 之前先算 drift，并把 `registryDrift` / `rangeAdvice` 传进去（后者在 `check` 里恒为 true，文档已按此改写）；`--explain` 走 catalog 文案（zh/en），`--json` 给 `registry.dist_tags` + `registry.drift`；`deprecated` 判定改为「非空字符串才算」（`npm deprecate … \"\"` 是解除弃用）",
+        "reproducibility": "PASS：`node packages/plugin/dist/cli.js check @deepseek-ai/dsh-tools --explain --locale en` 在同一 registry 状态下输出稳定（时间戳由 `--stamp` 注入）；门 `verdict-contract` 对全部产物（含新增 registry 命名空间）仍绿",
+        "licence": "PASS：CLI 只多读 packument 里已有的 `dist-tags` / `time` 字段，未新增请求、未下载 tarball；文案为中英双语、写在 `messages.ts` 单一真相源",
+        "ssot": "PASS：新命名空间 `registry.*` 在 `messages.ts` / `gate_verdict_contract.mjs` 白名单 / `docs/05` §3 三处同时登记（漏一处即红）；`INDEX.md` 的真机证据按 `data/results/…` 全路径引用（`governance/index-references` 门要求）",
+        "adversary": "反例：① 把 `registry.*` 从门白名单里删掉 → `verdict-contract` 立刻红（命名空间不是放宽阈值，是对齐已锁 spec）；② `--explain` 在 standing=`unknown` 时不能假装「latest 最新」→ 走 `registry.drift-unknown`；③ `INDEX.md` 里少写 `data/results/` 前缀 → `governance/index-references` 红（本轮实际踩到并修）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T20:10:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T20-10-00.000Z.json",
+        "sha256": "73b5ca4bcdbfe163532345aa1e01bc51b924fdccfc9c60d25d17b10c9633ee15",
+        "outcome": "ALL GREEN · 9 gates（ok=true；含 verdict-contract 对 registry 命名空间与占位符完整性的校验）"
+      }
+    },
+    {
+      "id": "R10-S3",
+      "batch": "R10",
+      "step": "R10 收尾：负对照 9/9 + 文档交接同步（HANDOFF / BACKLOG / INDEX / AGENTS / 审核报告 / 盲区 BS-18）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/AUDIT_2026-10-27_R10.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = build → typecheck → 124 测试 → 9 门全绿；HANDOFF §2/§3/§4/§8 与 BACKLOG 状态一致（T-109/T-115 标 ✅，T-202/T-112/T-117 保持 ⬜）",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T20:10:00.000Z` 落 **32 产物**全部被引用；`record_registry` 固定 stamp 重跑字节一致（64be043d…，复核后重跑仍同值）",
+        "licence": "PASS：无新增外部源码或数据许可义务；registry 事实只含公开元数据",
+        "ssot": "PASS：`audit/step_reviews.json` **39 步**全绿（R10-S1…S3）；`AI_DISCLOSURE_LOG.md` 追加 R10 条目；`blind_spots.json` 增 BS-18（registry 快照的三个不能）",
+        "adversary": "反例：① 若把「latest 落后」写成「该版本不可用」→ 与 `registry.*` 的 tier 纪律矛盾，单测 6/7 会红；② 若 `gates-*` 未登记 → `no-orphan-results` 红；③ 若把 19:30 那次失败运行的产物留在盘上 → step-review 孤儿检查会红（本轮实际删掉重录）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T20:15:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T20-15-00.000Z.json",
+        "sha256": "75eb0488f0695331e1b2896b87f58a24187db91d012f215a93a9016c331b2824",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }
   ]

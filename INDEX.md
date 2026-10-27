@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R9 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R10 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -11,6 +11,7 @@
 | **D1 命中率** | `scripts/d1_report.mjs` → `data/results/d1-*.json` | 从 `why-case-*.json` 汇总命中率（当前 **9/10 PASSED**），含 `label_key_sources` 与 **`miss_kind`**（`silent` / `explicit-unknown` / `explicit-other`）；`tests/governance/d1-report.test.ts` 反向点数 + 重算 `miss_kind`，禁手填 |
 | **次要通道 `dsh.compatibility`** | `packages/core/src/compat-channel.ts` + `verdict.ts#compatSurfacing` | 读 `dsh.compatibility.dsh` / `dshReleases` / `profiles`，只出 `declared` 级次要证据（`compat-channel`）；**不得单独判 `blocked`、不得把 `unknown` 升 `go`**（三条 tier 纪律负对照）；`dshReleases` 键按作者写法归一化（`v` 前缀/空白）；行级只在 `unconstrained` 挂载（行级相左 = `BS-17` / T-117） |
 | **live 采样尝试台账** | `scripts/probe_live_sample.mjs` → `data/results/ns-live-attempt-*.json` | 0.2.x 沙盒真实采相位的**尝试**记录：`outcome=blocked` 也落盘（当前 blocker：沙盒 profile 未装依赖）；`sample.kind=live` 仍待 P1 |
+| **dist-tag 失步 / 区间形状** | `packages/core/src/version-drift.ts` + `check --explain` → `data/results/registry-*.json` | 同通道比较 `latest` / `next` / 已发布最新（`latest` 是稳定版时不把更新的预发布当失步）；`registry.*` 只出 `measured-registry` 证据，**不改结论**；`judgeRangeShape` 提示「精确钉定会被下一个 patch 打挂」与「无上界会自动放大版本」；真机事实见 `data/results/registry-2026-10-27T19-00-00.000Z.json` |
 | **副本来源与重复副本** | `packages/core/src/duplicates.ts` + `scripts/record_audit.mjs` → `data/results/audit-*.json` | 同名同版本不算问题；同名不同版本 → `collision-duplicate-copy`（两条路径 + 两个版本）；行被拒时点名「这份副本来自谁的 dependencies」（借 npm explain / Maven） |
 | **运行时相位（M2-a P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` → `data/results/inventory-*.json` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff、`sample.kind` 自曝 synthetic/live；当前证据是**合成样本**（无真机 profile） |
 | **相位契约门** | `scripts/gate_inventory_contract.mjs` + `tests/fixtures/inventory/cases.json` | 9 门之一：fixtures 逐行回放 spec §3 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性 |
@@ -20,7 +21,7 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R9.md`（最新）· `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R9：不静默一轮（T-116/T-107/T-108）+ live 采样尝试；R8：副本来源 + 重复副本；R7：M2-a P2 相位层 + 新门；R6：D1 9/10 通过 + 计分脚本化 |
+| **审核报告** | `audit/AUDIT_2026-10-27_R10.md`（最新）· `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R10：dist-tag 失步 + 区间形状（`registry.*` 命名空间）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本；R7：M2-a P2 相位层 + 新门 |
 | **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -37,7 +38,7 @@
 | 路线 | `docs/06-roadmap.md` | M0–M5 周级拆解 + 下载量阶梯 + 分发动作 |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
-| 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 只出 `declared` 级次要证据 |
+| 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / version-drift / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 与 `version-drift` 只出次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
 | 隔离实测 | `packages/probe/src/`（plan） | M3：默认 dry-run，独立 DSH_HOME |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |

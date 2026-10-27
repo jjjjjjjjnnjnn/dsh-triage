@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R9 (2026-10-27)｜当前批次：**R9 · 不静默一轮（T-116 占位符门 + T-107 行级不静默 + T-108 读 `dsh.compatibility`）+ live 采样尝试台账**（110 测试；9 门 9-9）
+> **Stand**: R10 (2026-10-27)｜当前批次：**R10 · 让版本信号说真话（T-109 dist-tag 失步 + T-115 区间形状）**（124 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -27,12 +27,12 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中，1 例为显式 unknown）** · **M2-a P2 ✅ / P1 待真机**（T-201） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **110 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** |
+| 规模 | **124 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **不静默一轮**：① T-116 门 `verdict-contract` 增 `placeholder-params-required`（文案 `{占位符}` 必须由 `params` 提供，双向自测 + 双类 mutate 注入）与 `no-placeholders-without-params`（`missing.*`/`conclusion.*` 不传 params，禁写占位符）；② T-107 行级 `unconstrained` 不再静默 → `unknown` + `missing.peer-declaration`（CASE-7590 由 0 → 2 verdict）；③ T-108 新模块 `compat-channel.ts` 读 `dsh.compatibility` / `dshReleases` 作 `declared` 级**次要**证据（键按作者写法归一化）；④ `d1_report` 增 `miss_kind`（silent / explicit-unknown / explicit-other）；⑤ `scripts/probe_live_sample.mjs` 把「想采真机相位」的尝试落成台账（当前 blocked：沙盒 profile 未装依赖） |
-| 证据 | `data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`（2 unknown，含 `compat-channel` 证据）· `data/results/d1-2026-10-27T15-00-00.000Z.json`（9/10，`miss_by_kind={explicit-unknown:1}`）· `data/results/why-2026-10-27T18-20-00.000Z.json`（本机真机复跑：156 行 → 2 条行级 unknown，无噪音爆炸）· `data/results/ns-live-attempt-2026-10-27T16-00-00.000Z.json`（outcome=blocked）· `gates-2026-10-27T18-30-00.000Z.json` / `gates-mutate-2026-10-27T18-40-00.000Z.json`（9 门全绿 + 9/9 CAUGHT）；共 **29 产物 / 36 个已审步骤** |
-| 审核报告 | `audit/AUDIT_2026-10-27_R9.md`（本轮）· `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
-| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（本轮记录了一次 blocked 尝试，见 §8） |
+| 本轮交付 | **版本信号说真话**：① T-109 新模块 `packages/core/src/version-drift.ts`——同通道比较 dist-tag（`latest` 是预发布就比最新已发布；是稳定版就只比最新稳定版，更新的预发布另报 `prerelease-ahead` 不算失步）；`check --explain` 打印 `latest` / `next` / 已发布最新，`--json` 另有 `registry.drift`；② T-115 `judgeRangeShape`（exact / unbounded / bounded / unusable / absent）→ `check` 时出 `admission.range-exact-pin`（info）与 `admission.range-unbounded`（warn），结论不变；③ 新命名空间 `registry.*`（三处同改：messages / 门白名单 / `docs/05` §3）；④ `scripts/record_registry.mjs` 把真机 registry 事实落成 SSOT |
+| 证据 | `data/results/registry-2026-10-27T19-00-00.000Z.json`（3 个上游包 `latest` 全落后：`dsh-tools`/`dsh-base`=0.0.1-rc.1、`dsh`=0.2.1-rc.2，`next` 均 0.2.1-rc.4）· `why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`（R9：2 unknown）· `d1-2026-10-27T15-00-00.000Z.json`（9/10）· `why-2026-10-27T18-20-00.000Z.json`（真机 156 行 → 2 条行级 unknown）· `ns-live-attempt-2026-10-27T16-00-00.000Z.json`（相位采样 blocked）· `gates-*` / `gates-mutate-*`（9 门全绿 + 9/9） |
+| 审核报告 | `audit/AUDIT_2026-10-27_R10.md`（本轮）· `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
+| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（R9 记录了一次 blocked 尝试，见 §8） |
 | 交接快照（R9 收尾） | R9 = `9259515`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **110 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **29 产物 / 36 步**全被引用 |
 
 ---
@@ -47,15 +47,15 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 满足即环境可信，接着**三选一**（都不需要新许可）：
 
 1. **T-202**（namespace 快照）：`tools/commands/settings/skills` 的运行期快照，落 `data/results/ns-*.json` + 哈希。**注意**：真机路径被 R9 明确堵住一次——沙盒 profile 没装 `node_modules`，`pluginInventory` 又只以 typert Remote 暴露（见 `data/results/ns-live-attempt-2026-10-27T16-00-00.000Z.json`）；要在沙盒里真采，得先给 profile 装依赖并起 Host。
-2. **T-109 + T-115**（dist-tag 失步 + 版本区间对齐）：`check --explain` 显示 latest / next / 已发布最新，tier 不得越级；两者合并设计。
-3. **T-112**（`agentPresets` 维度）：同一 entry 在不同 preset 下相位不同，当前先出 `unknown`/`runtime.preset-unjudged`。按 `docs/specs/M2-inventory.md` §3 硬约束 3 实现，先写负对照。
+2. **T-112**（`agentPresets` 维度）：同一 entry 在不同 preset 下相位不同，当前先出 `unknown`/`runtime.preset-unjudged`。按 `docs/specs/M2-inventory.md` §3 硬约束 3 实现，先写负对照。
+3. **T-117**（行级兼容通道相左，`BS-17`）：先定「相左」在行级要不要提示、以什么粒度出现，再实现。
 
-**想继续从开源里借**：`docs/09-open-source-borrowing.md` 先看，再动 T-113（attw 矩阵，前置是沙箱实测 loader 解析模式）/ T-114（bisect，前置是 M3 probe）/ T-115（区间对齐，与 T-109 合并）。**借机制不抄代码**，真抄要先进 `quarantine/` + `vendor-manifest`。
+**想继续从开源里借**：`docs/09-open-source-borrowing.md` 先看，再动 T-113（attw 矩阵，前置是沙箱实测 loader 解析模式）/ T-114（bisect，前置是 M3 probe）。T-115 已于 R10 与 T-109 一起落地。**借机制不抄代码**，真抄要先进 `quarantine/` + `vendor-manifest`。
 
 先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
 
-> D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付（`data/results/inventory-2026-10-27T00-00-00.000Z.json`）；R8 补了副本来源与重复副本（`data/results/audit-2026-10-27T12-00-00.000Z.json`）；R9 让「没声明」不再静默（`data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`）。
-> 复核口径四条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`。
+> D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付（`data/results/inventory-2026-10-27T00-00-00.000Z.json`）；R8 补了副本来源与重复副本（`data/results/audit-2026-10-27T12-00-00.000Z.json`）；R9 让「没声明」不再静默（`data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`）；R10 让 dist-tag 失步可见（`data/results/registry-2026-10-27T19-00-00.000Z.json`）。
+> 复核口径五条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_registry.mjs --stamp <iso>`。
 > **P1 与真机相位采样仍阻塞**：本机没有可启动的 0.2.x profile；R9 的沙盒尝试停在「profile 未装 `node_modules`」（见 §8）。没有真机样本前，对外只能说「相位表已实现」，不能说「实测过这台机器」。
 
 > 每一步做完，先追加 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256），再跑 `node scripts/gate_step_review.mjs`。漏了它，`pnpm run verify` 会红。
@@ -97,6 +97,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 以为 `pluginInventory` 可以像普通 Cordis 服务那样 `ctx.get()` | 上游实现是 Remote-only，明确不声明同进程 merge | P1 要么在 Host 内走 loader 投影，要么走 Remote 客户端；README 原文见 `dsh-host-plugin-inventory` |
 | 兼容通道把作者标注的「不兼容」读成「兼容」 | `dshReleases` 的键被手写成 `v0.1.7-alpha.2`，与运行时串按字节比较失败，退化到更宽的 `dsh: "*"` | 比较前归一化（去空白 / 去 `v`,`=` 前缀 / 过 `semver.valid`）；R9 复核抓到，已修并加单测 |
 | 门「全绿」但 `--mutate` 的某一类注入根本没落地 | 注入目标（含占位符的 reason）在产物里不存在时被静默跳过 | R9 起：注入失败即判红，并加常态断言 `placeholder-copy-present`（产物必须真的用到含占位符的文案） |
+| 「latest 落后」判断反了 | 用了 `semver.rcompare(a,b) > 0`，但 `rcompare` 的语义是**反向**（a 比 b 旧时才 > 0），于是「更新的版本」被判成最新 | 正向比较一律用 `compare(a,b) > 0`，降序排序用 `rsort`；单测 8 条当场抓到（`tests/unit/version-drift.test.ts`） |
+| 用 PowerShell 改 `.ts`/`.mjs` 后文件头变成 `EF BB BF` | `Set-Content -Encoding utf8` 在 PS 5.1 写 BOM（R9/R10 各踩一次） | 改代码只用编辑器；批量替换后跑 `node -e` 检查首字节并剥 BOM，或直接写成临时 `.mjs` 执行 |
 
 ---
 
@@ -145,14 +147,12 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 | 项 | owner | 退出条件 |
 |---|---|---|
-| `T-109` npm dist-tag 失步（`dsh-tools` latest=0.0.1-rc.1，而已发布 0.2.1-rc.x） | implementer | `check --explain` 显示 latest / next / 已发布最新 三者差异，tier 不得越级 |
 | `T-111` label 自证（`BS-14`）：9 个命中无独立签署 | verifier + implementer | R7 起新案例由独立上下文签署 `label_verified_by` |
 | `T-201 P1`：Host 内 `compat_inventory` 工具（相位真机来源） | implementer | 本机可启动 0.2.x profile → P1 导出的快照喂给 `audit --snapshot` 与 Host 内结论一致 |
 | `B1/B2` 真机采样（`BS-15`）：相位层目前只有合成样本 | verifier | 产出一份 `sample.kind=live` 的 `data/results/inventory-*.json`，与合成样本并列。**R9 已把一次尝试落成台账**（`ns-live-attempt-*`，blocker = 沙盒 profile 未装依赖），本次未解除 |
 | `T-112` preset 维度：同一 entry 在不同 preset 下相位不同 | implementer | 分开出结论，禁取「最乐观值」；`conditional` 行标 `unknown`（当前先出 `unknown`/`runtime.preset-unjudged`，不静默） |
 | `T-113` attw 式入口可加载性矩阵 | implementer | 先在沙箱实测 loader 解析模式（两种），再实现；否则会造假警告 |
 | `T-114` `triage bisect`（VS Code 二分思路） | implementer | 依赖 M3 probe 能稳定启停一次 boot |
-| `T-115` 版本区间对齐建议（syncpack 思路） | implementer | 与 T-109 合并设计，先有 dist-tag 失步信号 |
 | `BS-16` 来源/副本扫描的边界：`overrides`/lockfile 手钉 / 两层以上嵌套不可见；未知版本不参与比较 | implementer | 出现误判先补样本再改扫描器；T-113 与 probe 是补全路径 |
 | 0.2.x 真机 profile 未装（沙盒已有 0.2.1-rc.3，但 profile 无 `node_modules`，不可 mount） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile（含依赖）并跑通一次 probe（同时解锁 P1 与 B1） |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |

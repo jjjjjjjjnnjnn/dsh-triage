@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: R9 (2026-10-27)｜M0 ✅（9 门 / 9-9 CAUGHT · 110 测试）· M1 金标对等 ✅ · M1 真实案例验收 **✅ D1 通过：10 例 / 9 命中 / 1 显式 unknown** · M2-a 契约已锁 / **P2 已交付**（`audit --snapshot` + 相位门）/ P1 待真机（`docs/HANDOFF.md` §2 为准）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: R10 (2026-10-27)｜M0 ✅（9 门 / 9-9 CAUGHT · 124 测试）· M1 金标对等 ✅ · M1 真实案例验收 **✅ D1 通过：10 例 / 9 命中 / 1 显式 unknown** · M2-a 契约已锁 / **P2 已交付**（`audit --snapshot` + 相位门）/ P1 待真机（`docs/HANDOFF.md` §2 为准）
 > **Mission**: 做 DSH 生态里「装之前判断该不该装、装完坏了定位为什么」的判断层，并靠真实失败数据成为默认安装件 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
@@ -54,11 +54,11 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── specs/M0-skeleton.md M1-why.md M2-inventory.md
 │   └── market/listing_zh.md       # 上架文案
 ├── packages/
-│   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 次要通道 / verdict 组装（纯函数、可离线）
+│   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 与 registry 次要通道 / verdict 组装（纯函数、可离线）
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
 │   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：计划生成 + 执行器（独立 DSH_HOME）
 │   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板 + bin CLI
-├── scripts/                       # 门禁（gate_*，9 门）+ 真跑落盘（scan_env / record_case / record_audit / render_inventory / d1_report / probe_live_sample / bootstrap_upstream）
+├── scripts/                       # 门禁（gate_*，9 门）+ 真跑落盘（scan_env / record_case / record_audit / record_registry / render_inventory / d1_report / probe_live_sample / bootstrap_upstream）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）
 ├── AGENTS.md / PROJECT_RULES.md / INDEX.md / COMPLIANCE.md / LICENSE(MIT)
 └── package.json / pnpm-workspace.yaml / tsconfig*.json / .npmrc / .editorconfig

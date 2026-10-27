@@ -138,3 +138,17 @@
 - 人工决策：HUMAN 选定 R9 范围（T-116 + T-107 + T-108）并批准「额外的 live 采样步，只作旁证、不影响主结论」
 - SessionID：待 HUMAN 回填
 - 备注：CASE-7590 **仍是 miss**；本轮只把失败方式从「静默」变成「显式 unknown + 点名作者自报通道」。`sample.kind=live` 仍未拿到，P1/B1/B2 阻塞未解除（见 `docs/HANDOFF.md` §8）
+
+### 2026-10-27 R10｜让版本信号说真话：dist-tag 失步 + 区间形状
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/core/src/{version-drift(新),verdict,messages,index}.ts`、`packages/signals/src/npm.ts`（dist-tags + time）、`packages/plugin/src/cli.ts`（`check --explain` / `--json registry`）、`scripts/{record_registry(新),gate_verdict_contract}.mjs`、`tests/unit/version-drift.test.ts`（新）、`data/results/registry-2026-10-27T19-00-00.000Z.json`、`audit/{AUDIT_2026-10-27_R10.md(新),blind_spots.json,step_reviews.json}`、`docs/{05-verdict-contract,HANDOFF,BACKLOG}.md`、`AGENTS.md`、`INDEX.md`
+- 起因：R6 登记的 F2（`dsh-tools` latest=0.0.1-rc.1 而 0.2.1-rc.x 已发布）与 R8 借鉴台账里的 T-115（syncpack 思路）；CASE-10849 / CASE-10201 两例的失败点都在「装裸包名拿到旧构建」这一步
+- 结果：① `judgeVersionDrift` 同通道比较（`latest` 是预发布就比最新已发布；是稳定版就只比最新稳定版，更新的预发布另报 `prerelease-ahead`；`deprecated` 版本排除）；② `judgeRangeShape`（exact / unbounded / bounded / unusable / absent）；③ 新命名空间 `registry.*`（messages + 门白名单 + docs/05 三处同改），`check --explain` 出 registry 事实块、`--json` 出结构化 `registry.drift`；④ `admission.range-exact-pin`（info）/ `admission.range-unbounded`（warn）只在 `check` 出现；⑤ `scripts/record_registry.mjs` 把真机 registry 事实落成 SSOT
+- 真机发现：`@deepseek-ai/dsh-tools` / `dsh-base` 的 latest 停在 0.0.1-rc.1、`@deepseek-ai/dsh` 停在 0.2.1-rc.2，三者 next 均为 0.2.1-rc.4（三个核心包全落后，工具自身也在内）
+- 门禁：`verify` **124 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**
+- 过程中的真实缺陷：① 用 `semver.rcompare(a,b) > 0` 判「a 更新」——`rcompare` 是反向语义，方向写反，单测 8 条当场抓到（改用 `compare` + `rsort`）；② 第一版测试把 `0.1.7-alpha.2` 当成稳定版 `latest`，被自己的语义打回（改为真稳定版 0.1.7）；③ 用 PowerShell `Set-Content -Encoding utf8` 改 `.ts` 写出 BOM，已剥除并写进坑表
+- 对抗性反例：稳定 latest + 更新预发布 → `prerelease-ahead` 不算失步；deprecated 的最新版 → 排除；latest 缺失/非法/无版本 → missing/unknown；registry 失步 + admission 通过 → 仍 `go`；registry 失步 + admission 拒绝 → 仍 `blocked`；`why`/`audit` 不传 registry 事实 → 旧产物逐字节不变
+- 人工决策：HUMAN 只说「继续」，范围由 HANDOFF §3 的三选一确定（T-202 / T-109+T-115 / T-112，本轮在环境可信后选第二条）
+- SessionID：待 HUMAN 回填
+- 备注：registry 事实是**快照**，不解释「为什么标签是旧的」，也不能说明最新构建在你的运行时上能用；`deprecated` 只排除、不解释原因（登记 `BS-18`）

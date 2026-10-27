@@ -8,12 +8,12 @@
 | T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | ✅ **D1 通过：10/10 例，9 命中 / 1 有意 miss**（`data/results/d1-2026-10-26T12-00-00.000Z.json` → `gate.passed=true`） |
 | T-104 | 再收 6 例真实案例（把 D1 门槛凑到 10 例 ≥8 命中） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | ✅ 2026-10-26 收齐：CASE-10201/10759/10364/8751/8220（hit）+ CASE-7590（miss 负样本）；R6 审核见 `audit/AUDIT_2026-10-26_R6.md` |
 | T-107 | 行级 `unknown`：admission 为 indeterminate 的行不得静默 | M2-a | implementer | — | 不声明任何 `@deepseek-ai/dsh*` peer 的行产出 `unknown` + `missingEvidence`；负对照：静默即红 | ✅ **R9 完成**：`verdictsFromRowAdmission` 对 `unconstrained` 行出 `unknown` + `missing.peer-declaration`；CASE-7590 由 0 verdict 变 2 verdict（`data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`） |
-| T-109 | npm dist-tag 失步信号进 `check --explain`（T-701 子项） | M2 | implementer | — | 能显示「latest=X / next=Y / 已发布最新=Z」并标 tier；不得据此越级判 blocked | ⬜ R6 发现 F2（`dsh-tools` latest=0.0.1-rc.1 而 0.2.1-rc.x 已发布）；R9 未动 |
+| T-109 | npm dist-tag 失步信号进 `check --explain`（T-701 子项） | M2 | implementer | — | 能显示「latest=X / next=Y / 已发布最新=Z」并标 tier；不得据此越级判 blocked | ✅ **R10 完成**：`packages/core/src/version-drift.ts` + `check --explain` + `--json registry`；真机证据 `data/results/registry-2026-10-27T19-00-00.000Z.json`（三个上游包 latest 全落后） |
 | T-108 | 读 `dsh.compatibility.dsh` / `dshReleases` 作为**次要证据** | M2-a | implementer | — | verdict 中与 peer 结论分列；tier 不得越级、不得单独判 blocked；CASE-7590 由 miss 升为 `unknown` + `missingEvidence` | ✅ **R9 完成**：`packages/core/src/compat-channel.ts` + `verdict.ts#compatSurfacing`；CASE-7590 仍判 miss，但 `miss_kind=explicit-unknown`（`data/results/d1-2026-10-27T15-00-00.000Z.json`） |
 | T-111 | label 独立签署：`label_verified_by` 字段 + 独立 verifier 流程 | 流程 | verifier + implementer | — | R7 起新案例先由独立上下文复核并签署；`d1_report` 输出已签/未签比例 | ⬜ R6 独立复核发现 A9 / `BS-14`（D1 目前是自证） |
 | T-113 | attw 式「入口可加载性矩阵」：按解析模式 × 入口判定候选包会不会 import 失败 | M2-b | implementer | — | 先在沙箱实测 loader 的解析模式（两种），再实现矩阵；否则会造出假警告 | ⬜ R8 借鉴台账（`docs/09`，attw 仅设计） |
 | T-114 | `triage bisect`：禁用一半行 → 重启 → 收敛（VS Code Extension Bisect 思路） | M3 | implementer | T-301 | 需要稳定启停一次 boot；输出「坏行 + 时间线证据」 | ⬜ R8 借鉴台账（`docs/09`） |
-| T-115 | 版本区间对齐建议：peer 精确钉定 → 上游每次 patch 都会打挂（syncpack 思路） | M2 | implementer | T-109 | 与 T-109 合并设计；只提示不阻断 | ⬜ R8 借鉴台账（`docs/09`） |
+| T-115 | 版本区间对齐建议：peer 精确钉定 → 上游每次 patch 都会打挂（syncpack 思路） | M2 | implementer | T-109 | 与 T-109 合并设计；只提示不阻断 | ✅ **R10 完成**（与 T-109 同一轮）：`judgeRangeShape` + `admission.range-exact-pin` / `admission.range-unbounded`；仅 `check --explain` 出现，`conclusion` 不变 |
 | T-116 | `messageId` 的 `{占位符}` 必须由 `reasons[].params` 提供，缺一即红 | 流程 | implementer | — | `gate_verdict_contract` 新增占位符完整性断言 + 负对照；现状只校验 messageId/severity | ✅ **R9 完成**：门新增 `placeholder-params-required`（双向自测：缺即红、补齐即绿，`reasons[]` 与 `remediation[]` 同规则）+ `--mutate` 注入第二类违规 |
 | T-117 | 行级「peer 通过但 `dsh.compatibility` 相左」是否提示（`BS-17`） | M2-a | implementer | T-108 | 先定粒度（每模块一条）与是否进 `unknown`，再实现；在此之前文档明确「行级只在 `unconstrained` 时挂兼容通道」 | ⬜ R9 独立复核发现（行级相左目前不提示） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
@@ -36,6 +36,19 @@
 | T-601 | 上架文案（zh/en）+ 提交 3 渠道 | 1.0 | arbiter | 功能完成 | `gate_release --publish` 绿 + 2 渠道收录 | ⬜ |
 | T-602 | 案例帖 ×3（消失的工具 / 白屏 / 升级后起不来） | 增长 | researcher | T-101 | 每篇含真实 SSOT 证据 | ⬜ |
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
+
+---
+
+## R10 已交付（本轮，证据见 `data/results/registry-2026-10-27T19-00-00.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-109 | 新模块 `packages/core/src/version-drift.ts`：同通道比较 dist-tag（`latest` 是预发布→比最新已发布；是稳定版→只比最新稳定版，更新的预发布另报 `prerelease-ahead`）；`check --explain` 打印 `latest`/`next`/已发布最新，`--json` 另有 `registry.drift` | ✅ |
+| T-115 | `judgeRangeShape`：`exact` / `unbounded` / `bounded` / `unusable` / `absent`；`check` 时出 `admission.range-exact-pin`（info）与 `admission.range-unbounded`（warn），**不改变结论** | ✅ |
+| NEW | 命名空间 `registry.*`（`registry.latest-behind` / `prerelease-ahead` / `latest-missing` / `tags` / `drift-none` / `drift-unknown`）；门 `verdict-contract` 白名单 + `docs/05` §3 三处同改 | ✅ |
+| NEW | `scripts/record_registry.mjs`：真查 npm 并把 drift 判断落成 SSOT（`registry-*.json`，元数据 only，不下载 tarball） | ✅ |
+| 真机发现 | 三个上游核心包的 `latest` 全落后：`dsh-tools` / `dsh-base` = `0.0.1-rc.1`，`dsh` = `0.2.1-rc.2`，三者 `next` = `0.2.1-rc.4` | ✅ |
+| 测试 | +14 单测（`tests/unit/version-drift.test.ts`），总 **124**；9 门 / `--mutate` 9/9 | ✅ |
 
 ---
 

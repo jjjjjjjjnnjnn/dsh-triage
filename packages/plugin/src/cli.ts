@@ -17,11 +17,14 @@ import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import {
+  catalogFor,
   compareInventory,
   evaluateAdmission,
   extractEntryClaims,
   findEntryIdCollisions,
+  format,
   groupClaimsBySource,
+  judgeVersionDrift,
   loadEnv,
   parseInventorySnapshot,
   parsePatchYaml,
@@ -41,6 +44,7 @@ import {
   type InventorySnapshot,
   type Locale,
   type Verdict,
+  type VersionDrift,
 } from '@dsh-triage/core'
 import { buildProbePlan } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
@@ -70,6 +74,8 @@ interface Flags {
   readonly noRedact: boolean
   /** Runtime inventory snapshot (`pluginInventory/list` export) to judge phases from. */
   readonly snapshot: string | null
+  /** `check --explain`: print the registry tag facts a verdict rested on. */
+  readonly explain: boolean
 }
 
 interface Parsed {
@@ -97,6 +103,7 @@ Flags
   --no-redact           keep absolute paths in --json output (default: redact to ~)
   --stamp <iso>         fixed timestamp for reproducible output
   --snapshot <file>     (audit) judge runtime phases from a pluginInventory snapshot
+  --explain             (check) show the registry tag facts behind the verdict
   --execute             (probe) really run the plan — not implemented before M3
   --help                this text
 
@@ -252,23 +259,91 @@ async function commandCheck(flags: Flags, spec: string | undefined): Promise<num
   }
 
   const admission = evaluateAdmission(manifest, env.dsh)
+  // Registry facts (T-109 / CASE-10849): the tag decides which build `install <name>`
+  // gets, so judge it before the declaration layer has a chance to deny a stale copy.
+  const drift = judgeVersionDrift({
+    latest: packument.value.latest,
+    next: packument.value.distTags['next'] ?? null,
+    versions: [...packument.value.versions.keys()],
+    publishedAt: packument.value.publishedAt,
+    // A deprecated build must never be recommended as "the newer one".
+    deprecated: [...packument.value.versions.values()]
+      .filter((manifest) => manifest.deprecated !== undefined)
+      .map((manifest) => manifest.version),
+  })
   const verdict = verdictFromAdmission({
     subject: { name, version: targetVersion, kind: 'plugin' },
     env,
     admission,
     generatedAt: stamp,
     manifest,
+    registryDrift: drift,
+    rangeAdvice: true,
   })
 
   if (flags.json) {
-    writeJson({ schema_version: 1, command: 'check', verdict: safeVerdicts(flags, [verdict])[0], admission })
+    writeJson({
+      schema_version: 1,
+      command: 'check',
+      verdict: safeVerdicts(flags, [verdict])[0],
+      admission,
+      registry: {
+        dist_tags: packument.value.distTags,
+        published_at_newest: drift.newestPublishedAt,
+        drift: {
+          latest: drift.latest,
+          next: drift.next,
+          newest: drift.newest,
+          newest_stable: drift.newestStable,
+          standing: drift.standing,
+          detail: drift.detail,
+        },
+      },
+    })
     return exitFor(flags, [verdict])
   }
   process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n`)
+  if (flags.explain) {
+    process.stdout.write(`${renderRegistryExplain(drift, flags.locale)}\n`)
+  }
   if (admission.status === 'admitted') {
     process.stdout.write('note  declaration passes; runtime behaviour is still unproven (probe lands in M3).\n')
   }
   return exitFor(flags, [verdict])
+}
+
+/**
+ * `check --explain`: the registry facts a user cannot see otherwise.
+ *
+ * WHY: "install a build whose declaration admits 0.2.1-rc.2" is useless advice when
+ * the `latest` tag never points at such a build — the user has to know which version
+ * to name explicitly. This block answers that, and only that.
+ */
+function renderRegistryExplain(drift: VersionDrift, locale: Locale): string {
+  const catalog = catalogFor(locale)
+  const message = (id: string, params?: Record<string, string>): string => {
+    const template = catalog.messages[id]
+    return template === undefined ? `?${id}` : format(template, params)
+  }
+  const published = drift.newestPublishedAt === null ? ' (publish date unknown)' : ` (published ${drift.newestPublishedAt.slice(0, 10)})`
+  const params = { latest: drift.latest ?? '—', next: drift.next ?? '—', newest: drift.newest ?? '—', published }
+  const lines = [`explain  ${message('registry.tags', params)}`]
+  const driftId =
+    drift.standing === 'latest-behind'
+      ? 'registry.latest-behind'
+      : drift.standing === 'prerelease-ahead'
+        ? 'registry.prerelease-ahead'
+        : drift.standing === 'latest-missing'
+          ? 'registry.latest-missing'
+          : drift.standing === 'latest-unpublished'
+            ? 'registry.latest-unpublished'
+            : drift.standing === 'latest-deprecated'
+              ? 'registry.latest-deprecated'
+              : drift.standing === 'unknown'
+                ? 'registry.drift-unknown'
+                : 'registry.drift-none'
+  lines.push(`explain  ${message(driftId, { ...params, detail: drift.detail })}`)
+  return lines.join('\n')
 }
 
 async function commandAudit(flags: Flags): Promise<number> {
@@ -595,6 +670,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let locale: Locale = defaultLocale()
   let noRedact = false
   let snapshot: string | null = null
+  let explain = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -626,6 +702,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         break
       case '--no-redact':
         noRedact = true
+        break
+      case '--explain':
+        explain = true
         break
       case '--help':
       case '-h':
@@ -666,9 +745,10 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  if (help) return { command: 'help', positionals: [], flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot } }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain }
+  if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
-  return { command, positionals, flags: { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot } }
+  return { command, positionals, flags }
 }
 
 function splitFlag(token: string): readonly [string, string | null] {

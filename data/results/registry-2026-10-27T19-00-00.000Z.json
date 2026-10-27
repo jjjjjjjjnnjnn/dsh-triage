@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_registry.mjs",
+  "generated_at": "2026-10-27T19:00:00.000Z",
+  "source": {
+    "registry": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-10-27T19:00:00.000Z"
+  },
+  "packages": [
+    {
+      "name": "@deepseek-ai/dsh-tools",
+      "ok": true,
+      "dist_tags": {
+        "alpha": "0.2.1-alpha.5",
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.1-rc.4"
+      },
+      "versions_published": 39,
+      "newest_published_at": "2026-10-26T15:02:15.639Z",
+      "drift": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.1-rc.4",
+        "newest": "0.2.1-rc.4",
+        "newest_stable": null,
+        "standing": "latest-behind",
+        "detail": "\"latest\" is 0.0.1-rc.1 but 0.2.1-rc.4 is already published"
+      }
+    },
+    {
+      "name": "@deepseek-ai/dsh",
+      "ok": true,
+      "dist_tags": {
+        "alpha": "0.2.1-alpha.5",
+        "latest": "0.2.1-rc.2",
+        "next": "0.2.1-rc.4"
+      },
+      "versions_published": 38,
+      "newest_published_at": "2026-10-26T15:28:13.431Z",
+      "drift": {
+        "latest": "0.2.1-rc.2",
+        "next": "0.2.1-rc.4",
+        "newest": "0.2.1-rc.4",
+        "newest_stable": null,
+        "standing": "latest-behind",
+        "detail": "\"latest\" is 0.2.1-rc.2 but 0.2.1-rc.4 is already published"
+      }
+    },
+    {
+      "name": "@deepseek-ai/dsh-base",
+      "ok": true,
+      "dist_tags": {
+        "alpha": "0.2.1-alpha.5",
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.1-rc.4"
+      },
+      "versions_published": 39,
+      "newest_published_at": "2026-10-26T15:14:50.751Z",
+      "drift": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.1-rc.4",
+        "newest": "0.2.1-rc.4",
+        "newest_stable": null,
+        "standing": "latest-behind",
+        "detail": "\"latest\" is 0.0.1-rc.1 but 0.2.1-rc.4 is already published"
+      }
+    }
+  ],
+  "summary": {
+    "packages": 3,
+    "failures": 0,
+    "drift": [
+      "@deepseek-ai/dsh-base: latest-behind",
+      "@deepseek-ai/dsh-tools: latest-behind",
+      "@deepseek-ai/dsh: latest-behind"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # 05 · Verdict 契约
 
-> **Stand**: R9 (2026-10-27) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
+> **Stand**: R10 (2026-10-27) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
 
 ## 1. 为什么要有契约
 
@@ -108,6 +108,25 @@
 
 `dshReleases` 里出现的未知状态（不是 `compatible`/`ok`/… 的字符串）按 **不兼容** 读——保守方向只能是「更不确定」，不能是「更乐观」。
 
+## 2d. Registry 事实：dist-tag 失步与区间形状（R10 / T-109 / T-115）
+
+`check` 除了判「声明 vs 运行时」，还要回答一个更早的问题：**你装的是哪个构建**。
+
+| 判据 | 规则 | 证据等级 |
+|---|---|---|
+| `latest` 是否落后 | `latest` 是**预发布**时，与「最新已发布（含 nightly/rc）」比；`latest` 是**稳定版**时只与「最新稳定版」比，更新的预发布另报 `prerelease-ahead`（**不算**失步）。注意：这里只区分「稳定 / 预发布」两类，不细分 rc 与 nightly 通道（见 `BS-18`） | `measured-registry` |
+| tag 本身的完整性 | `latest` 缺失 → `latest-missing`；指向未发布版本 → `latest-unpublished`（装裸包名根本解析不出来）；指向作者已弃用的构建 → `latest-deprecated`；值非法 → `unknown` | `measured-registry` |
+| 区间形状 | `exact`（`0.2.1-rc.2`、`=0.2.1-rc.2`）/ `unbounded`（`*`、裸 `>=x`、`>=1 \|\| >=2`）/ `bounded`（`^`、`~`、`1.x`、`>=x <y`、精确版并集）/ `unusable` / `absent` | `declared` |
+
+强制规则（接线在 `verdict.ts#registrySurfacing` / `rangeShapeReasons`）：
+
+- **不得越级**：registry 事实只能加 `info`/`warn` 原因与 `measured-registry` 证据，**永不改变 `conclusion` / `confidence`**；区间形状同理（作者侧建议，不是用户侧结论）；
+- **只在 `check` 出现**：`why`/`audit` 描述的是已装集合，dist-tag 与它们无关（`registryDrift` / `rangeAdvice` 不传即不出现，旧产物逐字节不变）；
+- `check` 的 verdict **默认**就带区间形状建议（`--json` 也有），`--explain` 额外打印 registry 事实块；`why` / `audit` 两者都不带；
+- 终端渲染按 `block > warn > info` 稳定排序（`admission-row-scope` 仍钉在最前），保证「本轮头条」这类 warn 不会被两条 info 挤掉（R10 复核发现）。
+
+真机复核（2026-10-27）：`@deepseek-ai/dsh-tools` / `dsh-base` 的 `latest` 停在 `0.0.1-rc.1`，`@deepseek-ai/dsh` 停在 `0.2.1-rc.2`，三者 `next` 都是 `0.2.1-rc.4` —— 证据 `data/results/registry-2026-10-27T19-00-00.000Z.json`。
+
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |
 |---|---|
@@ -115,7 +134,7 @@
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3） |
+| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3），`registry.*` 是 R10 引入的 registry 事实命名空间 |
 | 文案里的每个 `{占位符}` 必须由该条 `params` 提供（`reasons[]` 与 `remediation[]` 同规则） | 门 `verdict-contract` 的 `placeholder-params-required`：缺 key / `null` / 空串都算缺失；并带**双向自测**（缺即红 + 补齐即绿），防断言空转 |
 | `missing.*` / `conclusion.*` 的文案**不得**含 `{占位符}`（这两条渲染路径根本不传 params） | 门 `verdict-contract` 的 `no-placeholders-without-params`（R9 复核后补：此前只盖住 reasons/remediation） |
 | 行级 verdict：`subject.kind === "entry"` 时 `reasons` 必含 `admission-row-scope`，且其 `params.rows` 非空 | 单测 `tests/unit/rows.test.ts` |

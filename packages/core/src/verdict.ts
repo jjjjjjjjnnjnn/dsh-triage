@@ -15,6 +15,8 @@ import { evaluateAdmission } from './admission.js'
 import { judgeCompatChannel } from './compat-channel.js'
 import type { EntryCollision } from './ledger.js'
 import { catalogFor, format, type Locale } from './messages.js'
+import type { VersionDrift } from './version-drift.js'
+import { judgeRangeShape } from './version-drift.js'
 import type {
   Conclusion,
   Confidence,
@@ -37,6 +39,16 @@ export interface AdmissionVerdictInput {
    * itself is already made by `admission`, so omitting this never changes it.
    */
   readonly manifest?: unknown
+  /**
+   * Registry facts for the version under discussion (T-109). Only `check` supplies
+   * them: `why`/`audit` describe an installed set, where the dist-tag is irrelevant.
+   */
+  readonly registryDrift?: VersionDrift
+  /**
+   * Author-side advice about the shape of each declared range (T-115). Off by
+   * default: it is shopping advice for `check`, not a diagnosis of a broken profile.
+   */
+  readonly rangeAdvice?: boolean
 }
 
 export interface CollisionVerdictInput {
@@ -74,6 +86,13 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
   const compat = compatSurfacing(input.manifest, env.dsh, generatedAt, {
     reportSecondaryOnly: admission.status === 'unconstrained',
   })
+  // Registry facts (T-109) and range-shape advice (T-115). Both are additive: they
+  // append `info`/`warn` reasons plus tiered evidence and never touch `conclusion`.
+  const registry =
+    input.registryDrift === undefined
+      ? { reasons: [] as readonly Reason[], evidence: [] as readonly Evidence[] }
+      : registrySurfacing(input.registryDrift, subject.name, generatedAt)
+  const advice = input.rangeAdvice === true ? rangeShapeReasons(admission) : []
 
   if (admission.status === 'indeterminate') {
     return finish({
@@ -100,8 +119,9 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
       reasons: [
         { code: 'admission-unconstrained', severity: 'warn', messageId: 'admission.unconstrained', params: { runtime } },
         ...compat.reasons,
+        ...registry.reasons,
       ],
-      evidence: [...evidence, ...compat.evidence],
+      evidence: [...evidence, ...compat.evidence, ...registry.evidence],
       remediation: [{ kind: 'probe', messageId: 'remediation.probe', note: 'declaration is absent; only an isolated probe can resolve behaviour' }],
       missingEvidence: ['missing.admission', 'missing.probe'],
       generatedAt,
@@ -123,8 +143,10 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
           params: { runtime },
         },
         ...compat.reasons,
+        ...advice,
+        ...registry.reasons,
       ],
-      evidence: [...evidence, ...compat.evidence],
+      evidence: [...evidence, ...compat.evidence, ...registry.evidence],
       remediation: [],
       missingEvidence: [],
       generatedAt,
@@ -132,7 +154,11 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
   }
 
   // denied
-  const reasons: Reason[] = admission.unmet.map((requirement) => unmetReason(requirement, runtime))
+  const reasons: Reason[] = [
+    ...admission.unmet.map((requirement) => unmetReason(requirement, runtime)),
+    ...advice,
+    ...registry.reasons,
+  ]
   const remediation = remediationForDenial(admission.unmet, runtime, env.profile, subject)
 
   return finish({
@@ -141,7 +167,7 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
     conclusion: 'blocked',
     confidence: { level: 'high', basis: 'declared' },
     reasons,
-    evidence,
+    evidence: [...evidence, ...registry.evidence],
     remediation,
     missingEvidence: [],
     generatedAt,
@@ -495,7 +521,7 @@ export function renderVerdict(verdict: Verdict, locale: Locale): string {
   const subject = `${verdict.subject.name}${verdict.subject.version === null ? '' : `@${verdict.subject.version}`}`
   lines.push(`[${label}] ${subject} — ${message(catalog, `conclusion.${verdict.conclusion}`)}`)
   lines.push(`  env      dsh ${verdict.env.dsh ?? 'unknown'} · ${verdict.env.platform}/${verdict.env.arch} · profile ${verdict.env.profile}`)
-  for (const reason of verdict.reasons.slice(0, MAX_RENDERED_REASONS)) {
+  for (const reason of renderOrder(verdict.reasons).slice(0, MAX_RENDERED_REASONS)) {
     lines.push(`  reason   ${message(catalog, reason.messageId, reason.params)}`)
   }
   if (verdict.reasons.length > MAX_RENDERED_REASONS) {
@@ -524,6 +550,26 @@ export function renderVerdict(verdict: Verdict, locale: Locale): string {
  * print 32 lines. Full detail is always available via `--json`.
  */
 const MAX_RENDERED_REASONS = 3
+
+/**
+ * Order for the terminal: the loudest reason first, so a `warn` is never hidden by
+ * two `info` lines. The row-scope line stays pinned first because it carries the row
+ * id the user needs to act on (documented in `docs/05` §2b); everything else sorts by
+ * severity with a stable sort, so output stays deterministic.
+ *
+ * WHY (R10 adversary finding): the registry drift warn is appended after two `info`
+ * reasons, so the headline finding of the round was silently cut to "…2 more".
+ */
+function renderOrder(reasons: readonly Reason[]): readonly Reason[] {
+  const rank = (severity: string): number => (severity === 'block' ? 3 : severity === 'warn' ? 2 : 1)
+  const ordered = [...reasons].sort((left, right) => rank(right.severity) - rank(left.severity))
+  const scopeIndex = ordered.findIndex((reason) => reason.messageId === 'admission.row-scope')
+  if (scopeIndex > 0) {
+    const [scope] = ordered.splice(scopeIndex, 1)
+    if (scope !== undefined) ordered.unshift(scope)
+  }
+  return ordered
+}
 
 function message(
   catalog: ReturnType<typeof catalogFor>,
@@ -593,6 +639,104 @@ function compatSurfacing(
   }
 
   return { reasons: [], evidence: [evidence] }
+}
+
+/**
+ * Registry dist-tag facts as reasons + evidence (T-109).
+ *
+ * Only problems produce a reason; a healthy tag still leaves a tiered evidence entry
+ * so `--json` consumers can see what was checked. Nothing here can change
+ * `conclusion`: a stale dist-tag is a reason to pin a version, not a judgement that
+ * the plugin does or does not work on this machine.
+ */
+function registrySurfacing(
+  drift: VersionDrift,
+  subjectName: string,
+  generatedAt: string,
+): { readonly reasons: readonly Reason[]; readonly evidence: readonly Evidence[] } {
+  const published = dateNote(drift.newestPublishedAt)
+  const evidence: Evidence = {
+    id: 'registry-tags',
+    tier: 'measured-registry',
+    source: `npm:${subjectName}`,
+    method: 'registry-metadata',
+    at: generatedAt,
+    detail: drift.detail,
+  }
+  const params = { latest: drift.latest ?? '—', newest: drift.newest ?? '—', published }
+
+  switch (drift.standing) {
+    case 'latest-behind':
+      return {
+        reasons: [{ code: 'registry-latest-behind', severity: 'warn', messageId: 'registry.latest-behind', params }],
+        evidence: [evidence],
+      }
+    case 'prerelease-ahead':
+      return {
+        reasons: [
+          { code: 'registry-prerelease-ahead', severity: 'info', messageId: 'registry.prerelease-ahead', params },
+        ],
+        evidence: [evidence],
+      }
+    case 'latest-missing':
+      return {
+        reasons: [
+          { code: 'registry-latest-missing', severity: 'warn', messageId: 'registry.latest-missing', params },
+        ],
+        evidence: [evidence],
+      }
+    case 'latest-unpublished':
+      return {
+        reasons: [
+          { code: 'registry-latest-unpublished', severity: 'warn', messageId: 'registry.latest-unpublished', params },
+        ],
+        evidence: [evidence],
+      }
+    case 'latest-deprecated':
+      return {
+        reasons: [
+          { code: 'registry-latest-deprecated', severity: 'warn', messageId: 'registry.latest-deprecated', params },
+        ],
+        evidence: [evidence],
+      }
+    default:
+      return { reasons: [], evidence: [evidence] }
+  }
+}
+
+/** ` (published 2026-10-20)` — always non-empty, so the copy never keeps a placeholder. */
+function dateNote(iso: string | null): string {
+  return iso === null ? ' (publish date unknown)' : ` (published ${iso.slice(0, 10)})`
+}
+
+/**
+ * Author-side advice about how each declared range will age (T-115).
+ *
+ * An exact pin is denied by the next upstream patch; an unbounded range admits the
+ * next breaking major. Both are `info`/`warn` only — the user asked "can I install
+ * this", not "is the author's semver style good".
+ */
+function rangeShapeReasons(admission: AdmissionResult): readonly Reason[] {
+  const out: Reason[] = []
+  for (const requirement of admission.requirements) {
+    const reading = judgeRangeShape(requirement.range)
+    if (reading.shape === 'exact') {
+      out.push({
+        code: 'admission-range-exact-pin',
+        severity: 'info',
+        messageId: 'admission.range-exact-pin',
+        params: { key: requirement.key, range: reading.range },
+      })
+    } else if (reading.shape === 'unbounded') {
+      out.push({
+        code: 'admission-range-unbounded',
+        severity: 'warn',
+        messageId: 'admission.range-unbounded',
+        params: { key: requirement.key, range: reading.range },
+      })
+    }
+  }
+  return out
 }
 
 function unmetReason(requirement: { key: string; range: string; failure: string | null }, runtime: string): Reason {

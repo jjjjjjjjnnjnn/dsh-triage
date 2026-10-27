@@ -57,6 +57,9 @@ export { verdictsFromDuplicateCopies } from './duplicates.js'
 export type { CompatChannel, CompatReading, CompatRelease, CompatStanding } from './compat-channel.js'
 export { judgeCompatChannel, readCompatChannel } from './compat-channel.js'
 
+export type { DriftStanding, RangeShape, RangeShapeReading, RegistryFacts, VersionDrift } from './version-drift.js'
+export { judgeRangeShape, judgeVersionDrift } from './version-drift.js'
+
 export type {
   DeclaredRow,
   FiberPhase,
