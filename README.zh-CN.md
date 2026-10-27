@@ -2,7 +2,7 @@
 
 **分诊台 / Triage** · [`github.com/jjjjjjjjnnjnn/dsh-triage`](https://github.com/jjjjjjjjnnjnn/dsh-triage)
 
-> **状态**：`R7` —— **10 个真实案例已复现（9 命中 / 1 有意 miss）**，D1 决策门以 `data/results/d1-*.json` 机器判定通过；行级 admission 归因 + **运行时相位归因**（`audit --snapshot`，M2-a P2）+ **副本来源归因**（谁把这份副本带进来的、同一个名字有没有两个版本——借自 `npm explain` 与 Maven `dependencyConvergence`）、9 道门禁机器强制。Web 面板、隔离实测、徽章按 [`docs/ROADMAP.md`](docs/ROADMAP.md) 落地。
+> **状态**：`R14` —— **10 个真实案例已复现（9 命中 / 1 有意 miss）**，D1 决策门以 `data/results/d1-*.json` 机器判定通过；行级 admission 归因 + **运行时相位归因**（`audit --snapshot`）+ **副本来源归因**，以及 **隔离实测执行器**：把候选装进独立 `DSH_HOME`、真起一次、在**进程还活着时**探端口、读候选行的相位、无论成败都清理。仓里带三份真机样本（一份 `go`、两份 `blocked`——import 期与 apply 期失败各一）。**27 条签署过的金标**、166 个测试、9 道门禁。**尚未测**：客户端渲染、工具/命名空间 diff——产物里如实写 `unmeasured`，不冒充通过。
 >
 > DSH 已经能告诉你插件**装不装得上**。没有人告诉你它在你**这套环境**里**跑不跑得对**——你的 dsh 版本、你的系统、你另外那 12 个插件。
 
@@ -31,7 +31,7 @@ $ dsh-triage why
 - **`why`**：把「工具消失 / 白屏 / 起不来」定位到具体某一行，并给出可直接执行的修复命令。确定性、离线、只读。
 - **`check <包名>`**：装前判断 `可装 / 有风险 / 不可用 / 未知`，附证据与替代方案（退哪个版本、先禁哪个插件）。
 - **`audit`**：当前集合的命名空间台账——entry id / 服务 / 工具 / 命令 / 设置命名空间，谁占了什么。
-- **probe**（M3）：在独立 `DSH_HOME` 里真装真启动，产出 `boot / http / inventory / namespace-diff` 证据。显式开启，绝不碰你真实的 profile。
+- **probe**：`dsh-triage probe <包名> --execute --dsh-main <路径>` 在独立 `DSH_HOME` 里真装、真启动，**杀树之前**探端口，读候选行相位，无论成败都清理。已测：`boot / http / inventory`。**未测**（产物写 `unmeasured`，绝不冒充通过）：客户端渲染（T-302）、工具/命名空间 diff（T-303）。沙盒是模板 profile，不是你现有组合的副本（T-304）——所以它回答的是「起不起得来」，不是「装进我这套组合会不会挂」。
 
 ## 诚实边界
 

@@ -1451,7 +1451,7 @@
         "adversary": "反例：把行塞进一个已存在的 upstream group（`- id: include` + insert）也能 mount，此时我们的 id 前缀检查只查 `insert` 下的 id——所以该门证的是「以插入方式添加」，不是「不会污染别人的 group」；后者仍靠 `no-reserved-ids` 与行 id 前缀，未覆盖 group 目标"
       },
       "real_test": {
-        "command": "node scripts/record_live_inventory.mjs --dsh-home <temp>/home-phases --profile probe --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T02:30:00.000Z",
+        "command": "node scripts/record_live_inventory.mjs --dsh-home <temp>/home-phases --profile probe --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T02:30:00.000Z（前置：在同一个孤立 DSH_HOME 里依次 `dsh plugin --profile probe add tests/fixtures/probe/{ok,broken,throw}-plugin`，再 boot 采样；三个 fixture 都在仓内）",
         "artifact": "data/results/inventory-live-2026-10-28T02-30-00.000Z.json",
         "sha256": "058de2b23341697b4c05bf5577a069d6664a370d240d311364e39fdfae19083b",
         "outcome": "outcome sampled · live · entries 100 · cross_check agree=true · triage 三行 = active / null / failed"

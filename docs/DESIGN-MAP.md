@@ -17,7 +17,7 @@
 
 | 门 | 守什么 | 证据形式 | 负对照 |
 |---|---|---|---|
-| `admission-parity` | 与上游 admission 语义逐条对等 | 21 条金标（含 8 条 npm 真快照） | `--mutate` 破坏 admitted 用例 |
+| `admission-parity` | 与上游 admission 语义逐条对等 | 27 条金标（含 8 条 npm 真快照；R14 新增 6 条） | `--mutate` 破坏 admitted 用例 |
 | `verdict-contract` | 结论不得退化成黑箱分数 | `data/results/*.json` 逐条校验 | 注入「blocked 无 remediation」 |
 | `ssot` | 结论只由脚本产出且可校验 | `produced_by` + `.sha256` | 篡改哈希 |
 | `governance` | 索引/台账/隔离区/密钥 | 引用存在性、登记完整性 | 引用幽灵路径 |

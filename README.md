@@ -2,7 +2,7 @@
 
 **分诊台 / Triage** · `github.com/jjjjjjjjnnjnn/dsh-triage`
 
-> **Status**: `R7` — **10 real cases replayed (9 hits, 1 deliberate miss)**; the D1 decision gate is machine-judged from `data/results/d1-*.json`; row-level admission, **runtime phase attribution** (`audit --snapshot`, M2-a P2) and **copy provenance** (which plugin dragged a copy in, and whether one name exists at two versions — borrowed from `npm explain` and Maven's `dependencyConvergence`); 9 machine-enforced gates. The Web panel, probe runner and badges land per [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status**: `R14` — **10 real cases replayed (9 hits, 1 deliberate miss)**; the D1 decision gate is machine-judged from `data/results/d1-*.json`; row-level admission, **runtime phase attribution** (`audit --snapshot`), **copy provenance** and now an **isolated probe runner**: install a candidate into its own `DSH_HOME`, boot it, measure readiness *while it is alive*, read the candidate row's phase, clean up. Three real sandbox samples ship with the repo (one `go`, two `blocked` — import-time and apply-time failure). **27 signed admission goldens**, 166 tests, 9 machine-enforced gates. *Not* measured yet: client render, tool/namespace diff — those assertions say `unmeasured` in the artifacts instead of claiming a pass.
 > DSH (DeepSeek Harness) already tells you whether a plugin *installs*. Nobody tells you whether it will *work* — with **your** dsh version, **your** OS, and **your** other 12 plugins.
 
 ## The problem we take seriously
@@ -34,7 +34,7 @@ BLOCKED  dsh-web-search-pro@0.2.1 — 不可用
 - **`why`** — attribute "disappeared tools / white screen / won't boot" to a specific row, with the fix command. Deterministic, offline, read-only.
 - **`check <pkg>`** — verdict before install: `go` / `risky` / `blocked` / `unknown`, with evidence and alternatives (which version still fits, which plugin to disable first).
 - **`audit`** — namespace ledger of your current set: entry ids, services, tools, commands, settings namespaces, and who owns what.
-- **probe** *(M3)* — install the candidate into an isolated `DSH_HOME`, boot it, and record `boot / http / inventory / namespace-diff`. Opt-in, never on your real profile.
+- **probe** — `dsh-triage probe <pkg> --execute --dsh-main <path>` installs the candidate into its own `DSH_HOME`, boots the sandbox profile, checks the port **before** the tree is killed, reads the candidate row's phase, then always cleans up. Measured: `boot / http / inventory`. **Not measured** (and reported as `unmeasured`, never as a pass): client render (T-302) and namespace diff (T-303). The sandbox is a template profile, not a copy of your own plugin set (T-304) — so it answers "will it boot", not "will it fit my exact combination".
 
 ## Honest boundaries
 

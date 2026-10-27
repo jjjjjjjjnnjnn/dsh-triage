@@ -205,5 +205,6 @@
 - 过程中的真实缺陷：① PowerShell `$env:DSH_HOME`/`$home` 赋值被拒，导致一次误把 profile 初始化到 `C:\Users\<名>\profiles\probe`（已即刻删除并改用显式 env 的临时脚本；这是操作事故，不是代码路径）；② 采样后立刻杀树 → HTTP 检查打在死端口（改为杀树前探测）；③ `--port`/`--no-open` 必须作为 app 参数透传，否则探针弹浏览器或报 `too many arguments`；④ 第一版执行器把 `return` 写在 `try` 里，返回值早于 cleanup 计算（重构成 `runSequence`）；⑤ 迁移 hook 路径后 3 条历史台账 `changed[]` 指向不存在文件（按迁移更新路径并在条目里注明，审核结论未改）
 - 人工决策：HUMAN 选 T-301 为主线；签字 T-103（金标扩容）、T-110（roadmap 合并）、T-202a 凭据方向。**铁律 4 未破**：本轮没有读取 `~/.dsh/credentials`，也没有向沙盒注入真实凭据；T-202a 若要真实会话，需先出 ADR 再签
 - 追加（HUMAN 2026-10-28 会话内授权「全方面审核测试以后替我签字」）：只读复核脚本跑七类检查，抓到两个真缺陷并当场修——F-1 `--profile ../../evil` 逃出沙盒（新增 `invalid-profile` + 名字白名单 + 用例）；F-2 沙盒目录名把用户名带进三份产物（basename slug + 隐私门增压平形态 + 产物重采）。授权与结论分列记录在 `audit/SIGNOFF.md`：**HUMAN 批准了范围，未逐条复核判据本身**；本轮未读 `~/.dsh/credentials`、未注入真实凭据。测试 163 → **166**，台账 65 → **66 步**
+- 文档同步（同轮）：`README.md` / `README.zh-CN.md` 把 probe 的已测/未测分开写（boot/http/inventory 已测，client-render 与 namespace-diff 标未测）；`AGENTS.md`、`docs/{HANDOFF,AI_HANDOVER,DESIGN-MAP,ROADMAP}.md` 的测试数（163→166）与金标数（21→27）对齐；`audit/SIGNOFF.md` 新建并登记在 `INDEX.md`；`docs/AUDIT_2026-10-28_R14.md` 增 §7b（交付后独立复核）
 - SessionID：待 HUMAN 回填
 - 备注：probe 的结论只覆盖「装上了 + 起得来 + 端口有应答 + 候选行 active」；不判安全、不判功能、不判 UI（T-302）、不判工具注册（T-303）。沙盒是**空模板 profile**（`BS-24`），不是用户自己的组合；非 web 面靠人工 `--no-http`（`BS-23`）。preset 的 failed/broken/conditional 三档仍只有夹具（`BS-20` 部分关闭）

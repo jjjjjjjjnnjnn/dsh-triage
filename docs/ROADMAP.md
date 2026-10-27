@@ -17,7 +17,7 @@
 | 周 | 阶段 | 交付物 | 出口门禁（可证伪） | 人力 |
 |---|---|---|---|---|
 | W0 | **M0 骨架** ✅ | 治理 / 9 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 9 门 mutate 全 CAUGHT | 已完成 |
-| W1 | **M1 收口** ✅ | 21 条金标 + `why` 归因 + 10 例真实案例 | 真实案例 ≥8/10 命中 —— **R6 达成 9/10**（`data/results/d1-*.json`） | 已完成 |
+| W1 | **M1 收口** ✅ | 27 条金标（R14 由 21 扩）+ `why` 归因 + 10 例真实案例 | 真实案例 ≥8/10 命中 —— **R6 达成 9/10**（`data/results/d1-*.json`） | 已完成 |
 | W2 | **M2-a 运行时台账** | ✅ **P1+P2 已交付**：`pluginInventory` 相位在仓内沙盒真采样（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`，194 行）+ `audit --snapshot` + 门 `inventory-contract` + preset 维度（T-112）；tools/commands/settings 快照：T-202b 事实+差分 ✅（R13），**agent 作用域读数**归 T-202a（需真实会话/M3） | `audit` 能显示每行相位；与 patch 静态声明交叉校验（真机 `missing=0`，Host↔CLI 逐行一致） | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |
 | W4 | **M3 probe 执行器** | ✅ **R14 交付执行器（T-301）**：隔离 `DSH_HOME` 真装 → boot → http（杀树前）→ inventory → cleanup，一绿两红真机样本；render（T-302）/ namespace-diff（T-303）仍未测，产物标 `unmeasured` | `boot→sample ≤20s`（实测 11.8–13.8s）；「装了就白屏」两形状稳定复现（phase=failed / null）；失败必清理（目录 + 端口双判据） | 2（并行） |
