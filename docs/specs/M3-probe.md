@@ -56,6 +56,7 @@
 | F22 | **浏览器错误页有 body 子节点和文本，但没有 `#root`**：指向未监听端口时 Chrome 自己渲染 `ERR_CONNECTION_REFUSED` 页（76 字符），若按 body 子节点判就会拿到 `rendered` —— 所以判定必须要求 `#root`/`#app` 挂载点 | `data/results/render-fixture-error-2026-10-27T13-29-50.000Z.json`（交付后独立复核抓到） |
 | F23 | **卡死的渲染线程不回应 `Runtime.evaluate`**：`while(true)` 页面下第一次实现会无限挂（4s 预算跑了 30s+ 仍不返回）；加命令级超时 + 剩余预算封顶后，15s 预算下 **15.0s** 返回 `inconclusive` | `data/results/render-fixture-blocked-2026-10-27T13-30-00.000Z.json` |
 | F24 | **profile 级 `.npmrc` 会被 launcher 采纳**（T-305b 的机制）：在临时 `DSH_HOME` 里先用本地 fixture 初始化 profile，再写 `<profile>/.npmrc` 为 `registry=http://127.0.0.1:1/`，随后 `dsh plugin --profile web add dsh-cost-meter@1.9.41` **确实失败**：`ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR`，日志写着 `Failed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter`，exit 1。对比 F19：env 级 `NPM_CONFIG_REGISTRY` 被中和，**profile 级不被中和** | spike 2026-10-27（一次性临时 home，未留产物；复现命令就是本格描述的两步）。实现见 `T-305b` |
+| F25 | **「慢」与「坏」在探针里长得一样**：矩阵实测 `dsh-whale-widget@0.4.2` 在 12.3s 写出样本，但 5s 就绪窗口内 Host 从未打印 `?token=` URL（`fetch failed`），同时探针 hook 报 `cannot get required service "loader" in inactive context`。结论被写成 `blocked`，但根因可能是「树还没 active」而不是插件坏 → 记为 `BS-25` / `T-308` | `data/results/probe-matrix-2026-10-27T14-36-20.000Z.json`（`runs[2]`，`expectation_met=false`） |
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 

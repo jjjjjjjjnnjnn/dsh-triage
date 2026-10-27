@@ -1,0 +1,42 @@
+{
+  "note": "R16 D2 denominator: two real registry candidates plus four labeled synthetic failure shapes. Real candidates are MIT and pinned; nothing is vendored (ADR-0004).",
+  "candidates": [
+    {
+      "label": "local-fixture",
+      "spec": "tests/fixtures/probe/ok-plugin",
+      "expect": "go",
+      "shape": "local-path"
+    },
+    {
+      "label": "registry-model-proxy",
+      "spec": "dsh-plugin-model-proxy@0.1.6",
+      "expect": "go",
+      "shape": "real-registry"
+    },
+    {
+      "label": "registry-whale-widget",
+      "spec": "dsh-whale-widget@0.4.2",
+      "expect": "go",
+      "shape": "real-registry"
+    },
+    {
+      "label": "synthetic-missing",
+      "spec": "dsh-plugin-triage-missing@0.0.1",
+      "expect": "blocked",
+      "shape": "synthetic-missing-package"
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "spec": "dsh-plugin-model-proxy@99.99.99",
+      "expect": "blocked",
+      "shape": "synthetic-bogus-version"
+    },
+    {
+      "label": "synthetic-private-registry",
+      "spec": "dsh-cost-meter@1.9.41",
+      "expect": "blocked",
+      "npmrcRegistry": "http://127.0.0.1:1/",
+      "shape": "synthetic-unreachable-registry"
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { test } from 'node:test'
 import { buildProbePlan } from '@dsh-triage/probe'
 import type { ProbeExecDeps, ProbeRun, ProbeSampleView } from '@dsh-triage/probe'
-import { executeProbe, isCandidateModule, judgeProbe, modulePackageName, probeAssertions, readSample } from '@dsh-triage/probe'
+import { executeProbe, failureEndpoints, isCandidateModule, judgeProbe, modulePackageName, probeAssertions, readSample } from '@dsh-triage/probe'
 
 const realDshHome = join(tmpdir(), 'dsh-triage-probe-real', '.dsh')
 const workRoot = join(tmpdir(), 'dsh-triage-probe')
@@ -243,6 +244,36 @@ test('a linked candidate is still identified, and two matches stay ambiguous', (
   assert.equal(isCandidateModule('file:///C:/Users/x/AppData/Local/Temp/opencode/r14/ok-plugin/index.js', 'ok-plugin'), true)
   assert.equal(isCandidateModule('@deepseek-ai/dsh-base', 'triage-probe-fixture-ok'), false)
   assert.equal(isCandidateModule('anything', ''), false)
+})
+
+/* ------------------------ install failure endpoints (T-305b) ---------------- */
+
+test('a failed install names the endpoints it tried, from the diagnostics log', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'triage-endpoints-'))
+  try {
+    const log = join(dir, 'pnpm.log')
+    writeFileSync(log, 'ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR\nFailed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter\n', 'utf8')
+    const endpoints = failureEndpoints(`dsh: plugin command failed; diagnostics: ${log}\n`)
+    assert.deepEqual(endpoints, ['http://127.0.0.1:1/dsh-cost-meter'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('credentials, query strings and fragments never leave this layer', () => {
+  const endpoints = failureEndpoints('GET https://user:secret@registry.example/pkg?token=abc#frag failed')
+  assert.deepEqual(endpoints, ['https://registry.example/pkg'])
+})
+
+test('no URL at all is an empty list, not a guess', () => {
+  assert.deepEqual(failureEndpoints('install failed with exit 1'), [])
+  assert.equal(failureEndpoints('https://a.example/1 https://b.example/2 https://c.example/3 https://d.example/4 https://e.example/5 https://f.example/6').length, 5)
+})
+
+test('trailing punctuation from pnpm logs is not part of the endpoint', () => {
+  assert.deepEqual(failureEndpoints('Failed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter: error'), [
+    'http://127.0.0.1:1/dsh-cost-meter',
+  ])
 })
 
 /* --------------------------- client render (T-302) ------------------------- */

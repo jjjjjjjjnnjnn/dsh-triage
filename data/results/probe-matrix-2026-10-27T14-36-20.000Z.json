@@ -1,0 +1,1430 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe_matrix.mjs",
+  "generated_at": "2026-10-27T14:36:20.000Z",
+  "plan": {
+    "path": "<repo>\\tests\\fixtures\\probe\\matrix-r16.json",
+    "candidates": 6,
+    "note": "R16 D2 denominator: two real registry candidates plus four labeled synthetic failure shapes. Real candidates are MIT and pinned; nothing is vendored (ADR-0004)."
+  },
+  "runs": [
+    {
+      "label": "local-fixture",
+      "spec": "tests/fixtures/probe/ok-plugin",
+      "shape": "local-path",
+      "expect": "go",
+      "exit": 0,
+      "ms": 27567,
+      "expectation_met": true,
+      "conclusion": "go",
+      "boot_to_sample_ms": 14300,
+      "install_ms": 479,
+      "render_ms": 2067,
+      "cleanup_ok": true,
+      "assertion_shape": "namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-local-fixture-2026-10-27T14-36-20.000Z.json",
+        "sha256": "7562f2ca5ac3c903e0de01b9011c3157a21c75c0cd68f02131bd1bc6467dd51d",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:20.000Z",
+          "label": "local-fixture",
+          "expectation": "go",
+          "expectation_met": true,
+          "candidate": {
+            "spec": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+            "package": "triage-probe-fixture-ok",
+            "kind": "path",
+            "resolved": null
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": null
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 148,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "passed",
+              "ms": 479,
+              "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7\\profiles\\web",
+              "exitCode": 0
+            },
+            {
+              "id": "boot",
+              "status": "passed",
+              "ms": 26703,
+              "detail": "14.3s to sample",
+              "exitCode": null
+            },
+            {
+              "id": "http",
+              "status": "passed",
+              "ms": 0,
+              "detail": "HTTP 401",
+              "exitCode": null
+            },
+            {
+              "id": "render",
+              "status": "passed",
+              "ms": 0,
+              "detail": "rendered: mount root with 1 child(ren), 289 visible chars (2067ms)",
+              "exitCode": null
+            },
+            {
+              "id": "inventory",
+              "status": "passed",
+              "ms": 0,
+              "detail": "include:triage-probe-ok active",
+              "exitCode": null
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 19,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 479,
+            "bootToSampleMs": 14300,
+            "httpMs": 0,
+            "renderMs": 2067,
+            "cleanupMs": 19
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "passed",
+              "detail": null
+            },
+            {
+              "id": "http-served",
+              "status": "passed",
+              "detail": "HTTP 401"
+            },
+            {
+              "id": "inventory-active",
+              "status": "passed",
+              "detail": "1 candidate row(s)"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "passed",
+              "detail": "rendered: mount root with 1 child(ren), 289 visible chars"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": "in-process-projection",
+            "entries": 195,
+            "wait_ms": 6893,
+            "candidate_rows": [
+              {
+                "entryId": "include:triage-probe-ok",
+                "moduleName": "triage-probe-fixture-ok",
+                "phase": "active"
+              }
+            ],
+            "excluded": [
+              "include:triage-inventory-probe"
+            ],
+            "error": null
+          },
+          "http": {
+            "status": 401,
+            "detail": "HTTP 401"
+          },
+          "readiness": {
+            "source": "host-url",
+            "port": 53052
+          },
+          "render": {
+            "status": "rendered",
+            "detail": "mount root with 1 child(ren), 289 visible chars",
+            "ms": 2067,
+            "signals": {
+              "title_length": 16,
+              "ready_state": "complete",
+              "body_children": 4,
+              "root_id": "root",
+              "root_children": 1,
+              "text_length": 289,
+              "html_bytes": 540955
+            }
+          },
+          "install": {
+            "lockfile": {
+              "present": true,
+              "bytes": 373,
+              "sha256": "861f50178a35f2ce5d63afd4194dcaba178f4363c90cde10ff472fabcfcc9d8e"
+            },
+            "endpoints": []
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "go",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-served",
+              "severity": "info",
+              "messageId": "probe.served",
+              "params": {
+                "status": 401,
+                "seconds": 14
+              }
+            },
+            {
+              "code": "probe-render-ok",
+              "severity": "info",
+              "messageId": "probe.render-ok",
+              "params": {
+                "ms": 2067
+              }
+            },
+            {
+              "code": "probe-row-active",
+              "severity": "info",
+              "messageId": "probe.row-active",
+              "params": {
+                "row": "include:triage-probe-ok"
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:20.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-install",
+              "tier": "measured-local",
+              "source": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+              "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+              "at": "2026-10-27T14:36:20.000Z"
+            },
+            {
+              "id": "probe-boot",
+              "tier": "measured-local",
+              "source": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+              "method": "boot + in-process-projection inventory sample",
+              "at": "2026-10-27T14:36:20.000Z",
+              "detail": "entries=195 wait_ms=6893"
+            },
+            {
+              "id": "probe-http",
+              "tier": "measured-local",
+              "source": "http://127.0.0.1:53052",
+              "method": "http readiness (redirect: manual)",
+              "at": "2026-10-27T14:36:20.000Z",
+              "detail": "status=401"
+            },
+            {
+              "id": "probe-render",
+              "tier": "measured-local",
+              "source": "http://127.0.0.1:53052",
+              "method": "headless Chromium + CDP DOM observation",
+              "at": "2026-10-27T14:36:20.000Z",
+              "detail": "mount root with 1 child(ren), 289 visible chars"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:20.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    },
+    {
+      "label": "registry-model-proxy",
+      "spec": "dsh-plugin-model-proxy@0.1.6",
+      "shape": "real-registry",
+      "expect": "go",
+      "exit": 0,
+      "ms": 34445,
+      "expectation_met": true,
+      "conclusion": "go",
+      "boot_to_sample_ms": 13300,
+      "install_ms": 2644,
+      "render_ms": 6029,
+      "cleanup_ok": true,
+      "assertion_shape": "namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-registry-model-proxy-2026-10-27T14-36-21.000Z.json",
+        "sha256": "8c789928edfeba44122cc55211e1dae7c515e4a09cdea5c032887aa7a37c9883",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:21.000Z",
+          "label": "registry-model-proxy",
+          "expectation": "go",
+          "expectation_met": true,
+          "candidate": {
+            "spec": "dsh-plugin-model-proxy@0.1.6",
+            "package": "dsh-plugin-model-proxy",
+            "kind": "registry",
+            "resolved": {
+              "version": "0.1.6",
+              "claim": "registry-metadata (not verified against the tarball)",
+              "license": "MIT",
+              "unpacked_size": 450894,
+              "integrity": "sha512-Mqmbg6fr3MZyQqP7dx1s+IemX5ExZifAbpif780sgrG9/z8/UeCLCHleytygAgjXdGhqmroOSvucTMQSLci2Zg==",
+              "tarball": "https://registry.npmjs.org/dsh-plugin-model-proxy/-/dsh-plugin-model-proxy-0.1.6.tgz",
+              "deprecated": null,
+              "dependencies": 1
+            }
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-model-proxy-0.1.6-4629d514",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": null
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 226,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "passed",
+              "ms": 2644,
+              "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-model-proxy-0.1.6-4629d514\\profiles\\web",
+              "exitCode": 0
+            },
+            {
+              "id": "boot",
+              "status": "passed",
+              "ms": 30191,
+              "detail": "13.3s to sample",
+              "exitCode": null
+            },
+            {
+              "id": "http",
+              "status": "passed",
+              "ms": 0,
+              "detail": "HTTP 401",
+              "exitCode": null
+            },
+            {
+              "id": "render",
+              "status": "passed",
+              "ms": 0,
+              "detail": "rendered: mount root with 1 child(ren), 24 visible chars, readyState=interactive (6029ms)",
+              "exitCode": null
+            },
+            {
+              "id": "inventory",
+              "status": "passed",
+              "ms": 1,
+              "detail": "include:model-proxy active",
+              "exitCode": null
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 162,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 2644,
+            "bootToSampleMs": 13300,
+            "httpMs": 0,
+            "renderMs": 6029,
+            "cleanupMs": 162
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "passed",
+              "detail": null
+            },
+            {
+              "id": "http-served",
+              "status": "passed",
+              "detail": "HTTP 401"
+            },
+            {
+              "id": "inventory-active",
+              "status": "passed",
+              "detail": "1 candidate row(s)"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "passed",
+              "detail": "rendered: mount root with 1 child(ren), 24 visible chars, readyState=interactive"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": "in-process-projection",
+            "entries": 195,
+            "wait_ms": 7459,
+            "candidate_rows": [
+              {
+                "entryId": "include:model-proxy",
+                "moduleName": "dsh-plugin-model-proxy",
+                "phase": "active"
+              }
+            ],
+            "excluded": [
+              "include:triage-inventory-probe"
+            ],
+            "error": null
+          },
+          "http": {
+            "status": 401,
+            "detail": "HTTP 401"
+          },
+          "readiness": {
+            "source": "host-url",
+            "port": 53961
+          },
+          "render": {
+            "status": "rendered",
+            "detail": "mount root with 1 child(ren), 24 visible chars, readyState=interactive",
+            "ms": 6029,
+            "signals": {
+              "title_length": 16,
+              "ready_state": "interactive",
+              "body_children": 3,
+              "root_id": "root",
+              "root_children": 1,
+              "text_length": 24,
+              "html_bytes": 41542
+            }
+          },
+          "install": {
+            "lockfile": {
+              "present": true,
+              "bytes": 1717,
+              "sha256": "d716fa88e020ef03e395f387034f972a6c3ded5c8cc6de8ef6347ed965e4f99f"
+            },
+            "endpoints": []
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "go",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-served",
+              "severity": "info",
+              "messageId": "probe.served",
+              "params": {
+                "status": 401,
+                "seconds": 13
+              }
+            },
+            {
+              "code": "probe-render-ok",
+              "severity": "info",
+              "messageId": "probe.render-ok",
+              "params": {
+                "ms": 6029
+              }
+            },
+            {
+              "code": "probe-row-active",
+              "severity": "info",
+              "messageId": "probe.row-active",
+              "params": {
+                "row": "include:model-proxy"
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:21.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-install",
+              "tier": "measured-local",
+              "source": "dsh-plugin-model-proxy@0.1.6",
+              "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+              "at": "2026-10-27T14:36:21.000Z"
+            },
+            {
+              "id": "probe-boot",
+              "tier": "measured-local",
+              "source": "dsh-plugin-model-proxy@0.1.6",
+              "method": "boot + in-process-projection inventory sample",
+              "at": "2026-10-27T14:36:21.000Z",
+              "detail": "entries=195 wait_ms=7459"
+            },
+            {
+              "id": "probe-http",
+              "tier": "measured-local",
+              "source": "http://127.0.0.1:53961",
+              "method": "http readiness (redirect: manual)",
+              "at": "2026-10-27T14:36:21.000Z",
+              "detail": "status=401"
+            },
+            {
+              "id": "probe-render",
+              "tier": "measured-local",
+              "source": "http://127.0.0.1:53961",
+              "method": "headless Chromium + CDP DOM observation",
+              "at": "2026-10-27T14:36:21.000Z",
+              "detail": "mount root with 1 child(ren), 24 visible chars, readyState=interactive"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:21.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    },
+    {
+      "label": "registry-whale-widget",
+      "spec": "dsh-whale-widget@0.4.2",
+      "shape": "real-registry",
+      "expect": "go",
+      "exit": 1,
+      "ms": 50355,
+      "expectation_met": false,
+      "conclusion": "blocked",
+      "boot_to_sample_ms": 12300,
+      "install_ms": 20865,
+      "render_ms": 0,
+      "cleanup_ok": true,
+      "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-registry-whale-widget-2026-10-27T14-36-22.000Z.json",
+        "sha256": "b73d8bfcf546de74d0165a35c8c4f7b05f7a2a549c864afb2264adaff9091a85",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:22.000Z",
+          "label": "registry-whale-widget",
+          "expectation": "go",
+          "expectation_met": false,
+          "candidate": {
+            "spec": "dsh-whale-widget@0.4.2",
+            "package": "dsh-whale-widget",
+            "kind": "registry",
+            "resolved": {
+              "version": "0.4.2",
+              "claim": "registry-metadata (not verified against the tarball)",
+              "license": "MIT",
+              "unpacked_size": 7220176,
+              "integrity": "sha512-aGDUfd3b2Abv4PoUn1KtnlasOIkoqgvIOR2+rAIEPDOt1qlHB7emlTq+4zdyoV5ZiicS+tkugPk86GyVUoDggQ==",
+              "tarball": "https://registry.npmjs.org/dsh-whale-widget/-/dsh-whale-widget-0.4.2.tgz",
+              "deprecated": null,
+              "dependencies": 0
+            }
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-whale-widget-0.4.2-b5aa5398",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": null
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 189,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "passed",
+              "ms": 20865,
+              "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-whale-widget-0.4.2-b5aa5398\\profiles\\web",
+              "exitCode": 0
+            },
+            {
+              "id": "boot",
+              "status": "passed",
+              "ms": 28065,
+              "detail": "12.3s to sample",
+              "exitCode": null
+            },
+            {
+              "id": "http",
+              "status": "failed",
+              "ms": 0,
+              "detail": "TypeError: fetch failed",
+              "exitCode": null
+            },
+            {
+              "id": "render",
+              "status": "skipped",
+              "ms": 0,
+              "detail": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render",
+              "exitCode": null
+            },
+            {
+              "id": "inventory",
+              "status": "failed",
+              "ms": 0,
+              "detail": "cannot get required service \"loader\" in inactive context",
+              "exitCode": null
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 24,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 20865,
+            "bootToSampleMs": 12300,
+            "httpMs": 0,
+            "renderMs": 0,
+            "cleanupMs": 24
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "failed",
+              "detail": "cannot get required service \"loader\" in inactive context"
+            },
+            {
+              "id": "http-served",
+              "status": "failed",
+              "detail": "TypeError: fetch failed"
+            },
+            {
+              "id": "inventory-active",
+              "status": "failed",
+              "detail": "0 candidate row(s)"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "unmeasured",
+              "detail": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": null,
+            "entries": 0,
+            "wait_ms": 5987,
+            "candidate_rows": [],
+            "excluded": [],
+            "error": "cannot get required service \"loader\" in inactive context"
+          },
+          "http": {
+            "status": null,
+            "detail": "TypeError: fetch failed"
+          },
+          "readiness": {
+            "source": "plan-port",
+            "port": 53506
+          },
+          "render": {
+            "status": "unmeasured",
+            "reason": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render"
+          },
+          "install": {
+            "lockfile": {
+              "present": true,
+              "bytes": 407,
+              "sha256": "aaa6c12f2f8be7216c3675a0cb0147c0d98f014ce3edcfc4a9035c4ecf6e54ac"
+            },
+            "endpoints": []
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "blocked",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-http-unreachable",
+              "severity": "block",
+              "messageId": "probe.http-unreachable",
+              "params": {
+                "port": 53506
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:22.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-install",
+              "tier": "measured-local",
+              "source": "dsh-whale-widget@0.4.2",
+              "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+              "at": "2026-10-27T14:36:22.000Z"
+            },
+            {
+              "id": "probe-boot",
+              "tier": "measured-local",
+              "source": "dsh-whale-widget@0.4.2",
+              "method": "boot + unstated transport inventory sample",
+              "at": "2026-10-27T14:36:22.000Z",
+              "detail": "entries=0 wait_ms=5987"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:22.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    },
+    {
+      "label": "synthetic-missing",
+      "spec": "dsh-plugin-triage-missing@0.0.1",
+      "shape": "synthetic-missing-package",
+      "expect": "blocked",
+      "exit": 0,
+      "ms": 6052,
+      "expectation_met": true,
+      "conclusion": "blocked",
+      "boot_to_sample_ms": null,
+      "install_ms": 4801,
+      "render_ms": null,
+      "cleanup_ok": true,
+      "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-synthetic-missing-2026-10-27T14-36-23.000Z.json",
+        "sha256": "d473a8ff8d32f82cddb6ada101d15f4ed4a4360560e4cb14510ec6ab22fae7c1",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:23.000Z",
+          "label": "synthetic-missing",
+          "expectation": "blocked",
+          "expectation_met": true,
+          "candidate": {
+            "spec": "dsh-plugin-triage-missing@0.0.1",
+            "package": "dsh-plugin-triage-missing",
+            "kind": "registry",
+            "resolved": {
+              "version": null,
+              "requested": "0.0.1",
+              "error": "HTTP 404",
+              "tarball": null
+            }
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-triage-missing-0.0.1-f04801b7",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": null
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 165,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "failed",
+              "ms": 4801,
+              "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-triage-missing-0.0.1-f04801b7\\profiles\\web\\.plugin-manager\\logs\\operation-2AhkIg\\pnpm.log · tried https://registry.npmjs.org/dsh-plugin-",
+              "exitCode": 1
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 15,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 4801,
+            "bootToSampleMs": null,
+            "httpMs": null,
+            "renderMs": null,
+            "cleanupMs": 15
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "http-served",
+              "status": "failed",
+              "detail": "not probed"
+            },
+            {
+              "id": "inventory-active",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "unmeasured",
+              "detail": "render check not requested"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": null,
+            "entries": null,
+            "wait_ms": null,
+            "candidate_rows": [],
+            "excluded": [],
+            "error": null
+          },
+          "http": null,
+          "readiness": null,
+          "render": {
+            "status": "unmeasured",
+            "reason": "render check not requested"
+          },
+          "install": {
+            "lockfile": {
+              "present": false
+            },
+            "endpoints": [
+              "https://registry.npmjs.org/dsh-plugin-"
+            ]
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "blocked",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-install-failed",
+              "severity": "block",
+              "messageId": "probe.install-failed",
+              "params": {
+                "step": "install",
+                "exit": 1
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:23.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:23.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "spec": "dsh-plugin-model-proxy@99.99.99",
+      "shape": "synthetic-bogus-version",
+      "expect": "blocked",
+      "exit": 0,
+      "ms": 6730,
+      "expectation_met": true,
+      "conclusion": "blocked",
+      "boot_to_sample_ms": null,
+      "install_ms": 4404,
+      "render_ms": null,
+      "cleanup_ok": true,
+      "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-synthetic-bogus-version-2026-10-27T14-36-24.000Z.json",
+        "sha256": "fba6230fe931a817b5ce2b07485b1ece687d352985280d297852733c1488a9be",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:24.000Z",
+          "label": "synthetic-bogus-version",
+          "expectation": "blocked",
+          "expectation_met": true,
+          "candidate": {
+            "spec": "dsh-plugin-model-proxy@99.99.99",
+            "package": "dsh-plugin-model-proxy",
+            "kind": "registry",
+            "resolved": {
+              "version": null,
+              "requested": "99.99.99",
+              "error": "HTTP 404",
+              "tarball": null
+            }
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-model-proxy-99.99.99-641ba4e8",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": null
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 179,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "failed",
+              "ms": 4404,
+              "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-plugin-model-proxy-99.99.99-641ba4e8\\profiles\\web\\.plugin-manager\\logs\\operation-pIp6Uo\\pnpm.log · tried https://registry.npmjs.org/",
+              "exitCode": 1
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 13,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 4404,
+            "bootToSampleMs": null,
+            "httpMs": null,
+            "renderMs": null,
+            "cleanupMs": 13
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "http-served",
+              "status": "failed",
+              "detail": "not probed"
+            },
+            {
+              "id": "inventory-active",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "unmeasured",
+              "detail": "render check not requested"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": null,
+            "entries": null,
+            "wait_ms": null,
+            "candidate_rows": [],
+            "excluded": [],
+            "error": null
+          },
+          "http": null,
+          "readiness": null,
+          "render": {
+            "status": "unmeasured",
+            "reason": "render check not requested"
+          },
+          "install": {
+            "lockfile": {
+              "present": false
+            },
+            "endpoints": [
+              "https://registry.npmjs.org/"
+            ]
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "blocked",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-install-failed",
+              "severity": "block",
+              "messageId": "probe.install-failed",
+              "params": {
+                "step": "install",
+                "exit": 1
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:24.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:24.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    },
+    {
+      "label": "synthetic-private-registry",
+      "spec": "dsh-cost-meter@1.9.41",
+      "shape": "synthetic-unreachable-registry",
+      "expect": "blocked",
+      "exit": 0,
+      "ms": 81004,
+      "expectation_met": true,
+      "conclusion": "blocked",
+      "boot_to_sample_ms": null,
+      "install_ms": 79067,
+      "render_ms": null,
+      "cleanup_ok": true,
+      "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured",
+      "artifact": {
+        "path": "probe-synthetic-private-registry-2026-10-27T14-36-25.000Z.json",
+        "sha256": "464af57e12ba441099db850df226a37db16f361ec381b1e4078049e4b438ff97",
+        "payload": {
+          "schema_version": 1,
+          "produced_by": "scripts/record_probe.mjs",
+          "generated_at": "2026-10-27T14:36:25.000Z",
+          "label": "synthetic-private-registry",
+          "expectation": "blocked",
+          "expectation_met": true,
+          "candidate": {
+            "spec": "dsh-cost-meter@1.9.41",
+            "package": "dsh-cost-meter",
+            "kind": "registry",
+            "resolved": {
+              "version": "1.9.41",
+              "claim": "registry-metadata (not verified against the tarball)",
+              "license": "MIT",
+              "unpacked_size": 3479477,
+              "integrity": "sha512-IPRi0qMWVmVDA1sOtkJ9moXTh8JCisNefa+4AlB53B5MbbB3/8jfAH/d3xR1IzMv234xdvvnQxk4xxPAPP5BAg==",
+              "tarball": "https://registry.npmjs.org/dsh-cost-meter/-/dsh-cost-meter-1.9.41.tgz",
+              "deprecated": null,
+              "dependencies": 2
+            }
+          },
+          "runtime": {
+            "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+            "version": "0.2.1-rc.4",
+            "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+          },
+          "sandbox": {
+            "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463",
+            "profile": "web",
+            "overlap_check": "disjoint (validateProbePlan)",
+            "env_scrubbed": true,
+            "preinit": {
+              "fixture": {
+                "exit": 0,
+                "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463\\profiles\\web"
+              },
+              "npmrc": {
+                "registry": "http://127.0.0.1:1/",
+                "bytes": 29,
+                "written": true
+              }
+            }
+          },
+          "steps": [
+            {
+              "id": "runtime",
+              "status": "passed",
+              "ms": 248,
+              "detail": "runtime 0.2.1-rc.4",
+              "exitCode": null
+            },
+            {
+              "id": "install",
+              "status": "failed",
+              "ms": 79067,
+              "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463\\profiles\\web\\.plugin-manager\\logs\\operation-G8nG58\\pnpm.log · tried http://127.0.0.1:1/dsh-cost-meter",
+              "exitCode": 1
+            },
+            {
+              "id": "cleanup",
+              "status": "passed",
+              "ms": 10,
+              "detail": "sandbox removed · port closed",
+              "exitCode": null
+            }
+          ],
+          "timings": {
+            "installMs": 79067,
+            "bootToSampleMs": null,
+            "httpMs": null,
+            "renderMs": null,
+            "cleanupMs": 10
+          },
+          "assertions": [
+            {
+              "id": "boot-sampled",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "http-served",
+              "status": "failed",
+              "detail": "not probed"
+            },
+            {
+              "id": "inventory-active",
+              "status": "failed",
+              "detail": "no sample"
+            },
+            {
+              "id": "cleanup-complete",
+              "status": "passed",
+              "detail": "sandbox removed · port closed"
+            },
+            {
+              "id": "client-rendered",
+              "status": "unmeasured",
+              "detail": "render check not requested"
+            },
+            {
+              "id": "namespace-diff",
+              "status": "unmeasured",
+              "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+            }
+          ],
+          "inventory": {
+            "transport": null,
+            "entries": null,
+            "wait_ms": null,
+            "candidate_rows": [],
+            "excluded": [],
+            "error": null
+          },
+          "http": null,
+          "readiness": null,
+          "render": {
+            "status": "unmeasured",
+            "reason": "render check not requested"
+          },
+          "install": {
+            "lockfile": {
+              "present": true,
+              "bytes": 373,
+              "sha256": "861f50178a35f2ce5d63afd4194dcaba178f4363c90cde10ff472fabcfcc9d8e"
+            },
+            "endpoints": [
+              "http://127.0.0.1:1/dsh-cost-meter"
+            ]
+          },
+          "cleanup": {
+            "removed": true,
+            "port_closed": true,
+            "detail": "sandbox removed · port closed"
+          },
+          "conclusion": "blocked",
+          "confidence": {
+            "level": "high",
+            "basis": "measured-local"
+          },
+          "reasons": [
+            {
+              "code": "probe-install-failed",
+              "severity": "block",
+              "messageId": "probe.install-failed",
+              "params": {
+                "step": "install",
+                "exit": 1
+              }
+            }
+          ],
+          "evidence": [
+            {
+              "id": "probe-runtime",
+              "tier": "measured-local",
+              "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+              "method": "dsh --version (sandbox)",
+              "at": "2026-10-27T14:36:25.000Z",
+              "detail": "0.2.1-rc.4"
+            },
+            {
+              "id": "probe-cleanup",
+              "tier": "measured-local",
+              "source": "sandbox removed · port closed",
+              "method": "directory + port check",
+              "at": "2026-10-27T14:36:25.000Z"
+            }
+          ],
+          "missing_evidence": [],
+          "limits": [
+            "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+            "does not judge security or maliciousness (COMPLIANCE.md §5)",
+            "does not judge functionality, content correctness, or that tools registered (T-303)",
+            "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+            "measured on a sandbox runtime, not on the user machine",
+            "a plugin that needs credentials is unverified, not verified-safe"
+          ]
+        }
+      },
+      "output_tail": null
+    }
+  ],
+  "summary": {
+    "n": 6,
+    "by_conclusion": {
+      "go": 2,
+      "blocked": 4
+    },
+    "expectation_misses": 1,
+    "cleanup_ok": 6,
+    "cleanup_checked": 6,
+    "boot_to_sample_ms": {
+      "n": 3,
+      "min": 12300,
+      "median": 13300,
+      "max": 14300,
+      "within_20s": 3
+    },
+    "install_ms": {
+      "n": 6,
+      "min": 479,
+      "median": 4801,
+      "max": 79067
+    },
+    "shapes": [
+      {
+        "label": "local-fixture",
+        "shape": "local-path",
+        "assertion_shape": "namespace-diff:unmeasured"
+      },
+      {
+        "label": "registry-model-proxy",
+        "shape": "real-registry",
+        "assertion_shape": "namespace-diff:unmeasured"
+      },
+      {
+        "label": "registry-whale-widget",
+        "shape": "real-registry",
+        "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured"
+      },
+      {
+        "label": "synthetic-missing",
+        "shape": "synthetic-missing-package",
+        "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured"
+      },
+      {
+        "label": "synthetic-bogus-version",
+        "shape": "synthetic-bogus-version",
+        "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured"
+      },
+      {
+        "label": "synthetic-private-registry",
+        "shape": "synthetic-unreachable-registry",
+        "assertion_shape": "boot-sampled:failed,client-rendered:unmeasured,http-served:failed,inventory-active:failed,namespace-diff:unmeasured"
+      }
+    ]
+  },
+  "limits": [
+    "synthetic failures (missing package, bogus version, unreachable registry) are labeled by shape; they are not evidence about real plugin quality",
+    "each run is embedded verbatim (already redacted by record_probe) with its own sha256",
+    "boot→sample is the only timing judged against the 20s budget; install and render are separate segments",
+    "n is still small: a percentage is a description of this batch, not a population estimate"
+  ]
+}

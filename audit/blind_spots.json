@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R14 (2026-10-28)",
+  "stand": "R16 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -176,6 +176,13 @@
       "cannot_see": "probe 的沙盒 profile 是**空模板**（`dsh-base` + `dsh-web-app` + 候选），不是用户真实 profile 的副本。因此它回答的是「装进模板 profile 会不会挂」，不是「装进**我的**组合会不会挂」——后者还需要把用户的 bundle 集合与依赖复制进沙盒（安装耗时与网络都不可忽略）",
       "mitigation": "R14 起的产物在 `sandbox.profile` 与 `limits[]` 里写明这是模板 profile；对外口径不得说「在你机器上实测」。补全路径：T-304",
       "owner": "probe/plan"
+    },
+    {
+      "id": "BS-25",
+      "area": "probe/readiness-window",
+      "cannot_see": "「起得来但还没开始服务」与「起不来」在探针里长得一样：矩阵实测 `dsh-whale-widget@0.4.2`（7.2MB、带 web client）在 12.3s 写出样本，随后 5s 内 Host 从未打印 `?token=` URL，`fetch failed` → 结论 `blocked`；同时探针自己的 hook 报 `cannot get required service \"loader\" in inactive context`。这两件事都指向「树还没进入 active」，不一定是插件坏了。当前 http 就绪窗口（样本后 5s）对慢候选偏短，且 hook 早于树 active 时会把自己的失败算成候选失败",
+      "mitigation": "R16 起把形状记下来：`render.reason` 写明「Host 没打印 URL」，矩阵 `shapes` 区分 `boot-sampled:failed`；下一步 T-308 把就绪窗口改成「Host 打印 URL 为准 + 上限可配」，并让 hook 在 `inactive context` 时重试而不是直接失败（重试耗尽 → unknown + missing.inventory，不得算 blocked）",
+      "owner": "probe"
     }
   ]
 }

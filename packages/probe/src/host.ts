@@ -286,6 +286,14 @@ export function readRuntimeVersion(input: { dshMain: string; timeoutMs: number; 
 export interface InstallResult {
   readonly exitCode: number | null
   readonly detail: string
+  /**
+   * Registry endpoints the package manager actually tried when the install failed.
+   *
+   * WHY: T-305b's whole point is "name the source". The launcher only prints the path of a
+   * diagnostics log, so the endpoint lives inside that file. We extract URLs, strip
+   * credentials/query/fragment, and publish at most a few — never the log itself.
+   */
+  readonly endpoints?: readonly string[]
 }
 
 /**
@@ -311,7 +319,41 @@ export function runInstall(input: {
   })
   const text = `${run.stdout ?? ''}${run.stderr ?? ''}`.trim()
   const lastLine = text.split(/\r?\n/).filter((line) => line.trim() !== '').slice(-1)[0] ?? ''
-  return { exitCode: run.status, detail: lastLine.slice(0, 240) }
+  return { exitCode: run.status, detail: lastLine.slice(0, 240), endpoints: failureEndpoints(text) }
+}
+
+/**
+ * Endpoints named by a failed install, taken from the diagnostics log when the launcher
+ * points at one. Pure and exported so the sanitising rules are testable without a sandbox.
+ */
+export function failureEndpoints(output: string): readonly string[] {
+  const diagnostics = /diagnostics:\s*(.+?\.log)/.exec(output)?.[1]
+  let text = output
+  if (diagnostics !== undefined) {
+    try {
+      text = `${text}\n${readFileSync(diagnostics.trim(), 'utf8').slice(0, 64 * 1024)}`
+    } catch {
+      // The log is optional; the output itself may still carry the URL.
+    }
+  }
+  const found = new Set<string>()
+  for (const match of text.matchAll(/https?:\/\/[^\s'"<>)\]]+/g)) {
+    // pnpm writes `http://host/pkg: error …`; trailing punctuation is not part of the URL.
+    const raw = match[0].replace(/[.,;:]+$/, '')
+    try {
+      const url = new URL(raw)
+      // Strip credentials, query and fragment: a private registry URL can carry a token.
+      url.username = ''
+      url.password = ''
+      url.search = ''
+      url.hash = ''
+      found.add(url.toString())
+    } catch {
+      // Not a URL we can parse; do not publish a half-redacted string.
+    }
+    if (found.size >= 5) break
+  }
+  return [...found]
 }
 
 export interface HttpProbeResult {

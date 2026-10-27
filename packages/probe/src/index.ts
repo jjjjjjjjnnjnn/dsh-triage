@@ -12,6 +12,7 @@ export { buildProbePlan, validateProbePlan } from './plan.js'
 export {
   bootAndSampleHost,
   dshMainOf,
+  failureEndpoints,
   killTree,
   probeHttp,
   readRuntimeVersion,

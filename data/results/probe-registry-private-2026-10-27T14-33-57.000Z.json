@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-27T14:33:57.000Z",
+  "label": "registry-private",
+  "expectation": "blocked",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "dsh-cost-meter@1.9.41",
+    "package": "dsh-cost-meter",
+    "kind": "registry",
+    "resolved": {
+      "version": "1.9.41",
+      "claim": "registry-metadata (not verified against the tarball)",
+      "license": "MIT",
+      "unpacked_size": 3479477,
+      "integrity": "sha512-IPRi0qMWVmVDA1sOtkJ9moXTh8JCisNefa+4AlB53B5MbbB3/8jfAH/d3xR1IzMv234xdvvnQxk4xxPAPP5BAg==",
+      "tarball": "https://registry.npmjs.org/dsh-cost-meter/-/dsh-cost-meter-1.9.41.tgz",
+      "deprecated": null,
+      "dependencies": 2
+    }
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463",
+    "profile": "web",
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "preinit": {
+      "fixture": {
+        "exit": 0,
+        "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463\\profiles\\web"
+      },
+      "npmrc": {
+        "registry": "http://127.0.0.1:1/",
+        "bytes": 29,
+        "written": true
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 167,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "install",
+      "status": "failed",
+      "ms": 78887,
+      "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cost-meter-1.9.41-c419c463\\profiles\\web\\.plugin-manager\\logs\\operation-y1eTkB\\pnpm.log · tried http://127.0.0.1:1/dsh-cost-meter",
+      "exitCode": 1
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 19,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": 78887,
+    "bootToSampleMs": null,
+    "httpMs": null,
+    "renderMs": null,
+    "cleanupMs": 19
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "failed",
+      "detail": "no sample"
+    },
+    {
+      "id": "http-served",
+      "status": "failed",
+      "detail": "not probed"
+    },
+    {
+      "id": "inventory-active",
+      "status": "failed",
+      "detail": "no sample"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "unmeasured",
+      "detail": "render check not requested"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": null,
+    "entries": null,
+    "wait_ms": null,
+    "candidate_rows": [],
+    "excluded": [],
+    "error": null
+  },
+  "http": null,
+  "readiness": null,
+  "render": {
+    "status": "unmeasured",
+    "reason": "render check not requested"
+  },
+  "install": {
+    "lockfile": {
+      "present": true,
+      "bytes": 373,
+      "sha256": "861f50178a35f2ce5d63afd4194dcaba178f4363c90cde10ff472fabcfcc9d8e"
+    },
+    "endpoints": [
+      "http://127.0.0.1:1/dsh-cost-meter"
+    ]
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "blocked",
+  "confidence": {
+    "level": "high",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-install-failed",
+      "severity": "block",
+      "messageId": "probe.install-failed",
+      "params": {
+        "step": "install",
+        "exit": 1
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-27T14:33:57.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-cleanup",
+      "tier": "measured-local",
+      "source": "sandbox removed · port closed",
+      "method": "directory + port check",
+      "at": "2026-10-27T14:33:57.000Z"
+    }
+  ],
+  "missing_evidence": [],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe"
+  ]
+}

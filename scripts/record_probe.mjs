@@ -29,7 +29,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { makeRedactor, redactDeep } from './lib/live.mjs'
-import { buildProbePlan, executeProbe, judgeProbe } from '../packages/probe/dist/index.js'
+import { buildProbePlan, executeProbe, judgeProbe, runInstall, scrubbedEnv } from '../packages/probe/dist/index.js'
 import { candidatePackageName, normalizeCandidateSpec, probeScratchRoot, realProbeDeps } from '../packages/plugin/dist/probe-run.js'
 
 const argv = process.argv.slice(2)
@@ -48,7 +48,7 @@ if (stamp === null) {
 
 const rawCandidate = String(argOf('--candidate', ''))
 if (rawCandidate === '') {
-  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--stamp <iso>]\n')
+  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--npmrc-registry <url>] [--stamp <iso>]\n')
   process.exit(2)
 }
 const candidate = normalizeCandidateSpec(rawCandidate)
@@ -65,6 +65,13 @@ const outDir = pathFor(String(argOf('--out', 'data/results')))
 const realDshHome = pathFor(String(argOf('--dsh-home', join(process.env['USERPROFILE'] ?? homedir(), '.dsh'))))
 const browser = argOf('--browser', null)
 const registryOverride = argOf('--registry', null)
+/**
+ * T-305b: make the PROFILE's registry unreachable. Env-level `NPM_CONFIG_REGISTRY` is
+ * neutralised by the launcher (R15 F19) but `<profile>/.npmrc` is honoured (R16 F24).
+ * The profile only exists after its first install, so we initialize it with a local
+ * fixture first; that fixture is recorded as `sandbox.preinit`, never as the candidate.
+ */
+const npmrcRegistry = argOf('--npmrc-registry', null)
 
 const candidatePackage = candidatePackageName(candidate)
 if (candidatePackage === null) {
@@ -133,8 +140,36 @@ if (!plan.ok) {
   process.exit(3)
 }
 
+/**
+ * Initialize the profile (and optionally point it at a different registry) BEFORE the
+ * measured install. Both actions are recorded, because a probe that quietly prepared the
+ * sandbox would be hiding part of the experiment.
+ */
+const preinit = { fixture: null, detail: null, npmrc: null }
+if (npmrcRegistry !== null) {
+  const fixture = abs('tests/fixtures/probe/ok-plugin')
+  const env = scrubbedEnv(process.env, { DSH_HOME: plan.value.sandboxHome })
+  const initialized = runInstall({
+    dshMain,
+    dshHome: plan.value.sandboxHome,
+    profile,
+    candidate: fixture,
+    timeoutMs: 180_000,
+    env,
+  })
+  preinit.fixture = { exit: initialized.exitCode, detail: initialized.detail }
+  if (initialized.exitCode !== 0) {
+    process.stderr.write(`could not initialize the sandbox profile for --npmrc-registry: ${initialized.detail}\n`)
+    process.exit(3)
+  }
+  const npmrcPath = join(plan.value.sandboxProfileDir, '.npmrc')
+  const text = `registry=${npmrcRegistry}\n`
+  writeFileSync(npmrcPath, text, 'utf8')
+  preinit.npmrc = { registry: npmrcRegistry, bytes: Buffer.byteLength(text, 'utf8'), written: existsSync(npmrcPath) }
+}
+
 // Capture the lockfile the install produced, before `executeProbe` deletes the sandbox.
-const installFacts = { lockfile: null }
+const installFacts = { lockfile: null, endpoints: [] }
 const deps = realProbeDeps({
   ...(browser === null ? {} : { browser }),
   ...(registryOverride === null ? {} : { baseEnv: { ...process.env, NPM_CONFIG_REGISTRY: registryOverride } }),
@@ -144,6 +179,7 @@ const instrumentedDeps = {
   ...deps,
   install: async (input) => {
     const result = await baseInstall(input)
+    installFacts.endpoints = [...(result.endpoints ?? [])]
     const profileDir = join(input.dshHome, 'profiles', input.profile)
     const lockfile = join(profileDir, 'pnpm-lock.yaml')
     installFacts.lockfile = existsSync(lockfile)
@@ -182,6 +218,13 @@ const artifact = {
     profile: plan.value.profile,
     overlap_check: 'disjoint (validateProbePlan)',
     env_scrubbed: true,
+    preinit:
+      preinit.npmrc === null && preinit.fixture === null
+        ? null
+        : {
+            fixture: preinit.fixture === null ? null : { exit: preinit.fixture.exit, detail: redact(preinit.fixture.detail ?? '') },
+            npmrc: preinit.npmrc === null ? null : { registry: String(preinit.npmrc.registry), bytes: preinit.npmrc.bytes, written: preinit.npmrc.written },
+          },
   },
   steps: run.steps.map((step) => ({ ...step, detail: step.detail === null ? null : redact(step.detail) })),
   timings: run.timings,
@@ -220,7 +263,11 @@ const artifact = {
                   html_bytes: run.render.signals.htmlBytes,
                 },
         },
-  install: { lockfile: installFacts.lockfile },
+  install: {
+    lockfile: installFacts.lockfile,
+    // T-305b: which endpoints the package manager actually tried (sanitised in host.ts).
+    endpoints: installFacts.endpoints,
+  },
   cleanup: {
     removed: run.cleanup.removed,
     port_closed: run.cleanup.portClosed,

@@ -160,7 +160,7 @@ export interface CleanupInput {
 export interface ProbeExecDeps {
   now(): number
   readRuntimeVersion(input: RuntimeReadInput): Promise<{ version: string | null; detail: string }>
-  install(input: InstallInput): Promise<{ exitCode: number | null; detail: string }>
+  install(input: InstallInput): Promise<{ exitCode: number | null; detail: string; endpoints?: readonly string[] }>
   /**
    * `http` is the readiness measured *before* the Host was killed. It is optional so a
    * fake can omit it; when present, the executor records it instead of probing a port
@@ -293,7 +293,16 @@ async function runSequence(
       })
       return result.exitCode === 0
         ? { status: 'passed' as const, detail: result.detail, exitCode: result.exitCode }
-        : { status: 'failed' as const, detail: result.detail, exitCode: result.exitCode }
+        : {
+            status: 'failed' as const,
+            // Naming the endpoint is the difference between "install failed" and "install
+            // failed because this profile points at a registry that does not answer".
+            detail:
+              result.endpoints === undefined || result.endpoints.length === 0
+                ? result.detail
+                : `${result.detail} · tried ${result.endpoints.join(', ')}`,
+            exitCode: result.exitCode,
+          }
     })
     if (run.abortedAt !== null) return
   } else {

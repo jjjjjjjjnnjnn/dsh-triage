@@ -40,6 +40,7 @@
 | T-601 | 上架文案（zh/en）+ 提交 3 渠道 | 1.0 | arbiter | 功能完成 | `gate_release --publish` 绿 + 2 渠道收录 | ⬜ |
 | T-602 | 案例帖 ×3（消失的工具 / 白屏 / 升级后起不来） | 增长 | researcher | T-101 | 每篇含真实 SSOT 证据 | ⬜ |
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
+| T-308 | 就绪窗口与 hook 时序：慢候选不得被写成 blocked | M3 | implementer | T-305/T-308 | Host 打印 URL 为准 + 窗口可配；hook 在 `inactive context` 时重试，耗尽只能 `unknown` + `missing.inventory` | ⬜ **R16 发现（`BS-25` / F25）**：矩阵里 `dsh-whale-widget@0.4.2` 12.3s 出样本、5s 内无 URL → 被判 blocked，但根因可能是树未 active |
 | T-304 | probe 对「用户自己的 bundle 集合」取样（现在只测空模板 profile） | M3 | implementer | T-301 | 用 profile 副本 + 依赖安装跑一次，能回答「加到**我的**组合里会不会挂」；当前只能回答「加到模板 profile 里」 | ⬜ R14 诚实边界（`docs/specs/M3-probe.md` §9） |
 | T-305 | registry 候选的安装形状（网络、tarball、私有源） | M3 | implementer | T-301 | 至少一次真实 npm 来源的 probe；记录耗时与失败形状（本轮只有本地路径，0.58–0.64s） | ✅ **R15 完成（部分）**：真实安装 **5.4s**（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）+ E404 / 版本不存在两种 `blocked`；`--resolved` 记 `license/integrity/unpackedSize/lockfile`；F18/F19 发现「装成功 ≠ 走过网络」「env 级 registry 覆盖被中和」→ 私有源形状拆成 `T-305b` |
 | T-305b | 私有源 / 不可达 registry 的失败形状（profile 级配置） | M3 | implementer | T-305 | 用 profile 级 `.npmrc` 让 registry 真的不可达，产出 `probe.install-failed` 并点名源 | 🟨 **机制已验证（R16 spike，`M3-probe.md` F24）**：profile 级 `.npmrc` 会被 launcher 采纳（`ERR_PNPM_...NETWORK_ERROR`），env 级不会（F19）。实现 = `record_probe --npmrc-registry <url>`：先用本地 fixture 初始化 profile → 写 `<profile>/.npmrc` → 装候选 → 落产物 |

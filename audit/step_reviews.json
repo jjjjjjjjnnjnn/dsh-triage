@@ -2104,6 +2104,81 @@
         "sha256": "68a1ef4d1b431a2c515917ce3f0e6608e6b5ff5d76ab63208ea26e440637c38d",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 196）"
       }
+    },
+    {
+      "id": "R16-S6",
+      "batch": "R16",
+      "step": "T-305b：让 profile 级 registry 真的不可达，并让产物点名它试过哪个源",
+      "changed": [
+        "scripts/record_probe.mjs",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "tests/unit/probe-exec.test.ts",
+        "docs/specs/M3-probe.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：`--npmrc-registry` 先本地 fixture 初始化 profile（记录在 `sandbox.preinit`），再写 `<profile>/.npmrc`，然后才跑被测安装；产物 `install.endpoints` 从 launcher 的 diagnostics 日志里抽出失败端点（去凭据/查询串/片段、尾随标点），实测得到 `http://127.0.0.1:1/dsh-cost-meter`。对比：同一候选在默认源下 `go`（F21），指向死源后 `blocked`",
+        "reproducibility": "PASS：单测新增 4 条（端点抽取/凭据剥离/空列表/尾标点）；`record_probe` 的 `--expect blocked` 未满足即 exit 1",
+        "licence": "PASS：候选仍是 MIT、pin 版本、只在临时沙盒执行；新增的日志解析只读本地 diagnostics 文件，不上传",
+        "ssot": "PASS：产物 `probe-registry-private-…json` 记录 `sandbox.preinit`（fixture exit / .npmrc 字节数）与 `install.endpoints`；旧的一份（未含端点）已删除并重采，删除动作记在本条",
+        "adversary": "反例：端点是从**失败日志**里抽的，成功安装时没有 `endpoints`；若 launcher 某天不再打印 diagnostics 路径，端点会退化成空数组而不是猜。另一个反例：install 耗时 78.9s（pnpm 对死源多次重试），虽然不计入 20s 口径，但会拖慢矩阵——已在矩阵里如实记录 `install_ms`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-cost-meter@1.9.41 --label registry-private --expect blocked --npmrc-registry http://127.0.0.1:1/ --stamp 2026-10-27T14:33:57.000Z",
+        "artifact": "data/results/probe-registry-private-2026-10-27T14-33-57.000Z.json",
+        "sha256": "70c04e4a8a078340cb029d247d15e419a2249b71f748a292cf1c53fa1257eea8",
+        "outcome": "blocked；install 78.9s；endpoints=[http://127.0.0.1:1/dsh-cost-meter]；preinit fixture exit 0 + .npmrc 29 字节"
+      }
+    },
+    {
+      "id": "R16-S7",
+      "batch": "R16",
+      "step": "D2 分母：probe 矩阵（6 个候选，2 真 4 合成分支）首次真跑，暴露一个「慢 vs 坏」盲区",
+      "changed": [
+        "scripts/record_probe_matrix.mjs",
+        "tests/fixtures/probe/matrix-r16.json",
+        "audit/blind_spots.json",
+        "docs/specs/M3-probe.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：矩阵为每个候选跑一次 `record_probe`（独立 stamp、独立沙盒），把每次产物**逐字嵌入**汇总并记 sha256；汇总给出 `by_conclusion` / `cleanup_ok` / `boot_to_sample_ms` 分布 / `install_ms` 分布 / 每条的 `assertion_shape`。真跑结果：n=6（go 2 / blocked 4）、cleanup 6/6、boot→sample 12.3–14.3s（3 次，全部 <20s）、install 0.48–79.1s",
+        "reproducibility": "PASS：`--plan` 是仓内夹具（`tests/fixtures/probe/matrix-r16.json`），stamp 固定；单条失败不会中断整批（记录 exit 与 output_tail）",
+        "licence": "PASS：2 个真实候选都是 MIT + pin；4 个合成失败形状不执行第三方代码（缺失/假版本/死源）",
+        "ssot": "PASS：每批只有一份摘要进 SSOT（`probe-matrix-*`），单次运行产物写临时目录并嵌入摘要——避免给台账塞 N 个必须逐条引用的文件；摘要里每条都有自己的 sha256",
+        "adversary": "反例（本轮最重要）：`dsh-whale-widget@0.4.2` 的 `expect: go` **没有**满足 —— 12.3s 出样本，但 5s 内 Host 从未打印 URL，探针 hook 同时报 `cannot get required service \"loader\" in inactive context`。这说明「树还没 active」和「插件坏了」在探针里长得一样（`BS-25` / `T-308`），当前会写成 `blocked`。因此本批的 `2/4` **不能**被读成「50% 成功率」——4 个失败里有 3 个是刻意合成的，1 个是判据边界"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r16.json --dsh-main <sandbox>/bin.js --install <sandbox>/install --browser <chrome> --stamp 2026-10-27T14:36:20.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-27T14-36-20.000Z.json",
+        "sha256": "2bc16dbb1bc73a4960d9f56f3d403162a9488bf65492427cecf37c31efd4fd16",
+        "outcome": "n=6；go 2 / blocked 4；cleanup 6/6；boot→sample min 12.3s / median 13.3s / max 14.3s（3/3 <20s）；expectation_misses=1（whale-widget）"
+      }
+    },
+    {
+      "id": "R16-S8",
+      "batch": "R16",
+      "step": "T-305b + 矩阵落地后的全链快照：200 测试 / 9 门 / mutate 9/9",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：新增的端点抽取与矩阵都是旁路工具，没有改动 judgeProbe 的结论映射；200 测试全绿",
+        "reproducibility": "PASS：`--record --stamp` 可重放；矩阵与单次 probe 产物都在 SSOT 并被引用",
+        "licence": "PASS：零新依赖；真实候选仍 MIT + pin",
+        "ssot": "PASS：`data/results` 76 产物全部被 88 步台账引用",
+        "adversary": "反例：矩阵把 N 次运行嵌进一份摘要，读者必须相信我们的嵌入没有挑拣 —— 所以每条都带自己的 sha256，且 `shapes` 里原样列出失败断言；将来若要做人群统计，必须保留原始文件而不是只留摘要"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T14:42:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T14-42-00.000Z.json",
+        "sha256": "8af1ff977fc256f2490a19eea6be24aa0e368fbfc9731c0aca782ac0d52e1d1e",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 200）"
+      }
     }
   ]
 }
