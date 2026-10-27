@@ -34,7 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-28_R14.md`（本轮）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | **D2（probe 可行性）现在有了分布数据**：`boot→sample` 六次 **11.7 / 12.3 / 13.3 / 13.8 / 14.8 / 19.9s**——绿跑 3/3 都在 ≤20s 内，但最慢一次只剩 0.1s 余量，**D2 必须按分布判定**；清理 6/6；失败路径 2/2。仍缺「真实 registry 候选」（T-305）；T-302/T-303 未做；preset 的 broken/conditional 仍未真机化（`BS-20`） |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/*`；probe 使用 `%TEMP%/dsh-triage-probe/<slug>` 作为隔离 `DSH_HOME`，跑完必删 |
-| 交接快照（R14 收尾） | R14 = `806f770` + 本轮修复提交（见 `git log -3`）；`git status` 干净；`pnpm run verify` = **166 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用（66 步）；旧的三份 probe 产物因隐私修复（F-2）已删除并重采 |
+| 交接快照（R14 收尾） | R14 = `806f770`（交付）+ `b29e658`（交付后复核修复：F-1 沙盒逃逸 / F-2 用户名进 SSOT）；`git status` 干净；`pnpm run verify` = **166 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用（66 步）；旧的三份 probe 产物因隐私修复已删除并重采 |
 | 交接快照（R13 收尾） | R13 = `2a9e4c5`；142 测试 / 9 门全绿 / 9-9；`data/results` 46 产物 / 57 步 |
 
 ---
