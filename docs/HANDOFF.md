@@ -34,7 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-28_R14.md`（本轮）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | **D2（probe 可行性）现在有了第一组数**：单次 boot→sample 11.8–13.8s（≤20s 达标的 3/3），清理 3/3，成功路径 1/1 + 失败路径 2/2 —— 但「≥90% 成功率」还需要**真实候选**（registry 来源）才谈得上；T-302/T-303 未做；`BS-20` 的 preset broken/conditional 仍未真机化 |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/*`；probe 使用 `%TEMP%/dsh-triage-probe/<slug>` 作为隔离 `DSH_HOME`，跑完必删 |
-| 交接快照（R14 收尾） | R14 = 本轮提交（见 `git log -2`）；`git status` 干净；`pnpm run verify` = **163 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用 |
+| 交接快照（R14 收尾） | R14 = `806f770`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **163 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用（65 步） |
 | 交接快照（R13 收尾） | R13 = `2a9e4c5`；142 测试 / 9 门全绿 / 9-9；`data/results` 46 产物 / 57 步 |
 
 ---
