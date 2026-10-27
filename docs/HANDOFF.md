@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R8 (2026-10-27)｜当前批次：**R8 · 开源借鉴落地（副本来源归因 + 重复副本检测）+ 借鉴台账**（91 测试；9 门 9-9）
+> **Stand**: R8 (2026-10-27)｜当前批次：**R8 · 开源借鉴落地（副本来源归因 + 重复副本检测）+ 借鉴台账**（96 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -33,6 +33,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 证据 | `data/results/audit-2026-10-27T12-00-00.000Z.json`（2 rows / 1 duplicate group / 2 verdicts）· `inventory-2026-10-27T00-00-00.000Z.json`（相位层）· `gates-2026-10-27T12-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 23 个产物、30 个已审步骤 |
 | 审核报告 | `audit/AUDIT_2026-10-27_R8.md`（本轮）· `AUDIT_2026-10-27_R7.md` · `AUDIT_2026-10-26_R6.md` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（P1 未实现，见 §8） |
+| 交接快照（R8 收尾） | HEAD = `036ce97`（交接）；R8 主体/修正 = `62a2350` / `7455b62`；`git status` 干净；`pnpm run verify` = **96 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **23 产物 / 30 步**全被引用 |
 
 ---
 
@@ -127,7 +128,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 代码约定 | `docs/08-conventions.md` |
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
-| 本轮审核结论 | `audit/AUDIT_2026-10-26_R6.md`（R6，含 §10 独立复核）· `AUDIT_2026-10-26_R5.md` · `R4` · `R3` |
+| 本轮审核结论 | `audit/AUDIT_2026-10-27_R8.md`（R8，含 §7 独立复核与修正）· `AUDIT_2026-10-27_R7.md`（§8 独立复核）· `AUDIT_2026-10-26_R6.md`（§10 独立复核）· `R5` · `R4` · `R3` |
 | 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256） |
 
 ---
@@ -145,10 +146,14 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `T-201 P1`：Host 内 `compat_inventory` 工具（相位真机来源） | implementer | 本机可启动 0.2.x profile → P1 导出的快照喂给 `audit --snapshot` 与 Host 内结论一致 |
 | `B1/B2` 真机采样（`BS-15`）：相位层目前只有合成样本 | verifier | 产出一份 `sample.kind=live` 的 `data/results/inventory-*.json`，与合成样本并列 |
 | `T-112` preset 维度：同一 entry 在不同 preset 下相位不同 | implementer | 分开出结论，禁取「最乐观值」；`conditional` 行标 `unknown`（当前先出 `unknown`/`runtime.preset-unjudged`，不静默） |
+| `T-116` params 占位符完整性 | implementer | `gate_verdict_contract` 增断言：含 `{占位符}` 的 messageId 必须由 `reasons[].params` 提供，缺一即红 |
+| `T-113` attw 式入口可加载性矩阵 | implementer | 先在沙箱实测 loader 解析模式（两种），再实现；否则会造假警告 |
+| `T-114` `triage bisect`（VS Code 二分思路） | implementer | 依赖 M3 probe 能稳定启停一次 boot |
+| `T-115` 版本区间对齐建议（syncpack 思路） | implementer | 与 T-109 合并设计，先有 dist-tag 失步信号 |
+| `BS-16` 来源/副本扫描的边界：`overrides`/lockfile 手钉 / 两层以上嵌套不可见；未知版本不参与比较 | implementer | 出现误判先补样本再改扫描器；T-113 与 probe 是补全路径 |
 | 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe（同时解锁 P1 与 B1） |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
 | 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public`（建议等 D2 后再定） |
-| 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe |
 | `audit` 与 `why` 行级结论不一致（T-105） | implementer | 两命令对同一 profile 交叉一致（e2e 断言） |
 | T-103 金标扩容（冻结区） | HUMAN 签字后 implementer | 6 条新金标进 `data/gold/`，parity 门绿 |
 | 双 roadmap 重叠（`docs/06-roadmap.md` vs `docs/ROADMAP.md`） | HUMAN 决定 | 合并或明确分工后归档其一（T-110，需签字，因为要删文档） |
