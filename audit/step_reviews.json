@@ -1886,7 +1886,7 @@
     {
       "id": "R15-S11",
       "batch": "R15",
-      "step": "文档同步之后复跑全链：188 测试 / 9 门 / mutate 9/9，并把最终状态写成产物",
+      "step": "文档同步之后复跑全链：190 测试 / 9 门 / mutate 9/9，并把最终状态写成产物",
       "changed": [
         "README.md",
         "README.zh-CN.md",
@@ -1894,7 +1894,7 @@
         "audit/AUDIT_2026-10-27_R15.md"
       ],
       "review": {
-        "correctness": "PASS：同步后的仓库仍然 188 测试全绿、9 门全绿；README 双语、HANDOFF、AGENTS、INDEX、BACKLOG、ROADMAP 的口径都改成「client-render 已测、namespace-diff 未测」",
+        "correctness": "PASS：同步后的仓库仍然 190 测试全绿、9 门全绿；README 双语、HANDOFF、AGENTS、INDEX、BACKLOG、ROADMAP 的口径都改成「client-render 已测、namespace-diff 未测」",
         "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T13:45:00.000Z` 可重放；这是文档同步后的最终快照（13:20 那份是同步前的）",
         "licence": "PASS：只改本仓文档与自产产物，零第三方依赖、零网络",
         "ssot": "PASS：13:20 与 13:45 两份 gates 产物都被台账引用，`data/results` 无孤儿；`.sha256` 为纯 hash",
@@ -1904,7 +1904,80 @@
         "command": "node scripts/gate.mjs --record --stamp 2026-10-27T13:45:00.000Z",
         "artifact": "data/results/gates-2026-10-27T13-45-00.000Z.json",
         "sha256": "62ad230925412997c1b8311a5a68ab811706e5d22f2da40d9e0070b1fc60849b",
-        "outcome": "ALL GREEN · 9 gates（同轮 mutate = 9/9 CAUGHT；verify = 188 tests）"
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate = 9/9 CAUGHT；verify = 190 tests）"
+      }
+    },
+    {
+      "id": "R15-S12",
+      "batch": "R15",
+      "step": "交付后独立复核（只读、不看实现）抓到 3 个 CRITICAL + 3 个 MAJOR，当场修并留红样本",
+      "changed": [
+        "packages/probe/src/render.ts",
+        "packages/probe/src/host.ts",
+        "packages/plugin/src/cli.ts",
+        "packages/core/src/messages.ts",
+        "scripts/record_probe.mjs",
+        "scripts/record_render_fixture.mjs",
+        "tests/unit/render.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS（修后）：① 渲染线程卡死不再挂死 —— 命令级超时 + 剩余预算封顶，实测 15.0s / 15s 预算返回（修前 4s 预算挂 30s+ 不返回）；② 浏览器错误页不再被判 `rendered` —— 判定改为**必须存在 `#root`/`#app` 挂载点**，无挂载点 → `inconclusive`（修前 Chrome 自己的 `ERR_CONNECTION_REFUSED` 页拿到 77 字符 + `rendered`）；③ CLI 真实入口终于会测渲染 —— `flags.browser` 默认 `null` 被当成「没有浏览器」，改为未指定时自动发现，真跑得到 `client-rendered=passed`；④ 有挂载点但零文本（canvas/icon-only）→ `inconclusive`，不再误判 `blank`；⑤ `renderMs` 文案改成「从启动浏览器算起」；⑥ 伪 `npm:` 别名与非 pin spec 被拒；⑦ 锁文件 `bytes` 用真实字节数；⑧ `resolved` 标注「registry 声明，未对 tarball 校验」",
+        "reproducibility": "PASS：新增 N16/N17/N18 三个可重放形态（`--mode error|blocked` + 单测），错误页 6137ms、卡死页 15009ms 均落 SSOT；单测从 188 → 190（错误页/404/零文本/canvas 各一条）",
+        "licence": "PASS：修复全部在本仓代码与单测内，未引入依赖、未下载任何 tarball",
+        "ssot": "PASS：本轮新增两份 `render-fixture-{error,blocked}` 产物；旧的三份（blank/rendered/ok-render）未被改写，判定口径变化写在 spec §5/§8/§9 与 `docs/05` §2e",
+        "adversary": "反例自查：修完「必须存在挂载点」后，如果某天上游把挂载点改成 `#app-root`，判定会把健康页面判成 inconclusive（不是 blocked）——这是安全的失败方向，已写进 spec §9；另：文本稳定判定只读两次，理论上仍可能把「恰好两次同长度」的骨架当稳定，已知边界"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blocked --expect inconclusive --browser \"C:/Program Files/Google/Chrome/Application/chrome.exe\" --stamp 2026-10-27T13:30:00.000Z",
+        "artifact": "data/results/render-fixture-blocked-2026-10-27T13-30-00.000Z.json",
+        "sha256": "83cdc7b524799d1c52d543cd27cbb6f409aa970a21fe1fb3c9ce4521d3349f81",
+        "outcome": "inconclusive（the page never answered a DOM query within 15000ms），15009ms 返回 —— 不挂死"
+      }
+    },
+    {
+      "id": "R15-S13",
+      "batch": "R15",
+      "step": "把「浏览器错误页不得算作插件渲染」钉成可复算的红样本（N16）",
+      "changed": [
+        "scripts/record_render_fixture.mjs",
+        "docs/specs/M3-probe.md",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：指向未监听端口 → Chrome 错误页（body 有子节点、76 字符、无 `#root`）→ `inconclusive: no #root or #app mount point`；修复前同一形状会被判 `rendered` 并给 `go`",
+        "reproducibility": "PASS：`--mode error --expect inconclusive` 可重放；判定输入（signals）与结论都进产物，可离线复算",
+        "licence": "PASS：错误页来自本机浏览器，不引入第三方内容",
+        "ssot": "PASS：`render-fixture-error-…json` 与 blank/rendered/blocked 同 schema（`sample.kind=render-control`）",
+        "adversary": "反例：真实 Host 若把挂载点渲染在 shadow DOM 或换 id，也会落 `inconclusive` —— 这不是「绿」，产物会写 `unknown` + `missing.render`，不会被当成通过（spec §9 已记）"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode error --expect inconclusive --browser \"C:/Program Files/Google/Chrome/Application/chrome.exe\" --stamp 2026-10-27T13:29:50.000Z",
+        "artifact": "data/results/render-fixture-error-2026-10-27T13-29-50.000Z.json",
+        "sha256": "679329d9a9b50485fafd803448cbb7e541a1095e02f53baebe62e8d8e1e7eb0a",
+        "outcome": "inconclusive（no #root or #app mount point），6137ms"
+      }
+    },
+    {
+      "id": "R15-S14",
+      "batch": "R15",
+      "step": "复核修复后的最终快照：190 测试 / 9 门 / mutate 9/9，判据与文档一起对齐",
+      "changed": [
+        "docs/specs/M3-probe.md",
+        "docs/05-verdict-contract.md",
+        "audit/AUDIT_2026-10-27_R15.md"
+      ],
+      "review": {
+        "correctness": "PASS：修复后 190 测试全绿、9 门全绿、mutate 9/9；渲染断言的三态（rendered/blank/unmeasured）与「无挂载点→inconclusive」都在单测与真浏览器红样本里对齐",
+        "reproducibility": "PASS：本轮共四份 gates 快照（13:20 / 13:45 / 13:55 …），每份都可由 `--record --stamp` 重放；旧快照保留作历史，不删",
+        "licence": "PASS：只跑本仓门禁与测试，零网络、零新依赖",
+        "ssot": "PASS：`data/results` 68 产物全部被 80 步台账引用；spec F13–F21 与 N11–N18 都能指到具体产物",
+        "adversary": "反例：修了「错误页假绿」之后，最危险的失败方向变成**假红**（把健康页面判 blocked）——因此无挂载点/零文本只能落 inconclusive，任何 inconclusive 都把 go 压成 unknown，而不是直接 blocked"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T13:55:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T13-55-00.000Z.json",
+        "sha256": "e052acd9d736ffe67ca40cabb0759adb20a4a8cc3c4fae136ac636f8ed42a22a",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 190）"
       }
     }
   ]

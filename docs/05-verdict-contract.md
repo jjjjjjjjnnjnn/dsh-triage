@@ -134,8 +134,8 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 |---|---|
 | `go` **只**表示「候选装上了 + Host 起了 + 端口应答了 + 候选行 active（+ 页面挂载出可见 DOM）」 | `packages/probe/src/exec.ts#judgeProbe`；文案 `probe.served` / `probe.row-active` / `probe.render-ok` |
 | 不判安全、不判功能、不判 UI 可用 | `namespace-diff` 仍**必须**是 `unmeasured`（T-303）；`client-rendered` 自 R15 起**可测**（真浏览器 + CDP），无浏览器时必须 `unmeasured`，不许写成 passed |
-| 有应答但页面没挂载出内容（白屏）→ `blocked`（`probe.render-blank`） | T-302；渲染判定是纯函数 `judgeRender`，单测钉住 6 种 DOM 形状 |
-| 渲染检查得不出结论（浏览器崩了/超时）→ 至多 `unknown` + `missing.render`（`probe.render-unmeasured`），不允许判 `go` | 无证据只能 unknown（铁律 1） |
+| 有应答但页面没挂载出内容（白屏）→ `blocked`（`probe.render-blank`） | T-302；渲染判定是纯函数 `judgeRender`，单测钉住挂载点存在性、空根、零文本、错误页四种形状 |
+| 渲染检查得不出结论（浏览器崩了/超时/浏览器错误页/无挂载点）→ 至多 `unknown` + `missing.render`（`probe.render-unmeasured`），不允许判 `go` | 无证据只能 unknown（铁律 1）；R15 复核实测：把 body 子节点当判据会让 Chrome 自己的错误页拿到 `rendered` |
 | 候选行必须**唯一**：0 行 → `blocked`（`probe.row-missing`）；≥2 行 → `unknown`（`probe.row-ambiguous`） | 不猜归属（与 `runtime.ambiguous-entry` 同一条纪律） |
 | 候选行存在但相位不是 `active` → `blocked`（`probe.row-inactive`），并点名相位 | `failed` 与 `null` 是两种失败形状，不许合并成「没起来」 |
 | 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |

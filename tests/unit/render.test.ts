@@ -27,18 +27,27 @@ test('a mounted root with visible text is rendered', () => {
 test('an empty mount root is a white screen, not a pass', () => {
   const judgement = judgeRender(signals({ rootChildren: 0, textLength: 0, htmlBytes: 3_000 }))
   assert.equal(judgement.state, 'blank')
+  assert.match(judgement.detail, /has no children/)
+})
+
+test('a mounted root with children but no text is inconclusive, not blank', () => {
+  // An icon-only or canvas-only panel is a real UI with no text; calling it blank would
+  // publish a false "white screen" (R15 review finding).
+  const judgement = judgeRender(signals({ rootChildren: 2, textLength: 0 }))
+  assert.equal(judgement.state, 'inconclusive')
   assert.match(judgement.detail, /no visible text/)
 })
 
-test('a root with children but no text is still blank', () => {
-  const judgement = judgeRender(signals({ rootChildren: 2, textLength: 5 }))
-  assert.equal(judgement.state, 'blank')
-  assert.match(judgement.detail, /only 5 visible chars/)
+test('a browser error page is not a rendered plugin', () => {
+  // Measured: Chrome's ERR_CONNECTION_REFUSED page has body children and 77 visible chars
+  // and no #root. Judging body children scored the browser's page as `rendered`.
+  const judgement = judgeRender(signals({ rootId: null, rootChildren: 0, bodyChildren: 3, textLength: 77, htmlBytes: 308_101 }))
+  assert.equal(judgement.state, 'inconclusive')
+  assert.match(judgement.detail, /no #root or #app mount point/)
 })
 
-test('a page without a #root/#app id is judged on body children', () => {
-  assert.equal(judgeRender(signals({ rootId: null, rootChildren: 0, bodyChildren: 3 })).state, 'rendered')
-  assert.equal(judgeRender(signals({ rootId: null, rootChildren: 0, bodyChildren: 0, textLength: 0 })).state, 'blank')
+test('a 404 page is not a rendered plugin either', () => {
+  assert.equal(judgeRender(signals({ rootId: null, bodyChildren: 1, textLength: 52 })).state, 'inconclusive')
 })
 
 test('an empty document is inconclusive, never blank or rendered', () => {
@@ -84,6 +93,12 @@ test('an empty or unrelated log yields no URL', () => {
 
 test('a localhost URL is accepted as well as 127.0.0.1', () => {
   assert.equal(extractHostUrl('ready at http://localhost:41234/?token=t')?.port, 41234)
+})
+
+test('a URL-safe Base64 token with . = % + is still recognised', () => {
+  // The narrower class dropped these and published "the Host printed no URL" (R15 review).
+  const stdout = 'dsh web: http://127.0.0.1:53997/?token=ab.cd%2Fef+gh==\n'
+  assert.equal(extractHostUrl(stdout)?.port, 53997)
 })
 
 /* -------------------------------- browser --------------------------------- */

@@ -205,7 +205,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
           render = await renderUrl({
             browser: options.render.browser,
             url: hostUrl.url,
-            scratchRoot,
+            // Keep the throwaway browser profile inside this run's scratch dir, so a killed
+            // probe cannot leave a browser profile behind under the shared temp root.
+            scratchRoot: probeDir,
             ...(options.render.timeoutMs === undefined ? {} : { timeoutMs: options.render.timeoutMs }),
           })
         }
@@ -214,11 +216,15 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     killTree(child)
     await new Promise((resolveWait) => setTimeout(resolveWait, 1200))
 
+    const stderrLine = stderr.trimEnd().split(/\r?\n/)[0] ?? ''
+    const stdoutLine = stdout.trimEnd().split(/\r?\n/)[0] ?? ''
     const host: HostObservation = {
       status: collected ? 'sampled' : 'no-sample',
       seconds,
       log_sha256: sha256Of(`${stdout}\n${stderr}`),
-      first_line: (stderr.trimEnd().split(/\r?\n/)[0] ?? stdout.trimEnd().split(/\r?\n/)[0] ?? '').slice(0, 240),
+      // Stderr first, stdout as the real fallback: a healthy `dsh web` prints its URL on
+      // stdout, so `?? ` on an always-string value would have hidden it (R15 review finding).
+      first_line: (stderrLine !== '' ? stderrLine : stdoutLine).slice(0, 240),
       // Kept short and only on failure: a blocked boot must explain itself, but a healthy
       // one should not carry a log into a publishable artifact.
       error_tail: collected ? null : stderr.trimEnd().slice(-1500),

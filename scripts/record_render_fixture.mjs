@@ -35,11 +35,11 @@ if (stamp === null) {
   process.exit(2)
 }
 const mode = String(argOf('--mode', 'blank'))
-if (mode !== 'blank' && mode !== 'rendered') {
-  process.stderr.write('usage: node scripts/record_render_fixture.mjs --mode <blank|rendered> [--browser <path>] [--expect <blank|rendered>] [--stamp <iso>]\n')
+if (!['blank', 'rendered', 'blocked', 'error'].includes(mode)) {
+  process.stderr.write('usage: node scripts/record_render_fixture.mjs --mode <blank|rendered|blocked|error> [--browser <path>] [--expect <state>] [--stamp <iso>]\n')
   process.exit(2)
 }
-const expectation = String(argOf('--expect', mode))
+const expectation = String(argOf('--expect', mode === 'blank' ? 'blank' : mode === 'rendered' ? 'rendered' : 'inconclusive'))
 const browser = findBrowser({ explicit: argOf('--browser', null) })
 if (browser === null) {
   process.stderr.write('no Chromium-family browser found; pass --browser <path> (the control must not fake a result)\n')
@@ -51,6 +51,12 @@ const PAGES = {
   // 200 + an empty mount point: this is what a white screen looks like over the wire.
   blank: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>triage blank fixture</title></head><body><div id="root"></div><script>console.error("the client half threw before it could mount")</script></body></html>`,
   rendered: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>triage rendered fixture</title></head><body><div id="root"><main><h1>mounted</h1><p>This page has a mounted root and more than twenty visible characters.</p></main></div></body></html>`,
+  // A renderer whose main thread never yields: the R15 review measured that an unbounded
+  // CDP await hung the whole probe (and the Host) past its budget.
+  blocked: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>triage blocked fixture</title></head><body><div id="root"></div><script>while (true) {}</script></body></html>`,
+  // `error` mode does not serve a page: it points the browser at a closed port, which is
+  // how Chrome's own ERR_CONNECTION_REFUSED page (body children + text, no #root) shows up.
+  error: '',
 }
 
 const server = createServer((request, response) => {
@@ -73,11 +79,16 @@ const port = await new Promise((resolvePort, reject) => {
 
 let check
 try {
-  check = await renderUrl({
-    browser,
-    url: `http://127.0.0.1:${port}/`,
-    scratchRoot: join(tmpdir(), 'dsh-triage-render-fixture'),
-  })
+  if (mode === 'error') {
+    // Nothing listens on port 1, so the browser paints its own error page.
+    check = await renderUrl({ browser, url: 'http://127.0.0.1:1/', scratchRoot: join(tmpdir(), 'dsh-triage-render-fixture') })
+  } else {
+    check = await renderUrl({
+      browser,
+      url: `http://127.0.0.1:${port}/`,
+      scratchRoot: join(tmpdir(), 'dsh-triage-render-fixture'),
+    })
+  }
 } finally {
   server.close()
 }
@@ -85,11 +96,12 @@ try {
 const judgement = judgeRender(check.signals)
 const expectationMet = judgement.state === expectation
 
+const servedUrl = mode === 'error' ? 'http://127.0.0.1:1/' : `http://127.0.0.1:${port}/`
 const artifact = {
   schema_version: 1,
   produced_by: 'scripts/record_render_fixture.mjs',
   generated_at: stamp,
-  sample: { kind: 'render-control', mode, served_at: `http://127.0.0.1:${port}/` },
+  sample: { kind: 'render-control', mode, served_at: servedUrl },
   expectation,
   expectation_met: expectationMet,
   render: {
@@ -112,7 +124,9 @@ const artifact = {
   judged: { state: judgement.state, detail: judgement.detail },
   limits: [
     'this is a detector control, not a measurement of any plugin',
-    'it proves the render judgement can fail on a 200 response with an empty mount point',
+    'blank: a 200 response with an empty mount point must be caught',
+    'error: a browser error page must not be scored as a rendered plugin',
+    'blocked: a renderer whose main thread never yields must still return within the budget',
     'the page is static; a real Host serving a broken client is a different shape (T-305 keeps collecting those)',
   ],
 }

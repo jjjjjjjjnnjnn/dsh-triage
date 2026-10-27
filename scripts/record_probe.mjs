@@ -74,8 +74,11 @@ if (candidatePackage === null) {
 const candidateKind = /^[A-Za-z]:[\\/]|^\//.test(candidate) || candidate.startsWith('file:') ? 'path' : 'registry'
 
 // ADR-0004: an external candidate is only accepted as an exact pin, so the artifact can
-// say which bytes ran. A range would make "it worked" unreproducible.
-if (candidateKind === 'registry' && !/^(@[^/]+\/)?[^@]+@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(candidate)) {
+// say which bytes ran. A range would make "it worked" unreproducible. `npm:` aliases are
+// stripped first: `npm:foo@1.2.3` installs `foo`, and fetching `/npm:foo/1.2.3` would 404
+// while still recording a "resolved" version that was never resolved (R15 review finding).
+const registrySpec = candidate.startsWith('npm:') ? candidate.slice('npm:'.length) : candidate
+if (candidateKind === 'registry' && !/^(@[^/:]+\/)?[^@:]+@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(registrySpec)) {
   process.stderr.write(
     `refusing an unpinned registry candidate "${candidate}": ADR-0004 requires name@x.y.z (got a range or a tag)\n`,
   )
@@ -85,9 +88,10 @@ if (candidateKind === 'registry' && !/^(@[^/]+\/)?[^@]+@\d+\.\d+\.\d+(?:-[0-9A-Z
 /** Registry metadata for the artifact (never the tarball itself — ADR-0004 §4/§5). */
 async function resolveRegistryFacts(spec) {
   if (candidateKind !== 'registry') return null
-  const at = spec.lastIndexOf('@')
-  const name = spec.slice(0, at)
-  const version = spec.slice(at + 1)
+  const pinned = spec.startsWith('npm:') ? spec.slice('npm:'.length) : spec
+  const at = pinned.lastIndexOf('@')
+  const name = pinned.slice(0, at)
+  const version = pinned.slice(at + 1)
   const registry = String(registryOverride ?? 'https://registry.npmjs.org').replace(/\/+$/, '')
   try {
     // A concrete version endpoint needs `application/json`; install-v1 answers 406 (R12 pitfall).
@@ -95,10 +99,13 @@ async function resolveRegistryFacts(spec) {
       headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(15_000),
     })
-    if (!response.ok) return { version, error: `HTTP ${response.status}` }
+    if (!response.ok) return { version: null, requested: version, error: `HTTP ${response.status}` }
     const manifest = await response.json()
     return {
       version: typeof manifest.version === 'string' ? manifest.version : version,
+      // These are the registry's CLAIMS, not a verification of the installed bytes: the
+      // tarball is never downloaded by this script (ADR-0004 §4/§5).
+      claim: 'registry-metadata (not verified against the tarball)',
       license: typeof manifest.license === 'string' ? manifest.license : null,
       unpacked_size: typeof manifest.dist?.unpackedSize === 'number' ? manifest.dist.unpackedSize : null,
       integrity: typeof manifest.dist?.integrity === 'string' ? manifest.dist.integrity : null,
@@ -107,7 +114,8 @@ async function resolveRegistryFacts(spec) {
       dependencies: Object.keys(manifest.dependencies ?? {}).length,
     }
   } catch (error) {
-    return { version, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) }
+    // No invented version: an unresolved fetch reports the error and no version.
+    return { version: null, requested: version, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) }
   }
 }
 
@@ -139,7 +147,7 @@ const instrumentedDeps = {
     const profileDir = join(input.dshHome, 'profiles', input.profile)
     const lockfile = join(profileDir, 'pnpm-lock.yaml')
     installFacts.lockfile = existsSync(lockfile)
-      ? { present: true, bytes: readFileSync(lockfile, 'utf8').length, sha256: sha256(readFileSync(lockfile, 'utf8')) }
+      ? { present: true, bytes: Buffer.byteLength(readFileSync(lockfile, 'utf8'), 'utf8'), sha256: sha256(readFileSync(lockfile, 'utf8')) }
       : { present: false }
     return result
   },

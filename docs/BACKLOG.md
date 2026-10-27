@@ -56,7 +56,7 @@
 | T-305 | `record_probe.mjs --resolved`（license/integrity/unpackedSize/tarball）+ lockfile 指纹 + `--browser`/`--registry`；真实候选 1 绿 2 红 | ✅ 部分 |
 | ADR | `docs/adr/0004`：外部候选取用边界（pin 版本 / 临时沙盒 / 不 vendor / 不判安全 / 失败即证据） | ✅ |
 | 发现 | F18 装成功不等于走网络（pnpm store）；F19 env 级 registry 覆盖被 launcher 中和；F20 元数据层分不出 E404/ETARGET | ✅ 交给 T-305b |
-| 测试 | +22（单测 16 render + 6 exec/plan），总 **188**；9 门 / `--mutate` 9/9 | ✅ |
+| 测试 | +22（单测 16 render + 6 exec/plan），总 **190**；9 门 / `--mutate` 9/9 | ✅ |
 
 ---
 

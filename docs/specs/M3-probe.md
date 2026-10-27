@@ -53,6 +53,8 @@
 | F19 | **环境变量级的 registry 覆盖被 launcher 中和**：换一个从未装过的候选（`dsh-cost-meter@1.9.41`）仍然 `go`，而我们自己的元数据 fetch 在同一 env 下 `fetch failed`。要测「私有源不可达」必须在 profile 级配置，环境变量不够 | `probe-registry-unreachable-fresh-2026-10-27T13-00-58.000Z.json`；本文件 §9 记未决 |
 | F20 | **元数据层分不出 E404 / ETARGET**：`/pkg/<不存在版本>` 也返回 HTTP 404，所以 `resolved.error` 对「包不存在」和「版本不存在」都是 `HTTP 404`；要区分只能读 pnpm 全文 stderr（当前只留最后一行） | `probe-registry-e404-…` 与 `probe-registry-etarget-…` 两份产物 |
 | F21 | 真实 registry 安装耗时 **5.4s**（450KB / 1 依赖，冷缓存），boot→sample **7.7s**，渲染 **3.9s**，清理 61ms | `data/results/probe-registry-ok-2026-10-27T12-59-01.000Z.json` |
+| F22 | **浏览器错误页有 body 子节点和文本，但没有 `#root`**：指向未监听端口时 Chrome 自己渲染 `ERR_CONNECTION_REFUSED` 页（76 字符），若按 body 子节点判就会拿到 `rendered` —— 所以判定必须要求 `#root`/`#app` 挂载点 | `data/results/render-fixture-error-2026-10-27T13-29-50.000Z.json`（交付后独立复核抓到） |
+| F23 | **卡死的渲染线程不回应 `Runtime.evaluate`**：`while(true)` 页面下第一次实现会无限挂（4s 预算跑了 30s+ 仍不返回）；加命令级超时 + 剩余预算封顶后，15s 预算下 **15.0s** 返回 `inconclusive` | `data/results/render-fixture-blocked-2026-10-27T13-30-00.000Z.json` |
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
@@ -110,7 +112,7 @@ runtime → install → boot → http → render → inventory → cleanup
 |---|---|---|
 | `boot-sampled` | 测 | 样本文件存在且可解析 |
 | `http-served` | 测 | `redirect:'manual'` 的状态码 |
-| `client-rendered` | **测（需浏览器）** | 真浏览器 + CDP 读 DOM：挂载点有子节点 + 可见文本 ≥20 字符 + `readyState` 非 `loading`；无浏览器 → `unmeasured` |
+| `client-rendered` | **测（需浏览器）** | 真浏览器 + CDP 读 DOM：**必须存在 `#root`/`#app` 挂载点**、其子节点 ≥1、可见文本 ≥20 字符、`readyState` 非 `loading`；无挂载点（浏览器错误页 / 非挂载文档）→ `inconclusive`；有挂载点但零可见文本（canvas/icon-only）→ `inconclusive`；无浏览器 → `unmeasured` |
 | `inventory-active` | 测 | 候选行的 `fiberPhase` |
 | `cleanup-complete` | 测 | 目录 + **所有** Host 用过的端口双重判据 |
 | `namespace-diff` | **unmeasured**（T-303） | 工具表面在 agent/preset 作用域（R13 的 `BS-21`） |
@@ -188,8 +190,11 @@ runtime → install → boot → http → render → inventory → cleanup
 | N11 | 静态页 `200 + 空 <div id="root">`（真浏览器） | `blank` → `blocked` + `probe.render-blank`（`scripts/record_render_fixture.mjs --mode blank`） |
 | N12 | 机器上没有浏览器 | `client-rendered: unmeasured` + 原因文本，**不得**是 passed/failed |
 | N13 | 渲染检查得不出结论（调试端口没开） | `unknown` + `missing.render`，不得判 `go` |
-| N14 | 只跑到第一帧（`readyState=interactive`）就收工 | 判定必须继续等 `complete`，否则骨架屏会被当成已渲染（F14） |
+| N14 | 只跑到第一帧（`readyState=interactive`）就收工 | 判定必须继续等 `complete`，且可见文本要**两次读数一致**才算稳定（F14） |
 | N15 | 就绪端口用 `plan.port` 而 Host 打印了另一个端口 | 以 Host 为准；`cleanup` 必须证明两个端口都关 |
+| N16 | 浏览器错误页（`ERR_CONNECTION_REFUSED`：有 body 子节点和文本，但没有 `#root`） | **`inconclusive`**，不得判 `rendered`（`--mode error`，R15 复核抓到的假绿） |
+| N17 | 渲染线程被卡死（`while(true)`） | 仍在预算内返回（实测 15.0s / 15s 预算）；命令级超时 + 剩余预算封顶，**不得挂死**（`--mode blocked`） |
+| N18 | 有挂载点但零可见文本（canvas/icon-only） | `inconclusive`，不得判 `blank`（否则冤枉真 UI） |
 
 ---
 
@@ -200,6 +205,7 @@ runtime → install → boot → http → render → inventory → cleanup
 | registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20） |
 | 私有源 / 不可达 registry 的失败形状 | **未测出**：环境变量级覆盖被 launcher 中和（F19），pnpm store 还会让「装成功」变成假象（F18）。要测必须走 profile 级配置 → 新增 `T-305b` |
 | `namespace-diff`（T-303） | 需要 agent/preset 作用域（T-202a），仍 `unmeasured` |
-| 渲染判据的强度 | 只判「挂载 + 可见文本 ≥20 字符」。骨架屏与内容区的区别靠「等 `readyState=complete`」近似，**不是**视觉回归；`24 字符` 的真实样本证明阈值不能更高（`probe-registry-ok-…`） |
+| 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归；`24 字符` 的真实样本证明阈值不能更高（`probe-registry-ok-…`）。canvas/icon-only 面板 → `inconclusive`（不冤枉，也不放行） |
+| 渲染的耗时 | 15s 是**循环预算**；阻塞渲染器的实测总耗时 15.0s（命令级超时 + 剩余预算封顶），启动/清理另计约 0.5–2s。数字进 `timings.renderMs`，不进 20s 口径 |
 | 引擎差异 | 只在 Windows + Chrome 154 / Edge 146 上测过；Linux CI 没有浏览器 → 该断言在 CI 里只能是 `unmeasured`（单测用注入 DOM，不跑浏览器） |
 | 多候选 / 矩阵模式 | 不做（一次一个候选，`bisect` 由 T-114 负责） |

@@ -714,7 +714,7 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   const stamp = stampOf(flags)
   const run = await executeProbe(
     { plan: plan.value, dshMain: flags.dshMain, candidatePackage, ...(flags.noHttp ? { skipHttp: true } : {}) },
-    realProbeDeps({ baseEnv: process.env, browser: flags.browser }),
+    realProbeDeps({ baseEnv: process.env, ...(flags.browser === null ? {} : { browser: flags.browser }) }),
   )
   const judgement = judgeProbe({ run, at: stamp })
   const env: EnvFingerprint = {

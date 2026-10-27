@@ -31,9 +31,11 @@ export interface HostUrl {
  * `dsh web: http://127.0.0.1:53997/?token=…` (measured, M3-probe F10/F16).
  *
  * The LAST match wins: a Host that restarted prints twice, and the live one is the newer.
+ * The token class is deliberately broad (`[^\s"'<>]+`): a URL-safe Base64 token can carry
+ * `.`, `=`, `%` or `+`, and a narrower class silently drops a real URL (R15 review finding).
  */
 export function extractHostUrl(stdout: string): HostUrl | null {
-  const pattern = /https?:\/\/(?:127\.0\.0\.1|localhost):(\d+)\/\?token=[A-Za-z0-9_-]+/g
+  const pattern = /https?:\/\/(?:127\.0\.0\.1|localhost):(\d+)\/\?token=[^\s"'<>]+/g
   let match: RegExpExecArray | null = null
   let last: RegExpExecArray | null = null
   while ((match = pattern.exec(stdout)) !== null) last = match
@@ -82,22 +84,35 @@ export interface RenderJudgement {
  * Pure judgement over one DOM observation.
  *
  * `inconclusive` is not a soft pass: it means the observation cannot answer the question
- * (nothing read, or the document was still loading when we stopped).
+ * (nothing read, the document was still loading, no known mount point, or a mounted root
+ * with no text at all such as a canvas-only panel).
+ *
+ * WHY A MOUNT POINT IS REQUIRED: R15 review measured that Chrome's own error page
+ * (`ERR_CONNECTION_REFUSED`) and a 404 page both have body children and visible text —
+ * judging `bodyChildren` alone scored the *browser's* page as `rendered`, which would
+ * hand a `go` to any plugin whose Host failed to serve. A DSH web app mounts into
+ * `#root` (measured), so "no #root/#app" is an observation we cannot interpret, not a pass.
  */
 export function judgeRender(signals: RenderSignals | null): RenderJudgement {
   if (signals === null) return { state: 'inconclusive', detail: 'no DOM observation' }
   if (signals.htmlBytes <= 0) return { state: 'inconclusive', detail: 'the browser read an empty document' }
   if (signals.readyState === 'loading') return { state: 'inconclusive', detail: 'document still loading' }
-  const rootOk = signals.rootId === null ? signals.bodyChildren >= 1 : signals.rootChildren >= 1
+  if (signals.rootId === null) {
+    // Browser error pages and non-mounting documents land here. Saying "blank" would blame
+    // the plugin for something the probe never saw it do.
+    return { state: 'inconclusive', detail: 'no #root or #app mount point in the document' }
+  }
+  if (signals.rootChildren < 1) return { state: 'blank', detail: `mount point "${signals.rootId}" has no children` }
+  if (signals.textLength === 0) {
+    // An icon-only or canvas-only panel is a real UI with no text. We cannot tell it apart
+    // from a root that mounted and then threw, so we refuse to call it either way.
+    return { state: 'inconclusive', detail: `mount point "${signals.rootId}" has ${signals.rootChildren} child(ren) but no visible text` }
+  }
   const settled = signals.readyState === 'complete' ? '' : `, readyState=${signals.readyState}`
-  if (signals.textLength >= MIN_VISIBLE_TEXT && rootOk) {
+  if (signals.textLength >= MIN_VISIBLE_TEXT) {
     return { state: 'rendered', detail: `mount root with ${signals.rootChildren} child(ren), ${signals.textLength} visible chars${settled}` }
   }
-  if (signals.textLength === 0) return { state: 'blank', detail: 'no visible text and no mounted children' }
-  return {
-    state: 'blank',
-    detail: rootOk ? `only ${signals.textLength} visible chars` : `mount point "${signals.rootId ?? 'body'}" has no children`,
-  }
+  return { state: 'blank', detail: `mount point "${signals.rootId}" shows only ${signals.textLength} visible chars` }
 }
 
 /* -------------------------------- browser --------------------------------- */
@@ -187,12 +202,18 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
   const timeoutMs = input.timeoutMs ?? 15_000
   const pollMs = input.pollMs ?? 300
   const spawnImpl = input.spawnImpl ?? spawn
-  mkdirSync(input.scratchRoot, { recursive: true })
-  const profileDir = mkdtempSync(join(input.scratchRoot, 'triage-render-'))
+  // Per CDP command ceiling. Without it a renderer whose main thread is blocked (the very
+  // shape that produces a white screen: `while(true)`, a render loop) never answers
+  // `Runtime.evaluate`, and the await never returns — measured 30s+ past a 4s budget, with
+  // the Host and the browser still alive because `host.ts` waits for this before killing.
+  const commandTimeoutMs = Math.min(1_500, Math.max(400, Math.floor(timeoutMs / 4)))
   const started = Date.now()
   let child: ReturnType<typeof spawn> | null = null
   let socket: MinimalSocket | null = null
+  let profileDir: string | null = null
   try {
+    mkdirSync(input.scratchRoot, { recursive: true })
+    profileDir = mkdtempSync(join(input.scratchRoot, 'triage-render-'))
     child = spawnImpl(
       input.browser,
       [
@@ -228,36 +249,63 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
         }
       }
     })
-    const send = (method: string, params: Record<string, unknown> = {}): Promise<CdpMessage> =>
+    const send = (method: string, params: Record<string, unknown> = {}, ceiling = commandTimeoutMs): Promise<CdpMessage> =>
       new Promise((resolve) => {
         const messageId = ++id
-        pending.set(messageId, resolve)
-        socket?.send(JSON.stringify({ id: messageId, method, params }))
+        // Every command is bounded: a blocked renderer answers nothing, and an unbounded
+        // await would keep the whole probe (and the Host) hostage.
+        const timer = setTimeout(() => {
+          pending.delete(messageId)
+          resolve({})
+        }, Math.max(250, ceiling))
+        pending.set(messageId, (message) => {
+          clearTimeout(timer)
+          resolve(message)
+        })
+        try {
+          socket?.send(JSON.stringify({ id: messageId, method, params }))
+        } catch {
+          clearTimeout(timer)
+          pending.delete(messageId)
+          resolve({})
+        }
       })
 
-    await send('Page.enable')
-    await send('Page.navigate', { url: input.url })
+    // The acks are not what we judge; the DOM poll is. Keep them short so a blocked
+    // renderer cannot spend the whole budget here.
+    await send('Page.enable', {}, 400)
+    await send('Page.navigate', { url: input.url }, 1_000)
 
     let signals: RenderSignals | null = null
     let judgement: RenderJudgement = { state: 'inconclusive', detail: 'no observation yet' }
+    let lastTextLength = -1
     // Poll until the document has settled. Stopping at the first non-empty paint would
     // report a loading skeleton as "rendered": the first real measurement read 24 chars at
-    // readyState=interactive, while the loaded app shows ~320 chars (R15 spike F14).
+    // readyState=interactive, while the loaded app shows ~320 chars (R15 spike F14). A page
+    // that reaches `complete` with 24 chars keeps growing, so we also require the visible
+    // text to stop changing between two polls.
     while (Date.now() - started < timeoutMs) {
       await delay(pollMs)
-      const evaluated = await send('Runtime.evaluate', { expression: EMPTY_SIGNALS_EXPRESSION, returnByValue: true })
+      const remaining = timeoutMs - (Date.now() - started)
+      if (remaining <= 0) break
+      const evaluated = await send('Runtime.evaluate', { expression: EMPTY_SIGNALS_EXPRESSION, returnByValue: true }, remaining)
       const value = readString(evaluated.result, 'result', 'value')
       if (value === null) continue
       signals = parseSignals(value)
       judgement = judgeRender(signals)
       const elapsed = Date.now() - started
       const parsed = signals
-      if (judgement.state === 'rendered' && parsed !== null && parsed.readyState === 'complete') break
+      if (judgement.state === 'rendered' && parsed !== null && parsed.readyState === 'complete') {
+        if (parsed.textLength === lastTextLength) break
+        lastTextLength = parsed.textLength
+      }
       if (judgement.state === 'blank' && elapsed >= BLANK_SETTLE_MS) break
       if (elapsed >= RENDER_SETTLE_MS) break
     }
-    if (judgement.state === 'inconclusive' && Date.now() - started >= timeoutMs && signals !== null) {
-      judgement = { state: 'inconclusive', detail: `no terminal DOM within ${timeoutMs}ms` }
+    if (signals === null) {
+      // No DOM query was ever answered: the renderer's main thread is blocked, so this is
+      // an honest "cannot tell", not a blank page.
+      judgement = { state: 'inconclusive', detail: `the page never answered a DOM query within ${timeoutMs}ms` }
     }
     return { state: judgement.state, detail: judgement.detail, ms: Date.now() - started, signals }
   } catch (error) {
@@ -274,7 +322,15 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
       // Already closed.
     }
     if (child !== null) killBrowser(child)
-    rmSync(profileDir, { recursive: true, force: true })
+    if (profileDir !== null) {
+      try {
+        // A browser helper can still hold a file for a moment; a failed cleanup must not
+        // turn "the page rendered" into "the probe threw" (R15 review finding).
+        rmSync(profileDir, { recursive: true, force: true })
+      } catch {
+        // Left for the OS temp reaper; the artifact already says what was measured.
+      }
+    }
   }
 }
 
