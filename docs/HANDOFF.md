@@ -34,7 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-27_R12.md`（本轮）· `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 已关闭**（沙箱真机样本 + Host↔CLI 交叉一致）；`B3` 仍只有夹具覆盖（真机样本里没有 failed / broken / conditional 行） |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/upstream`（依赖 191 条）· `dsh --profile upstream --patch <overlay>` 9.2s 起服务并采到样 · 探针目录用完即删 |
-| 交接快照（R12 收尾） | R12 = 本轮提交；`git status` 干净；`pnpm run verify` = **135 测试 / 9 门全绿**；`--mutate` = **9/9** |
+| 交接快照（R12 收尾） | R12 = `ec33e94`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **135 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **41 产物 / 50 步**全被引用 |
 | 交接快照（R11 收尾） | R11 = `b92190e`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9** |
 | 交接快照（R10 收尾） | R10 = `cc76ea0`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **32 产物 / 39 步**全被引用 |
 | 交接快照（R9 收尾） | R9 = `9259515`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **110 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **29 产物 / 36 步**全被引用 |
