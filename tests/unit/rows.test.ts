@@ -110,6 +110,49 @@ test('a row whose package is not installed is unknown, never silently fine', () 
   assert.ok(verdict.remediation.length > 0, 'unknown still needs a next step')
 })
 
+test('a row that declares nothing is unknown, not silent (R9 / T-107)', () => {
+  // CASE-7590: neither plugin declares an @deepseek-ai/dsh* peer, so the old engine
+  // produced zero verdicts — indistinguishable from "everything is fine".
+  const verdicts = verdictsFromRowAdmission({
+    env,
+    rows: [
+      row({ rowId: 'dsh-im', module: '@xmanrui/dsh-im', manifest: { name: '@xmanrui/dsh-im' }, version: '4.26.0' }),
+      row({ rowId: 'modlens', module: '@liustack/modlens', manifest: { name: '@liustack/modlens' }, version: '3.26.3' }),
+    ],
+    generatedAt: stamp,
+  })
+  assert.equal(verdicts.length, 2, 'one unknown per module — never silence')
+  for (const verdict of verdicts) {
+    assert.equal(verdict.conclusion, 'unknown')
+    assert.deepEqual(verdict.missingEvidence, ['missing.peer-declaration'])
+    assert.ok(
+      verdict.reasons.some((reason) => reason.messageId === 'admission.row-unconstrained'),
+      'the reason must be the row-level one, not the bundle-level admission.unconstrained',
+    )
+    assert.ok(verdict.remediation.length > 0, 'unknown still needs a next step')
+    assert.equal(verdict.subject.kind, 'entry')
+  }
+  const im = verdicts.find((verdict) => verdict.subject.name === '@xmanrui/dsh-im')
+  const reason = im?.reasons.find((item) => item.messageId === 'admission.row-unconstrained')
+  assert.equal(reason?.params?.['rows'], 'dsh-im')
+  assert.equal(reason?.params?.['module'], '@xmanrui/dsh-im')
+})
+
+test('several undeclared rows for one module collapse into a single unknown', () => {
+  const verdicts = verdictsFromRowAdmission({
+    env,
+    rows: [
+      row({ rowId: 'im-a', module: '@xmanrui/dsh-im', manifest: {} }),
+      row({ rowId: 'im-b', module: '@xmanrui/dsh-im', manifest: {} }),
+    ],
+    generatedAt: stamp,
+  })
+  assert.equal(verdicts.length, 1)
+  const [verdict] = verdicts
+  const reason = verdict?.reasons.find((item) => item.messageId === 'admission.row-unconstrained')
+  assert.equal(reason?.params?.['rows'], 'im-a, im-b', 'the reader needs every row that pulled the module in')
+})
+
 test('rows that admit the running build stay silent', () => {
   const verdicts = verdictsFromRowAdmission({
     env,

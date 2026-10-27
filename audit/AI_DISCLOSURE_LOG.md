@@ -125,3 +125,16 @@
 - 人工决策：无（均按既有铁律修复）；4 项 blocked 需 HUMAN（npm 登录 / 转 public / 真实案例 / 0.2.x 真机）
 - SessionID：待 HUMAN 回填
 - 备注：门禁由 6 → 7；测试 44 → 47；SSOT 重新生成并脱敏（sha256 `19d71672c033…`）
+
+### 2026-10-27 R9｜不静默一轮：占位符门 + 行级不静默 + 读 dsh.compatibility
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/core/src/{compat-channel(新),verdict,messages,index}.ts`、`packages/plugin/src/cli.ts`、`scripts/{gate_verdict_contract,d1_report,probe_live_sample(新)}.mjs`、`tests/{unit/rows,unit/compat-channel(新),governance/d1-report}.test.ts`、`data/results/{why-case-CASE-7590-2026-10-27T15-00-00.000Z,d1-2026-10-27T15-00-00.000Z,ns-live-attempt-2026-10-27T16-00-00.000Z,gates-2026-10-27T17-00-00.000Z,gates-mutate-2026-10-27T17-10-00.000Z}.json`、`audit/{AUDIT_2026-10-27_R9.md(新),step_reviews.json,blind_spots.json,gate_ledger.json}`、`docs/{05-verdict-contract,HANDOFF,BACKLOG}.md`、`docs/specs/M1-why.md`、`AGENTS.md`、`INDEX.md`
+- 起因：R8 复核登记 T-116（文档曾声称 params 已锁死，实际没有）与 R6 登记的 BS-10（无声明行静默）/ BS-13（`dsh.compatibility` 未读）——三处都是「我们会说错话」
+- 结果：① 门 `verdict-contract` 新增 `placeholder-params-required`（缺 key / `null` / 空串都算缺；双向自测：缺即红、补齐即绿；`remediation[]` 同规则）；② 行级 `unconstrained` 不再静默 → `unknown` + `missing.peer-declaration`（CASE-7590 由 0 verdict 变 2 verdict）；③ 新模块 `compat-channel.ts` 把 `dsh.compatibility.dsh` / `dshReleases` / `profiles` 读成 `declared` 级**次要**证据，三条 tier 纪律负对照（不得单独 blocked、不得把 unknown 升 go、未知状态按不兼容读）；④ `d1_report` 增 `miss_kind`（silent / explicit-unknown / explicit-other），**不改 label**；⑤ `probe_live_sample.mjs` 把「想采真机相位」的尝试落成台账（`outcome=blocked`，blocker = 沙盒 profile 未装依赖）
+- 门禁：`verify` **110 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`audit/step_reviews.json` 35 步
+- 对抗性反例（全部真跑）：pset-unjudged 丢 `{rows}` → 门红；peer 通过而兼容通道不符 → 仍 `go`（只多 warn）；兼容通道匹配而 peer 拒绝 → 仍 `blocked`；只有兼容通道 → 最坏 `unknown`；未知 release 状态 → 按不兼容；CASE-7590 重放 → 2 条 unknown
+- 真实缺陷（过程中）：PowerShell 里 `node -e` 带中文与引号再次被吃掉（改用临时 `.mjs`，已补坑表）；`dsh --dump-config` 因 `| Select-Object -First N` 提前关管道而「看起来 exit 1」，实际 exit 0
+- 人工决策：HUMAN 选定 R9 范围（T-116 + T-107 + T-108）并批准「额外的 live 采样步，只作旁证、不影响主结论」
+- SessionID：待 HUMAN 回填
+- 备注：CASE-7590 **仍是 miss**；本轮只把失败方式从「静默」变成「显式 unknown + 点名作者自报通道」。`sample.kind=live` 仍未拿到，P1/B1/B2 阻塞未解除（见 `docs/HANDOFF.md` §8）

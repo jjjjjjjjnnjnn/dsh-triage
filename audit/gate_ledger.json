@@ -18,7 +18,7 @@
     {
       "id": "verdict-contract",
       "script": "scripts/gate_verdict_contract.mjs",
-      "enforces": "data/results/verdict-*.json 与 docs/05-verdict-contract.md 一致：四态结论、evidence[] 必填 tier/source/method/at、blocked 必须给 remediation、unknown 必须给 missing evidence",
+      "enforces": "data/results/verdict-*.json 与 docs/05-verdict-contract.md 一致：四态结论、evidence[] 必填 tier/source/method/at、blocked 必须给 remediation、unknown 必须给 missing evidence、reasons[]/remediation[] 文案里的每个 {占位符} 必须由 params 提供（含双向自测）",
       "negative_control": "node scripts/gate_verdict_contract.mjs --mutate → 必须 exit 1（套件汇总见 rules.negative_control）",
       "requires_build": false,
       "owner": "contract"

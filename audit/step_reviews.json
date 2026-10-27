@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R8 (2026-10-27)",
+  "stand": "R9 (2026-10-27)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -753,6 +753,158 @@
         "artifact": "data/results/audit-2026-10-27T12-00-00.000Z.json",
         "sha256": "99495e3d7c3648bf5286b91a0c3defc16ad3d959b2e5811af2482571f5b61c59",
         "outcome": "2 rows · 1 duplicate group · 2 verdicts（修正后同一沙盒产物字节不变）"
+      }
+    },
+    {
+      "id": "R9-S1",
+      "batch": "R9",
+      "step": "T-116：门 verdict-contract 增占位符完整性（reasons[]/remediation[] 的 {占位符} 必须由 params 提供）+ 不传 params 的渲染路径禁占位符 + 双向自测 + 双类 mutate 注入",
+      "changed": [
+        "scripts/gate_verdict_contract.mjs",
+        "docs/05-verdict-contract.md",
+        "audit/gate_ledger.json"
+      ],
+      "review": {
+        "correctness": "PASS：`readMessageCatalog` 同时解析 key 与模板占位符（跨 locale 取并集），`missingPlaceholders` 把缺 key / null / 空串一律判缺；复核后又补两条：`no-placeholders-without-params`（`missing.*`/`conclusion.*` 是不传 params 的渲染路径，写占位符即红）与 `placeholder-copy-present`（产物若从不使用含占位符的文案，则第二类 mutate 无靶可打，直接判红）。原「blocked 必须有 remediation」断言未改动",
+        "reproducibility": "PASS：`node scripts/gate_verdict_contract.mjs` 全绿（26 产物 / 20 verdicts 全部通过新断言），`--mutate` exit 1；套件 `--mutate` 仍 9/9 CAUGHT",
+        "licence": "PASS：门脚本仍零第三方依赖、零网络（只用 node 内置 + `scripts/lib/kit.mjs`），未引入新许可义务",
+        "ssot": "PASS：`enforces` 字段同步到 `audit/gate_ledger.json`（`negative_control` 未改，冻结区不动）；`docs/05` §3 不变量表与 §5 渲染说明同步；contract-documented 检查仍绿",
+        "adversary": "反例：① 删掉 `runtime.preset-unjudged` 的 `{rows}` → 门红（实跑：`reasons[0].params missing {rows}, {channel}`）；② 给 `missing.runtime` 加 `{runtime}` → `no-placeholders-without-params` 红（实跑 exit 1）；③ 自测的反向（补齐 params 应绿）同时断言，防模板解析写错导致空转；④ `remediation[]` 占位符缺失也红（自测第三条）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T18:40:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T18-40-00.000Z.json",
+        "sha256": "e3530391271930841dd9013950b029d370014b2f44a1d89fc17b23bbd04e74a9",
+        "outcome": "NEGATIVE CONTROL PASSED 9/9（含 verdict-contract 的双类注入）· 单门实测：缺占位符 exit 1、给 missing.* 写占位符 exit 1"
+      }
+    },
+    {
+      "id": "R9-S2",
+      "batch": "R9",
+      "step": "T-107：行级 unconstrained 不再静默——出 unknown + missing.peer-declaration，并点名 row 与 module",
+      "changed": [
+        "packages/core/src/verdict.ts",
+        "packages/core/src/messages.ts",
+        "tests/unit/rows.test.ts",
+        "docs/05-verdict-contract.md",
+        "docs/specs/M1-why.md"
+      ],
+      "review": {
+        "correctness": "PASS：`verdictsFromRowAdmission` 在 `evaluateAdmission` 返回 `unconstrained` 时出 `unknown` + `missing.peer-declaration`，reasons 顺序为 row-scope → row-unconstrained → 次要通道，符合契约「scope 必排第一」；同一模块多行仍合并为一条，未改动 admission 规则顺序（冻结区）",
+        "reproducibility": "PASS：`node scripts/record_case.mjs --case CASE-7590 --stamp 2026-10-27T15:00:00.000Z` 可重放到同一 sha256；`tests/unit/rows.test.ts` 从 6 条增至 8 条，全绿",
+        "licence": "PASS：零网络、零第三方代码；新增文案只落在 `messages.ts` 的 en/zh 两套目录；案例输入仍是已固化的 npm manifest（未新增外部数据）",
+        "ssot": "PASS：产物 `data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json` 的 verdicts 由 0 变 2，`hit.verdict` 仍为 miss（未升级命中口径）；文档同步 `docs/05` §2b、`M1-why` A9/负对照表",
+        "adversary": "反例：① 构造完全不声明任何 dsh 信息的行 → 必须出 unknown，改回静默则 `rows.test.ts` 红；② 构造声明满足的行 → 仍不出 verdict（不制造噪音）；③ 同模块两行 → 合并为一条且 rows 参数列出两个 id"
+      },
+      "real_test": {
+        "command": "node scripts/record_case.mjs --case CASE-7590 --stamp 2026-10-27T15:00:00.000Z",
+        "artifact": "data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json",
+        "sha256": "22e3757c251d8ba3558bdfefd9d5857d49291a065e0d7011a6fcee2d64cf9f45",
+        "outcome": "2 verdict(s)（both unknown）· 2 row(s) · hit 仍为 miss（诚实：静默 → 显式 unknown）"
+      }
+    },
+    {
+      "id": "R9-S3",
+      "batch": "R9",
+      "step": "T-108：读 dsh.compatibility / dshReleases / profiles 作 declared 级次要证据；D1 增 miss_kind",
+      "changed": [
+        "packages/core/src/compat-channel.ts",
+        "packages/core/src/verdict.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/compat-channel.test.ts",
+        "scripts/d1_report.mjs",
+        "tests/governance/d1-report.test.ts",
+        "docs/05-verdict-contract.md",
+        "docs/specs/M1-why.md"
+      ],
+      "review": {
+        "correctness": "PASS：`judgeCompatChannel` 的三级判据（精确 dshReleases > dsh 钉定/区间 > profiles 只能 unknown）都用 `evaluateRange` 复用 admission 的 prerelease/空区间语义，未复制第二套语义；`compatSurfacing` 只产 info/warn reason 与 declared 证据，不参与结论",
+        "reproducibility": "PASS：`node scripts/d1_report.mjs --stamp 2026-10-27T15:00:00.000Z` 固定 stamp 两次逐字节一致（既有治理测试仍绿）；`tests/unit/compat-channel.test.ts` 9 条全绿",
+        "licence": "PASS：通道语义来自案例里已固化的上游 manifest（CASE-7590 输入）+ 本仓 spec，未抓取新外部数据；仍零网络",
+        "ssot": "PASS：`d1-2026-10-27T15-00-00.000Z.json` 的 `totals.miss_by_kind={explicit-unknown:1}`，`cases[].miss_kind` 由产物 verdicts 反算；`tests/governance/d1-report.test.ts` 增「反算一致」与「silent/explicit 区分」两条断言；**未改任何 label**",
+        "adversary": "反例：① 兼容通道匹配但 peer 拒绝 → 仍 blocked（不得软化）；② peer 通过但兼容通道不符 → 仍 go（只多 warn，不得越级）；③ 只有兼容通道 → 最坏 unknown（不得单独 blocked）；④ 未知 release 状态 → 按不兼容读；⑤ 精确 release 条目 vs 更宽 dsh 钉定 → 精确优先"
+      },
+      "real_test": {
+        "command": "node scripts/d1_report.mjs --stamp 2026-10-27T15:00:00.000Z",
+        "artifact": "data/results/d1-2026-10-27T15-00-00.000Z.json",
+        "sha256": "5dba9da105a43f7ed4e41a8153cc167f51f8012285330da738819b0b11ba3497",
+        "outcome": "9/10 hit（PASSED）· miss_by_kind={explicit-unknown:1} · key sources {derived-from-reported-manifest:2, report-explicit:4, unstated:4}"
+      }
+    },
+    {
+      "id": "R9-S4",
+      "batch": "R9",
+      "step": "B1/B2 旁证步：0.2.x 沙盒真机相位采样尝试落成台账（outcome=blocked 也留证）",
+      "changed": [
+        "scripts/probe_live_sample.mjs",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：脚本逐条检查前置条件（profile manifest 可读、依赖已装、dsh 可执行、profile 可 compose），任何一项不满足即 outcome=blocked 且 rows 恒为空；复核后删除了不可达的 sampled 分支，next_step.why_not_here 改为由失败 evidence 反算，并把「profile 声明的区间」与「dsh --version 的实测值」拆成 declared_range / observed_runtime 两个字段",
+        "reproducibility": "PASS：命令与 blocker 可复算（同一沙盒重跑得同一组 evidence 布尔值）；产物内的 stdout 只记 sha256/行数，不落机器路径或时长",
+        "licence": "PASS：全部只读沙盒（`%TEMP%\\dsh-triage-env`），`DSH_HOME` 显式指向沙盒，未写真实 `~/.dsh`、未注入凭据、未起 agent 会话",
+        "ssot": "PASS：产物 `ns-live-attempt-2026-10-27T16-00-00.000Z.json` 含 produced_by/generated_at/schema_version 与 `.sha256`；路径经 redact（无 `C:\\Users\\<名>`）；`audit/blind_spots.json` 的 BS-15 标为 partially mitigated",
+        "adversary": "反例：① 沙盒 profile 无 node_modules → 必须 blocked（正是本次结果，未伪装成 sampled）；② 不传 `--install` → `dsh-binary` 红、仍 blocked；③ 若脚本给出 rows 而来源是 static compose，就构成「假 live」——脚本里 rows 恒为 []，且 `outcome` 只有 sampled 才允许有 rows"
+      },
+      "real_test": {
+        "command": "node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp 2026-10-27T16:00:00.000Z",
+        "artifact": "data/results/ns-live-attempt-2026-10-27T16-00-00.000Z.json",
+        "sha256": "effd70721464a7bb06eb9366ff03a3350896ba473e8125622a0da8c777a49085",
+        "outcome": "outcome=blocked · blocker=profile-dependencies-installed · observed_runtime=0.2.1-rc.3（dsh --version）· profile 可 compose（dump-config exit 0，1231 行）· rows 恒为空（未伪装成 live）"
+      }
+    },
+    {
+      "id": "R9-S5",
+      "batch": "R9",
+      "step": "R9 收尾：全链验证（110 测试 / 9 门 / 9-9 mutate）+ 文档与交接同步",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/AUDIT_2026-10-27_R9.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = build → typecheck → 110 测试 → 9 门全绿；`docs/HANDOFF.md` §2/§3/§4/§8 与 `BACKLOG.md` 状态一致（T-107/T-108/T-116 标 ✅，新增 T-117 为 ⬜）",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T18:30:00.000Z` 落 **29 产物 / 26 verdict** 全部被引用（`no-orphan-results` 自报 29）；`d1_report`/`record_case`/`scan_env` 在固定 stamp 下逐字节一致（治理测试覆盖）",
+        "licence": "PASS：无新增外部数据；本轮所有结论来自仓内已固化输入与沙盒只读观察",
+        "ssot": "PASS：`audit/step_reviews.json` **36 步**全绿（R9-S1…S6）；`data/results` 无孤儿产物；`AI_DISCLOSURE_LOG.md` 追加 R9 条目（含 SessionID 槽位）；独立复核后修正了三处数字与两处口径，并把真机复跑单列一步（R9-S6）",
+        "adversary": "反例：① 若把 CASE-7590 写成「命中」→ 与产物 `hit.verdict=miss` 矛盾，`d1_report` 会拒绝非法值；② 若 `gates-*` 未登记 → `no-orphan-results` 门红；③ 若把 `miss_kind` 手填而非反算 → `tests/governance/d1-report.test.ts` 红"
+      },
+      "real_test": {
+        "command": "pnpm run verify && node scripts/gate.mjs --record --stamp 2026-10-27T18:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T18-30-00.000Z.json",
+        "sha256": "2381c6c185649859337e014c9ef8377e7f625f0253c454aa14bea66f93d78c3d",
+        "outcome": "110 测试通过 · ALL GREEN · 9 gates（ok=true；该 run 之后仅重指产物引用与文档措辞，无代码改动）"
+      }
+    },
+    {
+      "id": "R9-S6",
+      "batch": "R9",
+      "step": "T-107 真机复跑：本机 0.1.0-rc.6 profile 156 行，新增的行级 unknown 只有 2 条（没有噪音爆炸）",
+      "changed": [
+        "packages/core/src/verdict.ts",
+        "data/results/why-2026-10-27T18-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`scan_env` 在本机真实 profile（0.1.0-rc.6，156 个 entry）上跑出 4 条结论：2 条 bundle `go` + 2 条行级 `unknown`。两条 unknown 都点名了具体 row，且都是真的没有声明 @deepseek-ai/dsh* peer 的上游包（`@deepseek-ai/cordis-plugin-hmr`、`@deepseek-ai/cordis-plugin-timer`），不是误报",
+        "reproducibility": "PASS：`node scripts/scan_env.mjs --stamp 2026-10-27T18:20:00.000Z` 固定 stamp 可重放；产物与 `.sha256` 一同落盘，路径经 `redactEnv`/`redactVerdict` 脱敏（无 `C:\\Users\\<名>`）",
+        "licence": "PASS：只读本机 profile（`~/.dsh` 未被写入），零网络；产物只含 npm 公开包名与版本",
+        "ssot": "PASS：`why-2026-10-27T18-20-00.000Z.json` 与 R7 的 `why-2026-10-26T00-00-00.000Z.json` 并列（不替换历史产物），`scanned.entries=156` 与 `verdicts` 数量可直接对账",
+        "adversary": "反例：复核担心「每个未声明行都出一条 verdict，真实 profile 会刷屏」。实测 156 行只出 2 条 unknown（其余上游包都声明了 @deepseek-ai/dsh* peer），故按模块合并 + 只在 unconstrained 时产出的粒度是可用的；若某天第三方行大量无声明，仍会按模块数增长，这点写在 BS-17 的同类风险里"
+      },
+      "real_test": {
+        "command": "node scripts/scan_env.mjs --stamp 2026-10-27T18:20:00.000Z",
+        "artifact": "data/results/why-2026-10-27T18-20-00.000Z.json",
+        "sha256": "337737381953881b8b7cf21057f6e1e36571e4803aae20dc2fb856a8742e9da1",
+        "outcome": "156 rows → 4 verdicts：{\"go\":2,\"unknown\":2}，2 条 unknown 均为未声明 peer 的行（hmr / timer）"
       }
     }
   ]

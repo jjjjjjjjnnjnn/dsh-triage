@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/scan_env.mjs",
+  "generated_at": "2026-10-27T18:20:00.000Z",
+  "status": "ok",
+  "env": {
+    "dsh": "0.1.0-rc.6",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "web",
+    "profileDir": "~\\profiles\\web",
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app"
+    ],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.1.0-rc.6"
+      },
+      {
+        "name": "@deepseek-ai/dsh-base",
+        "version": "0.1.0-rc.6"
+      },
+      {
+        "name": "@deepseek-ai/dsh-web-app",
+        "version": "0.1.0-rc.6"
+      }
+    ]
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-base",
+        "version": "0.1.0-rc.6",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "go",
+      "confidence": {
+        "level": "medium",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-admitted",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        },
+        {
+          "code": "admission-declared-only",
+          "severity": "info",
+          "messageId": "admission.declared-only",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-base@0.1.0-rc.6",
+          "method": "declared-range",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T18:20:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-web-app",
+        "version": "0.1.0-rc.6",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "go",
+      "confidence": {
+        "level": "medium",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-admitted",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        },
+        {
+          "code": "admission-declared-only",
+          "severity": "info",
+          "messageId": "admission.declared-only",
+          "params": {
+            "runtime": "0.1.0-rc.6"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-web-app@0.1.0-rc.6",
+          "method": "declared-range",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T18:20:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/cordis-plugin-hmr",
+        "version": "1.0.16",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "unknown",
+      "confidence": {
+        "level": "low",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "hmr",
+            "module": "@deepseek-ai/cordis-plugin-hmr",
+            "source": "bundle:@deepseek-ai/dsh-base"
+          }
+        },
+        {
+          "code": "admission-row-unconstrained",
+          "severity": "warn",
+          "messageId": "admission.row-unconstrained",
+          "params": {
+            "rows": "hmr",
+            "module": "@deepseek-ai/cordis-plugin-hmr"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "bundle:@deepseek-ai/dsh-base",
+          "method": "patch-parse",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "row(s) hmr"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "report",
+          "messageId": "remediation.declare-peer",
+          "params": {
+            "module": "@deepseek-ai/cordis-plugin-hmr"
+          },
+          "note": "row(s) hmr import @deepseek-ai/cordis-plugin-hmr, which declares no @deepseek-ai/dsh* range; behaviour on 0.1.0-rc.6 is unproven"
+        }
+      ],
+      "missingEvidence": [
+        "missing.peer-declaration"
+      ],
+      "generatedAt": "2026-10-27T18:20:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/cordis-plugin-timer",
+        "version": "1.1.3",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.1.0-rc.6",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.1.0-rc.6"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.1.0-rc.6"
+          }
+        ]
+      },
+      "conclusion": "unknown",
+      "confidence": {
+        "level": "low",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "timer",
+            "module": "@deepseek-ai/cordis-plugin-timer",
+            "source": "bundle:@deepseek-ai/dsh-base"
+          }
+        },
+        {
+          "code": "admission-row-unconstrained",
+          "severity": "warn",
+          "messageId": "admission.row-unconstrained",
+          "params": {
+            "rows": "timer",
+            "module": "@deepseek-ai/cordis-plugin-timer"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "bundle:@deepseek-ai/dsh-base",
+          "method": "patch-parse",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "row(s) timer"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-27T18:20:00.000Z",
+          "detail": "dsh 0.1.0-rc.6"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "report",
+          "messageId": "remediation.declare-peer",
+          "params": {
+            "module": "@deepseek-ai/cordis-plugin-timer"
+          },
+          "note": "row(s) timer import @deepseek-ai/cordis-plugin-timer, which declares no @deepseek-ai/dsh* range; behaviour on 0.1.0-rc.6 is unproven"
+        }
+      ],
+      "missingEvidence": [
+        "missing.peer-declaration"
+      ],
+      "generatedAt": "2026-10-27T18:20:00.000Z"
+    }
+  ],
+  "collisions": [],
+  "summary": {
+    "go": 2,
+    "unknown": 2
+  },
+  "scanned": {
+    "bundles": 2,
+    "entries": 156
+  },
+  "errors": []
+}

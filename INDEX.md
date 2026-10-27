@@ -1,14 +1,16 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R8 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R9 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
-| **真实案例** | `data/cases/CASE-*/` | **10 例（9 命中 / 1 有意 miss）**：`CASE-11080`（升级后行被静默禁用）· `CASE-11012`（MCP 工具整体消失/传递依赖漂移）· `CASE-8202`（上一代插件进新运行时）· `CASE-10849`（npm dist-tag 失步 → 未钉版本被拒）· `CASE-10201`（hooks 桥 latest 失步 → 装前被拒）· `CASE-10759` / `CASE-10364`（dependency hoist 遮蔽 `dsh-tools` → tools 行被禁）· `CASE-8751`（官方包留在上一代 → session 行被禁）· `CASE-8220`（安装器判了 bundle 自己 disabled 的 shim 行）· `CASE-7590`（**miss 负样本**：不声明 peer 的插件运行期 API 漂移） |
-| **D1 命中率** | `scripts/d1_report.mjs` → `data/results/d1-*.json` | 从 `why-case-*.json` 汇总命中率（当前 **9/10 PASSED**），含 `label_key_sources`；`tests/governance/d1-report.test.ts` 反向点数，禁手填 |
+| **真实案例** | `data/cases/CASE-*/` | **10 例（9 命中 / 1 显式 `unknown`）**：`CASE-11080`（升级后行被静默禁用）· `CASE-11012`（MCP 工具整体消失/传递依赖漂移）· `CASE-8202`（上一代插件进新运行时）· `CASE-10849`（npm dist-tag 失步 → 未钉版本被拒）· `CASE-10201`（hooks 桥 latest 失步 → 装前被拒）· `CASE-10759` / `CASE-10364`（dependency hoist 遮蔽 `dsh-tools` → tools 行被禁）· `CASE-8751`（官方包留在上一代 → session 行被禁）· `CASE-8220`（安装器判了 bundle 自己 disabled 的 shim 行）· `CASE-7590`（**负样本**：两个插件都不声明 peer；R9 起不再是「静默 miss」，而是 2 条 `unknown`，其中 `@xmanrui/dsh-im` 的 `dsh.compatibility` 被点名读出来） |
+| **D1 命中率** | `scripts/d1_report.mjs` → `data/results/d1-*.json` | 从 `why-case-*.json` 汇总命中率（当前 **9/10 PASSED**），含 `label_key_sources` 与 **`miss_kind`**（`silent` / `explicit-unknown` / `explicit-other`）；`tests/governance/d1-report.test.ts` 反向点数 + 重算 `miss_kind`，禁手填 |
+| **次要通道 `dsh.compatibility`** | `packages/core/src/compat-channel.ts` + `verdict.ts#compatSurfacing` | 读 `dsh.compatibility.dsh` / `dshReleases` / `profiles`，只出 `declared` 级次要证据（`compat-channel`）；**不得单独判 `blocked`、不得把 `unknown` 升 `go`**（三条 tier 纪律负对照）；`dshReleases` 键按作者写法归一化（`v` 前缀/空白）；行级只在 `unconstrained` 挂载（行级相左 = `BS-17` / T-117） |
+| **live 采样尝试台账** | `scripts/probe_live_sample.mjs` → `data/results/ns-live-attempt-*.json` | 0.2.x 沙盒真实采相位的**尝试**记录：`outcome=blocked` 也落盘（当前 blocker：沙盒 profile 未装依赖）；`sample.kind=live` 仍待 P1 |
 | **副本来源与重复副本** | `packages/core/src/duplicates.ts` + `scripts/record_audit.mjs` → `data/results/audit-*.json` | 同名同版本不算问题；同名不同版本 → `collision-duplicate-copy`（两条路径 + 两个版本）；行被拒时点名「这份副本来自谁的 dependencies」（借 npm explain / Maven） |
 | **运行时相位（M2-a P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` → `data/results/inventory-*.json` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff、`sample.kind` 自曝 synthetic/live；当前证据是**合成样本**（无真机 profile） |
 | **相位契约门** | `scripts/gate_inventory_contract.mjs` + `tests/fixtures/inventory/cases.json` | 9 门之一：fixtures 逐行回放 spec §3 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性 |
@@ -18,7 +20,7 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R7.md`（最新）· `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R7：M2-a P2 相位层 + 新门；R6：D1 9/10 通过 + 计分脚本化；R5：案例扩容 + 过期信息清理；R4：7 项缺陷已修；R3：14 项修复 |
+| **审核报告** | `audit/AUDIT_2026-10-27_R9.md`（最新）· `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R9：不静默一轮（T-116/T-107/T-108）+ live 采样尝试；R8：副本来源 + 重复副本；R7：M2-a P2 相位层 + 新门；R6：D1 9/10 通过 + 计分脚本化 |
 | **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -35,11 +37,11 @@
 | 路线 | `docs/06-roadmap.md` | M0–M5 周级拆解 + 下载量阶梯 + 分发动作 |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
-| 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict） | 纯函数、零网络、可离线 |
+| 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 只出 `declared` 级次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
 | 隔离实测 | `packages/probe/src/`（plan） | M3：默认 dry-run，独立 DSH_HOME |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
-| 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约 / SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |
+| 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约（含 `{占位符}` 完整性）/ SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |
 | 真跑落盘 | `scripts/scan_env.mjs` | 扫本机 profile → `data/results/*.json` + `.sha256` |
 | 测试 | `tests/` | `node --test`（TS 直跑，零测试框架依赖）；`tests/governance/d1-report.test.ts` 把 D1 命中率钉成可重算断言 |
 | 金标 | `data/gold/admission-cases.json` | 真实 npm 声明快照 + 人工签署 |

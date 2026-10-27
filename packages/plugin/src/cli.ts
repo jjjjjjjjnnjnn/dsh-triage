@@ -164,6 +164,7 @@ async function commandWhy(flags: Flags): Promise<number> {
         env,
         admission,
         generatedAt: stamp,
+        manifest: layer.manifest,
       }),
     )
   }
@@ -217,7 +218,7 @@ async function commandWhy(flags: Flags): Promise<number> {
   }
   if (findings.some((verdict) => verdict.conclusion === 'unknown')) {
     process.stdout.write(
-      'note  "unknown" means the plugin declares no DSH version range; admission cannot judge it (see docs/03-failure-taxonomy.md F5).\n',
+      'note  "unknown" means there is no @deepseek-ai/dsh* peer range to judge; if the plugin also publishes dsh.compatibility, the reason lines above name that channel (secondary evidence only).\n',
     )
   }
   return exitFor(flags, findings)
@@ -256,6 +257,7 @@ async function commandCheck(flags: Flags, spec: string | undefined): Promise<num
     env,
     admission,
     generatedAt: stamp,
+    manifest,
   })
 
   if (flags.json) {

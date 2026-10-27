@@ -72,6 +72,8 @@ for (const name of files) {
     process.stderr.write(`${path} has no case.id 鈥?refuse to count it\n`)
     process.exit(2)
   }
+  const verdicts = Array.isArray(payload?.verdicts) ? payload.verdicts : []
+  const conclusions = [...new Set(verdicts.map((verdict) => String(verdict?.conclusion ?? '?')))].sort()
   const entry = {
     id,
     artifact: path,
@@ -82,6 +84,8 @@ for (const name of files) {
     label: payload?.hit?.expected ?? null,
     matched_module: payload?.hit?.matched?.subject?.name ?? null,
     why: String(payload?.hit?.why ?? ''),
+    verdict_count: verdicts.length,
+    conclusions,
   }
   if (entry.verdict !== 'hit' && entry.verdict !== 'miss') {
     process.stderr.write(`${path} has hit.verdict="${entry.verdict}" 鈥?expected hit|miss\n`)
@@ -101,6 +105,20 @@ if (cases.length === 0) {
   process.exit(2)
 }
 
+/**
+ * How a miss failed. Added in R9 (T-107/T-108): before those fixes a case could
+ * "miss" by producing zero verdicts, which is indistinguishable from a healthy
+ * profile — the silent failure this project exists to remove. Keeping the two
+ * kinds apart stops "we said nothing" from hiding behind "we said unknown".
+ */
+function missKind(entry) {
+  if (entry.verdict === 'hit') return null
+  if (entry.conclusions.includes('unknown')) return 'explicit-unknown'
+  if (entry.verdict_count === 0) return 'silent'
+  return 'explicit-other'
+}
+for (const entry of cases) entry.miss_kind = missKind(entry)
+
 /* --------------------------------- aggregate -------------------------------- */
 
 const hits = cases.filter((entry) => entry.verdict === 'hit').length
@@ -108,6 +126,15 @@ const misses = cases.length - hits
 const hitRate = Math.round((hits / cases.length) * 1000) / 1000
 const enoughSamples = cases.length >= minimumTotal
 const enoughHits = hits >= minimumHits
+
+// Misses split by how honest the answer was. A green D1 says "we name the root
+// cause"; this breakdown says what happened in the cases where we do not.
+const missByKind = {}
+for (const entry of cases) {
+  if (entry.miss_kind === null) continue
+  missByKind[entry.miss_kind] = (missByKind[entry.miss_kind] ?? 0) + 1
+}
+const sortedMissKinds = Object.fromEntries(Object.entries(missByKind).sort(([a], [b]) => a.localeCompare(b)))
 
 const labelSources = {}
 for (const entry of cases) {
@@ -135,6 +162,7 @@ const payload = {
     miss: misses,
     hit_rate: hitRate,
     required: `${minimumHits}/${minimumTotal}`,
+    miss_by_kind: sortedMissKinds,
   },
   // How each label's requirement key was obtained. A key quoted by the reporter
   // and a key derived from the published manifest are both legitimate, but they
@@ -158,7 +186,8 @@ process.stdout.write(
 )
 for (const entry of cases) {
   process.stdout.write(
-    `  ${entry.verdict.toUpperCase().padEnd(4)} ${entry.id.padEnd(11)} ${entry.mode.padEnd(9)} ${entry.matched_module ?? '-'}\n`,
+    `  ${entry.verdict.toUpperCase().padEnd(4)} ${entry.id.padEnd(11)} ${entry.mode.padEnd(9)} ${entry.matched_module ?? '-'}` +
+      `${entry.miss_kind === null ? '' : `  [${entry.miss_kind}]`}\n`,
   )
 }
 if (superseded.length > 0) {

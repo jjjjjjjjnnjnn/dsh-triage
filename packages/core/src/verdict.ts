@@ -12,6 +12,7 @@
 import { gt, minVersion } from 'semver'
 import type { AdmissionResult } from './admission.js'
 import { evaluateAdmission } from './admission.js'
+import { judgeCompatChannel } from './compat-channel.js'
 import type { EntryCollision } from './ledger.js'
 import { catalogFor, format, type Locale } from './messages.js'
 import type {
@@ -30,6 +31,12 @@ export interface AdmissionVerdictInput {
   readonly env: EnvFingerprint
   readonly admission: AdmissionResult
   readonly generatedAt: string
+  /**
+   * The resolved manifest, when the caller has it. Only used to read
+   * `dsh.compatibility` as secondary evidence (T-108); the admission decision
+   * itself is already made by `admission`, so omitting this never changes it.
+   */
+  readonly manifest?: unknown
 }
 
 export interface CollisionVerdictInput {
@@ -61,6 +68,12 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
     detail: env.dsh === null ? 'runtime version not found' : `dsh ${env.dsh}`,
   }
   const evidence = [baseEvidence, runtimeEvidence]
+  // Secondary channel (T-108). Never feeds the conclusion: `reportSecondaryOnly`
+  // is true exactly when there is no peer range to judge, so the user learns which
+  // channel the author actually used instead of getting silence.
+  const compat = compatSurfacing(input.manifest, env.dsh, generatedAt, {
+    reportSecondaryOnly: admission.status === 'unconstrained',
+  })
 
   if (admission.status === 'indeterminate') {
     return finish({
@@ -86,8 +99,9 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
       confidence: { level: 'low', basis: 'declared' },
       reasons: [
         { code: 'admission-unconstrained', severity: 'warn', messageId: 'admission.unconstrained', params: { runtime } },
+        ...compat.reasons,
       ],
-      evidence,
+      evidence: [...evidence, ...compat.evidence],
       remediation: [{ kind: 'probe', messageId: 'remediation.probe', note: 'declaration is absent; only an isolated probe can resolve behaviour' }],
       missingEvidence: ['missing.admission', 'missing.probe'],
       generatedAt,
@@ -108,8 +122,9 @@ export function verdictFromAdmission(input: AdmissionVerdictInput): Verdict {
           messageId: 'admission.declared-only',
           params: { runtime },
         },
+        ...compat.reasons,
       ],
-      evidence,
+      evidence: [...evidence, ...compat.evidence],
       remediation: [],
       missingEvidence: [],
       generatedAt,
@@ -298,8 +313,46 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
     }
 
     const admission = evaluateAdmission(first.manifest, runtime)
-    // Admitted / unconstrained / indeterminate rows stay silent: the bundle-level
-    // verdict already covers them, and repeating "fine" for 80 rows is noise.
+    // R9 / T-107: a row module that declares *nothing* used to fall through the
+    // "stay silent" branch below, so a profile whose only broken plugin has no
+    // declaration produced zero verdicts (CASE-7590). Silence is what "fine" looks
+    // like to a user, so the honest answer is `unknown` plus what is missing.
+    if (admission.status === 'unconstrained') {
+      const compat = compatSurfacing(first.manifest, runtime, input.generatedAt, { reportSecondaryOnly: true })
+      out.push(
+        finish({
+          subject,
+          env: input.env,
+          conclusion: 'unknown',
+          confidence: { level: 'low', basis: 'declared' },
+          reasons: [
+            scopeReason,
+            {
+              code: 'admission-row-unconstrained',
+              severity: 'warn',
+              messageId: 'admission.row-unconstrained',
+              params: { rows: rowIds, module },
+            },
+            ...compat.reasons,
+          ],
+          evidence: [rowEvidence, runtimeEvidence, ...compat.evidence],
+          remediation: [
+            {
+              kind: 'report',
+              messageId: 'remediation.declare-peer',
+              params: { module },
+              note: `row(s) ${rowIds} import ${module}, which declares no @deepseek-ai/dsh* range; behaviour on ${runtime} is unproven`,
+            },
+          ],
+          missingEvidence: ['missing.peer-declaration'],
+          generatedAt: input.generatedAt,
+        }),
+      )
+      continue
+    }
+
+    // Admitted / indeterminate rows stay silent: the bundle-level verdict already
+    // covers them, and repeating "fine" for 80 rows is noise.
     if (admission.status !== 'denied') continue
 
     // Name the copy's origin only when it changes the advice: "install a build
@@ -479,6 +532,67 @@ function message(
 ): string {
   const template = catalog.messages[id]
   return template === undefined ? `?${id}` : format(template, params)
+}
+
+/**
+ * Secondary evidence from `dsh.compatibility` (R9 / T-108).
+ *
+ * Tier discipline, enforced by tests: this helper can add `info`/`warn` reasons and
+ * `declared` evidence, and nothing else. No caller may fold it into the admission
+ * decision — a self-declared channel is not a measurement, so it can never block a
+ * plugin and can never turn `unknown` into `go`/`blocked`.
+ */
+function compatSurfacing(
+  manifest: unknown,
+  runtime: string | null,
+  generatedAt: string,
+  options: { readonly reportSecondaryOnly: boolean },
+): { readonly reasons: readonly Reason[]; readonly evidence: readonly Evidence[] } {
+  const reading = judgeCompatChannel(manifest, runtime)
+  if (reading === null) return { reasons: [], evidence: [] }
+
+  const { channel, standing } = reading
+  const evidence: Evidence = {
+    id: 'compat-channel',
+    tier: 'declared',
+    source: 'manifest:dsh.compatibility',
+    method: 'manifest-compat',
+    at: generatedAt,
+    detail:
+      standing === 'unknown'
+        ? `${channel.claim} (no per-version statement for this runtime)`
+        : `${channel.claim} → ${standing} against ${runtime ?? 'unknown'}`,
+  }
+
+  if (standing === 'mismatch') {
+    return {
+      reasons: [
+        {
+          code: 'admission-compat-channel-mismatch',
+          severity: 'warn',
+          messageId: 'admission.compat-channel-mismatch',
+          params: { claim: channel.claim, runtime: runtime ?? 'unknown' },
+        },
+      ],
+      evidence: [evidence],
+    }
+  }
+
+  if (options.reportSecondaryOnly) {
+    return {
+      reasons: [
+        {
+          code: 'admission-compat-channel',
+          severity: 'info',
+          messageId: 'admission.compat-channel',
+          params: { claim: channel.claim, runtime: runtime ?? 'unknown' },
+        },
+      ],
+      evidence: [evidence],
+    }
+  }
+
+  return { reasons: [], evidence: [evidence] }
 }
 
 function unmetReason(requirement: { key: string; range: string; failure: string | null }, runtime: string): Reason {

@@ -54,6 +54,9 @@ export {
 export type { CopyLocation, DuplicateCopy, DuplicateCopyInput } from './duplicates.js'
 export { verdictsFromDuplicateCopies } from './duplicates.js'
 
+export type { CompatChannel, CompatReading, CompatRelease, CompatStanding } from './compat-channel.js'
+export { judgeCompatChannel, readCompatChannel } from './compat-channel.js'
+
 export type {
   DeclaredRow,
   FiberPhase,

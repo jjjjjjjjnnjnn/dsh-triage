@@ -1,6 +1,6 @@
 # 05 · Verdict 契约
 
-> **Stand**: R5 (2026-10-26) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
+> **Stand**: R9 (2026-10-27) | 实现：`packages/core/src/verdict.ts` + `types.ts` | 门禁：`scripts/gate_verdict_contract.mjs`
 
 ## 1. 为什么要有契约
 
@@ -87,7 +87,26 @@
 - 同一模块被多行引入 → **一个** verdict，`reasons[0].params.rows` 列出全部 row id（不刷屏，但可定位）；
 - 模块未安装 → `unknown` + `missingEvidence: ["missing.row-module"]`，禁止判 `go`；
 - 声明满足当前运行时 → **不产生** verdict（「没消息」不是 finding）；
+- **没有任何声明 ≠ 声明满足**（R9 / T-107）：行的模块既无 `engines.dsh` 也无 `@deepseek-ai/dsh*` peer 时，必须出 `unknown` + `missingEvidence: ["missing.peer-declaration"]`，文案点名 row 与 module。沉默是不可接受的输出，因为用户读不出「沉默」与「没问题」的差别（CASE-7590 曾因此产出 0 条结论）；
+- **运行时版本读不到时，行级仍然整段静默**（刻意）：此时每一行都只能是 `unknown`，而行级 80 行的重复没有信息量；bundle 级已经给出一次 `unknown` + `missing.runtime`。这是**唯一的**允许静默的情形，且有单测钉住（`tests/unit/rows.test.ts` 的 "without a runtime version row-level attribution stays silent"）；
 - `severity: info` 的 `admission-row-scope` 必须排第一，保证文本渲染（只显示前 3 条）时行号不会被截掉。
+
+## 2c. 次要通道：`dsh.compatibility`（R9 / T-108）
+
+插件的 `dsh.compatibility`（`dsh` 精确钉定 / `dshReleases` 逐版本状态 / `profiles`）**只作为次要证据**读进来：
+
+| 规则 | 实现 |
+|---|---|
+| 只加 `declared` 级证据（`evidence[].id = "compat-channel"`）+ 一条 `info`/`warn` 原因 | `packages/core/src/compat-channel.ts`，由 `verdict.ts#compatSurfacing` 挂载 |
+| **不得单独判 `blocked`** | 最坏情况是 `unknown`（`tests/unit/compat-channel.test.ts` 负对照） |
+| **不得把 `unknown` 升为 `go`** | 同上：自报 ≠ 实测 |
+| 与 peer 结论**分列** | 独立的 reason / evidence，不合并进 `admission.unmet.*` |
+| **bundle 级**：没有 peer 区间（`unconstrained`）出 `info`；与 peer 结论相左（`mismatch`）出 `warn`；一致时只留证据 | `verdictFromAdmission` |
+| **行级**：**只在 `unconstrained` 行**挂载（避免每行都刷一条 warn）；「行级 peer 通过但 compat 不符」目前**不提示**，登记为 T-117 | `verdictsFromRowAdmission` |
+
+`dshReleases` 里的键按「作者可能怎么写」比较（去空白、去 `v`/`=` 前缀、过 `semver.valid`），因为手写清单里出现 `v0.1.7-alpha.2` 是常态；比较失败会退化到更宽的 `dsh` 声明，从而把作者标注为不兼容的版本读成兼容——这是本通道唯一绝不能错的方向（R9 复核抓到，已修）。
+
+`dshReleases` 里出现的未知状态（不是 `compatible`/`ok`/… 的字符串）按 **不兼容** 读——保守方向只能是「更不确定」，不能是「更乐观」。
 
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |
@@ -97,6 +116,8 @@
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
 | `reasons[].messageId` 形如 `admission.* / collision.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3） |
+| 文案里的每个 `{占位符}` 必须由该条 `params` 提供（`reasons[]` 与 `remediation[]` 同规则） | 门 `verdict-contract` 的 `placeholder-params-required`：缺 key / `null` / 空串都算缺失；并带**双向自测**（缺即红 + 补齐即绿），防断言空转 |
+| `missing.*` / `conclusion.*` 的文案**不得**含 `{占位符}`（这两条渲染路径根本不传 params） | 门 `verdict-contract` 的 `no-placeholders-without-params`（R9 复核后补：此前只盖住 reasons/remediation） |
 | 行级 verdict：`subject.kind === "entry"` 时 `reasons` 必含 `admission-row-scope`，且其 `params.rows` 非空 | 单测 `tests/unit/rows.test.ts` |
 | `blocked` / `risky` ⇒ `remediation.length ≥ 1` 且每项有 `note` | 条件断言 |
 | `unknown` ⇒ `missingEvidence.length ≥ 1` | 条件断言 |
@@ -115,5 +136,5 @@
 ## 5. 渲染
 
 - CLI 文本由 `renderVerdict(verdict, locale)` 生成，locale ∈ `en | zh`。
-- 文案集中在 `packages/core/src/messages.ts`；新增原因码 = 新增 messageId + 两个语言条目（`gate` 不检查条目缺失，但单测/审阅会检查 `?messageId` 输出）。
+- 文案集中在 `packages/core/src/messages.ts`；新增原因码 = 新增 messageId + 两个语言条目。门 `verdict-contract` 现在检查两件事：① messageId 必须在目录里；② 文案里的每个 `{占位符}` 必须由该条 `params` 提供（R9 / T-116 起），缺一即红。
 - Web 面板（M4）必须复用同一 `messageId`，不得自己编文案。

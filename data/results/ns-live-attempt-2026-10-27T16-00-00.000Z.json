@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/probe_live_sample.mjs",
+  "generated_at": "2026-10-27T16:00:00.000Z",
+  "sample": {
+    "kind": "live-attempt",
+    "profile": "upstream",
+    "dsh_home": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3\\home",
+    "declared_range": "0.2.1-rc.3",
+    "observed_runtime": "0.2.1-rc.3",
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app"
+    ]
+  },
+  "outcome": "blocked",
+  "blockers": [
+    "profile-dependencies-installed"
+  ],
+  "evidence": [
+    {
+      "id": "profile-manifest",
+      "ok": true,
+      "detail": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3\\home\\profiles\\upstream\\package.json"
+    },
+    {
+      "id": "profile-dependencies-installed",
+      "ok": false,
+      "detail": "profile=false shared=false"
+    },
+    {
+      "id": "dsh-binary",
+      "ok": true,
+      "detail": "~\\AppData\\Local\\Temp\\dsh-triage-env\\0.2.1-rc.3\\install\\node_modules\\.bin\\dsh.cmd"
+    },
+    {
+      "id": "dsh-runs",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "profile-composes",
+      "ok": true,
+      "detail": "exit 0"
+    }
+  ],
+  "cli": {
+    "version": {
+      "exit_code": 0,
+      "stdout_sha256": "96bad88b8a312b7297de5c9c1d57cd158d8b2964dab42a39463bd743d94fbd7a",
+      "stdout_lines": 1,
+      "stdout_first_line": "0.2.1-rc.3",
+      "stderr_first_line": ""
+    },
+    "dump_config": {
+      "exit_code": 0,
+      "stdout_sha256": "c5286c542ddc14f85e18ddbfcde891956d1136c7928579df4daae097e558a356",
+      "stdout_lines": 1231,
+      "stdout_first_line": "# == @deepseek-ai/dsh-base",
+      "stderr_first_line": ""
+    }
+  },
+  "next_step": {
+    "requirement": "a mounted Host plus a loader projection: either an in-process read of ctx.loader.entries() or a pluginInventory/list Remote call (T-201 P1)",
+    "why_not_here": "the sandbox profile has no node_modules, so no entry can mount",
+    "reference": "docs/specs/M2-inventory.md §4 (P1)"
+  },
+  "rows": []
+}

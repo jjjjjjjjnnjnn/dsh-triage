@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R8 (2026-10-27)",
+  "stand": "R9 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -70,8 +70,10 @@
       "id": "BS-10",
       "area": "verdict/rows",
       "cannot_see": "一个不声明任何 @deepseek-ai/dsh* peer 的行，目前既不判 go 也不出 unknown，而是一行结论都不出（CASE-7590：2 行 → 0 verdict）。用户会把静默读成「没问题」，这与铁律 1「证据不足只能出 unknown」不一致",
-      "mitigation": "T-107：行级在 admission 为 indeterminate 时产出 unknown + missingEvidence（点名「该包未声明任何 dsh peer」），并加负对照测试；在此之前，`why` 文案不得声称「已检查通过」",
-      "owner": "core/verdict"
+      "mitigation": "T-107（R9 已完成）：行级在 admission 为 unconstrained（该模块无 engines.dsh、也无 @deepseek-ai/dsh* peer）时产出 unknown + missingEvidence [\"missing.peer-declaration\"]，点名 row 与 module，并有「静默即红」的负对照。注意与 indeterminate（运行时版本读不到）区分：后者行级仍整段静默，由 bundle 级统一报 unknown + missing.runtime（docs/05 §2b）",
+      "owner": "core/verdict",
+      "status": "resolved (R9)",
+      "resolved_by": "R9-S2: packages/core/src/verdict.ts now emits unknown + missingEvidence [\"missing.peer-declaration\"] for rows whose admission is unconstrained, naming row and module; negative controls in tests/unit/rows.test.ts (CASE-7590 went from 0 verdicts to 2)"
     },
     {
       "id": "BS-11",
@@ -92,7 +94,9 @@
       "area": "admission-parity",
       "cannot_see": "admission 只读 peerDependencies / engines.dsh（这是与上游对等的口径），但插件还可能声明 dsh.compatibility.dsh 与 dshReleases（CASE-7590 的 @xmanrui/dsh-im 就写了 0.1.7-alpha.1 / compatible）。这类声明我们完全没读，于是「插件什么都没声明」的说法在数据上是错的",
       "mitigation": "T-108：把 dsh.compatibility / dshReleases 读成次要证据（tier 不得越级、不得单独判 blocked），在 verdict 里与 peer 结论分列；未读之前，文案只能说「未声明 @deepseek-ai/dsh* peer」，不能说「未声明任何兼容信息」",
-      "owner": "core/admission"
+      "owner": "core/admission",
+      "status": "resolved (R9)",
+      "resolved_by": "R9-S3: packages/core/src/compat-channel.ts reads dsh.compatibility.dsh / dshReleases / profiles as declared-tier secondary evidence only (info/warn reason + compat-channel evidence); three tier-discipline negative controls in tests/unit/compat-channel.test.ts"
     },
     {
       "id": "BS-14",
@@ -106,7 +110,9 @@
       "area": "runtime-inventory",
       "cannot_see": "相位层（M2-a P2）目前的证据是**合成快照**：本机没有可启动的 0.2.x profile，所以 `audit --snapshot` 从未读过真实 Host 的 pluginInventory。spec §5 的 B1/B2 只验证了「表与解析器」，没验证「这台机器上某行真的处于 no-fiber」。另外 agentPresets 维度未实现（同一 entry 在不同 preset 下相位可不同）",
       "mitigation": "产物强制 `sample.kind=synthetic|live`；对外只能说「相位表已实现」。T-201 P1（Host 内取相位）与 T-112（preset 维度）是解锁条件；真机样本出现后必须与合成样本并列而非替换",
-      "owner": "core/inventory"
+      "owner": "core/inventory",
+      "status": "partially mitigated (R9)",
+      "resolved_by": "R9-S4: scripts/probe_live_sample.mjs + data/results/ns-live-attempt-2026-10-27T16-00-00.000Z.json (outcome=blocked, blocker=profile-dependencies-installed). No live phase sample yet; the exit condition in HANDOFF §8 is unchanged"
     },
     {
       "id": "BS-16",
@@ -114,6 +120,13 @@
       "cannot_see": "副本来源归因只读**已安装 manifest 的 dependency 字段**：pnpm `overrides`/`resolutions`、lockfile 里手工钉的版本、以及嵌套超过一层的副本，都不会被点名；重复副本扫描只覆盖「profile / shared / 一层嵌套」三处，且**未知版本不参与比较**（无法证明不同就当没事）。软链/`link:` 已能跟随（`linked: true`），但深层 pnpm 树仍不扫",
       "mitigation": "结论措辞只说「这份副本来自 X 的 dependencies」，不说「唯一来源」；T-113（入口矩阵）与 M3 probe 是补全路径；出现误判时先补样本再改扫描器",
       "owner": "core/duplicates"
+    },
+    {
+      "id": "BS-17",
+      "area": "verdict/compat-channel",
+      "cannot_see": "行级：某行的 peer 区间判定通过，但作者同时在 dsh.compatibility 里写了一个更窄的版本/逐版本状态（例如 dsh: \"0.1.7-alpha.1\"），这一「声明相左」在行级目前不会提示——只有 bundle 级会挂 warn。原因是行级逐行刷 warn 会淹没真正的结论",
+      "mitigation": "登记为 T-117：先定「相左」在行级要不要提示、以什么粒度（每模块一条）出现，再实现；在此之前文档明确写「行级仅在 unconstrained 时挂载兼容通道」，不得声称行级已覆盖相左情形",
+      "owner": "core/verdict"
     }
   ]
 }

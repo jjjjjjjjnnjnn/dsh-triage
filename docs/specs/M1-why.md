@@ -18,6 +18,8 @@
 | A6 | 输出确定性 | `--stamp` 固定 → 两次输出逐字节相同 |
 | A7 | **行级归因**：`cordis.patch.yml` 里挂的 row 也要按模块判 admission，不能只看 bundle | 构造「patch row 钉旧 peer + 新运行时」→ 出现 `kind: entry` 的 `blocked`，且 `admission.row-scope` 点名 row id |
 | A8 | 未安装的 row 模块只能出 `unknown` + `missing.row-module`，不得判 `go` | 构造指向不存在包的 row → `--json` 里 `conclusion: unknown` |
+| A9 | **不静默**（R9 / T-107）：row 的模块没有任何 `@deepseek-ai/dsh*` / `engines.dsh` 声明 → 必须出 `unknown` + `missing.peer-declaration`，点名 row 与 module | `tests/unit/rows.test.ts` 两条负对照（CASE-7590：2 行 → 2 verdict，此前是 0） |
+| A10 | **次要通道**（R9 / T-108）：`dsh.compatibility` / `dshReleases` 只作 `declared` 级次要证据，单独不能判 `blocked`，也不能把 `unknown` 升 `go` | `tests/unit/compat-channel.test.ts` 三条 tier 纪律负对照 |
 
 ## 3. 真实案例验收（必须做，否则不算完成）
 
@@ -45,6 +47,8 @@
 | 运行时版本读不到 | 结论 `unknown` + `missing.runtime`，不得默认放行 |
 | 两个 bundle 同 id | `blocked` + 点名两个 owner |
 | patch row 指向未安装的包 | `unknown` + `missing.row-module`，不得静默 |
+| patch row 的模块什么都没声明（R9） | `unknown` + `missing.peer-declaration`，**禁止**不出 verdict |
+| 模块只写了 `dsh.compatibility`（R9） | `unknown` + 一条 `info`/`warn` 次要原因 + `compat-channel` 证据；**禁止**据此判 `blocked` 或 `go` |
 | patch row 声明满足当前运行时 | 不产生行级 verdict（不制造噪音） |
 | 同模块被多行引入 | 合并成一个 verdict，点名全部 row id |
 
