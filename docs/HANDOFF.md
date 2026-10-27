@@ -33,6 +33,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 证据 | `data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`（2 unknown，含 `compat-channel` 证据）· `data/results/d1-2026-10-27T15-00-00.000Z.json`（9/10，`miss_by_kind={explicit-unknown:1}`）· `data/results/why-2026-10-27T18-20-00.000Z.json`（本机真机复跑：156 行 → 2 条行级 unknown，无噪音爆炸）· `data/results/ns-live-attempt-2026-10-27T16-00-00.000Z.json`（outcome=blocked）· `gates-2026-10-27T18-30-00.000Z.json` / `gates-mutate-2026-10-27T18-40-00.000Z.json`（9 门全绿 + 9/9 CAUGHT）；共 **29 产物 / 36 个已审步骤** |
 | 审核报告 | `audit/AUDIT_2026-10-27_R9.md`（本轮）· `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（本轮记录了一次 blocked 尝试，见 §8） |
+| 交接快照（R9 收尾） | R9 = `9259515`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **110 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **29 产物 / 36 步**全被引用 |
 
 ---
 
