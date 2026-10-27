@@ -193,3 +193,16 @@
 - 人工决策：无（本轮无冻结区改动、无判据变更）；T-202a 需要 HUMAN 决定是否允许使用一次真实会话的模型凭据
 - SessionID：待 HUMAN 回填
 - 备注：本轮**不新增 verdict 命名空间**——没有判据来源就不造结论。对外只能称「工具清单（全局层）与两样本差分可用」，不能说「能判断工具为什么不见了」
+
+### 2026-10-28 R14｜M3 probe 执行器（T-301）+ 金标扩容（T-103）+ roadmap 合并（T-110）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/probe/src/{exec,host,plan,index}.ts`（exec/host 新）、`packages/probe/hooks/inventory-hook.mjs`（自 `scripts/probe_hooks/` 迁入）、`packages/plugin/src/{cli,probe-run}.ts`（probe-run 新）、`scripts/{lib/live.mjs}`（live 改为再导出）、`scripts/gate_namespace.mjs`、`scripts/record_probe.mjs`（新）、`tests/{unit/probe-exec.test.ts,unit/probe.test.ts,e2e/probe-cli.test.ts}`、`tests/fixtures/probe/{ok,broken,throw}-plugin/`（新）、`data/gold/admission-cases.json`（27 条）、`data/results/{probe-ok,probe-red-apply-fail,probe-red-import-fail,inventory-live,gates,gates-mutate}-2026-10-28*.json`、`docs/{specs/M3-probe.md（新）,ROADMAP,05-verdict-contract,HANDOFF,BACKLOG,00-vision,AI_HANDOVER,market/listing_zh}.md`、`_archive/{2026-10-28_06-roadmap-merged-into-ROADMAP.md,ARCHIVE_MANIFEST.md}`、`INDEX.md`、`AGENTS.md`、`audit/{blind_spots.json,step_reviews.json,AUDIT_2026-10-28_R14.md}`
+- 起因：HUMAN 指令「交接项目过来，进行下一步计划」→ 给出 R14 三选一，HUMAN 选 A（T-301）并签字三项（T-103 金标扩容 / T-110 roadmap 合并 / 允许 T-202a 凭据方向）
+- 结果：① **probe 执行器交付**：六步状态机 + `judgeProbe` 纯函数 + 六断言表（`client-rendered`/`namespace-diff` 恒 `unmeasured`）；② 真机一绿两红：go（boot→sample 11.8s / HTTP 401 / 行 active / 清理双判据）、apply 抛错 → `failed`、import 抛错 → `null`；③ **修掉我们自己的 bundle patch 缺陷**（`- id:` 是 patch 不是 insert，装了不挂载），门 `namespace` 新增 `rows-are-inserted` 并双向自测；④ 起 Host 机械收进 `host.ts` 一处，`scripts/lib/live.mjs` 只再导出；⑤ 金标 21→27（六条全部与文档语义一致，无分歧）；⑥ 单 roadmap（旧文件归档并登记）
+- 实测：同一真机样本首次同时出现 `active` / `null` / `failed` 三形状且 `cross_check.agree=true`；boot→sample 三次 11.8/12.3/13.8s（均 <20s）；本地 fixture 安装 0.58–0.64s
+- 门禁：`verify` **163 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；step_reviews **63 步**
+- 过程中的真实缺陷：① PowerShell `$env:DSH_HOME`/`$home` 赋值被拒，导致一次误把 profile 初始化到 `C:\Users\<名>\profiles\probe`（已即刻删除并改用显式 env 的临时脚本；这是操作事故，不是代码路径）；② 采样后立刻杀树 → HTTP 检查打在死端口（改为杀树前探测）；③ `--port`/`--no-open` 必须作为 app 参数透传，否则探针弹浏览器或报 `too many arguments`；④ 第一版执行器把 `return` 写在 `try` 里，返回值早于 cleanup 计算（重构成 `runSequence`）；⑤ 迁移 hook 路径后 3 条历史台账 `changed[]` 指向不存在文件（按迁移更新路径并在条目里注明，审核结论未改）
+- 人工决策：HUMAN 选 T-301 为主线；签字 T-103（金标扩容）、T-110（roadmap 合并）、T-202a 凭据方向。**铁律 4 未破**：本轮没有读取 `~/.dsh/credentials`，也没有向沙盒注入真实凭据；T-202a 若要真实会话，需先出 ADR 再签
+- SessionID：待 HUMAN 回填
+- 备注：probe 的结论只覆盖「装上了 + 起得来 + 端口有应答 + 候选行 active」；不判安全、不判功能、不判 UI（T-302）、不判工具注册（T-303）。沙盒是**空模板 profile**（`BS-24`），不是用户自己的组合；非 web 面靠人工 `--no-http`（`BS-23`）。preset 的 failed/broken/conditional 三档仍只有夹具（`BS-20` 部分关闭）

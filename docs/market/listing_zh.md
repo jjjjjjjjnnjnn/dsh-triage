@@ -42,7 +42,7 @@ dsh-triage probe <包名>   # 隔离实测计划（默认 dry-run，不碰你的
 
 ## 当前状态（提交前必改）
 
-`v0.1.0` 骨架：引擎 / 门禁 / CLI 的 `why`·`audit`·`check` 可用；Web 面板、隔离实测执行器、徽章、索引源按路线图落地（`docs/06-roadmap.md`）。
+`v0.1.0` 骨架：引擎 / 门禁 / CLI 的 `why`·`audit`·`check` 可用；Web 面板、隔离实测执行器、徽章、索引源按路线图落地（`docs/ROADMAP.md`）。
 
 ## 关键词
 

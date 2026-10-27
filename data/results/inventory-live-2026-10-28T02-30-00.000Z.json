@@ -1,0 +1,2201 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_live_inventory.mjs",
+  "generated_at": "2026-10-28T02:30:00.000Z",
+  "sample": {
+    "kind": "live",
+    "profile": "probe",
+    "dsh_home": "~\\AppData\\Local\\Temp\\opencode\\r14\\home-phases",
+    "runtime_version": "0.2.1-rc.4",
+    "wait_ms": 2620,
+    "transport": "in-process-projection",
+    "method": "readPluginInventory"
+  },
+  "outcome": "sampled",
+  "blockers": [],
+  "evidence": [
+    {
+      "id": "profile-manifest",
+      "ok": true,
+      "detail": "~\\AppData\\Local\\Temp\\opencode\\r14\\home-phases\\profiles\\probe"
+    },
+    {
+      "id": "dsh-runtime",
+      "ok": true,
+      "detail": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+    },
+    {
+      "id": "hook-present",
+      "ok": true,
+      "detail": "<repo>\\packages\\probe\\hooks\\inventory-hook.mjs"
+    },
+    {
+      "id": "host-sampled",
+      "ok": true,
+      "detail": "probe wrote its sample in 6.7s"
+    },
+    {
+      "id": "sample-declares-transport",
+      "ok": true,
+      "detail": "transport=in-process-projection (inside snapshot: in-process-projection)"
+    },
+    {
+      "id": "excluded-rows-absent",
+      "ok": true,
+      "detail": "1 excluded row(s), none of them scored"
+    },
+    {
+      "id": "hook-completed",
+      "ok": true,
+      "detail": "100 entries after 2620ms (probe excluded)"
+    }
+  ],
+  "host": {
+    "status": "sampled",
+    "seconds": 6.7,
+    "log_sha256": "372b920c9c28db28f1fedb588ab392edc6ec4f22710459932a285df95726661c",
+    "first_line": "dsh: warning: 2 entries did not activate",
+    "error_tail": null
+  },
+  "snapshot": {
+    "entries": [
+      {
+        "entryId": "include",
+        "moduleName": "cordis:include",
+        "enabled": true,
+        "fiberPhase": "active"
+      },
+      {
+        "entryId": "include:tool-plugin-manager",
+        "moduleName": "@deepseek-ai/dsh-plugin-manager/tools",
+        "enabled": false,
+        "fiberPhase": null,
+        "meta": {
+          "title": {
+            "en": "plugin-manager/tools",
+            "zh": "插件管理工具"
+          }
+        }
+      },
+      {
+        "entryId": "include:plugin-manager",
+        "moduleName": "@deepseek-ai/dsh-plugin-manager",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "plugin-manager",
+            "zh": "插件管理服务"
+          },
+          "description": {
+            "en": "Current-profile plugin and bundle management shared by dsh CLI, Web and agent tools",
+            "zh": "管理当前运行配置中的插件与插件包，支持安装、移除和启停。"
+          }
+        }
+      },
+      {
+        "entryId": "include:timer",
+        "moduleName": "@deepseek-ai/cordis-plugin-timer",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "timer",
+            "zh": "计时服务"
+          },
+          "description": {
+            "en": "Timer service for cordis",
+            "zh": "为其他插件提供延时和周期执行能力。"
+          }
+        }
+      },
+      {
+        "entryId": "include:hmr",
+        "moduleName": "@deepseek-ai/dsh-hmr",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "hmr",
+            "zh": "插件热重载"
+          },
+          "description": {
+            "en": "Coordinated module and profile configuration hot reload",
+            "zh": "在应用运行期间重新加载插件代码和配置。"
+          }
+        }
+      },
+      {
+        "entryId": "include:llm",
+        "moduleName": "@deepseek-ai/dsh-llm",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "llm",
+            "zh": "模型调用服务"
+          },
+          "description": {
+            "en": "Provider-neutral LLM service interface for the DeepSeek Harness",
+            "zh": "为不同模型提供统一的调用接口。"
+          }
+        }
+      },
+      {
+        "entryId": "include:deepseek-llm-api-extensions",
+        "moduleName": "@deepseek-ai/dsh-deepseek-llm-api-extensions",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "deepseek-llm-api-extensions",
+            "zh": "DeepSeek API 扩展"
+          },
+          "description": {
+            "en": "Additive request-field registry for the official DeepSeek LLM API adapter",
+            "zh": "允许其他插件向 DeepSeek 模型请求添加扩展字段。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session",
+        "moduleName": "@deepseek-ai/dsh-session",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session",
+            "zh": "会话记录"
+          },
+          "description": {
+            "en": "Event-sourced session store for the DeepSeek Harness",
+            "zh": "记录会话中的消息、工具调用和运行事件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-log-deepseek",
+        "moduleName": "@deepseek-ai/dsh-session-log-deepseek",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-log-deepseek",
+            "zh": "DeepSeek 会话日志上传"
+          },
+          "description": {
+            "en": "Incremental lossless session-log request extension for the official DeepSeek LLM API",
+            "zh": "启用后，随官方模型 API 请求向 DeepSeek 上传会话日志。"
+          }
+        }
+      },
+      {
+        "entryId": "include:typert",
+        "moduleName": "@deepseek-ai/dsh-typert-registry",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "typert-registry",
+            "zh": "Typert 类型注册表"
+          },
+          "description": {
+            "en": "Runtime registry for generated package reflection and Zod schemas",
+            "zh": "为插件提供运行时类型信息和远程调用定义。"
+          }
+        }
+      },
+      {
+        "entryId": "include:typert-loader",
+        "moduleName": "@deepseek-ai/dsh-typert-loader",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "typert-loader",
+            "zh": "Typert 类型加载"
+          },
+          "description": {
+            "en": "Loader integration for generated Typert package contributions",
+            "zh": "加载插件生成的类型信息，供运行时查询和调用。"
+          }
+        }
+      },
+      {
+        "entryId": "include:typert-gateway",
+        "moduleName": "@deepseek-ai/dsh-api-gateway",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "api-gateway",
+            "zh": "远程调用网关"
+          },
+          "description": {
+            "en": "Typert Remote Host dispatcher and Client API endpoint",
+            "zh": "接收客户端的接口调用，并分发给对应的服务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:remote-access",
+        "moduleName": "@deepseek-ai/dsh-api-remote-access",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": "@deepseek-ai/dsh-api-remote-access",
+          "description": "Method-level Remote access control for non-owner Peers and the per-Peer access snapshot"
+        }
+      },
+      {
+        "entryId": "include:session-title",
+        "moduleName": "@deepseek-ai/dsh-session-title",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-title",
+            "zh": "会话标题服务"
+          },
+          "description": {
+            "en": "Log-backed session title service and provider registry for the DeepSeek Harness",
+            "zh": "保存和读取会话标题，并管理标题生成方式。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-title-llm",
+        "moduleName": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-title-first-prompt-llm",
+            "zh": "首条消息生成标题"
+          },
+          "description": {
+            "en": "First-message LLM provider plugin for DeepSeek Harness session titles",
+            "zh": "根据会话中的首条消息，使用模型生成标题。"
+          }
+        }
+      },
+      {
+        "entryId": "include:user-questions",
+        "moduleName": "@deepseek-ai/dsh-user-questions",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "user-questions",
+            "zh": "用户提问服务"
+          },
+          "description": {
+            "en": "Abstract user-questions seam (ctx.userQuestions) for asking the human during agent runs",
+            "zh": "让运行中的 AI 向用户提问并等待回答。"
+          }
+        }
+      },
+      {
+        "entryId": "include:agent",
+        "moduleName": "@deepseek-ai/dsh-agent",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "agent",
+            "zh": "智能体管理"
+          },
+          "description": {
+            "en": "Agent interface, registry, initiator scope, and event vocabulary for the DeepSeek Harness",
+            "zh": "管理智能体实例及其运行上下文和事件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:plugin-package-inventory-deepseek",
+        "moduleName": "@deepseek-ai/dsh-plugin-package-inventory-deepseek",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "plugin-package-inventory-deepseek",
+            "zh": "DeepSeek 插件清单上报"
+          },
+          "description": {
+            "en": "Active Loader-backed plugin package inventory for official DeepSeek LLM API requests",
+            "zh": "随官方模型 API 请求发送当前活跃插件包的清单。"
+          }
+        }
+      },
+      {
+        "entryId": "include:agent-default-model",
+        "moduleName": "@deepseek-ai/dsh-agent-default-model",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "agent-default-model",
+            "zh": "默认模型"
+          },
+          "description": {
+            "en": "Default model selection shared by Agent entry points",
+            "zh": "为新建智能体提供默认模型选择。"
+          }
+        }
+      },
+      {
+        "entryId": "include:jobs",
+        "moduleName": "@deepseek-ai/dsh-jobs-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "jobs-local",
+            "zh": "本地后台任务"
+          },
+          "description": {
+            "en": "Process-local implementation of the DeepSeek Harness background job registry seam",
+            "zh": "管理当前进程中的后台任务及其运行状态。"
+          }
+        }
+      },
+      {
+        "entryId": "include:llm-retry",
+        "moduleName": "@deepseek-ai/dsh-llm-retry",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "llm-retry",
+            "zh": "模型请求重试"
+          },
+          "description": {
+            "en": "Provider-routed LLM request retry policy for the DeepSeek Harness",
+            "zh": "按模型提供方的策略重试失败的请求。"
+          }
+        }
+      },
+      {
+        "entryId": "include:config-editor",
+        "moduleName": "@deepseek-ai/dsh-config-editor",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "config-editor",
+            "zh": "插件配置编辑"
+          },
+          "description": {
+            "en": "Persist plugin configuration through profile patches and Loader reconciliation",
+            "zh": "保存插件配置，并将变更应用到当前运行配置。"
+          }
+        }
+      },
+      {
+        "entryId": "include:settings",
+        "moduleName": "@deepseek-ai/dsh-settings",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "settings",
+            "zh": "设置服务"
+          },
+          "description": {
+            "en": "Abstract user-settings seam (ctx.settings) for the DeepSeek Harness",
+            "zh": "为其他插件提供统一的用户设置接口。"
+          }
+        }
+      },
+      {
+        "entryId": "include:authorization",
+        "moduleName": "@deepseek-ai/dsh-authorization",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "authorization",
+            "zh": "授权流程服务"
+          },
+          "description": {
+            "en": "Authorization seam (ctx.authorization): plugin-owned flows that obtain a credential through a conversation with the human",
+            "zh": "组织需要用户参与的登录和凭据授权流程。"
+          }
+        }
+      },
+      {
+        "entryId": "include:deepseek-account",
+        "moduleName": "@deepseek-ai/dsh-deepseek-account-platform",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "deepseek-account-platform",
+            "zh": "DeepSeek 账号登录"
+          },
+          "description": {
+            "en": "Authorize DeepSeek accounts through browser PKCE",
+            "zh": "通过浏览器完成 DeepSeek 账号登录授权。"
+          }
+        }
+      },
+      {
+        "entryId": "include:credentials",
+        "moduleName": "@deepseek-ai/dsh-credentials-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "credentials-local",
+            "zh": "本地凭据存储"
+          },
+          "description": {
+            "en": "File-backed credentials provider ($DSH_HOME/.env under the live process environment) for the DeepSeek Harness",
+            "zh": "保存 API 密钥等凭据，并按优先级读取环境变量和本地凭据文件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:llm-pi-ai",
+        "moduleName": "@deepseek-ai/dsh-llm-pi-ai",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "llm-pi-ai",
+            "zh": "pi-ai 模型适配"
+          },
+          "description": {
+            "en": "pi-ai-backed DeepSeek adapter for the DeepSeek Harness LLM seam (design-verification twin of dsh-llm-deepseek)",
+            "zh": "通过 pi-ai 为 DeepSeek Harness 提供 DeepSeek 模型适配，作为 dsh-llm-deepseek 的设计验证实现。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-persistence-jsonl",
+        "moduleName": "@deepseek-ai/dsh-session-persistence-jsonl",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-persistence-jsonl",
+            "zh": "会话日志持久保存"
+          },
+          "description": {
+            "en": "JSONL durable session persistence backend for the DeepSeek Harness",
+            "zh": "将会话日志保存为本地 JSONL 文件，供后续恢复和读取。"
+          }
+        }
+      },
+      {
+        "entryId": "include:attachment-local",
+        "moduleName": "@deepseek-ai/dsh-attachment-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "attachment-local",
+            "zh": "本地附件存储"
+          },
+          "description": {
+            "en": "Private content-addressed DSH_HOME attachment storage",
+            "zh": "保存会话中的图片等附件，并按内容标识读取。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-query-sqlite",
+        "moduleName": "@deepseek-ai/dsh-session-query-sqlite",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-query-sqlite",
+            "zh": "会话查询与搜索"
+          },
+          "description": {
+            "en": "Concrete ctx.sessionQuery backend with SQLite FTS5 search",
+            "zh": "查询会话记录，并在配置启用时提供 SQLite 全文搜索。"
+          }
+        }
+      },
+      {
+        "entryId": "include:working-directory",
+        "moduleName": "@deepseek-ai/dsh-working-directory",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": "@deepseek-ai/dsh-working-directory",
+          "description": "Session working directories with durable changes and model context"
+        }
+      },
+      {
+        "entryId": "include:tool-working-directory",
+        "moduleName": "@deepseek-ai/dsh-tool-working-directory",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": "@deepseek-ai/dsh-tool-working-directory",
+          "description": "Read and change the active Session working directory"
+        }
+      },
+      {
+        "entryId": "include:session-projection",
+        "moduleName": "@deepseek-ai/dsh-session-projection",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-projection",
+            "zh": "会话状态汇总"
+          },
+          "description": {
+            "en": "Session-projection seam: the merge-extensible projection type table, the provider contract, and the ctx.sessionProjections registry serving whole current values of log-derived per-session state",
+            "zh": "从会话日志生成标题、状态等信息，供其他功能读取。"
+          }
+        }
+      },
+      {
+        "entryId": "include:storage",
+        "moduleName": "@deepseek-ai/dsh-storage",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "storage",
+            "zh": "数据存储服务"
+          },
+          "description": {
+            "en": "Storage hub (ctx.storage): named backend registry plus mounted data-form facilities for the DeepSeek Harness",
+            "zh": "统一管理插件使用的存储后端和数据访问方式。"
+          }
+        }
+      },
+      {
+        "entryId": "include:storage-json",
+        "moduleName": "@deepseek-ai/dsh-storage-json",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "storage-json",
+            "zh": "JSON 文件存储"
+          },
+          "description": {
+            "en": "JSON file KV storage backend for the DeepSeek Harness storage hub",
+            "zh": "将键值数据保存为本地 JSON 文件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:storage-domain",
+        "moduleName": "@deepseek-ai/dsh-storage-domain",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "storage-domain",
+            "zh": "结构化数据存储"
+          },
+          "description": {
+            "en": "Domain data form (ctx.storage.domain): schema-validated, event-emitting KV domains over storage backends for the DeepSeek Harness",
+            "zh": "按数据结构校验和保存键值数据，并通知其他插件发生了变更。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-projection-cache",
+        "moduleName": "@deepseek-ai/dsh-session-projection-cache",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-projection-cache",
+            "zh": "会话状态缓存"
+          },
+          "description": {
+            "en": "Persisted projection cache (ctx.sessionProjectionCache): durable per-session checkpoint records on the session_projcache storage domain (per-record layout), throttled write-behind, and the cached listing read",
+            "zh": "缓存从会话日志生成的状态，供会话列表等功能快速读取。"
+          }
+        }
+      },
+      {
+        "entryId": "include:otel",
+        "moduleName": "@deepseek-ai/dsh-otel",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "otel",
+            "zh": "OpenTelemetry 上报服务"
+          },
+          "description": {
+            "en": "Cordis service for independent ordinary-event and byte-bounded Session-log OTLP channels",
+            "zh": "为产品事件和会话日志提供独立的数据上报通道。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-telemetry-otel",
+        "moduleName": "@deepseek-ai/dsh-session-telemetry-otel",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-telemetry-otel",
+            "zh": "反馈会话日志上传"
+          },
+          "description": {
+            "en": "Feedback-authorized Session logs over byte-bounded OpenTelemetry HTTP requests",
+            "zh": "按反馈授权策略，通过 OpenTelemetry 上传相关会话日志。"
+          }
+        }
+      },
+      {
+        "entryId": "include:subprocess",
+        "moduleName": "@deepseek-ai/dsh-subprocess-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "subprocess-local",
+            "zh": "本地子进程"
+          },
+          "description": {
+            "en": "Local-subprocess implementation of the DeepSeek Harness subprocess seam",
+            "zh": "为其他插件提供本地进程的启动和管理能力。"
+          }
+        }
+      },
+      {
+        "entryId": "include:sandbox",
+        "moduleName": "@deepseek-ai/dsh-sandbox-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "sandbox-local",
+            "zh": "本地进程沙箱"
+          },
+          "description": {
+            "en": "Local process-sandbox backends for the DeepSeek Harness sandbox seam: bwrap, the npm-distributed landlock-run launcher, macOS Seatbelt, or the Windows ACL restricted-token runner — functionally probed, fail-closed",
+            "zh": "按操作系统提供进程隔离，限制命令的访问范围。"
+          }
+        }
+      },
+      {
+        "entryId": "include:sandbox-policy",
+        "moduleName": "@deepseek-ai/dsh-sandbox-policy",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "sandbox-policy",
+            "zh": "沙箱权限策略"
+          },
+          "description": {
+            "en": "Per-call sandbox policy resolver and current model context: deployment fallbacks plus each session's mode and workspace root, shared by every enforcing capability family",
+            "zh": "根据当前会话的权限模式和工作区，确定每次操作的限制。"
+          }
+        }
+      },
+      {
+        "entryId": "include:bash-sandbox",
+        "moduleName": "@deepseek-ai/dsh-bash-sandbox",
+        "enabled": false,
+        "fiberPhase": null,
+        "meta": {
+          "title": {
+            "en": "bash-sandbox",
+            "zh": "Bash 沙箱执行"
+          },
+          "description": {
+            "en": "Sandbox-consuming implementation of the DeepSeek Harness bash executor seam (confines every command via ctx.sandbox, reports denial/enforcement result facts)",
+            "zh": "在当前沙箱权限范围内执行 Bash 命令。"
+          }
+        }
+      },
+      {
+        "entryId": "include:pwsh-sandbox",
+        "moduleName": "@deepseek-ai/dsh-pwsh-sandbox",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "pwsh-sandbox",
+            "zh": "PowerShell 沙箱执行"
+          },
+          "description": {
+            "en": "Sandbox-consuming implementation of the DeepSeek Harness PowerShell executor seam (confines every command via ctx.sandbox, reports denial/enforcement result facts)",
+            "zh": "在当前沙箱权限范围内执行 PowerShell 命令。"
+          }
+        }
+      },
+      {
+        "entryId": "include:approval",
+        "moduleName": "@deepseek-ai/dsh-user-approval",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "user-approval",
+            "zh": "用户审批服务"
+          },
+          "description": {
+            "en": "User-approval seam (ctx.approval) for the DeepSeek Harness: one-shot permission decisions dispatched to composed answerers over the approval/request waterfall, fail-closed by default",
+            "zh": "向用户请求操作授权，并返回本次审批结果。"
+          }
+        }
+      },
+      {
+        "entryId": "include:permission",
+        "moduleName": "@deepseek-ai/dsh-permission-presets",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "permission-presets",
+            "zh": "权限模式服务"
+          },
+          "description": {
+            "en": "User-facing permission presets (ctx.permissionPresets) for the DeepSeek Harness: one product-level Permissions select bundling the sandbox-mode and approval-policy knobs, written through to their own session events",
+            "zh": "管理用户选择的权限模式，统一对应的沙箱和审批策略。"
+          }
+        }
+      },
+      {
+        "entryId": "include:shell-env",
+        "moduleName": "@deepseek-ai/dsh-shell-env",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "shell-env",
+            "zh": "命令环境变量"
+          },
+          "description": {
+            "en": "Tool-independent managed DSH_* shell environment registry",
+            "zh": "为命令执行工具统一提供 DSH 环境变量。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-bash",
+        "moduleName": "@deepseek-ai/dsh-tool-bash",
+        "enabled": false,
+        "fiberPhase": null,
+        "meta": {
+          "title": {
+            "en": "tool-bash",
+            "zh": "Bash 命令工具"
+          },
+          "description": {
+            "en": "Model-facing bash tool with optional generic background-job and sandbox-escalation support",
+            "zh": "让 AI 执行 Bash 命令，并按配置管理后台运行和权限申请。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-pwsh",
+        "moduleName": "@deepseek-ai/dsh-tool-pwsh",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-pwsh",
+            "zh": "PowerShell 命令工具"
+          },
+          "description": {
+            "en": "Model-facing pwsh tool over the bash executor seam",
+            "zh": "让 AI 执行 PowerShell 命令。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-jobs",
+        "moduleName": "@deepseek-ai/dsh-tool-jobs",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-jobs",
+            "zh": "后台任务工具"
+          },
+          "description": {
+            "en": "Model-facing background job control tools (job_output, job_list, job_kill) over the ctx.jobs registry",
+            "zh": "让 AI 查看后台任务、读取输出或停止任务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:fs-observation-policy",
+        "moduleName": "@deepseek-ai/dsh-fs-observation-policy",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "fs-observation-policy",
+            "zh": "文件编辑保护"
+          },
+          "description": {
+            "en": "File-context policy plugin for the DeepSeek Harness — observed-state, read-before-edit, and version-guarded write/edit added over the ctx.fs provider seam through the fs/* event gate (no service API)",
+            "zh": "要求 AI 编辑前先读取文件，并在文件发生变化时重新确认内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-fs",
+        "moduleName": "@deepseek-ai/dsh-tool-fs",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-fs",
+            "zh": "文件读写工具"
+          },
+          "description": {
+            "en": "Model-facing filesystem tools (read, write, edit) over the DeepSeek Harness filesystem seam (ctx.fs)",
+            "zh": "让 AI 读取、创建和编辑工作文件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-fs-search",
+        "moduleName": "@deepseek-ai/dsh-tool-fs-search",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-fs-search",
+            "zh": "文件搜索工具"
+          },
+          "description": {
+            "en": "Model-facing filesystem discovery tools (glob, grep) backed by the packaged ripgrep binary (@vscode/ripgrep)",
+            "zh": "让 AI 按文件名或文本内容搜索本地文件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:agent-instructions",
+        "moduleName": "@deepseek-ai/dsh-agent-instructions",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "agent-instructions",
+            "zh": "工作区指令加载"
+          },
+          "description": {
+            "en": "Workspace context loader for AGENTS.md/CLAUDE.md instruction files",
+            "zh": "读取 AGENTS.md、CLAUDE.md 等文件，为 AI 提供工作区规则。"
+          }
+        }
+      },
+      {
+        "entryId": "include:skill",
+        "moduleName": "@deepseek-ai/dsh-skill",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "skill",
+            "zh": "技能注册服务"
+          },
+          "description": {
+            "en": "Agent skill provider registry for the DeepSeek Harness",
+            "zh": "汇总不同来源的技能，供 AI 查询和使用。"
+          }
+        }
+      },
+      {
+        "entryId": "include:skill-filesystem",
+        "moduleName": "@deepseek-ai/dsh-skill-filesystem",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "skill-filesystem",
+            "zh": "本地技能加载"
+          },
+          "description": {
+            "en": "Local filesystem skill provider for the DeepSeek Harness",
+            "zh": "从本地目录发现和读取技能。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-skill",
+        "moduleName": "@deepseek-ai/dsh-tool-skill",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-skill",
+            "zh": "技能加载工具"
+          },
+          "description": {
+            "en": "Model-facing skill loading tool for the DeepSeek Harness",
+            "zh": "让 AI 按需加载技能说明。"
+          }
+        }
+      },
+      {
+        "entryId": "include:commands",
+        "moduleName": "@deepseek-ai/dsh-commands",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "commands",
+            "zh": "用户命令服务"
+          },
+          "description": {
+            "en": "Plugin-owned human command registry for DeepSeek Harness UIs",
+            "zh": "注册和管理插件提供的用户命令。"
+          }
+        }
+      },
+      {
+        "entryId": "include:command-feedback",
+        "moduleName": "@deepseek-ai/dsh-command-feedback",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "command-feedback",
+            "zh": "会话反馈命令"
+          },
+          "description": {
+            "en": "Log-only session feedback: the record event, the sessionFeedback Host Remote, and the human-facing slash command",
+            "zh": "通过 /feedback 等入口记录用户对会话的评价。"
+          }
+        }
+      },
+      {
+        "entryId": "include:goal",
+        "moduleName": "@deepseek-ai/dsh-goal",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "goal",
+            "zh": "会话目标服务"
+          },
+          "description": {
+            "en": "Event-sourced same-session goal state and lifecycle service for the DeepSeek Harness",
+            "zh": "记录会话目标，并管理目标的状态和生命周期。"
+          }
+        }
+      },
+      {
+        "entryId": "include:goal-round-driver",
+        "moduleName": "@deepseek-ai/dsh-goal-round-driver",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "goal-round-driver",
+            "zh": "目标自动续行"
+          },
+          "description": {
+            "en": "Race-fenced same-session goal-round driver",
+            "zh": "在条件和额度允许时，让 AI 继续推进当前会话的目标。"
+          }
+        }
+      },
+      {
+        "entryId": "include:command-goal",
+        "moduleName": "@deepseek-ai/dsh-command-goal",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "command-goal",
+            "zh": "目标管理命令"
+          },
+          "description": {
+            "en": "Human-facing slash command for persisted same-session goals",
+            "zh": "通过用户命令设置和管理当前会话目标。"
+          }
+        }
+      },
+      {
+        "entryId": "include:plan-mode",
+        "moduleName": "@deepseek-ai/dsh-plan-mode",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "plan-mode",
+            "zh": "计划模式"
+          },
+          "description": {
+            "en": "Logged per-agent plan mode with deployment guidance, a direct slash command, and a user-reviewed exit",
+            "zh": "让 AI 先制定计划，并在用户审阅后切换到执行。"
+          }
+        }
+      },
+      {
+        "entryId": "include:token-meter",
+        "moduleName": "@deepseek-ai/dsh-token-meter",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "token-meter",
+            "zh": "Token 计量"
+          },
+          "description": {
+            "en": "Replay-aware token measurement service (ctx.tokenMeter) for the DeepSeek Harness",
+            "zh": "估算模型上下文的 Token 用量，供压缩等功能判断预算。"
+          }
+        }
+      },
+      {
+        "entryId": "include:compaction-basic",
+        "moduleName": "@deepseek-ai/dsh-compaction-basic",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "compaction-basic",
+            "zh": "上下文压缩"
+          },
+          "description": {
+            "en": "Token-meter-driven compaction policy and LLM summarization backend for the DeepSeek Harness",
+            "zh": "在上下文达到阈值时，使用模型总结历史内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:command-compact",
+        "moduleName": "@deepseek-ai/dsh-command-compact",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "command-compact",
+            "zh": "上下文压缩命令"
+          },
+          "description": {
+            "en": "Human-facing slash command for explicit session compaction",
+            "zh": "让用户通过命令主动压缩当前会话上下文。"
+          }
+        }
+      },
+      {
+        "entryId": "include:subagent",
+        "moduleName": "@deepseek-ai/dsh-subagent",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "subagent",
+            "zh": "子智能体服务"
+          },
+          "description": {
+            "en": "Abstract subagent seam (ctx.subagents): named-provider registry for delegating to child agents",
+            "zh": "管理子智能体后端，为任务委派提供统一接口。"
+          }
+        }
+      },
+      {
+        "entryId": "include:subagent-spawn-in-process",
+        "moduleName": "@deepseek-ai/dsh-subagent-spawn-in-process",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "subagent-spawn-in-process",
+            "zh": "新建子智能体后端"
+          },
+          "description": {
+            "en": "In-process spawn subagent backend: runs a fresh child agent on ctx.agents",
+            "zh": "在当前进程中新建子智能体，执行独立任务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:subagent-fork-in-process",
+        "moduleName": "@deepseek-ai/dsh-subagent-fork-in-process",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "subagent-fork-in-process",
+            "zh": "继承上下文子智能体后端"
+          },
+          "description": {
+            "en": "In-process fork subagent backend: runs a child agent seeded with a prefix of the parent's log",
+            "zh": "使用父会话的一段历史创建子智能体。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-subagent-control",
+        "moduleName": "@deepseek-ai/dsh-tool-subagent-control",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-subagent-control",
+            "zh": "子智能体控制工具"
+          },
+          "description": {
+            "en": "Globally named send_message, interrupt_agent, and list_agents tools over ctx.subagents continuations",
+            "zh": "让 AI 向子智能体发送消息或中断其运行。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-subagent-list-agents",
+        "moduleName": "@deepseek-ai/dsh-tool-subagent-control/list-agents",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-subagent-control/list-agents",
+            "zh": "子智能体列表工具"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-subagent",
+        "moduleName": "@deepseek-ai/dsh-tool-subagent",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-subagent",
+            "zh": "子智能体委派工具"
+          },
+          "description": {
+            "en": "Model-facing subagent delegation tool over the ctx.subagents seam",
+            "zh": "让 AI 将任务交给子智能体，并获取运行结果。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-subagent-fork",
+        "moduleName": "@deepseek-ai/dsh-tool-subagent",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-subagent",
+            "zh": "子智能体委派工具"
+          },
+          "description": {
+            "en": "Model-facing subagent delegation tool over the ctx.subagents seam",
+            "zh": "让 AI 将任务交给子智能体，并获取运行结果。"
+          }
+        }
+      },
+      {
+        "entryId": "include:ptc-runtime",
+        "moduleName": "@deepseek-ai/dsh-ptc-runtime-node",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "ptc-runtime-node",
+            "zh": "Node PTC 运行时"
+          },
+          "description": {
+            "en": "Node PTC execution with per-call sandboxed processes or in-memory REPL state",
+            "zh": "在沙箱中的 Node 进程里执行用于调用工具的代码。"
+          }
+        }
+      },
+      {
+        "entryId": "include:workflow-ptc",
+        "moduleName": "@deepseek-ai/dsh-workflow-ptc",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "workflow-ptc",
+            "zh": "工作流执行引擎"
+          },
+          "description": {
+            "en": "Workflow orchestration in the shared sandboxed Node PTC runtime",
+            "zh": "使用共享的 PTC 运行时执行工作流编排代码。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-workflow",
+        "moduleName": "@deepseek-ai/dsh-tool-workflow",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-workflow",
+            "zh": "工作流工具"
+          },
+          "description": {
+            "en": "Model-facing workflow tool: run a JavaScript orchestration script over ctx.workflowEngine",
+            "zh": "让 AI 编写并运行 JavaScript 脚本，编排多项工具操作。"
+          }
+        }
+      },
+      {
+        "entryId": "include:timeout-policy",
+        "moduleName": "@deepseek-ai/dsh-tool-call-timeout-policy",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-call-timeout-policy",
+            "zh": "工具调用超时控制"
+          },
+          "description": {
+            "en": "Tool-call timeout policy: a tools/execute wrapper that arms a per-tool deadline on exec.signal and returns TOOL_TIMEOUT when it wins",
+            "zh": "按各工具的时限发出取消信号，并返回超时结果。"
+          }
+        }
+      },
+      {
+        "entryId": "include:spill-local",
+        "moduleName": "@deepseek-ai/dsh-spill-local",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "spill-local",
+            "zh": "本地长结果存储"
+          },
+          "description": {
+            "en": "Local-filesystem implementation of the DeepSeek Harness spill storage seam (private session-scoped files)",
+            "zh": "将过长的工具结果保存到会话专用的本地文件。"
+          }
+        }
+      },
+      {
+        "entryId": "include:spill-policy",
+        "moduleName": "@deepseek-ai/dsh-spill-policy",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "spill-policy",
+            "zh": "工具结果长度控制"
+          },
+          "description": {
+            "en": "Token-budgeted tool-result retention with recoverable text and image paths",
+            "zh": "限制直接放入上下文的工具结果长度，并保留完整结果的读取路径。"
+          }
+        }
+      },
+      {
+        "entryId": "include:session-checkpoint-policy",
+        "moduleName": "@deepseek-ai/dsh-session-checkpoint-policy",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "session-checkpoint-policy",
+            "zh": "会话检查点"
+          },
+          "description": {
+            "en": "Semantic session durability checkpoints before model requests and tool side effects",
+            "zh": "在模型请求和可能产生外部影响的工具操作前保存会话记录。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-result-pruner",
+        "moduleName": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "compaction-tool-result-pruner",
+            "zh": "工具结果精简"
+          },
+          "description": {
+            "en": "Replay-safe model-free head/middle/tail pruning for tool-result surface nodes",
+            "zh": "在上下文压力较大时，精简过长的工具输出并保留首尾内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:image-offload",
+        "moduleName": "@deepseek-ai/dsh-compaction-image-offload",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "compaction-image-offload",
+            "zh": "历史图片卸载"
+          },
+          "description": {
+            "en": "Durable image offload for image-capable routes: replace over-budget request images with placeholders and retry",
+            "zh": "将超出模型图片预算的历史图片替换为附件引用，再重试请求。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-todo",
+        "moduleName": "@deepseek-ai/dsh-tool-todo",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-todo",
+            "zh": "待办清单工具"
+          },
+          "description": {
+            "en": "Model-facing todo_write tool over the DeepSeek Harness event-sourced session log",
+            "zh": "让 AI 创建和更新任务待办清单。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-goal",
+        "moduleName": "@deepseek-ai/dsh-tool-goal",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-goal",
+            "zh": "目标管理工具"
+          },
+          "description": {
+            "en": "Model-facing same-session goal tools with execution-time authority checks",
+            "zh": "让 AI 设置、查看和更新当前会话目标。"
+          }
+        }
+      },
+      {
+        "entryId": "include:repeat-tool-reminder",
+        "moduleName": "@deepseek-ai/dsh-repeat-tool-reminder",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "repeat-tool-reminder",
+            "zh": "重复工具调用提醒"
+          },
+          "description": {
+            "en": "Repeat-tool-call guard plugin: advisory reminders when an agent loops on identical tool calls",
+            "zh": "在 AI 重复执行相同工具调用时，提示它调整做法。"
+          }
+        }
+      },
+      {
+        "entryId": "include:web",
+        "moduleName": "@deepseek-ai/dsh-web",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "web",
+            "zh": "网页访问服务"
+          },
+          "description": {
+            "en": "Abstract web access capability seam (ctx.web) for the DeepSeek Harness — search/fetch provider registry, registration-order-independent selection, request/result vocabulary, and the WebError taxonomy",
+            "zh": "统一管理网页搜索和内容获取的服务提供方。"
+          }
+        }
+      },
+      {
+        "entryId": "include:web-search-deepseek",
+        "moduleName": "@deepseek-ai/dsh-web-search-deepseek",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "web-search-deepseek",
+            "zh": "DeepSeek 网页搜索"
+          },
+          "description": {
+            "en": "DeepSeek-backed search provider (native web_search via the Anthropic-compatible API) for the DeepSeek Harness web capability seam (ctx.web)",
+            "zh": "通过 DeepSeek 提供网页搜索结果。"
+          }
+        }
+      },
+      {
+        "entryId": "include:web-deepseek-api",
+        "moduleName": "@deepseek-ai/dsh-web-deepseek-api",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "web-deepseek-api",
+            "zh": "DeepSeek 网页搜索与抓取 API"
+          },
+          "description": {
+            "en": "DeepSeek Search and Fetch API providers for the DeepSeek Harness web capability seam (ctx.web)",
+            "zh": "通过 DeepSeek Search API 搜索网页、Fetch API 抓取网页正文。"
+          }
+        }
+      },
+      {
+        "entryId": "include:web-fetch-http",
+        "moduleName": "@deepseek-ai/dsh-web-fetch-http",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "web-fetch-http",
+            "zh": "公开网页获取"
+          },
+          "description": {
+            "en": "Anonymous public HTTP(S) fetch provider for the DeepSeek Harness web capability seam (ctx.web)",
+            "zh": "读取无需登录的 HTTP 或 HTTPS 网页内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tool-web",
+        "moduleName": "@deepseek-ai/dsh-tool-web",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tool-web",
+            "zh": "网页搜索与读取工具"
+          },
+          "description": {
+            "en": "Model-facing web tools (web_search, web_fetch) over the DeepSeek Harness web capability seam (ctx.web)",
+            "zh": "让 AI 搜索网页并读取页面内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:mcp-resources",
+        "moduleName": "@deepseek-ai/dsh-mcp-resources",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "mcp-resources",
+            "zh": "MCP 资源访问"
+          },
+          "description": {
+            "en": "Scoped MCP resource discovery and reading through shared model tools",
+            "zh": "让 AI 发现并读取已接入 MCP 服务提供的资源。"
+          }
+        }
+      },
+      {
+        "entryId": "include:tools",
+        "moduleName": "@deepseek-ai/dsh-tools",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "tools",
+            "zh": "工具注册与执行"
+          },
+          "description": {
+            "en": "Tool registry and execution pipeline for the DeepSeek Harness",
+            "zh": "管理可用工具及其调用执行流程。"
+          }
+        }
+      },
+      {
+        "entryId": "include:system-prompt",
+        "moduleName": "@deepseek-ai/dsh-system-prompt",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "system-prompt",
+            "zh": "系统提示词组装"
+          },
+          "description": {
+            "en": "System prompt assembly registry for the DeepSeek Harness",
+            "zh": "汇总各插件提供的系统提示词内容。"
+          }
+        }
+      },
+      {
+        "entryId": "include:agent-loop",
+        "moduleName": "@deepseek-ai/dsh-agent-loop",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "agent-loop",
+            "zh": "智能体运行循环"
+          },
+          "description": {
+            "en": "The concrete agent loop plugin for the DeepSeek Harness",
+            "zh": "协调模型请求、工具调用和后续步骤，推进智能体任务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:fs-sandbox",
+        "moduleName": "@deepseek-ai/dsh-fs-sandbox",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "fs-sandbox",
+            "zh": "文件沙箱访问"
+          },
+          "description": {
+            "en": "Sandbox-enforcing implementation of the DeepSeek Harness filesystem seam: fences write/edit by the per-call sandbox mode (read-only denies mutation, workspace-write contains it to the workspace + temp roots) while reads pass through",
+            "zh": "按当前权限模式限制文件写入和编辑范围。"
+          }
+        }
+      },
+      {
+        "entryId": "include:llm-deepseek",
+        "moduleName": "@deepseek-ai/dsh-llm-deepseek-api-key",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "llm-deepseek-api-key",
+            "zh": "DeepSeek API 密钥接入"
+          },
+          "description": {
+            "en": "DeepSeek api-key provider authentication and discovery",
+            "zh": "使用 API 密钥连接 DeepSeek 模型服务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:llm-deepseek-account",
+        "moduleName": "@deepseek-ai/dsh-llm-deepseek-account",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": {
+            "en": "llm-deepseek-account",
+            "zh": "DeepSeek 账号模型接入"
+          },
+          "description": {
+            "en": "DeepSeek account provider authentication and discovery",
+            "zh": "使用已登录的 DeepSeek 账号连接模型服务。"
+          }
+        }
+      },
+      {
+        "entryId": "include:triage-probe-ok",
+        "moduleName": "triage-probe-fixture-ok",
+        "enabled": true,
+        "fiberPhase": "active",
+        "meta": {
+          "title": "triage-probe-fixture-ok"
+        }
+      },
+      {
+        "entryId": "include:triage-probe-broken",
+        "moduleName": "triage-probe-fixture-broken",
+        "enabled": true,
+        "fiberPhase": null,
+        "meta": {
+          "title": "triage-probe-fixture-broken"
+        }
+      },
+      {
+        "entryId": "include:triage-probe-throw",
+        "moduleName": "triage-probe-fixture-throw",
+        "enabled": true,
+        "fiberPhase": "failed",
+        "meta": {
+          "title": "triage-probe-fixture-throw"
+        }
+      }
+    ],
+    "managementAvailable": true,
+    "transport": "in-process-projection"
+  },
+  "host_summary": {
+    "entries": 100,
+    "by_phase": {
+      "active": 95,
+      "null": 4,
+      "failed": 1
+    },
+    "phases": {
+      "include": "active",
+      "include:agent": "active",
+      "include:agent-default-model": "active",
+      "include:agent-instructions": "active",
+      "include:agent-loop": "active",
+      "include:approval": "active",
+      "include:attachment-local": "active",
+      "include:authorization": "active",
+      "include:bash-sandbox": "none",
+      "include:command-compact": "active",
+      "include:command-feedback": "active",
+      "include:command-goal": "active",
+      "include:commands": "active",
+      "include:compaction-basic": "active",
+      "include:config-editor": "active",
+      "include:credentials": "active",
+      "include:deepseek-account": "active",
+      "include:deepseek-llm-api-extensions": "active",
+      "include:fs-observation-policy": "active",
+      "include:fs-sandbox": "active",
+      "include:goal": "active",
+      "include:goal-round-driver": "active",
+      "include:hmr": "active",
+      "include:image-offload": "active",
+      "include:jobs": "active",
+      "include:llm": "active",
+      "include:llm-deepseek": "active",
+      "include:llm-deepseek-account": "active",
+      "include:llm-pi-ai": "active",
+      "include:llm-retry": "active",
+      "include:mcp-resources": "active",
+      "include:otel": "active",
+      "include:permission": "active",
+      "include:plan-mode": "active",
+      "include:plugin-manager": "active",
+      "include:plugin-package-inventory-deepseek": "active",
+      "include:ptc-runtime": "active",
+      "include:pwsh-sandbox": "active",
+      "include:remote-access": "active",
+      "include:repeat-tool-reminder": "active",
+      "include:sandbox": "active",
+      "include:sandbox-policy": "active",
+      "include:session": "active",
+      "include:session-checkpoint-policy": "active",
+      "include:session-log-deepseek": "active",
+      "include:session-persistence-jsonl": "active",
+      "include:session-projection": "active",
+      "include:session-projection-cache": "active",
+      "include:session-query-sqlite": "active",
+      "include:session-telemetry-otel": "active",
+      "include:session-title": "active",
+      "include:session-title-llm": "active",
+      "include:settings": "active",
+      "include:shell-env": "active",
+      "include:skill": "active",
+      "include:skill-filesystem": "active",
+      "include:spill-local": "active",
+      "include:spill-policy": "active",
+      "include:storage": "active",
+      "include:storage-domain": "active",
+      "include:storage-json": "active",
+      "include:subagent": "active",
+      "include:subagent-fork-in-process": "active",
+      "include:subagent-spawn-in-process": "active",
+      "include:subprocess": "active",
+      "include:system-prompt": "active",
+      "include:timeout-policy": "active",
+      "include:timer": "active",
+      "include:token-meter": "active",
+      "include:tool-bash": "none",
+      "include:tool-fs": "active",
+      "include:tool-fs-search": "active",
+      "include:tool-goal": "active",
+      "include:tool-jobs": "active",
+      "include:tool-plugin-manager": "none",
+      "include:tool-pwsh": "active",
+      "include:tool-result-pruner": "active",
+      "include:tool-skill": "active",
+      "include:tool-subagent": "active",
+      "include:tool-subagent-control": "active",
+      "include:tool-subagent-fork": "active",
+      "include:tool-subagent-list-agents": "active",
+      "include:tool-todo": "active",
+      "include:tool-web": "active",
+      "include:tool-workflow": "active",
+      "include:tool-working-directory": "active",
+      "include:tools": "active",
+      "include:triage-probe-broken": "none",
+      "include:triage-probe-ok": "active",
+      "include:triage-probe-throw": "failed",
+      "include:typert": "active",
+      "include:typert-gateway": "active",
+      "include:typert-loader": "active",
+      "include:user-questions": "active",
+      "include:web": "active",
+      "include:web-deepseek-api": "active",
+      "include:web-fetch-http": "active",
+      "include:web-search-deepseek": "active",
+      "include:workflow-ptc": "active",
+      "include:working-directory": "active"
+    },
+    "failed": [
+      "include:triage-probe-throw"
+    ],
+    "no_fiber_enabled": [
+      "include:triage-probe-broken"
+    ],
+    "disabled": [
+      "include:bash-sandbox",
+      "include:tool-bash",
+      "include:tool-plugin-manager"
+    ],
+    "presets": null
+  },
+  "excluded": [
+    {
+      "entryId": "include:triage-inventory-probe",
+      "reason": "the probe row itself, mounted through a launcher --patch overlay for this sample only"
+    }
+  ],
+  "cli": {
+    "exit_code": 1,
+    "entries": 100,
+    "transport": "in-process-projection",
+    "missing": 0,
+    "undeclared": [
+      "include",
+      "include:agent",
+      "include:agent-default-model",
+      "include:agent-instructions",
+      "include:agent-loop",
+      "include:approval",
+      "include:attachment-local",
+      "include:authorization",
+      "include:bash-sandbox",
+      "include:command-compact",
+      "include:command-feedback",
+      "include:command-goal",
+      "include:commands",
+      "include:compaction-basic",
+      "include:config-editor",
+      "include:credentials",
+      "include:deepseek-account",
+      "include:deepseek-llm-api-extensions",
+      "include:fs-observation-policy",
+      "include:fs-sandbox",
+      "include:goal",
+      "include:goal-round-driver",
+      "include:hmr",
+      "include:image-offload",
+      "include:jobs",
+      "include:llm",
+      "include:llm-deepseek",
+      "include:llm-deepseek-account",
+      "include:llm-pi-ai",
+      "include:llm-retry",
+      "include:mcp-resources",
+      "include:otel",
+      "include:permission",
+      "include:plan-mode",
+      "include:plugin-manager",
+      "include:plugin-package-inventory-deepseek",
+      "include:ptc-runtime",
+      "include:pwsh-sandbox",
+      "include:remote-access",
+      "include:repeat-tool-reminder",
+      "include:sandbox",
+      "include:sandbox-policy",
+      "include:session",
+      "include:session-checkpoint-policy",
+      "include:session-log-deepseek",
+      "include:session-persistence-jsonl",
+      "include:session-projection",
+      "include:session-projection-cache",
+      "include:session-query-sqlite",
+      "include:session-telemetry-otel",
+      "include:session-title",
+      "include:session-title-llm",
+      "include:settings",
+      "include:shell-env",
+      "include:skill",
+      "include:skill-filesystem",
+      "include:spill-local",
+      "include:spill-policy",
+      "include:storage",
+      "include:storage-domain",
+      "include:storage-json",
+      "include:subagent",
+      "include:subagent-fork-in-process",
+      "include:subagent-spawn-in-process",
+      "include:subprocess",
+      "include:system-prompt",
+      "include:timeout-policy",
+      "include:timer",
+      "include:token-meter",
+      "include:tool-bash",
+      "include:tool-fs",
+      "include:tool-fs-search",
+      "include:tool-goal",
+      "include:tool-jobs",
+      "include:tool-plugin-manager",
+      "include:tool-pwsh",
+      "include:tool-result-pruner",
+      "include:tool-skill",
+      "include:tool-subagent",
+      "include:tool-subagent-control",
+      "include:tool-subagent-fork",
+      "include:tool-subagent-list-agents",
+      "include:tool-todo",
+      "include:tool-web",
+      "include:tool-workflow",
+      "include:tool-working-directory",
+      "include:tools",
+      "include:typert",
+      "include:typert-gateway",
+      "include:typert-loader",
+      "include:user-questions",
+      "include:web",
+      "include:web-deepseek-api",
+      "include:web-fetch-http",
+      "include:web-search-deepseek",
+      "include:workflow-ptc",
+      "include:working-directory"
+    ],
+    "verdicts": 99,
+    "by_code": {
+      "runtime.disabled": 3,
+      "runtime.fiber-failed": 1,
+      "runtime.no-fiber": 1,
+      "runtime.undeclared-entry": 94
+    },
+    "by_code_ids": {
+      "runtime.disabled": [
+        "include:bash-sandbox",
+        "include:tool-bash",
+        "include:tool-plugin-manager"
+      ],
+      "runtime.no-fiber": [
+        "include:triage-probe-broken"
+      ],
+      "runtime.fiber-failed": [
+        "include:triage-probe-throw"
+      ],
+      "runtime.undeclared-entry": [
+        "include",
+        "include:agent",
+        "include:agent-default-model",
+        "include:agent-instructions",
+        "include:agent-loop",
+        "include:approval",
+        "include:attachment-local",
+        "include:authorization",
+        "include:command-compact",
+        "include:command-feedback",
+        "include:command-goal",
+        "include:commands",
+        "include:compaction-basic",
+        "include:config-editor",
+        "include:credentials",
+        "include:deepseek-account",
+        "include:deepseek-llm-api-extensions",
+        "include:fs-observation-policy",
+        "include:fs-sandbox",
+        "include:goal",
+        "include:goal-round-driver",
+        "include:hmr",
+        "include:image-offload",
+        "include:jobs",
+        "include:llm",
+        "include:llm-deepseek",
+        "include:llm-deepseek-account",
+        "include:llm-pi-ai",
+        "include:llm-retry",
+        "include:mcp-resources",
+        "include:otel",
+        "include:permission",
+        "include:plan-mode",
+        "include:plugin-manager",
+        "include:plugin-package-inventory-deepseek",
+        "include:ptc-runtime",
+        "include:pwsh-sandbox",
+        "include:remote-access",
+        "include:repeat-tool-reminder",
+        "include:sandbox",
+        "include:sandbox-policy",
+        "include:session",
+        "include:session-checkpoint-policy",
+        "include:session-log-deepseek",
+        "include:session-persistence-jsonl",
+        "include:session-projection",
+        "include:session-projection-cache",
+        "include:session-query-sqlite",
+        "include:session-telemetry-otel",
+        "include:session-title",
+        "include:session-title-llm",
+        "include:settings",
+        "include:shell-env",
+        "include:skill",
+        "include:skill-filesystem",
+        "include:spill-local",
+        "include:spill-policy",
+        "include:storage",
+        "include:storage-domain",
+        "include:storage-json",
+        "include:subagent",
+        "include:subagent-fork-in-process",
+        "include:subagent-spawn-in-process",
+        "include:subprocess",
+        "include:system-prompt",
+        "include:timeout-policy",
+        "include:timer",
+        "include:token-meter",
+        "include:tool-fs",
+        "include:tool-fs-search",
+        "include:tool-goal",
+        "include:tool-jobs",
+        "include:tool-pwsh",
+        "include:tool-result-pruner",
+        "include:tool-skill",
+        "include:tool-subagent",
+        "include:tool-subagent-control",
+        "include:tool-subagent-fork",
+        "include:tool-subagent-list-agents",
+        "include:tool-todo",
+        "include:tool-web",
+        "include:tool-workflow",
+        "include:tool-working-directory",
+        "include:tools",
+        "include:typert",
+        "include:typert-gateway",
+        "include:typert-loader",
+        "include:user-questions",
+        "include:web",
+        "include:web-deepseek-api",
+        "include:web-fetch-http",
+        "include:web-search-deepseek",
+        "include:workflow-ptc",
+        "include:working-directory"
+      ]
+    },
+    "phases": {
+      "include": "active",
+      "include:agent": "active",
+      "include:agent-default-model": "active",
+      "include:agent-instructions": "active",
+      "include:agent-loop": "active",
+      "include:approval": "active",
+      "include:attachment-local": "active",
+      "include:authorization": "active",
+      "include:bash-sandbox": "none",
+      "include:command-compact": "active",
+      "include:command-feedback": "active",
+      "include:command-goal": "active",
+      "include:commands": "active",
+      "include:compaction-basic": "active",
+      "include:config-editor": "active",
+      "include:credentials": "active",
+      "include:deepseek-account": "active",
+      "include:deepseek-llm-api-extensions": "active",
+      "include:fs-observation-policy": "active",
+      "include:fs-sandbox": "active",
+      "include:goal": "active",
+      "include:goal-round-driver": "active",
+      "include:hmr": "active",
+      "include:image-offload": "active",
+      "include:jobs": "active",
+      "include:llm": "active",
+      "include:llm-deepseek": "active",
+      "include:llm-deepseek-account": "active",
+      "include:llm-pi-ai": "active",
+      "include:llm-retry": "active",
+      "include:mcp-resources": "active",
+      "include:otel": "active",
+      "include:permission": "active",
+      "include:plan-mode": "active",
+      "include:plugin-manager": "active",
+      "include:plugin-package-inventory-deepseek": "active",
+      "include:ptc-runtime": "active",
+      "include:pwsh-sandbox": "active",
+      "include:remote-access": "active",
+      "include:repeat-tool-reminder": "active",
+      "include:sandbox": "active",
+      "include:sandbox-policy": "active",
+      "include:session": "active",
+      "include:session-checkpoint-policy": "active",
+      "include:session-log-deepseek": "active",
+      "include:session-persistence-jsonl": "active",
+      "include:session-projection": "active",
+      "include:session-projection-cache": "active",
+      "include:session-query-sqlite": "active",
+      "include:session-telemetry-otel": "active",
+      "include:session-title": "active",
+      "include:session-title-llm": "active",
+      "include:settings": "active",
+      "include:shell-env": "active",
+      "include:skill": "active",
+      "include:skill-filesystem": "active",
+      "include:spill-local": "active",
+      "include:spill-policy": "active",
+      "include:storage": "active",
+      "include:storage-domain": "active",
+      "include:storage-json": "active",
+      "include:subagent": "active",
+      "include:subagent-fork-in-process": "active",
+      "include:subagent-spawn-in-process": "active",
+      "include:subprocess": "active",
+      "include:system-prompt": "active",
+      "include:timeout-policy": "active",
+      "include:timer": "active",
+      "include:token-meter": "active",
+      "include:tool-bash": "none",
+      "include:tool-fs": "active",
+      "include:tool-fs-search": "active",
+      "include:tool-goal": "active",
+      "include:tool-jobs": "active",
+      "include:tool-plugin-manager": "none",
+      "include:tool-pwsh": "active",
+      "include:tool-result-pruner": "active",
+      "include:tool-skill": "active",
+      "include:tool-subagent": "active",
+      "include:tool-subagent-control": "active",
+      "include:tool-subagent-fork": "active",
+      "include:tool-subagent-list-agents": "active",
+      "include:tool-todo": "active",
+      "include:tool-web": "active",
+      "include:tool-workflow": "active",
+      "include:tool-working-directory": "active",
+      "include:tools": "active",
+      "include:triage-probe-broken": "none",
+      "include:triage-probe-ok": "active",
+      "include:triage-probe-throw": "failed",
+      "include:typert": "active",
+      "include:typert-gateway": "active",
+      "include:typert-loader": "active",
+      "include:user-questions": "active",
+      "include:web": "active",
+      "include:web-deepseek-api": "active",
+      "include:web-fetch-http": "active",
+      "include:web-search-deepseek": "active",
+      "include:workflow-ptc": "active",
+      "include:working-directory": "active"
+    },
+    "presets": [],
+    "preset_declarations": []
+  },
+  "cross_check": {
+    "performed": true,
+    "agree": true,
+    "scope": [
+      "per-entry phase map",
+      "disabled / failed / no-fiber identity lists",
+      "per-preset row map + conditional identity list",
+      "verdict code counts"
+    ],
+    "caveat": "both sides read the same readPluginInventory(ctx) projection: this proves the summary and the offline engine agree, not that the Host state is correct",
+    "detail": "Host summary and CLI conclusions agree row for row",
+    "host": {
+      "entries": 100,
+      "by_phase": {
+        "active": 95,
+        "null": 4,
+        "failed": 1
+      },
+      "disabled": 3,
+      "failed": 1,
+      "no_fiber_enabled": 1,
+      "presets": null
+    },
+    "cli": {
+      "entries": 100,
+      "transport": "in-process-projection",
+      "missing": 0,
+      "undeclared": [
+        "include",
+        "include:agent",
+        "include:agent-default-model",
+        "include:agent-instructions",
+        "include:agent-loop",
+        "include:approval",
+        "include:attachment-local",
+        "include:authorization",
+        "include:bash-sandbox",
+        "include:command-compact",
+        "include:command-feedback",
+        "include:command-goal",
+        "include:commands",
+        "include:compaction-basic",
+        "include:config-editor",
+        "include:credentials",
+        "include:deepseek-account",
+        "include:deepseek-llm-api-extensions",
+        "include:fs-observation-policy",
+        "include:fs-sandbox",
+        "include:goal",
+        "include:goal-round-driver",
+        "include:hmr",
+        "include:image-offload",
+        "include:jobs",
+        "include:llm",
+        "include:llm-deepseek",
+        "include:llm-deepseek-account",
+        "include:llm-pi-ai",
+        "include:llm-retry",
+        "include:mcp-resources",
+        "include:otel",
+        "include:permission",
+        "include:plan-mode",
+        "include:plugin-manager",
+        "include:plugin-package-inventory-deepseek",
+        "include:ptc-runtime",
+        "include:pwsh-sandbox",
+        "include:remote-access",
+        "include:repeat-tool-reminder",
+        "include:sandbox",
+        "include:sandbox-policy",
+        "include:session",
+        "include:session-checkpoint-policy",
+        "include:session-log-deepseek",
+        "include:session-persistence-jsonl",
+        "include:session-projection",
+        "include:session-projection-cache",
+        "include:session-query-sqlite",
+        "include:session-telemetry-otel",
+        "include:session-title",
+        "include:session-title-llm",
+        "include:settings",
+        "include:shell-env",
+        "include:skill",
+        "include:skill-filesystem",
+        "include:spill-local",
+        "include:spill-policy",
+        "include:storage",
+        "include:storage-domain",
+        "include:storage-json",
+        "include:subagent",
+        "include:subagent-fork-in-process",
+        "include:subagent-spawn-in-process",
+        "include:subprocess",
+        "include:system-prompt",
+        "include:timeout-policy",
+        "include:timer",
+        "include:token-meter",
+        "include:tool-bash",
+        "include:tool-fs",
+        "include:tool-fs-search",
+        "include:tool-goal",
+        "include:tool-jobs",
+        "include:tool-plugin-manager",
+        "include:tool-pwsh",
+        "include:tool-result-pruner",
+        "include:tool-skill",
+        "include:tool-subagent",
+        "include:tool-subagent-control",
+        "include:tool-subagent-fork",
+        "include:tool-subagent-list-agents",
+        "include:tool-todo",
+        "include:tool-web",
+        "include:tool-workflow",
+        "include:tool-working-directory",
+        "include:tools",
+        "include:typert",
+        "include:typert-gateway",
+        "include:typert-loader",
+        "include:user-questions",
+        "include:web",
+        "include:web-deepseek-api",
+        "include:web-fetch-http",
+        "include:web-search-deepseek",
+        "include:workflow-ptc",
+        "include:working-directory"
+      ],
+      "verdicts": 99,
+      "by_code": {
+        "runtime.disabled": 3,
+        "runtime.fiber-failed": 1,
+        "runtime.no-fiber": 1,
+        "runtime.undeclared-entry": 94
+      }
+    }
+  },
+  "next_step": {
+    "requirement": "none for P1; the Remote transport (P3) is a separate task",
+    "reference": "docs/specs/M2-inventory.md §4"
+  }
+}

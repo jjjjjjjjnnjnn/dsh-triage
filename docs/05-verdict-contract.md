@@ -109,7 +109,6 @@
 `dshReleases` 里出现的未知状态（不是 `compatible`/`ok`/… 的字符串）按 **不兼容** 读——保守方向只能是「更不确定」，不能是「更乐观」。
 
 ## 2d. Registry 事实：dist-tag 失步与区间形状（R10 / T-109 / T-115）
-
 `check` 除了判「声明 vs 运行时」，还要回答一个更早的问题：**你装的是哪个构建**。
 
 | 判据 | 规则 | 证据等级 |
@@ -127,6 +126,22 @@
 
 真机复核（2026-10-27）：`@deepseek-ai/dsh-tools` / `dsh-base` 的 `latest` 停在 `0.0.1-rc.1`，`@deepseek-ai/dsh` 停在 `0.2.1-rc.2`，三者 `next` 都是 `0.2.1-rc.4` —— 证据 `data/results/registry-2026-10-27T19-00-00.000Z.json`。
 
+## 2e. Probe：隔离实测的结论口径（R14 / T-301）
+
+probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的通道，因此它的口径必须比声明层更窄，而不是更宽：
+
+| 规则 | 实现 / 门 |
+|---|---|
+| `go` **只**表示「候选装上了 + Host 起了 + 端口应答了 + 候选行 active」 | `packages/probe/src/exec.ts#judgeProbe`；文案 `probe.served` / `probe.row-active` |
+| 不判安全、不判功能、不判 UI 可用 | 断言 `client-rendered` / `namespace-diff` 在产物里**必须**是 `unmeasured`（T-302 / T-303），单测钉住 |
+| 候选行必须**唯一**：0 行 → `blocked`（`probe.row-missing`）；≥2 行 → `unknown`（`probe.row-ambiguous`） | 不猜归属（与 `runtime.ambiguous-entry` 同一条纪律） |
+| 候选行存在但相位不是 `active` → `blocked`（`probe.row-inactive`），并点名相位 | `failed` 与 `null` 是两种失败形状，不许合并成「没起来」 |
+| 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |
+| 实测运行时不在候选声明区间 → 降为 `unknown`（`probe.runtime-mismatch`） | 结论不可外推到没跑过的运行时 |
+| `evidence[].method` 必须写真实传输 | `boot + <transport> inventory sample`；探针行自身从评分行里剔除 |
+
+命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.cleanup-incomplete`。
+
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |
 |---|---|
@@ -134,7 +149,7 @@
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间 |
+| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.* / probe.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间，`probe.*` 是 M3 隔离实测的命名空间（见 §2e） |
 
 `runtime.*` 的完整成员（R12 起含 preset 维度）：`fiber-failed` / `no-fiber` / `disabled` / `missing-entry` / `ambiguous-entry` / `undeclared-entry` / `preset-unjudged` / `preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-divergence`。新增成员必须三处同改：`messages.ts` 文案（中英）、门 `verdict-contract` 白名单、本节与 `docs/specs/M2-inventory.md` §3。
 

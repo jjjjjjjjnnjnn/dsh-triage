@@ -48,8 +48,8 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
 |---|---|---|
 | M1 收口 | `docs/specs/M1-why.md` | 21 条金标全绿 + `scan_env` SSOT 落盘 |
 | M2 运行时台账 | `docs/02-signal-sources.md` §4 待验证清单 | `pluginInventory` 字段核实 + `audit` 显示相位 |
-| M3 probe 执行器 | `packages/probe/src/plan.ts` | 见 `docs/06-roadmap.md` M3 出口门禁 |
-| 分发起草 | `docs/06-roadmap.md` §3 | catalog/hub/dsh.so 三份提交文案 |
+| M3 probe 执行器 | `packages/probe/src/{plan,exec,host}.ts` | 见 `docs/ROADMAP.md` W4 与 `docs/specs/M3-probe.md` |
+| 分发起草 | `docs/ROADMAP.md` §7.2 | catalog/hub/dsh.so 三份提交文案 |
 
 ## 6. 常见错误（会浪费一整轮）
 

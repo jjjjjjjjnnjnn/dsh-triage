@@ -62,7 +62,7 @@ if (disableRow === null) {
 const redact = makeRedactor([abs('.'), homedir(), tmpdir(), dshHome, installDir].filter((root) => root !== ''))
 const profileDir = join(dshHome, 'profiles', profile)
 const dshMain = dshMainOf(installDir)
-const hookSource = abs('scripts/probe_hooks/inventory-hook.mjs')
+const hookSource = abs('packages/probe/hooks/inventory-hook.mjs')
 
 const blockers = []
 const evidence = []

@@ -40,15 +40,37 @@ await runGate('namespace', async ({ checks, mutate }) => {
 
   const ids = []
   const names = []
+  // Rows must arrive through `insert:`. A top-level `- id: x / name: y` is an *edit of
+  // entry x*; upstream drops it when x does not exist and only writes a stderr warning
+  // (`patch: entry "x" not found`), so the bundle installs cleanly and mounts nothing.
+  // Measured in R14 on 0.2.1-rc.4 — see docs/specs/M3-probe.md §2.
+  const notInserted = []
+  let currentItemIsInsert = false
   for (const line of patch.split(/\r?\n/)) {
     const withoutComment = line.replace(/\s+#.*$/, '')
+    if (/^- insert:\s*$/.test(withoutComment)) {
+      currentItemIsInsert = true
+      continue
+    }
+    if (/^- /.test(withoutComment)) currentItemIsInsert = false
     const idMatch = /^\s*-\s+id:\s*(\S+)\s*$/.exec(withoutComment)
-    if (idMatch !== null) ids.push(idMatch[1])
+    if (idMatch !== null) {
+      ids.push(idMatch[1])
+      if (!currentItemIsInsert) notInserted.push(idMatch[1])
+    }
     const nameMatch = /^\s+name:\s*(\S+)\s*$/.exec(withoutComment)
     if (nameMatch !== null) names.push(nameMatch[1])
   }
 
   checks.require('rows-present', ids.length >= 1, `${ids.length} rows`)
+
+  checks.add(
+    'rows-are-inserted',
+    notInserted.length === 0,
+    notInserted.length > 0
+      ? `these rows patch an entry instead of inserting one (upstream skips unknown targets): ${notInserted.join(', ')}`
+      : 'ok',
+  )
 
   if (mutate && ids.length > 0) ids[0] = 'plugin-manager'
 

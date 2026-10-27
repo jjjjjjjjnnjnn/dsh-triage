@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R13 (2026-10-27)",
+  "stand": "R14 (2026-10-28)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -145,8 +145,8 @@
     {
       "id": "BS-20",
       "area": "inventory/preset-dimension",
-      "cannot_see": "preset 行的 fiberPhase 为 null 有两种含义：这个 preset 从未被任何会话组合，或组合后拿到 fiber 前就失手。上游的快照只有 null，没有区分字段，所以本层只能出 unknown（runtime.preset-no-fiber），不能像主列表那样判 blocked。真机样本里没有出现过 enabled+null 的 preset 行，因此这一档目前只有夹具与负对照支撑",
-      "mitigation": "文案明确写出两种可能（不乱指失败），missingEvidence 记 missing.preset-phase；要分开只能靠 M3 probe 在一次真实会话组合下再采一次。对外口径不得说「这台机器的 preset 都跑起来了」",
+      "cannot_see": "preset 行的 fiberPhase 为 null 有两种含义：这个 preset 从未被任何会话组合，或组合后拿到 fiber 前就失手。上游快照只有 null，没有区分字段，所以本层只能出 unknown（runtime.preset-no-fiber）。R14 起主列表的两种失败形状已有真机样本（enabled+null 的 import 失败、failed 的 apply 失败，见 inventory-live-2026-10-28T02-30-00.000Z.json），但 **preset 行**的 failed / broken / conditional 三档仍只有夹具与负对照支撑",
+      "mitigation": "文案明确写出两种可能（不乱指失败），missingEvidence 记 missing.preset-phase；要分开只能靠一次真实会话组合。对外口径不得说「这台机器的 preset 都跑起来了」",
       "owner": "core/inventory"
     },
     {
@@ -162,6 +162,20 @@
       "cannot_see": "上游插件**不静态声明**自己提供哪些工具：`dsh-tool-bash` / `dsh-tool-fs` 的 `package.json` 没有 `dsh` 字段，`bash`/`read`/`write`/`edit`/`read_image` 只出现在构建产物 `defineTool({ name })` 里。因此「声明了工具 X 但注册表没有 X」不可推导——除非我们自带一张插件→工具映射表，那就是猜",
       "mitigation": "不做该类结论；`docs/specs/M2-capabilities.md` §2 B1 记录取证；若将来上游加上静态声明（或 dsh.so 提供映射），再实现该判断并补负对照",
       "owner": "core/capabilities"
+    },
+    {
+      "id": "BS-23",
+      "area": "probe/readiness",
+      "cannot_see": "probe 的 `http-served` 只在 profile 真的起了一个 HTTP 应用时才有意义。R14 实测：空模板 profile 起得来但没有服务（第一版据此误判 blocked）；带上 web app 后同一端口返回 401/404。当前用人工开关 `--no-http` 表示「这个 profile 没有 web 面」，探针自己无法从 Host 输出判断——它既不知道 app 类型，也不解析 Host 打印的 URL/端口",
+      "mitigation": "非 web 面必须显式 `--no-http`，产物把 `http-served` 记为 unmeasured（不是 failed）；对外不得把「端口无应答」说成「插件坏了」。补全路径：T-306 用 Host 自己打印的 URL/端口替代人工开关",
+      "owner": "probe/exec"
+    },
+    {
+      "id": "BS-24",
+      "area": "probe/environment",
+      "cannot_see": "probe 的沙盒 profile 是**空模板**（`dsh-base` + `dsh-web-app` + 候选），不是用户真实 profile 的副本。因此它回答的是「装进模板 profile 会不会挂」，不是「装进**我的**组合会不会挂」——后者还需要把用户的 bundle 集合与依赖复制进沙盒（安装耗时与网络都不可忽略）",
+      "mitigation": "R14 起的产物在 `sandbox.profile` 与 `limits[]` 里写明这是模板 profile；对外口径不得说「在你机器上实测」。补全路径：T-304",
+      "owner": "probe/plan"
     }
   ]
 }

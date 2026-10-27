@@ -3,7 +3,7 @@
  * Live inventory recorder (T-201 P1 · the artifact side of B1/B2).
  *
  * WHAT IT DOES, IN ORDER:
- *   1. copies `scripts/probe_hooks/inventory-hook.mjs` into a scratch directory inside
+ *   1. copies `packages/probe/hooks/inventory-hook.mjs` into a scratch directory inside
  *      the sandbox and writes a one-entry `--patch` overlay that mounts it;
  *   2. boots the sandbox Host (`dsh --profile <p> --patch <overlay>`), waits for the
  *      hook to write its sample, then kills the whole process tree;
@@ -96,7 +96,7 @@ evidence.push(record('profile-manifest', existsSync(join(profileDir, 'package.js
 const dshMain = installDir === '' ? '' : join(installDir, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
 const dshMainExists = dshMain !== '' && existsSync(dshMain)
 evidence.push(record('dsh-runtime', dshMainExists, dshMainExists ? redact(dshMain) : 'no --install directory with @deepseek-ai/dsh/lib/bin.js'))
-const hookSource = abs('scripts/probe_hooks/inventory-hook.mjs')
+const hookSource = abs('packages/probe/hooks/inventory-hook.mjs')
 evidence.push(record('hook-present', existsSync(hookSource), redact(hookSource)))
 
 const runtimeVersion =

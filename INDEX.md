@@ -15,7 +15,7 @@
 | **dist-tag 失步 / 区间形状** | `packages/core/src/version-drift.ts` + `check --explain` → `data/results/registry-*.json` | 同通道比较 `latest` / `next` / 已发布最新（`latest` 是稳定版时不把更新的预发布当失步）；`registry.*` 只出 `measured-registry` 证据，**不改结论**；`judgeRangeShape` 提示「精确钉定会被下一个 patch 打挂」与「无上界会自动放大版本」；真机事实见 `data/results/registry-2026-10-27T19-00-00.000Z.json` |
 | **副本来源与重复副本** | `packages/core/src/duplicates.ts` + `scripts/record_audit.mjs` → `data/results/audit-*.json` | 同名同版本不算问题；同名不同版本 → `collision-duplicate-copy`（两条路径 + 两个版本）；行被拒时点名「这份副本来自谁的 dependencies」（借 npm explain / Maven） |
 | **运行时相位（M2-a P1+P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` + `scripts/record_live_inventory.mjs` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff（id 前缀 `include:` 已归一）、`sample.kind` 自曝 synthetic/live、`transport` 自曝 `remote`/`in-process-projection`；**R12 起有真机样本**：`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（194 行 / 167 active / 27 disabled / 4 preset 98 行 / Host↔CLI 结论逐行一致） |
-| **真机采样（Host 内探针）** | `scripts/probe_hooks/inventory-hook.mjs` + `scripts/record_live_inventory.mjs` | 用 `--patch` 挂一行探针进沙箱 Host，调上游导出的 `readPluginInventory(ctx)`（与 Remote 方法同一函数），等树稳定后落盘；用完即删目录；探针行在产物里记 `excluded` |
+| **真机采样（Host 内探针）** | `packages/probe/hooks/inventory-hook.mjs` + `scripts/record_live_inventory.mjs` | 用 `--patch` 挂一行探针进沙箱 Host，调上游导出的 `readPluginInventory(ctx)`（与 Remote 方法同一函数），等树稳定后落盘；用完即删目录；探针行在产物里记 `excluded`。**R14 起该 hook 随 probe 包发布**（CLI 装成 npm 包也能找到），repo 脚本经 `scripts/lib/live.mjs` 复用同一份 |
 | **能力层（M2-b / T-202b）** | `packages/core/src/capabilities.ts` + `scripts/record_live_capabilities.mjs` | 工具注册表**事实**（`ctx.tools.schemas()`）+ 两样本**差分**（`diffCapabilities`）+ 三条硬边界（插件不静态声明工具名 / 工具在 agent 作用域 / `ptc` 折叠可见面）；**不产出「工具缺失」结论**（无判据来源）。证据 `data/results/capabilities-2026-10-27T23-30-00.000Z.json` |
 | **两命令同源（T-105）** | `packages/plugin/src/cli.ts` | `audit` 也出**行级** admission 结论（文本逐行 + `--json row_verdicts`），与 `why` 同一个引擎；e2e 比集合而非计数 |
 | **preset 维度（T-112）** | `packages/core/src/inventory.ts#presetVerdicts` | 五档：`preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-unjudged` / `preset-divergence`；`enabled:false` 的 preset 行不刷屏；跨 preset 相位不同两侧分别成立 |
@@ -26,7 +26,7 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R12.md`（最新）· `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
+| **审核报告** | `audit/AUDIT_2026-10-28_R14.md`（最新）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
 | **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -40,12 +40,14 @@
 | Verdict 契约 | `docs/05-verdict-contract.md` | 结论/证据/置信度/替代方案 JSON 契约 |
 | 工程约定 | `docs/08-conventions.md` | 模块边界/命名/错误/确定性/扩展方式/评审清单 |
 | 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 |
-| 路线 | `docs/06-roadmap.md` | M0–M5 周级拆解 + 下载量阶梯 + 分发动作 |
+| 路线 | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 增长阶梯/分发清单/指标（R14 起为唯一执行计划；旧的双 roadmap 之一已归档到 `_archive/`，见 `ARCHIVE_MANIFEST`） |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
 | 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / version-drift / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 与 `version-drift` 只出次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
-| 隔离实测 | `packages/probe/src/`（plan） | M3：默认 dry-run，独立 DSH_HOME |
+| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→inventory→cleanup` 六步；判定是纯函数（`judgeProbe`），I/O 全部注入；`client-rendered` 与 `namespace-diff` **恒为 `unmeasured`**（T-302 / T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；产物 `data/results/probe-ok-2026-10-28T02-00-00.000Z.json` 等三份（boot→sample 11.8–13.8s） |
+| **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 F1–F12（`insert:` 必填、就绪探测必须在杀树前、端口与 `--no-open` 属于 app 参数）+ 计时契约（boot→sample ≤20s，install 单列）+ 断言→结论映射 + 10 条负对照 |
+| 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出 |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
 | 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约（含 `{占位符}` 完整性）/ SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |
 | 真跑落盘 | `scripts/scan_env.mjs` | 扫本机 profile → `data/results/*.json` + `.sha256` |

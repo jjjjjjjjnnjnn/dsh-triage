@@ -1,0 +1,10 @@
+# RED-path fixture: the module throws while being imported.
+#
+# This is the honest shape of the failure class we promise to attribute — the row is
+# declared, admission admits it, and it still never comes up. The probe must report a
+# failed boot naming this row, not a generic "something went wrong".
+#
+# `insert:` is required for the row to exist at all; see ok-plugin/cordis.patch.yml.
+- insert:
+    - id: triage-probe-broken
+      name: triage-probe-fixture-broken

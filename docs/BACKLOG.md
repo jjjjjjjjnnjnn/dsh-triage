@@ -17,7 +17,7 @@
 | T-116 | `messageId` 的 `{占位符}` 必须由 `reasons[].params` 提供，缺一即红 | 流程 | implementer | — | `gate_verdict_contract` 新增占位符完整性断言 + 负对照；现状只校验 messageId/severity | ✅ **R9 完成**：门新增 `placeholder-params-required`（双向自测：缺即红、补齐即绿，`reasons[]` 与 `remediation[]` 同规则）+ `--mutate` 注入第二类违规 |
 | T-117 | 行级「peer 通过但 `dsh.compatibility` 相左」是否提示（`BS-17`） | M2-a | implementer | T-108 | 先定粒度（每模块一条）与是否进 `unknown`，再实现；在此之前文档明确「行级只在 `unconstrained` 时挂兼容通道」 | ⬜ R9 独立复核发现（行级相左目前不提示） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
-| T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
+| T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ✅ **R14 完成**（HUMAN 2026-10-27 签字）：21 → **27 条**（+6 synthetic：workspace: peer / engines 非字符串 / `^0.2.0` prerelease 边界 / 空串 engines / `*` peer / 非法 engines 优先于 peer）。六条**全部与文档语义一致，未暴露分歧**；原有 21 条未改 |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | ✅ **R12 完成 P1（进程内投影）+ P2**：沙箱 Host 内 `readPluginInventory(ctx)` 真采样 → `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（`sample.kind=live`，195 行，`cross_check.agree=true`，B1/B2 关闭）；**Remote 客户端（真 `pluginInventory/list`）留作 P3** |
 | T-112 | `agentPresets` 维度：同一 entry 在不同 preset 下相位不同，必须分开出结论 | M2-a | implementer | T-201 | 不取「最乐观值」；只有 `conditional` 的 preset 行标 `unknown` + 需会话上下文 | ✅ **R12 完成**：preset 分行判（`conditional` / `failed` / `no-fiber` / `broken` / 跨 preset 分歧五档），真机样本 4 个 preset / 98 行；`runtime.preset-*` 命名空间三处同改 |
 | T-202a | 运行时命名空间快照（**agent/preset 作用域**：tools/commands/settings/skills） | M2-b | implementer | T-301 或一次真实会话 | 在会话作用域里读出 preset 的工具表面，才谈得上「声明 vs 注册」 | ⛔ **R13 取证后重定义**：进程级探针只看到全局层 1 个工具（`BS-21`）；上游插件也不静态声明工具名（`BS-22`）。退出条件：一次真实会话（需 HUMAN 允许模型凭据）或 M3 probe |
@@ -25,9 +25,9 @@
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
 | T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ✅ **R13 完成**：`audit` 复用 `verdictsFromRowAdmission` + `--json row_verdicts` + 文本逐行结论；e2e「audit and why reach the same row-level admission conclusion」比两命令的 `subject|conclusion|reasons` 集合；`unknown` 不计入失败（与 `why` 默认一致） |
 | T-106 | `step-review` 升级：结论必须引用具体反例命令/路径的结构化字段 | 流程 | implementer | — | 套话无法通过（新增结构化断言 + 负对照） | ⬜ 对应 BS-09 |
-| T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ⬜ |
-| T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ⬜ |
-| T-303 | probe 的 namespace-diff 断言 | M3 | verifier | T-202, T-301 | 声明了但未注册的工具能被列出 | ⬜ |
+| T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ✅ **R14 完成**：`packages/probe/src/{exec,host}.ts` + CLI `probe --execute --dsh-main` + `scripts/record_probe.mjs`；真机绿跑 `go`（boot→sample **11.8s**，HTTP 401，行 active）+ 两红（`failed` / `null`）稳定复现；清理以「目录消失 + 端口不再应答」双判据。证据 `data/results/probe-{ok,red-apply-fail,red-import-fail}-2026-10-28*.json`；spec `docs/specs/M3-probe.md` |
+| T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ⬜ **前置已满足（T-301 交付）**：当前产物把 `client-rendered` 标 `unmeasured`，不许当通过 |
+| T-303 | probe 的 namespace-diff 断言 | M3 | verifier | T-202, T-301 | 声明了但未注册的工具能被列出 | ⬜ **T-301 已交付，但仍需 T-202a 作用域**：进程级探针只看到全局层（`BS-21`） |
 | T-401 | Web 面板骨架（`settings.plugins.tab`） | M4-a | implementer | 上游 cordis 类型 | 面板显示与 CLI 同源结论 | ⬜ |
 | T-402 | 徽章服务（SVG，插件×dsh×os） | M4-b | implementer | — | 徽章可按 SSOT 渲染；带 dsh.so 署名 | ⬜ |
 | T-403 | format-1 索引源生成器 | M4-b | implementer | T-402 | 输出通过 `format:1` 字段校验；可在 Discover 添加 | ⬜ |
@@ -37,10 +37,30 @@
 | T-601 | 上架文案（zh/en）+ 提交 3 渠道 | 1.0 | arbiter | 功能完成 | `gate_release --publish` 绿 + 2 渠道收录 | ⬜ |
 | T-602 | 案例帖 ×3（消失的工具 / 白屏 / 升级后起不来） | 增长 | researcher | T-101 | 每篇含真实 SSOT 证据 | ⬜ |
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
+| T-304 | probe 对「用户自己的 bundle 集合」取样（现在只测空模板 profile） | M3 | implementer | T-301 | 用 profile 副本 + 依赖安装跑一次，能回答「加到**我的**组合里会不会挂」；当前只能回答「加到模板 profile 里」 | ⬜ R14 诚实边界（`docs/specs/M3-probe.md` §9） |
+| T-305 | registry 候选的安装形状（网络、tarball、私有源） | M3 | implementer | T-301 | 至少一次真实 npm 来源的 probe；记录耗时与失败形状（本轮只有本地路径，0.58–0.64s） | ⬜ R14 只测了本地 fixture |
+| T-306 | 非 web 表面的就绪判据 | M3 | implementer | T-301 | 用 host 自己打印的 URL/端口替代人工 `--no-http` 开关，覆盖 tui/headless profile | ⬜ R14 的 `--no-http` 是人工出口，不是判据 |
 
 ---
 
-## R12 已交付（本轮，证据见 `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）
+## R14 已交付（本轮，证据见 `data/results/probe-*-2026-10-28*.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-301 | probe 执行器：`packages/probe/src/exec.ts`（步骤机 + 判定纯函数，17 条单测）+ `host.ts`（安装/起 Host/就绪探测/杀树/清理，唯一实现）+ `packages/plugin/src/probe-run.ts` + CLI `probe --execute --dsh-main` | ✅ |
+| NEW | `scripts/record_probe.mjs`：一绿两红三份 SSOT（`probe-ok` / `probe-red-apply-fail` / `probe-red-import-fail`），`--expect` 自检，`limits[]` 把「不判安全 / 不判功能 / 沙盒非用户机器」写进产物 | ✅ |
+| FIX | **我们自己的 `packages/plugin/cordis.patch.yml` 用的是 patch 形态而不是 insert**：装了也不挂载（上游只写 stderr `patch: entry … not found`）。已修，门 `namespace` 新增 `rows-are-inserted`（双向自测） | ✅ |
+| FIX | 就绪探测必须在杀树之前（第一版打完样本立刻 `taskkill`，HTTP 检查全打在死端口） | ✅ |
+| NEW | `--port`/`--no-open` 作为 app 参数透传（否则探针会打开用户浏览器）；非 web 面用 `--no-http` 显式关掉而不是误判 | ✅ |
+| 合并 | 起 Host 的机械收到 `packages/probe/src/host.ts`，`scripts/lib/live.mjs` 改为再导出 —— 不再有第二份 boot 逻辑（R13 的教训） | ✅ |
+| T-103 | 金标 21 → **27**（HUMAN 签字）：6 条新语义全部与文档一致，无分歧 | ✅ |
+| T-110 | 双 roadmap 合并：保留 `docs/ROADMAP.md`（§7 吸收增长/分发/指标），旧文件归档 `_archive/` 并登记 | ✅ |
+| BS-20 部分 | 真机样本首次同时包含 `active` / `null`（import 失败）/ `failed`（apply 失败）三形状，`cross_check.agree=true`；preset 的 broken/conditional 仍未真机化 | 🟡 部分 |
+| 测试 | +21（单测 17 + e2e 4），总 **163**；9 门 / `--mutate` 9/9 | ✅ |
+
+---
+
+## R12 已交付（证据见 `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|

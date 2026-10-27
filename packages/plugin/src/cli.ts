@@ -7,7 +7,7 @@
  *   why                 attribute "installed but nothing happened" / "tools vanished"
  *   check <pkg[@ver]>   judge a candidate before install (declaration layer)
  *   audit               capability ledger: entry ids, owners, collisions, local evidence
- *   probe <pkg[@ver]>   print the isolated probe plan (dry-run; execution is M3)
+ *   probe <pkg[@ver]>   plan (dry-run) or run an isolated boot probe for a candidate
  *
  * Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
  */
@@ -50,9 +50,17 @@ import {
   type Verdict,
   type VersionDrift,
 } from '@dsh-triage/core'
-import { buildProbePlan } from '@dsh-triage/probe'
+import { buildProbePlan, executeProbe, judgeProbe, probeVerdict } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
+import {
+  candidatePackageName,
+  normalizeCandidateSpec,
+  probeScratchRoot,
+  realDshHomeOf,
+  realProbeDeps,
+  sandboxBundles,
+} from './probe-run.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -80,6 +88,10 @@ interface Flags {
   readonly snapshot: string | null
   /** `check --explain`: print the registry tag facts a verdict rested on. */
   readonly explain: boolean
+  /** `probe --execute`: the DSH launcher entry to run inside the sandbox. */
+  readonly dshMain: string | null
+  /** `probe --execute --no-http`: the profile serves no web surface; skip readiness. */
+  readonly noHttp: boolean
 }
 
 interface Parsed {
@@ -96,7 +108,6 @@ Usage
   dsh-triage check <pkg[@version]>   judge a candidate before installing
   dsh-triage audit                   capability ledger of the installed set
   dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)
-
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -108,7 +119,9 @@ Flags
   --stamp <iso>         fixed timestamp for reproducible output
   --snapshot <file>     (audit) judge runtime phases from a pluginInventory snapshot
   --explain             (check) show the registry tag facts behind the verdict
-  --execute             (probe) really run the plan — not implemented before M3
+  --execute             (probe) really run the plan inside an isolated DSH_HOME
+  --dsh-main <path>     (probe --execute) DSH launcher entry the sandbox boots
+  --no-http             (probe --execute) profile serves no web surface; skip readiness
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -643,40 +656,104 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
     process.stderr.write('usage: dsh-triage probe <pkg[@version]>\n')
     return EXIT_USAGE
   }
-  const dshHome = resolveDshHome(flags)
+  // The plan is built against the REAL home only to prove the sandbox is disjoint from it;
+  // nothing here reads or writes `~/.dsh`.
+  const dshHome = realDshHomeOf(flags.dshHome)
+  const candidate = normalizeCandidateSpec(spec)
   const plan = buildProbePlan({
-    candidate: spec,
+    candidate,
     realDshHome: dshHome,
-    workRoot: join(tmpdir(), 'dsh-triage-probe'),
+    workRoot: probeScratchRoot(),
     profile: flags.profile,
+    dshBin: flags.dshMain ?? 'dsh',
   })
   if (!plan.ok) {
     process.stderr.write(`cannot build a safe probe plan: ${plan.error.code} (${plan.error.detail})\n`)
     return EXIT_UNAVAILABLE
   }
 
-  if (flags.json) {
-    writeJson({ schema_version: 1, command: 'probe', dryRun: !flags.execute, plan: plan.value })
-  } else {
-    process.stdout.write(`probe plan (dry-run) for ${plan.value.candidate}\n`)
-    process.stdout.write(`sandbox   DSH_HOME=${plan.value.sandboxHome}\n`)
-    process.stdout.write(`port      ${plan.value.port}\n`)
-    for (const step of plan.value.steps) {
-      process.stdout.write(`  ${step.id.padEnd(14)} ${step.argv.join(' ')}\n`)
-      process.stdout.write(`  ${''.padEnd(14)} ${step.note}\n`)
+  if (!flags.execute) {
+    if (flags.json) {
+      writeJson({ schema_version: 1, command: 'probe', dryRun: true, plan: plan.value })
+    } else {
+      process.stdout.write(`probe plan (dry-run) for ${plan.value.candidate}\n`)
+      process.stdout.write(`sandbox   DSH_HOME=${plan.value.sandboxHome}\n`)
+      process.stdout.write(`profile   ${plan.value.profile}\n`)
+      process.stdout.write(`port      ${plan.value.port}\n`)
+      for (const step of plan.value.steps) {
+        process.stdout.write(`  ${step.id.padEnd(14)} ${step.argv.join(' ')}\n`)
+        process.stdout.write(`  ${''.padEnd(14)} ${step.note}\n`)
+      }
+      process.stdout.write('assertions\n')
+      for (const assertion of plan.value.assertions) {
+        process.stdout.write(
+          `  - ${assertion.id}${assertion.measured ? '' : ' (not measured by M3)'}: ${assertion.expect}\n`,
+        )
+      }
+      for (const warning of plan.value.warnings) process.stdout.write(`warn  ${warning}\n`)
+      process.stdout.write('note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it\n')
     }
-    process.stdout.write('assertions\n')
-    for (const assertion of plan.value.assertions) {
-      process.stdout.write(`  - ${assertion.id}: ${assertion.expect}\n`)
-    }
-    for (const warning of plan.value.warnings) process.stdout.write(`warn  ${warning}\n`)
+    return EXIT_OK
   }
 
-  if (flags.execute) {
-    process.stderr.write('execution is not implemented before M3; the plan above is what would run\n')
-    return EXIT_UNAVAILABLE
+  if (flags.dshMain === null) {
+    process.stderr.write('probe --execute needs --dsh-main <path to @deepseek-ai/dsh/lib/bin.js>\n')
+    return EXIT_USAGE
   }
-  return EXIT_OK
+  const candidatePackage = candidatePackageName(spec)
+  if (candidatePackage === null) {
+    process.stderr.write(
+      `cannot determine which package "${spec}" installs as; the probe matches rows by module name\n`,
+    )
+    return EXIT_USAGE
+  }
+
+  const stamp = stampOf(flags)
+  const run = await executeProbe(
+    { plan: plan.value, dshMain: flags.dshMain, candidatePackage, ...(flags.noHttp ? { skipHttp: true } : {}) },
+    realProbeDeps({ baseEnv: process.env }),
+  )
+  const judgement = judgeProbe({ run, at: stamp })
+  const env: EnvFingerprint = {
+    dsh: run.runtimeVersion,
+    node: process.versions.node,
+    platform: process.platform,
+    arch: process.arch,
+    profile: plan.value.profile,
+    profileDir: plan.value.sandboxProfileDir,
+    bundles: sandboxBundles(plan.value.sandboxProfileDir),
+    installed: [],
+  }
+  const verdict = probeVerdict({ run, judgement, env, at: stamp })
+  const roots = [homedir(), dshHome, probeScratchRoot()]
+
+  if (flags.json) {
+    writeJson({
+      schema_version: 1,
+      command: 'probe',
+      dryRun: false,
+      candidate: { spec, package: candidatePackage },
+      steps: run.steps,
+      timings: run.timings,
+      assertions: judgement.assertions,
+      verdict: flags.noRedact ? verdict : redactVerdict(verdict, roots),
+    })
+  } else {
+    process.stdout.write(`probe ${candidatePackage} · sandbox DSH_HOME=${plan.value.sandboxHome}\n`)
+    for (const step of run.steps) {
+      const mark = step.status === 'passed' ? 'ok  ' : step.status === 'skipped' ? 'skip' : 'FAIL'
+      process.stdout.write(`  ${mark} ${step.id.padEnd(10)} ${String(step.ms).padStart(6)}ms  ${step.detail ?? ''}\n`)
+    }
+    process.stdout.write('assertions\n')
+    for (const assertion of judgement.assertions) {
+      process.stdout.write(`  ${assertion.status.padEnd(10)} ${assertion.id}${assertion.detail === null ? '' : `  (${assertion.detail})`}\n`)
+    }
+    process.stdout.write('\n')
+    process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n`)
+    process.stdout.write('note  this proves boot + HTTP + row phase only; it is not a security or feature verdict\n')
+  }
+
+  return verdict.conclusion === 'blocked' || verdict.conclusion === 'risky' ? EXIT_FINDINGS : EXIT_OK
 }
 
 /* -------------------------------- helpers -------------------------------- */
@@ -815,6 +892,8 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let noRedact = false
   let snapshot: string | null = null
   let explain = false
+  let dshMain: string | null = null
+  let noHttp = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -847,6 +926,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--no-redact':
         noRedact = true
         break
+      case '--no-http':
+        noHttp = true
+        break
       case '--explain':
         explain = true
         break
@@ -878,6 +960,12 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         snapshot = value
         break
       }
+      case '--dsh-main': {
+        const value = takeValue()
+        if (value === null) return null
+        dshMain = value
+        break
+      }
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -889,7 +977,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

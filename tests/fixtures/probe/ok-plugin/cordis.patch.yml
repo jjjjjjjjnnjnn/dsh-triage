@@ -1,0 +1,16 @@
+# Fixture plugin for the M3 probe executor.
+#
+# This row must mount cleanly: the probe's GREEN path asserts that the candidate row
+# reaches phase `active` and that the Host serves HTTP within the readiness window.
+# Row ids here are fixture-local (`triage-probe-*`) so they cannot collide with the
+# upstream ids that `gate_namespace` protects.
+#
+# `insert:` IS REQUIRED. Upstream's schema (includePatch) is explicit: "An insert
+# appends entries... Unknown targets and non-insert patches without a nonempty id are
+# warned and skipped." A bare `- id: x / name: y` is a PATCH of entry `x`, not an
+# insertion, so on a profile that has no such entry the row is dropped with only a
+# stderr warning — which is exactly the silent-disappearance class this project exists
+# to attribute (measured in R14; see docs/specs/M3-probe.md §2).
+- insert:
+    - id: triage-probe-ok
+      name: triage-probe-fixture-ok

@@ -1,0 +1,10 @@
+# Third fixture: imports cleanly, throws while applying.
+#
+# The two failure shapes are different verdicts, not one:
+#   - import failure  -> no fiber at all  -> phase `null`   (broken-plugin)
+#   - apply failure   -> a fiber that died -> phase `failed` (this one)
+# A probe that collapses both into "did not start" loses the attribution the product
+# sells, so the red paths are measured separately (R14, docs/specs/M3-probe.md §4).
+- insert:
+    - id: triage-probe-throw
+      name: triage-probe-fixture-throw

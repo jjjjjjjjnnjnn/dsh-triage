@@ -4,9 +4,14 @@
 # - every row id MUST be prefixed `compat-` (never reuse an upstream row id:
 #   `plugin-manager`, `tools`, `session`, `llm`, `web`, `permission`, `plugin-market`);
 # - the module specifier must resolve from this package only;
-# - no `config` keys that shadow upstream services.
-- id: compat-verdict
-  name: dsh-triage/host
-  config:
-    # Reserved for M4: which localized catalogue the Web panel renders.
-    locale: auto
+# - no `config` keys that shadow upstream services;
+# - every row MUST be added through `insert:` — a bare `- id: …` is a *patch of an
+#   existing entry*, and upstream skips unknown patch targets with nothing but a stderr
+#   warning (measured in R14). Shipping that shape would make this bundle mount nothing
+#   while looking installed — the exact failure class this project attributes.
+- insert:
+    - id: compat-verdict
+      name: dsh-triage/host
+      config:
+        # Reserved for M4: which localized catalogue the Web panel renders.
+        locale: auto

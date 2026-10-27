@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R11 (2026-10-27)",
+  "stand": "R14 (2026-10-28)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -1090,9 +1090,9 @@
     {
       "id": "R12-S1",
       "batch": "R12",
-      "step": "T-201 P1：在沙箱 Host 内挂一行探针，用上游导出的 readPluginInventory(ctx) 采真实相位，并跑 CLI 交叉校验后落 SSOT",
+      "step": "T-201 P1：在沙箱 Host 内挂一行探针，用上游导出的 readPluginInventory(ctx) 采真实相位，并跑 CLI 交叉校验后落 SSOT（该 hook 在 R14 迁到 packages/probe/hooks/ 并随 probe 包发布，台账路径随之更新；审核结论未改）",
       "changed": [
-        "scripts/probe_hooks/inventory-hook.mjs",
+        "packages/probe/hooks/inventory-hook.mjs",
         "scripts/record_live_inventory.mjs",
         "docs/specs/M2-inventory.md",
         "docs/07-environment.md"
@@ -1224,9 +1224,9 @@
     {
       "id": "R12-S6",
       "batch": "R12",
-      "step": "按独立复核的 6 条必须修整改完后复跑：交叉校验按身份比对、探针排除断言、同包 id 解析、transport 进快照 + 门正向断言、preset 拒绝理由",
+      "step": "按独立复核的 6 条必须修整改完后复跑：交叉校验按身份比对、探针排除断言、同包 id 解析、transport 进快照 + 门正向断言、preset 拒绝理由（该 hook 在 R14 迁到 packages/probe/hooks/ 并随 probe 包发布，台账路径随之更新；审核结论未改）",
       "changed": [
-        "scripts/probe_hooks/inventory-hook.mjs",
+        "packages/probe/hooks/inventory-hook.mjs",
         "scripts/record_live_inventory.mjs",
         "packages/core/src/inventory.ts",
         "scripts/gate_inventory_contract.mjs",
@@ -1298,9 +1298,9 @@
     {
       "id": "R13-S2",
       "batch": "R13",
-      "step": "探针扩采能力清单 + 两个 live 记录器共用 `scripts/lib/live.mjs`（挂载/采样/杀树只有一份实现）",
+      "step": "探针扩采能力清单 + 两个 live 记录器共用 `scripts/lib/live.mjs`（挂载/采样/杀树只有一份实现）（该 hook 在 R14 迁到 packages/probe/hooks/ 并随 probe 包发布，台账路径随之更新；审核结论未改）",
       "changed": [
-        "scripts/probe_hooks/inventory-hook.mjs",
+        "packages/probe/hooks/inventory-hook.mjs",
         "scripts/lib/live.mjs",
         "scripts/record_live_capabilities.mjs",
         "scripts/record_live_inventory.mjs"
@@ -1430,6 +1430,202 @@
         "artifact": "data/results/gates-mutate-2026-10-28T00-45-00.000Z.json",
         "sha256": "063742b77ce6780d302676dc9827bd63b268b803f8b53543a65220825106378b",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R14-S1",
+      "batch": "R14",
+      "step": "修复我们自己的 bundle patch 形态（必须 insert），并让门 namespace 从此拒绝非 insert 行；三个 fixture 在同一台真机 Host 上分别落到 active / null / failed",
+      "changed": [
+        "packages/plugin/cordis.patch.yml",
+        "scripts/gate_namespace.mjs",
+        "tests/fixtures/probe/ok-plugin/cordis.patch.yml",
+        "tests/fixtures/probe/broken-plugin/index.js",
+        "tests/fixtures/probe/throw-plugin/index.js"
+      ],
+      "review": {
+        "correctness": "PASS：实测 `dsh: warning: patch: entry \"triage-probe-ok\" not found` —— 裸 `- id:` 是 patch 而不是 insert，上游 schema（includePatch）明确写「Unknown targets and non-insert patches are warned and skipped」。改成 `- insert:` 后同一 profile 的 97 → 98 行，`include:triage-probe-ok` 相位 active。门 namespace 新增 `rows-are-inserted`，双向自测：改回非 insert 形态 → 门红并点名 `compat-verdict`；恢复 → 绿",
+        "reproducibility": "PASS：同一命令（三 fixture 装进一个孤立 DSH_HOME，再 boot 采样）重跑两次，相位分工一致（active 95 / null 4 / failed 1 中的 triage 三行分工不变）",
+        "licence": "PASS：只读上游 MIT 产物与其 schema 文本；fixture 为本仓原创，未 vendor 任何第三方代码",
+        "ssot": "PASS：`inventory-live-2026-10-28T02-30-00.000Z.json` 由 `scripts/record_live_inventory.mjs` 产出，`sample.kind=live`、`cross_check.agree=true`，`.sha256` 为纯 hash",
+        "adversary": "反例：把行塞进一个已存在的 upstream group（`- id: include` + insert）也能 mount，此时我们的 id 前缀检查只查 `insert` 下的 id——所以该门证的是「以插入方式添加」，不是「不会污染别人的 group」；后者仍靠 `no-reserved-ids` 与行 id 前缀，未覆盖 group 目标"
+      },
+      "real_test": {
+        "command": "node scripts/record_live_inventory.mjs --dsh-home <temp>/home-phases --profile probe --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T02:30:00.000Z",
+        "artifact": "data/results/inventory-live-2026-10-28T02-30-00.000Z.json",
+        "sha256": "058de2b23341697b4c05bf5577a069d6664a370d240d311364e39fdfae19083b",
+        "outcome": "outcome sampled · live · entries 100 · cross_check agree=true · triage 三行 = active / null / failed"
+      }
+    },
+    {
+      "id": "R14-S2",
+      "batch": "R14",
+      "step": "实现 M3 probe 执行器（runtime → install → boot → http → inventory → cleanup）与 CLI 真跑，并把起 Host 的机械从 scripts 收拢到 packages/probe/src/host.ts 一处",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/plan.ts",
+        "packages/probe/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "packages/plugin/src/probe-run.ts",
+        "packages/probe/hooks/inventory-hook.mjs",
+        "scripts/lib/live.mjs",
+        "tests/unit/probe-exec.test.ts",
+        "tests/unit/probe.test.ts",
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：真机绿跑 `go`（install 0.6s / boot→sample 11.8s / HTTP 401 / 行 active / cleanup 双重判据）。执行器把「无样本」「无应答」「行缺失」「行非 active」「≥2 行」分别映射到不同结论，17 条单测逐条钉住；`client-rendered` / `namespace-diff` 恒为 unmeasured",
+        "reproducibility": "PASS：`probe-ok-2026-10-28T02-00-00.000Z.json` 由 `scripts/record_probe.mjs` 产出；结论字段（conclusion / assertions / inventory）同输入可复现，时序只进 `timings`。两次重跑 boot→sample 分别 11.8s / 13.8s，均 < 20s 预算",
+        "licence": "PASS：未复制上游实现；`readPluginInventory` 通过运行时 resolve 加载，不 vendor。fixture 为本仓代码",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `schema_version` + 纯 hash `.sha256`；沙盒路径经 `makeRedactor` 脱敏；`limits[]` 把「不判安全 / 不判功能 / 沙盒非用户机器」写进产物本身",
+        "adversary": "反例一：第一版在采到样本后**立即杀树**，随后的 HTTP 检查打在已死端口上——真机当场暴露（fetch failed）。修法是把就绪探测移到杀树之前。反例二：把 `--port` 当作 launcher flag 传会报错，实测必须作为 app 参数透传并在前面加 `--no-open`，否则 probe 会打开用户的浏览器"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label ok --expect go --stamp 2026-10-28T02:00:00.000Z",
+        "artifact": "data/results/probe-ok-2026-10-28T02-00-00.000Z.json",
+        "sha256": "3a4ced71ee9247c601fbad9ba935d5ede12e31ef842ea29c6758966f727dbd1f",
+        "outcome": "go · boot→sample 11.8s · http 401 · 候选行 1 条 active · cleanup 已删且端口不再应答"
+      }
+    },
+    {
+      "id": "R14-S3",
+      "batch": "R14",
+      "step": "红路之一：apply 期抛错 → 行相位 failed，必须点名该行且判 blocked（装了就白屏的稳定复现）",
+      "changed": [
+        "tests/fixtures/probe/throw-plugin/index.js",
+        "packages/probe/src/exec.ts"
+      ],
+      "review": {
+        "correctness": "PASS：真机 `probe-red-apply-fail` 结论 blocked，理由 `probe.row-inactive` 且 params.phase=\"failed\"；断言 inventory-active=failed，其余三项通过（boot / http / cleanup）。与 import 失败（phase=null）分成两条不同理由，未被合并成「没起来」",
+        "reproducibility": "PASS：产物 `probe-red-apply-fail-2026-10-28T02-10-00.000Z.json` 由 `--expect blocked` 自检；若该 fixture 哪天能跑起来，脚本 exit 1 而不是默默通过",
+        "licence": "PASS：fixture 为本仓原创的最小 plugin（一个 apply 抛错）",
+        "ssot": "PASS：产物 + 纯 hash；`conclusion=blocked`、`limits[]` 与断言表齐全",
+        "adversary": "反例：若把 apply 抛错改成 `process.exit(1)`，Host 可能整体退出而拿不到样本，look 会变成 boot-timeout（理由不同）。本层没有「进程退出码」这条证据，边界记录在 spec §9"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/throw-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-apply-fail --expect blocked --stamp 2026-10-28T02:10:00.000Z",
+        "artifact": "data/results/probe-red-apply-fail-2026-10-28T02-10-00.000Z.json",
+        "sha256": "293935e34df35854a94c794758bdb0e1abc1985882beddcacd8bb10458fb8c43",
+        "outcome": "blocked · 行 include:triage-probe-throw phase=failed · boot→sample 13.8s · http 401 · cleanup 通过"
+      }
+    },
+    {
+      "id": "R14-S4",
+      "batch": "R14",
+      "step": "红路之二：import 期抛错 → enabled 但无 fiber（phase=null），必须与 failed 分列",
+      "changed": [
+        "tests/fixtures/probe/broken-plugin/index.js"
+      ],
+      "review": {
+        "correctness": "PASS：真机 `probe-red-import-fail` 结论 blocked，理由同为 `probe.row-inactive`，但 params.phase=\"none\"；stderr 首行为 `dsh: warning: N entries did not activate`，说明上游自己也只给 warning，不刷错误——这正是「工具静默消失」的形状",
+        "reproducibility": "PASS：`--expect blocked` 自检；产物与 apply-fail 那份只有 phase 与 label 不同，可对照读",
+        "licence": "PASS：本仓原创 fixture",
+        "ssot": "PASS：产物 + 纯 hash；`inventory.error=null`（样本可读）与「行没起来」是两件事，字段分开",
+        "adversary": "反例：两种失败都归到 `probe.row-inactive`，若只看 messageId 无法区分 import/apply。区分靠 `params.phase`（none vs failed）——门禁不校验 reason 的语义质量，只校验 id 与占位符；这一条的可靠性目前由单测 + 两份产物对照兜住"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/broken-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-import-fail --expect blocked --stamp 2026-10-28T02:20:00.000Z",
+        "artifact": "data/results/probe-red-import-fail-2026-10-28T02-20-00.000Z.json",
+        "sha256": "ff3a043cb8efd2ef9d80a128f1f751096b70c3ccc451974dfbaed4be1aae6e73",
+        "outcome": "blocked · 行 include:triage-probe-broken phase=none · boot→sample 12.3s · http 401 · cleanup 通过"
+      }
+    },
+    {
+      "id": "R14-S5",
+      "batch": "R14",
+      "step": "全链门禁真跑：执行器、新原因码、迁移后的 hook 路径与历史台账一起过 9 门，并把门禁结果本身落成可重算产物",
+      "changed": [
+        "packages/core/src/messages.ts",
+        "scripts/gate_verdict_contract.mjs",
+        "docs/05-verdict-contract.md",
+        "INDEX.md",
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`ALL GREEN · 9 gates`。新增的 `probe.*` 12 个 messageId 全部在 `messages.ts` 有中英两条，门的白名单已扩到 `probe`，占位符完整性检查对 `probe.served` 等带参文案生效（缺 params 即红）",
+        "reproducibility": "PASS：门禁结果按同一 stamp 重跑可复现；`gates-2026-10-28T03-30-00.000Z.json` 与 `.sha256` 由 `gate.mjs --record` 写入",
+        "licence": "PASS：门禁零第三方依赖、零网络；新增检查只用行扫描，不引入解析库",
+        "ssot": "PASS：`data/results` 50 个产物全部被台账引用（无孤儿）；本条的 `real_test.sha256` 与文件内容一致，事后改产物即红",
+        "adversary": "反例：`rows-are-inserted` 只认「顶层项以 `- insert:` 开头」，一个写成 `- {insert: [...], id: x}` 的内联形态会绕过检查——当前仓库格式固定为块式，若未来允许内联必须先扩展扫描器（登记为已知边界，不是放宽阈值）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T03:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T03-30-00.000Z.json",
+        "sha256": "c8b2072841a58f208b48881c7e16b42c6796426fb99a8c9142d270d665b7d8ab",
+        "outcome": "ALL GREEN · 9 gates"
+      }
+    },
+    {
+      "id": "R14-S6",
+      "batch": "R14",
+      "step": "负对照真跑：9 门在同一轮里全部被注入违规打红，证明新检查不是空转",
+      "changed": [
+        "scripts/gate.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "review": {
+        "correctness": "PASS：`NEGATIVE CONTROL PASSED · 9/9`，其中 namespace 门靠 `--mutate` 把首行 id 换成 `plugin-manager` 打红；`rows-are-inserted` 另有手工双向自测（改回非 insert → 红并点名 compat-verdict，恢复 → 绿），记录在 R14-S1",
+        "reproducibility": "PASS：同 stamp 重跑 `--mutate` 结论一致；产物记录每门 exitCode 与耗时",
+        "licence": "PASS：注入只发生在内存中的门禁输入，不写仓库文件",
+        "ssot": "PASS：产物 + 纯 hash 被本条引用；`data/results` 无孤儿",
+        "adversary": "反例：`--mutate` 只要求每门「以非 0 退出」，因此一门因为无关原因崩溃也会被记作 CAUGHT。这一条的强度依赖每门自己的日志与 `--json` 里的 check 明细，本轮的 namespace 门已核对到具体 check 名（`rows-are-inserted`），其余门沿用既有做法"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-28T03:40:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-28T03-40-00.000Z.json",
+        "sha256": "fa9b642358c50db612936bce0ba9fcc3e9ebb62a03118215ce3e0f90f6912cec",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R14-S7",
+      "batch": "R14",
+      "step": "T-103 金标扩容（HUMAN 已签）：21 → 27 条，新增 workspace: peer / engines 畸形 / carets 预发布边界 / 空串 engines / 通配 peer / 非法 engines 优先",
+      "changed": [
+        "data/gold/admission-cases.json",
+        "scripts/gate_admission_parity.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：六条期望值全部由 `semantics_rules` 推导后写入，parity 门逐条复算 27/27 通过——**没有出现「实现与文档不一致」的分歧**，因此本轮没有改实现，也没有为通过而改夹具",
+        "reproducibility": "PASS：`node scripts/gate_admission_parity.mjs` 每次对同一 27 条给出同一结论；门禁结果落进本轮 gates 产物",
+        "licence": "PASS：新用例为 synthetic（自写声明 + 文档语义），不含任何 npm 抓取内容；原有 8 条真快照未改",
+        "ssot": "PASS：`signature` 字段记录「HUMAN 授权扩容 + agent 按既有规则编写 + parity 门复算」，没有把 agent 自写伪装成人工标注；门禁产物被本条引用",
+        "adversary": "反例：这六条只覆盖「单条声明的边界」，没有覆盖 `engines` 与 peer 同时畸形之外的多重错误组合；另外 `workspace:` 用例只验证「被判不兼容」，没有验证上游在 `workspace:` 下的具体错误码。两处都登记为后续可扩，不与上游语义冲突"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T04:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T04-30-00.000Z.json",
+        "sha256": "fcc44a1a8734a986205a8963fccbe413e7a7bb0959b435712ca5b750a054a50c",
+        "outcome": "ALL GREEN · 9 gates（其中 admission-parity 覆盖 27 条金标）"
+      }
+    },
+    {
+      "id": "R14-S8",
+      "batch": "R14",
+      "step": "T-110 双 roadmap 合并（HUMAN 已签）：保留 docs/ROADMAP.md 为唯一执行计划，旧文件归档 _archive/ 并登记，六处引用同步",
+      "changed": [
+        "docs/ROADMAP.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md",
+        "INDEX.md",
+        "docs/00-vision.md",
+        "docs/AI_HANDOVER.md",
+        "docs/market/listing_zh.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：增长阶梯（A–E）、分发八条清单、领先/滞后指标、五条风险全部并入 `docs/ROADMAP.md` §7，原文件只做搬运未改结论；W4 行改为 R14 的交付事实（执行器已交，render/namespace-diff 未测）",
+        "reproducibility": "PASS：`gate_governance` 的 `index-references` 逐条校验 INDEX 里被反引号的路径都存在；归档后该门先红（指向已删/搬移的文件）→ 改引用后绿，这一来一回就是负对照",
+        "licence": "PASS：只搬本仓自己的文档；归档走 `git mv` + `ARCHIVE_MANIFEST.md`，未删除任何内容",
+        "ssot": "PASS：唯一执行计划的断言由门禁（governance）与 ARCHIVE_MANIFEST 双向兜住；本条引用本轮门禁产物",
+        "adversary": "反例：归档文件里仍保留着旧口径（例如 M0「6 道门禁」），若有人直接读 `_archive/` 会被误导——archive 目录名与 manifest 已标注「只进不出、非现行」，但门禁不检查 archive 内容的时效性"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T04:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T04-40-00.000Z.json",
+        "sha256": "4b329bdc11f8b4c4e039183b409ff89ccc78743a68b57548dc296687098f3818",
+        "outcome": "ALL GREEN · 9 gates（含 governance/index-references 对搬家后引用的校验）"
       }
     }
   ]

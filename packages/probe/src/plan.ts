@@ -44,11 +44,19 @@ export interface ProbeAssertion {
   readonly id: string
   /** Human-readable expectation; the M3 runner maps these to machine checks. */
   readonly expect: string
+  /**
+   * Whether M3 actually measures it. `false` means the artifact must report
+   * `unmeasured` — advertising an assertion the runner cannot answer is how a probe
+   * starts lying (BS-03 / BS-21).
+   */
+  readonly measured: boolean
 }
 
 export interface ProbePlan {
   readonly schemaVersion: 1
   readonly candidate: string
+  /** Profile name created inside the sandbox home. */
+  readonly profile: string
   readonly sandboxHome: string
   readonly sandboxProfileDir: string
   readonly port: number
@@ -80,35 +88,44 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
   const sandboxProfileDir = join(sandboxHome, 'profiles', profile)
   const port = input.basePort ?? 53000 + (parseInt(digest.slice(0, 4), 16) % 1000)
   const dshBin = input.dshBin ?? 'dsh'
+  const nodeBin = process.execPath.replaceAll('\\', '/')
   const env = { DSH_HOME: sandboxHome } as const
 
   const plan: ProbePlan = {
     schemaVersion: 1,
     candidate,
+    profile,
     sandboxHome,
     sandboxProfileDir,
     port,
     steps: [
       {
-        id: 'runtime-check',
-        argv: [dshBin, '--version'],
+        id: 'runtime',
+        argv: [nodeBin, dshBin, '--version'],
         env,
         cwd: sandboxHome,
-        note: 'records the sandbox runtime; the install step initializes the profile on first use',
+        note: 'records which runtime the sandbox will boot; an unreadable runtime stops the probe',
       },
       {
         id: 'install',
-        argv: [dshBin, 'plugin', '--profile', profile, 'add', candidate],
+        argv: [nodeBin, dshBin, 'plugin', '--profile', profile, 'add', candidate],
         env,
         cwd: sandboxHome,
-        note: 'runs pnpm inside the sandbox; third-party install scripts may execute — requires --execute',
+        note: 'runs pnpm inside the sandbox profile; third-party install scripts may execute — requires --execute',
       },
       {
         id: 'boot',
-        argv: [dshBin, '--profile', profile, 'web', '--port', String(port)],
+        argv: [nodeBin, dshBin, '--profile', profile, '--patch', '<generated overlay>'],
         env,
         cwd: sandboxHome,
-        note: 'boots the sandboxed profile; capture stderr for attribution',
+        note: 'boots the sandbox profile with a one-row inventory probe overlay; stderr is kept for attribution',
+      },
+      {
+        id: 'http',
+        argv: ['<fetch>', `http://127.0.0.1:${port}/`, '--redirect', 'manual'],
+        env: {},
+        cwd: sandboxHome,
+        note: 'a 303 with a token and a 401 without one both count as "something is listening"',
       },
       {
         id: 'cleanup',
@@ -119,16 +136,17 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
       },
     ],
     assertions: [
-      { id: 'boot-exit-zero', expect: 'the dsh process stays alive past the readiness window' },
-      { id: 'http-served', expect: `GET http://127.0.0.1:${port}/ answers 200` },
-      { id: 'client-rendered', expect: 'browser half reports a mounted root (HTTP 200 alone is not enough — BS-03)' },
-      { id: 'inventory-active', expect: 'the candidate row reports phase "active" in pluginInventory' },
-      { id: 'namespace-diff', expect: 'tools/commands/settings namespaces claimed by the candidate actually appear' },
+      { id: 'boot-sampled', expect: 'the Host writes an inventory sample within the boot budget', measured: true },
+      { id: 'http-served', expect: `GET http://127.0.0.1:${port}/ answers at all (2xx/3xx/401)`, measured: true },
+      { id: 'inventory-active', expect: 'the candidate row exists exactly once and reports phase "active"', measured: true },
+      { id: 'cleanup-complete', expect: 'the sandbox directory is gone and the port no longer answers', measured: true },
+      { id: 'client-rendered', expect: 'browser half reports a mounted root (HTTP 200 alone is not enough — BS-03)', measured: false },
+      { id: 'namespace-diff', expect: 'tools/commands/settings claimed by the candidate actually appear (agent scope — BS-21)', measured: false },
     ],
     warnings: [
       'installing a candidate may execute third-party build scripts; the plan is dry-run until --execute is passed',
       'the sandbox has no credentials; probing a plugin that requires a key will report a false negative',
-      'this plan does not judge security; see COMPLIANCE.md §5',
+      'this plan does not judge security, and it does not check whether the UI renders (assertions marked measured=false)',
     ],
   }
 

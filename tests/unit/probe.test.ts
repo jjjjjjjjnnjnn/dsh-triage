@@ -39,12 +39,18 @@ test('the plan always isolates DSH_HOME and documents cleanup', () => {
   assert.ok(plan.ok)
   if (!plan.ok) return
   assert.ok(isAbsolute(plan.value.sandboxHome), 'sandbox path must be absolute on this platform')
-  for (const step of plan.value.steps.filter((item) => item.id !== 'cleanup')) {
+  // `http` exercises the sandbox port from outside and carries no DSH_HOME of its own.
+  for (const step of plan.value.steps.filter((item) => item.id !== 'cleanup' && item.id !== 'http')) {
     assert.equal(step.env.DSH_HOME, plan.value.sandboxHome, `${step.id} must set DSH_HOME`)
   }
   assert.ok(plan.value.steps.some((step) => step.id === 'cleanup'))
+  assert.ok(plan.value.steps.some((step) => step.id === 'http'), 'the plan must show the readiness probe it runs')
   assert.ok(plan.value.warnings.some((warning) => warning.includes('dry-run')))
-  assert.ok(plan.value.assertions.some((assertion) => assertion.id === 'client-rendered'), 'BS-03: HTTP 200 is not enough')
+  const rendered = plan.value.assertions.find((assertion) => assertion.id === 'client-rendered')
+  assert.ok(rendered !== undefined, 'BS-03: HTTP 200 is not enough')
+  assert.equal(rendered?.measured, false, 'an assertion the runner cannot answer must say so')
+  assert.equal(plan.value.assertions.find((assertion) => assertion.id === 'namespace-diff')?.measured, false)
+  assert.equal(plan.value.assertions.find((assertion) => assertion.id === 'boot-sampled')?.measured, true)
 })
 
 test('validateProbePlan rejects an equal sandbox and accepts a sibling', () => {
