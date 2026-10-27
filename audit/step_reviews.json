@@ -2033,6 +2033,77 @@
         "sha256": "d126df0012682a4fabdde32653e67a52f15686c555f9361ac3a62946055d5cb9",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 190）"
       }
+    },
+    {
+      "id": "R16-S3",
+      "batch": "R16",
+      "step": "`dsh-triage serve` v0（只读证据面板）：零依赖、token + 回环 + 跨源拒绝 + POST 403/501",
+      "changed": [
+        "packages/plugin/src/serve.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/serve.test.ts",
+        "scripts/record_serve_smoke.mjs",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：零依赖 `node:http` 面板；路由 `/`（内联 HTML）、`/api/artifacts`、`/api/artifact`、`/api/health`；只绑 127.0.0.1；每次请求校验一次性 token（查询参数或 HttpOnly cookie）；跨源 Origin → 403；artifact 名字白名单 + `..` 拒绝；`POST` 默认 403，`--allow-execute` 也只回 501（动作没实现就不假装实现）",
+        "reproducibility": "PASS：`tests/unit/serve.test.ts` 6 条（列表/容错/token/CSRF/穿越/POST 403/501/无远程资源）；`scripts/record_serve_smoke.mjs` 用同一批路由打真 `data/results`（71 份产物），8 项检查逐条进产物",
+        "licence": "PASS：零新依赖；页面 CSP `default-src none`，不引用任何远程资源，离线可用",
+        "ssot": "PASS：面板只读 `data/results`、不重算结论；smoke 产物不写 token；`results_dir` 过 makeRedactor（见 S4 的隐私修复）",
+        "adversary": "反例一：首个 smoke 的 8 项检查全 ok、产物已写，但进程退出时崩了 —— Windows 上 `fetch` 的 keep-alive socket 在 `server.close()` 后仍开着，libuv 报 `!(handle->flags & UV_HANDLE_CLOSING)`（exit 0xC0000409）；修法 `closeAllConnections()` + 不再 `process.exit()`。反例二：首版产物把 `C:\\Users\\…\\data\\results` 写进了 SSOT，被 `results-privacy` 门当场打红（与 R14 F-2 同一类）。教训：面板/截图类产物最容易漏脱敏"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-27T14:16:05.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-27T14-16-05.000Z.json",
+        "sha256": "e47ebbd1ffef069be014ed2d4df4bafaf72b60177186508a43b7801cea1c4775",
+        "outcome": "8/8 通过、exit 0：token 401 / 页面 200 / 71 产物 / 详情 200 / 穿越 400 / 跨源 403 / POST 403"
+      }
+    },
+    {
+      "id": "R16-S4",
+      "batch": "R16",
+      "step": "隐私修复：面板产物只记相对结果目录，不再写绝对路径；泄漏的两份产物删除并重采",
+      "changed": [
+        "scripts/record_serve_smoke.mjs",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：`results_dir` 与 `checks[].detail` 统一过 `makeRedactor([repo, home, tmp])`；产物里出现的是 `data/results` 而不是盘符路径",
+        "reproducibility": "PASS：`results-privacy` 门对修复前后两个版本都打了一次：修前 FAIL（两份 smoke），修后 PASS；重采两份新产物（14:16:05 / 14:16:07）",
+        "licence": "PASS：只改自家脚本；无新依赖",
+        "ssot": "PASS：泄漏的两份产物已删除（与 R14 对 F-2 的处置一致：隐私优先于「只进不出」的归档规则，删除动作记在本条）；重采后的两份都被台账引用，`data/results` 无孤儿",
+        "adversary": "反例：脱敏只覆盖「已知根」（repo/home/tmp）；如果用户用 `--results D:\\证据` 指到别处，绝对路径仍会进产物。当前把这个边界写进 `limits` 更诚实，但**更好的做法**是默认只记 basename——留作 T-408"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-27T14:16:07.000Z（修复后重采；同轮 `gate_governance` 从 FAIL 变 PASS）",
+        "artifact": "data/results/serve-smoke-2026-10-27T14-16-07.000Z.json",
+        "sha256": "d714169e354f4ae7f5c9df4cdb74b616992191174a56ef0d5768bc2061a26819",
+        "outcome": "8/8 通过；`results-privacy` 不再命中绝对路径；产物 `panel.results_dir = data/results`"
+      }
+    },
+    {
+      "id": "R16-S5",
+      "batch": "R16",
+      "step": "面板落地后的全链快照：196 测试 / 9 门 / mutate 9/9",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：新增的 serve 路由有 6 条单测 + 8 项真跑 smoke；CLI 的 `serve` 与既有命令共用同一套 flags 解析，未改动 audit/probe/why 的行为",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T14:20:00.000Z` 可重放；smoke 与 gates 产物都在 SSOT 并被引用",
+        "licence": "PASS：零新依赖、零网络",
+        "ssot": "PASS：`data/results` 74 产物全部被 85 步台账引用；面板 smoke 不含 token 与绝对路径",
+        "adversary": "反例：面板把「产物」当唯一数据源，所以它显示的是**上一次**判断的结果，不是实时状态。UI 上必须写清「read-only / 不重算」，否则用户会以为它刚跑过 — 已在页面文案与 `--json` 的 `readOnly` 字段里固定"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T14:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T14-20-00.000Z.json",
+        "sha256": "68a1ef4d1b431a2c515917ce3f0e6608e6b5ff5d76ab63208ea26e440637c38d",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 196）"
+      }
     }
   ]
 }

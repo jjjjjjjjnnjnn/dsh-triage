@@ -28,7 +28,10 @@
 | T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ✅ **R14 完成**：`packages/probe/src/{exec,host}.ts` + CLI `probe --execute --dsh-main` + `scripts/record_probe.mjs`；真机绿跑 `go`（boot→sample **11.8s**，HTTP 401，行 active）+ 两红（`failed` / `null`）稳定复现；清理以「目录消失 + 端口不再应答」双判据。证据 `data/results/probe-{ok,red-apply-fail,red-import-fail}-2026-10-28*.json`；spec `docs/specs/M3-probe.md` |
 | T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ✅ **R15 完成**：`packages/probe/src/render.ts`（`judgeRender` 纯函数 + `findBrowser` + 无头 Chromium/CDP `renderUrl`）；真机绿跑 `client-rendered=passed`（289 字符 / `readyState=complete`）；红样本 `render-fixture-blank-2026-10-27T12-58-42.000Z.json`（200 + 空挂载点 → blank）；无浏览器/超时 → `unmeasured`，不判通过 |
 | T-303 | probe 的 namespace-diff 断言 | M3 | verifier | T-202, T-301 | 声明了但未注册的工具能被列出 | ⬜ **T-301 已交付，但仍需 T-202a 作用域**：进程级探针只看到全局层（`BS-21`） |
-| T-401 | Web 面板骨架（`settings.plugins.tab`） | M4-a | implementer | 上游 cordis 类型 | 面板显示与 CLI 同源结论 | ⬜ |
+| T-401 | Web 面板骨架（`settings.plugins.tab`） | M4-a | implementer | 上游 cordis 类型 | 面板显示与 CLI 同源结论 | ⬜ 契约已取证（`M4-surface.md` §1）：`dsh.client` + `__ModuleLoader__.load` + row id = settings 命名空间；未实现 |
+| T-405 | `dsh-triage serve` 本地只读面板 | M4-a | implementer | — | 零依赖、只绑回环、token 鉴权、跨源拒绝、POST 默认 403 | ✅ **R16 完成 v0**：`packages/plugin/src/serve.ts` + CLI `serve --port/--results/--allow-execute`；smoke 8/8（`data/results/serve-smoke-2026-10-27T14-12-16.000Z.json`）；只列 SSOT 产物，不重算 |
+| T-406 | 面板接实时 `audit`（`/api/audit`） | M4-a | implementer | T-405 | 抽取 `loadAuditData()` 后，`audit --json` 逐字节不变；面板显示当前组合 | ⬜ 需要先把 `commandAudit` 的数据收集抽成纯函数（重构，不改判据） |
+| T-407 | CI `render-control` 作业（Linux 真浏览器） | M3/M4 | implementer | T-302 | runner 自带浏览器；blank/rendered/error 三份对照；缺浏览器即失败 | ✅ **R16 完成**：`.github/workflows/ci.yml` 新 job；本机同一命令已落 SSOT（`render-fixture-blank-2026-10-27T14-02-15.000Z.json`） |
 | T-402 | 徽章服务（SVG，插件×dsh×os） | M4-b | implementer | — | 徽章可按 SSOT 渲染；带 dsh.so 署名 | ⬜ |
 | T-403 | format-1 索引源生成器 | M4-b | implementer | T-402 | 输出通过 `format:1` 字段校验；可在 Discover 添加 | ⬜ |
 | T-404 | `compat_verdict` Agent 工具 | M4-b | implementer | T-201 | 工具返回 verdict JSON；失败降级 `unknown` | ⬜ |
@@ -44,6 +47,20 @@
 
 ---
 
+## R16 已交付（本轮，证据见 `data/results/serve-smoke-*` 与 `render-fixture-blank-2026-10-27T14-02-15.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| 口径纠正 | R14/R15 写的「Linux CI 没浏览器」是错的：ubuntu runner 预装 Chrome/Chromium/Edge + xvfb（`ADR-0005`） | ✅ |
+| T-407 | CI 新增 `render-control`：先断言 runner 真有浏览器（缺了明确失败），再跑 blank/rendered/error 三份对照，产物写 `$RUNNER_TEMP` | ✅ |
+| T-405 | `dsh-triage serve`：零依赖只读面板 + token + 回环 + 跨源拒绝 + POST 403/501；`--results` 指向任意证据目录 | ✅ v0 |
+| NEW | `scripts/record_serve_smoke.mjs`：8 项路由检查落 SSOT（不含 token/端口） | ✅ |
+| 设计 | `docs/specs/M4-surface.md`（serve / DSH 设置面板 / SEA exe）+ `docs/adr/0005-render-backends.md` | ✅ |
+| 真缺陷 | smoke 首跑 8/8 通过但进程 teardown 崩（Windows libuv，keep-alive socket）；`closeAllConnections()` + 去掉 `process.exit()` 后干净退出 | ✅ |
+| 测试 | +6（serve 单测），总 **196**；9 门 / `--mutate` 9/9 | ✅ |
+
+---
+
 ## R15 已交付（本轮，证据见 `data/results/probe-*` 与 `render-fixture-*`）
 
 | 项 | 内容 | 状态 |
@@ -56,7 +73,7 @@
 | T-305 | `record_probe.mjs --resolved`（license/integrity/unpackedSize/tarball）+ lockfile 指纹 + `--browser`/`--registry`；真实候选 1 绿 2 红 | ✅ 部分 |
 | ADR | `docs/adr/0004`：外部候选取用边界（pin 版本 / 临时沙盒 / 不 vendor / 不判安全 / 失败即证据） | ✅ |
 | 发现 | F18 装成功不等于走网络（pnpm store）；F19 env 级 registry 覆盖被 launcher 中和；F20 元数据层分不出 E404/ETARGET | ✅ 交给 T-305b |
-| 测试 | +22（单测 16 render + 6 exec/plan），总 **190**；9 门 / `--mutate` 9/9 | ✅ |
+| 测试 | +22（单测 16 render + 6 exec/plan），总 **196**；9 门 / `--mutate` 9/9 | ✅ |
 
 ---
 

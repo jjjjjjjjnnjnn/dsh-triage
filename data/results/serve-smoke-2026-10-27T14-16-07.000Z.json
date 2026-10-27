@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_serve_smoke.mjs",
+  "generated_at": "2026-10-27T14:16:07.000Z",
+  "panel": {
+    "results_dir": "<repo>\\data\\results",
+    "port": 49673,
+    "read_only": true,
+    "url_shape": "http://127.0.0.1:<port>/?token=<token>"
+  },
+  "checks": [
+    {
+      "id": "token-required",
+      "ok": true,
+      "detail": "GET / without token → 401"
+    },
+    {
+      "id": "page-renders",
+      "ok": true,
+      "detail": "GET / → 200, 3401 bytes"
+    },
+    {
+      "id": "health",
+      "ok": true,
+      "detail": "ok=true readOnly=true"
+    },
+    {
+      "id": "artifacts-listed",
+      "ok": true,
+      "detail": "72 artifacts · kinds why:14 upstream:2 serve:1 render:5 registry:1 probe:10 ns:2 inventory:3 gates:30 d1:2 capabilities:1 audit:1"
+    },
+    {
+      "id": "artifact-detail",
+      "ok": true,
+      "detail": "probe-registry-unreachable-fresh-2026-10-27T13-00-58.000Z.json → 200, sha256=a4e9efec27c6"
+    },
+    {
+      "id": "traversal-refused",
+      "ok": true,
+      "detail": "../package.json → 400"
+    },
+    {
+      "id": "cross-origin-refused",
+      "ok": true,
+      "detail": "Origin: evil → 403"
+    },
+    {
+      "id": "post-read-only",
+      "ok": true,
+      "detail": "POST /api/probe → 403"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "this proves the panel answers and refuses the ways it claims to; it is not a UI review",
+    "no browser is involved: the page is inline HTML and the API is plain JSON",
+    "the token and port are not written to this artifact"
+  ]
+}

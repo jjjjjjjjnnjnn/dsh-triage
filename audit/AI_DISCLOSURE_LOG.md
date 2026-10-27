@@ -215,7 +215,7 @@
 - 起因：HUMAN 交接后选择「S1 + T-306 + T-302 + T-305」，并授权「按 pin 版本 + 临时沙盒执行」第三方 npm 候选
 - 结果：① **S1 先取证再写码**：本机 `--dump-dom` / `--screenshot` 都失效（0 字节 + 挂满 60s），CDP 可用；真 Host 的 `#root` 有 1 个子节点、289 字符可见文本；② **T-302 白屏判定**：`judgeRender` 纯函数（6 种 DOM 形状）+ `findBrowser` + `renderUrl`（无头 Chromium + CDP，独立 profile 目录，跑完杀树），`client-rendered` 从恒 `unmeasured` 变成真判据；红/绿对照两份 fixture 产物证明判定不是恒绿；③ **T-306**：就绪端口改由 Host 自打印的 `dsh web: http://…/?token=` 决定，`cleanup` 证明它用过的所有端口都关，端口不一致出 `probe.port-mismatch`；④ **T-305**：`--resolved` 记 license / integrity / unpackedSize / tarball，install.lockfile 记指纹；真实候选 `dsh-plugin-model-proxy@0.1.6` install 5.4s / boot 7.7s / render 3.9s / cleanup 61ms；E404 与版本不存在两种 `blocked`；⑤ **ADR-0004**：外部候选只在临时沙盒执行、pin 版本、不 vendor、不注入凭据、不判安全
 - 实测：R15 真实启动 5 次 boot→sample **7.7 / 7.7 / 8.2 / 8.7 / 15.8s**（15.8s 为首次冷启），清理 7/7，失败路径 2/2；渲染 1.1–4.2s（独立预算）
-- 门禁：`verify` **190 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；step_reviews **76 步**（R15-S1…S10）
+- 门禁：`verify` **196 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；step_reviews **76 步**（R15-S1…S10）
 - 过程中的真实缺陷/发现：① 首帧（`readyState=interactive`，24 字符）被当成已渲染 → 改为等 `complete`（上限 6s），并重采产物；② `renderMs` 记成「读取步的墙钟 0ms」→ 改为观测自身时钟；③ `mkdtempSync` 父目录不存在直接 ENOENT；④ `scripts/lib/live.mjs` 直接 import `host.ts`，而新加的 `./render.js` 不会被类型剥离重写 → 改为 re-export 构建产物；⑤ **F18**：`NPM_CONFIG_REGISTRY` 指向死地址仍 `go`（pnpm store 命中，lockfile 逐字节一致）；⑥ **F19**：换一个从未装过的候选仍 `go` → env 级覆盖被 launcher 中和，私有源形状只能走 profile 级配置（`T-305b`）；⑦ **F20**：版本端点对不存在的版本也 404，元数据层分不出 E404/ETARGET
 - 人工决策：HUMAN 选范围（S1+T-306+T-302+T-305）并授权临时沙盒执行；授权与结论分列记在 `audit/SIGNOFF.md`（**未**逐条复核候选作者可信度，本仓不判安全）
 - SessionID：待 HUMAN 回填

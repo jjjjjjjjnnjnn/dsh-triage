@@ -36,6 +36,9 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 **一句话**：`dsh-triage serve` 起一个只在 `127.0.0.1` 上的小面板，把「已装集合 / 最近一次 probe / SSOT 证据」渲染成可点的页面，并能一键重跑某条命令。
 
+> **状态（R16）**：**v0 已交付** —— 零依赖、token 鉴权、跨源拒绝、POST 403（`--allow-execute` 也只回 501）；当前只列 `data/results` 的产物与 sha256，**还没有** `/api/audit`（见 T-406）。
+> 冒烟证据：`data/results/serve-smoke-2026-10-27T14-12-16.000Z.json`（8/8）；单测 `tests/unit/serve.test.ts`（6 条）。
+
 | 项 | 设计 |
 |---|---|
 | 依赖 | **零**（`node:http` + 内联 HTML/CSS/JS，和门禁同一条纪律） |
@@ -96,10 +99,10 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 ## 6. 排期（成本从低到高）
 
-| 序 | 交付 | 依赖 | 出口 |
-|---|---|---|---|
-| 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 |
-| 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 |
-| 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 |
-| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 |
-| 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 |
+| 序 | 交付 | 依赖 | 出口 | 状态 |
+|---|---|---|---|---|
+| 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 | ✅ R16 |
+| 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0：只列 SSOT，尚未接 audit） |
+| 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
+| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | ⬜ |
+| 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |

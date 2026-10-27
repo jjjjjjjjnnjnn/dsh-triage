@@ -12,9 +12,9 @@
  * Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
 import {
   catalogFor,
@@ -61,6 +61,7 @@ import {
   realProbeDeps,
   sandboxBundles,
 } from './probe-run.js'
+import { startPanel } from './serve.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -94,6 +95,12 @@ interface Flags {
   readonly noHttp: boolean
   /** `probe --execute --browser <path>`: Chromium-family binary for the render check (T-302). */
   readonly browser: string | null
+  /** `serve --port <n>`: 0 picks a free port. */
+  readonly port: number | null
+  /** `serve --results <dir>`: where the panel reads artifacts from. */
+  readonly results: string | null
+  /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
+  readonly allowExecute: boolean
 }
 
 interface Parsed {
@@ -110,6 +117,7 @@ Usage
   dsh-triage check <pkg[@version]>   judge a candidate before installing
   dsh-triage audit                   capability ledger of the installed set
   dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)
+  dsh-triage serve                   open a read-only local evidence panel (127.0.0.1)
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -125,6 +133,9 @@ Flags
   --dsh-main <path>     (probe --execute) DSH launcher entry the sandbox boots
   --no-http             (probe --execute) profile serves no web surface; skip readiness
   --browser <path>      (probe --execute) Chromium-family binary for the render check (T-302)
+  --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
+  --results <dir>       (serve) directory of evidence to display (default: ./data/results)
+  --allow-execute       (serve) enable actions; without it the panel is read-only
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -152,6 +163,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandCheck(flags, positionals[0])
     case 'probe':
       return commandProbe(flags, positionals[0])
+    case 'serve':
+      return commandServe(flags)
     default:
       process.stderr.write(`unknown command "${command}"; see --help\n`)
       return EXIT_USAGE
@@ -759,6 +772,47 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   return verdict.conclusion === 'blocked' || verdict.conclusion === 'risky' ? EXIT_FINDINGS : EXIT_OK
 }
 
+/**
+ * `serve` — the local evidence panel (M4 form A). Read-only unless `--allow-execute` was
+ * passed, and even then this version answers 501 for actions: the flag is the gate, not a
+ * promise. The URL carries a one-time token and is the only way in.
+ */
+async function commandServe(flags: Flags): Promise<number> {
+  const resultsDir = flags.results === null ? resolve(process.cwd(), 'data/results') : resolve(flags.results)
+  const panel = await startPanel({
+    resultsDir,
+    port: flags.port ?? 0,
+    allowExecute: flags.allowExecute,
+    locale: flags.locale,
+  })
+  const readOnly = !flags.allowExecute
+  if (flags.json) {
+    writeJson({
+      schema_version: 1,
+      command: 'serve',
+      url: panel.url,
+      port: panel.port,
+      resultsDir,
+      readOnly,
+    })
+  } else {
+    process.stdout.write(`panel   ${panel.url}\n`)
+    process.stdout.write(`results ${resultsDir}${existsSync(resultsDir) ? '' : '  (does not exist yet)'}\n`)
+    process.stdout.write(`mode    ${readOnly ? 'read-only' : 'actions requested (POST still returns 501)'}\n`)
+    process.stdout.write('open the URL above; it carries a one-time token, and the panel binds 127.0.0.1 only\n')
+  }
+  // Stay in the foreground until the user stops it: a panel that backgrounds itself is a
+  // process nobody can find later.
+  await new Promise<void>((resolveStop) => {
+    const stop = (): void => {
+      panel.server.close(() => resolveStop())
+    }
+    process.once('SIGINT', stop)
+    process.once('SIGTERM', stop)
+  })
+  return EXIT_OK
+}
+
 /* -------------------------------- helpers -------------------------------- */
 
 async function requireEnv(flags: Flags): Promise<EnvFingerprint | null> {
@@ -898,6 +952,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let dshMain: string | null = null
   let noHttp = false
   let browser: string | null = null
+  let port: number | null = null
+  let results: string | null = null
+  let allowExecute = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -976,6 +1033,23 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         browser = value
         break
       }
+      case '--port': {
+        const value = takeValue()
+        if (value === null) return null
+        const parsed = Number(value)
+        if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65_535) return null
+        port = parsed
+        break
+      }
+      case '--results': {
+        const value = takeValue()
+        if (value === null) return null
+        results = value
+        break
+      }
+      case '--allow-execute':
+        allowExecute = true
+        break
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -987,7 +1061,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

@@ -51,6 +51,7 @@
 | **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 F1–F23（`insert:` 必填、就绪探测必须在杀树前、`--dump-dom` 不可用须走 CDP、装成功≠走网络、错误页/卡死渲染器的判据）+ 计时契约（boot→sample ≤20s，install/render 单列）+ 断言→结论映射 + 18 条负对照 |
 | **渲染后端选择** | `docs/adr/0005-render-backends.md` | 系统浏览器 + CDP 是唯一能给 `passed` 的后端；DOM 模拟/应用内上报/静态检查的定位与代价；CI 真浏览器作业 |
 | **控制面设计（M4）** | `docs/specs/M4-surface.md` | `dsh-triage serve` 本地面板 / DSH 设置面板（`dsh.client` + slots，row id = settings 命名空间）/ SEA 单文件 exe；三者都只展示与触发，不新增判据 |
+| **本地证据面板（T-405）** | `packages/plugin/src/serve.ts` + `scripts/record_serve_smoke.mjs` | `dsh-triage serve [--port N] [--results DIR] [--allow-execute]`：零依赖、只绑 127.0.0.1、token + HttpOnly cookie、跨源 403、POST 默认 403（`--allow-execute` 也只回 501）；列出 `data/results` 全部产物与 sha256 |
 | **外部候选取用边界** | `docs/adr/0004-external-candidate-boundary.md` | pin 版本 / 临时沙盒 / 不 vendor / 不注入凭据 / 不判安全 / 失败即证据；`vendor-manifest` 只登记 `kind: probe-candidate` 元数据 |
 | 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出 |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
