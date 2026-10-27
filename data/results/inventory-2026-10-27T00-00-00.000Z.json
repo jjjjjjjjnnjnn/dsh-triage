@@ -4,7 +4,7 @@
   "generated_at": "2026-10-27T00:00:00.000Z",
   "command": "audit --snapshot",
   "sample": {
-    "kind": "fixture",
+    "kind": "synthetic",
     "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
     "sampled_at": "2026-10-26T00:00:00.000Z",
     "profile": "desktop",
@@ -28,6 +28,13 @@
   "inventory": {
     "management_available": true,
     "unknown_keys": [],
+    "unjudged": [
+      {
+        "channel": "agentPresets",
+        "rows": 2
+      }
+    ],
+    "declared_without_module": 0,
     "entries": [
       {
         "entry_id": "hooks-claude-code",
@@ -323,7 +330,8 @@
           "messageId": "runtime.undeclared-entry",
           "params": {
             "entryId": "preset-row",
-            "module": "@deepseek-ai/dsh-agent-preset"
+            "module": "@deepseek-ai/dsh-agent-preset",
+            "phase": "active"
           }
         }
       ],
@@ -334,7 +342,7 @@
           "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
           "method": "plugin-inventory/list",
           "at": "2026-10-26T00:00:00.000Z",
-          "detail": "running but not declared: preset-row"
+          "detail": "in the sample but not declared: preset-row"
         },
         {
           "id": "inventory-profile",
@@ -354,12 +362,80 @@
       ],
       "missingEvidence": [],
       "generatedAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "inventory:agentPresets",
+        "version": null,
+        "kind": "set"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "unknown",
+      "confidence": {
+        "level": "low",
+        "basis": "measured-local"
+      },
+      "reasons": [
+        {
+          "code": "runtime.preset-unjudged",
+          "severity": "warn",
+          "messageId": "runtime.preset-unjudged",
+          "params": {
+            "channel": "agentPresets",
+            "rows": 2
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "inventory",
+          "tier": "measured-local",
+          "source": "data/fixtures/inventory/desktop-web-2026-10-26.json",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "unjudged channel: agentPresets (2 rows)"
+        },
+        {
+          "id": "inventory-profile",
+          "tier": "measured-local",
+          "source": "desktop",
+          "method": "plugin-inventory/list",
+          "at": "2026-10-26T00:00:00.000Z",
+          "detail": "sampled from profile desktop"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an isolated probe (M3) can decide whether \"agentPresets\" would register in a clean profile"
+        }
+      ],
+      "missingEvidence": [
+        "missing.preset-phase"
+      ],
+      "generatedAt": "2026-10-27T00:00:00.000Z"
     }
   ],
   "summary": {
     "risky": 2,
     "blocked": 1,
-    "unknown": 1
+    "unknown": 2
   },
   "discarded": false
 }

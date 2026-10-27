@@ -24,7 +24,14 @@ import { listDir, Checks, exists, fileUrl, readJson, readText, runGate } from '.
 
 const FIXTURES = 'tests/fixtures/inventory/cases.json'
 const SPEC = 'docs/specs/M2-inventory.md'
-const RUNTIME_REASON_CODES = ['runtime.fiber-failed', 'runtime.no-fiber', 'runtime.disabled', 'runtime.missing-entry', 'runtime.undeclared-entry']
+const RUNTIME_REASON_CODES = [
+  'runtime.fiber-failed',
+  'runtime.no-fiber',
+  'runtime.disabled',
+  'runtime.missing-entry',
+  'runtime.undeclared-entry',
+  'runtime.preset-unjudged',
+]
 
 await runGate('inventory-contract', async ({ checks, mutate }) => {
   const buildPath = 'packages/core/dist/inventory.js'
@@ -129,14 +136,43 @@ await runGate('inventory-contract', async ({ checks, mutate }) => {
     unknown.length === 0 ? `${observed.length} phase(s) match ${declared.join('|')}` : `upstream phases not in the engine: ${unknown.join(', ')}`,
   )
 
-  /* 3. every runtime reason is translated, and the spec names it */
-  const spec = readText(SPEC)
+  /* 3. every runtime reason is translated, and the spec agrees with the fixtures */
+  const specLines = readText(SPEC).split(/\r?\n/)
   for (const code of RUNTIME_REASON_CODES) {
     for (const locale of ['en', 'zh']) {
       const template = messages.catalogFor(locale).messages[code]
       checks.add(`message:${locale}:${code}`, typeof template === 'string' && template.length > 0, template ?? 'missing template')
     }
-    checks.add(`spec:${code}`, spec.includes(code), `${SPEC} must document ${code}`)
+
+    // The spec used to be checked by `spec.includes(code)` alone, which let a
+    // one-word edit (`blocked` → `go`) pass every gate. The fixtures are the
+    // executable form of the table, so the spec row that names this code must
+    // state the same conclusion the fixtures demand.
+    const expected = cases
+      .map((testCase) => testCase.expect)
+      .filter((expect) => expect?.code === code && typeof expect.conclusion === 'string')
+      .map((expect) => String(expect.conclusion))
+    const rows = specLines.filter((line) => line.startsWith('|') && line.includes(code))
+    checks.add(`spec:${code}`, rows.length > 0, `${SPEC} must document ${code}`)
+    if (rows.length === 0 || expected.length === 0) continue
+    const wanted = [...new Set(expected)]
+    // The conclusion column comes first in these rows; later mentions are prose
+    // ("risky, not blocked"), so only the first token counts as the stated verdict.
+    const stated = [
+      ...new Set(
+        rows
+          .map((line) => [...line.matchAll(/\b(go|risky|blocked|unknown)\b/g)].map((match) => match[1])[0])
+          .filter((token) => token !== undefined),
+      ),
+    ]
+    const agrees = wanted.every((conclusion) => stated.includes(conclusion)) && stated.every((token) => wanted.includes(token))
+    checks.add(
+      `spec-table:${code}`,
+      agrees,
+      agrees
+        ? `spec and fixtures agree on ${wanted.join('|')}`
+        : `fixtures say ${wanted.join('|')}, spec row states ${stated.join('|') || '(nothing)'}`,
+    )
   }
 })
 

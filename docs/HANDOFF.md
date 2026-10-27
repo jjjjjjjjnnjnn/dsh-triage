@@ -12,7 +12,7 @@ git status --short                  # 必须干净；有未提交改动先问来
 git log --oneline -3
 pnpm install --frozen-lockfile
 pnpm run verify                     # build → typecheck → test → gate，必须全绿
-node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/8
+node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/9
 ```
 
 基线不绿 → **先修基线，不叠加新功能**。
@@ -30,7 +30,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 8/
 | 规模 | **75 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
 | 本轮交付 | **M2-a P2**：`packages/core/src/inventory.ts`（防御式解析 + 相位→结论映射 + 声明/运行 diff）+ `audit --snapshot` + **新门 `inventory-contract`**（9 门）+ `scripts/render_inventory.mjs` + 13 条测试（单测 10 / e2e 3）；`verdict-contract` 的 messageId 白名单新增 `runtime.*` 命名空间（对齐 R4 已锁 spec，不是放宽阈值） |
-| 证据 | `data/results/inventory-2026-10-27T00-00-00.000Z.json`（5 entries / 1 missing / 1 undeclared / {risky2, blocked1, unknown1}，`sample.kind=synthetic`）· `gates-2026-10-27T00-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 20 个产物、24 个已审步骤 |
+| 证据 | `data/results/inventory-2026-10-27T00-00-00.000Z.json`（5 entries / 1 missing / 1 undeclared / {risky2, blocked1, unknown1}，`sample.kind=synthetic`）· `gates-2026-10-27T00-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 20 个产物、25 个已审步骤 |
 | 审核报告 | `audit/AUDIT_2026-10-27_R7.md`（本轮）· `AUDIT_2026-10-26_R6.md`（含 §10 独立复核）· `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 的真机采样未验证**（无 0.2.x 可启动 profile，见 §8） |
 
@@ -139,7 +139,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `T-111` label 自证（`BS-14`）：9 个命中无独立签署 | verifier + implementer | R7 起新案例由独立上下文签署 `label_verified_by` |
 | `T-201 P1`：Host 内 `compat_inventory` 工具（相位真机来源） | implementer | 本机可启动 0.2.x profile → P1 导出的快照喂给 `audit --snapshot` 与 Host 内结论一致 |
 | `B1/B2` 真机采样（`BS-15`）：相位层目前只有合成样本 | verifier | 产出一份 `sample.kind=live` 的 `data/results/inventory-*.json`，与合成样本并列 |
-| `T-112` preset 维度：同一 entry 在不同 preset 下相位不同 | implementer | 分开出结论，禁取「最乐观值」；`conditional` 行标 `unknown` |
+| `T-112` preset 维度：同一 entry 在不同 preset 下相位不同 | implementer | 分开出结论，禁取「最乐观值」；`conditional` 行标 `unknown`（当前先出 `unknown`/`runtime.preset-unjudged`，不静默） |
 | 0.2.x 真机 profile 未装（沙盒已有，非真机） | Implementer（M3） | 本机装 `0.2.1-rc.3` profile 并跑通一次 probe（同时解锁 P1 与 B1） |
 | npm 未登录，尚未占位发布 | HUMAN | `npm login` 后发布 `dsh-triage@0.0.1`（先 `pnpm run release:check`） |
 | 仓库仍 private | HUMAN | 决定转 public 时执行 `gh repo edit … --visibility public`（建议等 D2 后再定） |

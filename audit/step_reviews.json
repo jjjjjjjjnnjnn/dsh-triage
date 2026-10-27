@@ -520,8 +520,8 @@
       "real_test": {
         "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
-        "sha256": "9e1d2d95c47f639eaeeb71ff6df40d4603a1a987a228dbcb4f5eb0ead1e945a1",
-        "outcome": "5 entries · 1 missing · 1 undeclared · {risky:2, blocked:1, unknown:1}（synthetic 样本，非真机）"
+        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
+        "outcome": "5 entries · 1 missing · 1 undeclared · {risky:2, blocked:1, unknown:2}（synthetic；unknown 之一来自 agentPresets 未判通道）"
       }
     },
     {
@@ -543,8 +543,8 @@
       "real_test": {
         "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
-        "sha256": "9e1d2d95c47f639eaeeb71ff6df40d4603a1a987a228dbcb4f5eb0ead1e945a1",
-        "outcome": "同一引擎路径：CLI 与脚本对同一快照给出同一结论（e2e 3 条 + 单测 10 条全过）"
+        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
+        "outcome": "同一引擎路径：CLI 与脚本对同一快照给出同一结论（e2e 3 条 + 单测 14 条全过）"
       }
     },
     {
@@ -590,6 +590,35 @@
         "artifact": "data/results/gates-mutate-2026-10-27T00-00-00.000Z.json",
         "sha256": "aab1598f570e397b979509f61f66a89ddc588faf18a911146aadf07e9c9db086",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R7-S5",
+      "batch": "R7",
+      "step": "独立对抗性复核后的三项修正：spec 表与 fixtures 绑定、agentPresets 不再被吞、sample.kind 由来源决定",
+      "changed": [
+        "scripts/gate_inventory_contract.mjs",
+        "packages/core/src/inventory.ts",
+        "packages/core/src/messages.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/render_inventory.mjs",
+        "tests/unit/inventory.test.ts",
+        "tests/fixtures/inventory/cases.json",
+        "data/fixtures/inventory/desktop-web-2026-10-26.json",
+        "docs/specs/M2-inventory.md"
+      ],
+      "review": {
+        "correctness": "PASS：三条都是复核打出来的真问题——① 门原先只读 fixtures，把 spec 表里 blocked 改成 go 仍然全绿；现在门解析 spec 表的「结论列首词」并与 fixtures 对账（已用同一攻击实测：FAIL spec-table:runtime.no-fiber）。② agentPresets 原被当已知键静默吞掉，preset 里 failed 的行完全不可见；现在解析成 unjudged 通道并出 unknown + missingEvidence。③ sample.kind 原来是自由文本默认 fixture，文档却写 synthetic；现在只能由导出文件自身声明 kind=live 且带 sampled_at 才标 live",
+        "reproducibility": "PASS：新增 5 条 fixture（loading/unloading/phase 缺失/preset/禁用未声明）+ 4 条单测；同一 stamp 重放产物字节一致（sha 已更新为 bff4628f…）",
+        "licence": "PASS：仍零网络零第三方依赖；spec 攻击脚本只在临时目录里跑并原样还原（git diff 仅剩本轮意图内的改动）",
+        "ssot": "PASS：产物新增 unjudged / declared_without_module 字段；sample.kind=synthetic 与文档口径一致，sha256 与步骤记录同步",
+        "adversary": "反例复现：① 改 spec 表一行 → 门红；② 删掉 agentPresets 处理 → 单测「preset 行不得不可见」红；③ 把 fixture 声明成 live 但不给 sampled_at → render 脚本 exit 2"
+      },
+      "real_test": {
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
+        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
+        "outcome": "{risky:2, blocked:1, unknown:2}；unknown 含 preset 未判通道与一行「声明有但快照里没有」"
       }
     }
   ]

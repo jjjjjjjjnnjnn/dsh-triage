@@ -97,6 +97,58 @@
       "expect": { "conclusion": "risky", "code": "runtime.undeclared-entry" }
     },
     {
+      "id": "transient-loading-is-silent",
+      "spec": "§3 row 6: loading is transient too — silence, not a verdict",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "loading" }]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "transient-unloading-is-silent",
+      "spec": "§3 row 6: unloading is transient — silence, not a verdict",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "unloading" }]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "phase-key-absent-is-no-fiber",
+      "spec": "§3 row 3: an absent fiberPhase is the same state as null, so it blocks rather than passing silently",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true }]
+      },
+      "expect": { "conclusion": "blocked", "code": "runtime.no-fiber" }
+    },
+    {
+      "id": "preset-rows-are-not-swallowed",
+      "spec": "§3 hard constraint 3: preset phases must never be taken as the main phase — until T-112 they surface as unknown",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "reviewer",
+            "isDefault": false,
+            "rows": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "failed" }]
+          }
+        ]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.preset-unjudged" }
+    },
+    {
+      "id": "disabled-and-undeclared-is-not-called-running",
+      "spec": "§3: a disabled row is reported once (as disabled), never as 'runs but undeclared'",
+      "declared": [],
+      "snapshot": {
+        "entries": [{ "entryId": "hooks-claude-code", "moduleName": "@deepseek-ai/dsh-hooks-claude-code", "enabled": false, "fiberPhase": null }]
+      },
+      "expect": { "conclusion": "risky", "code": "runtime.disabled" }
+    },
+    {
       "id": "renamed-phase-is-refused",
       "spec": "§6 row 5: an upstream rename must fail loudly, not degrade to 'no problems found'",
       "declared": [],

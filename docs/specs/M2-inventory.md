@@ -53,7 +53,8 @@ interface PluginInventorySnapshot {
 | `enabled: false` 任何相位 | `risky` | `runtime.disabled` | 同上 |
 | `pending` / `loading` / `unloading` | 不产生 verdict（瞬态；重复采样会抖） | — | — |
 | 快照里没有、声明里有 | `unknown` | `runtime.missing-entry` | `probe`（要 M3 才能定） |
-| 快照里有、声明里没有 | `risky`（信息级） | `runtime.undeclared-entry` | `report`（可能来自 preset 或动态挂载） |
+| 快照里有、声明里没有（且该行 `enabled`） | `risky`（信息级） | `runtime.undeclared-entry` | `report`（可能来自 preset 或动态挂载；被禁用的行只报 `runtime.disabled`，不重复判「在跑」） |
+| `agentPresets[].rows` 存在 | `unknown`（本版本不判 preset 相位，T-112） | `runtime.preset-unjudged` | `probe`；**禁止**把 preset 相位当成主列表相位 |
 
 **硬约束**：
 
@@ -77,7 +78,7 @@ P1/P2 的 schema 校验必须是**防御式**的：未知字段进 `raw` 不猜�
 |---|---|---|
 | B1 | `audit` 能显示每行 `active / failed / null(disabled)` | 沙箱里真跑一次快照 |
 | B2 | 静态声明与运行时快照交叉校验，能列出「声明了但没注册」 | fixture + 沙箱各一次 |
-| B3 | 相位缺失时结论是 `unknown`，不是 `go` | 负对照：删掉快照字段 |
+| B3 | 快照缺项 → `unknown`，绝不 `go`。注意：单行 `fiberPhase` 为 `null`/缺失**不是**「相位缺失」，而是 §3 的 `no-fiber` → `blocked`（fixture `phase-key-absent-is-no-fiber` 锁死） | 负对照：删掉快照字段 |
 | B4 | 采样时间与 profile 进入证据，且 JSON 脱敏 | `results-privacy` 门 + e2e 断言 |
 | B5 | 新门 `inventory-contract` 可被 `--mutate` 打红（8/8） | `node scripts/gate.mjs --mutate` |
 

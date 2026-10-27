@@ -101,6 +101,58 @@ test('unknown top-level keys are surfaced instead of interpreted', () => {
   assert.deepEqual(parsed.value.unknownKeys, ['agentPresetsV2'])
 })
 
+test('unknown keys inside the wrapped snapshot are surfaced too', () => {
+  const parsed = parseInventorySnapshot(
+    { snapshot: { entries: [], presetV3: [] } },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  assert.deepEqual(parsed.value.unknownKeys, ['presetV3'], 'a field added inside `snapshot` is just as interesting')
+})
+
+test('agentPresets are never swallowed: they surface as unknown until T-112', () => {
+  const parsed = parseInventorySnapshot(
+    {
+      entries: [],
+      agentPresets: [
+        { id: 'reviewer', rows: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }] },
+      ],
+    },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  assert.deepEqual(parsed.value.unjudged, [{ channel: 'agentPresets', rows: 1 }])
+
+  const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
+  assert.equal(verdicts.length, 1, 'a failing preset row must not be invisible')
+  assert.equal(verdicts[0]?.conclusion, 'unknown')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.preset-unjudged')
+  assert.deepEqual(verdicts[0]?.missingEvidence, ['missing.preset-phase'])
+})
+
+test('a disabled entry nobody declares is reported once, as disabled', () => {
+  const verdicts = verdictsFromInventory({
+    env,
+    snapshot: snapshot([{ entryId: 'hooks', moduleName: '@deepseek-ai/dsh-hooks-claude-code', enabled: false, fiberPhase: null }]),
+    declared: [],
+    generatedAt: STAMP,
+  })
+  assert.equal(verdicts.length, 1, 'no second "runs but undeclared" card for a row that is off')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.disabled')
+})
+
+test('an absent fiberPhase key is no-fiber, not silence', () => {
+  const verdicts = verdictsFromInventory({
+    env,
+    snapshot: snapshot([{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true }]),
+    declared: [{ entryId: 'tools', module: '@deepseek-ai/dsh-tools' }],
+    generatedAt: STAMP,
+  })
+  assert.equal(verdicts.length, 1)
+  assert.equal(verdicts[0]?.conclusion, 'blocked')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.no-fiber')
+})
+
 test('phase → conclusion follows the spec table exactly', () => {
   assert.equal(phaseConclusion(entry({ fiberPhase: 'active' })), null, 'active is covered by the bundle verdict')
   assert.equal(phaseConclusion(entry({ fiberPhase: 'pending' })), null, 'transient phases would flap between samples')

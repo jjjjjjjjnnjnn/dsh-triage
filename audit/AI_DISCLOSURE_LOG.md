@@ -59,6 +59,7 @@
 - 审核：`audit/AUDIT_2026-10-27_R7.md`（B1–B5 逐条对照、3 条偏差、6 向对抗性反例）
 - 门禁：`verify` **75 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`audit/step_reviews.json` 共 24 步
 - 过程中的真实缺陷：新结论用了 `runtime.*` 命名空间，被 `verdict-contract` 门的 messageId 白名单当场拦下 → 同步 `docs/05` 契约表 + 门正则（对齐 R4 已锁 spec，不是放宽阈值）；另修了一个 `for (const [a, b] of …)` 漏括号的语法错
+- 独立复核：另起只读、不看实现的 adversary 会话 → **PARTLY CONFIRMED**；当场修 3 个洞：门未真正绑定 spec 表（改一行仍全绿）、`agentPresets` 被静默吞掉、`sample.kind` 自由文本且与文档不符；另改 4 处口径（B3 拆分、禁用行不判“在跑”、`--json` 新增字段、无 module 行计数）
 - SessionID：待 HUMAN 回填
 - 备注：**P1 与真机采样仍阻塞**（无 0.2.x 可启动 profile，`BS-15`）；对外只能说「相位表已实现」，不能说「实测过这台机器」
 

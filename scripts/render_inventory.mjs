@@ -39,7 +39,23 @@ if (stamp === null) {
 }
 const profile = argOf('--profile', 'web')
 const dshHome = argOf('--dsh-home', join(process.env['USERPROFILE'] ?? homedir(), '.dsh'))
-const sampleKind = argOf('--sample', 'fixture')
+
+/**
+ * `live` is not a flag: it must be declared by the export itself. A hand-written
+ * fixture cannot claim to be a Host sample by passing an argument.
+ */
+function sampleKindOf(value) {
+  if (value === null || typeof value !== 'object') return 'synthetic'
+  const declared = value['kind']
+  if (declared === 'live') {
+    if (typeof value['sampled_at'] !== 'string') {
+      process.stderr.write('snapshot declares kind=live without sampled_at — refusing to label it live\n')
+      process.exit(2)
+    }
+    return 'live'
+  }
+  return 'synthetic'
+}
 
 const core = await import(fileUrl('packages/core/dist/index.js'))
 const plugin = await import(fileUrl('packages/plugin/dist/load.js'))
@@ -67,6 +83,7 @@ if (!parsed.ok) {
   process.exit(2)
 }
 const snapshot = parsed.value
+const sampleKind = sampleKindOf(raw)
 
 /* Declared rows come from the same composition the CLI reads (bundle + patch layers). */
 const composition = await plugin.loadComposition(env, dshHome)
@@ -104,16 +121,17 @@ const payload = {
     kind: sampleKind,
     source,
     sampled_at: snapshot.sampledAt,
-    profile: snapshot.profile,
-    note:
+    profile: snapshot.profile,    note:
       sampleKind === 'live'
-        ? 'exported from a running Host via pluginInventory/list'
+        ? 'exported from a running Host via pluginInventory/list (the file declared kind=live and a sampled_at)'
         : 'synthetic snapshot: exercises the phase table, not a live observation of this machine',
   },
   env: core.redactEnv(env, redactRoots),
   inventory: {
     management_available: snapshot.managementAvailable,
     unknown_keys: snapshot.unknownKeys,
+    unjudged: snapshot.unjudged,
+    declared_without_module: declared.filter((row) => row.module === null).length,
     entries: snapshot.entries.map((entry) => ({
       entry_id: entry.entryId,
       module: entry.moduleName,

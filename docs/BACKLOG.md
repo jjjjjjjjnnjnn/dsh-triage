@@ -44,6 +44,7 @@
 | NEW | `scripts/render_inventory.mjs`：把一次相位判定写成 SSOT（`sample.kind` 自曝 synthetic/live） | ✅ |
 | 测试 | +13（单测 10 + e2e 3），总 **75**；套件 9 门 / `--mutate` 9/9 | ✅ |
 | 未做 | P1（Host 内取相位）、真机样本、`agentPresets` 维度（T-112） | ⬜ 见 `audit/AUDIT_2026-10-27_R7.md` §3 |
+| 复核修正 | 独立对抗性会话（只读、不看实现）判定 PARTLY CONFIRMED，抓出 3 个必须当场修的洞：**门没真正绑定 spec 表**（改一行结论仍全绿）、**`agentPresets` 被静默吞掉**（failed 的 preset 行完全不可见）、**`sample.kind` 是自由文本且默认值与文档不符**；另改 4 处口径（B3 拆分、禁用行不判“在跑”、`--json` 多字段、无 module 行计数） | ✅ 见 `audit/AUDIT_2026-10-27_R7.md` §8 |
 
 ---
 

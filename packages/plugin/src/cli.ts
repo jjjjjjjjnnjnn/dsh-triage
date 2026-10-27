@@ -9,7 +9,7 @@
  *   audit               capability ledger: entry ids, owners, collisions, local evidence
  *   probe <pkg[@ver]>   print the isolated probe plan (dry-run; execution is M3)
  *
- * Exit codes: 0 ok · 1 findings (only with --strict) · 2 usage · 3 unavailable
+ * Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
  */
 
 import { readFileSync } from 'node:fs'
@@ -99,7 +99,7 @@ Flags
   --execute             (probe) really run the plan — not implemented before M3
   --help                this text
 
-Exit codes: 0 ok · 1 findings (with --strict) · 2 usage · 3 unavailable
+Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
 `
 
 async function run(argv: readonly string[]): Promise<number> {
@@ -332,6 +332,8 @@ async function commandAudit(flags: Flags): Promise<number> {
                 enabled: entry.enabled,
                 phase: entry.fiberPhase,
               })),
+              unjudged: snapshot.unjudged,
+              declared_without_module: declared.filter((row) => row.module === null).length,
               missing: diff.missing,
               undeclared: diff.undeclared.map((entry) => ({
                 entry_id: entry.entryId,
@@ -378,9 +380,18 @@ async function commandAudit(flags: Flags): Promise<number> {
     if (snapshot.unknownKeys.length > 0) {
       process.stdout.write(`warn  snapshot has keys this build does not know: ${snapshot.unknownKeys.join(', ')}\n`)
     }
-    process.stdout.write(`  declared but not running: ${diff.missing.length}\n`)
+    for (const channel of snapshot.unjudged) {
+      process.stdout.write(
+        `warn  ${channel.channel} carries ${channel.rows} row(s) this build cannot judge yet (T-112); reported as unknown\n`,
+      )
+    }
+    const withoutModule = declared.filter((row) => row.module === null).length
+    if (withoutModule > 0) {
+      process.stdout.write(`warn  ${withoutModule} declared row(s) name no module and cannot be attributed to a phase\n`)
+    }
+    process.stdout.write(`  declared but not in the sample: ${diff.missing.length}\n`)
     for (const row of diff.missing) process.stdout.write(`    ${row.entryId}  ->  ${row.module ?? '(no module)'}\n`)
-    process.stdout.write(`  running but not declared: ${diff.undeclared.length}\n`)
+    process.stdout.write(`  in the sample but not declared: ${diff.undeclared.length}\n`)
     for (const entry of diff.undeclared) {
       process.stdout.write(`    ${entry.entryId}  ->  ${entry.moduleName}  phase=${entry.fiberPhase ?? 'none'}\n`)
     }

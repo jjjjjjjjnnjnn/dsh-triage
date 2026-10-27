@@ -38,7 +38,6 @@ const KNOWN_SNAPSHOT_KEYS = new Set([
   'note',
   'kind',
 ])
-
 export interface InventoryEntry {
   readonly entryId: string
   readonly moduleName: string
@@ -60,6 +59,17 @@ export interface InventorySnapshot {
   readonly source: string
   /** Top-level keys we did not understand — surfaced, never interpreted. */
   readonly unknownKeys: readonly string[]
+  /**
+   * Channels this build can see but cannot judge (today: `agentPresets`).
+   * Reported as `unknown` instead of dropped: a failed preset row must never be
+   * invisible just because the preset dimension is unimplemented (T-112).
+   */
+  readonly unjudged: readonly UnjudgedChannel[]
+}
+
+export interface UnjudgedChannel {
+  readonly channel: 'agentPresets'
+  readonly rows: number
 }
 
 export interface InventoryMeta {
@@ -141,9 +151,14 @@ export function parseInventorySnapshot(value: unknown, meta: InventoryMeta): Res
   }
 
   entries.sort((left, right) => left.entryId.localeCompare(right.entryId))
-  const unknownKeys = Object.keys(value)
+  // Unknown keys are collected from the wrapper *and* the inner snapshot: a field
+  // upstream adds inside `snapshot` is exactly as interesting as one on the wrapper,
+  // and the earlier version only looked at the wrapper.
+  const unknownKeys = [...new Set([...Object.keys(value), ...Object.keys(wrapped)])]
     .filter((key) => !KNOWN_SNAPSHOT_KEYS.has(key))
     .sort((left, right) => left.localeCompare(right))
+
+  const unjudged = readUnjudgedChannels(wrapped)
 
   return ok({
     managementAvailable,
@@ -152,7 +167,25 @@ export function parseInventorySnapshot(value: unknown, meta: InventoryMeta): Res
     profile,
     source: meta.source,
     unknownKeys,
+    unjudged,
   })
+}
+
+/**
+ * `agentPresets` carries per-preset rows whose phases can differ from the main
+ * entry. Judging them needs the preset dimension (T-112), so until then they are
+ * counted and surfaced as an `unknown` verdict — never silently dropped.
+ */
+function readUnjudgedChannels(snapshot: Record<string, unknown>): readonly UnjudgedChannel[] {
+  const presets = snapshot['agentPresets']
+  if (!Array.isArray(presets) || presets.length === 0) return []
+  let rows = 0
+  for (const preset of presets) {
+    if (!isRecord(preset)) continue
+    const presetRows = preset['rows']
+    if (Array.isArray(presetRows)) rows += presetRows.length
+  }
+  return [{ channel: 'agentPresets', rows }]
 }
 
 export function isFiberPhase(value: string): value is FiberPhase {
@@ -279,7 +312,9 @@ export function verdictsFromInventory(input: InventoryVerdictInput): readonly Ve
   }
 
   for (const entry of snapshot.entries) {
-    if (declaredIds.has(entry.entryId)) continue
+    // A disabled entry that nobody declares is already reported as `disabled`;
+    // adding "runs but is not declared" would be a lie about a row that is off.
+    if (!entry.enabled || declaredIds.has(entry.entryId)) continue
     out.push(
       buildVerdict({
         env,
@@ -291,14 +326,40 @@ export function verdictsFromInventory(input: InventoryVerdictInput): readonly Ve
             code: 'runtime.undeclared-entry',
             severity: 'info',
             messageId: 'runtime.undeclared-entry',
-            params: { entryId: entry.entryId, module: entry.moduleName },
+            params: { entryId: entry.entryId, module: entry.moduleName, phase: entry.fiberPhase ?? 'none' },
           },
         ],
         remediation: [remediationOf('report', entry.entryId, entry.moduleName, env.profile)],
         missingEvidence: [],
         snapshot,
         generatedAt,
-        detail: `running but not declared: ${entry.entryId}`,
+        detail: `in the sample but not declared: ${entry.entryId}`,
+      }),
+    )
+  }
+
+  for (const channel of snapshot.unjudged) {
+    // Not a claim about any single row, but not silence either: the caller now
+    // knows there is a loaded channel whose phases this build cannot read.
+    out.push(
+      buildVerdict({
+        env,
+        subject: { name: `inventory:${channel.channel}`, version: null, kind: 'set' },
+        conclusion: 'unknown',
+        confidence: { level: 'low', basis: 'measured-local' },
+        reasons: [
+          {
+            code: 'runtime.preset-unjudged',
+            severity: 'warn',
+            messageId: 'runtime.preset-unjudged',
+            params: { channel: channel.channel, rows: channel.rows },
+          },
+        ],
+        remediation: [remediationOf('probe', channel.channel, channel.channel, env.profile)],
+        missingEvidence: ['missing.preset-phase'],
+        snapshot,
+        generatedAt,
+        detail: `unjudged channel: ${channel.channel} (${channel.rows} rows)`,
       }),
     )
   }
