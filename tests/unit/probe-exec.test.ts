@@ -94,7 +94,7 @@ test('a clean candidate is decided go, with the limits spelled out', async () =>
   assert.deepEqual(judgement.missingEvidence, [])
 })
 
-test('client-rendered and namespace-diff stay unmeasured, never passed', async () => {
+test('client-rendered stays unmeasured when the probe had no browser', async () => {
   const { run } = await runWith()
   const assertions = probeAssertions(run)
   const byId = new Map(assertions.map((assertion) => [assertion.id, assertion.status]))
@@ -102,7 +102,7 @@ test('client-rendered and namespace-diff stay unmeasured, never passed', async (
   assert.equal(byId.get('http-served'), 'passed')
   assert.equal(byId.get('inventory-active'), 'passed')
   assert.equal(byId.get('cleanup-complete'), 'passed')
-  assert.equal(byId.get('client-rendered'), 'unmeasured', 'HTTP 200 is not a rendered UI (BS-03)')
+  assert.equal(byId.get('client-rendered'), 'unmeasured', 'no browser means no answer, not a pass (BS-03)')
   assert.equal(byId.get('namespace-diff'), 'unmeasured', 'tool surface lives in agent scope (BS-21)')
 })
 
@@ -244,3 +244,104 @@ test('a linked candidate is still identified, and two matches stay ambiguous', (
   assert.equal(isCandidateModule('@deepseek-ai/dsh-base', 'triage-probe-fixture-ok'), false)
   assert.equal(isCandidateModule('anything', ''), false)
 })
+
+/* --------------------------- client render (T-302) ------------------------- */
+
+const renderedCheck = { state: 'rendered' as const, detail: 'mount root with 1 child(ren), 320 visible chars', ms: 1_400, signals: null }
+const blankCheck = { state: 'blank' as const, detail: 'mount point "root" has no children', ms: 900, signals: null }
+const inconclusiveCheck = { state: 'inconclusive' as const, detail: 'the browser never opened a debugging port', ms: 20_000, signals: null }
+
+test('a rendered page is an info reason, and the segment is timed separately', async () => {
+  const { run } = await runWith({
+    deps: { bootAndSample: async () => ({ sample: activeCandidate, seconds: 8.1, detail: 'sampled', http: { status: 401, detail: 'HTTP 401' }, render: renderedCheck }) },
+  })
+  assert.equal(run.timings.renderMs !== null, true)
+  assert.ok((run.timings.renderMs ?? 0) < 20_000, 'the render segment must not be folded into the boot budget')
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.render-ok'))
+  assert.equal(probeAssertions(run).find((item) => item.id === 'client-rendered')?.status, 'passed')
+})
+
+test('HTTP answered and the row is active, but the page is blank: blocked', async () => {
+  const { run } = await runWith({
+    deps: { bootAndSample: async () => ({ sample: activeCandidate, seconds: 8.1, detail: 'sampled', http: { status: 401, detail: 'HTTP 401' }, render: blankCheck }) },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'blocked', 'a white screen is the BS-03 case, not a go')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.render-blank'))
+  assert.equal(probeAssertions(run).find((item) => item.id === 'client-rendered')?.status, 'failed')
+})
+
+test('a render check that cannot conclude downgrades to unknown, never to go', async () => {
+  const { run } = await runWith({
+    deps: { bootAndSample: async () => ({ sample: activeCandidate, seconds: 8.1, detail: 'sampled', http: { status: 401, detail: 'HTTP 401' }, render: inconclusiveCheck }) },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.missingEvidence.includes('missing.render'))
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.render-unmeasured'))
+})
+
+test('skipping the render check leaves the conclusion alone and says why', async () => {
+  const { run } = await runWith({
+    deps: {
+      bootAndSample: async () => ({
+        sample: activeCandidate,
+        seconds: 8.1,
+        detail: 'sampled',
+        http: { status: 401, detail: 'HTTP 401' },
+        renderSkipped: 'no Chromium-family browser was found on this machine',
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go')
+  const assertion = probeAssertions(run).find((item) => item.id === 'client-rendered')
+  assert.equal(assertion?.status, 'unmeasured')
+  assert.match(String(assertion?.detail), /no Chromium-family browser/)
+})
+
+/* --------------------------- readiness source (T-306) --------------------- */
+
+test('the readiness port comes from the Host and cleanup checks every port it used', async () => {
+  const observed: { cleanup: { port: number; extraPorts?: readonly number[] } | null } = { cleanup: null }
+  const { run } = await runWith({
+    deps: {
+      bootAndSample: async () => ({
+        sample: activeCandidate,
+        seconds: 8.1,
+        detail: 'sampled',
+        http: { status: 303, detail: 'HTTP 303' },
+        readiness: { source: 'host-url' as const, port: 53997 },
+      }),
+      cleanup: async (input) => {
+        observed.cleanup = { port: input.port, ...(input.extraPorts === undefined ? {} : { extraPorts: input.extraPorts }) }
+        return { removed: true, portClosed: true, detail: 'sandbox removed · port closed' }
+      },
+    },
+  })
+  assert.equal(run.readiness?.source, 'host-url')
+  assert.equal(observed.cleanup?.extraPorts?.includes(53997), true, 'the port the Host actually used must be proven closed too')
+})
+
+test('a Host port that differs from the plan is reported, and the conclusion follows the measurement', async () => {
+  const { run } = await runWith({
+    deps: {
+      bootAndSample: async () => ({
+        sample: activeCandidate,
+        seconds: 8.1,
+        detail: 'sampled',
+        http: { status: 401, detail: 'HTTP 401' },
+        readiness: { source: 'host-url' as const, port: 53997 },
+        render: renderedCheck,
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go', 'a port difference is a warning, not a verdict')
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.port-mismatch')
+  assert.equal(reason?.params?.host, 53997)
+  assert.equal(reason?.params?.plan, run.port)
+})
+

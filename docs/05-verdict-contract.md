@@ -126,21 +126,23 @@
 
 真机复核（2026-10-27）：`@deepseek-ai/dsh-tools` / `dsh-base` 的 `latest` 停在 `0.0.1-rc.1`，`@deepseek-ai/dsh` 停在 `0.2.1-rc.2`，三者 `next` 都是 `0.2.1-rc.4` —— 证据 `data/results/registry-2026-10-27T19-00-00.000Z.json`。
 
-## 2e. Probe：隔离实测的结论口径（R14 / T-301）
+## 2e. Probe：隔离实测的结论口径（R14 / T-301，R15 / T-302 扩）
 
 probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的通道，因此它的口径必须比声明层更窄，而不是更宽：
 
 | 规则 | 实现 / 门 |
 |---|---|
-| `go` **只**表示「候选装上了 + Host 起了 + 端口应答了 + 候选行 active」 | `packages/probe/src/exec.ts#judgeProbe`；文案 `probe.served` / `probe.row-active` |
-| 不判安全、不判功能、不判 UI 可用 | 断言 `client-rendered` / `namespace-diff` 在产物里**必须**是 `unmeasured`（T-302 / T-303），单测钉住 |
+| `go` **只**表示「候选装上了 + Host 起了 + 端口应答了 + 候选行 active（+ 页面挂载出可见 DOM）」 | `packages/probe/src/exec.ts#judgeProbe`；文案 `probe.served` / `probe.row-active` / `probe.render-ok` |
+| 不判安全、不判功能、不判 UI 可用 | `namespace-diff` 仍**必须**是 `unmeasured`（T-303）；`client-rendered` 自 R15 起**可测**（真浏览器 + CDP），无浏览器时必须 `unmeasured`，不许写成 passed |
+| 有应答但页面没挂载出内容（白屏）→ `blocked`（`probe.render-blank`） | T-302；渲染判定是纯函数 `judgeRender`，单测钉住 6 种 DOM 形状 |
+| 渲染检查得不出结论（浏览器崩了/超时）→ 至多 `unknown` + `missing.render`（`probe.render-unmeasured`），不允许判 `go` | 无证据只能 unknown（铁律 1） |
 | 候选行必须**唯一**：0 行 → `blocked`（`probe.row-missing`）；≥2 行 → `unknown`（`probe.row-ambiguous`） | 不猜归属（与 `runtime.ambiguous-entry` 同一条纪律） |
 | 候选行存在但相位不是 `active` → `blocked`（`probe.row-inactive`），并点名相位 | `failed` 与 `null` 是两种失败形状，不许合并成「没起来」 |
 | 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |
 | 实测运行时不在候选声明区间 → 降为 `unknown`（`probe.runtime-mismatch`） | 结论不可外推到没跑过的运行时 |
 | `evidence[].method` 必须写真实传输 | `boot + <transport> inventory sample`；探针行自身从评分行里剔除 |
 
-命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.cleanup-incomplete`。
+命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch`。
 
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |

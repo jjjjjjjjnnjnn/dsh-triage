@@ -39,16 +39,18 @@ test('the plan always isolates DSH_HOME and documents cleanup', () => {
   assert.ok(plan.ok)
   if (!plan.ok) return
   assert.ok(isAbsolute(plan.value.sandboxHome), 'sandbox path must be absolute on this platform')
-  // `http` exercises the sandbox port from outside and carries no DSH_HOME of its own.
-  for (const step of plan.value.steps.filter((item) => item.id !== 'cleanup' && item.id !== 'http')) {
+  // `http` and `render` exercise the sandbox from outside (fetch / a browser) and carry
+  // no DSH_HOME of their own; every DSH invocation must still point at the sandbox.
+  for (const step of plan.value.steps.filter((item) => item.id !== 'cleanup' && item.id !== 'http' && item.id !== 'render')) {
     assert.equal(step.env.DSH_HOME, plan.value.sandboxHome, `${step.id} must set DSH_HOME`)
   }
   assert.ok(plan.value.steps.some((step) => step.id === 'cleanup'))
   assert.ok(plan.value.steps.some((step) => step.id === 'http'), 'the plan must show the readiness probe it runs')
+  assert.ok(plan.value.steps.some((step) => step.id === 'render'), 'T-302: the plan must show the render check it runs')
   assert.ok(plan.value.warnings.some((warning) => warning.includes('dry-run')))
   const rendered = plan.value.assertions.find((assertion) => assertion.id === 'client-rendered')
   assert.ok(rendered !== undefined, 'BS-03: HTTP 200 is not enough')
-  assert.equal(rendered?.measured, false, 'an assertion the runner cannot answer must say so')
+  assert.equal(rendered?.measured, true, 'T-302 made this measurable; a machine without a browser reports unmeasured at run time')
   assert.equal(plan.value.assertions.find((assertion) => assertion.id === 'namespace-diff')?.measured, false)
   assert.equal(plan.value.assertions.find((assertion) => assertion.id === 'boot-sampled')?.measured, true)
 })

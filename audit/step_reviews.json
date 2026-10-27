@@ -1652,6 +1652,260 @@
         "sha256": "68dc7edfc9b47c6a94ca182b3110693aae2cbdef07e585aa827c96306c7d0402",
         "outcome": "ALL GREEN · 9 gates（含 governance/results-privacy 与 step-review 对新产物的复算）"
       }
+    },
+    {
+      "id": "R15-S1",
+      "batch": "R15",
+      "step": "取证 + 契约：先证明「无头浏览器能读到真 Host 的 DOM」，把判据与外部候选取用边界写进 spec/ADR，再动代码",
+      "changed": [
+        "docs/specs/M3-probe.md",
+        "docs/adr/0004-external-candidate-boundary.md",
+        "docs/05-verdict-contract.md",
+        "packages/core/src/messages.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`--dump-dom` 在 Edge 146 与 Chrome 154 上都返回 0 字节并挂满 60s，`--screenshot` 同样失败；改走 CDP（`--remote-debugging-port=0` + `DevToolsActivePort` + `Runtime.evaluate`）后 1–5s 拿到 DOM。真 Host 观测：title=DeepSeek Harness、#root 1 个子节点、readyState=complete、可见文本 289 字符。F13–F21 每条都附产物或对照实验",
+        "reproducibility": "PASS：spike 脚本是一次性取证（不入仓），但同一结论可用 `node scripts/record_probe.mjs … --browser <chrome>` 重放；产物里含 render.signals（ready_state/root_children/text_length/html_bytes），可逐步比对",
+        "licence": "PASS：只用本机已装的 Chrome/Edge 与本仓代码，未引入任何新依赖（ADR-0004 明确不引 playwright）；ADR 里写清「不 vendor 候选源码」",
+        "ssot": "PASS：首份真机产物 `probe-ok-render-2026-10-27T12-55-42.000Z.json` 记录 render=rendered 但只有 24 字符、readyState=interactive —— 这正是「第一帧不算完」的证据，随后把判定改成等 complete 并重采（12-57-25）",
+        "adversary": "反例一：把 `--dump-dom` 失败直接当成「本机没有浏览器」会误判能力边界 —— 用 `--screenshot` 与 CDP 两次对照证伪。反例二：spike 只在 Windows + Chrome 上验证，Linux CI 无浏览器；因此断言必须在无浏览器时落 `unmeasured` 而不是 failed（N12）。反例三：渲染「成功」不等于功能可用，spec §1 非目标里已锁死，不写进结论文案"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label ok-render --expect go --browser \"C:/Program Files/Google/Chrome/Application/chrome.exe\" --stamp 2026-10-27T12:55:42.000Z",
+        "artifact": "data/results/probe-ok-render-2026-10-27T12-55-42.000Z.json",
+        "sha256": "a1878b4e426422708e8b20e7fc0156875f0f9bb112060bbe73582401147e24e4",
+        "outcome": "go；render=rendered（24 字符 / readyState=interactive）→ 暴露首帧问题，判据改为等 complete"
+      }
+    },
+    {
+      "id": "R15-S2",
+      "batch": "R15",
+      "step": "T-306：就绪判据改由 Host 自己打印的 URL 决定，cleanup 证明它用过的所有端口都关",
+      "changed": [
+        "packages/probe/src/render.ts",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/plugin/src/probe-run.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/probe-exec.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`extractHostUrl` 只认 `127.0.0.1|localhost` + `?token=` 形态，取最后一条（重启场景）；`readiness.source=host-url` 进产物；`CleanupInput.extraPorts` 让 cleanup 对 Host 用过的每个端口都探一次。端口不一致时出 `probe.port-mismatch`（warn，不改结论）",
+        "reproducibility": "PASS：单测覆盖「Host 端口来自 URL」「extraPorts 被传给 cleanup」「端口不一致出 warning」三条；真机产物 `probe-ok-render-12-57-25` 里 readiness.source=host-url、port=53052",
+        "licence": "PASS：无新依赖；token 只在本进程内存里用于导航，落盘前不经过产物字段",
+        "ssot": "PASS：产物新增 readiness/render/install.lockfile，`.sha256` 由脚本同写；`data/results` 无孤儿",
+        "adversary": "反例一：Host 不打印 URL（`--no-http` / tui profile）时会静默退回 plan 端口 —— 现在显式记 `readiness.source=plan-port`，可被审计。反例二：token 泄漏 —— 产物里只留 port 与 source，signals 只记 title 长度，不记 URL；`results-privacy` 门事后全量扫描未命中 token"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --label ok-render --expect go --browser <chrome> --stamp 2026-10-27T12:57:25.000Z（同一命令，Host 端口 53052）",
+        "artifact": "data/results/probe-ok-render-2026-10-27T12-57-25.000Z.json",
+        "sha256": "4e77816def03c15547543aa8670e115b8ffc48a9c72c8aa4af00691bbd90b22c",
+        "outcome": "go；readiness.source=host-url（53052）；render=rendered（289 字符 / complete，1785ms）；boot→sample 8.7s"
+      }
+    },
+    {
+      "id": "R15-S3",
+      "batch": "R15",
+      "step": "T-302：白屏判定（纯函数）落地，并按「三处同改」写文案与契约",
+      "changed": [
+        "packages/probe/src/render.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/plan.ts",
+        "packages/probe/src/index.ts",
+        "packages/core/src/messages.ts",
+        "docs/05-verdict-contract.md",
+        "docs/specs/M3-probe.md",
+        "tests/unit/render.test.ts",
+        "tests/unit/probe-exec.test.ts",
+        "tests/unit/probe.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`judgeRender` 是纯函数（无 I/O），六种 DOM 形状覆盖：有内容 / 空根 / 有根无文本 / 无 #root 但有 body / 空文档 / 仍在 loading。空白 → `blocked` + `probe.render-blank`；得不出结论 → `unknown` + `missing.render`；无浏览器 → `unmeasured` 且结论不变",
+        "reproducibility": "PASS：单测 16 条（render）+ 5 条（exec/plan）；e2e 不依赖真浏览器（干跑计划里只断言 step/assertion 存在），真浏览器只出现在人工 recorder",
+        "licence": "PASS：零新依赖（Node 22 内置 WebSocket + 本机 Chromium）",
+        "ssot": "PASS：`render` 段进 timings（独立预算，不进 20s）、assertions（`client-rendered` 三态）、产物 `render.signals`；`go` 的渲染文案带「仅证明……不证明功能」",
+        "adversary": "反例一：把骨架屏当已渲染 —— 首帧 24 字符就是活证据，改为等 `readyState=complete`（上限 6s）。反例二：把阈值抬高到 40 字符会把真实候选（本机 24 字符）判成白屏 → 保持 20 并在 spec §9 写清「只判挂载，不判可用」。反例三：浏览器崩溃时若判 failed 会冤枉插件 → `inconclusive` 只能落 `unknown`/`unmeasured`"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blank --expect blank --browser <chrome> --stamp 2026-10-27T12:58:42.000Z",
+        "artifact": "data/results/render-fixture-blank-2026-10-27T12-58-42.000Z.json",
+        "sha256": "2bcafadda1856c6c112b4fdd34089b6ebb8afcbe50ed84b13308ad2b50a198b8",
+        "outcome": "blank：200 + 空挂载点被判 blank（no visible text and no mounted children），3101ms —— 证明判定会红"
+      }
+    },
+    {
+      "id": "R15-S4",
+      "batch": "R15",
+      "step": "T-302 对照：同一套判定对「有内容」的页面必须绿，否则红样本只能证明它永远红",
+      "changed": [
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：同一 recorder、同一浏览器、同一判定，只把页面从空根换成有内容的根，结果从 blank 变 rendered",
+        "reproducibility": "PASS：`--mode rendered --expect rendered` 可重放；产物记录 signals（root_children=1、text_length=77）",
+        "licence": "PASS：无第三方内容，页面是本脚本内联的静态 HTML",
+        "ssot": "PASS：两份 fixture 产物同源同 schema，`sample.kind=render-control` 自曝「这是检测器对照，不是插件测量」",
+        "adversary": "反例：如果只留红样本，无法排除「判定永远返回 blank」；因此必须成对产出绿/红两份，且都带 `limits`"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode rendered --expect rendered --browser <chrome> --stamp 2026-10-27T12:58:49.000Z",
+        "artifact": "data/results/render-fixture-rendered-2026-10-27T12-58-49.000Z.json",
+        "sha256": "626fd00467177e2843fef4dac32e5350e8de1f6045760f440b2dad0a67be6f78",
+        "outcome": "rendered：mounted root + 77 字符，911ms"
+      }
+    },
+    {
+      "id": "R15-S5",
+      "batch": "R15",
+      "step": "T-305（1/4）：第一个真实 registry 候选 —— 真实安装、真实启动、真实渲染",
+      "changed": [
+        "scripts/record_probe.mjs",
+        "quarantine/vendor-manifest.json",
+        "COMPLIANCE.md"
+      ],
+      "review": {
+        "correctness": "PASS：候选 `dsh-plugin-model-proxy@0.1.6`（MIT/450KB/1 依赖）真装（5.4s）、真起（7.7s）、行 active、页面 rendered；`--resolved` 记 license/integrity/unpackedSize/tarball，install.lockfile 记字节数与哈希",
+        "reproducibility": "PASS：spec 精确 pin（ADR-0004），integrity 已记；同一命令在任何有网络/缓存的机器上可重放，产物 sha256 可复算",
+        "licence": "PASS：MIT（见 vendor-manifest `probe-candidate-model-proxy`）；源码不入仓、不进 quarantine，只登记元数据；`limits` 明写不判安全",
+        "ssot": "PASS：`probe-registry-ok-2026-10-27T12-59-01.000Z.json` 是 D2 的第一个真实分母（此前只有本地 fixture 0.53–0.64s）",
+        "adversary": "反例一：装成功可能只是 pnpm store 命中（后来 F18 证实）——因此产物记 lockfile 指纹，并与「不可达 registry」那次逐字节比对。反例二：把「装上了」写成「能用了」——文案与 limits 都限定为 boot/HTTP/行/画面"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-plugin-model-proxy@0.1.6 --label registry-ok --expect go --browser <chrome> --stamp 2026-10-27T12:59:01.000Z",
+        "artifact": "data/results/probe-registry-ok-2026-10-27T12-59-01.000Z.json",
+        "sha256": "a4d364741bb4b4deebd6fc7dd662d2255a535d517f6f386ad34e721939b99028",
+        "outcome": "go；install 5.4s · boot→sample 7.7s · render 3.9s · cleanup 61ms；lockfile sha256=d716fa88…"
+      }
+    },
+    {
+      "id": "R15-S6",
+      "batch": "R15",
+      "step": "T-305（2/4）：不存在的包名 —— 安装失败必须是 blocked，且沙盒仍被清理",
+      "changed": [
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：`blocked` + `probe.install-failed`，steps 停在 install，cleanup=passed",
+        "reproducibility": "PASS：固定 spec + 固定 stamp；`--expect blocked` 使「意外成功」变成 exit 1",
+        "licence": "PASS：只读公共 registry 的 404，无内容落盘",
+        "ssot": "PASS：产物 `candidate.resolved={version, error:\"HTTP 404\"}` 记录元数据层判定",
+        "adversary": "反例：404 也可能是网络代理返回的假页面 —— 产物同时记了我们自己的元数据 fetch 结果与安装器退出形状，两者都对不上才是真问题"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-plugin-triage-missing@0.0.1 --label registry-e404 --expect blocked --stamp 2026-10-27T12:59:48.000Z",
+        "artifact": "data/results/probe-registry-e404-2026-10-27T12-59-48.000Z.json",
+        "sha256": "20ace597323ae47b1ebfd3b6aface49735ee603ff1927e9b4b3ff2e17d1dc4d2",
+        "outcome": "blocked；install 退出失败；cleanup passed（目录删除 + 端口关闭）"
+      }
+    },
+    {
+      "id": "R15-S7",
+      "batch": "R15",
+      "step": "T-305（3/4）：版本不存在 —— 与「包不存在」同形，记下元数据层分不出（F20）",
+      "changed": [
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：`blocked` + `probe.install-failed`；`resolved.error` 同样是 `HTTP 404`（版本端点对不存在的版本也 404）",
+        "reproducibility": "PASS：pin 到 `99.99.99`，不会随上游漂移",
+        "licence": "PASS：只读公共 registry 的元数据（404 响应），没有任何候选内容落盘，也没有新增依赖或数据源",
+        "ssot": "PASS：与 E404 那份并列，构成「两种失败同形」的可复算证据（F20 的出处）",
+        "adversary": "反例：如果只看退出码，会把「版本打错」与「包名打错」当同一件事；这里明确记录当前无法区分，并把它留成已知边界而不是假装能分"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-plugin-model-proxy@99.99.99 --label registry-etarget --expect blocked --stamp 2026-10-27T12:59:53.000Z",
+        "artifact": "data/results/probe-registry-etarget-2026-10-27T12-59-53.000Z.json",
+        "sha256": "89a0ecadf2b41b1b29d6382e08d8d2c1a737528063888ead786284cabb75fba4",
+        "outcome": "blocked；resolved.error=HTTP 404（与 E404 同形）"
+      }
+    },
+    {
+      "id": "R15-S8",
+      "batch": "R15",
+      "step": "T-305（4/4）：把 registry 指向不可达地址 —— 结论却是 go，这是本轮最有价值的一个反例",
+      "changed": [
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS（结论如实）：`NPM_CONFIG_REGISTRY=http://127.0.0.1:1` 下候选仍然 `go`，lockfile 与被测成功那次逐字节一致（sha256=d716fa88…），而我们自己的元数据 fetch 在同一 env 下 `fetch failed` → 安装走的是 pnpm store（F18）",
+        "reproducibility": "PASS：`--registry` 是显式参数；`expectation_met=false` 直接写在产物里，脚本以 exit 1 报告「期望未满足」，这就是证据本身",
+        "licence": "PASS：仅读本仓与公共 registry 元数据，本轮未新增任何外部内容或依赖",
+        "ssot": "PASS：artifact 的 `expectation: blocked` / `expectation_met: false` / `conclusion: go` 三字段并存，读者不会把文件名当结论",
+        "adversary": "反例：这正是「装上了 ≠ 走网络」的实证。若不打这一枪，D2 的「安装成功率」会把缓存命中算成网络成功。处置：manifest 与 spec 都把这一条写成边界（F18），T-305b 负责 profile 级私有源形状"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-plugin-model-proxy@0.1.6 --label registry-unreachable --expect blocked --registry http://127.0.0.1:1 --stamp 2026-10-27T13:00:00.000Z",
+        "artifact": "data/results/probe-registry-unreachable-2026-10-27T13-00-00.000Z.json",
+        "sha256": "6b3ee4e3b8755199a3f6ed3e26d8f345df9955e0d02a990d94229a3dec4d21e5",
+        "outcome": "实际 go（不是 blocked）：store 命中；expectation_met=false，脚本 exit 1 —— 记录的是发现，不是通过"
+      }
+    },
+    {
+      "id": "R15-S9",
+      "batch": "R15",
+      "step": "T-305 交叉验证：换一个从未装过的候选，仍然 go → 说明不是缓存个例，而是 env 级覆盖被中和（F19）",
+      "changed": [
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：`dsh-cost-meter@1.9.41`（此前未装过）在不可达 registry 下仍 `go`（install 未走网络或走了 launcher 自己的源），我方 fetch 仍 `fetch failed` → 结论是环境变量没有传到 pnpm，而不是「网络其实通」",
+        "reproducibility": "PASS：同一 `--registry` 参数；两次实验（缓存过 / 从未装过）结论一致，构成二选一的判据",
+        "licence": "PASS：只装 MIT 包，元数据已登记",
+        "ssot": "PASS：产物与 S8 并列，供 T-305b 当作对照",
+        "adversary": "反例：若后续用 profile 级 `.npmrc` 复现出失败，必须能解释这两次为什么成功；否则「不可达」这个形状仍不可信"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-cost-meter@1.9.41 --label registry-unreachable-fresh --expect blocked --registry http://127.0.0.1:1 --stamp 2026-10-27T13:00:58.000Z",
+        "artifact": "data/results/probe-registry-unreachable-fresh-2026-10-27T13-00-58.000Z.json",
+        "sha256": "a4e9efec27c6425d10ddea2531e4a95b9dda0953ec7c75ca9d245ed404ec64d7",
+        "outcome": "实际 go（expectation_met=false）：从未装过的候选也成功 → env 级 registry 覆盖被 launcher 中和（F19）"
+      }
+    },
+    {
+      "id": "R15-S10",
+      "batch": "R15",
+      "step": "本轮收尾：全链 verify + 负对照，并把门禁结果本身写成可复算产物",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：187 测试全绿、9 门全绿、mutate 9/9 CAUGHT；step_review 对 76 步逐一复算 sha256，无孤儿产物",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T13:20:00.000Z` 可重放；产物内含每道门的 checks 与耗时",
+        "licence": "PASS：门禁只读本仓文件，零第三方依赖、零网络，符合 ADR-0003",
+        "ssot": "PASS：`data/results` 全部产物被台账引用；`.sha256` 为纯 hash（不含文件名）",
+        "adversary": "反例：绿跑本身不能证明门有效 —— 同轮 mutate 逐门注入违规并全部 CAUGHT；另检查「渲染断言在无浏览器时会不会被写成 passed」，由单测 N12 固定"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T13:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T13-20-00.000Z.json",
+        "sha256": "5ed8fc9f0e320b517a4a59fa9638e7084c591e76a7fd0a0ceaa117557da13937",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate = NEGATIVE CONTROL PASSED 9/9）"
+      }
+    },
+    {
+      "id": "R15-S11",
+      "batch": "R15",
+      "step": "文档同步之后复跑全链：188 测试 / 9 门 / mutate 9/9，并把最终状态写成产物",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "audit/AUDIT_2026-10-27_R15.md"
+      ],
+      "review": {
+        "correctness": "PASS：同步后的仓库仍然 188 测试全绿、9 门全绿；README 双语、HANDOFF、AGENTS、INDEX、BACKLOG、ROADMAP 的口径都改成「client-render 已测、namespace-diff 未测」",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T13:45:00.000Z` 可重放；这是文档同步后的最终快照（13:20 那份是同步前的）",
+        "licence": "PASS：只改本仓文档与自产产物，零第三方依赖、零网络",
+        "ssot": "PASS：13:20 与 13:45 两份 gates 产物都被台账引用，`data/results` 无孤儿；`.sha256` 为纯 hash",
+        "adversary": "反例：文档里的测试数字最容易漂移 —— 本轮先写 187，加上一条 port-mismatch 单测后变成 188；如果不复跑就提交，读者会拿到一个假数字。已用脚本全量替换并再次 verify 校验"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T13:45:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T13-45-00.000Z.json",
+        "sha256": "62ad230925412997c1b8311a5a68ab811706e5d22f2da40d9e0070b1fc60849b",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate = 9/9 CAUGHT；verify = 188 tests）"
+      }
     }
   ]
 }

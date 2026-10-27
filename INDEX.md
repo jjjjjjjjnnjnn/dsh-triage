@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R13 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R15 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -40,14 +40,16 @@
 | admission 语义 | `docs/04-admission-semantics.md` | 上游判定规则逐条复刻 + 金标夹具口径 |
 | Verdict 契约 | `docs/05-verdict-contract.md` | 结论/证据/置信度/替代方案 JSON 契约 |
 | 工程约定 | `docs/08-conventions.md` | 模块边界/命名/错误/确定性/扩展方式/评审清单 |
-| 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 |
+| 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` + `docs/adr/0004-external-candidate-boundary.md` | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 / 外部候选只在临时沙盒执行且不 vendor |
 | 路线 | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 增长阶梯/分发清单/指标（R14 起为唯一执行计划；旧的双 roadmap 之一已归档到 `_archive/`，见 `ARCHIVE_MANIFEST`） |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
 | 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / version-drift / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 与 `version-drift` 只出次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
-| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→inventory→cleanup` 六步；判定是纯函数（`judgeProbe`），I/O 全部注入；`client-rendered` 与 `namespace-diff` **恒为 `unmeasured`**（T-302 / T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；产物 `data/results/probe-ok-2026-10-28T06-00-00.000Z.json` 等三份（boot→sample 11.7–19.9s） |
-| **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 F1–F12（`insert:` 必填、就绪探测必须在杀树前、端口与 `--no-open` 属于 app 参数）+ 计时契约（boot→sample ≤20s，install 单列）+ 断言→结论映射 + 10 条负对照 |
+| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/render.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→render→inventory→cleanup` 七步；判定是纯函数（`judgeProbe` / `judgeRender`），I/O 全部注入；**R15 起 `client-rendered` 可测**（真浏览器 + CDP；无浏览器 → `unmeasured`），`namespace-diff` 仍 `unmeasured`（T-303）；默认 dry-run，`--execute --dsh-main` 才真跑 |
+| **白屏判定（T-302）** | `packages/probe/src/render.ts` · `scripts/record_render_fixture.mjs` | `judgeRender` 判「挂载点有子节点 + 可见文本 ≥20 字符 + 非 loading」；`findBrowser`（显式/env/常见路径）；`renderUrl` 用无头 Chromium + CDP（`--dump-dom` 在本机不可用）；红/绿对照产物 `data/results/render-fixture-*.json` |
+| **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 F1–F21（`insert:` 必填、就绪探测必须在杀树前、`--dump-dom` 不可用须走 CDP、装成功≠走网络）+ 计时契约（boot→sample ≤20s，install/render 单列）+ 断言→结论映射 + 13 条负对照 |
+| **外部候选取用边界** | `docs/adr/0004-external-candidate-boundary.md` | pin 版本 / 临时沙盒 / 不 vendor / 不注入凭据 / 不判安全 / 失败即证据；`vendor-manifest` 只登记 `kind: probe-candidate` 元数据 |
 | 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出 |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
 | 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约（含 `{占位符}` 完整性）/ SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |

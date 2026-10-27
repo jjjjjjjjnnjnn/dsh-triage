@@ -26,7 +26,7 @@
 | T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ✅ **R13 完成**：`audit` 复用 `verdictsFromRowAdmission` + `--json row_verdicts` + 文本逐行结论；e2e「audit and why reach the same row-level admission conclusion」比两命令的 `subject|conclusion|reasons` 集合；`unknown` 不计入失败（与 `why` 默认一致） |
 | T-106 | `step-review` 升级：结论必须引用具体反例命令/路径的结构化字段 | 流程 | implementer | — | 套话无法通过（新增结构化断言 + 负对照） | ⬜ 对应 BS-09 |
 | T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ✅ **R14 完成**：`packages/probe/src/{exec,host}.ts` + CLI `probe --execute --dsh-main` + `scripts/record_probe.mjs`；真机绿跑 `go`（boot→sample **11.8s**，HTTP 401，行 active）+ 两红（`failed` / `null`）稳定复现；清理以「目录消失 + 端口不再应答」双判据。证据 `data/results/probe-{ok,red-apply-fail,red-import-fail}-2026-10-28*.json`；spec `docs/specs/M3-probe.md` |
-| T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ⬜ **前置已满足（T-301 交付）**：当前产物把 `client-rendered` 标 `unmeasured`，不许当通过 |
+| T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ✅ **R15 完成**：`packages/probe/src/render.ts`（`judgeRender` 纯函数 + `findBrowser` + 无头 Chromium/CDP `renderUrl`）；真机绿跑 `client-rendered=passed`（289 字符 / `readyState=complete`）；红样本 `render-fixture-blank-2026-10-27T12-58-42.000Z.json`（200 + 空挂载点 → blank）；无浏览器/超时 → `unmeasured`，不判通过 |
 | T-303 | probe 的 namespace-diff 断言 | M3 | verifier | T-202, T-301 | 声明了但未注册的工具能被列出 | ⬜ **T-301 已交付，但仍需 T-202a 作用域**：进程级探针只看到全局层（`BS-21`） |
 | T-401 | Web 面板骨架（`settings.plugins.tab`） | M4-a | implementer | 上游 cordis 类型 | 面板显示与 CLI 同源结论 | ⬜ |
 | T-402 | 徽章服务（SVG，插件×dsh×os） | M4-b | implementer | — | 徽章可按 SSOT 渲染；带 dsh.so 署名 | ⬜ |
@@ -38,12 +38,29 @@
 | T-602 | 案例帖 ×3（消失的工具 / 白屏 / 升级后起不来） | 增长 | researcher | T-101 | 每篇含真实 SSOT 证据 | ⬜ |
 | T-701 | 把 `dsh.so` 数据接入 `check`（作为先验，tier 不得越级） | M2 | implementer | — | `--explain` 显示 registry 先验与本地结论差异 | ⬜ |
 | T-304 | probe 对「用户自己的 bundle 集合」取样（现在只测空模板 profile） | M3 | implementer | T-301 | 用 profile 副本 + 依赖安装跑一次，能回答「加到**我的**组合里会不会挂」；当前只能回答「加到模板 profile 里」 | ⬜ R14 诚实边界（`docs/specs/M3-probe.md` §9） |
-| T-305 | registry 候选的安装形状（网络、tarball、私有源） | M3 | implementer | T-301 | 至少一次真实 npm 来源的 probe；记录耗时与失败形状（本轮只有本地路径，0.58–0.64s） | ⬜ R14 只测了本地 fixture |
-| T-306 | 非 web 表面的就绪判据 | M3 | implementer | T-301 | 用 host 自己打印的 URL/端口替代人工 `--no-http` 开关，覆盖 tui/headless profile | ⬜ R14 的 `--no-http` 是人工出口，不是判据 |
+| T-305 | registry 候选的安装形状（网络、tarball、私有源） | M3 | implementer | T-301 | 至少一次真实 npm 来源的 probe；记录耗时与失败形状（本轮只有本地路径，0.58–0.64s） | ✅ **R15 完成（部分）**：真实安装 **5.4s**（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）+ E404 / 版本不存在两种 `blocked`；`--resolved` 记 `license/integrity/unpackedSize/lockfile`；F18/F19 发现「装成功 ≠ 走过网络」「env 级 registry 覆盖被中和」→ 私有源形状拆成 `T-305b` |
+| T-305b | 私有源 / 不可达 registry 的失败形状（profile 级配置） | M3 | implementer | T-305 | 用 profile 级 `.npmrc` 或 launcher 配置让 registry 真的不可达，产出 `probe.install-failed` 并点名源 | ⬜ R15 只证明 env 覆盖无效（`M3-probe.md` F19） |
+| T-306 | 非 web 表面的就绪判据 | M3 | implementer | T-301 | 用 host 自己打印的 URL/端口替代人工 `--no-http` 开关，覆盖 tui/headless profile | ✅ **R15 完成（web 面）**：`extractHostUrl` 从 stdout 取 URL，产物 `readiness.source=host-url`；`cleanup` 证明 Host 用过的**所有**端口都关；非 web 面仍用 `--no-http`，tui/headless 未测 |
 
 ---
 
-## R14 已交付（本轮，证据见 `data/results/probe-*-2026-10-28*.json`）
+## R15 已交付（本轮，证据见 `data/results/probe-*` 与 `render-fixture-*`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| S1 | spike 先证事实：`--dump-dom`/`--screenshot` 在本机不可用，CDP 可用；真 Host 挂载出 `#root` + 289 字符（`M3-probe.md` F13–F16） | ✅ |
+| T-302 | `render.ts`：`judgeRender` 纯函数（6 种 DOM 形状）+ `findBrowser`（显式/env/常见路径）+ `renderUrl`（无头 Chromium + CDP，独立 profile 目录，跑完杀树） | ✅ |
+| T-302 | 三处同改：`probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured`（`messages.ts` 中英 + `docs/05` §2e + spec §7） | ✅ |
+| T-306 | 就绪端口改由 Host 自打印 URL 决定；`cleanup` 证明它用过的所有端口都关；`readiness.source` 进产物 | ✅ |
+| NEW | `scripts/record_render_fixture.mjs`：真浏览器跑「200 + 空挂载点」红样本与「有内容」对照，证明判定不是恒绿 | ✅ |
+| T-305 | `record_probe.mjs --resolved`（license/integrity/unpackedSize/tarball）+ lockfile 指纹 + `--browser`/`--registry`；真实候选 1 绿 2 红 | ✅ 部分 |
+| ADR | `docs/adr/0004`：外部候选取用边界（pin 版本 / 临时沙盒 / 不 vendor / 不判安全 / 失败即证据） | ✅ |
+| 发现 | F18 装成功不等于走网络（pnpm store）；F19 env 级 registry 覆盖被 launcher 中和；F20 元数据层分不出 E404/ETARGET | ✅ 交给 T-305b |
+| 测试 | +22（单测 16 render + 6 exec/plan），总 **188**；9 门 / `--mutate` 9/9 | ✅ |
+
+---
+
+## R14 已交付（证据见 `data/results/probe-*-2026-10-28*.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|

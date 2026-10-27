@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R5 (2026-10-26)",
+  "stand": "R15 (2026-10-27)",
   "why": "外部数据源与参考实现的许可真相源。任何 packages/ 代码引用前必须在此登记。",
   "entries": [
     {
@@ -79,6 +79,30 @@
       "usage": "read-only：只引用其 README 的结论与检查项清单，代码禁抄",
       "commercial_ok": false,
       "recorded_at": "2026-10-26"
+    },
+    {
+      "id": "probe-candidate-model-proxy",
+      "kind": "probe-candidate",
+      "name": "dsh-plugin-model-proxy@0.1.6",
+      "source": "https://registry.npmjs.org/dsh-plugin-model-proxy/-/dsh-plugin-model-proxy-0.1.6.tgz",
+      "license": "MIT",
+      "used_for": "T-305：真实 registry 候选的安装/启动/渲染形状（第一个真实分母）",
+      "usage": "reference-only, never vendored：只在临时沙盒 DSH_HOME 里执行一次，源码不进仓；产物只记元数据（ADR-0004）",
+      "integrity": "sha512-Mqmbg6fr3MZyQqP7dx1s+IemX5ExZifAbpif780sgrG9/z8/UeCLCHleytygAgjXdGhqmroOSvucTMQSLci2Zg==",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-27"
+    },
+    {
+      "id": "probe-candidate-cost-meter",
+      "kind": "probe-candidate",
+      "name": "dsh-cost-meter@1.9.41",
+      "source": "https://registry.npmjs.org/dsh-cost-meter/-/dsh-cost-meter-1.9.41.tgz",
+      "license": "MIT",
+      "used_for": "T-305：F19 的对照样本（环境变量级 registry 覆盖被 launcher 中和时仍然装成功）",
+      "usage": "reference-only, never vendored：同上",
+      "integrity": "sha512-IPRi0qMWVmVDA1sOtkJ9moXTh8JCisNefa+4AlB53B5MbbB3/8jfAH/d3xR1IzMv234xdvvnQxk4xxPAPP5BAg==",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-27"
     }
   ]
 }

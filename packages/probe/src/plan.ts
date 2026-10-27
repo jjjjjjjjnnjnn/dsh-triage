@@ -144,6 +144,13 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
         note: 'a 303 with a token and a 401 without one both count as "something is listening"',
       },
       {
+        id: 'render',
+        argv: ['<browser>', '--headless=new', '--remote-debugging-port=0', '<host url from stdout>'],
+        env: {},
+        cwd: sandboxHome,
+        note: 'T-302: reads the mounted DOM over CDP; skipped (reported unmeasured) when no browser is available',
+      },
+      {
         id: 'cleanup',
         argv: ['<rm>', sandboxHome],
         env: {},
@@ -156,13 +163,13 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
       { id: 'http-served', expect: `GET http://127.0.0.1:${port}/ answers at all (2xx/3xx/401)`, measured: true },
       { id: 'inventory-active', expect: 'the candidate row exists exactly once and reports phase "active"', measured: true },
       { id: 'cleanup-complete', expect: 'the sandbox directory is gone and the port no longer answers', measured: true },
-      { id: 'client-rendered', expect: 'browser half reports a mounted root (HTTP 200 alone is not enough — BS-03)', measured: false },
+      { id: 'client-rendered', expect: 'the page mounts visible DOM (a browser is required; without one this stays unmeasured — BS-03)', measured: true },
       { id: 'namespace-diff', expect: 'tools/commands/settings claimed by the candidate actually appear (agent scope — BS-21)', measured: false },
     ],
     warnings: [
       'installing a candidate may execute third-party build scripts; the plan is dry-run until --execute is passed',
       'the sandbox has no credentials; probing a plugin that requires a key will report a false negative',
-      'this plan does not judge security, and it does not check whether the UI renders (assertions marked measured=false)',
+      'this plan does not judge security; the render check (T-302) needs a local Chromium-family browser and is reported unmeasured without one',
     ],
   }
 

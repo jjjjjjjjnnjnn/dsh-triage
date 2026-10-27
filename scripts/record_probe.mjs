@@ -23,7 +23,7 @@
  * · 2 bad usage · 3 could not record (the plan was refused).
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -48,7 +48,7 @@ if (stamp === null) {
 
 const rawCandidate = String(argOf('--candidate', ''))
 if (rawCandidate === '') {
-  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|spec> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked] [--stamp <iso>]\n')
+  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--stamp <iso>]\n')
   process.exit(2)
 }
 const candidate = normalizeCandidateSpec(rawCandidate)
@@ -63,12 +63,55 @@ const label = String(argOf('--label', 'probe')).replace(/[^a-zA-Z0-9._-]+/g, '-'
 const expectation = argOf('--expect', null)
 const outDir = pathFor(String(argOf('--out', 'data/results')))
 const realDshHome = pathFor(String(argOf('--dsh-home', join(process.env['USERPROFILE'] ?? homedir(), '.dsh'))))
+const browser = argOf('--browser', null)
+const registryOverride = argOf('--registry', null)
 
 const candidatePackage = candidatePackageName(candidate)
 if (candidatePackage === null) {
   process.stderr.write(`cannot determine which package "${candidate}" installs as\n`)
   process.exit(2)
 }
+const candidateKind = /^[A-Za-z]:[\\/]|^\//.test(candidate) || candidate.startsWith('file:') ? 'path' : 'registry'
+
+// ADR-0004: an external candidate is only accepted as an exact pin, so the artifact can
+// say which bytes ran. A range would make "it worked" unreproducible.
+if (candidateKind === 'registry' && !/^(@[^/]+\/)?[^@]+@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(candidate)) {
+  process.stderr.write(
+    `refusing an unpinned registry candidate "${candidate}": ADR-0004 requires name@x.y.z (got a range or a tag)\n`,
+  )
+  process.exit(2)
+}
+
+/** Registry metadata for the artifact (never the tarball itself — ADR-0004 §4/§5). */
+async function resolveRegistryFacts(spec) {
+  if (candidateKind !== 'registry') return null
+  const at = spec.lastIndexOf('@')
+  const name = spec.slice(0, at)
+  const version = spec.slice(at + 1)
+  const registry = String(registryOverride ?? 'https://registry.npmjs.org').replace(/\/+$/, '')
+  try {
+    // A concrete version endpoint needs `application/json`; install-v1 answers 406 (R12 pitfall).
+    const response = await fetch(`${registry}/${name.replace('/', '%2F')}/${version}`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!response.ok) return { version, error: `HTTP ${response.status}` }
+    const manifest = await response.json()
+    return {
+      version: typeof manifest.version === 'string' ? manifest.version : version,
+      license: typeof manifest.license === 'string' ? manifest.license : null,
+      unpacked_size: typeof manifest.dist?.unpackedSize === 'number' ? manifest.dist.unpackedSize : null,
+      integrity: typeof manifest.dist?.integrity === 'string' ? manifest.dist.integrity : null,
+      tarball: typeof manifest.dist?.tarball === 'string' ? manifest.dist.tarball : null,
+      deprecated: typeof manifest.deprecated === 'string' ? manifest.deprecated : null,
+      dependencies: Object.keys(manifest.dependencies ?? {}).length,
+    }
+  } catch (error) {
+    return { version, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) }
+  }
+}
+
+const resolved = await resolveRegistryFacts(candidate)
 
 const plan = buildProbePlan({
   candidate,
@@ -82,7 +125,27 @@ if (!plan.ok) {
   process.exit(3)
 }
 
-const run = await executeProbe({ plan: plan.value, dshMain, candidatePackage }, realProbeDeps())
+// Capture the lockfile the install produced, before `executeProbe` deletes the sandbox.
+const installFacts = { lockfile: null }
+const deps = realProbeDeps({
+  ...(browser === null ? {} : { browser }),
+  ...(registryOverride === null ? {} : { baseEnv: { ...process.env, NPM_CONFIG_REGISTRY: registryOverride } }),
+})
+const baseInstall = deps.install
+const instrumentedDeps = {
+  ...deps,
+  install: async (input) => {
+    const result = await baseInstall(input)
+    const profileDir = join(input.dshHome, 'profiles', input.profile)
+    const lockfile = join(profileDir, 'pnpm-lock.yaml')
+    installFacts.lockfile = existsSync(lockfile)
+      ? { present: true, bytes: readFileSync(lockfile, 'utf8').length, sha256: sha256(readFileSync(lockfile, 'utf8')) }
+      : { present: false }
+    return result
+  },
+}
+
+const run = await executeProbe({ plan: plan.value, dshMain, candidatePackage }, instrumentedDeps)
 const judgement = judgeProbe({ run, at: stamp })
 const expectationMet = expectation === null ? null : judgement.conclusion === String(expectation)
 
@@ -98,7 +161,8 @@ const artifact = {
   candidate: {
     spec: redact(candidate),
     package: candidatePackage,
-    kind: /^[A-Za-z]:[\\/]|^\//.test(candidate) || candidate.startsWith('file:') ? 'path' : 'registry',
+    kind: candidateKind,
+    resolved: resolved === null ? null : { ...resolved, tarball: resolved.tarball === undefined || resolved.tarball === null ? null : redact(resolved.tarball) },
   },
   runtime: {
     source: installDir === '' ? '(not supplied)' : redact(installDir),
@@ -126,6 +190,29 @@ const artifact = {
     error: run.sample === null || run.sample.error === null ? null : redact(run.sample.error),
   },
   http: run.http === null ? null : { status: run.http.status, detail: redact(run.http.detail) },
+  readiness: run.readiness === null ? null : { source: run.readiness.source, port: run.readiness.port },
+  render:
+    run.render === null
+      ? { status: 'unmeasured', reason: run.renderSkipped === null ? 'render check not requested' : redact(run.renderSkipped) }
+      : {
+          status: run.render.state,
+          detail: redact(run.render.detail),
+          ms: run.render.ms,
+          // Signals only: no URL, no token, no page content.
+          signals:
+            run.render.signals === null
+              ? null
+              : {
+                  title_length: run.render.signals.title.length,
+                  ready_state: run.render.signals.readyState,
+                  body_children: run.render.signals.bodyChildren,
+                  root_id: run.render.signals.rootId,
+                  root_children: run.render.signals.rootChildren,
+                  text_length: run.render.signals.textLength,
+                  html_bytes: run.render.signals.htmlBytes,
+                },
+        },
+  install: { lockfile: installFacts.lockfile },
   cleanup: {
     removed: run.cleanup.removed,
     port_closed: run.cleanup.portClosed,
@@ -141,9 +228,10 @@ const artifact = {
   missing_evidence: [...judgement.missingEvidence],
   // The honest boundary, in the artifact itself rather than only in a doc.
   limits: [
-    'answers boot + HTTP + candidate row phase only',
+    'answers boot + HTTP + candidate row phase + whether the page mounted visible DOM',
     'does not judge security or maliciousness (COMPLIANCE.md §5)',
-    'does not check that the client renders (T-302) or that tools registered (T-303)',
+    'does not judge functionality, content correctness, or that tools registered (T-303)',
+    'a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured',
     'measured on a sandbox runtime, not on the user machine',
     'a plugin that needs credentials is unverified, not verified-safe',
   ],

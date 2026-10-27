@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import type { InstallResult, ProbeExecDeps, RuntimeReadResult } from '@dsh-triage/probe'
 import {
   bootAndSampleHost,
+  findBrowser,
   probeHttp,
   readRuntimeVersion,
   removeSandbox,
@@ -34,12 +35,20 @@ export interface RealProbeDepsOptions {
   readonly scratchRoot?: string
   readonly hookSource?: string
   readonly baseEnv?: NodeJS.ProcessEnv
+  /**
+   * Explicit browser path. `undefined` means "look one up" (env var + usual install
+   * locations); `null` means "do not run the render check" (T-302 reports unmeasured).
+   */
+  readonly browser?: string | null
+  /** Budget for the render check; it is a separate segment, never the boot budget. */
+  readonly renderTimeoutMs?: number
 }
 
 export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps {
   const hookSource = options.hookSource ?? probeHookSource()
   const scratchRoot = options.scratchRoot ?? join(tmpdir(), 'dsh-triage-probe')
   const baseEnv = options.baseEnv ?? process.env
+  const browser = options.browser === undefined ? findBrowser({ env: baseEnv }) : options.browser
   return {
     now: () => Date.now(),
     readRuntimeVersion: async ({ dshMain, timeoutMs }): Promise<RuntimeReadResult> =>
@@ -67,25 +76,37 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         // probe would launch the user's browser. Both belong to the probe, not the plugin.
         appArgs: ['--port', String(plan.port), '--no-open'],
         readinessPort: plan.port,
+        // T-302: the DOM check needs the Host's own token URL, so it runs inside the
+        // same alive window as the readiness probe.
+        render: { browser, ...(options.renderTimeoutMs === undefined ? {} : { timeoutMs: options.renderTimeoutMs }) },
       })
       return {
         sample: boot.payload,
         seconds: boot.host.seconds,
         detail: boot.error ?? `sampled in ${boot.host.seconds}s (${boot.host.status})`,
         http: boot.http,
+        readiness: boot.readiness,
+        render: boot.render,
+        renderSkipped: boot.renderSkipped,
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),
-    cleanup: async ({ dshHome, port, timeoutMs }) => {
+    cleanup: async ({ dshHome, port, extraPorts, timeoutMs }) => {
       const removed = removeSandbox(dshHome)
       // "The directory is gone" is not "the process is gone": on Windows the Host keeps
       // helper processes alive, so the port is the second half of the proof (R12 pitfall).
-      const after = await probeHttp(port, Math.min(timeoutMs, 2000))
+      // T-306 adds a second port when the Host printed a different one than `--port`.
+      const ports = [port, ...(extraPorts ?? [])]
+      const readings = await Promise.all(ports.map((each) => probeHttp(each, Math.min(timeoutMs, 2000))))
+      const stillAnswering = readings
+        .map((reading, index) => ({ port: ports[index], status: reading.status }))
+        .filter((entry) => entry.status !== null)
+      const portClosed = stillAnswering.length === 0
       return {
         removed: removed.removed,
-        portClosed: after.status === null,
+        portClosed,
         detail: `${removed.removed ? 'sandbox removed' : 'sandbox left behind'} · port ${
-          after.status === null ? 'closed' : `still answering ${after.status}`
+          portClosed ? 'closed' : `still answering ${stillAnswering.map((entry) => `${entry.port}:${entry.status}`).join(', ')}`
         }`,
       }
     },

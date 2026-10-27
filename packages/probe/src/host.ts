@@ -15,6 +15,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { extractHostUrl, renderUrl, type HostUrl, type RenderCheck } from './render.js'
 
 /* -------------------------------- overlay --------------------------------- */
 
@@ -54,6 +55,25 @@ export interface BootSampleOptions {
   readonly readinessTimeoutMs?: number
   /** Settle time between the sample and the readiness probe, so a binding server is seen. */
   readonly settleMs?: number
+  /**
+   * Client-render check (T-302). `browser` comes from {@link findBrowser}; when the caller
+   * has no browser, it passes `null` and the run reports the reason instead of a verdict.
+   *
+   * The check must run while the Host is alive — the page is served by this very process.
+   */
+  readonly render?: {
+    readonly browser: string | null
+    readonly timeoutMs?: number
+  }
+}
+
+export interface HostReadiness {
+  /**
+   * Where the port came from. `host-url` is the launcher's own `dsh web: http://…` line
+   * (T-306); `plan-port` is the fallback when that line never appeared.
+   */
+  readonly source: 'host-url' | 'plan-port'
+  readonly port: number
 }
 
 export interface HostObservation {
@@ -70,6 +90,12 @@ export interface BootSampleResult {
   readonly error: string | null
   /** Readiness measured while the Host was still alive; `null` when not requested. */
   readonly http: { readonly status: number | null; readonly detail: string } | null
+  /** Where the readiness port came from (T-306); `null` when readiness was not requested. */
+  readonly readiness: HostReadiness | null
+  /** Client-render result; `null` when it was skipped (see {@link BootSampleResult.renderSkipped}). */
+  readonly render: RenderCheck | null
+  /** Why the render check did not run, in publishable words; `null` when it did run. */
+  readonly renderSkipped: string | null
 }
 
 /**
@@ -147,16 +173,42 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     const collected = existsSync(samplePath)
     const seconds = Math.round((Date.now() - started) / 100) / 10
     let http: { status: number | null; detail: string } | null = null
-    if (collected && readinessPort !== undefined) {
+    let readiness: HostReadiness | null = null
+    let render: RenderCheck | null = null
+    let renderSkipped: string | null = null
+    if (collected) {
       // Probe while the Host is alive. A server that binds a moment after the tree
       // settles is normal, so this retries instead of sampling one instant.
       await new Promise((resolveWait) => setTimeout(resolveWait, settleMs))
-      const readinessStarted = Date.now()
-      for (;;) {
-        http = await probeHttp(readinessPort, Math.min(readinessTimeoutMs, 2_000))
-        if (http.status !== null) break
-        if (Date.now() - readinessStarted >= readinessTimeoutMs) break
-        await new Promise((resolveWait) => setTimeout(resolveWait, 500))
+      // T-306: the launcher prints its own URL with the token. That line is the readiness
+      // criterion; `--port` is only a fallback for a Host that never prints one.
+      const hostUrl =
+        readinessPort === undefined && options.render === undefined ? null : await waitForHostUrl(() => stdout, 3_000)
+      const effectivePort = hostUrl?.port ?? readinessPort
+      if (effectivePort !== undefined) {
+        readiness = { source: hostUrl === null ? 'plan-port' : 'host-url', port: effectivePort }
+        const readinessStarted = Date.now()
+        for (;;) {
+          http = await probeHttp(effectivePort, Math.min(readinessTimeoutMs, 2_000))
+          if (http.status !== null) break
+          if (Date.now() - readinessStarted >= readinessTimeoutMs) break
+          await new Promise((resolveWait) => setTimeout(resolveWait, 500))
+        }
+      }
+      if (options.render !== undefined) {
+        if (options.render.browser === null) {
+          renderSkipped = 'no Chromium-family browser was found on this machine (pass --browser or DSH_TRIAGE_BROWSER)'
+        } else if (hostUrl === null) {
+          renderSkipped = 'the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render'
+        } else {
+          // Still inside the Host's lifetime: the page is served by this process.
+          render = await renderUrl({
+            browser: options.render.browser,
+            url: hostUrl.url,
+            scratchRoot,
+            ...(options.render.timeoutMs === undefined ? {} : { timeoutMs: options.render.timeoutMs }),
+          })
+        }
       }
     }
     killTree(child)
@@ -171,9 +223,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       // one should not carry a log into a publishable artifact.
       error_tail: collected ? null : stderr.trimEnd().slice(-1500),
     }
-    if (!collected) return { payload: null, host, error: 'the hook wrote nothing within the timeout', http }
+    if (!collected) return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped }
     const payload: unknown = JSON.parse(readFileSync(samplePath, 'utf8').replace(/^\uFEFF/, ''))
-    return { payload, host, error: null, http }
+    return { payload, host, error: null, http, readiness, render, renderSkipped }
   } finally {
     if (child !== null) killTree(child)
     rmSync(probeDir, { recursive: true, force: true })
@@ -277,6 +329,17 @@ export async function probeHttp(port: number, timeoutMs: number): Promise<HttpPr
   } catch (error) {
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
     return { status: null, detail: detail.slice(0, 240) }
+  }
+}
+
+/** Poll the captured stdout for the launcher's own URL line (T-306). */
+export async function waitForHostUrl(readStdout: () => string, timeoutMs: number): Promise<HostUrl | null> {
+  const started = Date.now()
+  for (;;) {
+    const found = extractHostUrl(readStdout())
+    if (found !== null) return found
+    if (Date.now() - started >= timeoutMs) return null
+    await new Promise((resolveWait) => setTimeout(resolveWait, 200))
   }
 }
 

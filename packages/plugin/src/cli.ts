@@ -92,6 +92,8 @@ interface Flags {
   readonly dshMain: string | null
   /** `probe --execute --no-http`: the profile serves no web surface; skip readiness. */
   readonly noHttp: boolean
+  /** `probe --execute --browser <path>`: Chromium-family binary for the render check (T-302). */
+  readonly browser: string | null
 }
 
 interface Parsed {
@@ -122,6 +124,7 @@ Flags
   --execute             (probe) really run the plan inside an isolated DSH_HOME
   --dsh-main <path>     (probe --execute) DSH launcher entry the sandbox boots
   --no-http             (probe --execute) profile serves no web surface; skip readiness
+  --browser <path>      (probe --execute) Chromium-family binary for the render check (T-302)
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -711,7 +714,7 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   const stamp = stampOf(flags)
   const run = await executeProbe(
     { plan: plan.value, dshMain: flags.dshMain, candidatePackage, ...(flags.noHttp ? { skipHttp: true } : {}) },
-    realProbeDeps({ baseEnv: process.env }),
+    realProbeDeps({ baseEnv: process.env, browser: flags.browser }),
   )
   const judgement = judgeProbe({ run, at: stamp })
   const env: EnvFingerprint = {
@@ -894,6 +897,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let explain = false
   let dshMain: string | null = null
   let noHttp = false
+  let browser: string | null = null
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -966,6 +970,12 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         dshMain = value
         break
       }
+      case '--browser': {
+        const value = takeValue()
+        if (value === null) return null
+        browser = value
+        break
+      }
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -977,7 +987,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

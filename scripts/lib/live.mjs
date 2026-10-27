@@ -5,10 +5,14 @@
  * the same code, and a third copy of "spawn → wait for the sample → kill the tree" is
  * exactly the drift R13 paid for. This file keeps the script-facing names and the
  * redaction helpers; it does not re-implement the Host.
+ *
+ * It re-exports the BUILT package (`dist/`), not the `.ts` source: since R15 `host.ts`
+ * imports `./render.js`, and Node's type stripping does not rewrite a `.js` specifier to
+ * a sibling `.ts` file. Run `pnpm build` before the live recorders (playbook §1).
  */
 
 import { resolve } from 'node:path'
-import { bootAndSampleHost, dshMainOf, killTree, sha256Of } from '../../packages/probe/src/host.ts'
+import { bootAndSampleHost, dshMainOf, killTree, sha256Of } from '../../packages/probe/dist/host.js'
 
 export { dshMainOf, killTree, sha256Of }
 

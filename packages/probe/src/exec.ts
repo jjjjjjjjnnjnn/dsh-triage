@@ -11,10 +11,11 @@
  * - `cleanup` always runs, even when an earlier step threw;
  * - the candidate row must be identified by module name and must be unique — 0 rows and
  *   ≥2 rows are different verdicts, and neither is rounded to "fine";
- * - assertions this layer cannot measure (`client-rendered`, `namespace-diff`) are
- *   reported as `unmeasured`, never omitted and never `passed`;
- * - `go` means "installed + booted + served + row active". It does NOT mean "works",
- *   and it is never a security statement.
+ * - assertions this layer cannot measure (`namespace-diff`) are reported as `unmeasured`,
+ *   never omitted and never `passed`; `client-rendered` is measured since R15, and stays
+ *   `unmeasured` only when the machine has no browser (T-302);
+ * - `go` means "installed + booted + served + row active (+ page mounted)". It does NOT
+ *   mean "works", and it is never a security statement.
  */
 
 import type {
@@ -28,10 +29,11 @@ import type {
 } from '@dsh-triage/core'
 import { parseInventorySnapshot } from '@dsh-triage/core'
 import type { ProbePlan } from './plan.js'
+import type { RenderCheck } from './render.js'
 
 /* ---------------------------------- types ---------------------------------- */
 
-export type ProbeStepId = 'runtime' | 'install' | 'boot' | 'http' | 'inventory' | 'cleanup'
+export type ProbeStepId = 'runtime' | 'install' | 'boot' | 'http' | 'render' | 'inventory' | 'cleanup'
 export type ProbeStepStatus = 'passed' | 'failed' | 'skipped'
 
 export interface ProbeStepRun {
@@ -64,6 +66,8 @@ export interface ProbeTimings {
   readonly installMs: number | null
   readonly bootToSampleMs: number | null
   readonly httpMs: number | null
+  /** Client-render segment (T-302). Never part of the 20s boot→sample budget. */
+  readonly renderMs: number | null
   readonly cleanupMs: number | null
 }
 
@@ -83,6 +87,12 @@ export interface ProbeRun {
   readonly timings: ProbeTimings
   readonly sample: ProbeSampleView | null
   readonly http: { readonly status: number | null; readonly detail: string } | null
+  /** Where the readiness port came from (T-306); `null` when readiness was not requested. */
+  readonly readiness: { readonly source: 'host-url' | 'plan-port'; readonly port: number } | null
+  /** Client-render observation (T-302); `null` when it did not run. */
+  readonly render: RenderCheck | null
+  /** Why the render check did not run; `null` when it ran. */
+  readonly renderSkipped: string | null
   readonly cleanup: ProbeCleanupResult
   readonly abortedAt: ProbeStepId | null
 }
@@ -134,6 +144,11 @@ export interface HttpInput {
 export interface CleanupInput {
   readonly dshHome: string
   readonly port: number
+  /**
+   * Ports the Host was actually seen on. T-306 reads the URL the Host printed, which can
+   * differ from `--port`; cleanup must prove *both* are closed, not just the planned one.
+   */
+  readonly extraPorts?: readonly number[]
   readonly timeoutMs: number
 }
 
@@ -156,6 +171,12 @@ export interface ProbeExecDeps {
     seconds: number
     detail: string
     http?: { status: number | null; detail: string } | null
+    /** T-306: where the readiness port came from. Absent means "not reported". */
+    readiness?: { source: 'host-url' | 'plan-port'; port: number } | null
+    /** T-302: the render observation, when a browser was available. */
+    render?: RenderCheck | null
+    /** T-302: why the render check did not run (published verbatim). */
+    renderSkipped?: string | null
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
   cleanup(input: CleanupInput): Promise<ProbeCleanupResult>
@@ -186,9 +207,12 @@ interface MutableRun {
   port: number
   runtimeVersion: string | null
   steps: ProbeStepRun[]
-  timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; cleanupMs: number | null }
+  timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null }
   sample: ProbeSampleView | null
   http: { status: number | null; detail: string } | null
+  readiness: { source: 'host-url' | 'plan-port'; port: number } | null
+  render: RenderCheck | null
+  renderSkipped: string | null
   cleanup: ProbeCleanupResult
   abortedAt: ProbeStepId | null
 }
@@ -202,9 +226,12 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     port: input.plan.port,
     runtimeVersion: null,
     steps: [],
-    timings: { installMs: null, bootToSampleMs: null, httpMs: null, cleanupMs: null },
+    timings: { installMs: null, bootToSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null },
     sample: null,
     http: null,
+    readiness: null,
+    render: null,
+    renderSkipped: null,
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
     abortedAt: null,
   }
@@ -220,6 +247,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
       run.cleanup = await deps.cleanup({
         dshHome: input.plan.sandboxHome,
         port: input.plan.port,
+        ...(run.readiness === null || run.readiness.port === input.plan.port ? {} : { extraPorts: [run.readiness.port] }),
         timeoutMs: timeouts.cleanupMs,
       })
     } catch (error) {
@@ -284,6 +312,9 @@ async function runSequence(
     run.timings.bootToSampleMs = Math.round(boot.seconds * 1000)
     // Readiness was taken while the Host was alive; keep it for the http step.
     if (boot.http !== undefined) run.http = boot.http
+    if (boot.readiness !== undefined) run.readiness = boot.readiness
+    if (boot.render !== undefined) run.render = boot.render
+    if (boot.renderSkipped !== undefined) run.renderSkipped = boot.renderSkipped
     return { status: 'passed' as const, detail: `${boot.seconds}s to sample`, exitCode: null }
   })
   if (run.abortedAt !== null) return
@@ -300,6 +331,20 @@ async function runSequence(
     return http.status === null
       ? { status: 'failed' as const, detail: http.detail, exitCode: null }
       : { status: 'passed' as const, detail: `HTTP ${http.status}`, exitCode: null }
+  })
+
+  await runStep(run, deps, 'render', async () => {
+    // Not a pass, not a failure: a machine without a browser simply cannot answer this.
+    // The artifact keeps the assertion visible as `unmeasured` with the reason (T-302).
+    if (run.render === null) {
+      return { status: 'skipped' as const, detail: run.renderSkipped ?? 'render check not requested', exitCode: null }
+    }
+    const detail = `${run.render.state}: ${run.render.detail} (${run.render.ms}ms)`
+    return {
+      status: run.render.state === 'blank' ? ('failed' as const) : run.render.state === 'rendered' ? ('passed' as const) : ('skipped' as const),
+      detail,
+      exitCode: null,
+    }
   })
 
   await runStep(run, deps, 'inventory', async () => {
@@ -324,6 +369,9 @@ function freeze(run: MutableRun): ProbeRun {
     timings: run.timings,
     sample: run.sample,
     http: run.http,
+    readiness: run.readiness,
+    render: run.render,
+    renderSkipped: run.renderSkipped,
     cleanup: run.cleanup,
     abortedAt: run.abortedAt,
   }
@@ -352,7 +400,13 @@ async function runStep(
   run.steps.push(step)
   if (id === 'install') run.timings.installMs = step.ms
   if (id === 'http') run.timings.httpMs = step.ms
-  if (outcome.status === 'failed' && id !== 'http' && id !== 'inventory' && id !== 'cleanup') {
+  // The render segment is the observation's own clock (browser spawn → settled DOM), not
+  // the wall time of the step that merely reads it back.
+  if (id === 'render') run.timings.renderMs = run.render?.ms ?? step.ms
+  // `render` is deliberately not an aborting step: a blank page must still be reported
+  // together with the row phase, because "row active but nothing rendered" is the exact
+  // shape of the 白屏 case this assertion exists for.
+  if (outcome.status === 'failed' && id !== 'http' && id !== 'inventory' && id !== 'cleanup' && id !== 'render') {
     run.abortedAt = id
   }
 }
@@ -573,6 +627,48 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
     }
   }
 
+  if (run.readiness !== null && run.readiness.source === 'host-url' && run.readiness.port !== run.port) {
+    // The Host's own URL wins over the planned port, but the difference is evidence, not
+    // noise: it means `--port` was not honoured and any later check must use both ports.
+    reasons.push({
+      code: 'probe-port-mismatch',
+      severity: 'warn',
+      messageId: 'probe.port-mismatch',
+      params: { host: run.readiness.port, plan: run.port },
+    })
+  }
+
+  // Client-render (T-302). A blank page blocks on its own: "HTTP answered, row active,
+  // nothing on screen" is exactly BS-03, and reporting `go` for it would be the lie this
+  // assertion was added to prevent.
+  if (run.render !== null) {
+    if (run.render.state === 'blank') {
+      block('probe-render-blank', 'probe.render-blank', { detail: run.render.detail })
+      remediation.push({
+        kind: 'report',
+        messageId: 'remediation.report',
+        note: 'the page mounted nothing (white screen); attach the probe artifact and the browser console log',
+      })
+    } else if (run.render.state === 'inconclusive') {
+      if (state.conclusion === 'go') {
+        state.conclusion = 'unknown'
+        state.level = 'medium'
+      }
+      missingEvidence.push('missing.render')
+      reasons.push({ code: 'probe-render-unmeasured', severity: 'warn', messageId: 'probe.render-unmeasured', params: { detail: run.render.detail } })
+    } else {
+      reasons.push({ code: 'probe-render-ok', severity: 'info', messageId: 'probe.render-ok', params: { ms: run.render.ms } })
+      evidence.push({
+        id: 'probe-render',
+        tier: 'measured-local',
+        source: `http://127.0.0.1:${run.readiness?.port ?? run.port}`,
+        method: 'headless Chromium + CDP DOM observation',
+        at,
+        detail: run.render.detail,
+      })
+    }
+  }
+
   if (state.conclusion !== 'blocked') {
     if (run.sample?.error !== null && run.sample?.error !== undefined) {
       state.conclusion = 'unknown'
@@ -728,8 +824,23 @@ export function probeAssertions(run: ProbeRun): readonly ProbeAssertionResult[] 
       status: run.cleanup.removed && run.cleanup.portClosed ? 'passed' : 'failed',
       detail: run.cleanup.detail,
     },
-    // Not "skipped": the artifact must show that this run never answered them.
-    { id: 'client-rendered', status: 'unmeasured', detail: 'tracked as T-302; HTTP 200 alone is not a rendered UI (BS-03)' },
+    // Not "skipped": the artifact must show whether this run answered it. `unmeasured`
+    // means no browser was available (or the check could not complete), never "fine".
+    {
+      id: 'client-rendered',
+      status:
+        run.render === null
+          ? 'unmeasured'
+          : run.render.state === 'rendered'
+            ? 'passed'
+            : run.render.state === 'blank'
+              ? 'failed'
+              : 'unmeasured',
+      detail:
+        run.render === null
+          ? (run.renderSkipped ?? 'render check not requested')
+          : `${run.render.state}: ${run.render.detail}`,
+    },
     { id: 'namespace-diff', status: 'unmeasured', detail: 'tracked as T-303; tool surface lives in agent scope (BS-21)' },
   ]
 }

@@ -19,16 +19,37 @@ export {
   runInstall,
   scrubbedEnv,
   sha256Of,
+  waitForHostUrl,
 } from './host.js'
 export type {
   BootSampleOptions,
   BootSampleResult,
   ExtraPatchEntry,
   HostObservation,
+  HostReadiness,
   HttpProbeResult,
   InstallResult,
   RuntimeReadResult,
 } from './host.js'
+
+export {
+  MIN_VISIBLE_TEXT,
+  extractHostUrl,
+  findBrowser,
+  judgeRender,
+  killBrowser,
+  renderScratchRoot,
+  renderUrl,
+} from './render.js'
+export type {
+  BrowserLookup,
+  HostUrl,
+  RenderCheck,
+  RenderJudgement,
+  RenderSignals,
+  RenderState,
+  RenderUrlInput,
+} from './render.js'
 
 export type {
   BootInput,

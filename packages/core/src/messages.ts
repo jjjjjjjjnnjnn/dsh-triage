@@ -97,6 +97,10 @@ const EN: MessageCatalog = {
     'probe.runtime-mismatch': 'the probe ran on {runtime}, outside the candidate range {range} — the measurement does not transfer',
     'probe.sample-unreadable': 'the inventory sample could not be read ({detail})',
     'probe.cleanup-incomplete': 'the sandbox was not fully removed (removed={removed}, port closed={portClosed})',
+    'probe.render-ok': 'the page mounted visible DOM ({ms}ms after navigation)',
+    'probe.render-blank': 'the page answered but rendered nothing ({detail}) — a white screen is not a working UI',
+    'probe.render-unmeasured': 'the render check could not reach a conclusion ({detail})',
+    'probe.port-mismatch': 'the Host printed port {host} while the plan asked for {plan}; the Host wins and both are proven closed',
     'ui.more-reasons': '…{count} more reason(s); pass --json for the full list',
   },
 }
@@ -184,6 +188,10 @@ const ZH: MessageCatalog = {
     'probe.runtime-mismatch': '本次实测跑在 {runtime} 上，不在候选声明的区间 {range} 内——结论不可外推',
     'probe.sample-unreadable': 'inventory 样本读不出来（{detail}）',
     'probe.cleanup-incomplete': '沙盒没有清理干净（已删除={removed}，端口已关={portClosed}）',
+    'probe.render-ok': '页面已挂载出可见 DOM（导航后 {ms}ms）',
+    'probe.render-blank': '页面有应答但什么都没渲染出来（{detail}）——白屏不算能用',
+    'probe.render-unmeasured': '渲染检查得不出结论（{detail}）',
+    'probe.port-mismatch': 'Host 打印的端口是 {host}，计划里是 {plan}；以 Host 为准，且两个端口都要证明已关',
     'ui.more-reasons': '…还有 {count} 条原因；加 --json 看完整列表',
   },
 }

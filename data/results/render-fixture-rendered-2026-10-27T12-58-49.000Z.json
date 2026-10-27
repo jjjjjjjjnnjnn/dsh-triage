@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_render_fixture.mjs",
+  "generated_at": "2026-10-27T12:58:49.000Z",
+  "sample": {
+    "kind": "render-control",
+    "mode": "rendered",
+    "served_at": "http://127.0.0.1:59136/"
+  },
+  "expectation": "rendered",
+  "expectation_met": true,
+  "render": {
+    "state": "rendered",
+    "detail": "mount root with 1 child(ren), 77 visible chars",
+    "ms": 911,
+    "signals": {
+      "title_length": 23,
+      "ready_state": "complete",
+      "body_children": 1,
+      "root_id": "root",
+      "root_children": 1,
+      "text_length": 77,
+      "html_bytes": 235
+    }
+  },
+  "judged": {
+    "state": "rendered",
+    "detail": "mount root with 1 child(ren), 77 visible chars"
+  },
+  "limits": [
+    "this is a detector control, not a measurement of any plugin",
+    "it proves the render judgement can fail on a 200 response with an empty mount point",
+    "the page is static; a real Host serving a broken client is a different shape (T-305 keeps collecting those)"
+  ]
+}

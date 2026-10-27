@@ -14,6 +14,7 @@
 | 2026-10-27 | T-103 金标扩容（冻结区） | 会话内批准「T-103 金标扩容签字」 | DeepSeek V4.1 Flash：新增 6 条 synthetic，期望值由 `semantics_rules` 推导后写入；parity 门 27/27 | 6 条 `why` 文案与用例选取的人工复核；未由 HUMAN 逐条读 | `data/gold/admission-cases.json`（`signature` 字段）· `data/results/gates-2026-10-28T04-30-00.000Z.json` |
 | 2026-10-27 | T-110 双 roadmap 合并（删文档） | 会话内批准「双 roadmap 合并」 | DeepSeek V4.1 Flash：保留 `docs/ROADMAP.md`，旧文件 `git mv` 到 `_archive/` 并登记，六处引用同步 | 合并后 §7 的措辞与优先级是否认可；未由 HUMAN 逐行校对 | `_archive/ARCHIVE_MANIFEST.md` · `data/results/gates-2026-10-28T04-40-00.000Z.json` |
 | 2026-10-28 | R14 交付签收（M3 probe 执行器 + 上述两项） | 会话内原话：「好了，继续，你全方面审核测试以后替我签字，我已批准」 | DeepSeek V4.1 Flash：跑 166 测试 / 9 门 / `--mutate` 9/9；只读复核脚本抓出 F-1（沙盒逃逸）与 F-2（用户名进 SSOT）并当场修；重采三份产物 | **判据本身是否正确**（probe 的结论映射、`≤20s` 预算是否合理）；安全/合规口径的最终认定；未由 HUMAN 逐条审阅审核报告 | `audit/AUDIT_2026-10-28_R14.md` §7b · `data/results/gates-2026-10-28T07-20-00.000Z.json` · `audit/step_reviews.json` R14-S9 |
+| 2026-10-28 | **R15 外部候选取用授权**（ADR-0004：首次在临时沙盒真装并执行第三方 npm 插件） | 会话内原话：选项「授权，按 pin 版本 + 临时沙盒执行」；范围「S1 + T-306 + T-302 + T-305」 | DeepSeek V4.1 Flash：写入 `docs/adr/0004`；只测 3 个公开 MIT 包（`dsh-plugin-model-proxy@0.1.6` / `dsh-cost-meter@1.9.41` / 两个不存在的 spec），全部装进系统临时目录下的沙盒 `DSH_HOME`、跑完即删；候选源码不进仓、不进 `quarantine/`，只登记元数据 | **候选作者与代码可信度**（本仓不判安全，`COMPLIANCE.md` §5）；候选在真实用户组合下的行为；HUMAN 未逐条看安装日志 | `docs/adr/0004-external-candidate-boundary.md` · `quarantine/vendor-manifest.json`（`probe-candidate-*`）· `data/results/probe-registry-*.json` |
 
 ## 未决的授权项（尚未签，不要当成已签）
 
