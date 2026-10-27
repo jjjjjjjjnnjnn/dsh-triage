@@ -220,3 +220,15 @@
 - 人工决策：HUMAN 选范围（S1+T-306+T-302+T-305）并授权临时沙盒执行；授权与结论分列记在 `audit/SIGNOFF.md`（**未**逐条复核候选作者可信度，本仓不判安全）
 - SessionID：待 HUMAN 回填
 - 备注：白屏判据只回答「挂载出可见 DOM（≥20 字符）」，**不回答功能是否正确**，也不是视觉回归；Linux CI 无浏览器 → 该断言在 CI 只能是 `unmeasured`（单测用注入 DOM，不跑浏览器）。D2 **未判定**：真实启动 n=5、真实失败形状 n=2，样本不足以说「≥90%」。
+
+### 2026-10-27 R16｜口径纠正（CI 有浏览器）+ CI 渲染作业 + 只读证据面板 + T-305b 私有源 + D2 分母矩阵
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/plugin/src/{serve.ts（新）,cli.ts}`、`packages/probe/src/{render,host,exec,index}.ts`、`scripts/{record_serve_smoke,record_probe_matrix}.mjs`（新）、`scripts/record_probe.mjs`、`.github/workflows/ci.yml`、`tests/unit/{serve.test.ts（新）,probe-exec.test.ts,render.test.ts,probe.test.ts}`、`tests/fixtures/probe/matrix-r16.json`（新）、`docs/adr/{0004,0005-render-backends}.md`、`docs/specs/{M3-probe,M4-surface}.md`、`docs/{HANDOFF,BACKLOG,ROADMAP,05-verdict-contract}.md`、`README.md`、`README.zh-CN.md`、`AGENTS.md`、`INDEX.md`、`COMPLIANCE.md`、`audit/{blind_spots.json,step_reviews.json,SIGNOFF.md,AUDIT_2026-10-27_R16.md（新）}`、`quarantine/vendor-manifest.json`、`data/results/{serve-smoke-*,render-fixture-*,probe-registry-private-*,probe-matrix-*,gates-*}.json`
+- 起因：HUMAN 指令「同意，继续」→ 按上一轮交接的优先级做 T-305b 与 D2 分母；同时按「尝试其他渲染方式 / 做面板 / 大量研究」的要求补了 ADR-0005 与 M4 控制面设计
+- 结果：① **口径纠正**：R14/R15 写的「Linux CI 没浏览器」被 runner 镜像清单推翻（ubuntu 预装 Chrome/Chromium/Edge + xvfb），据此补 `ADR-0005` 与 CI `render-control` 作业；② **`dsh-triage serve` v0**：零依赖只读证据面板（token + 回环 + 跨源 403 + POST 403/501），smoke 8/8 入 SSOT；③ **T-305b**：`--npmrc-registry` + `install.endpoints` 点名失败源；④ **D2 分母**：`record_probe_matrix.mjs` 首跑 n=6（go 2 / blocked 4、cleanup 6/6、boot 12.3–14.3s）；⑤ **新盲区** `BS-25` / `T-308`：慢候选与坏候选同形
+- 实测：矩阵 n=6；面板 smoke 8/8；私有源 `blocked`（install 78.9s，endpoints 点名）；CI 三份对照可重放
+- 门禁：`verify` **200 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；step_reviews **88 步**
+- 过程中的真实缺陷：① 面板 smoke 首跑 8/8 通过但进程 teardown 崩（Windows libuv keep-alive socket）→ `closeAllConnections()` + 去掉 `process.exit()`；② 首版 smoke 产物把绝对路径写进 SSOT（`results-privacy` 打红）→ 脱敏 + 删泄漏产物 + 重采；③ `findBrowser` 缺 `/usr/bin/google-chrome-stable`、`/opt/google/chrome/chrome`；④ 端点抽取最初把 pnpm 的尾随冒号当成 URL 的一部分
+- 人工决策：沿用 R15 的第三方执行授权（pin + 临时沙盒 + 元数据 only），未扩大；未新增冻结区改动
+- SessionID：待 HUMAN 回填
+- 备注：D2 **未判定**；矩阵的「2/6」不是成功率（3 个刻意合成、1 个判据边界）。`serve` 显示的是**已有**产物，不重算结论；设置面板（T-401）与 SEA exe 只有设计。

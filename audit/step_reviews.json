@@ -2179,6 +2179,36 @@
         "sha256": "8af1ff977fc256f2490a19eea6be24aa0e368fbfc9731c0aca782ac0d52e1d1e",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 200）"
       }
+    },
+    {
+      "id": "R16-S9",
+      "batch": "R16",
+      "step": "交接：HANDOFF/INDEX/AGENTS/README 口径对齐 + 本轮审核报告 + 披露台账 + 最终门禁快照",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/AI_HANDOVER.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "README.md",
+        "README.zh-CN.md",
+        "audit/AUDIT_2026-10-27_R16.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：测试数（200）/ 产物数（76）/ 台账步数（88）/ CI job 数（6）在 HANDOFF、INDEX、AGENTS、README 双语文档里一致；R15 与 R16 的交接快照分开记，历史数字没有被覆盖",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T14:55:00.000Z` 可重放；HANDOFF §1 与 §3 的命令块都能直接执行",
+        "licence": "PASS：文档改动零依赖、零网络；SIGNOFF 新增行明确「沿用 R15 授权，未扩大」",
+        "ssot": "PASS：`data/results` 78 产物全部被 89 步台账引用；`AUDIT_2026-10-27_R16.md` 与 `BS-25` 在 INDEX/HANDOFF 有入口",
+        "adversary": "反例：交接文档最容易「把上一轮的数字带过来」——本轮就抓到 R15 快照被误写成 200/76/88，已改回 190/68/80 并把 R16 单独记；另一个反例：`R16` 的「2/6」若被下一位读成成功率，会直接污染 D2 判定，因此在 HANDOFF §3、矩阵 `limits[]`、AUDIT §3 三处都写了同一句"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T14:55:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T14-55-00.000Z.json",
+        "sha256": "e43962a97b46e821db27c720bdf7715e40243c0e0df388d77d17c0996725f9d7",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 200）"
+      }
     }
   ]
 }
