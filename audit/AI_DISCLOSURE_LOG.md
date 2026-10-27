@@ -180,3 +180,16 @@
 - 人工决策：HUMAN 选择「P1 真机快照 + T-112 合并」；「spec 冲突只记录不改判据」
 - SessionID：待 HUMAN 回填
 - 备注：真机样本产地是**仓内沙盒**，不是用户 `~/.dsh`；对外只能说「在一台真起的 0.2.1-rc.4 Host 上实测」。`B3` 仍只有夹具覆盖（`BS-20`），静态侧不全登记 `BS-19`
+
+### 2026-10-27 R13｜能力层取证（T-202 收窄为事实+差分）+ 两命令同源（T-105）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/core/src/{capabilities,index,result}.ts`、`packages/plugin/src/cli.ts`、`scripts/probe_hooks/inventory-hook.mjs`、`scripts/lib/live.mjs`（新）、`scripts/record_live_capabilities.mjs`（新）、`scripts/record_live_inventory.mjs`、`tests/unit/capabilities.test.ts`（新）、`tests/e2e/cli.test.ts`、`docs/specs/M2-capabilities.md`（新）、`docs/{HANDOFF,BACKLOG}.md`、`INDEX.md`、`audit/{blind_spots.json,step_reviews.json,AUDIT_2026-10-27_R13.md}`、`data/results/{capabilities-2026-10-27T23-30-00.000Z,inventory-live-2026-10-27T22-00-00.000Z,gates-2026-10-28T00-10-00.000Z,gates-mutate-2026-10-28T00-15-00.000Z}.json`
+- 起因：HUMAN 指令「继续，计划以后，开始继续进行」→ 选 T-202 作为 R13，取证后再定实现边界
+- 结果：① 能力层交付**事实 + 差分**（`registry: null` 与空清单严格区分、`read_error` / `presentation` 诚实字段、`diffCapabilities`），**不产出「工具缺失」结论**；② 三条硬边界实测：上游插件不静态声明工具名（`BS-22`）、工具注册在 agent/preset 作用域（进程级探针只见全局层 1 个工具，`BS-21`）、`ptc` 折叠可见面；③ T-202 拆成 T-202a（会话作用域，⛔ 需真实会话/M3）与 T-202b（✅ 本轮）；④ **T-105 完成**：`audit` 与 `why` 行级 admission 同源，e2e 比集合；⑤ 两个 live 记录器共用 `scripts/lib/live.mjs`
+- 实测：沙盒 Host 4 次真机启动（8.2–9.5s/次）；能力产物 `outcome=expectation-not-met`（基线/禁用各 1 个工具），这不是故障而是本轮要证明的边界
+- 门禁：`verify` **142 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；step_reviews **55 步**
+- 过程中的真实缺陷：① `dsh web --patch` 被当 app 参数（launcher flag 顺序）；② 探针裸模块名解析失败 → `createRequire(resolveFrom)`；③ `sha256Of` 在 ESM 里用 `require`（改为顶部 import）；④ 首版把「期望未达成」记成 blocker（outcome=blocked）→ 改为 `expectation-not-met`（发现≠故障）；⑤ `audit` 引入行级结论后，`unknown` 若计入失败会让沙盒真机（72 条 unconstrained）永远 exit 1 → 定规则「unknown 不计入失败」，与 `why` 默认一致，并新增 e2e 交叉断言
+- 人工决策：无（本轮无冻结区改动、无判据变更）；T-202a 需要 HUMAN 决定是否允许使用一次真实会话的模型凭据
+- SessionID：待 HUMAN 回填
+- 备注：本轮**不新增 verdict 命名空间**——没有判据来源就不造结论。对外只能称「工具清单（全局层）与两样本差分可用」，不能说「能判断工具为什么不见了」

@@ -380,6 +380,13 @@ async function commandAudit(flags: Flags): Promise<number> {
   // Resolving rows here is what lets `audit` answer "who put this copy here" for
   // every row, not only for the denied ones (R8 adversary finding F11).
   const auditRows = await resolveRows(env, rowTargets(claims))
+  // T-105: `why` and `audit` must reach the SAME row-level admission conclusion. They
+  // already resolved the same rows from the same layers; only `why` judged them, so the
+  // two commands could disagree about the same profile without anyone noticing.
+  const rowVerdicts = verdictsFromRowAdmission({ env, rows: auditRows, generatedAt: stampOf(flags) })
+  const rowConclusion = new Map(
+    rowVerdicts.map((verdict) => [verdict.subject.name, verdict.conclusion] as const),
+  )
 
   /* --------------------------- runtime inventory --------------------------- */
 
@@ -450,6 +457,8 @@ async function commandAudit(flags: Flags): Promise<number> {
         version: row.version,
         declared_by: (row.declaredBy ?? []).map((origin) => ({ name: origin.name, version: origin.version, field: origin.field })),
       })),
+      // Same engine as `why`: an e2e test compares these two outputs on one profile.
+      row_verdicts: safeVerdicts(flags, rowVerdicts),
       inventory:
         snapshot === null
           ? null
@@ -491,7 +500,10 @@ async function commandAudit(flags: Flags): Promise<number> {
             },
       errors: composition.errors,
     })
-    return collisions.length === 0 && duplicateFindings.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+    return collisions.length === 0 &&
+      duplicateFindings.length === 0 &&
+      inventoryVerdicts.every((verdict) => verdict.conclusion === 'go') &&
+      rowVerdicts.every((verdict) => verdict.conclusion === 'go' || verdict.conclusion === 'unknown')
       ? EXIT_OK
       : EXIT_FINDINGS
   }
@@ -507,8 +519,29 @@ async function commandAudit(flags: Flags): Promise<number> {
         phase === undefined || phase === null
           ? ''
           : `  phase=${phase.fiberPhase ?? 'none'}${phase.enabled ? '' : ' (disabled)'}`
-      process.stdout.write(`  ${claim.id}${claim.name === null ? '' : `  ->  ${claim.name}`}${suffix}${phaseText}\n`)
+      const conclusion = claim.name === null ? undefined : rowConclusion.get(claim.name)
+      const verdictText = conclusion === undefined ? '' : `  ${conclusion}`
+      process.stdout.write(`  ${claim.id}${claim.name === null ? '' : `  ->  ${claim.name}`}${suffix}${phaseText}${verdictText}\n`)
     }
+  }
+  // `unknown` is missing evidence, not a defect: `why` does not fail on it either
+  // (`exitFor` returns OK unless --strict), and a profile full of modules that declare
+  // nothing would otherwise make `audit` exit 1 forever. Blocked/risky still fail.
+  const rowFindings = rowVerdicts.filter((verdict) => verdict.conclusion === 'blocked' || verdict.conclusion === 'risky')
+  const rowUnknown = rowVerdicts.filter((verdict) => verdict.conclusion === 'unknown')
+  process.stdout.write(
+    `\nrow admission: ${rowVerdicts.length - rowFindings.length - rowUnknown.length} go · ${rowFindings.length} blocked/risky · ${rowUnknown.length} unknown · same engine as \`why\`\n`,
+  )
+  for (const verdict of rowFindings.slice(0, MAX_RENDERED_VERDICTS)) {
+    process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n\n`)
+  }
+  if (rowFindings.length > MAX_RENDERED_VERDICTS) {
+    process.stdout.write(`… ${rowFindings.length - MAX_RENDERED_VERDICTS} more row finding(s); pass --json for the full list.\n`)
+  }
+  if (rowUnknown.length > 0) {
+    process.stdout.write(
+      `${rowUnknown.length} row(s) have no admission evidence (missing.row-module / missing.peer-declaration); they are not counted as failures — pass --json for the list.\n`,
+    )
   }
   process.stdout.write(`\ncollisions: ${collisions.length}\n`)
   for (const collision of collisions) {
@@ -597,7 +630,10 @@ async function commandAudit(flags: Flags): Promise<number> {
       }
     }
   }
-  return collisions.length === 0 && duplicateFindings.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+  return collisions.length === 0 &&
+    duplicateFindings.length === 0 &&
+    inventoryVerdicts.every((verdict) => verdict.conclusion === 'go') &&
+    rowVerdicts.every((verdict) => verdict.conclusion === 'go' || verdict.conclusion === 'unknown')
     ? EXIT_OK
     : EXIT_FINDINGS
 }

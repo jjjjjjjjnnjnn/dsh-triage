@@ -222,6 +222,11 @@ function readTransport(value: unknown): InventoryTransport | null | 'invalid' {
   return (INVENTORY_TRANSPORTS as readonly string[]).includes(value) ? (value as InventoryTransport) : 'invalid'
 }
 
+/** Shared with the capability layer, so one sample cannot be parsed with two rules. */
+export function readTransportValue(value: unknown): InventoryTransport | null | 'invalid' {
+  return readTransport(value)
+}
+
 /**
  * Parse `agentPresets` defensively (T-112).
  *

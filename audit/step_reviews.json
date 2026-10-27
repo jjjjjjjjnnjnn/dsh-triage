@@ -1107,7 +1107,7 @@
       "real_test": {
         "command": "node scripts/record_live_inventory.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T22:00:00.000Z",
         "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
-        "sha256": "e97021a2f873cefeae341ff4d97bc5fba400fe7fa699985950abfe18cdad16c2",
+        "sha256": "226ac25dd41bf3aa0d5f570624ac2e2e1038686370244b8e86489c9530500b56",
         "outcome": "outcome=sampled · sample.kind=live · transport=in-process-projection（快照内也带）· 194 行（167 active / 27 disabled，探针已排除且不在快照里）· 4 preset / 98 行 · cross_check.agree=true（逐行相位 + 身份表 + preset 行表）"
       }
     },
@@ -1161,7 +1161,7 @@
       "real_test": {
         "command": "node scripts/record_live_inventory.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T22:00:00.000Z",
         "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
-        "sha256": "e97021a2f873cefeae341ff4d97bc5fba400fe7fa699985950abfe18cdad16c2",
+        "sha256": "226ac25dd41bf3aa0d5f570624ac2e2e1038686370244b8e86489c9530500b56",
         "outcome": "同一份真机样本：missing=0、undeclared=3（include 根 group + 2 条动态挂载；探针已排除），Host 与 CLI 按逐行相位与身份表逐项一致"
       }
     },
@@ -1267,6 +1267,168 @@
         "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T23:45:00.000Z",
         "artifact": "data/results/gates-mutate-2026-10-27T23-45-00.000Z.json",
         "sha256": "e71585a3d295890fcfa28faed70e4cda0bd1c9fa44b21301eb3db423cef507ef",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R13-S1",
+      "batch": "R13",
+      "step": "能力层取证：查上游是否静态声明工具名、注册表在哪个作用域、ptc 是否折叠可见面，并把结论固化成纯函数模块与 spec",
+      "changed": [
+        "packages/core/src/capabilities.ts",
+        "packages/core/src/result.ts",
+        "packages/core/src/index.ts",
+        "docs/specs/M2-capabilities.md",
+        "tests/unit/capabilities.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：取证得到三条硬边界并全部落到 spec §2——① 插件 `package.json` 无 `dsh` 字段、`defineTool({name})` 只存在于构建产物里，所以「声明了但没注册」不可判；② 工具注册在 agent/preset 作用域，进程级探针只看到全局层（实测 1 个 `working_directory`）；③ `ptc` 折叠模型可见面，必须用 `presentAs('native')` 才能读未被折叠的清单。模块只做解析与差分，不产出任何「应该存在」的结论",
+        "reproducibility": "PASS：解析与差分是纯函数，同输入同输出；拒绝理由带位置（`tools[k]`、字段名）；单测 6 条覆盖拒绝、去重、read_error、差分与「registry 缺失 ≠ 空清单」",
+        "licence": "PASS：只读上游已安装产物（MIT）与自有代码；不 vendor、不复制上游实现",
+        "ssot": "PASS：契约写在 `docs/specs/M2-capabilities.md`（§3 解析、§4 差分、§6 负对照），产物字段与文档一一对应",
+        "adversary": "反例：① 把「没有工具服务」写成 `registry:'tools', tools:[]` → 单测红（两者必须可分）；② 同一份快照里同名工具两次 → 拒绝解析（不得静默去重）；③ 读取抛错但清单为空 → `read_error` 必须非空，记录器把该条判 blocker"
+      },
+      "real_test": {
+        "command": "node scripts/record_live_capabilities.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --disable tool-fs --expect read,write,edit,read_image --stamp 2026-10-27T23:30:00.000Z",
+        "artifact": "data/results/capabilities-2026-10-27T23-30-00.000Z.json",
+        "sha256": "674d8275a36d04b06724fda4be91feaf7c95a76c59538a96f979c949aca2e609",
+        "outcome": "outcome=expectation-not-met · baseline/disabled 各 1 个工具（`working_directory`）· removed=(none) · 证明进程级探针读不到 preset 作用域（边界 B2）"
+      }
+    },
+    {
+      "id": "R13-S2",
+      "batch": "R13",
+      "step": "探针扩采能力清单 + 两个 live 记录器共用 `scripts/lib/live.mjs`（挂载/采样/杀树只有一份实现）",
+      "changed": [
+        "scripts/probe_hooks/inventory-hook.mjs",
+        "scripts/lib/live.mjs",
+        "scripts/record_live_capabilities.mjs",
+        "scripts/record_live_inventory.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：hook 新增 `capabilities`（registry/tools/presentation/unjudged/read_error），并在自己的 scope 里 `presentAs('native')` 后立刻 dispose，不改部署；两个记录器共用同一份 boot 实现（overlay 写入、等样本、`taskkill /T`、临时目录清理），避免两份实现漂移",
+        "reproducibility": "PASS：overlay 由参数生成、`extraPatch` 支持「禁用一行」的实验层；临时目录 `mkdtempSync` + `finally` 删除；两次采样各自 8.2–8.7s 起服务，产物记录 `log_sha256` 与秒数",
+        "licence": "PASS：只读 profile/node_modules；不写真实 `~/.dsh`；探针目录用完即删",
+        "ssot": "PASS：`capabilities-*.json` 含 produced_by/generated_at/schema_version + 纯 hash `.sha256`；边界三条写在产物 `boundary` 字段里，不靠文档口口相传",
+        "adversary": "反例：① 不 dispose `presentAs` → 探针会改变自己 scope 的呈现，后续读被污染（现在用 try/finally 释放）；② 把 `read_error` 吞成空清单 → 记录器 `registry-read` 判 blocker；③ 两个记录器各自实现 boot → 用同一 helper 消除该风险（本次改动的直接动机）"
+      },
+      "real_test": {
+        "command": "node scripts/record_live_inventory.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T22:00:00.000Z",
+        "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
+        "sha256": "226ac25dd41bf3aa0d5f570624ac2e2e1038686370244b8e86489c9530500b56",
+        "outcome": "outcome=sampled · 194 行（167 active / 27 disabled）· cross_check.agree=true（逐行相位 + 身份表 + preset 行表）"
+      }
+    },
+    {
+      "id": "R13-S3",
+      "batch": "R13",
+      "step": "T-105：`audit` 与 `why` 同源——audit 也出行级 admission 结论，并用 e2e 断言两命令对同一 profile 结论一致",
+      "changed": [
+        "packages/plugin/src/cli.ts",
+        "tests/e2e/cli.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`audit` 复用 `verdictsFromRowAdmission`（与 `why` 同一个引擎与同一批 `resolveRows` 结果），文本里每行标结论、并给 `row admission: N go · M blocked/risky · K unknown` 汇总；`unknown` 不计入失败（与 `why` 默认行为一致：缺证据不是缺陷），`blocked/risky` 计入——这条差异写进代码注释，避免下一位读成「随便挑的」",
+        "reproducibility": "PASS：e2e 用同一 fixture 跑两命令，比较 `subject.name|conclusion|reason codes` 的排序集合，重复可复现",
+        "licence": "PASS：无新依赖，纯 CLI 输出改动",
+        "ssot": "PASS：`audit --json` 新增 `row_verdicts`，与 `why --json` 的 `verdicts` 同构，可机器比对；两个 e2e 用例锁死",
+        "adversary": "反例：① 把 audit 的结论改成只按 bundle 判 → e2e「audit and why reach the same row-level conclusion」立刻红；② 让 `unknown` 也计入失败 → 沙盒真机 profile（72 条 unconstrained）会永远 exit 1，本轮实测到并据此定规则；③ 删掉行内结论标注 → 文本断言缺失"
+      },
+      "real_test": {
+        "command": "node --test tests/e2e/cli.test.ts",
+        "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
+        "sha256": "226ac25dd41bf3aa0d5f570624ac2e2e1038686370244b8e86489c9530500b56",
+        "outcome": "e2e 7 条全过（含新增 T-105 交叉一致）· 同一份真机 profile 上 audit 与 why 的行级结论逐条相同"
+      }
+    },
+    {
+      "id": "R13-S4",
+      "batch": "R13",
+      "step": "R13 收尾：9 门全绿，并把 T-202 按取证结果重新定义（agent 作用域前置）",
+      "changed": [
+        "scripts/gate.mjs",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-27_R13.md"
+      ],
+      "review": {
+        "correctness": "PASS：能力层不新增 verdict 命名空间（没有判据就不编判据），因此 `verdict-contract` / `inventory-contract` 的判据表未被改动；门禁只在 R12 的基础上增加「产物被引用」一条",
+        "reproducibility": "PASS：门禁与负对照各跑一次并落产物；两级产物都只记 id 与 exitCode",
+        "licence": "PASS：无网络、无新增依赖",
+        "ssot": "PASS：`data/results` 全部产物被步骤引用（无孤儿）；T-202 拆分与 `BS-19/20/21` 写进 BACKLOG/HANDOFF/blind spots",
+        "adversary": "反例：若本轮把「工具缺失」做成 verdict 而不加判据来源，`verdict-contract` 会因缺 `messages.ts` 条目与 params 而红；因此本轮故意只做事实与差分——门禁全绿本身不构成「能力层已判」的证据，这一点写进 AUDIT_R13 §7"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T00:10:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T00-10-00.000Z.json",
+        "sha256": "28d7cc2f15c61ce99caa477f69002d45bfb726b2a46b171800c0610cce24dba9",
+        "outcome": "ALL GREEN · 9 gates（141 测试）"
+      }
+    },
+    {
+      "id": "R13-S5",
+      "batch": "R13",
+      "step": "R13 负对照：新增的能力层与两命令同源改动之后，9 道门仍能被注入违规打红",
+      "changed": [
+        "scripts/gate.mjs",
+        "scripts/gate_inventory_contract.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`--mutate` 下每道门按各自注入点失败，9/9 CAUGHT；本轮新增的判据为零，所以 `verdict-contract` 的期望集合未变，负对照仍有意义",
+        "reproducibility": "PASS：同一命令重跑结论一致；产物只记 id 与 exitCode",
+        "licence": "PASS：负对照只在本机注入违规",
+        "ssot": "PASS：`gates-mutate-2026-10-28T00-15-00.000Z.json` 被本条引用，`data/results` 无孤儿产物",
+        "adversary": "反例：若能力层偷偷加了一条 verdict 却没有 messages/params，`verdict-contract` 会在正向运行就红；本轮正向与负向都跑过，结论一致"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-28T00:15:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-28T00-15-00.000Z.json",
+        "sha256": "d505b4a34c8e978b495a9c7224160b7572f89dca40aeeb06a8d3a2325fb5a701",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R13-S6",
+      "batch": "R13",
+      "step": "把 `record_live_inventory.mjs` 也切到共用的 boot 实现（消除两份启动逻辑），修掉重复 YAML key 与漏 import，重采真机样本后复跑门禁",
+      "changed": [
+        "scripts/record_live_inventory.mjs",
+        "scripts/lib/live.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：合并后两个 live 记录器走同一份「写 overlay → 起 Host → 等样本 → `taskkill /T` → 清临时目录」；过程中抓到自己写的两个真缺陷——① 配置里重复写 `profile` 导致 overlay 出现重复 YAML key，`dsh` 直接解析失败（本次改动引入、本次发现）；② 删掉 `spawnSync` 后 CLI 交叉校验段仍在用（漏 import）。两者都靠真跑抓到，不是读代码看出来的",
+        "reproducibility": "PASS：重采后同一 stamp 下 `entries=194 / agree=true` 稳定；`error_tail` 只在失败时进产物（本轮靠它定位到 YAML 解析失败）",
+        "licence": "PASS：无新增依赖；共用 helper 只做进程与文件操作",
+        "ssot": "PASS：`inventory-live-*` 与 `capabilities-*` 两份产物同源同规则（produced_by/generated_at/schema_version + 纯 hash）；R12/R13 的步骤记录 hash 同步",
+        "adversary": "反例：若两份 boot 实现继续并存，任何一边改超时/杀树规则都会让两次采样不可比——这次合并就是为了消掉该风险；另外 `error_tail` 让「hook 没写文件」不再是一句无可追查的话"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T00:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T00-40-00.000Z.json",
+        "sha256": "e9edead805b6c4dcbee418011d7d887c2452aa96e56c9aabbbf2059a52b2f4d5",
+        "outcome": "ALL GREEN · 9 gates（142 测试；两个 live 记录器共用 boot 实现后重采仍 sampled/agree）"
+      }
+    },
+    {
+      "id": "R13-S7",
+      "batch": "R13",
+      "step": "R13 最终负对照：合并 boot 实现、重采产物之后，9 门仍能被注入违规打红",
+      "changed": [
+        "scripts/lib/live.mjs",
+        "scripts/gate.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`--mutate` 9/9 CAUGHT，与合并前一致；本轮没有引入新判据，因此门的期望集合未变",
+        "reproducibility": "PASS：同一命令重跑结论一致；产物只记 id 与 exitCode",
+        "licence": "PASS：负对照只在本机注入违规",
+        "ssot": "PASS：`gates-mutate-2026-10-28T00-45-00.000Z.json` 被本条引用，`data/results` 无孤儿产物",
+        "adversary": "反例：若共用 helper 让某个记录器静默跳过 boot（例如忽略 `extraPatch`），`step-review` 不会发现——这一条靠 S6 的真跑与产物里的 `host.status=sampled` 兜住，而不是靠门"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-28T00:45:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-28T00-45-00.000Z.json",
+        "sha256": "063742b77ce6780d302676dc9827bd63b268b803f8b53543a65220825106378b",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }

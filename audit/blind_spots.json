@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R12 (2026-10-27)",
+  "stand": "R13 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -148,6 +148,20 @@
       "cannot_see": "preset 行的 fiberPhase 为 null 有两种含义：这个 preset 从未被任何会话组合，或组合后拿到 fiber 前就失手。上游的快照只有 null，没有区分字段，所以本层只能出 unknown（runtime.preset-no-fiber），不能像主列表那样判 blocked。真机样本里没有出现过 enabled+null 的 preset 行，因此这一档目前只有夹具与负对照支撑",
       "mitigation": "文案明确写出两种可能（不乱指失败），missingEvidence 记 missing.preset-phase；要分开只能靠 M3 probe 在一次真实会话组合下再采一次。对外口径不得说「这台机器的 preset 都跑起来了」",
       "owner": "core/inventory"
+    },
+    {
+      "id": "BS-21",
+      "area": "capabilities/scope",
+      "cannot_see": "进程级探针只能读**全局层**的工具注册表。实测沙盒 Host：preset 里 `tool-bash`/`tool-fs` 等行都是 `active`，但 `ctx.tools.schemas()` 只有 1 个 `working_directory`——工具注册在 agent/preset 作用域，不在全局层。因此「关掉一行 → 哪个工具消失」这个因果实验在进程级做不到",
+      "mitigation": "能力层本轮只交付事实（全局层清单）+ 差分 + 边界登记（产物 `boundary.cannot_reach`）；T-202a 的退出条件是「在一次真实会话或 M3 probe 里采样」。对外不得说「工具清单已覆盖」",
+      "owner": "core/capabilities"
+    },
+    {
+      "id": "BS-22",
+      "area": "capabilities/declaration",
+      "cannot_see": "上游插件**不静态声明**自己提供哪些工具：`dsh-tool-bash` / `dsh-tool-fs` 的 `package.json` 没有 `dsh` 字段，`bash`/`read`/`write`/`edit`/`read_image` 只出现在构建产物 `defineTool({ name })` 里。因此「声明了工具 X 但注册表没有 X」不可推导——除非我们自带一张插件→工具映射表，那就是猜",
+      "mitigation": "不做该类结论；`docs/specs/M2-capabilities.md` §2 B1 记录取证；若将来上游加上静态声明（或 dsh.so 提供映射），再实现该判断并补负对照",
+      "owner": "core/capabilities"
     }
   ]
 }

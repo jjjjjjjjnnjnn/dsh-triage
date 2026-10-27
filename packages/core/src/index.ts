@@ -96,4 +96,7 @@ export {
 export type { Locale, MessageCatalog } from './messages.js'
 export { catalogFor, format } from './messages.js'
 
+export type { CapabilityDiff, CapabilityMeta, CapabilitySnapshot, CapabilityTool } from './capabilities.js'
+export { diffCapabilities, parseCapabilitySnapshot } from './capabilities.js'
+
 export { redactEnv, redactPath, redactVerdict } from './redact.js'

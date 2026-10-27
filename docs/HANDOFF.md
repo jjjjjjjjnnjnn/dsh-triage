@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R12 (2026-10-27)｜当前批次：**R12 · 让相位来自真机（T-201 P1 进程内投影 + T-112 preset 维度）**（135 测试；9 门 9-9）
+> **Stand**: R13 (2026-10-27)｜当前批次：**R13 · 能力层取证（T-202 收窄为事实+差分）+ 两命令同源（T-105）**（142 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -27,12 +27,12 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中，1 例为显式 unknown）** · **M2-a P1+P2 ✅（R12 真机采样，B1/B2 关闭）** · T-112 ✅ |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **135 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **1 份真机相位样本（194 行）** |
+| 规模 | **142 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **1 份真机相位样本（194 行）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **相位不再靠合成样本**：① T-201 P1 `scripts/probe_hooks/inventory-hook.mjs` 在沙箱 Host 内调上游导出的 `readPluginInventory(ctx)`（与 Remote 方法同一个函数），等树稳定后落盘；`scripts/record_live_inventory.mjs` 负责挂载/采样/杀树/CLI 交叉校验/脱敏；② T-112 preset 维度五档判法（`preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-unjudged` / `preset-divergence`）；③ `transport` 进快照契约（进程内投影不得自称 Remote）；④ **两个真 bug**：`dsh.bundle.patch` 是数组时整层被静默跳过（修后 `undeclared` 195→4）、loader id 带 group 前缀 `include:` 导致声明/运行对不上（修后 `missing` 96→0） |
-| 证据 | `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（`sample.kind=live` · `transport=in-process-projection` · 194 行 = 167 active + 27 disabled · 4 preset / 98 行 · `outcome=sampled` · `cross_check.agree=true`）· `inventory-2026-10-27T00-00-00.000Z.json`（R7 合成样本，R12 用当前引擎重放）· 上一轮 `registry-2026-10-27T19-00-00.000Z.json` · `why-case-CASE-7590-*` · `d1-2026-10-27T15-00-00.000Z.json` · `ns-live-attempt-2026-10-27T21-10-00.000Z.json` |
-| 审核报告 | `audit/AUDIT_2026-10-27_R12.md`（本轮）· `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
-| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 已关闭**（沙箱真机样本 + Host↔CLI 交叉一致）；`B3` 仍只有夹具覆盖（真机样本里没有 failed / broken / conditional 行） |
+| 本轮交付 | **能力层取证 + 两命令同源**：① 新增 `packages/core/src/capabilities.ts`（防御式解析 + `diffCapabilities` + `registry: null` 与空清单严格区分 + `read_error` / `presentation` 诚实字段）；② 探针扩采 `capabilities`（`ctx.tools.schemas()`，先 `presentAs('native')` 再读、读完释放），两个 live 记录器共用 `scripts/lib/live.mjs`；③ 新记录器 `scripts/record_live_capabilities.mjs`：基线 + 禁用一行两次采样 → 差分 + `expectation_met`；④ **T-105**：`audit` 也出行级 admission 结论（与 `why` 同一引擎），e2e 断言两命令集合一致；⑤ 取证结论：**「工具缺失」不可判**（上游不静态声明工具名）、**工具在 agent/preset 作用域**（进程级探针只见全局层 1 个工具）、**`ptc` 折叠可见面** |
+| 证据 | `data/results/capabilities-2026-10-27T23-30-00.000Z.json`（`outcome=expectation-not-met`，边界 B2 的机器可读形式）· `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（重采，hook 扩了能力读）· `gates-2026-10-28T00-10-00.000Z.json` / `gates-mutate-2026-10-28T00-15-00.000Z.json` · R12 的 `registry-*` / `why-case-CASE-7590-*` / `d1-*` 仍有效 |
+| 审核报告 | `audit/AUDIT_2026-10-27_R13.md`（本轮）· `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
+| 未通过的门槛 | D2–D4 尚未到点；B1/B2 已于 R12 关闭；**能力层未做「工具缺失」判断**——R13 取证证明它不可判（`BS-21` / `BS-22`），T-202a 需要一次真实会话或 M3 probe |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/upstream`（依赖 191 条）· `dsh --profile upstream --patch <overlay>` 9.2s 起服务并采到样 · 探针目录用完即删 |
 | 交接快照（R12 收尾） | R12 = `ec33e94`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **135 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **41 产物 / 50 步**全被引用 |
 | 交接快照（R11 收尾） | R11 = `b92190e`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9** |
@@ -50,9 +50,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**三选一**（都不需要新许可）：
 
-1. **T-202**（运行时命名空间快照 tools/commands/settings/skills）：相位层现在有真机样本了，下一步是把「声明了但没注册的能力」也变成事实。前置已满足：`scripts/probe_hooks/inventory-hook.mjs` 已经证明「在 Host 内挂一行探针读服务」这条路可行。
-2. **T-105**（`audit` 与 `why` 同源）：R12 刚把声明/运行 diff 修准（`missing=0`、`undeclared` 可逐条解释），两条命令交叉一致现在才有意义；先写 e2e 断言再改实现。
-3. **P3 · 真 Remote 客户端**（`pluginInventory/list` 走 `dsh-client-connection`）：token→cookie 握手已实测（303），principal/权限未验证。做成后，采样不再需要挂探针行，`transport` 可以写 `remote`。
+1. **T-301 probe 执行器**：本轮把「起 Host → 等样本 → 杀树」抽成 `scripts/lib/live.mjs` 并跑了 4 次真机（8.2–9.2s/次），产品化所需的东西已经齐了；做完它 T-202a / T-114 才有前置。
+2. **T-202a 能力层的会话作用域**：进程级探针只看到全局层（`BS-21`）。要做成，必须有一次真实会话或 probe 内的会话上下文——先与 HUMAN 确认能否用模型凭据。
+3. **T-117 行级兼容通道相左（`BS-17`）**：与相位层无关的一块独立判断，先定粒度再实现。
 
 **想继续从开源里借**：`docs/09-open-source-borrowing.md` 先看，再动 T-113（attw 矩阵，前置是沙箱实测 loader 解析模式）/ T-114（bisect，前置是 M3 probe）。**借机制不抄代码**，真抄要先进 `quarantine/` + `vendor-manifest`。
 

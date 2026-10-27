@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_live_capabilities.mjs",
+  "generated_at": "2026-10-27T23:30:00.000Z",
+  "sample": {
+    "kind": "live",
+    "profile": "upstream",
+    "dsh_home": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\home",
+    "transport": "in-process-projection",
+    "registry_scope": "process-global (the probe context), NOT an agent/preset scope",
+    "presentation": "deployment-default"
+  },
+  "experiment": {
+    "disabled_patch_row": "tool-fs",
+    "disabled_runtime_entry": "include:tool-fs",
+    "disabled_phase": null,
+    "expectation": {
+      "tools": [
+        "edit",
+        "read",
+        "read_image",
+        "write"
+      ],
+      "source": "operator (--expect); upstream declares no tool names statically"
+    },
+    "expectation_met": false
+  },
+  "outcome": "expectation-not-met",
+  "blockers": [],
+  "evidence": [
+    {
+      "id": "profile-manifest",
+      "ok": true,
+      "detail": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\home\\profiles\\upstream"
+    },
+    {
+      "id": "dsh-runtime",
+      "ok": true,
+      "detail": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+    },
+    {
+      "id": "hook-present",
+      "ok": true,
+      "detail": "<repo>\\scripts\\probe_hooks\\inventory-hook.mjs"
+    },
+    {
+      "id": "baseline-sampled",
+      "ok": true,
+      "detail": "entries 194"
+    },
+    {
+      "id": "disabled-sampled",
+      "ok": true,
+      "detail": "entries 194"
+    },
+    {
+      "id": "expectation",
+      "ok": false,
+      "detail": "expected edit, read, read_image, write to leave; actually left (none)"
+    },
+    {
+      "id": "registry-present",
+      "ok": true,
+      "detail": "baseline=tools disabled=tools"
+    }
+  ],
+  "hosts": {
+    "baseline": {
+      "status": "sampled",
+      "seconds": 8.2,
+      "log_sha256": "01e9dd50c984fa92f310f43d4b46bfe35314f741c70de7cf9bd509e43115dc9e",
+      "first_line": ""
+    },
+    "disabled": {
+      "status": "sampled",
+      "seconds": 8.7,
+      "log_sha256": "dd8aaa0e7f03fdb36503b641ca7ae07aa9c6d7fd637db3a31a8d88d7f171554b",
+      "first_line": ""
+    }
+  },
+  "baseline": {
+    "sampled_at": "2026-10-27T10:20:55.816Z",
+    "registry": "tools",
+    "tools": [
+      "working_directory"
+    ],
+    "unjudged": [
+      "commands",
+      "settings",
+      "skills"
+    ],
+    "read_error": null
+  },
+  "disabled": {
+    "sampled_at": "2026-10-27T10:21:09.870Z",
+    "registry": "tools",
+    "tools": [
+      "working_directory"
+    ],
+    "unjudged": [
+      "commands",
+      "settings",
+      "skills"
+    ],
+    "read_error": null
+  },
+  "diff": {
+    "removed": [],
+    "added": [],
+    "unchanged": 1
+  },
+  "boundary": {
+    "cannot_judge": "declared tool missing from the registry: upstream plugins publish no static tool names",
+    "cannot_reach": "tool plugins register into AGENT/PRESET scopes, so a process-level probe sees only the global layer (measured: 1 tool, `working_directory`); a real session or M3 probe is required to read a preset surface",
+    "cannot_see_mode": "a `ptc` deployment collapses the model-facing surface to `run_code`; the probe forces a native view in its own scope, and records which presentation each sample used",
+    "reference": "docs/specs/M2-capabilities.md §2"
+  }
+}

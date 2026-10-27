@@ -110,6 +110,10 @@ export function apply(ctx, config = {}) {
           transport: 'in-process-projection',
         },
         host_summary: summarize(published),
+        // Facts, not judgements: the registry's own list, plus what this build does not
+        // read yet. `registry: null` means "no tool service composed", which is not the
+        // same answer as "a registry with zero tools".
+        capabilities: readCapabilities(ctx, sampledAt),
       })
     } catch (error) {
       try {
@@ -138,6 +142,75 @@ export function apply(ctx, config = {}) {
 function findSelfEntryId(entries, selfId) {
   const hit = entries.find((entry) => entry.entryId === selfId || entry.entryId.endsWith(`:${selfId}`))
   return hit === undefined ? null : hit.entryId
+}
+
+/**
+ * Read the tool registry that the mounted Host actually serves.
+ *
+ * FACTS ONLY. Upstream plugins never declare their tool names statically (no `dsh` field
+ * in `dsh-tool-bash`'s package.json; `bash` exists only inside `defineTool({ name })` in
+ * the built code), so "this plugin declared X and X is missing" is not derivable without
+ * shipping a hand-written mapping table. The list below is what the registry itself says.
+ */
+function readCapabilities(ctx, sampledAt) {
+  const base = {
+    sampled_at: sampledAt,
+    transport: 'in-process-projection',
+    // Channels a deployment may compose that this build does not read yet.
+    unjudged: ['commands', 'skills', 'settings'],
+  }
+  let registry
+  try {
+    registry = ctx.get('tools')
+  } catch (error) {
+    return { ...base, registry: null, tools: [], read_error: `ctx.get('tools') threw: ${describe(error)}` }
+  }
+  if (registry === null || registry === undefined) return { ...base, registry: null, tools: [] }
+  // A `ptc` deployment collapses the model-facing surface to `run_code` only, so a plain
+  // `schemas()` call reports ONE tool on a host that has dozens. `presentAs('native')` is
+  // the public, scope-local way to ask for the uncollapsed view; it is disposed right
+  // after the read so the deployment is untouched.
+  let presentation = 'deployment-default'
+  let presentationError = null
+  let disposePresentation = null
+  try {
+    const dispose = typeof registry.presentAs === 'function' ? registry.presentAs('native') : null
+    if (typeof dispose === 'function') {
+      presentation = 'native (forced by the probe, then disposed)'
+      disposePresentation = dispose
+    } else {
+      presentationError = 'tools.presentAs() is not available in this build'
+    }
+  } catch (error) {
+    presentationError = `tools.presentAs('native') threw: ${describe(error)}`
+  }
+  try {
+    const schemas = typeof registry.schemas === 'function' ? registry.schemas() : null
+    if (!Array.isArray(schemas)) {
+      return { ...base, registry: 'tools', tools: [], presentation, presentation_error: presentationError, read_error: 'tools.schemas() did not return an array' }
+    }
+    const tools = schemas
+      .map((schema) => ({
+        name: typeof schema?.name === 'string' ? schema.name : '',
+        description: typeof schema?.description === 'string' && schema.description !== '' ? schema.description : null,
+      }))
+      .filter((tool) => tool.name !== '')
+    return { ...base, registry: 'tools', tools, presentation, presentation_error: presentationError }
+  } catch (error) {
+    return { ...base, registry: 'tools', tools: [], presentation, presentation_error: presentationError, read_error: `tools.schemas() threw: ${describe(error)}` }
+  } finally {
+    if (typeof disposePresentation === 'function') {
+      try {
+        disposePresentation()
+      } catch {
+        // A failed disposal must not discard the sample we already took.
+      }
+    }
+  }
+}
+
+function describe(error) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 /** Drop the probe row from every list we publish, without mutating upstream's snapshot. */

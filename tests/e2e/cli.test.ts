@@ -235,17 +235,58 @@ test('why exits 1 under --strict when something is blocked', () => {
   }
 })
 
+test('audit and why reach the same row-level admission conclusion (T-105)', () => {
+  const fixture = buildFixture()
+  try {
+    // The fixture mounts a bundle whose row module is not installed: both commands must
+    // agree that this row cannot be attributed, and agree on the bundle denial too.
+    writeFileSync(
+      join(fixture.dshHome, 'profiles', 'node_modules', 'fake-bundle', 'cordis.patch.yml'),
+      '- id: compat-fake\n  name: fake-bundle/host\n- id: compat-fake-two\n  name: fake-bundle/second\n',
+    )
+    const why = runCli(['why', '--json', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z'], fixture)
+    const audit = runCli(['audit', '--json', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z'], fixture)
+
+    const whyVerdicts = JSON.parse(why.stdout).verdicts as { subject: { name: string }; conclusion: string; reasons: { code: string }[] }[]
+    const auditVerdicts = JSON.parse(audit.stdout).row_verdicts as { subject: { name: string }; conclusion: string; reasons: { code: string }[] }[]
+
+    const shape = (list: typeof whyVerdicts) =>
+      list
+        .map((verdict) => `${verdict.subject.name}|${verdict.conclusion}|${verdict.reasons.map((reason) => reason.code).sort().join(',')}`)
+        .sort()
+
+    const rowNames = ['fake-bundle/host', 'fake-bundle/second']
+    const whyRows = shape(whyVerdicts.filter((verdict) => rowNames.includes(verdict.subject.name)))
+    const auditRows = shape(auditVerdicts.filter((verdict) => rowNames.includes(verdict.subject.name)))
+
+    assert.equal(whyRows.length, 2, `why must judge both rows, got ${whyRows.length}`)
+    assert.deepEqual(auditRows, whyRows, 'the same profile must yield the same row-level conclusions in both commands')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
 test('audit reports the loader row of the incompatible bundle', () => {
   const fixture = buildFixture()
   try {
     const result = runCli(['audit', '--json', '--dsh-home', fixture.dshHome], fixture)
-    assert.equal(result.status, 0, result.stderr)
+    // T-105: `audit` now carries the same row-level admission verdicts as `why`, and a
+    // row whose module cannot be resolved is a finding — so this fixture (which mounts a
+    // bundle that is denied *and* a row whose module is not installed) exits 1 instead of
+    // claiming a clean bill. Before this change the two commands could disagree about the
+    // very same profile.
+    assert.equal(result.status, 1, result.stderr)
     const payload = JSON.parse(result.stdout)
     const entry = payload.claims
       .flatMap((group: { entries: { id: string; name: string | null }[] }) => group.entries)
       .find((row: { id: string }) => row.id === 'compat-fake')
     assert.ok(entry, 'capability ledger must contain the declared row')
     assert.equal(entry.name, 'fake-bundle/host')
+    assert.ok(Array.isArray(payload.row_verdicts), 'row verdicts must be in the JSON')
+    assert.ok(
+      payload.row_verdicts.some((verdict: { subject: { name: string }; conclusion: string }) => verdict.subject.name === 'fake-bundle/host'),
+      'the row module must be judged, not only listed',
+    )
   } finally {
     rmSync(fixture.root, { recursive: true, force: true })
   }

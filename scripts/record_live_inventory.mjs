@@ -28,12 +28,13 @@
  * · 3 could not sample (blocked; the artifact records why).
  */
 
-import { spawn, spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { bootAndSample } from './lib/live.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -113,106 +114,70 @@ const runtimeVersion =
 
 let sample = null
 let host = { status: 'skipped' }
-let probeDir = null
 
 if (blockers.length === 0) {
-  probeDir = mkdtempSync(join(existsSync(join(dshHome, '..')) ? join(dshHome, '..') : tmpdir(), 'triage-live-'))
-  const samplePath = join(probeDir, 'sample.json')
-  const patchPath = join(probeDir, 'overlay.patch.yml')
-  const hookPath = join(probeDir, 'inventory-hook.mjs')
-  try {
-    copyFileSync(hookSource, hookPath)
-    writeFileSync(
-      patchPath,
-      [
-        '- insert:',
-        '    - id: triage-inventory-probe',
-        '      name: \'./inventory-hook.mjs\'',
-        '      config:',
-        `        out: '${samplePath.replaceAll('\\', '/')}'`,
-        `        resolveFrom: '${profileDir.replaceAll('\\', '/')}'`,
-        `        profile: '${profile}'`,
-        `        runtimeVersion: ${runtimeVersion === null ? 'null' : `'${runtimeVersion}'`}`,
-        '        selfId: triage-inventory-probe',
-        `        timeoutMs: ${settleTimeoutMs}`,
-        '',
-      ].join('\n'),
-      'utf8',
-    )
-
-    const started = Date.now()
-    const child = spawn(process.execPath, [dshMain, '--profile', profile, '--patch', patchPath], {
-      env: { ...process.env, DSH_HOME: dshHome },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    let stdout = ''
-    let stderr = ''
-    child.stdout.on('data', (chunk) => {
-      stdout += String(chunk)
-    })
-    child.stderr.on('data', (chunk) => {
-      stderr += String(chunk)
-    })
-
-    while (Date.now() - started < collectTimeoutMs && !existsSync(samplePath)) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+  // One implementation of "write overlay → boot → wait for the hook → kill the tree",
+  // shared with scripts/record_live_capabilities.mjs, so two recorders can never sample
+  // different moments with subtly different boot rules.
+  const result = await bootAndSample({
+    dshMain,
+    dshHome,
+    profile,
+    profileDir,
+    hookSource,
+    scratchRoot: resolve(dshHome, '..'),
+    timeoutMs: collectTimeoutMs,
+    config: {
+      // `out`, `resolveFrom` and `profile` are written by bootAndSample itself; repeating
+      // `profile` here produced a duplicate YAML key and the overlay failed to parse.
+      runtimeVersion,
+      selfId: 'triage-inventory-probe',
+      timeoutMs: settleTimeoutMs,
+    },
+  })
+  host = { ...result.host, first_line: redact(result.host.first_line) }
+  evidence.push(
+    record(
+      'host-sampled',
+      result.payload !== null,
+      result.payload === null ? String(result.error) : `probe wrote its sample in ${result.host.seconds}s`,
+    ),
+  )
+  const payload = result.payload
+  if (payload !== null) {
+    if (payload.error !== undefined) {
+      evidence.push(record('hook-completed', false, `${payload.error.name}: ${payload.error.message}`))
+    } else {
+      // Provenance is a precondition, not decoration: a sample that does not say how it
+      // was taken cannot be judged, and the auditor must not have to read the sidecar.
+      const declared = payload.snapshot?.transport ?? payload.transport ?? null
+      evidence.push(
+        record(
+          'sample-declares-transport',
+          declared === 'in-process-projection',
+          `transport=${String(declared)} (inside snapshot: ${String(payload.snapshot?.transport ?? null)})`,
+        ),
+      )
+      const excludedIds = (payload.excluded ?? []).map((row) => row.entryId).filter((id) => typeof id === 'string')
+      const stillThere = excludedIds.filter((id) => (payload.snapshot?.entries ?? []).some((entry) => entry.entryId === id))
+      evidence.push(
+        record(
+          'excluded-rows-absent',
+          excludedIds.length > 0 && stillThere.length === 0,
+          stillThere.length === 0
+            ? `${excludedIds.length} excluded row(s), none of them scored`
+            : `still scored: ${stillThere.join(', ')}`,
+        ),
+      )
+      evidence.push(
+        record(
+          'hook-completed',
+          true,
+          `${payload.snapshot?.entries?.length ?? 0} entries after ${payload.wait_ms}ms (probe excluded)`,
+        ),
+      )
+      sample = redactDeep(payload)
     }
-    const collected = existsSync(samplePath)
-    const seconds = Math.round((Date.now() - started) / 100) / 10
-
-    // Windows keeps helper processes alive; kill the tree and prove the port is gone.
-    child.kill()
-    if (process.platform === 'win32' && child.pid !== undefined) {
-      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { encoding: 'utf8' })
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    host = {
-      status: collected ? 'sampled' : 'no-sample',
-      seconds: seconds,
-      log_sha256: sha256(`${stdout}\n${stderr}`),
-      first_line: redact((stderr.trimEnd().split(/\r?\n/)[0] ?? stdout.trimEnd().split(/\r?\n/)[0] ?? '').slice(0, 240)),
-    }
-    evidence.push(record('host-sampled', collected, collected ? `probe wrote its sample in ${seconds}s` : 'the hook wrote nothing within the timeout'))
-
-    if (collected) {
-      const payload = JSON.parse(readFileSync(samplePath, 'utf8').replace(/^\uFEFF/, ''))
-      if (payload.error !== undefined) {
-        evidence.push(record('hook-completed', false, `${payload.error.name}: ${payload.error.message}`))
-      } else {
-        // Provenance is a precondition, not decoration: a sample that does not say how it
-        // was taken cannot be judged, and the auditor must not have to read the sidecar.
-        const declared = payload.snapshot?.transport ?? payload.transport ?? null
-        evidence.push(
-          record(
-            'sample-declares-transport',
-            declared === 'in-process-projection',
-            `transport=${String(declared)} (inside snapshot: ${String(payload.snapshot?.transport ?? null)})`,
-          ),
-        )
-        const excludedIds = (payload.excluded ?? []).map((row) => row.entryId).filter((id) => typeof id === 'string')
-        const stillThere = excludedIds.filter((id) => (payload.snapshot?.entries ?? []).some((entry) => entry.entryId === id))
-        evidence.push(
-          record(
-            'excluded-rows-absent',
-            excludedIds.length > 0 && stillThere.length === 0,
-            stillThere.length === 0
-              ? `${excludedIds.length} excluded row(s), none of them scored`
-              : `still scored: ${stillThere.join(', ')}`,
-          ),
-        )
-        evidence.push(
-          record(
-            'hook-completed',
-            true,
-            `${payload.snapshot?.entries?.length ?? 0} entries after ${payload.wait_ms}ms (probe excluded)`,
-          ),
-        )
-        sample = redactDeep(payload)
-      }
-    }
-  } finally {
-    if (probeDir !== null) rmSync(probeDir, { recursive: true, force: true })
   }
 }
 

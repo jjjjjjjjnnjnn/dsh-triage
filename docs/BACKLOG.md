@@ -20,9 +20,10 @@
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | ✅ **R12 完成 P1（进程内投影）+ P2**：沙箱 Host 内 `readPluginInventory(ctx)` 真采样 → `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（`sample.kind=live`，195 行，`cross_check.agree=true`，B1/B2 关闭）；**Remote 客户端（真 `pluginInventory/list`）留作 P3** |
 | T-112 | `agentPresets` 维度：同一 entry 在不同 preset 下相位不同，必须分开出结论 | M2-a | implementer | T-201 | 不取「最乐观值」；只有 `conditional` 的 preset 行标 `unknown` + 需会话上下文 | ✅ **R12 完成**：preset 分行判（`conditional` / `failed` / `no-fiber` / `broken` / 跨 preset 分歧五档），真机样本 4 个 preset / 98 行；`runtime.preset-*` 命名空间三处同改 |
-| T-202 | 运行时命名空间快照（tools/commands/settings/skills） | M2-a | implementer | T-201 | 快照落 `data/results/ns-*.json` + 哈希 | ⬜ |
+| T-202a | 运行时命名空间快照（**agent/preset 作用域**：tools/commands/settings/skills） | M2-b | implementer | T-301 或一次真实会话 | 在会话作用域里读出 preset 的工具表面，才谈得上「声明 vs 注册」 | ⛔ **R13 取证后重定义**：进程级探针只看到全局层 1 个工具（`BS-21`）；上游插件也不静态声明工具名（`BS-22`）。退出条件：一次真实会话（需 HUMAN 允许模型凭据）或 M3 probe |
+| T-202b | 能力层事实：全局层工具清单 + 两样本差分 + 边界登记 | M2-b | implementer | T-201 | 快照落 `data/results/capabilities-*.json` + 哈希；差分可点名「关掉这一行后能力怎么变」 | ✅ **R13 完成**：`packages/core/src/capabilities.ts` + `scripts/record_live_capabilities.mjs`；产物 `capabilities-2026-10-27T23-30-00.000Z.json`（`outcome=expectation-not-met`，正是边界 B2 的机器可读形式）；spec `docs/specs/M2-capabilities.md` |
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
-| T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ⬜ R4 审核遗留（`audit/AUDIT_2026-10-26_R4.md` §5） |
+| T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ✅ **R13 完成**：`audit` 复用 `verdictsFromRowAdmission` + `--json row_verdicts` + 文本逐行结论；e2e「audit and why reach the same row-level admission conclusion」比两命令的 `subject|conclusion|reasons` 集合；`unknown` 不计入失败（与 `why` 默认一致） |
 | T-106 | `step-review` 升级：结论必须引用具体反例命令/路径的结构化字段 | 流程 | implementer | — | 套话无法通过（新增结构化断言 + 负对照） | ⬜ 对应 BS-09 |
 | T-301 | probe 执行器（boot/http 两段） | M3 | implementer | T-201 | 单次 ≤20s；失败清理；dry-run 默认 | ⬜ |
 | T-302 | probe 的 client-rendered 断言（BS-03） | M3 | implementer | T-301 | 能识别「HTTP 200 但白屏」 | ⬜ |

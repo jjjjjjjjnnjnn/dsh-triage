@@ -7,7 +7,7 @@
     "profile": "upstream",
     "dsh_home": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\home",
     "runtime_version": "0.2.1-rc.4",
-    "wait_ms": 5213,
+    "wait_ms": 4979,
     "transport": "in-process-projection",
     "method": "readPluginInventory"
   },
@@ -32,7 +32,7 @@
     {
       "id": "host-sampled",
       "ok": true,
-      "detail": "probe wrote its sample in 10.7s"
+      "detail": "probe wrote its sample in 9.7s"
     },
     {
       "id": "sample-declares-transport",
@@ -47,14 +47,15 @@
     {
       "id": "hook-completed",
       "ok": true,
-      "detail": "194 entries after 5213ms (probe excluded)"
+      "detail": "194 entries after 4979ms (probe excluded)"
     }
   ],
   "host": {
     "status": "sampled",
-    "seconds": 10.7,
-    "log_sha256": "5e34508767e3aa95b48aff96b612635df4142472797aac9eee23752f8029355b",
-    "first_line": ""
+    "seconds": 9.7,
+    "log_sha256": "d8f25238231eefbcb41bd028ca88c6f0add6595f4f0a1c7e2b5d72d55de48bbb",
+    "first_line": "",
+    "error_tail": null
   },
   "snapshot": {
     "entries": [
@@ -3071,7 +3072,7 @@
         }
       },
       {
-        "entryId": "a4419595",
+        "entryId": "34fcd3ed",
         "moduleName": "@deepseek-ai/dsh-host-directory-picker-native",
         "enabled": true,
         "fiberPhase": "active",
@@ -3087,7 +3088,7 @@
         }
       },
       {
-        "entryId": "a492a0c9",
+        "entryId": "1391781b",
         "moduleName": "@deepseek-ai/dsh-client-ui-directory-picker-native",
         "enabled": true,
         "fiberPhase": "active",
@@ -4647,8 +4648,8 @@
       "null": 27
     },
     "phases": {
-      "a4419595": "active",
-      "a492a0c9": "active",
+      "1391781b": "active",
+      "34fcd3ed": "active",
       "include": "active",
       "include:account-controller": "active",
       "include:agent": "active",
@@ -5000,8 +5001,8 @@
     "transport": "in-process-projection",
     "missing": 0,
     "undeclared": [
-      "a4419595",
-      "a492a0c9",
+      "1391781b",
+      "34fcd3ed",
       "include"
     ],
     "verdicts": 30,
@@ -5040,14 +5041,14 @@
         "include:workflow-ptc"
       ],
       "runtime.undeclared-entry": [
-        "a4419595",
-        "a492a0c9",
+        "1391781b",
+        "34fcd3ed",
         "include"
       ]
     },
     "phases": {
-      "a4419595": "active",
-      "a492a0c9": "active",
+      "1391781b": "active",
+      "34fcd3ed": "active",
       "include": "active",
       "include:account-controller": "active",
       "include:agent": "active",
@@ -5528,8 +5529,8 @@
       "transport": "in-process-projection",
       "missing": 0,
       "undeclared": [
-        "a4419595",
-        "a492a0c9",
+        "1391781b",
+        "34fcd3ed",
         "include"
       ],
       "verdicts": 30,
