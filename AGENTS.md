@@ -36,6 +36,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 ├── backup/BACKUP_POLICY.md        # 快照策略（snapshots/ 同名 + .sha256）
 ├── _archive/ARCHIVE_MANIFEST.md   # 只进不出归档索引
 ├── quarantine/                    # 外部产物隔离区（双门制）+ vendor-manifest（许可真相源）
+├── sandbox/                       # 仓内 DSH 运行时（git 忽略）：upstream/<ver>/{install,home}，可挂载可删除
 ├── data/
 │   ├── gold/admission-cases.json  # 金标夹具（admission 语义对等基准，人工签署）
 │   ├── cases/CASE-*/              # 真实案例：输入 manifest + 机器可算 label + 偏差披露

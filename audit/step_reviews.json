@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R10 (2026-10-27)",
+  "stand": "R11 (2026-10-27)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -988,6 +988,102 @@
         "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T20:15:00.000Z",
         "artifact": "data/results/gates-mutate-2026-10-27T20-15-00.000Z.json",
         "sha256": "75eb0488f0695331e1b2896b87f58a24187db91d012f215a93a9016c331b2824",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R11-S1",
+      "batch": "R11",
+      "step": "环境解锁：DSH 本体与 profile 依赖装进仓内 sandbox/（git 忽略），compose 与依赖状态都可复算",
+      "changed": [
+        "scripts/bootstrap_upstream.mjs",
+        ".gitignore",
+        "docs/07-environment.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：`bootstrap_upstream.mjs` 新增 `--root`（默认仓内 `sandbox/`）与 `--with-profile-deps`，后者把 profile 自己的 `node_modules` 装上——这正是 R9 记录的 `profile-dependencies-installed` blocker；同时新增 compose 条目数与 `profile-dependencies` 两项检查，`limits` 与 SSOT 字段随之改写，不再声称「profile 没有 node_modules」",
+        "reproducibility": "PASS：`node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.4 --root sandbox --with-profile-deps --stamp 2026-10-27T21:00:00.000Z` 产出 `upstream-0.2.1-rc.4-2026-10-27T21-00-00.000Z.json`（`.sha256` 同目录）；沙盒路径在产物里脱敏为 `<repo>…`，不含用户名或绝对 home 路径",
+        "licence": "PASS：只从 npm 安装公开包（MIT/Apache-2.0），不下载源码仓、不复制代码；沙盒在 `.gitignore` 里（`sandbox/`），不会进版本库；未注入任何凭据",
+        "ssot": "PASS：产物含 `profile_dependencies` / `compose.entries=191` / `fiberPhase` 枚举 / `dsh --version`；`sandbox/` 未跟踪（`git status` 干净），`pnpm run verify` 不受影响",
+        "adversary": "反例：① 不传 `--with-profile-deps` → `profile-dependencies` 红、outcome 仍是 compose-only（不会假称可挂载）；② 把 `--root` 指到仓外 → 产物里路径脱敏为 `~`/`%TEMP%`，不写入仓内；③ 重复执行 → 已装则跳过 npm install（`--force` 才重装），不会把 8 分钟的安装重跑一遍"
+      },
+      "real_test": {
+        "command": "node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.4 --root sandbox --with-profile-deps --stamp 2026-10-27T21:00:00.000Z",
+        "artifact": "data/results/upstream-0.2.1-rc.4-2026-10-27T21-00-00.000Z.json",
+        "sha256": "acb91a8c523682f23b70b773d3827ee3cfdf7cd6e4455ac3b4363dd70bc68525",
+        "outcome": "ok · 0.2.1-rc.4 安装成功 · profile 依赖已装 · compose 191 条 · fiberPhase = null|failed|pending|active|loading|unloading"
+      }
+    },
+    {
+      "id": "R11-S2",
+      "batch": "R11",
+      "step": "真机挂载实测：probe_live_sample --boot 起 Host、探 HTTP、杀进程，把 blocker 从「环境」推进到「缺 Remote 客户端」",
+      "changed": [
+        "scripts/probe_live_sample.mjs",
+        "docs/07-environment.md",
+        "docs/HANDOFF.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：`--boot` 用 `node bin.js web --no-open` 起 Host（`DSH_HOME` 指向沙盒），从 stdout 抽取 URL，分别探「带 token」（303 = token→cookie 重定向）与「不带 token」（401），再用 `taskkill /T /F` 收尾并以「端口不再应答」作为停止判据；`outcome` 新增 `mounted-host`，`sample.kind` 只在真挂载时写 `live-mount`",
+        "reproducibility": "PASS：同一沙盒两次运行结论一致（11.8s / 16.9s 起服务，303+401，端口干净关闭）；日志只落 `log_sha256`，`token=<token>` 脱敏；产物路径为 `<repo>\\sandbox\\…`",
+        "licence": "PASS：只起本机 Host，不注入凭据、不发起外部会话；session token 不进产物；`~/.dsh` 未被读写",
+        "ssot": "PASS：`ns-live-attempt-2026-10-27T21-10-00.000Z.json` 的 `outcome=mounted-host`、`blockers=[]`、`boot.stopped=true`；`next_step.why_not_here` 明确写「Host 已应答 HTTP，但本脚本没有 Remote 客户端，因此没有相位行」——不把挂载当作相位采样",
+        "adversary": "反例：① 跟随重定向探 HTTP → 会把健康的 303 变成假 401（已用 `redirect: manual` 修）；② 只 `child.kill()` → Windows 上端口仍监听（改用 `taskkill /T` + 端口判据）；③ 不传 `--boot` → 仍是 `composed-only`，不会冒充 `mounted-host`；④ token 曾被写进产物 → 现固定脱敏，并由 `results-privacy` 门兜底"
+      },
+      "real_test": {
+        "command": "node scripts/probe_live_sample.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --boot --stamp 2026-10-27T21:10:00.000Z",
+        "artifact": "data/results/ns-live-attempt-2026-10-27T21-10-00.000Z.json",
+        "sha256": "d36049b2ff32cecd9416fb04009f6bb928a26c418c7dfcaf92c3f23dcfae7685",
+        "outcome": "outcome=mounted-host · ready 11.8s · HTTP 303（带 token）/ 401（无 token）· 端口干净关闭 · rows 仍为空（缺 Remote 客户端）"
+      }
+    },
+    {
+      "id": "R11-S3",
+      "batch": "R11",
+      "step": "R11 收尾：环境结论写回交接文档（HANDOFF / INDEX / AGENTS / 07-environment），门禁全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/07-environment.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：HANDOFF §2 新增「环境（本轮新解锁）」一行（191 条 compose / 11.8s / 303+401 / 干净关闭），§3 第一件事改为 T-201 P1 并写明环境已就绪，§8 把 blocker 从「profile 无 node_modules」改写为「缺 Remote 客户端」；07 §4b 的沙盒路径改为仓内并附实测数字",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T21:30:00.000Z` 落 35 产物全部被引用（`no-orphan-results` 自报 35）；沙盒在 `.gitignore` 里，`git status` 只显示预期改动",
+        "licence": "PASS：文档只描述本机安装的公开包；沙盒不入库；无新许可义务",
+        "ssot": "PASS：`audit/step_reviews.json` 43 步全绿；`data/results` 的 `upstream-0.2.1-rc.4-*` 与 `ns-live-attempt-2026-10-27T21-10-00.000Z` 均被 R11-S1/S2 引用",
+        "adversary": "反例：① INDEX 里写 `sandbox/upstream/<version>/`（占位符不是真路径）→ `governance/index-references` 红，本轮实际踩到并按「只写真实存在的路径」修正；② 若把 `mounted-host` 说成「已采到相位」→ 与产物 `rows: []` 矛盾；③ 若删掉 `sandbox/` 而不改文档 → 下一任 agent 会按不存在的路径排查"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T21:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T21-30-00.000Z.json",
+        "sha256": "5a75342f1531343a34e477c928b61c2ee7b07c2e4f030a9250c60137c4062967",
+        "outcome": "ALL GREEN · 9 gates（ok=true；含 governance/index-references 对本轮新增文档引用的校验）"
+      }
+    },
+    {
+      "id": "R11-S4",
+      "batch": "R11",
+      "step": "R11 负对照：9/9 门仍能被注入违规打红",
+      "changed": [
+        "scripts/gate.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`--mutate` 下每道门都 exit 1（`gates-mutate-*` 里 9 条 `exitCode:1`、`ok:true`），说明本轮的环境/脚本改动没有让任何门变成空转",
+        "reproducibility": "PASS：同一命令重跑结论一致；产物只记 exitCode 与 id，不含时长，可逐字节比较",
+        "licence": "PASS：负对照只在本机注入违规，不触碰外部资源",
+        "ssot": "PASS：`gates-mutate-2026-10-27T21-35-00.000Z.json` 与 R11-S1/S2/S3 的产物并列，全部被步骤引用（无孤儿）",
+        "adversary": "反例：若某道门在本轮改动后变成「永远绿」，`--mutate` 会显示 MISSED 并让套件 exit 1；本轮 9/9 CAUGHT"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T21:35:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T21-35-00.000Z.json",
+        "sha256": "4e4ab8d5f3fc3d7e0aabfa393b52a46138db702d4b2884072180e1ac8d4b8367",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }

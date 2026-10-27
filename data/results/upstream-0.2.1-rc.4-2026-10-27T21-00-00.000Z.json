@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/bootstrap_upstream.mjs",
+  "generated_at": "2026-10-27T21:00:00.000Z",
+  "status": "ok",
+  "note": "runtime + bootable profile installed; phases still need a mounted Host (see probe_live_sample.mjs)",
+  "limits": [
+    "composing a profile is declaration-only: phases need a mounted Host (T-201)",
+    "no credentials are copied or injected; nothing outside the repo sandbox is written",
+    "the sandbox is git-ignored: `rm -rf sandbox/` resets it, and it must never be committed"
+  ],
+  "requested_version": "0.2.1-rc.4",
+  "sandbox": {
+    "root": "sandbox\\upstream\\0.2.1-rc.4",
+    "install": "sandbox\\upstream\\0.2.1-rc.4\\install",
+    "dsh_home": "sandbox\\upstream\\0.2.1-rc.4\\home",
+    "profile": "upstream"
+  },
+  "dry_run": false,
+  "profile_dependencies": {
+    "status": "installed",
+    "detail": "profile node_modules written"
+  },
+  "compose": {
+    "status": "ok",
+    "entries": 191,
+    "stdout_sha256": "c5286c542ddc14f85e18ddbfcde891956d1136c7928579df4daae097e558a356"
+  },
+  "registry": {
+    "tarball": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.1-rc.4.tgz",
+    "integrity": "sha512-8gxl6zOi6vx1sDolH+vjh9txrpbXD+t74Z2YfWkEBtR3xP2YEtk0bbLkgLZRnYQgDxCoXitXyXDKn5k0+6iXrg=="
+  },
+  "inventory": {
+    "package": "@deepseek-ai/dsh-host-plugin-inventory",
+    "version": "0.2.1-rc.4",
+    "remote": "pluginInventory/list",
+    "fiber_phase": [
+      null,
+      "failed",
+      "pending",
+      "active",
+      "loading",
+      "unloading"
+    ]
+  },
+  "smoke": {
+    "status": "ok",
+    "output": "0.2.1-rc.4"
+  },
+  "checks": [
+    {
+      "id": "registry",
+      "ok": true,
+      "detail": "published https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.1-rc.4.tgz"
+    },
+    {
+      "id": "npm-install",
+      "ok": true,
+      "detail": "installed"
+    },
+    {
+      "id": "installed-version",
+      "ok": true,
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "profile-deps-install",
+      "ok": true,
+      "detail": "installed"
+    },
+    {
+      "id": "plugin-inventory-present",
+      "ok": true,
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "pluginInventory/list",
+      "ok": true,
+      "detail": "<sandbox>\\install\\node_modules\\@deepseek-ai\\dsh-host-plugin-inventory\\lib\\typert.remote-client.js"
+    },
+    {
+      "id": "fiberPhase",
+      "ok": true,
+      "detail": " | failed | pending | active | loading | unloading"
+    },
+    {
+      "id": "dsh --version",
+      "ok": true,
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "profile-composes",
+      "ok": true,
+      "detail": "191 entries"
+    },
+    {
+      "id": "profile-dependencies",
+      "ok": true,
+      "detail": "mounted-ready"
+    }
+  ]
+}

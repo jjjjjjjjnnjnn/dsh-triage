@@ -152,3 +152,17 @@
 - 人工决策：HUMAN 只说「继续」，范围由 HANDOFF §3 的三选一确定（T-202 / T-109+T-115 / T-112，本轮在环境可信后选第二条）
 - SessionID：待 HUMAN 回填
 - 备注：registry 事实是**快照**，不解释「为什么标签是旧的」，也不能说明最新构建在你的运行时上能用；`deprecated` 只排除、不解释原因（登记 `BS-18`）
+
+### 2026-10-27 R11｜环境解锁：DSH 本体 + 依赖装进仓内沙盒，并把 Host 真切起来一次
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- 范围：`scripts/{bootstrap_upstream,probe_live_sample}.mjs`、`.gitignore`（新增 `sandbox/`）、`docs/07-environment.md`、`docs/HANDOFF.md`、`INDEX.md`、`AGENTS.md`、`audit/step_reviews.json`、`data/results/{upstream-0.2.1-rc.4-2026-10-27T21-00-00.000Z,ns-live-attempt-2026-10-27T21-10-00.000Z,gates-2026-10-27T21-30-00.000Z,gates-mutate-2026-10-27T21-35-00.000Z}.json`
+- 起因：HUMAN 指令「先下载依赖以及 DSH 本体用于测试；所有项目文件必须放在项目文件夹中」
+- 结果：① 沙盒从 `%TEMP%` 迁到 `<repo>/sandbox/upstream/<version>/`（git 忽略，可随时删）；② `bootstrap_upstream.mjs` 新增 `--root` 与 `--with-profile-deps`（后者装 profile 自己的 `node_modules`，即 R9 记录的 mount blocker），并新增 compose 条目数与 `profile-dependencies` 两项证据；③ `probe_live_sample.mjs` 新增 `--boot`：真起 `dsh web`、抽 URL、探 HTTP、`taskkill /T` 收尾，`outcome` 增 `mounted-host`、`sample.kind=live-mount`
+- 实测（0.2.1-rc.4）：runtime + profile 依赖装好（compose **191** 条）→ Host **11.8s** 起服务 → 带 token **303**（token→cookie 重定向）、无 token **401** → 端口干净关闭
+- 关键结论：blocker 从「环境不可挂载」推进到「缺 `pluginInventory/list` 的 Remote 客户端」；**相位行仍未读到**（产物 `rows: []`，不冒充 live 样本）
+- 门禁：`verify` **124 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`step_reviews` **43 步**
+- 过程中的真实缺陷：① 探 HTTP 跟随重定向（303+Set-Cookie → 假 401），改 `redirect: 'manual'`；② Windows 上 `child.kill()` 杀不掉 `dsh web`（端口仍监听），改 `taskkill /pid … /T /F` 并以「端口不再应答」为判据；③ 无 token 的 URL 用错正则拼出 `//` 得到 400，已修；④ `INDEX.md` 写了占位路径 `sandbox/upstream/<version>/` 被 `governance/index-references` 打红，已改
+- 人工决策：HUMAN 指定「下载依赖 + DSH 本体用于测试」「所有项目文件放仓内」
+- SessionID：待 HUMAN 回填
+- 备注：沙盒不入库；session token 不进产物（`token=<token>`）；`~/.dsh` 未被读写；`mounted-host` ≠ 相位采样，B1/B2 仍未关闭

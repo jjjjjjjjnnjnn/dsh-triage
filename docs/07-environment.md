@@ -51,24 +51,32 @@ node scripts/scan_env.mjs
 # 真实案例复现（隔离沙盒，输入已固化在 data/cases/<ID>/）
 node scripts/record_case.mjs --case CASE-11080
 
-# 0.2.x 隔离运行时（不写 ~/.dsh；可随时删）
-node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.3
+# 0.2.x 隔离运行时（仓内沙盒，不写 ~/.dsh；`--with-profile-deps` 让它可挂载）
+node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.4 --root sandbox --with-profile-deps --stamp <iso>
+
+# 挂载实测（起 Host → 探 HTTP → 杀掉；产物是 sample.kind=live-mount）
+node scripts/probe_live_sample.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home \
+     --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --boot --stamp <iso>
 
 # 门禁负对照（每道门都必须 FAIL）
 node scripts/gate.mjs --mutate
 ```
 
-## 4b. 0.2.x 沙盒（M2 前置）
+## 4b. 0.2.x 沙盒（M2 前置，现在在仓内）
 
-本机 profile 是 `0.1.0-rc.6`，没有 `pluginInventory`。运行时信号只能在隔离环境里开发：
+本机 profile 是 `0.1.0-rc.6`，没有 `pluginInventory`。运行时信号只能在隔离环境里开发。**沙盒已迁进仓内**（`sandbox/`，git 忽略），因为它的用途就是边开发边看，放 `%TEMP%` 会被顺手清掉：
 
 | 项 | 值 |
 |---|---|
-| 位置 | `%TEMP%\dsh-triage-env\<version>\`（`install/` 装包，`home/` 是 `DSH_HOME`） |
-| 建立 | `node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.3` |
-| 证据 | `data/results/upstream-<version>-<stamp>.json` + `.sha256`（含安装版本、`pluginInventory` 存在性、`fiberPhase` 枚举、`dsh --version` 冒烟） |
-| 清理 | 直接删 `%TEMP%\dsh-triage-env` |
-| 边界 | 不注入任何真实凭据；不改真实 `~/.dsh`；不作安全结论 |
+| 位置 | `<repo>/sandbox/upstream/<version>/`（`install/` 装包，`home/` 是 `DSH_HOME`） |
+| 建立 | `node scripts/bootstrap_upstream.mjs --version 0.2.1-rc.4 --root sandbox --with-profile-deps --stamp <iso>` |
+| `--with-profile-deps` | 给 profile 装自己的 `node_modules`。**没有它，profile 只能 compose、不能 mount**（这正是 R9 记录的 blocker） |
+| 证据 | `data/results/upstream-<version>-<stamp>.json` + `.sha256`（安装版本、`pluginInventory` 存在性、`fiberPhase` 枚举、`dsh --version`、compose 条目数、profile 依赖状态） |
+| 挂载实测 | `node scripts/probe_live_sample.mjs --dsh-home sandbox/upstream/<v>/home --profile upstream --install sandbox/upstream/<v>/install --boot --stamp <iso>` → `data/results/ns-live-attempt-<stamp>.json` |
+| 清理 | `rm -rf sandbox/`（不涉及 `~/.dsh`） |
+| 边界 | 不注入任何真实凭据；不改真实 `~/.dsh`；不作安全结论；日志只存哈希，session token 不进产物 |
+
+**已实测（2026-10-27，`0.2.1-rc.4`）**：runtime 安装 + profile 依赖就位（compose 191 条）→ `dsh web` **11.8s 起服务**、带 token 303（token→cookie 重定向）、不带 token 401、`taskkill /T` 后端口关闭。**相位行仍未读到**：缺的是 `pluginInventory/list` 的 Remote 客户端（T-201 P1），不是环境。
 
 ## 5. 已知环境陷阱
 

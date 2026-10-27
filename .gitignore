@@ -8,12 +8,14 @@ packages/*/lib/
 # --- local runtime scratch (never committed) ---
 .env
 .env.*
-!.env.example
+!/.env.example
 *.log
 coverage/
 .tmp/
 probe-work/
 local/
+# Repo-internal DSH sandbox (upstream runtime + profile deps for live testing).
+sandbox/
 
 # --- OS / editor ---
 .DS_Store

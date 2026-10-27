@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/probe_live_sample.mjs",
+  "generated_at": "2026-10-27T21:10:00.000Z",
+  "sample": {
+    "kind": "live-mount",
+    "profile": "upstream",
+    "dsh_home": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\home",
+    "declared_range": "0.2.1-rc.4",
+    "observed_runtime": "0.2.1-rc.4",
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app"
+    ]
+  },
+  "outcome": "mounted-host",
+  "blockers": [],
+  "evidence": [
+    {
+      "id": "profile-manifest",
+      "ok": true,
+      "detail": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\home\\profiles\\upstream\\package.json"
+    },
+    {
+      "id": "profile-dependencies-installed",
+      "ok": true,
+      "detail": "profile=true shared=false"
+    },
+    {
+      "id": "dsh-binary",
+      "ok": true,
+      "detail": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\.bin\\dsh.cmd"
+    },
+    {
+      "id": "dsh-runs",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "profile-composes",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "host-mounts",
+      "ok": true,
+      "detail": "ready in 11.8s"
+    },
+    {
+      "id": "host-answers-http",
+      "ok": true,
+      "detail": "with token 303 (303 = token→cookie redirect), without token 401 (auth rejected)"
+    },
+    {
+      "id": "host-stopped",
+      "ok": true,
+      "detail": "socket closed after tree kill"
+    }
+  ],
+  "cli": {
+    "version": {
+      "exit_code": 0,
+      "stdout_sha256": "8d9eae93f7a3ed0c60bfd30edfbddf2cb4843775e00913f3cf947a74f301c524",
+      "stdout_lines": 1,
+      "stdout_first_line": "0.2.1-rc.4",
+      "stderr_first_line": ""
+    },
+    "dump_config": {
+      "exit_code": 0,
+      "stdout_sha256": "c5286c542ddc14f85e18ddbfcde891956d1136c7928579df4daae097e558a356",
+      "stdout_lines": 1231,
+      "stdout_first_line": "# == @deepseek-ai/dsh-base",
+      "stderr_first_line": ""
+    }
+  },
+  "boot": {
+    "status": "mounted",
+    "seconds_to_ready": 11.8,
+    "url": "http://127.0.0.1:3080/?token=<token>",
+    "http_with_token": 303,
+    "http_without_token": 401,
+    "stopped": true,
+    "log_sha256": "694c829a4ec8b29726ce5b7175e090c03a7a6d33c2bb6bd88e8e61c96da54f65",
+    "error_first_line": ""
+  },
+  "next_step": {
+    "requirement": "a loader projection from the mounted Host: either an in-process read of ctx.loader.entries() or a pluginInventory/list Remote call (T-201 P1)",
+    "why_not_here": "the Host is up and answering HTTP, but this script has no Remote client, so no phase rows were read",
+    "reference": "docs/specs/M2-inventory.md §4 (P1)"
+  },
+  "rows": []
+}
