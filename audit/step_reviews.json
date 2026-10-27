@@ -1979,6 +1979,60 @@
         "sha256": "e052acd9d736ffe67ca40cabb0759adb20a4a8cc3c4fae136ac636f8ed42a22a",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 190）"
       }
+    },
+    {
+      "id": "R16-S1",
+      "batch": "R16",
+      "step": "渲染跨平台的口径纠正 + CI 真浏览器作业 + 控制面设计（ADR-0005 / M4-surface）",
+      "changed": [
+        ".github/workflows/ci.yml",
+        "docs/adr/0005-render-backends.md",
+        "docs/specs/M4-surface.md",
+        "packages/probe/src/render.ts",
+        "docs/specs/M3-probe.md",
+        "docs/HANDOFF.md",
+        "README.md",
+        "README.zh-CN.md",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：查 runner 镜像清单（Ubuntu 24.04 / image 20261023.334.3）确认预装 Chrome 155 / Chromium 155 / Edge 155 / xvfb，因此「Linux CI 没浏览器」这个前提本身是错的，不是能力边界。CI 新增 `render-control`：先断言 runner 真有浏览器（缺了明确失败，不静默降级成 unmeasured），再跑 blank / rendered / error 三份对照，产物写 `$RUNNER_TEMP`（CI 不污染 SSOT）。`findBrowser` 补 `/usr/bin/google-chrome-stable` 与 `/opt/google/chrome/chrome`",
+        "reproducibility": "PASS：三条对照命令在本机用同一 `--out` 形式复跑过（blank 3239ms / rendered 1207ms）；`--out` 落 SSOT 的那一份已进 data/results 并被本步引用，`.sha256` 由脚本同写",
+        "licence": "PASS：不引入新依赖（继续用系统浏览器）；ADR-0005 明确否决 playwright/puppeteer、打包 Chromium、Electron 三条路；设计稿引用的上游契约只读源码，不复制代码",
+        "ssot": "PASS：`ADR-0005` 与 `M4-surface.md` 登记进 INDEX/AGENTS；docs/05、M3-probe §9 的「CI 只能 unmeasured」措辞已改；HANDOFF 的坑表加了一条「以为 CI 没浏览器」并指向 ADR",
+        "adversary": "反例（本轮最重要的一条）：我们**自己写错过一条能力边界**——把「CI 没有浏览器」当成事实写进 HANDOFF/README/spec，并据此设计了「只能 unmeasured」。证据是 runner 镜像清单。处置：改口径 + 加 CI 作业，让这条事实每轮被机器复核。另一反例：CI 作业若某天镜像不再带浏览器会红——这是正确的失败方向（比静默降级好），但要在 ADR 里写明「红=修环境或换 browser-actions/setup-chrome」，不能改成 skip"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp 2026-10-27T14:02:15.000Z（与 CI 的 `render-control` 作业同一命令，只是产物落 data/results）",
+        "artifact": "data/results/render-fixture-blank-2026-10-27T14-02-15.000Z.json",
+        "sha256": "2c2df26fe49a4f983eda68f357d4db49f1d3d8a7fff27e5c0dfed1a0b85563fa",
+        "outcome": "blank：200 + 空挂载点被判 blank（mount point \"root\" has no children），3239ms —— CI 每轮跑的三份对照之一"
+      }
+    },
+    {
+      "id": "R16-S2",
+      "batch": "R16",
+      "step": "设计批收尾：190 测试 / 9 门 / mutate 9/9，把口径纠正后的状态落成产物",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/specs/M3-probe.md",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS：改动只涉及文档口径 + CI 配置 + findBrowser 路径，190 测试与 9 门仍全绿；渲染判定本身没有改语义（只补了两条 Linux 浏览器路径）",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T14:05:00.000Z` 可重放；CI 作业的产物写 `$RUNNER_TEMP`，不会与 SSOT 互相污染",
+        "licence": "PASS：零新依赖、零网络调用；引用的上游契约只读源码",
+        "ssot": "PASS：`data/results` 69 产物全部被 81 步台账引用；ADR-0005 与 M4-surface 在 INDEX/AGENTS 都有入口",
+        "adversary": "反例：CI 作业依赖 runner 镜像自带浏览器——如果 GitHub 改镜像，作业会红。我们没有把它改成 `continue-on-error`（那等于把证据变装饰）；ADR-0005 写明处置是「修环境或换 setup-chrome」，不是 skip"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T14:05:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T14-05-00.000Z.json",
+        "sha256": "d126df0012682a4fabdde32653e67a52f15686c555f9361ac3a62946055d5cb9",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9 CAUGHT；pnpm test = 190）"
+      }
     }
   ]
 }

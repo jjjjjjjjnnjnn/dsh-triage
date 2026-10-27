@@ -26,7 +26,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 🟡（R15：白屏可判、就绪有判据；namespace-diff 仍缺）** |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
-| CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
+| CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · **`render controls (ubuntu, real browser)`（R16）** · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
 | 规模 | **190 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **10 份 probe/render 真机产物（R15：5 绿 2 红 3 对照）** · **80 步台账** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R15 起 **80 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
 | 本轮交付 | **① T-302 白屏判定**：`packages/probe/src/render.ts`（`judgeRender` 纯函数 + `findBrowser` + CDP `renderUrl`，零新依赖）；`client-rendered` 从恒 `unmeasured` 变成**真判据**（真机 289 字符 / `readyState=complete`）；无浏览器 → `unmeasured` 且结论不变。**② T-306 就绪换源**：端口取 Host 自打印的 URL，`cleanup` 证明它用过的**所有**端口都关，端口不一致出 `probe.port-mismatch`。**③ T-305 真实分母**：`record_probe --resolved`（license/integrity/unpackedSize/tarball）+ lockfile 指纹 + `--browser`/`--registry`；真装 `dsh-plugin-model-proxy@0.1.6` 成功、E404/版本不存在两种 `blocked`。**④ ADR-0004**：外部候选只在临时沙盒执行、pin 版本、不 vendor、不判安全。**⑤ 三个真发现**：装成功≠走网络（F18）、env 级 registry 覆盖被 launcher 中和（F19）、元数据分不出 E404/ETARGET（F20） |
@@ -34,6 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-28_R14.md`（上一轮）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3`（R15 的四轴结论在 `step_reviews.json` R15-S1…S10） |
 | 未通过的门槛 | **D2 仍未判定**：R15 的真实启动 5 次是 **7.7 / 7.7 / 8.2 / 8.7 / 15.8s**（15.8s 是首次冷启），清理 7/7，失败路径 2/2 —— 样本只有 **n=5 真实启动、n=2 真实失败形状**，**不够**判「≥90%」。`T-305b`（私有源形状）与 `T-303`（namespace-diff）仍未做 |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）；probe 沙盒在 `%TEMP%/dsh-triage-probe/<slug>`、渲染 profile 在 `%TEMP%/dsh-triage-render*`，跑完必删。本机浏览器：Chrome 154 / Edge 146（**`--dump-dom` 在本机不可用，必须走 CDP**） |
+| 交接快照（R16 设计批） | `ADR-0005`（渲染后端）+ `docs/specs/M4-surface.md`（本地面板 / DSH 设置面板 / SEA exe）+ CI 新增 `render-control` 作业（ubuntu 真浏览器，三份对照）；**更正**：R14/R15 说的「Linux CI 没浏览器」是错的（runner 镜像自带 Chrome/Chromium/Edge） |
 | 交接快照（R15 收尾） | `git status` 干净；`pnpm run verify` = **190 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **68 产物**全部被 `audit/step_reviews.json`（80 步）引用 |
 | 交接快照（R14 收尾） | R14 = `806f770` + `b29e658` + `1a353ab`；166 测试 / 9 门；54 产物 / 66 步 |
 
@@ -48,10 +49,10 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**四选一**（都不需要新许可）：
 
-1. **T-305b 私有源 / 不可达 registry 的真实失败形状**：R15 已证明 env 级 `NPM_CONFIG_REGISTRY` 会被 launcher 中和（F19），要出这个形状必须走 profile 级 `.npmrc` 或 launcher 自己的 registry 配置；做完 D2 的「失败形状」才算齐。
-2. **T-303 probe 的 `namespace-diff` 断言**：需要 T-202a 的会话作用域；进程级探针只看到全局层（`BS-21`）。先读铁律 4，要真实会话必须出 ADR + HUMAN 签。
-3. **T-304 probe 对「用户自己的组合」取样**：现在只测空模板 profile，回答不了「加到**我的**组合里会不会挂」。
-4. **T-114 `triage bisect`**：前置（稳定启停一次 boot）已满足；把「哪一行让 Host 起不来」变成二分收敛。
+1. **M4 形态 A：`dsh-triage serve` 本地面板**（设计已就绪：`docs/specs/M4-surface.md` §2）：零依赖 HTTP + 内联页面，只读展示 audit/probe/SSOT；`--allow-execute` 才允许 `POST /api/probe`（负对照：未授权 403）。这是「exe 控制面板」的低成本前置，先证明用户愿不愿意点开面板。
+2. **T-305b 私有源形状**：R15 已证明 env 级 `NPM_CONFIG_REGISTRY` 被 launcher 中和（F19）；要出失败形状必须走 profile 级 `.npmrc`。先做一次 spike（建 profile → 写 `.npmrc` → `dsh plugin add`），再决定是否落脚本。
+3. **D2 样本量**：现在 n=5 真实启动 / n=2 失败形状。设计一个 `record_probe_matrix.mjs`（N 个 pin 候选，逐条落 SSOT + 汇总成功率/耗时分布），把分母做到 ≥10 再谈 ≥90%。
+4. **T-303 / T-202a**：仍被铁律 4 挡着（会话作用域需要真实凭据），必须先出 ADR 让 HUMAN 签。**不要**用「进程级工具清单」冒充它。
 
 **D2 提醒**：现在有 `n=5` 真实启动（7.7–15.8s）与 `n=2` 真实失败形状，**还不够**判「≥90%」。别用 R15 的数字对外宣布 D2 通过；要判就先补样本量（至少 10 次真实启动 + 5 种失败形状）并把分布写进产物。
 
@@ -119,6 +120,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 自己的插件装上了却什么都没挂载，日志只有一行 `patch: entry "x" not found` | bundle 的 `cordis.patch.yml` 用了 `- id: x` 形态——那是**修改**已有 entry，不是插入；上游对未知目标口头警告后跳过（schema `includePatch` 原文） | 必须 `- insert:`；门 `namespace` 的 `rows-are-inserted` 已把这条钉死（R14 实测发现，我们自己也踩了） |
 | probe 明明起了服务，HTTP 检查却全 `fetch failed` | 采样后立刻 `taskkill`，端口已经没了；就绪探测打在死端口上 | 就绪探测必须在杀树**之前**（`host.ts`：采样 → settle → 探测重试 → 杀树），R14 真机抓到 |
 | probe 一跑就把用户浏览器弹出来 | Host 默认 `open` 浏览器，探针是后台进程 | app 参数加 `--no-open`；`--port` 也是 app 参数（launcher flag 与 app 参数位置别混） |
+| 以为 CI 里没有浏览器，渲染断言只能 `unmeasured` | **前提错了**：GitHub ubuntu-latest 预装 Chrome/Chromium/Edge + xvfb（runner 镜像清单实测） | `ADR-0005`；CI 新增 `render-control` 作业跑三份对照，缺浏览器时**明确失败**而不是静默降级 |
 | `dsh --profile <p> web --port N` 报 `too many arguments` | app 名不能当参数再给一次；profile 自己决定 app | 直接 `dsh --profile <p> --port N --no-open`，端口透传给 app |
 | 以为 `chrome --headless --dump-dom URL` 能拿 DOM，结果 0 字节 + 挂满 60s | 本机 Chrome 154 / Edge 146 上 `--dump-dom` 与 `--screenshot` 都失效（不是参数写错） | 走 CDP：`--remote-debugging-port=0` + `<profile>/DevToolsActivePort` + `Runtime.evaluate`；Node 22 内置 `WebSocket` 就够（`packages/probe/src/render.ts`） |
 | `mkdtempSync(join(root,'x-'))` 报 ENOENT | 父目录不存在时 mkdtemp 不会替你建 | 先 `mkdirSync(root,{recursive:true})`（render.ts 踩过） |

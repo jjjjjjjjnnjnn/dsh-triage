@@ -207,5 +207,5 @@ runtime → install → boot → http → render → inventory → cleanup
 | `namespace-diff`（T-303） | 需要 agent/preset 作用域（T-202a），仍 `unmeasured` |
 | 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归；`24 字符` 的真实样本证明阈值不能更高（`probe-registry-ok-…`）。canvas/icon-only 面板 → `inconclusive`（不冤枉，也不放行） |
 | 渲染的耗时 | 15s 是**循环预算**；阻塞渲染器的实测总耗时 15.0s（命令级超时 + 剩余预算封顶），启动/清理另计约 0.5–2s。数字进 `timings.renderMs`，不进 20s 口径 |
-| 引擎差异 | 只在 Windows + Chrome 154 / Edge 146 上测过；Linux CI 没有浏览器 → 该断言在 CI 里只能是 `unmeasured`（单测用注入 DOM，不跑浏览器） |
+| 引擎差异 | Windows（Chrome 154 / Edge 146）+ **Linux CI（ubuntu-latest 自带 Chrome 155）** 都跑过同一套对照（`ADR-0005`）；CI 作业 `render-control` 每轮跑 `blank`/`rendered`/`error` 三份，产物写 `$RUNNER_TEMP`（不污染 SSOT） |
 | 多候选 / 矩阵模式 | 不做（一次一个候选，`bisect` 由 T-114 负责） |

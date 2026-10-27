@@ -49,11 +49,52 @@ jobs:
       - run: pnpm run test
       - run: pnpm run gate
 
-  negative-control:
-    name: gates can fail
+  # R16: the render check (T-302) was only ever measured on Windows. GitHub's ubuntu
+  # runners ship Google Chrome, so the detector is proven on Linux too — and a runner image
+  # change fails loudly instead of silently degrading every render assertion to `unmeasured`.
+  # Artifacts go to $RUNNER_TEMP: CI must never write into data/results (that is SSOT).
+  render-control:
+    name: render controls (ubuntu, real browser)
     runs-on: ubuntu-latest
     needs: verify
     steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - name: the runner must actually have a Chromium-family browser
+        run: |
+          for candidate in google-chrome google-chrome-stable chromium chromium-browser microsoft-edge; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "browser=$candidate"
+              exit 0
+            fi
+          done
+          echo "::error::no Chromium-family browser on this runner: the render check would silently report unmeasured"
+          exit 1
+      # A white screen must be caught, and a healthy page must pass: one control alone can
+      # be satisfied by a detector that is always red (or always green).
+      - name: a 200 response with an empty mount point must be caught
+        run: node scripts/record_render_fixture.mjs --mode blank --expect blank --out "$RUNNER_TEMP/render"
+      - name: a mounted page must pass
+        run: node scripts/record_render_fixture.mjs --mode rendered --expect rendered --out "$RUNNER_TEMP/render"
+      - name: a browser error page must not be read as a rendered plugin
+        run: node scripts/record_render_fixture.mjs --mode error --expect inconclusive --out "$RUNNER_TEMP/render"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-controls
+          path: ${{ runner.temp }}/render/*.json
+
+  negative-control:
+    name: gates can fail
+    runs-on: ubuntu-latest
+    needs: verify    steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:

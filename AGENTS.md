@@ -51,8 +51,8 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── 00-vision.md 01-competitors.md 02-signal-sources.md
 │   ├── 03-failure-taxonomy.md 04-admission-semantics.md 05-verdict-contract.md
 │   ├── 07-environment.md 08-conventions.md
-│   ├── adr/                       # 决策记录（Result 优先 / 覆写不是撞车 / 零依赖门禁 / 外部候选取用边界）
-│   ├── specs/M0-skeleton.md M1-why.md M2-inventory.md M2-capabilities.md M3-probe.md
+│   ├── adr/                       # 决策记录（Result 优先 / 覆写不是撞车 / 零依赖门禁 / 外部候选取用边界 / 渲染后端）
+│   ├── specs/M0-skeleton.md M1-why.md M2-inventory.md M2-capabilities.md M3-probe.md M4-surface.md
 │   └── market/listing_zh.md       # 上架文案
 ├── packages/
 │   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 与 registry 次要通道 / verdict 组装（纯函数、可离线）

@@ -154,7 +154,7 @@ export function findBrowser(input: BrowserLookup = {}): string | null {
             '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
             '/Applications/Chromium.app/Contents/MacOS/Chromium',
           ]
-        : ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge']
+        : ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/opt/google/chrome/chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge']
   for (const candidate of candidates) {
     if (exists(candidate)) return candidate
   }
