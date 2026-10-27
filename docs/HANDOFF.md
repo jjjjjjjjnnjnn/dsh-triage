@@ -34,6 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-27_R10.md`（本轮）· `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**真机相位样本仍未拿到**——但 blocker 已从「环境不可挂载」变成「缺 Remote 客户端」（见 §8） |
 | **环境（本轮新解锁）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：runtime + profile 依赖已装（compose **191** 条）· `dsh web` **11.8s** 起服务 · 带 token **303**（token→cookie）、无 token **401** · `taskkill /T` 后端口关闭 · 证据 `data/results/upstream-0.2.1-rc.4-2026-10-27T21-00-00.000Z.json` + `data/results/ns-live-attempt-2026-10-27T21-10-00.000Z.json`（`outcome=mounted-host`） |
+| 交接快照（R11 收尾） | R11 = `b92190e`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **35 产物 / 43 步**全被引用；沙盒 `sandbox/` 已被 `.gitignore` 忽略 |
 | 交接快照（R10 收尾） | R10 = `cc76ea0`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **32 产物 / 39 步**全被引用 |
 | 交接快照（R9 收尾） | R9 = `9259515`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **110 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **29 产物 / 36 步**全被引用 |
 
