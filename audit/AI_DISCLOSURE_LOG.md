@@ -49,6 +49,19 @@
 - SessionID：待 HUMAN 回填
 - 备注：仓库为 private；首推后仍需 HUMAN 决定是否转 public 与 npm 发布时机
 
+### 2026-10-27 R8｜开源借鉴：副本来源归因 + 重复副本检测 + 借鉴台账
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 researcher / implementer / verifier / adversary）
+- 范围：`packages/core/src/{duplicates,verdict,index,messages}.ts`、`packages/plugin/src/{load,cli}.ts`、`scripts/record_audit.mjs`（新）、`tests/{unit/duplicates,unit/rows-origin,e2e/duplicates-cli}.test.ts`（新）、`docs/09-open-source-borrowing.md`（新）、`data/results/{audit,gates,gates-mutate}-2026-10-27T12*.json`、`audit/{step_reviews,AUDIT_2026-10-27_R8}.json|md`、`docs/{HANDOFF,BACKLOG,AI_HANDOVER}.md`、`AGENTS.md`、`INDEX.md`、`README*.md`
+- 取证：本轮实抓 7 份权威页面/仓库原文（npm explain、Maven dependencyConvergence、pip check、attw、publint、cargo-semver-checks、VS Code Extension Bisect）；其余来源标 B 级（不作实测证据）
+- 结果：① npm `explain` 式来源归因（`admission-row-declared-by` + `remediation.declared-by`）；② Maven `dependencyConvergence` 式重复副本（`collision-duplicate-copy`，同名不同版本才报，两条路径 + 两个版本）；③ 台账把「已落地 / 只设计 / 明确不做」分档（不做 `npm audit` 式安全扫描、不做作者侧打包 lint）
+- 人工决策：HUMAN 要求「大量借鉴开源逻辑融合进项目」；据此明确**只借机制不抄代码**（若抄须先 quarantine + vendor-manifest）
+- 审核：`audit/AUDIT_2026-10-27_R8.md`（6 向对抗性反例：单副本 / 同版本 / peer 来源 / 假称已做 attw / 假称做安全扫描 / 绝对路径入 SSOT）
+- 门禁：`verify` **91 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`audit/step_reviews.json` 共 29 步
+- 过程中的真实缺陷：`findDuplicateCopies` 一开始把 `env.profileDir` 当 `node_modules` 扫描 → 0 条命中；e2e 直接红，修后单测补上该回归。另两次 `node -e` 在 PowerShell 里被引号吃掉 → 已写入坑表
+- SessionID：待 HUMAN 回填
+- 备注：attw 矩阵 / `triage bisect` / 区间对齐都**只是设计**（T-113/T-114/T-115），前置条件写在 `docs/09` §3，别当成已交付
+
 ### 2026-10-27 R7｜M2-a P2 相位层落地（`audit --snapshot` + 新门 `inventory-contract`）
 
 - 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）

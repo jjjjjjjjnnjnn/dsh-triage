@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R7 (2026-10-27)｜当前批次：**R7 · M2-a P2 相位层落地**（`audit --snapshot` + 新门 `inventory-contract`；75 测试；9 门 9-9）
+> **Stand**: R8 (2026-10-27)｜当前批次：**R8 · 开源借鉴落地（副本来源归因 + 重复副本检测）+ 借鉴台账**（91 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -27,12 +27,12 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中）** · **M2-a P2 ✅ / P1 待真机**（T-201） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **75 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
+| 规模 | **91 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **M2-a P2**：`packages/core/src/inventory.ts`（防御式解析 + 相位→结论映射 + 声明/运行 diff）+ `audit --snapshot` + **新门 `inventory-contract`**（9 门）+ `scripts/render_inventory.mjs` + 13 条测试（单测 10 / e2e 3）；`verdict-contract` 的 messageId 白名单新增 `runtime.*` 命名空间（对齐 R4 已锁 spec，不是放宽阈值） |
-| 证据 | `data/results/inventory-2026-10-27T00-00-00.000Z.json`（5 entries / 1 missing / 1 undeclared / {risky2, blocked1, unknown1}，`sample.kind=synthetic`）· `gates-2026-10-27T00-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 20 个产物、25 个已审步骤 |
-| 审核报告 | `audit/AUDIT_2026-10-27_R7.md`（本轮）· `AUDIT_2026-10-26_R6.md`（含 §10 独立复核）· `R5` · `R4` · `R3` |
-| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 的真机采样未验证**（无 0.2.x 可启动 profile，见 §8） |
+| 本轮交付 | **开源借鉴落地**（台账 `docs/09-open-source-borrowing.md`，14 来源分三档）：① npm `explain` 式**副本来源归因**（`admission-row-declared-by`：「这份副本来自 `dsh-pdf@0.1.0` 的 `dependencies`」）；② Maven `dependencyConvergence` 式**重复副本检测**（`collision-duplicate-copy`，两条路径 + 两个版本）；③ `scripts/record_audit.mjs` 把 audit 写成 SSOT；④ 只设计：T-113 attw 矩阵 / T-114 bisect / T-115 区间对齐；明确不做：`npm audit` 式漏洞扫描、作者侧打包 lint |
+| 证据 | `data/results/audit-2026-10-27T12-00-00.000Z.json`（2 rows / 1 duplicate group / 2 verdicts）· `inventory-2026-10-27T00-00-00.000Z.json`（相位层）· `gates-2026-10-27T12-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 21 个产物、29 个已审步骤 |
+| 审核报告 | `audit/AUDIT_2026-10-27_R8.md`（本轮）· `AUDIT_2026-10-27_R7.md` · `AUDIT_2026-10-26_R6.md` · `R5` · `R4` · `R3` |
+| 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（P1 未实现，见 §8） |
 
 ---
 
@@ -43,15 +43,18 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
-满足即环境可信，接着**二选一**（都不需要新的许可）：
+满足即环境可信，接着**三选一**（都不需要新许可）：
 
-1. **T-112**（`agentPresets` 维度）：同一 entry 在不同 preset 下相位不同，当前保守地不进结论。按 `docs/specs/M2-inventory.md` §3 硬约束 3 实现，先写负对照。
+1. **T-112**（`agentPresets` 维度）：同一 entry 在不同 preset 下相位不同，当前先出 `unknown`/`runtime.preset-unjudged`。按 `docs/specs/M2-inventory.md` §3 硬约束 3 实现，先写负对照。
 2. **T-202**（namespace 快照）：`tools/commands/settings/skills` 的运行期快照，落 `data/results/ns-*.json` + 哈希。
+3. **T-107 / T-108 / T-109**（R6 的三个真缺口）：无声明行静默、`dsh.compatibility` 未读、dist-tag 失步。
+
+**想继续从开源里借**：`docs/09-open-source-borrowing.md` 先看，再动 T-113（attw 矩阵，前置是沙箱实测 loader 解析模式）/ T-114（bisect，前置是 M3 probe）/ T-115（区间对齐，与 T-109 合并）。**借机制不抄代码**，真抄要先进 `quarantine/` + `vendor-manifest`。
 
 先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
 
-> D1 已于 R6 通过（9/10，见 `data/results/d1-2026-10-26T12-00-00.000Z.json`）；M2-a P2 已于 R7 交付（`data/results/inventory-2026-10-27T00-00-00.000Z.json`）。
-> 复核口径两条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp <iso>`。
+> D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付（`data/results/inventory-2026-10-27T00-00-00.000Z.json`）；R8 补了副本来源与重复副本（`data/results/audit-2026-10-27T12-00-00.000Z.json`）。
+> 复核口径三条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`。
 > **P1 与真机相位采样仍阻塞**：本机没有可启动的 0.2.x profile（见 §8）。没有真机样本前，对外只能说「相位表已实现」，不能说「实测过这台机器」。
 
 > 每一步做完，先追加 `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256），再跑 `node scripts/gate_step_review.mjs`。漏了它，`pnpm run verify` 会红。
@@ -85,6 +88,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `npm view`/registry 拿某个具体版本的 manifest 返回 **406** | 只发 `Accept: application/vnd.npm.install-v1+json` 时，版本端点不支持 | 具体版本用 `Accept: application/json`；packument 才用 install-v1 |
 | 新写了一条 `reason`，`verdict-contract` 门报 “messageId must be a catalogue id” | 门里 `MESSAGE_ID` 是**白名单正则**（`admission|collision|runtime|remediation|missing`），新命名空间要同时改门 + `docs/05-verdict-contract.md` | 新增命名空间时三处同改：`messages.ts` 文案、`gate_verdict_contract.mjs` 正则、`docs/05` §契约表；这不是放宽阈值，是对齐已锁 spec |
 | 给 `for (const [a, b] of [...])` 漏了 `]`，Node 只报 “Unexpected token 'of'” | 解构语法；报错位置指向 `of` 容易误导 | 写完 pair 循环先跑 `node --check <file>`（或直接跑一次 `tsc -b`） |
+| PowerShell 里写 `node -e "…中文/单引号/正则…"` 反复报 ParserError | PS 5.1 会先解析一遍单引号与转义，中文和 `'` 很容易被吃掉 | 一次性脚本写成临时 `.mjs`（`%TEMP%\opencode\*.mjs`）再 `node` 执行；R8 两次踩到 |
+| `findDuplicateCopies` 扫出 0 条，明明有两份 | 把 `env.profileDir`（profile 目录）当成了 `node_modules` 传进扫描器 | 扫描器的根必须是 `<profile>/node_modules` 与 `<dshHome>/profiles/node_modules`；R8 的单测抓到了 e2e 没抓到的这处 |
 
 ---
 

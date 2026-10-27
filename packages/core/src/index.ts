@@ -41,6 +41,7 @@ export type { EntryClaim, EntryCollision, RowTarget } from './ledger.js'
 export { extractEntryClaims, findEntryIdCollisions, groupClaimsBySource, parsePatchYaml, rowTargets } from './ledger.js'
 
 export type { AdmissionVerdictInput, CollisionVerdictInput, RowAdmissionInput, RowDeclaration } from './verdict.js'
+export type { InstallOrigin } from './verdict.js'
 export {
   conclusionRank,
   mergeVerdicts,
@@ -49,6 +50,9 @@ export {
   verdictsFromCollisions,
   verdictsFromRowAdmission,
 } from './verdict.js'
+
+export type { CopyLocation, DuplicateCopy, DuplicateCopyInput } from './duplicates.js'
+export { verdictsFromDuplicateCopies } from './duplicates.js'
 
 export type {
   DeclaredRow,

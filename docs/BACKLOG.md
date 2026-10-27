@@ -11,6 +11,9 @@
 | T-109 | npm dist-tag 失步信号进 `check --explain`（T-701 子项） | M2 | implementer | — | 能显示「latest=X / next=Y / 已发布最新=Z」并标 tier；不得据此越级判 blocked | ⬜ R6 发现 F2（`dsh-tools` latest=0.0.1-rc.1 而 0.2.1-rc.x 已发布） |
 | T-108 | 读 `dsh.compatibility.dsh` / `dshReleases` 作为**次要证据** | M2-a | implementer | — | verdict 中与 peer 结论分列；tier 不得越级、不得单独判 blocked；CASE-7590 由 miss 升为 `unknown` + `missingEvidence` | ⬜ R6 独立复核发现 A7 / `BS-13` |
 | T-111 | label 独立签署：`label_verified_by` 字段 + 独立 verifier 流程 | 流程 | verifier + implementer | — | R7 起新案例先由独立上下文复核并签署；`d1_report` 输出已签/未签比例 | ⬜ R6 独立复核发现 A9 / `BS-14`（D1 目前是自证） |
+| T-113 | attw 式「入口可加载性矩阵」：按解析模式 × 入口判定候选包会不会 import 失败 | M2-b | implementer | — | 先在沙箱实测 loader 的解析模式（两种），再实现矩阵；否则会造出假警告 | ⬜ R8 借鉴台账（`docs/09`，attw 仅设计） |
+| T-114 | `triage bisect`：禁用一半行 → 重启 → 收敛（VS Code Extension Bisect 思路） | M3 | implementer | T-301 | 需要稳定启停一次 boot；输出「坏行 + 时间线证据」 | ⬜ R8 借鉴台账（`docs/09`） |
+| T-115 | 版本区间对齐建议：peer 精确钉定 → 上游每次 patch 都会打挂（syncpack 思路） | M2 | implementer | T-109 | 与 T-109 合并设计；只提示不阻断 | ⬜ R8 借鉴台账（`docs/09`） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **P2 已交付（2026-10-27）**：`audit --snapshot` + 门 `inventory-contract` + 13 条测试；**P1 待真机**（需 0.2.x 可启动 profile）；B1/B2 目前只有合成样本 |
@@ -34,7 +37,20 @@
 
 ---
 
-## R7 已交付（本轮，证据见 `data/results/inventory-2026-10-27T00-00-00.000Z.json`）
+## R8 已交付（本轮，证据见 `data/results/audit-2026-10-27T12-00-00.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| 借鉴台账 | `docs/09-open-source-borrowing.md`：14 个来源，分「已落地 / 只设计 / 明确不做」三档，含许可与证据等级 | ✅ |
+| NEW | **副本来源归因**（借 npm `explain` + Maven「paths to dependency」）：行被拒时点名「这份副本来自 `dsh-pdf@0.1.0` 的 `dependencies`」 | ✅ |
+| NEW | **重复副本检测**（借 Maven `dependencyConvergence`）：同名不同版本 → `collision-duplicate-copy`，两条路径 + 两个版本；同版本硬链不算 | ✅ |
+| NEW | `scripts/record_audit.mjs`：把一次 audit（行 + 来源 + 重复副本 + 结论）写成 SSOT | ✅ |
+| 测试 | +15（单测 9 + e2e 3 + 其他回归），总 **91**；9 门 / `--mutate` 9/9 | ✅ |
+| 登记 | 只设计：T-113（attw 矩阵）、T-114（bisect）、T-115（区间对齐）；明确不做：`npm audit` 式漏洞扫描、作者侧打包 lint | ✅ |
+
+---
+
+## R7 已交付（证据见 `data/results/inventory-2026-10-27T00-00-00.000Z.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|

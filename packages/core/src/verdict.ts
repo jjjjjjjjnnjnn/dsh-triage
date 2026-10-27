@@ -191,6 +191,23 @@ export interface RowDeclaration {
   /** Resolved `package.json` of the module; `null` when the package is not installed here. */
   readonly manifest: unknown | null
   readonly version: string | null
+  /**
+   * Installed packages whose *dependency* fields pulled this module's copy into
+   * the profile (the `npm explain` / Maven "paths to dependency" idea).
+   *
+   * WHY: for the shadowing cases (CASE-10364 / CASE-10759) the expensive part was
+   * not knowing the row was denied — the stderr line said that — but finding out
+   * which plugin's `dependencies` placed the stale copy. The source-level reply in
+   * #10364 said exactly this line would have saved the reporter.
+   */
+  readonly declaredBy?: readonly InstallOrigin[]
+}
+
+/** Where an installed copy came from: which package declared it, and in which field. */
+export interface InstallOrigin {
+  readonly name: string
+  readonly version: string | null
+  readonly field: 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
 }
 
 export interface RowAdmissionInput {
@@ -285,13 +302,49 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
     // verdict already covers them, and repeating "fine" for 80 rows is noise.
     if (admission.status !== 'denied') continue
 
+    // Name the copy's origin only when it changes the advice: "install a build
+    // that admits this runtime" is wrong when the copy was dragged in by another
+    // plugin's dependency and nobody asked for it (CASE-10364 / CASE-10759).
+    const declaredBy = (first.declaredBy ?? []).filter((origin) => origin.field !== 'peerDependencies')
+    const shadowReasons: Reason[] =
+      declaredBy.length === 0
+        ? []
+        : [
+            {
+              code: 'admission-row-declared-by',
+              severity: 'info',
+              messageId: 'admission.row-declared-by',
+              params: {
+                module,
+                by: declaredBy.map((origin) => `${origin.name}@${origin.version ?? 'unknown'}`).join(', '),
+                fields: [...new Set(declaredBy.map((origin) => origin.field))].sort().join(', '),
+              },
+            },
+          ]
+    const shadowRemediation: Remediation[] =
+      declaredBy.length === 0
+        ? []
+        : [
+            {
+              kind: 'remove-plugin',
+              messageId: 'remediation.declared-by',
+              params: {
+                module,
+                by: declaredBy.map((origin) => origin.name).join(', '),
+              },
+              note: `"${module}" is in this profile because ${declaredBy
+                .map((origin) => origin.name)
+                .join(', ')} lists it under ${[...new Set(declaredBy.map((origin) => origin.field))].join('/')}; moving it to peerDependencies (or removing the declaring plugin) removes the shadowing copy`,
+            },
+          ]
+
     out.push(
       finish({
         subject,
         env: input.env,
         conclusion: 'blocked',
         confidence: { level: 'high', basis: 'declared' },
-        reasons: [scopeReason, ...admission.unmet.map((requirement) => unmetReason(requirement, runtime))],
+        reasons: [scopeReason, ...shadowReasons, ...admission.unmet.map((requirement) => unmetReason(requirement, runtime))],
         evidence: [
           {
             id: 'admission',
@@ -301,11 +354,24 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
             at: input.generatedAt,
             detail: admission.mode,
           },
+          ...(declaredBy.length === 0
+            ? []
+            : [
+                {
+                  id: 'install-origin',
+                  tier: 'scanned' as const,
+                  source: declaredBy[0]?.name ?? 'profile',
+                  method: 'node_modules-scan',
+                  at: input.generatedAt,
+                  detail: `${module} copy declared by ${declaredBy.map((origin) => `${origin.name} (${origin.field})`).join(', ')}`,
+                },
+              ]),
           rowEvidence,
           runtimeEvidence,
         ],
         remediation: [
           ...remediationForDenial(admission.unmet, runtime, input.env.profile, subject),
+          ...shadowRemediation,
           ...rows.map((row) => ({
             kind: 'disable-entry' as const,
             messageId: 'remediation.disable-entry' as const,

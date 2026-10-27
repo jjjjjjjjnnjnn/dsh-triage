@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R7 (2026-10-27)",
+  "stand": "R8 (2026-10-27)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -619,6 +619,106 @@
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
         "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
         "outcome": "{risky:2, blocked:1, unknown:2}；unknown 含 preset 未判通道与一行「声明有但快照里没有」"
+      }
+    },
+    {
+      "id": "R8-S1",
+      "batch": "R8",
+      "step": "借 npm explain / Maven dependencyConvergence：行级副本来源归因 + 重复副本检测（含 CLI 与 12 条测试）",
+      "changed": [
+        "packages/core/src/duplicates.ts",
+        "packages/core/src/verdict.ts",
+        "packages/core/src/index.ts",
+        "packages/core/src/messages.ts",
+        "packages/plugin/src/load.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_audit.mjs",
+        "tests/unit/duplicates.test.ts",
+        "tests/unit/rows-origin.test.ts",
+        "tests/e2e/duplicates-cli.test.ts",
+        "docs/09-open-source-borrowing.md"
+      ],
+      "review": {
+        "correctness": "PASS：来源归因只在行被拒时输出，且 peerDependencies 不算来源（peer 不落地副本）；重复副本只在「同名 + 版本不同」时成案，同版本硬链与单副本都有负向断言；两条结论都带可复算的 params（by/fields、versions/paths）",
+        "reproducibility": "PASS：扫描在 load.ts（IO 边界），判定在 core（纯函数）；产物 audit-2026-10-27T12-00-00.000Z.json 由脚本生成、路径相对 DSH home、sha256 可重算",
+        "licence": "PASS：只借鉴机制不复制代码（npm/Maven/pip 文档与 README 仅引用）；本仓 MIT，无第三方源码进入 packages/，因此无需 quarantine 登记",
+        "ssot": "PASS：产物含 produced_by/generated_at/schema_version；rows/duplicates/verdicts 三段与 CLI 同源；新增 reason 命名空间落在已允许的 admission.* / collision.* 内",
+        "adversary": "反例：① 只留一份副本 → duplicates 为空且无来源行（e2e 第三条）；② 把副本改成同版本 → 不出结论（单测）；③ 把来源字段写成 peerDependencies → 不输出「declared by」（单测）"
+      },
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T12:00:00.000Z",
+        "artifact": "data/results/audit-2026-10-27T12-00-00.000Z.json",
+        "sha256": "99495e3d7c3648bf5286b91a0c3defc16ad3d959b2e5811af2482571f5b61c59",
+        "outcome": "2 rows · 1 duplicate group · 2 verdicts（tools@0.0.1-rc.1 declared by dsh-pdf@0.1.0 dependencies；profile vs shared 双副本）"
+      }
+    },
+    {
+      "id": "R8-S2",
+      "batch": "R8",
+      "step": "开源借鉴台账：14 个来源的机制/许可/落地状态，并写下「借了但不做」的理由",
+      "changed": [
+        "docs/09-open-source-borrowing.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：每条借鉴都指向本轮真实落地的代码或明确缺口；A 级证据（attw/publint/cargo-semver-checks/npm explain/Maven/pip/VS Code bisect）均本轮实抓原文，其余标 B 级，不把记忆当实测",
+        "reproducibility": "PASS：文档只描述机制与状态，结论可由 R8-S1 的产物与代码复核；无「据说」「可能」式断言",
+        "licence": "PASS：明确写下「不复制代码、若复制先 quarantine + vendor-manifest」；表内标注各来源许可类型（含 GPL/LGPL 仅借鉴概念、不链接代码）",
+        "ssot": "PASS：与 INDEX/README/HANDOFF 的同一套数字（91 测试 / 9 门）对齐；新增文档已在 INDEX 登记（governance 门校验引用存在）",
+        "adversary": "反例：若把「我们做了 npm audit 式扫描」写进文档 → 违反严禁行为 2，文档已在 §3 明确拒绝；若声称 attw 矩阵已实现 → 表中标的是 ⬜ 设计 + 前置条件"
+      },
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T12:00:00.000Z",
+        "artifact": "data/results/audit-2026-10-27T12-00-00.000Z.json",
+        "sha256": "99495e3d7c3648bf5286b91a0c3defc16ad3d959b2e5811af2482571f5b61c59",
+        "outcome": "文档所述机制与本产物一致（来源归因 + 双副本两段均在产物里可见）"
+      }
+    },
+    {
+      "id": "R8-S3",
+      "batch": "R8",
+      "step": "R8 门禁自证：9 门全绿（含 M2-a 相位门与 R8 新增结论），写成可重算产物",
+      "changed": [
+        "audit/step_reviews.json",
+        "packages/core/src/duplicates.ts",
+        "packages/plugin/src/load.ts"
+      ],
+      "review": {
+        "correctness": "PASS：9 门 exit 0；verdict-contract 覆盖了本轮新增的 collision-duplicate-copy / admission-row-declared-by 两条结论（messageId 与 params 都在目录内）",
+        "reproducibility": "PASS：固定 --stamp，产物只含门 id/脚本/退出码；重跑字节一致",
+        "licence": "PASS：门禁零第三方依赖、零网络；产物无路径无凭据",
+        "ssot": "PASS：produced_by=scripts/gate.mjs；与本轮 audit 产物并列，21 个产物全部被引用",
+        "adversary": "反例：把某条新 reason 的 messageId 改成自由文本 → verdict-contract 立刻红（该门要求 messageId 命中目录）；本轮已实测过同类拦截"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T12:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T12-00-00.000Z.json",
+        "sha256": "511bdfd1cb2816f69ec3aa657c1886e5516fb4045a319c04d8ea0445a8b86644",
+        "outcome": "ALL GREEN · 9 gates"
+      }
+    },
+    {
+      "id": "R8-S4",
+      "batch": "R8",
+      "step": "R8 负对照：9/9 门各自被注入违规后必须 FAIL",
+      "changed": [
+        "audit/step_reviews.json",
+        "audit/AUDIT_2026-10-27_R8.md"
+      ],
+      "review": {
+        "correctness": "PASS：每门各注入一种违规，9/9 全部 CAUGHT；套件在 9/9 时 exit 0",
+        "reproducibility": "PASS：--mutate --record 固定 stamp，产物与正常产物分列，可对比",
+        "licence": "PASS：注入只在内存/临时路径，不写源码；产物无路径无凭据",
+        "ssot": "PASS：mode=mutate 与同轮正常产物并列被引用；无孤儿",
+        "adversary": "反例：只跑正常套件无法区分「查过」与「空转」；本条与 R8-S3 成对存在才构成证据（HANDOFF 坑表第 5 条）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T12:00:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T12-00-00.000Z.json",
+        "sha256": "30aef7cfdd3ec3108a2e624862e555e13f75ba91cec85b0063163b6c8487462f",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }
   ]

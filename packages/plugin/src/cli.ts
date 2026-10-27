@@ -32,6 +32,7 @@ import {
   rowTargets,
   verdictFromAdmission,
   verdictsFromCollisions,
+  verdictsFromDuplicateCopies,
   verdictsFromInventory,
   verdictsFromRowAdmission,
   type Conclusion,
@@ -43,7 +44,7 @@ import {
 } from '@dsh-triage/core'
 import { buildProbePlan } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
-import { loadComposition, resolveRows } from './load.js'
+import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -178,6 +179,11 @@ async function commandWhy(flags: Flags): Promise<number> {
   const rows = await resolveRows(env, rowTargets(claims))
   verdicts.push(...verdictsFromRowAdmission({ env, rows, generatedAt: stamp }))
 
+  // Same name, two physical copies (Maven `dependencyConvergence` logic): the
+  // silent variant of CASE-10364, which passes admission and breaks at call time.
+  const duplicates = await findDuplicateCopies(env)
+  verdicts.push(...verdictsFromDuplicateCopies({ env, duplicates, generatedAt: stamp }))
+
   const findings = verdicts.filter((verdict) => (flags.all ? true : verdict.conclusion !== 'go'))
 
   if (flags.json) {
@@ -272,6 +278,8 @@ async function commandAudit(flags: Flags): Promise<number> {
   const grouped = groupClaimsBySource(claims)
   const collisions = findEntryIdCollisions(claims)
   const artifacts = await discoverLocalArtifacts({ root: env.profileDir })
+  const duplicates = await findDuplicateCopies(env)
+  const duplicateFindings = duplicates.filter((duplicate) => duplicate.kind === 'different-versions')
 
   /* --------------------------- runtime inventory --------------------------- */
 
@@ -317,6 +325,11 @@ async function commandAudit(flags: Flags): Promise<number> {
         bytes: artifact.bytes,
         note: artifact.note,
       })),
+      duplicates: duplicates.map((duplicate) => ({
+        name: duplicate.name,
+        kind: duplicate.kind,
+        copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
+      })),
       inventory:
         snapshot === null
           ? null
@@ -344,7 +357,7 @@ async function commandAudit(flags: Flags): Promise<number> {
             },
       errors: composition.errors,
     })
-    return collisions.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+    return collisions.length === 0 && duplicateFindings.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
       ? EXIT_OK
       : EXIT_FINDINGS
   }
@@ -371,6 +384,22 @@ async function commandAudit(flags: Flags): Promise<number> {
     process.stdout.write(`\nlocal artifacts from other tools (${artifacts.length}):\n`)
     for (const artifact of artifacts) {
       process.stdout.write(`  [${artifact.kind}] ${artifact.path} (${artifact.bytes} B) — ${artifact.note}\n`)
+    }
+  }
+  if (duplicates.length > 0) {
+    process.stdout.write(`\nduplicate copies (${duplicates.length}):\n`)
+    for (const duplicate of duplicates) {
+      const versions = [...new Set(duplicate.copies.map((copy) => copy.version ?? 'unknown'))].join(' vs ')
+      const marker = duplicate.kind === 'different-versions' ? 'warn' : 'info'
+      process.stdout.write(`  ${marker}  ${duplicate.name}  (${versions})\n`)
+      for (const copy of duplicate.copies) {
+        process.stdout.write(`      ${copy.scope.padEnd(7)} ${copy.path} @ ${copy.version ?? 'unknown'}\n`)
+      }
+    }
+    if (duplicateFindings.length > 0) {
+      process.stdout.write(
+        '  two physical copies can evaluate module-level state twice (identity split); the declaring plugin should use peerDependencies\n',
+      )
     }
   }
   if (snapshot !== null) {
@@ -409,7 +438,7 @@ async function commandAudit(flags: Flags): Promise<number> {
       }
     }
   }
-  return collisions.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
+  return collisions.length === 0 && duplicateFindings.length === 0 && inventoryVerdicts.every((verdict) => verdict.conclusion === 'go')
     ? EXIT_OK
     : EXIT_FINDINGS
 }

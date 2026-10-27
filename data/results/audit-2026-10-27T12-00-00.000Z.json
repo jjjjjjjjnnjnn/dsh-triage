@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_audit.mjs",
+  "generated_at": "2026-10-27T12:00:00.000Z",
+  "command": "audit",
+  "env": {
+    "dsh": "0.2.1-rc.2",
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "desktop",
+    "profileDir": "~\\profiles\\desktop",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": "0.2.1-rc.2"
+      }
+    ]
+  },
+  "scanned": {
+    "bundles": 0,
+    "rows": 2,
+    "import_targets": 2
+  },
+  "rows": [
+    {
+      "row_id": "tools",
+      "module": "@deepseek-ai/dsh-tools",
+      "source": "patch:profile",
+      "version": "0.0.1-rc.1",
+      "declared_by": [
+        {
+          "name": "dsh-pdf",
+          "version": "0.1.0",
+          "field": "dependencies"
+        }
+      ]
+    },
+    {
+      "row_id": "mcp-client",
+      "module": "@deepseek-ai/dsh-mcp-client",
+      "source": "patch:profile",
+      "version": "0.2.1-rc.2",
+      "declared_by": []
+    }
+  ],
+  "duplicates": [
+    {
+      "name": "@deepseek-ai/dsh-tools",
+      "kind": "different-versions",
+      "copies": [
+        {
+          "scope": "profile",
+          "path": "profiles/desktop/node_modules/@deepseek-ai/dsh-tools",
+          "version": "0.0.1-rc.1"
+        },
+        {
+          "scope": "shared",
+          "path": "profiles/node_modules/@deepseek-ai/dsh-tools",
+          "version": "0.2.1-rc.2"
+        }
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": "0.0.1-rc.1",
+        "kind": "entry"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-row-scope",
+          "severity": "info",
+          "messageId": "admission.row-scope",
+          "params": {
+            "rows": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "source": "patch:profile"
+          }
+        },
+        {
+          "code": "admission-row-declared-by",
+          "severity": "info",
+          "messageId": "admission.row-declared-by",
+          "params": {
+            "module": "@deepseek-ai/dsh-tools",
+            "by": "dsh-pdf@0.1.0",
+            "fields": "dependencies"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "^0.0.1-rc.1",
+            "runtime": "0.2.1-rc.2"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@deepseek-ai/dsh-tools@0.0.1-rc.1",
+          "method": "declared-range",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "peers"
+        },
+        {
+          "id": "install-origin",
+          "tier": "scanned",
+          "source": "dsh-pdf",
+          "method": "node_modules-scan",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "@deepseek-ai/dsh-tools copy declared by dsh-pdf (dependencies)"
+        },
+        {
+          "id": "row",
+          "tier": "declared",
+          "source": "patch:profile",
+          "method": "patch-parse",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "row(s) tools"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\desktop",
+          "method": "profile-scan",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "dsh 0.2.1-rc.2"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile desktop allow-version @deepseek-ai/dsh-tools@0.0.1-rc.1 --dsh-version 0.2.1-rc.2 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "disable-entry",
+          "messageId": "remediation.disable-entry",
+          "params": {
+            "id": "tools",
+            "owners": "patch:profile"
+          },
+          "note": "disable row \"tools\" in patch:profile when @deepseek-ai/dsh-tools is no longer needed"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 1,
+            "runtime": "0.2.1-rc.2"
+          },
+          "note": "1 requirement(s) exclude 0.2.1-rc.2; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.1-rc.2",
+            "profile": "desktop"
+          },
+          "note": "install a plugin build whose declarations include 0.2.1-rc.2 (profile: desktop)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        },
+        {
+          "kind": "remove-plugin",
+          "messageId": "remediation.declared-by",
+          "params": {
+            "module": "@deepseek-ai/dsh-tools",
+            "by": "dsh-pdf"
+          },
+          "note": "\"@deepseek-ai/dsh-tools\" is in this profile because dsh-pdf lists it under dependencies; moving it to peerDependencies (or removing the declaring plugin) removes the shadowing copy"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T12:00:00.000Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@deepseek-ai/dsh-tools",
+        "version": "0.2.1-rc.2",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.2",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "desktop",
+        "profileDir": "~\\profiles\\desktop",
+        "bundles": [],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.2"
+          }
+        ]
+      },
+      "conclusion": "risky",
+      "confidence": {
+        "level": "high",
+        "basis": "scanned"
+      },
+      "reasons": [
+        {
+          "code": "collision-duplicate-copy",
+          "severity": "warn",
+          "messageId": "collision.duplicate-copy",
+          "params": {
+            "name": "@deepseek-ai/dsh-tools",
+            "versions": "0.0.1-rc.1 vs 0.2.1-rc.2",
+            "paths": "profile:profiles/desktop/node_modules/@deepseek-ai/dsh-tools | shared:profiles/node_modules/@deepseek-ai/dsh-tools"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "copy-1",
+          "tier": "scanned",
+          "source": "profiles/desktop/node_modules/@deepseek-ai/dsh-tools",
+          "method": "node_modules-scan",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "profile copy @ 0.0.1-rc.1"
+        },
+        {
+          "id": "copy-2",
+          "tier": "scanned",
+          "source": "profiles/node_modules/@deepseek-ai/dsh-tools",
+          "method": "node_modules-scan",
+          "at": "2026-10-27T12:00:00.000Z",
+          "detail": "shared copy @ 0.2.1-rc.2"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.duplicate-copy",
+          "params": {
+            "name": "@deepseek-ai/dsh-tools",
+            "versions": "0.0.1-rc.1 vs 0.2.1-rc.2"
+          },
+          "note": "keep one copy of \"@deepseek-ai/dsh-tools\" in the profile (the copies are at profile:0.0.1-rc.1, shared:0.2.1-rc.2); a delegating plugin should declare it under peerDependencies instead of dependencies"
+        },
+        {
+          "kind": "report",
+          "messageId": "remediation.report",
+          "note": "two physical copies of one module can evaluate its module-level state twice (identity split), which fails only at call time"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-27T12:00:00.000Z"
+    }
+  ],
+  "errors": []
+}

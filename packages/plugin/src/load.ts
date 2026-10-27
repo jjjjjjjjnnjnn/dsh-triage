@@ -8,9 +8,9 @@
  * first, then the shared `profiles/node_modules` (pnpm `nodeLinker: hoisted`).
  */
 
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import type { EnvFingerprint, RowDeclaration, RowTarget } from '@dsh-triage/core'
+import type { CopyLocation, DuplicateCopy, EnvFingerprint, InstallOrigin, RowDeclaration, RowTarget } from '@dsh-triage/core'
 
 export interface BundleLayer {
   readonly name: string
@@ -163,19 +163,183 @@ export async function resolveRows(
   const cache = new Map<string, { manifest: unknown; version: string | null } | null>()
   const out: RowDeclaration[] = []
 
+  const declarers = await findDeclarers(env, new Set(targets.map((target) => target.module)))
+
   for (const target of targets) {
     const cached = cache.get(target.module)
     const resolved = cached === undefined ? await resolveModuleManifest(env.profileDir, target.module, roots) : cached
     cache.set(target.module, resolved)
+    const declaredBy = declarers.get(target.module)
     out.push({
       rowId: target.rowId,
       module: target.module,
       source: target.source,
       manifest: resolved === null ? null : resolved.manifest,
       version: resolved === null ? null : resolved.version,
+      ...(declaredBy === undefined ? {} : { declaredBy }),
     })
   }
   return out
+}
+
+/* ---------------------------- install provenance ---------------------------- */
+
+const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const
+type DependencyField = (typeof DEPENDENCY_FIELDS)[number]
+
+interface InstalledManifest {
+  readonly name: string
+  /** Path relative to the DSH home, so nothing absolute can leak into SSOT. */
+  readonly relativePath: string
+  readonly dir: string
+  readonly manifest: Record<string, unknown>
+}
+
+/**
+ * Which installed packages declare `modules` under a dependency field?
+ *
+ * This is the `npm explain` idea ("why is this package here?") applied to the
+ * shadowing cases: the useful sentence is not "the row is denied" but "the copy is
+ * here because dsh-pdf lists it under dependencies".
+ */
+export async function findDeclarers(
+  env: EnvFingerprint,
+  modules: ReadonlySet<string>,
+): Promise<ReadonlyMap<string, readonly InstallOrigin[]>> {
+  const out = new Map<string, InstallOrigin[]>()
+  if (modules.size === 0) return out
+
+  const profileManifest = await readManifestRecord(env.profileDir)
+  const installed = [
+    ...(profileManifest === null
+      ? []
+      : [{ name: String(profileManifest['name'] ?? '(profile)'), version: readVersion(profileManifest), manifest: profileManifest }]),
+    ...(await listInstalledPackages(join(env.profileDir, 'node_modules'))),
+    ...(await listInstalledPackages(join(dirname(env.profileDir), 'node_modules'))),
+  ]
+
+  for (const pkg of installed) {
+    for (const field of DEPENDENCY_FIELDS) {
+      const declared = pkg.manifest[field]
+      if (declared === null || typeof declared !== 'object') continue
+      for (const module of Object.keys(declared as Record<string, unknown>)) {
+        if (!modules.has(module)) continue
+        const bucket = out.get(module) ?? []
+        if (!bucket.some((origin) => origin.name === pkg.name && origin.field === field)) {
+          bucket.push({ name: pkg.name, version: readVersion(pkg.manifest), field })
+        }
+        out.set(module, bucket)
+      }
+    }
+  }
+
+  for (const bucket of out.values()) {
+    bucket.sort((left, right) => left.name.localeCompare(right.name) || left.field.localeCompare(right.field))
+  }
+  return out
+}
+
+/**
+ * Same package name, different versions, two physical copies (Maven
+ * `dependencyConvergence` for a single module tree).
+ *
+ * Only **different versions** are reported: pnpm hard-links one version into both
+ * roots, and flagging that would bury the real finding. Paths are relative to the
+ * DSH home on purpose — verdicts land in publishable SSOT.
+ */
+export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly DuplicateCopy[]> {
+  const sharedModules = join(dirname(env.profileDir), 'node_modules')
+  const copies = new Map<string, CopyLocation[]>()
+
+  const add = (pkg: InstalledManifest, scope: CopyLocation['scope']): void => {
+    const bucket = copies.get(pkg.name) ?? []
+    bucket.push({ path: pkg.relativePath, version: readVersion(pkg.manifest), scope })
+    copies.set(pkg.name, bucket)
+  }
+
+  for (const pkg of await listInstalledPackages(join(env.profileDir, 'node_modules'))) add(pkg, 'profile')
+  for (const pkg of await listInstalledPackages(sharedModules)) add(pkg, 'shared')
+
+  // One level of nesting is where the interesting failure lives: a plugin's own
+  // dependency copy. Deeper trees are pnpm's business, not a diagnosis.
+  for (const pkg of await listInstalledPackages(join(env.profileDir, 'node_modules'))) {
+    for (const nested of await listInstalledPackages(join(pkg.dir, 'node_modules'))) {
+      if (!copies.has(nested.name)) continue
+      add(nested, 'nested')
+    }
+  }
+
+  const duplicates: DuplicateCopy[] = []
+  for (const [name, list] of [...copies.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    if (list.length < 2) continue
+    const versions = new Set(list.map((copy) => copy.version ?? 'unknown'))
+    duplicates.push({
+      name,
+      copies: [...list].sort((left, right) => left.path.localeCompare(right.path)),
+      kind: versions.size > 1 ? 'different-versions' : 'same-version',
+    })
+  }
+  return duplicates
+}
+
+async function listInstalledPackages(root: string): Promise<readonly InstalledManifest[]> {
+  let entries: readonly { name: string; isDirectory(): boolean }[]
+  try {
+    entries = await readdir(root, { withFileTypes: true })
+  } catch {
+    return []
+  }
+  const out: InstalledManifest[] = []
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    if (entry.name.startsWith('@')) {
+      const scopeDir = join(root, entry.name)
+      let scoped: readonly { name: string; isDirectory(): boolean }[]
+      try {
+        scoped = await readdir(scopeDir, { withFileTypes: true })
+      } catch {
+        continue
+      }
+      for (const child of scoped) {
+        if (!child.isDirectory()) continue
+        const pkg = await readInstalled(join(scopeDir, child.name), `${entry.name}/${child.name}`, root)
+        if (pkg !== null) out.push(pkg)
+      }
+      continue
+    }
+    const pkg = await readInstalled(join(root, entry.name), entry.name, root)
+    if (pkg !== null) out.push(pkg)
+  }
+  return out
+}
+
+async function readInstalled(dir: string, name: string, root: string): Promise<InstalledManifest | null> {
+  const manifest = await readManifestRecord(dir)
+  if (manifest === null) return null
+  const declaredName = typeof manifest['name'] === 'string' && manifest['name'] !== '' ? manifest['name'] : name
+  // Relative to the DSH home (`<dshHome>/profiles/<p>/...`), so the path in SSOT
+  // never contains a user name.
+  const relative = relativeFromProfiles(root, declaredName)
+  return { name: declaredName, relativePath: relative, dir, manifest }
+}
+
+function relativeFromProfiles(root: string, name: string): string {
+  // `root` is always `<dshHome>/profiles/node_modules` or `<dshHome>/profiles/<p>/node_modules`.
+  const parts = root.split(/[\\/]/)
+  const profilesIndex = parts.lastIndexOf('profiles')
+  const tail = profilesIndex === -1 ? [] : parts.slice(profilesIndex)
+  return [...tail, ...name.split('/')].join('/')
+}
+
+async function readManifestRecord(dir: string): Promise<Record<string, unknown> | null> {
+  const text = await readTextOrNull(join(dir, 'package.json'))
+  if (text === null) return null
+  try {
+    const parsed: unknown = JSON.parse(text)
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
 }
 
 async function resolveModuleManifest(

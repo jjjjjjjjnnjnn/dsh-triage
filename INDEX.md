@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R7 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R8 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -9,6 +9,7 @@
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
 | **真实案例** | `data/cases/CASE-*/` | **10 例（9 命中 / 1 有意 miss）**：`CASE-11080`（升级后行被静默禁用）· `CASE-11012`（MCP 工具整体消失/传递依赖漂移）· `CASE-8202`（上一代插件进新运行时）· `CASE-10849`（npm dist-tag 失步 → 未钉版本被拒）· `CASE-10201`（hooks 桥 latest 失步 → 装前被拒）· `CASE-10759` / `CASE-10364`（dependency hoist 遮蔽 `dsh-tools` → tools 行被禁）· `CASE-8751`（官方包留在上一代 → session 行被禁）· `CASE-8220`（安装器判了 bundle 自己 disabled 的 shim 行）· `CASE-7590`（**miss 负样本**：不声明 peer 的插件运行期 API 漂移） |
 | **D1 命中率** | `scripts/d1_report.mjs` → `data/results/d1-*.json` | 从 `why-case-*.json` 汇总命中率（当前 **9/10 PASSED**），含 `label_key_sources`；`tests/governance/d1-report.test.ts` 反向点数，禁手填 |
+| **副本来源与重复副本** | `packages/core/src/duplicates.ts` + `scripts/record_audit.mjs` → `data/results/audit-*.json` | 同名同版本不算问题；同名不同版本 → `collision-duplicate-copy`（两条路径 + 两个版本）；行被拒时点名「这份副本来自谁的 dependencies」（借 npm explain / Maven） |
 | **运行时相位（M2-a P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` → `data/results/inventory-*.json` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff、`sample.kind` 自曝 synthetic/live；当前证据是**合成样本**（无真机 profile） |
 | **相位契约门** | `scripts/gate_inventory_contract.mjs` + `tests/fixtures/inventory/cases.json` | 9 门之一：fixtures 逐行回放 spec §3 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性 |
 | **复现脚本** | `scripts/record_case.mjs` | 案例 → 隔离沙盒 → verdicts → `data/results/why-case-*.json` + `.sha256` + `hit` |
@@ -23,6 +24,7 @@
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
 | 设计地图 | `docs/DESIGN-MAP.md` | 六层架构 / 门与证据矩阵 / 数据模型 / 分发位 |
 | 愿景与定位 | `docs/00-vision.md` | 「装得上 ≠ 跑得对」判断层；不做市场/启动器/杀软 |
+| **开源借鉴台账** | `docs/09-open-source-borrowing.md` | 14 个来源的机制/许可/落地状态：npm explain → 副本来源归因、Maven dependencyConvergence → 重复副本、pip check → 已装集合自检；含「借了但不做」的理由（不做安全扫描、不做作者侧 lint） |
 | 竞品与上游归因 | `docs/01-competitors.md` | 12 个竞品 + 上游已吸收清单 + 实测下载量/星标 |
 | 信号源评估 | `docs/02-signal-sources.md` | 信号/格式/频率/可信度/许可/适配成本 |
 | 失败分类法 | `docs/03-failure-taxonomy.md` | 9 类失败：机制 / 症状 / 谁接得住 / 空白 |

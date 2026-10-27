@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R6 (2026-10-26)",
+  "stand": "R8 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -107,6 +107,13 @@
       "cannot_see": "相位层（M2-a P2）目前的证据是**合成快照**：本机没有可启动的 0.2.x profile，所以 `audit --snapshot` 从未读过真实 Host 的 pluginInventory。spec §5 的 B1/B2 只验证了「表与解析器」，没验证「这台机器上某行真的处于 no-fiber」。另外 agentPresets 维度未实现（同一 entry 在不同 preset 下相位可不同）",
       "mitigation": "产物强制 `sample.kind=synthetic|live`；对外只能说「相位表已实现」。T-201 P1（Host 内取相位）与 T-112（preset 维度）是解锁条件；真机样本出现后必须与合成样本并列而非替换",
       "owner": "core/inventory"
+    },
+    {
+      "id": "BS-16",
+      "area": "install-provenance",
+      "cannot_see": "副本来源归因只读**已安装 manifest 的 dependency 字段**：pnpm `overrides`/`resolutions`、lockfile 里手工钉的版本、`link:` 目标、以及嵌套超过一层的副本，都不会被点名；重复副本扫描也只覆盖「profile / shared / 一层嵌套」三处",
+      "mitigation": "结论措辞只说「这份副本来自 X 的 dependencies」，不说「唯一来源」；T-113（入口矩阵）与 M3 probe 是补全路径；出现误判时先补样本再改扫描器",
+      "owner": "core/duplicates"
     }
   ]
 }

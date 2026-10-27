@@ -23,7 +23,7 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
   - 失败分类 → `docs/03-failure-taxonomy.md`
   - 信号与许可 → `docs/02-signal-sources.md` + `quarantine/vendor-manifest.json`
   - 工程约定 → `docs/08-conventions.md`
-- **当前状态**：M0 ✅（9 门 / 75 测试）· M1 金标对等 ✅ · M1 真实案例验收 ✅（**10/10 例，9 命中 / 1 有意 miss**，D1 判定见 `data/results/d1-*.json`）· M2-a 契约已锁定，**P2（`audit --snapshot` + 相位门）已交付**，P1（Host 内取相位）待真机。**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）。
+- **当前状态**：M0 ✅（9 门 / 91 测试）· M1 金标对等 ✅ · M1 真实案例验收 ✅（**10/10 例，9 命中 / 1 有意 miss**，D1 判定见 `data/results/d1-*.json`）· M2-a 契约已锁定，**P2（`audit --snapshot` + 相位门）已交付**，P1（Host 内取相位）待真机。**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）。
 
 ## 3. 防幻觉规则（本仓特有）
 
