@@ -1,8 +1,9 @@
-# M3 · probe 执行器契约（T-301，R15 扩 T-302/T-306）
+# M3 · probe 执行器契约（T-301，R15 扩 T-302/T-306，R17 扩 T-308）
 
-> **Stand**: R15 (2026-10-27) | 实现：`packages/probe/src/{exec,host,render,plan}.ts` + `scripts/record_probe.mjs` + `scripts/record_render_fixture.mjs` | 门禁：`tests/unit/probe-exec.test.ts` + `tests/unit/render.test.ts` + 门 `step-review`（不新增第 10 道门）
+> **Stand**: R17 (2026-10-27) | 实现：`packages/probe/src/{exec,host,render,plan}.ts` + `scripts/record_probe.mjs` + `scripts/record_render_fixture.mjs` | 门禁：`tests/unit/probe-exec.test.ts` + `tests/unit/render.test.ts` + 门 `step-review`（不新增第 10 道门）
 > **上游基线**：仓内沙盒 `@deepseek-ai/dsh` 0.2.1-rc.4（证据见 §2） | **默认 dry-run**，真跑必须显式 `--execute`
 > **R15 新增**：`client-rendered` 从「恒为 unmeasured」变成**真判据**（真浏览器 + CDP）；就绪端口改由 Host 自己打印的 URL 决定（T-306）；registry 候选开始有真实分母（T-305）。
+> **R17 新增**：**「慢」与「坏」分开**（T-308 / `BS-25`）——测量失败只能 `unknown`；端口改为向 OS 申请（本机 TCP 53461–53560 是排除段，哈希选中的 53506 绑不上，曾把正常候选写成 `blocked`）；`startup failed` 用 launcher 原文归因，且不再等满 120s。
 
 ---
 
@@ -58,6 +59,16 @@
 | F24 | **profile 级 `.npmrc` 会被 launcher 采纳**（T-305b 的机制）：在临时 `DSH_HOME` 里先用本地 fixture 初始化 profile，再写 `<profile>/.npmrc` 为 `registry=http://127.0.0.1:1/`，随后 `dsh plugin --profile web add dsh-cost-meter@1.9.41` **确实失败**：`ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR`，日志写着 `Failed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter`，exit 1。对比 F19：env 级 `NPM_CONFIG_REGISTRY` 被中和，**profile 级不被中和** | spike 2026-10-27（一次性临时 home，未留产物；复现命令就是本格描述的两步）。实现见 `T-305b` |
 | F25 | **「慢」与「坏」在探针里长得一样**：矩阵实测 `dsh-whale-widget@0.4.2` 在 12.3s 写出样本，但 5s 就绪窗口内 Host 从未打印 `?token=` URL（`fetch failed`），同时探针 hook 报 `cannot get required service "loader" in inactive context`。结论被写成 `blocked`，但根因可能是「树还没 active」而不是插件坏 → 记为 `BS-25` / `T-308` | `data/results/probe-matrix-2026-10-27T14-36-20.000Z.json`（`runs[2]`，`expectation_met=false`） |
 
+### R17 新增事实（0.2.1-rc.4，同一台 Windows 机器）
+
+| # | 事实 | 怎么测的 |
+|---|---|---|
+| F26 | **哈希选的端口可能根本绑不上**：`buildProbePlan` 用 `53000 + hash%1000` 得到 **53506**，而本机 `netsh int ipv4 show excludedportrange protocol=tcp` 列出 **53461–53560** 为排除段，`net.Server.listen(53506)` 直接 `EACCES`。沙盒 Host 的 `webserver` 行因此 `failed`，`web-runtime` 等 5 行 pending，启动整体失败 —— **候选完全无辜** | 三次真跑同一条命令：`dsh: startup failed: 2 required plugins did not activate` → `webserver (required): listen EACCES: permission denied 127.0.0.1:53506`；`netsh` 输出；Node 直接 bind 复现 |
+| F27 | **排除段会在会话中途变化**：同一候选在 15:05 还能起来（193 行、行 `active`），15:20 之后连续三次都是 EACCES 启动失败。**结论**：端口不能是常量或摘要，必须每次向 OS 申请 | 四次真跑的时间线（`probe-whale-*`，本轮临时目录） |
+| F28 | **换端口后同一个候选是 `go`**：`findFreePort()`（bind :0 → 取端口 → 关闭）之后，`dsh-whale-widget@0.4.2` boot→sample **5.9–6.8s**、HTTP 401、行 `active`、渲染通过 | `data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json` · `probe-matrix-2026-10-27T17-20-00.000Z.json`（`runs[3]`） |
+| F29 | **`inactive context` 是「我们的 fiber 被 unload 了」，不是「插件坏」**：Cordis 在注入服务缺失时把 `fiber.store` 置 `undefined`（`_unload`），等服务回来**重新跑 apply**。因此同一个 task 里重试同一个 ctx 无效；有效的是「旧 task 不许写文件（代际保护）+ 新 apply 覆盖写出好样本 + Host 等一份可判的样本」 | 读 `@deepseek-ai/cordis/lib/index.js`（`_getImpl`/`_refresh`/`_setEpoch`/`_unload`）+ 五次真跑的三种形状（error / 好样本 / 无样本） |
+| F30 | **launcher 的启动诊断是免费的归因**：失败时 stdout 打印 `dsh: startup failed: N required plugins did not activate`，后面逐行列出 `Failed plugins` / `Plugins waiting for services`（含缺失服务名与原始错误）。它一出现就不会再写出样本，等满 120s 是纯浪费 | 一次 EACCES 真跑的完整 stdout（本轮 `boot.error_tail`） |
+
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
 ---
@@ -74,10 +85,10 @@ runtime → install → boot → http → render → inventory → cleanup
 |---|---|---|---|
 | `runtime` | `--dsh-main <path>`（本轮显式传，不猜 PATH） | `node <main> --version` 有输出且可解析 | `probe.runtime-unavailable` |
 | `install` | 候选 spec（路径 / tarball / npm spec，registry 必须 pin 版本） | 退出码 0 且 profile 的 `package.json` 里出现该包 | `probe.install-failed` |
-| `boot` | profile 名 + 探针 overlay | 探针写出样本文件（不是「进程还活着」） | `probe.boot-timeout` |
-| `http` | Host 自打印 URL 的端口（T-306），回退 `plan.port` | `redirect:'manual'` 下收到 2xx/3xx/401（303+token、401 无 token 都算活） | `probe.http-unreachable` |
+| `boot` | profile 名 + 探针 overlay | 探针写出**可判**的样本（无 `{error}` 且 `settled≠false`）。写不出时：launcher 说过 `startup failed` → `blocked`（原文归因）；Host 打印过 URL 或**我们自己的端口**绑不上 → `unknown`；两者都没有 → `blocked` | `probe.startup-failed` / `probe.boot-timeout` / `probe.tree-not-settled` / `probe.port-unavailable` |
+| `http` | Host 自打印 URL 的端口（T-306），回退 `plan.port`；URL 与端口**同轮询**（R17） | `redirect:'manual'` 下收到 2xx/3xx/401（303+token、401 无 token 都算活）。**读数不是 `valid` 时本步不出结论**（`unmeasured`） | `probe.http-unreachable`（仅 settled 树） |
 | `render` | 同一 URL + 浏览器 | DOM 有挂载点、有可见文本（≥20 字符）、且 `readyState` 前进 | `probe.render-blank`；拿不到结论时 `unmeasured` |
-| `inventory` | 样本 | 候选模块对应**恰好一条**运行时行 | `probe.row-missing` / `probe.row-inactive` |
+| `inventory` | 样本 | 候选模块对应**恰好一条**运行时行 | `probe.row-missing` / `probe.row-inactive`；`pending/loading/unloading` → `unknown`（`probe.tree-not-settled`） |
 | `cleanup` | 沙盒路径 + Host 用过的端口 | 目录不存在且端口不再应答 | `probe.cleanup-incomplete`（`risky`，不改测量结论） |
 
 **硬规则**：
@@ -85,7 +96,8 @@ runtime → install → boot → http → render → inventory → cleanup
 1. `cleanup` 在 `finally` 里执行；任何一步抛错都不许跳过清理；
 2. 探针样本是**唯一**的相位来源，执行器不得自己猜相位；
 3. 探针行自身必须从评分行里剔除（`excluded`），否则「候选行」与「我们自己的 instrument」会混在一起（R12 的坑）；
-4. 候选行的识别口径：`moduleName === candidatePackageName` 且**唯一**；0 条 → `row-missing`，≥2 条 → `unknown`（不猜）。
+4. 候选行的识别口径：`moduleName === candidatePackageName` 且**唯一**；0 条 → `row-missing`，≥2 条 → `unknown`（不猜）；
+5. **测量失败不得归给候选**（R17）：`{error}`、`settled:false`、候选行仍 transient、我们自己的端口绑不上——四种形状只能 `unknown` + `missing.*`，唯一例外是 launcher 明说 `startup failed`（那是 Host 自己的判定，照抄原文进 `blocked`）。
 
 ---
 
@@ -94,8 +106,11 @@ runtime → install → boot → http → render → inventory → cleanup
 | 段 | 预算 | 超时 | 实测 |
 |---|---|---|---|
 | `install` | 不计入 20s（网络与 pnpm 波动不可控） | 本地 60s / registry 180s | 0.53–5.4s（本地 / 真实 registry） |
-| `boot → sample` | **≤ 20s**（M3 出口门禁） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s（D2 的六次分布见 `HANDOFF`） |
-| `http` | ≤ 5s（样本落盘后、杀树之前） | 5s | 1s settle + 1 次探测命中 401/303 |
+| `boot → sample` | **≤ 20s**（M3 出口门禁） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s；**R17：6.2–6.9s（12 次真跑）** |
+| `readiness`（settled 树） | **≤ 5s**（**阈值不变**） | 5s | R17：`waited_ms` 10–32ms（URL 与端口同轮询，命中即返回） |
+| `readiness`（unsettled 树） | **≤ 20s，可配**（`--unsettled-timeout`）；**该窗口只能产出 `unknown`** | 20s | R17 新增；settled 树的 5s 判据未被放松 |
+| `sample 替换等待` | ≤ `--unsettled-timeout`（默认 20s） | 同上 | 只对不可判样本生效：等 Cordis 重新 apply 覆盖出可判样本（F29） |
+| `startup failed` | 立即收敛（不占满 120s） | — | 实测从 126s 降到 ~6s（F30） |
 | `render` | ≤ 15s（**独立预算，不进 20s 口径**） | 15s | 1.1–4.2s（`readyState=complete` 即停） |
 | `cleanup` | ≤ 5s | 10s | 8–61ms |
 | 总时长 | 只记录，不设判据 | — | — |
@@ -112,10 +127,10 @@ runtime → install → boot → http → render → inventory → cleanup
 
 | assertion | 本轮状态 | 依据 |
 |---|---|---|
-| `boot-sampled` | 测 | 样本文件存在且可解析 |
-| `http-served` | 测 | `redirect:'manual'` 的状态码 |
+| `boot-sampled` | 测 | 样本文件存在、可解析、且**可判**（无 `{error}`、`settled≠false`）。没写出样本但 Host 打印过 URL → `unmeasured`（不是 `failed`） |
+| `http-served` | 测 | `redirect:'manual'` 的状态码。**读数不是 `valid` 时本项必须 `unmeasured`**：树还在动时的静默端口回答不了这个问题（R17） |
 | `client-rendered` | **测（需浏览器）** | 真浏览器 + CDP 读 DOM：**必须存在 `#root`/`#app` 挂载点**、其子节点 ≥1、可见文本 ≥20 字符、`readyState` 非 `loading`；无挂载点（浏览器错误页 / 非挂载文档）→ `inconclusive`；有挂载点但零可见文本（canvas/icon-only）→ `inconclusive`；无浏览器 → `unmeasured` |
-| `inventory-active` | 测 | 候选行的 `fiberPhase` |
+| `inventory-active` | 测 | 候选行的 `fiberPhase`；读数不可判时 `unmeasured` |
 | `cleanup-complete` | 测 | 目录 + **所有** Host 用过的端口双重判据 |
 | `namespace-diff` | **unmeasured**（T-303） | 工具表面在 agent/preset 作用域（R13 的 `BS-21`） |
 
@@ -127,7 +142,9 @@ runtime → install → boot → http → render → inventory → cleanup
 | 候选行 `failed` / `null` / 不存在 | `blocked` | `measured-local`（high） |
 | **HTTP 有应答但页面没挂载出内容（白屏）** | `blocked` + `probe.render-blank` | `measured-local`（high） |
 | 渲染检查得不出结论（浏览器崩/超时） | `unknown` + `missing.render` | `measured-local` |
-| install / boot / http 失败 | `blocked` | `measured-local`（high） |
+| install / boot / http 失败（**settled 树**） | `blocked` | `measured-local`（high） |
+| **launcher 说 `startup failed`** | `blocked` + `probe.startup-failed`（原文进 `params.detail`） | `measured-local`（high） |
+| **读数不可判**（`{error}` / `settled:false` / 候选行 transient / 我们的端口绑不上 / Host 起了但探针没写出样本） | `unknown` + `missing.inventory` 或 `missing.probe` | `measured-local` |
 | 清理不干净 | `risky`（结论仍引自测量） | `measured-local` |
 | 运行时与候选声明不匹配 / 候选行 ≥2 条 / 样本读不出 | `unknown` + `missingEvidence` | `measured-local` |
 
@@ -147,11 +164,13 @@ runtime → install → boot → http → render → inventory → cleanup
   "sandbox": { "home": "<temp>/…", "profile": "probe", "overlap_check": "disjoint", "env_scrubbed": true },
   "steps": [{ "id": "install", "status": "passed", "ms": 640, "argv": ["<node>", "<dsh-main>", "plugin", "--profile", "probe", "add", "<candidate>"] }],
   "timings": { "installMs": 5394, "bootToSampleMs": 7700, "httpMs": 0, "renderMs": 3930, "cleanupMs": 61 },
-  "readiness": { "source": "host-url", "port": 53052 },
+  "readiness": { "source": "host-url", "port": 53052, "outcome": "served", "waited_ms": 10, "window_ms": 5000, "url_seen": true },
+  "boot": { "url_printed": true, "first_line": "dsh web: http://127.0.0.1:53052/?token=<redacted>", "error_tail": null, "startup_failed": false, "bind_failed_ports": [] },
+  "sandbox": { "home": "<temp>/…", "profile": "probe", "port_origin": "allocated", "port": 53052, "overlap_check": "disjoint", "env_scrubbed": true },
   "render": { "status": "rendered", "detail": "mount root with 1 child(ren), 289 visible chars", "ms": 1785, "signals": { "ready_state": "complete", "root_children": 1, "text_length": 289, "html_bytes": 540955 } },
   "install": { "lockfile": { "present": true, "bytes": 1717, "sha256": "…" } },
   "assertions": [{ "id": "boot-sampled", "status": "passed", "detail": null }, { "id": "client-rendered", "status": "passed", "detail": "rendered: mount root with 1 child(ren), 289 visible chars" }],
-  "inventory": { "transport": "in-process-projection", "entries": 98, "candidate_rows": [{ "entryId": "include:triage-probe-ok", "phase": "active" }], "excluded": ["include:triage-probe-ok"?] },
+  "inventory": { "transport": "in-process-projection", "entries": 98, "settled": true, "error_code": null, "attempts": 1, "applies": 1, "candidate_rows": [{ "entryId": "include:triage-probe-ok", "phase": "active" }], "excluded": ["include:triage-probe-ok"?] },
   "verdict": { "conclusion": "go", "reasons": [], "evidence": [], "missingEvidence": [] },
   "limits": ["no security judgement", "no client render check", "sandbox runtime, not the user's machine"]
 }
@@ -169,7 +188,9 @@ runtime → install → boot → http → render → inventory → cleanup
 
 新增 `probe.*` 原因码（**三处同改**：`messages.ts` 中英 / 门 `verdict-contract` 白名单 / `docs/05` §3）：
 
-`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）
+`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）**
+
+> 新增文案一律**只加不改**：给已有 messageId 增加 `{占位符}` 会让 `data/results` 里的历史产物在门 `verdict-contract` 变红（HANDOFF 坑表）。
 
 `go` 的渲染必须包含限定：**「仅证明装得上 + Host 起得来 + 端口有应答 + 行在跑（+ 页面有可见内容），不证明功能」**。
 
@@ -197,6 +218,13 @@ runtime → install → boot → http → render → inventory → cleanup
 | N16 | 浏览器错误页（`ERR_CONNECTION_REFUSED`：有 body 子节点和文本，但没有 `#root`） | **`inconclusive`**，不得判 `rendered`（`--mode error`，R15 复核抓到的假绿） |
 | N17 | 渲染线程被卡死（`while(true)`） | 仍在预算内返回（实测 15.0s / 15s 预算）；命令级超时 + 剩余预算封顶，**不得挂死**（`--mode blocked`） |
 | N18 | 有挂载点但零可见文本（canvas/icon-only） | `inconclusive`，不得判 `blank`（否则冤枉真 UI） |
+| N19 | 样本 `settled:false` + 端口静默 | `unknown` + `missing.inventory`（`probe.tree-not-settled`），**不得** `blocked` |
+| N20 | 样本 `settled:true` + 端口静默 | 仍 `blocked` + `probe.http-unreachable`（防止修复变成「全都 unknown」） |
+| N21 | 候选行相位 `pending`/`loading` | `unknown`，**不得** `probe.row-inactive` |
+| N22 | 没写出样本，但 Host 打印过 `?token=` URL | `unknown` + `missing.inventory`；`boot-sampled: unmeasured`（**不得** `failed`） |
+| N23 | Host 报绑定失败，且失败端口 = 探针自己选的端口 | `unknown` + `missing.probe` + `probe.port-unavailable`（**不得**算到候选头上） |
+| N24 | 显式把 `--readiness-timeout` 调成 1000 | 如实 `readiness.outcome='timeout'` / `waited_ms≈1000`，不静默升级成 `served` |
+| N25 | launcher 打印 `startup failed` | 立即收敛（不等 120s），`blocked` + `probe.startup-failed`，`params.detail` 是原文 |
 
 ---
 
@@ -204,10 +232,12 @@ runtime → install → boot → http → render → inventory → cleanup
 
 | 项 | 状态 |
 |---|---|
-| registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20） |
-| 私有源 / 不可达 registry 的失败形状 | **未测出**：环境变量级覆盖被 launcher 中和（F19），pnpm store 还会让「装成功」变成假象（F18）。要测必须走 profile 级配置 → 新增 `T-305b` |
+| registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20）。**R17**：矩阵 n=7（真实启动 2 次 / 合成失败 5 次），真实 2 次全 `go` |
+| 私有源 / 不可达 registry 的失败形状 | **R16 已测**（F24，profile 级 `.npmrc`）；R17 未重测 |
 | `namespace-diff`（T-303） | 需要 agent/preset 作用域（T-202a），仍 `unmeasured` |
-| 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归；`24 字符` 的真实样本证明阈值不能更高（`probe-registry-ok-…`）。canvas/icon-only 面板 → `inconclusive`（不冤枉，也不放行） |
-| 渲染的耗时 | 15s 是**循环预算**；阻塞渲染器的实测总耗时 15.0s（命令级超时 + 剩余预算封顶），启动/清理另计约 0.5–2s。数字进 `timings.renderMs`，不进 20s 口径 |
-| 引擎差异 | Windows（Chrome 154 / Edge 146）+ **Linux CI（ubuntu-latest 自带 Chrome 155）** 都跑过同一套对照（`ADR-0005`）；CI 作业 `render-control` 每轮跑 `blank`/`rendered`/`error` 三份，产物写 `$RUNNER_TEMP`（不污染 SSOT） |
-| 多候选 / 矩阵模式 | 不做（一次一个候选，`bisect` 由 T-114 负责） |
+| 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归 |
+| 渲染的耗时 | 15s 是**循环预算**；阻塞渲染器的实测总耗时 15.0s（命令级超时 + 剩余预算封顶） |
+| 引擎差异 | Windows（Chrome 154 / Edge 146）+ **Linux CI（ubuntu-latest 自带 Chrome 155）** 都跑过同一套对照（`ADR-0005`） |
+| **端口排除段** | R17 实测本机 53461–53560 被排除且**会变化**。现在每次 `findFreePort()` 向 OS 申请，产物记 `sandbox.port_origin=allocated`；仍存在「释放到 Host 绑定」之间的竞态，届时由 `probe.port-unavailable` 兜底。**未测**：Linux/macOS 上是否有等价排除段（CI 目前不跑真 probe） |
+| **「慢到超过 settle 预算」的真机样本** | 判定有单测（N19），但**没有**真机夹具证明（要一条延迟 >15s 的插件）。补全路径：加一个 `slow-overrun` 夹具并在 R18 真跑一次 |
+| **`settled:false` 时的等待成本** | 不可判样本要等一份替换（默认 20s）。对坏候选是纯成本，对间歇慢的候选是唯一恢复路径；R17 选择后者（`BS-25` 的教训） |
