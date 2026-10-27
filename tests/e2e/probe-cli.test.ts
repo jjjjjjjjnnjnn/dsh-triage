@@ -80,8 +80,7 @@ test('a candidate whose package name cannot be read is refused, not guessed', ()
   }
 })
 
-test('probe --json in dry-run says dryRun=true and carries the plan', () => {
-  const home = fakeHome()
+test('probe --json in dry-run says dryRun=true and carries the plan', () => {  const home = fakeHome()
   try {
     const result = runCli(['probe', FIXTURE, '--json', '--locale', 'en'], home)
     assert.equal(result.status, 0, result.stderr)
@@ -89,6 +88,17 @@ test('probe --json in dry-run says dryRun=true and carries the plan', () => {
     assert.equal(payload.dryRun, true)
     assert.ok(Array.isArray(payload.plan?.assertions))
     assert.ok(payload.plan?.assertions?.some((assertion) => assertion.measured === false))
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('a profile name that escapes the sandbox is a usage error', () => {
+  const home = fakeHome()
+  try {
+    const result = runCli(['probe', FIXTURE, '--profile', '../../evil', '--locale', 'en'], home)
+    assert.equal(result.status, 2)
+    assert.match(result.stderr, /invalid-profile/)
   } finally {
     rmSync(home, { recursive: true, force: true })
   }

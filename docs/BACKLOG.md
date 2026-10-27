@@ -56,7 +56,8 @@
 | T-103 | 金标 21 → **27**（HUMAN 签字）：6 条新语义全部与文档一致，无分歧 | ✅ |
 | T-110 | 双 roadmap 合并：保留 `docs/ROADMAP.md`（§7 吸收增长/分发/指标），旧文件归档 `_archive/` 并登记 | ✅ |
 | BS-20 部分 | 真机样本首次同时包含 `active` / `null`（import 失败）/ `failed`（apply 失败）三形状，`cross_check.agree=true`；preset 的 broken/conditional 仍未真机化 | 🟡 部分 |
-| 测试 | +21（单测 17 + e2e 4），总 **163**；9 门 / `--mutate` 9/9 | ✅ |
+| 复核修复 | **交付后独立复核抓到两处真缺陷**：F-1 `--profile` 路径逃逸出沙盒（现按名字白名单拒绝，exit 2）；F-2 沙盒目录名把用户名带进三份产物（改 basename slug + 隐私门增压平形态 + 产物重采） | ✅ |
+| 测试 | +24（单测 19 + e2e 5），总 **166**；9 门 / `--mutate` 9/9 | ✅ |
 
 ---
 

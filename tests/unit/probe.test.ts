@@ -69,3 +69,25 @@ test('an empty candidate is rejected, not guessed', () => {
   if (plan.ok) return
   assert.equal(plan.error.code, 'invalid-candidate')
 })
+
+test('a profile name that could climb out of the sandbox is refused', () => {
+  for (const profile of ['../../evil', '..\\..\\evil', 'a/b', '..', '']) {
+    const plan = buildProbePlan({ candidate: 'x', realDshHome, workRoot, profile })
+    assert.equal(plan.ok, false, `profile "${profile}" must be refused`)
+    if (plan.ok) continue
+    assert.equal(plan.error.code, 'invalid-profile')
+  }
+})
+
+test('the sandbox directory name never carries the candidate path', () => {
+  // A Windows absolute candidate used to slugify into `C-Users-<name>-…`, which published
+  // the account name inside every artifact (R14 audit finding F-2).
+  const candidate = 'C:\\Users\\someone\\Desktop\\project\\tests\\fixtures\\probe\\ok-plugin'
+  const plan = buildProbePlan({ candidate, realDshHome, workRoot })
+  assert.ok(plan.ok)
+  if (!plan.ok) return
+  const tail = plan.value.sandboxHome.slice(workRoot.length + 1)
+  assert.ok(tail.startsWith('ok-plugin-'), `expected basename-based slug, got ${tail}`)
+  assert.equal(tail.includes('someone'), false)
+  assert.equal(tail.includes('C-Users'), false)
+})

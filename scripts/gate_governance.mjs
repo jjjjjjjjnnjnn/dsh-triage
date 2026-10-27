@@ -121,6 +121,10 @@ await runGate('governance', async ({ checks, mutate }) => {
     /[A-Za-z]:\\Users\\/,
     /\/home\/[a-z0-9._-]+\//i,
     /\/Users\/[A-Za-z0-9._-]+\//,
+    // Flattened paths: a slug made from an absolute path loses the separators, and the
+    // patterns above stop matching while the account name is still there (R14 audit
+    // finding F-2: `C-Users-<name>-Desktop-…` slipped into three probe artifacts).
+    /[A-Za-z]-Users-[A-Za-z0-9._-]{2,}/,
   ]
   const leaked = []
   for (const entry of listDir('data/results').filter((item) => item.isFile && item.name.endsWith('.json'))) {

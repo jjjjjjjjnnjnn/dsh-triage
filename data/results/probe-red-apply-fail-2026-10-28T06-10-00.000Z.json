@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/record_probe.mjs",
-  "generated_at": "2026-10-28T02:20:00.000Z",
-  "label": "red-import-fail",
+  "generated_at": "2026-10-28T06:10:00.000Z",
+  "label": "red-apply-fail",
   "expectation": "blocked",
   "expectation_met": true,
   "candidate": {
-    "spec": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
-    "package": "triage-probe-fixture-broken",
+    "spec": "<repo>\\tests\\fixtures\\probe\\throw-plugin",
+    "package": "triage-probe-fixture-throw",
     "kind": "path"
   },
   "runtime": {
@@ -16,7 +16,7 @@
     "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
   },
   "sandbox": {
-    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\C-Users-rongj-Desktop-DSH-Addition-tests-fixture-cbc4c00c",
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\throw-plugin-a5bb3559",
     "profile": "web",
     "overlap_check": "disjoint (validateProbePlan)",
     "env_scrubbed": true
@@ -25,22 +25,22 @@
     {
       "id": "runtime",
       "status": "passed",
-      "ms": 173,
+      "ms": 177,
       "detail": "runtime 0.2.1-rc.4",
       "exitCode": null
     },
     {
       "id": "install",
       "status": "passed",
-      "ms": 516,
-      "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\C-Users-rongj-Desktop-DSH-Addition-tests-fixture-cbc4c00c\\profiles\\web",
+      "ms": 524,
+      "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\throw-plugin-a5bb3559\\profiles\\web",
       "exitCode": 0
     },
     {
       "id": "boot",
       "status": "passed",
-      "ms": 20251,
-      "detail": "12.3s to sample",
+      "ms": 20139,
+      "detail": "11.7s to sample",
       "exitCode": null
     },
     {
@@ -54,22 +54,22 @@
       "id": "inventory",
       "status": "passed",
       "ms": 0,
-      "detail": "include:triage-probe-broken none",
+      "detail": "include:triage-probe-throw failed",
       "exitCode": null
     },
     {
       "id": "cleanup",
       "status": "passed",
-      "ms": 17,
+      "ms": 11,
       "detail": "sandbox removed · port closed",
       "exitCode": null
     }
   ],
   "timings": {
-    "installMs": 516,
-    "bootToSampleMs": 12300,
+    "installMs": 524,
+    "bootToSampleMs": 11700,
     "httpMs": 0,
-    "cleanupMs": 17
+    "cleanupMs": 11
   },
   "assertions": [
     {
@@ -106,12 +106,12 @@
   "inventory": {
     "transport": "in-process-projection",
     "entries": 195,
-    "wait_ms": 7158,
+    "wait_ms": 6440,
     "candidate_rows": [
       {
-        "entryId": "include:triage-probe-broken",
-        "moduleName": "triage-probe-fixture-broken",
-        "phase": null
+        "entryId": "include:triage-probe-throw",
+        "moduleName": "triage-probe-fixture-throw",
+        "phase": "failed"
       }
     ],
     "excluded": [
@@ -139,8 +139,8 @@
       "severity": "block",
       "messageId": "probe.row-inactive",
       "params": {
-        "row": "include:triage-probe-broken",
-        "phase": "none"
+        "row": "include:triage-probe-throw",
+        "phase": "failed"
       }
     }
   ],
@@ -150,30 +150,30 @@
       "tier": "measured-local",
       "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
       "method": "dsh --version (sandbox)",
-      "at": "2026-10-28T02:20:00.000Z",
+      "at": "2026-10-28T06:10:00.000Z",
       "detail": "0.2.1-rc.4"
     },
     {
       "id": "probe-install",
       "tier": "measured-local",
-      "source": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
+      "source": "<repo>\\tests\\fixtures\\probe\\throw-plugin",
       "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
-      "at": "2026-10-28T02:20:00.000Z"
+      "at": "2026-10-28T06:10:00.000Z"
     },
     {
       "id": "probe-boot",
       "tier": "measured-local",
-      "source": "<repo>\\tests\\fixtures\\probe\\broken-plugin",
+      "source": "<repo>\\tests\\fixtures\\probe\\throw-plugin",
       "method": "boot + in-process-projection inventory sample",
-      "at": "2026-10-28T02:20:00.000Z",
-      "detail": "entries=195 wait_ms=7158"
+      "at": "2026-10-28T06:10:00.000Z",
+      "detail": "entries=195 wait_ms=6440"
     },
     {
       "id": "probe-http",
       "tier": "measured-local",
-      "source": "http://127.0.0.1:53164",
+      "source": "http://127.0.0.1:53427",
       "method": "http readiness (redirect: manual)",
-      "at": "2026-10-28T02:20:00.000Z",
+      "at": "2026-10-28T06:10:00.000Z",
       "detail": "status=401"
     },
     {
@@ -181,7 +181,7 @@
       "tier": "measured-local",
       "source": "sandbox removed · port closed",
       "method": "directory + port check",
-      "at": "2026-10-28T02:20:00.000Z"
+      "at": "2026-10-28T06:10:00.000Z"
     }
   ],
   "missing_evidence": [],

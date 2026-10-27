@@ -27,7 +27,8 @@
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
 | **审核报告** | `audit/AUDIT_2026-10-28_R14.md`（最新）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
-| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
+| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R14 起 66 步） |
+| **授权/签署台账** | `audit/SIGNOFF.md` | 谁授权 / 谁执行出结论 / HUMAN 未逐条复核的部分，三者分列；冻结区改动必须有对应条目 |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
 | 设计地图 | `docs/DESIGN-MAP.md` | 六层架构 / 门与证据矩阵 / 数据模型 / 分发位 |
@@ -45,7 +46,7 @@
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
 | 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / version-drift / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 与 `version-drift` 只出次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
-| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→inventory→cleanup` 六步；判定是纯函数（`judgeProbe`），I/O 全部注入；`client-rendered` 与 `namespace-diff` **恒为 `unmeasured`**（T-302 / T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；产物 `data/results/probe-ok-2026-10-28T02-00-00.000Z.json` 等三份（boot→sample 11.8–13.8s） |
+| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→inventory→cleanup` 六步；判定是纯函数（`judgeProbe`），I/O 全部注入；`client-rendered` 与 `namespace-diff` **恒为 `unmeasured`**（T-302 / T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；产物 `data/results/probe-ok-2026-10-28T06-00-00.000Z.json` 等三份（boot→sample 11.7–19.9s） |
 | **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 F1–F12（`insert:` 必填、就绪探测必须在杀树前、端口与 `--no-open` 属于 app 参数）+ 计时契约（boot→sample ≤20s，install 单列）+ 断言→结论映射 + 10 条负对照 |
 | 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出 |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |

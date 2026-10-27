@@ -27,14 +27,14 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条，R14 扩容）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（工具级结论不可判，`BS-21`/`BS-22`）** · **M3-a probe 执行器 ✅（R14）** |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **163 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **3 份 probe 真机样本**（一绿两红） |
-| 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R14 起 63 步），由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
-| 本轮交付 | **M3 probe 执行器**：① `packages/probe/src/exec.ts`（步骤机 `runtime→install→boot→http→inventory→cleanup` + `judgeProbe` 纯函数 + 六断言表，`client-rendered`/`namespace-diff` 恒为 `unmeasured`）；② `packages/probe/src/host.ts`（安装/起 Host/杀树/就绪探测的唯一实现，`scripts/lib/live.mjs` 改为再导出）；③ CLI `probe --execute --dsh-main`（默认仍 dry-run，e2e 断言不 spawn）；④ `scripts/record_probe.mjs` + 三份 SSOT；⑤ **修掉我们自己 bundle patch 的 `insert:` 缺陷**（装了不挂载）；⑥ **T-103 金标 21→27**（六条全部与文档一致）；⑦ **T-110 双 roadmap 合并** |
-| 证据 | `data/results/probe-ok-2026-10-28T02-00-00.000Z.json`（go：boot→sample 11.8s / HTTP 401 / 行 active）· `probe-red-apply-fail-…T02-10-00.000Z.json`（phase=`failed`）· `probe-red-import-fail-…T02-20-00.000Z.json`（phase=`null`）· `inventory-live-2026-10-28T02-30-00.000Z.json`（同一真机样本里 active/null/failed 三形状 + `cross_check.agree=true`）· `gates-2026-10-28T04-30-00.000Z.json`（金标扩容后）/ `gates-2026-10-28T04-40-00.000Z.json`（roadmap 合并后）/ `gates-mutate-2026-10-28T03-40-00.000Z.json` |
+| 规模 | **166 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **3 份 probe 真机样本**（一绿两红，隐私修复后重采） |
+| 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R14 起 **66 步**），由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11）；授权/签署单独记在 `audit/SIGNOFF.md`（谁授权 / 谁执行 / HUMAN 未逐条看的部分，三者分列） |
+| 本轮交付 | **M3 probe 执行器**：① `packages/probe/src/exec.ts`（步骤机 `runtime→install→boot→http→inventory→cleanup` + `judgeProbe` 纯函数 + 六断言表，`client-rendered`/`namespace-diff` 恒为 `unmeasured`）；② `packages/probe/src/host.ts`（安装/起 Host/杀树/就绪探测的唯一实现，`scripts/lib/live.mjs` 改为再导出）；③ CLI `probe --execute --dsh-main`（默认仍 dry-run，e2e 断言不 spawn）；④ `scripts/record_probe.mjs` + 三份 SSOT；⑤ **修掉我们自己 bundle patch 的 `insert:` 缺陷**（装了不挂载）；⑥ **T-103 金标 21→27**；⑦ **T-110 双 roadmap 合并**；⑧ **交付后独立复核抓到两个真缺陷并修**：`--profile` 路径逃逸（F-1）、沙盒目录名把用户名带进 SSOT（F-2） |
+| 证据 | `data/results/probe-ok-2026-10-28T06-00-00.000Z.json`（go：boot→sample **19.9s**，本轮最慢；同 fixture 另有 11.7–14.8s）· `probe-red-apply-fail-…T06-10-00.000Z.json`（phase=`failed`）· `probe-red-import-fail-…T06-20-00.000Z.json`（phase=`null`）· `inventory-live-2026-10-28T02-30-00.000Z.json`（同一真机样本里 active/null/failed 三形状 + `cross_check.agree=true`）· `gates-2026-10-28T04-30-00.000Z.json`（金标后）/ `gates-2026-10-28T07-20-00.000Z.json`（复核修复后）/ `gates-mutate-2026-10-28T03-40-00.000Z.json` · 授权台账 `audit/SIGNOFF.md` |
 | 审核报告 | `audit/AUDIT_2026-10-28_R14.md`（本轮）· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
-| 未通过的门槛 | **D2（probe 可行性）现在有了第一组数**：单次 boot→sample 11.8–13.8s（≤20s 达标的 3/3），清理 3/3，成功路径 1/1 + 失败路径 2/2 —— 但「≥90% 成功率」还需要**真实候选**（registry 来源）才谈得上；T-302/T-303 未做；`BS-20` 的 preset broken/conditional 仍未真机化 |
+| 未通过的门槛 | **D2（probe 可行性）现在有了分布数据**：`boot→sample` 六次 **11.7 / 12.3 / 13.3 / 13.8 / 14.8 / 19.9s**——绿跑 3/3 都在 ≤20s 内，但最慢一次只剩 0.1s 余量，**D2 必须按分布判定**；清理 6/6；失败路径 2/2。仍缺「真实 registry 候选」（T-305）；T-302/T-303 未做；preset 的 broken/conditional 仍未真机化（`BS-20`） |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/*`；probe 使用 `%TEMP%/dsh-triage-probe/<slug>` 作为隔离 `DSH_HOME`，跑完必删 |
-| 交接快照（R14 收尾） | R14 = `806f770`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **163 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用（65 步） |
+| 交接快照（R14 收尾） | R14 = `806f770` + 本轮修复提交（见 `git log -3`）；`git status` 干净；`pnpm run verify` = **166 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` 产物全部被 `audit/step_reviews.json` 引用（66 步）；旧的三份 probe 产物因隐私修复（F-2）已删除并重采 |
 | 交接快照（R13 收尾） | R13 = `2a9e4c5`；142 测试 / 9 门全绿 / 9-9；`data/results` 46 产物 / 57 步 |
 
 ---
@@ -154,7 +154,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
 | 本轮审核结论 | `audit/AUDIT_2026-10-28_R14.md`（本轮，含 §6 对抗性小节）· `AUDIT_2026-10-27_R13.md` · `AUDIT_2026-10-27_R12.md` · `AUDIT_2026-10-27_R8.md`（含 §7 独立复核与修正）· `R7` · `R6` · `R5` · `R4` · `R3` |
-| 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256） |
+| 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256；R14 起 66 步） |
+| 授权/签署台账 | `audit/SIGNOFF.md`（谁授权、谁执行、HUMAN 没逐条看的部分，三者分列） |
 
 ---
 

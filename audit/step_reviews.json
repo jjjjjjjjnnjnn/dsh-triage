@@ -1460,7 +1460,7 @@
     {
       "id": "R14-S2",
       "batch": "R14",
-      "step": "实现 M3 probe 执行器（runtime → install → boot → http → inventory → cleanup）与 CLI 真跑，并把起 Host 的机械从 scripts 收拢到 packages/probe/src/host.ts 一处",
+      "step": "实现 M3 probe 执行器（runtime → install → boot → http → inventory → cleanup）与 CLI 真跑，并把起 Host 的机械从 scripts 收拢到 packages/probe/src/host.ts 一处（产物按隐私修复（R14 audit F-2）重采：沙盒目录名改用 basename slug，不再携带用户名）",
       "changed": [
         "packages/probe/src/exec.ts",
         "packages/probe/src/host.ts",
@@ -1483,15 +1483,15 @@
       },
       "real_test": {
         "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label ok --expect go --stamp 2026-10-28T02:00:00.000Z",
-        "artifact": "data/results/probe-ok-2026-10-28T02-00-00.000Z.json",
-        "sha256": "3a4ced71ee9247c601fbad9ba935d5ede12e31ef842ea29c6758966f727dbd1f",
-        "outcome": "go · boot→sample 11.8s · http 401 · 候选行 1 条 active · cleanup 已删且端口不再应答"
+        "artifact": "data/results/probe-ok-2026-10-28T06-00-00.000Z.json",
+        "sha256": "b3999230d91dbea17a3d227c9ec6350afbb86e3c712db36bcfbe21bb6a54a6a4",
+        "outcome": "go · boot→sample 19.9s（本轮最慢一次，擦 20s 预算；同 fixture 另有 5 次 11.7–14.8s）· http 401 · 候选行 1 条 active · cleanup 已删且端口不再应答"
       }
     },
     {
       "id": "R14-S3",
       "batch": "R14",
-      "step": "红路之一：apply 期抛错 → 行相位 failed，必须点名该行且判 blocked（装了就白屏的稳定复现）",
+      "step": "红路之一：apply 期抛错 → 行相位 failed，必须点名该行且判 blocked（装了就白屏的稳定复现）（同 S2，按隐私修复重采）",
       "changed": [
         "tests/fixtures/probe/throw-plugin/index.js",
         "packages/probe/src/exec.ts"
@@ -1505,15 +1505,15 @@
       },
       "real_test": {
         "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/throw-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-apply-fail --expect blocked --stamp 2026-10-28T02:10:00.000Z",
-        "artifact": "data/results/probe-red-apply-fail-2026-10-28T02-10-00.000Z.json",
-        "sha256": "293935e34df35854a94c794758bdb0e1abc1985882beddcacd8bb10458fb8c43",
-        "outcome": "blocked · 行 include:triage-probe-throw phase=failed · boot→sample 13.8s · http 401 · cleanup 通过"
+        "artifact": "data/results/probe-red-apply-fail-2026-10-28T06-10-00.000Z.json",
+        "sha256": "8fa431be306ef3311c9655130505311e6d955bfc34a680c80ad0dbba88aa5409",
+        "outcome": "blocked · 行 include:triage-probe-throw phase=failed · boot→sample 11.7s · http 401 · cleanup 通过"
       }
     },
     {
       "id": "R14-S4",
       "batch": "R14",
-      "step": "红路之二：import 期抛错 → enabled 但无 fiber（phase=null），必须与 failed 分列",
+      "step": "红路之二：import 期抛错 → enabled 但无 fiber（phase=null），必须与 failed 分列（同 S2，按隐私修复重采）",
       "changed": [
         "tests/fixtures/probe/broken-plugin/index.js"
       ],
@@ -1526,9 +1526,9 @@
       },
       "real_test": {
         "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/broken-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label red-import-fail --expect blocked --stamp 2026-10-28T02:20:00.000Z",
-        "artifact": "data/results/probe-red-import-fail-2026-10-28T02-20-00.000Z.json",
-        "sha256": "ff3a043cb8efd2ef9d80a128f1f751096b70c3ccc451974dfbaed4be1aae6e73",
-        "outcome": "blocked · 行 include:triage-probe-broken phase=none · boot→sample 12.3s · http 401 · cleanup 通过"
+        "artifact": "data/results/probe-red-import-fail-2026-10-28T06-20-00.000Z.json",
+        "sha256": "37c587e1ff4383ce4fec936f513f2423ecf41a99443ca076d1c3c1c8fc900de8",
+        "outcome": "blocked · 行 include:triage-probe-broken phase=none · boot→sample 13.3s · http 401 · cleanup 通过"
       }
     },
     {
@@ -1626,6 +1626,31 @@
         "artifact": "data/results/gates-2026-10-28T04-40-00.000Z.json",
         "sha256": "4b329bdc11f8b4c4e039183b409ff89ccc78743a68b57548dc296687098f3818",
         "outcome": "ALL GREEN · 9 gates（含 governance/index-references 对搬家后引用的校验）"
+      }
+    },
+    {
+      "id": "R14-S9",
+      "batch": "R14",
+      "step": "独立复核（HUMAN 授权后）：全量重算哈希 + PII 扫描 + 路径逃逸探测，抓到两个真缺陷（沙盒逃逸 / 用户名进 SSOT）并当场修",
+      "changed": [
+        "packages/probe/src/plan.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/gate_governance.mjs",
+        "tests/unit/probe.test.ts",
+        "tests/e2e/probe-cli.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS（修后）：F-1 `--profile ../../evil` 会让 profileDir 落到沙盒外（`<tmp>/dsh-triage-probe/evil`），隔离证明失效；现以 `^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$` 拒绝（新错误码 `invalid-profile` → exit 2），并对 `..`、`a/b`、空串做了用例。F-2 沙盒目录名原先把整条绝对路径压成 slug（`C-Users-<名>-Desktop-…`），用户名因此进了三份已提交产物；现改为 basename slug，隐私门新增「压平路径」形态并当场对旧产物打红（反向证明有效）",
+        "reproducibility": "PASS：`tests/unit/probe.test.ts` 13 条含两条新负对照；e2e 新增逃逸用例（exit 2）；旧产物在新门下必红 → 重采后绿，这条来回可复算",
+        "licence": "PASS：只读本仓代码与自家产物；修复未引入依赖；隐私模式收紧后仍能命中旧样例（`C-Users-rongj-…`）",
+        "ssot": "PASS：三份 probe 产物按隐私修复重采（02:00/02:10/02:20 → 06:00/06:10/06:20），S2/S3/S4 的 artifact 与 sha256 同步；旧文件已删，`data/results` 无孤儿。重采同时暴露预算边缘：绿跑四次 11.7 / 13.3 / 19.9 / 12.3–14.8s，最慢一次距 20s 只剩 0.1s",
+        "adversary": "反例：隐私门现在只认 `X-Users-` 一种压平形态；POSIX 的 `home-<user>` 压平形态未覆盖（收紧前它会误伤 `dsh-home-paths` 这类包名）。这是**检测**的边界，不是修复的边界——slug 已不再由路径生成，根因已去掉。另：`--profile` 只校验形状，不校验该名字是否已被真实 profile 使用（沙盒内无所谓）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T07:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T07-20-00.000Z.json",
+        "sha256": "68dc7edfc9b47c6a94ca182b3110693aae2cbdef07e585aa827c96306c7d0402",
+        "outcome": "ALL GREEN · 9 gates（含 governance/results-privacy 与 step-review 对新产物的复算）"
       }
     }
   ]

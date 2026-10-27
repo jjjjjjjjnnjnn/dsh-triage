@@ -669,7 +669,7 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   })
   if (!plan.ok) {
     process.stderr.write(`cannot build a safe probe plan: ${plan.error.code} (${plan.error.detail})\n`)
-    return EXIT_UNAVAILABLE
+    return plan.error.code === 'invalid-profile' ? EXIT_USAGE : EXIT_UNAVAILABLE
   }
 
   if (!flags.execute) {

@@ -65,7 +65,11 @@ export interface ProbePlan {
   readonly warnings: readonly string[]
 }
 
-export type ProbePlanErrorCode = 'invalid-candidate' | 'sandbox-overlaps-real-home' | 'invalid-work-root'
+export type ProbePlanErrorCode =
+  | 'invalid-candidate'
+  | 'invalid-profile'
+  | 'sandbox-overlaps-real-home'
+  | 'invalid-work-root'
 
 export interface ProbePlanError {
   readonly code: ProbePlanErrorCode
@@ -85,6 +89,18 @@ export function buildProbePlan(input: ProbePlanInput): Result<ProbePlan, ProbePl
   const slug = slugify(candidate)
   const sandboxHome = join(resolve(input.workRoot), `${slug}-${digest}`)
   const profile = input.profile ?? 'web'
+  // A profile name becomes a directory segment under the sandbox home. Anything that can
+  // climb out of it (`..`, separators) makes the isolation proof false, so it is refused
+  // here instead of being sanitised silently (R14 audit finding F-1).
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(profile)) {
+    return {
+      ok: false,
+      error: {
+        code: 'invalid-profile',
+        detail: `profile "${profile}" must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ — it becomes a directory segment inside the sandbox`,
+      },
+    }
+  }
   const sandboxProfileDir = join(sandboxHome, 'profiles', profile)
   const port = input.basePort ?? 53000 + (parseInt(digest.slice(0, 4), 16) % 1000)
   const dshBin = input.dshBin ?? 'dsh'
@@ -175,7 +191,17 @@ export function validateProbePlan(input: {
   return { ok: true, value: true }
 }
 
+/**
+ * Directory-safe name for the sandbox home.
+ *
+ * BASENAME ONLY, and deliberately so: the first version slugified the whole candidate
+ * spec, which flattened `C:\Users\<name>\…` into `C-Users-<name>-…` and published the
+ * user's account name inside every probe artifact. The redactor could not match it
+ * because the separators it keys on were gone (R14 audit finding F-2).
+ */
 function slugify(spec: string): string {
-  const base = spec.replace(/^npm:/, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')
-  return (base === '' ? 'candidate' : base).slice(0, 48)
+  const bare = spec.replace(/^npm:/, '').replaceAll('\\', '/')
+  const base = bare.split('/').filter((part) => part !== '').pop() ?? ''
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')
+  return (cleaned === '' ? 'candidate' : cleaned).slice(0, 48)
 }
