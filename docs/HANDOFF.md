@@ -33,6 +33,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 证据 | `data/results/registry-2026-10-27T19-00-00.000Z.json`（3 个上游包 `latest` 全落后：`dsh-tools`/`dsh-base`=0.0.1-rc.1、`dsh`=0.2.1-rc.2，`next` 均 0.2.1-rc.4）· `why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`（R9：2 unknown）· `d1-2026-10-27T15-00-00.000Z.json`（9/10）· `why-2026-10-27T18-20-00.000Z.json`（真机 156 行 → 2 条行级 unknown）· `ns-live-attempt-2026-10-27T16-00-00.000Z.json`（相位采样 blocked）· `gates-*` / `gates-mutate-*`（9 门全绿 + 9/9） |
 | 审核报告 | `audit/AUDIT_2026-10-27_R10.md`（本轮）· `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（R9 记录了一次 blocked 尝试，见 §8） |
+| 交接快照（R10 收尾） | R10 = `cc76ea0`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **32 产物 / 39 步**全被引用 |
 | 交接快照（R9 收尾） | R9 = `9259515`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **110 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **29 产物 / 36 步**全被引用 |
 
 ---
