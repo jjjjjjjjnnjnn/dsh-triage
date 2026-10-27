@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R10 (2026-10-27)",
+  "stand": "R12 (2026-10-27)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -134,6 +134,20 @@
       "cannot_see": "dist-tag 事实是**快照**：只能回答「在打 stamp 那一刻 latest 落后」，回答不了「什么时候开始落后、为什么落后」（忘了打标签 vs 故意留旧版本，在 rc 生态里两者都存在）。通道粒度只分「稳定 / 预发布」，不细分 `rc` 与 `nightly`，所以 `latest=1.0.0-rc.5` 遇到 `rc.6-nightly.*` 会判落后（保守方向）。它也完全不能说明最新构建在你的运行时上跑得起来——那是声明层与 M3 probe 的问题。弃用原因不解释，只提示「tag 指向被弃用构建」",
       "mitigation": "产物带 `generated_at` 与 `.sha256`，并明确标 `tier=measured-registry`；结论侧永不据此改变 `go/blocked`；巡检靠重跑 `record_registry.mjs` 形成时间序列（M5 回流才会做趋势）；对用户的措辞只能是「装裸包名会拿到旧构建」，不能说「旧构建不能用」",
       "owner": "core/version-drift"
+    },
+    {
+      "id": "BS-19",
+      "area": "inventory/static-composition",
+      "cannot_see": "静态声明侧只看得到我们读得到的 patch 层：profile 的 cordis.patch.yml、home 层、以及 bundle 自己的 dsh.bundle.patch（字符串或数组）。launcher 层（--patch 覆盖、flag 派生的 patch）与运行时动态挂载的行（真机样本里 2 条 hash id、1 个 include group、以及采样探针自己）永远不在静态侧，因此 declared/runtime diff 的 undeclared 侧必然是「静态侧不全」+「真的没人声明」混合，两者当前不可分",
+      "mitigation": "产物把 undeclared 全列出来而不是只报计数；R12 真机样本里 4 条可逐条解释（include 根 group、2 条动态挂载、1 条采样探针，探针另有 excluded 字段）。判据侧：只要 missing（声明了却没跑）为真就报，undeclared 只到信息级。想要真正补全需要 M3 probe（在已知组合下启动）或读取 launcher 层，登记为 T-201 后续",
+      "owner": "plugin/load"
+    },
+    {
+      "id": "BS-20",
+      "area": "inventory/preset-dimension",
+      "cannot_see": "preset 行的 fiberPhase 为 null 有两种含义：这个 preset 从未被任何会话组合，或组合后拿到 fiber 前就失手。上游的快照只有 null，没有区分字段，所以本层只能出 unknown（runtime.preset-no-fiber），不能像主列表那样判 blocked。真机样本里没有出现过 enabled+null 的 preset 行，因此这一档目前只有夹具与负对照支撑",
+      "mitigation": "文案明确写出两种可能（不乱指失败），missingEvidence 记 missing.preset-phase；要分开只能靠 M3 probe 在一次真实会话组合下再采一次。对外口径不得说「这台机器的 preset 都跑起来了」",
+      "owner": "core/inventory"
     }
   ]
 }

@@ -15,6 +15,7 @@ import { test } from 'node:test'
 import {
   FIBER_PHASES,
   compareInventory,
+  findPresetDivergence,
   parseInventorySnapshot,
   phaseConclusion,
   verdictsFromInventory,
@@ -38,7 +39,12 @@ const env: EnvFingerprint = {
 }
 
 function snapshot(entries: readonly Record<string, unknown>[]): InventorySnapshot {
-  const parsed = parseInventorySnapshot({ entries }, { source: 'fixture', sampledAt: SAMPLED, profile: 'web' })
+  return parseOk({ entries })
+}
+
+/** Parse a whole snapshot literal (transport, presets, …) and fail the test if it is refused. */
+function parseOk(value: unknown): InventorySnapshot {
+  const parsed = parseInventorySnapshot(value, { source: 'fixture', sampledAt: SAMPLED, profile: 'web' })
   assert.ok(parsed.ok, parsed.ok ? '' : parsed.error.detail)
   return parsed.value
 }
@@ -110,7 +116,7 @@ test('unknown keys inside the wrapped snapshot are surfaced too', () => {
   assert.deepEqual(parsed.value.unknownKeys, ['presetV3'], 'a field added inside `snapshot` is just as interesting')
 })
 
-test('agentPresets are never swallowed: they surface as unknown until T-112', () => {
+test('agentPresets are parsed into presets instead of being swallowed (T-112)', () => {
   const parsed = parseInventorySnapshot(
     {
       entries: [],
@@ -121,13 +127,230 @@ test('agentPresets are never swallowed: they surface as unknown until T-112', ()
     { source: 'fixture', sampledAt: SAMPLED },
   )
   assert.ok(parsed.ok)
-  assert.deepEqual(parsed.value.unjudged, [{ channel: 'agentPresets', rows: 1 }])
+  assert.equal(parsed.value.presets.length, 1)
+  assert.equal(parsed.value.presets[0]?.id, 'reviewer')
+  assert.equal(parsed.value.presets[0]?.rows.length, 1)
 
   const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
   assert.equal(verdicts.length, 1, 'a failing preset row must not be invisible')
+  assert.equal(verdicts[0]?.conclusion, 'blocked')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.preset-fiber-failed')
+  assert.ok(
+    verdicts[0]?.evidence.some((item) => item.id === 'preset' && item.source === 'preset:reviewer'),
+    'the verdict must name the preset it came from',
+  )
+})
+
+test('a preset row that is enabled but has no fiber is unknown, never blocked', () => {
+  // Upstream documents preset `fiberPhase` as "the root-fiber phase when the
+  // composition is live; null otherwise". `null` therefore also means "no session ever
+  // composed this preset" — calling that `blocked` would invent a failure, and calling
+  // it `go` would hide one. The main list keeps blocking on the same shape; this
+  // asymmetry is the whole reason presets need their own table row.
+  const parsed = parseInventorySnapshot(
+    {
+      entries: [],
+      agentPresets: [
+        { id: 'minimal', rows: [{ entryId: 'persona', moduleName: '@deepseek-ai/dsh-persona', enabled: true, fiberPhase: null }] },
+      ],
+    },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
+  assert.equal(verdicts.length, 1)
+  assert.equal(verdicts[0]?.conclusion, 'unknown')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.preset-no-fiber')
+  assert.deepEqual(verdicts[0]?.missingEvidence, ['missing.preset-phase'])
+})
+
+test('a conditional preset row is unknown and names the gate', () => {
+  const parsed = parseInventorySnapshot(
+    {
+      entries: [],
+      agentPresets: [
+        {
+          id: 'standard',
+          rows: [
+            {
+              entryId: 'tool-bash',
+              moduleName: '@deepseek-ai/dsh-tool-bash',
+              enabled: 'conditional',
+              condition: "process.platform === 'win32'",
+              fiberPhase: null,
+            },
+          ],
+        },
+      ],
+    },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
+  assert.equal(verdicts.length, 1)
+  assert.equal(verdicts[0]?.conclusion, 'unknown')
+  assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.preset-conditional')
+  assert.equal(verdicts[0]?.reasons[0]?.params?.['condition'], "process.platform === 'win32'")
+})
+
+test('a broken preset stays listed as unknown with its own reason', () => {
+  const parsed = parseInventorySnapshot(
+    { entries: [], agentPresets: [{ id: 'cordis', broken: 'composition file is not readable', rows: [] }] },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
+  assert.equal(verdicts.length, 1)
   assert.equal(verdicts[0]?.conclusion, 'unknown')
   assert.equal(verdicts[0]?.reasons[0]?.code, 'runtime.preset-unjudged')
-  assert.deepEqual(verdicts[0]?.missingEvidence, ['missing.preset-phase'])
+  assert.equal(verdicts[0]?.reasons[0]?.params?.['reason'], 'composition file is not readable')
+})
+
+test('a disabled preset row is a composition choice, not a finding', () => {
+  // The shipped `minimal` preset is built out of rows like this. Reporting each one
+  // would bury the real findings; the row stays visible in the listing and in --json.
+  const parsed = parseInventorySnapshot(
+    {
+      entries: [],
+      agentPresets: [
+        { id: 'minimal', rows: [{ entryId: 'tool-bash', moduleName: '@deepseek-ai/dsh-tool-bash', enabled: false, fiberPhase: null }] },
+      ],
+    },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  assert.equal(parsed.value.presets[0]?.rows.length, 1, 'the row is still parsed and visible')
+  assert.deepEqual(verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP }), [])
+})
+
+test('cross-preset divergence is surfaced and neither value is rounded', () => {
+  const parsed = parseInventorySnapshot(
+    {
+      entries: [],
+      agentPresets: [
+        { id: 'ptc', rows: [{ entryId: 'workflow-ptc', moduleName: '@deepseek-ai/dsh-workflow-ptc', enabled: true, fiberPhase: 'active' }] },
+        { id: 'standard', rows: [{ entryId: 'workflow-ptc', moduleName: '@deepseek-ai/dsh-workflow-ptc', enabled: true, fiberPhase: 'failed' }] },
+      ],
+    },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(parsed.ok)
+  const divergence = findPresetDivergence(parsed.value.presets)
+  assert.equal(divergence.length, 1)
+  assert.equal(divergence[0]?.entryId, 'workflow-ptc')
+  assert.match(String(divergence[0]?.summary), /active@ptc/)
+  assert.match(String(divergence[0]?.summary), /failed@standard/)
+
+  const verdicts = verdictsFromInventory({ env, snapshot: parsed.value, declared: [], generatedAt: STAMP })
+  const codes = verdicts.map((verdict) => verdict.reasons[0]?.code)
+  assert.ok(codes.includes('runtime.preset-divergence'), 'the disagreement must be named')
+  assert.ok(codes.includes('runtime.preset-fiber-failed'), 'the failing side still blocks on its own')
+})
+
+test('the transport a sample declares is recorded and never upgraded to a Remote call', () => {
+  const projection = parseInventorySnapshot(
+    { transport: 'in-process-projection', entries: [] },
+    { source: 'fixture', sampledAt: SAMPLED },
+  )
+  assert.ok(projection.ok)
+  assert.equal(projection.value.transport, 'in-process-projection')
+
+  const projected = verdictsFromInventory({
+    env,
+    snapshot: parseOk({
+      transport: 'in-process-projection',
+      entries: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }],
+    }),
+    declared: [],
+    generatedAt: STAMP,
+  })
+  assert.ok(
+    projected.every((verdict) => verdict.evidence.every((item) => !String(item.method).includes('plugin-inventory/list'))),
+    'an in-process read must not claim the Remote endpoint',
+  )
+  assert.ok(projected[0]?.evidence.some((item) => item.method === 'readPluginInventory (in-process projection)'))
+
+  // The published artifact keeps the transport *inside* the snapshot; reading only the
+  // wrapper made `audit --snapshot` call it "unstated" while the file plainly said so.
+  const nested = parseOk({
+    snapshot: {
+      transport: 'in-process-projection',
+      entries: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }],
+    },
+  })
+  assert.equal(nested.transport, 'in-process-projection', 'a transport inside the snapshot counts')
+
+  const remote = verdictsFromInventory({
+    env,
+    snapshot: parseOk({
+      transport: 'remote',
+      entries: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }],
+    }),
+    declared: [],
+    generatedAt: STAMP,
+  })
+  assert.ok(remote[0]?.evidence.some((item) => item.method === 'plugin-inventory/list'))
+
+  const unstated = verdictsFromInventory({
+    env,
+    snapshot: snapshot([{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }]),
+    declared: [],
+    generatedAt: STAMP,
+  })
+  assert.ok(
+    unstated[0]?.evidence.every((item) => !String(item.method).includes('plugin-inventory/list')),
+    'no transport, no Remote claim',
+  )
+
+  const bogus = parseInventorySnapshot({ transport: 'carrier-pigeon', entries: [] }, { source: 'fixture', sampledAt: SAMPLED })
+  assert.equal(bogus.ok, false, 'a transport nobody defines is refused, not ignored')
+  assert.ok(!bogus.ok && bogus.error.detail.includes('carrier-pigeon'))
+})
+
+test('a refused preset names the offending row and field', () => {
+  const cases = [
+    {
+      snapshot: { entries: [], agentPresets: [{ id: 'standard', rows: [{ entryId: 'tools', enabled: true, fiberPhase: 'active' }] }] },
+      includes: 'moduleName',
+    },
+    {
+      snapshot: { entries: [], agentPresets: [{ id: 'standard', rows: [{ entryId: 'tools', moduleName: '@x/y', enabled: 'yes', fiberPhase: null }] }] },
+      includes: 'enabled',
+    },
+    {
+      snapshot: { entries: [], agentPresets: 'agentPresets' },
+      includes: 'not an array',
+    },
+    {
+      snapshot: {
+        entries: [],
+        agentPresets: [{ id: 'dup', rows: [] }, { id: 'dup', rows: [] }],
+      },
+      includes: 'more than once',
+    },
+    {
+      snapshot: {
+        entries: [],
+        agentPresets: [
+          {
+            id: 'cordis',
+            broken: 'unreadable',
+            rows: [{ entryId: 'tools', moduleName: '@x/y', enabled: true, fiberPhase: 'failed' }],
+          },
+        ],
+      },
+      includes: 'marked broken and still carries',
+    },
+    {
+      snapshot: { entries: [], agentPresets: [{ id: 'standard', rows: [{ entryId: 't', moduleName: '@x/y', enabled: true, fiberPhase: 'sleeping' }] }] },
+      includes: 'sleeping',
+    },
+  ]
+  for (const { snapshot: value, includes } of cases) {
+    const parsed = parseInventorySnapshot(value, { source: 'fixture', sampledAt: SAMPLED })
+    assert.equal(parsed.ok, false, `expected a refusal for ${includes}`)
+    assert.ok(!parsed.ok && parsed.error.detail.includes(includes), `detail must mention "${includes}", got "${parsed.ok ? '' : parsed.error.detail}"`)
+  }
 })
 
 test('a disabled entry nobody declares is reported once, as disabled', () => {
@@ -259,3 +482,84 @@ test('the declared-vs-running diff names both directions', () => {
   assert.deepEqual(diff.missing.map((row) => row.entryId), ['mcp-client'])
   assert.deepEqual(diff.undeclared.map((item) => item.entryId), ['preset-row'])
 })
+
+test('a loader id carrying its group path still matches the flat declared row', () => {
+  // Measured on a real sandbox Host: the loader wraps the profile's cordis.yml in an
+  // `include` group, so patch row `tool-bash` runs as `include:tool-bash`. Comparing
+  // those literally produced 96 "absent" + 195 "undeclared" rows out of a healthy Host.
+  const built = snapshot([
+    { entryId: 'include:tool-bash', moduleName: '@deepseek-ai/dsh-tool-bash', enabled: true, fiberPhase: 'active' },
+    { entryId: 'include:tool-pwsh', moduleName: '@deepseek-ai/dsh-tool-pwsh', enabled: true, fiberPhase: 'active' },
+  ])
+  const declared = [
+    { entryId: 'tool-bash', module: '@deepseek-ai/dsh-tool-bash' },
+    { entryId: 'tool-pwsh', module: '@deepseek-ai/dsh-tool-pwsh' },
+  ]
+  const diff = compareInventory(built, declared)
+  assert.deepEqual(diff.missing, [], 'a prefixed runtime id is not "missing"')
+  assert.deepEqual(diff.undeclared, [], 'and the declared row is not "undeclared" either')
+
+  const verdicts = verdictsFromInventory({ env, snapshot: built, declared, generatedAt: STAMP })
+  assert.deepEqual(verdicts, [], 'a healthy prefixed row produces no finding')
+})
+
+test('an exact id wins over a suffixed one, and two candidates are never guessed', () => {
+  const built = snapshot([
+    { entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' },
+    { entryId: 'include:tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'active' },
+    { entryId: 'a:shared', moduleName: '@deepseek-ai/dsh-shared', enabled: true, fiberPhase: 'active' },
+    { entryId: 'b:shared', moduleName: '@deepseek-ai/dsh-shared', enabled: true, fiberPhase: 'active' },
+  ])
+  const exact = verdictsFromInventory({
+    env,
+    snapshot: built,
+    declared: [{ entryId: 'tools', module: '@deepseek-ai/dsh-tools' }],
+    generatedAt: STAMP,
+  })
+  const blocked = exact.filter((verdict) => verdict.conclusion === 'blocked')
+  assert.equal(blocked.length, 1, 'only the exact id is judged as the declared row')
+  assert.equal(blocked[0]?.reasons[0]?.params?.['entryId'], 'tools', 'the exact match is the one that blocks')
+  assert.ok(
+    !exact.some((verdict) => verdict.reasons[0]?.params?.['entryId'] === 'include:tools' && verdict.conclusion !== 'risky'),
+    'the suffixed twin is never credited with the declaration',
+  )
+
+  const ambiguous = verdictsFromInventory({
+    env,
+    snapshot: built,
+    declared: [{ entryId: 'shared', module: '@deepseek-ai/dsh-shared' }],
+    generatedAt: STAMP,
+  })
+  const codes = ambiguous.map((verdict) => verdict.reasons[0]?.code)
+  assert.ok(codes.includes('runtime.ambiguous-entry'), 'two tail matches are reported, not resolved')
+  assert.ok(!codes.includes('runtime.missing-entry'), 'and the row is not called absent either')
+  const card = ambiguous.find((verdict) => verdict.reasons[0]?.code === 'runtime.ambiguous-entry')
+  assert.deepEqual(card?.missingEvidence, ['missing.row-identity'])
+  assert.equal(card?.conclusion, 'unknown')
+})
+
+test('a suffix match must load the declared package, or the row is not the same row', () => {
+  // Adversary finding: matching on the id tail alone let `other:tools` (loading
+  // `@other/pkg/tools`) satisfy a declaration for `tools` (@deepseek-ai/dsh-tools).
+  // A genuinely missing plugin then cancelled out against an unrelated row and the
+  // sample reported *zero* findings — the exact false negative this layer exists to stop.
+  const built = snapshot([{ entryId: 'other:tools', moduleName: '@other/pkg/tools', enabled: true, fiberPhase: 'active' }])
+  const verdicts = verdictsFromInventory({
+    env,
+    snapshot: built,
+    declared: [{ entryId: 'tools', module: '@deepseek-ai/dsh-tools' }],
+    generatedAt: STAMP,
+  })
+  const codes = verdicts.map((verdict) => verdict.reasons[0]?.code)
+  assert.ok(codes.includes('runtime.missing-entry'), 'the declared row is missing, not satisfied by a stranger')
+  assert.ok(codes.includes('runtime.undeclared-entry'), 'and the stranger is still reported as undeclared')
+
+  const samePackage = verdictsFromInventory({
+    env,
+    snapshot: built,
+    declared: [{ entryId: 'tools', module: '@other/pkg' }],
+    generatedAt: STAMP,
+  })
+  assert.deepEqual(samePackage, [], 'a subpath export of the same package is the same row')
+})
+

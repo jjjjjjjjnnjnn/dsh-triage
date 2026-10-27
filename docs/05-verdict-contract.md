@@ -134,7 +134,11 @@
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3），`registry.*` 是 R10 引入的 registry 事实命名空间 |
+| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间 |
+
+`runtime.*` 的完整成员（R12 起含 preset 维度）：`fiber-failed` / `no-fiber` / `disabled` / `missing-entry` / `ambiguous-entry` / `undeclared-entry` / `preset-unjudged` / `preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-divergence`。新增成员必须三处同改：`messages.ts` 文案（中英）、门 `verdict-contract` 白名单、本节与 `docs/specs/M2-inventory.md` §3。
+
+`evidence[].method` 必须与真实传输一致：`plugin-inventory/list` 只用于真的走 Remote 的采样；进程内投影写 `readPluginInventory (in-process projection)`；文件未声明传输写 `inventory snapshot (transport unstated)`（刻意不借用 Remote 端点名）。门的 fixture `projection-never-claims-the-remote` 锁死这一条。
 | 文案里的每个 `{占位符}` 必须由该条 `params` 提供（`reasons[]` 与 `remediation[]` 同规则） | 门 `verdict-contract` 的 `placeholder-params-required`：缺 key / `null` / 空串都算缺失；并带**双向自测**（缺即红 + 补齐即绿），防断言空转 |
 | `missing.*` / `conclusion.*` 的文案**不得**含 `{占位符}`（这两条渲染路径根本不传 params） | 门 `verdict-contract` 的 `no-placeholders-without-params`（R9 复核后补：此前只盖住 reasons/remediation） |
 | 行级 verdict：`subject.kind === "entry"` 时 `reasons` 必含 `admission-row-scope`，且其 `params.rows` 非空 | 单测 `tests/unit/rows.test.ts` |

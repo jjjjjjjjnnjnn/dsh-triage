@@ -121,16 +121,25 @@ const payload = {
     kind: sampleKind,
     source,
     sampled_at: snapshot.sampledAt,
-    profile: snapshot.profile,    note:
+    profile: snapshot.profile,
+    transport: snapshot.transport,
+    note:
       sampleKind === 'live'
-        ? 'exported from a running Host via pluginInventory/list (the file declared kind=live and a sampled_at)'
+        ? 'exported from a running Host (the file declared kind=live and a sampled_at); read `sample.transport` for how the rows were taken'
         : 'synthetic snapshot: exercises the phase table, not a live observation of this machine',
   },
   env: core.redactEnv(env, redactRoots),
   inventory: {
     management_available: snapshot.managementAvailable,
     unknown_keys: snapshot.unknownKeys,
-    unjudged: snapshot.unjudged,
+    transport: snapshot.transport,
+    presets: snapshot.presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      is_default: preset.isDefault,
+      broken: preset.broken,
+      rows: preset.rows.length,
+    })),
     declared_without_module: declared.filter((row) => row.module === null).length,
     entries: snapshot.entries.map((entry) => ({
       entry_id: entry.entryId,
@@ -139,6 +148,7 @@ const payload = {
       phase: entry.fiberPhase,
     })),
     missing: diff.missing,
+    ambiguous: diff.ambiguous,
     undeclared: diff.undeclared.map((entry) => ({ entry_id: entry.entryId, module: entry.moduleName, phase: entry.fiberPhase })),
   },
   verdicts,

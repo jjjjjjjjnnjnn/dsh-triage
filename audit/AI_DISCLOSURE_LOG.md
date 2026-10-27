@@ -166,3 +166,17 @@
 - 人工决策：HUMAN 指定「下载依赖 + DSH 本体用于测试」「所有项目文件放仓内」
 - SessionID：待 HUMAN 回填
 - 备注：沙盒不入库；session token 不进产物（`token=<token>`）；`~/.dsh` 未被读写；`mounted-host` ≠ 相位采样，B1/B2 仍未关闭
+
+### 2026-10-27 R12｜让相位来自真机（T-201 P1 进程内投影 + T-112 preset 维度）+ 两个真 bug
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）+ 独立对抗性复核子会话（只读）
+- 范围：`scripts/probe_hooks/inventory-hook.mjs`（新）、`scripts/record_live_inventory.mjs`（新）、`packages/core/src/{inventory,ledger,messages,index}.ts`、`packages/plugin/src/{cli,load}.ts`、`scripts/gate_inventory_contract.mjs`、`tests/{unit/inventory,e2e/inventory-cli}.test.ts`、`tests/fixtures/{inventory/cases.json,env/home/profiles/desktop/package.json}`、`docs/{HANDOFF,BACKLOG,ROADMAP,05-verdict-contract,07-environment,specs/M2-inventory}.md`、`INDEX.md`、`AGENTS.md`、`.agents/prompts/kickoff.md`、`audit/{blind_spots.json,step_reviews.json,AUDIT_2026-10-27_R12.md}`、`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（新）+ `inventory-2026-10-27T00-00-00.000Z.json`（重放）
+- 起因：HUMAN 指令「交接项目过来，进行下一步计划」→ 选定 R12 = P1 真机快照 + T-112 合并；并授权「真机数据与 spec 冲突时只记录、不改判据」
+- 结果：① 探针在沙箱 Host 内调用上游导出的 `readPluginInventory(ctx)`（`list()` 内部同一函数），等树稳定后落盘；产物 `transport=in-process-projection`，**不冒充 Remote**；② 记录器串起「挂载 → 采样 → 杀进程树 → CLI 交叉校验 → 脱敏 → SSOT」，`cross_check.agree=true`；③ preset 维度五档判法 + 跨 preset 分歧显式化；④ 真 bug 两个：`dsh.bundle.patch` 数组形态被静默丢弃（`undeclared` 195→4）、loader id 带 `include:` 前缀（`missing` 96→0，新增 `runtime.ambiguous-entry` 不猜归属）
+- 实测（0.2.1-rc.4 沙盒）：194 行 = 167 active + 27 disabled；4 个 preset / 98 行；9.2s 起服务、采样 4.8s 稳定；无 failed / broken / conditional 行
+- 门禁：`verify` **135 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**
+- 过程中的真实缺陷：① `dsh web --patch` 被当 app 参数（launcher flag 必须在 profile 名之前）；② 探针裸模块名解析失败（改用 `createRequire(resolveFrom)` 指到运行中的 profile）；③ 交叉校验把「0 条」当 `undefined` 误报不一致；④ `.sha256` 带文件名导致 `gate_ssot` 红；⑤ 脱敏漏掉 `file:///` 百分号编码路径；⑥ 旧合成产物因 preset 命名空间变更被 `verdict-contract` 打红，按同一 stamp 重放并同步 sha256
+- 独立复核：只读对抗性会话判 PARTLY CONFIRMED，6 条必须修全部当场修完（详见 udit/AUDIT_2026-10-27_R12.md §8.1）：交叉校验只比计数（翻转 87 条 preset 仍 agree）→ 改按身份比对；探针因子句 id 前缀没被排除 → 从发布快照剔除并加硬断言；id 后缀匹配不看模块名（真缺失被野行抵消）→ 加同包约束；	ransport 自证且不在快照内 → 写进快照 + 门加正向断言 + 未声明不借用 Remote 名；preset 拒绝理由造假 / broken+rows 吞行 / 重复 id → 逐条具体理由 + 拒绝；复核时门不绿 → 收尾按序补齐并重跑（S6/S7）
+- 人工决策：HUMAN 选择「P1 真机快照 + T-112 合并」；「spec 冲突只记录不改判据」
+- SessionID：待 HUMAN 回填
+- 备注：真机样本产地是**仓内沙盒**，不是用户 `~/.dsh`；对外只能说「在一台真起的 0.2.1-rc.4 Host 上实测」。`B3` 仍只有夹具覆盖（`BS-20`），静态侧不全登记 `BS-19`

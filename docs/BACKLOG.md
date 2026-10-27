@@ -18,8 +18,8 @@
 | T-117 | 行级「peer 通过但 `dsh.compatibility` 相左」是否提示（`BS-17`） | M2-a | implementer | T-108 | 先定粒度（每模块一条）与是否进 `unknown`，再实现；在此之前文档明确「行级只在 `unconstrained` 时挂兼容通道」 | ⬜ R9 独立复核发现（行级相左目前不提示） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
-| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **P2 已交付（2026-10-27）**：`audit --snapshot` + 门 `inventory-contract` + 13 条测试；**P1 待真机**（需 0.2.x 可启动 profile）；B1/B2 目前只有合成样本 |
-| T-112 | `agentPresets` 维度：同一 entry 在不同 preset 下相位不同，必须分开出结论 | M2-a | implementer | T-201 | 不取「最乐观值」；只有 `conditional` 的 preset 行标 `unknown` + 需会话上下文 | ⬜ R7 发现（`BS-15`，spec §3 硬约束 3 未实现） |
+| T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | ✅ **R12 完成 P1（进程内投影）+ P2**：沙箱 Host 内 `readPluginInventory(ctx)` 真采样 → `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（`sample.kind=live`，195 行，`cross_check.agree=true`，B1/B2 关闭）；**Remote 客户端（真 `pluginInventory/list`）留作 P3** |
+| T-112 | `agentPresets` 维度：同一 entry 在不同 preset 下相位不同，必须分开出结论 | M2-a | implementer | T-201 | 不取「最乐观值」；只有 `conditional` 的 preset 行标 `unknown` + 需会话上下文 | ✅ **R12 完成**：preset 分行判（`conditional` / `failed` / `no-fiber` / `broken` / 跨 preset 分歧五档），真机样本 4 个 preset / 98 行；`runtime.preset-*` 命名空间三处同改 |
 | T-202 | 运行时命名空间快照（tools/commands/settings/skills） | M2-a | implementer | T-201 | 快照落 `data/results/ns-*.json` + 哈希 | ⬜ |
 | T-203 | 冲突分级 v2：service / tool / command / slot / theme 权重表 | M2-a | implementer | T-202 | 单测覆盖 5 类；文档 `docs/03` F4 更新 | ⬜ |
 | T-105 | `audit` 与 `why` 结论同源：`audit` 也要给出行级 admission 结论 | M2-a | implementer | T-201 | 同一 profile 下两命令交叉一致（e2e 断言） | ⬜ R4 审核遗留（`audit/AUDIT_2026-10-26_R4.md` §5） |
@@ -39,7 +39,23 @@
 
 ---
 
-## R10 已交付（本轮，证据见 `data/results/registry-2026-10-27T19-00-00.000Z.json`）
+## R12 已交付（本轮，证据见 `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| T-201 P1 | `scripts/probe_hooks/inventory-hook.mjs`：在沙箱 Host 内调上游导出的 `readPluginInventory(ctx)`，等树稳定（无 pending/loading）后落盘；`scripts/record_live_inventory.mjs` 负责挂载/采样/杀树/交叉校验/脱敏 | ✅ |
+| T-112 | preset 维度：`InventoryPreset`/`InventoryPresetRow` 解析 + 五档判法（`preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-unjudged` / `preset-divergence`）；禁用的 preset 行不刷屏 | ✅ |
+| NEW | `transport` 字段进快照契约（`remote` / `in-process-projection`），证据 `method` 随传输变化；fixture `projection-never-claims-the-remote` 锁死 | ✅ |
+| NEW | id 形态解析：`include:tool-bash` ≡ 声明行 `tool-bash`（唯一后缀），两候选 → `runtime.ambiguous-entry`（不猜）；新原因 `missing.row-identity` | ✅ |
+| FIX | `dsh.bundle.patch` 支持**数组**（上游默认形态）：此前只读字符串分支，`dsh-web-app` 整层被静默跳过。修后真机 `undeclared` 195 → 3 | ✅ |
+| FIX | preset 声明读取：`config.plugins` 里的组合行（`extractPresetDeclarations`），而不是把 preset 载体行当成 1 条声明 | ✅ |
+| 真机发现 | 沙箱 Host：194 行 = 167 active + 27 disabled（27 条全是 disabled）；4 个 preset / 98 行；无 failed、无 broken、无 conditional | ✅ |
+| 测试 | +8（`tests/unit/inventory.test.ts` 22 条），总 **135**；9 门 / `--mutate` 9/9 | ✅ |
+| 重放 | `data/results/inventory-2026-10-27T00-00-00.000Z.json`（R7 合成样本）用当前引擎重放：preset 档位变了，夹具未改；sha256 同步进 `audit/step_reviews.json` | ✅ |
+
+---
+
+## R10 已交付（证据见 `data/results/registry-2026-10-27T19-00-00.000Z.json`）
 
 | 项 | 内容 | 状态 |
 |---|---|---|

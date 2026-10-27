@@ -37,8 +37,15 @@ export { evaluateAdmission, evaluateRange, isAdmissionPeer, readEnginesDsh } fro
 export type { LoadEnvInput, ProfileManifest } from './env.js'
 export { defaultDshHome, loadEnv, parseProfileManifest, profileDirOf, resolveProfileDir } from './env.js'
 
-export type { EntryClaim, EntryCollision, RowTarget } from './ledger.js'
-export { extractEntryClaims, findEntryIdCollisions, groupClaimsBySource, parsePatchYaml, rowTargets } from './ledger.js'
+export type { EntryClaim, EntryCollision, PresetDeclaration, RowTarget } from './ledger.js'
+export {
+  extractEntryClaims,
+  extractPresetDeclarations,
+  findEntryIdCollisions,
+  groupClaimsBySource,
+  parsePatchYaml,
+  rowTargets,
+} from './ledger.js'
 
 export type { AdmissionVerdictInput, CollisionVerdictInput, RowAdmissionInput, RowDeclaration } from './verdict.js'
 export type { InstallOrigin } from './verdict.js'
@@ -65,16 +72,24 @@ export type {
   FiberPhase,
   InventoryEntry,
   InventoryMeta,
+  InventoryPreset,
+  InventoryPresetRow,
   InventorySnapshot,
+  InventoryTransport,
   InventoryVerdictInput,
   PhaseConclusion,
 } from './inventory.js'
 export {
   FIBER_PHASES,
+  INVENTORY_TRANSPORTS,
   compareInventory,
+  evidenceMethod,
+  findPresetDivergence,
+  indexRuntimeIds,
   isFiberPhase,
   parseInventorySnapshot,
   phaseConclusion,
+  resolveRuntimeId,
   verdictsFromInventory,
 } from './inventory.js'
 

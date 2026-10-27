@@ -8,7 +8,7 @@
 【项目】dsh-triage（分诊台）— DSH 插件的判断层。仓库 https://github.com/jjjjjjjjnnjnn/dsh-triage（private, main）
 【工作目录】C:\Users\rongj\Desktop\项目开发\DSH-Addition
 【上游基线】@deepseek-ai/dsh 0.2.1-rc.2（本机 profile 实测 0.1.0-rc.6）
-【当前状态】M0 ✅（75 测试 / 9 门 / 负对照 9-9）· M1 金标对等 ✅ · M1 真实案例验收 ✅ D1 通过（10 例 / 9 命中 / 1 有意 miss）· M2-a **P2 已交付**（`audit --snapshot` + 相位契约门）/ P1 待真机
+【当前状态】M0 ✅（132 测试 / 9 门 / 负对照 9-9）· M1 金标对等 ✅ · M1 真实案例验收 ✅ D1 通过（10 例 / 9 命中 / 1 有意 miss）· M2-a **P1+P2 已交付**（仓内沙盒真机相位采样 + `audit --snapshot` + 相位契约门 + preset 维度 T-112）
 
 【开工三步，先跑再动手】
 1) git status --short && git log --oneline -3

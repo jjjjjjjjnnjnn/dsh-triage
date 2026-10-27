@@ -29,8 +29,13 @@ const RUNTIME_REASON_CODES = [
   'runtime.no-fiber',
   'runtime.disabled',
   'runtime.missing-entry',
+  'runtime.ambiguous-entry',
   'runtime.undeclared-entry',
   'runtime.preset-unjudged',
+  'runtime.preset-conditional',
+  'runtime.preset-fiber-failed',
+  'runtime.preset-no-fiber',
+  'runtime.preset-divergence',
 ]
 
 await runGate('inventory-contract', async ({ checks, mutate }) => {
@@ -76,6 +81,14 @@ await runGate('inventory-contract', async ({ checks, mutate }) => {
 
     if (typeof expected.error === 'string') {
       checks.add(`case:${id}`, parsed.ok === false && parsed.error.code === expected.error, parsed.ok ? 'parsed an input the contract refuses' : `${parsed.error.code} vs expected ${expected.error}`)
+      if (typeof expected.error_includes === 'string') {
+        const detail = parsed.ok ? '' : parsed.error.detail
+        checks.add(
+          `case:${id}:detail-names-${expected.error_includes}`,
+          detail.includes(String(expected.error_includes)),
+          detail === '' ? 'no error detail' : detail.slice(0, 160),
+        )
+      }
       continue
     }
     if (!parsed.ok) {
@@ -106,6 +119,31 @@ await runGate('inventory-contract', async ({ checks, mutate }) => {
         ? `expected ${wanted}/${String(expected.code)}, got ${verdicts.map((v) => `${v.conclusion}:${v.reasons.map((r) => r.code).join('+')}`).join(' | ') || 'nothing'}`
         : `${wanted}/${String(expected.code)}`,
     )
+    // A sample must never be upgraded to a transport it did not use: the evidence row
+    // repeats the transport, so a fixture can forbid one method (substring: "unstated"
+    // and "readPluginInventory (…)" both used to slip past an equality check) or demand
+    // one outright.
+    if (typeof expected.evidence_method_not === 'string') {
+      const forbidden = String(expected.evidence_method_not)
+      const offenders = verdicts.filter((verdict) =>
+        verdict.evidence.some((item) => String(item.method).includes(forbidden)),
+      )
+      checks.add(
+        `case:${id}:method-not-${forbidden}`,
+        offenders.length === 0,
+        offenders.length === 0 ? `no verdict claims "${forbidden}"` : `${offenders.length} verdict(s) claim "${forbidden}"`,
+      )
+    }
+    if (typeof expected.evidence_method_is === 'string') {
+      const demanded = String(expected.evidence_method_is)
+      const ok =
+        verdicts.length > 0 && verdicts.every((verdict) => verdict.evidence.some((item) => item.method === demanded))
+      checks.add(
+        `case:${id}:method-is-${demanded}`,
+        ok,
+        ok ? `every verdict names "${demanded}"` : `a verdict does not name "${demanded}"`,
+      )
+    }
     // Contract invariants that must hold for every emitted verdict.
     for (const verdict of verdicts) {
       const problems = []
@@ -117,7 +155,23 @@ await runGate('inventory-contract', async ({ checks, mutate }) => {
     }
   }
 
-  /* 2. upstream enum drift, compared with the recorded sample */
+  /* 2. the transport assertions must not be vacuous */
+  const methodForbidden = cases.filter((testCase) => typeof testCase.expect?.evidence_method_not === 'string')
+  const methodDemanded = cases.filter((testCase) => typeof testCase.expect?.evidence_method_is === 'string')
+  checks.add(
+    'method-negative-control-present',
+    methodForbidden.length > 0,
+    methodForbidden.length > 0
+      ? `${methodForbidden.length} fixture(s) forbid a method`
+      : 'no fixture forbids a transport method, so the assertion can be deleted without a trace',
+  )
+  checks.add(
+    'method-positive-control-present',
+    methodDemanded.length > 0,
+    methodDemanded.length > 0 ? `${methodDemanded.length} fixture(s) demand a method` : 'no fixture demands the projection method',
+  )
+
+  /* 3. upstream enum drift, compared with the recorded sample */
   const upstream = listDir('data/results')
     .filter((entry) => entry.isFile && /^upstream-.*\.json$/.test(entry.name))
     .map((entry) => `data/results/${entry.name}`)
@@ -136,7 +190,7 @@ await runGate('inventory-contract', async ({ checks, mutate }) => {
     unknown.length === 0 ? `${observed.length} phase(s) match ${declared.join('|')}` : `upstream phases not in the engine: ${unknown.join(', ')}`,
   )
 
-  /* 3. every runtime reason is translated, and the spec agrees with the fixtures */
+  /* 4. every runtime reason is translated, and the spec agrees with the fixtures */
   const specLines = readText(SPEC).split(/\r?\n/)
   for (const code of RUNTIME_REASON_CODES) {
     for (const locale of ['en', 'zh']) {

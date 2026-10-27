@@ -76,7 +76,16 @@ node scripts/gate.mjs --mutate
 | 清理 | `rm -rf sandbox/`（不涉及 `~/.dsh`） |
 | 边界 | 不注入任何真实凭据；不改真实 `~/.dsh`；不作安全结论；日志只存哈希，session token 不进产物 |
 
-**已实测（2026-10-27，`0.2.1-rc.4`）**：runtime 安装 + profile 依赖就位（compose 191 条）→ `dsh web` **11.8s 起服务**、带 token 303（token→cookie 重定向）、不带 token 401、`taskkill /T` 后端口关闭。**相位行仍未读到**：缺的是 `pluginInventory/list` 的 Remote 客户端（T-201 P1），不是环境。
+**已实测（2026-10-27，`0.2.1-rc.4`）**：runtime 安装 + profile 依赖就位（compose 191 条）→ `dsh web` **11.8s 起服务**、带 token 303（token→cookie 重定向）、不带 token 401、`taskkill /T` 后端口关闭。
+
+**R12 起相位行也读到了**（T-201 P1）：探针行通过 launcher 层挂进去，9.2s 起服务、采样在 4.8s 内稳定，产出 `data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（194 行 / 167 active / 27 disabled / 4 preset 98 行 / Host↔CLI 一致）。
+
+| 项 | 值 |
+|---|---|
+| launcher flag 顺序 | `dsh --profile upstream --patch <overlay>`；**`--patch` 必须在 profile 名之前**，写在后面会被当成 app 参数（`error: unknown option '--patch'`） |
+| 探针模块名 | overlay 里写 `name: './inventory-hook.mjs'`，loader 按 overlay 文件所在目录解析（`ctx.baseUrl`） |
+| 探针的行数效应 | 探针自己也是一行：快照行数 = 部署行数 + 1，产物用 `excluded` 记录并排除 |
+| 清理 | `scripts/record_live_inventory.mjs` 用 `mkdtempSync` 在沙盒旁建临时目录，`finally` 里整目录删除 |
 
 ## 5. 已知环境陷阱
 

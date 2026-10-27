@@ -124,8 +124,8 @@
       "expect": { "conclusion": "blocked", "code": "runtime.no-fiber" }
     },
     {
-      "id": "preset-rows-are-not-swallowed",
-      "spec": "§3 hard constraint 3: preset phases must never be taken as the main phase — until T-112 they surface as unknown",
+      "id": "preset-failed-row-blocks",
+      "spec": "§3 preset row: a failed preset row blocks on its own, attributed to its preset",
       "declared": [],
       "snapshot": {
         "entries": [],
@@ -137,7 +137,203 @@
           }
         ]
       },
+      "expect": { "conclusion": "blocked", "code": "runtime.preset-fiber-failed" }
+    },
+    {
+      "id": "preset-enabled-without-fiber-is-unknown",
+      "spec": "§3 preset row: enabled with no live fiber is unknown, never blocked (null also means 'no session composed it')",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "minimal",
+            "isDefault": false,
+            "rows": [{ "entryId": "persona", "moduleName": "@deepseek-ai/dsh-persona", "enabled": true, "fiberPhase": null }]
+          }
+        ]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.preset-no-fiber" }
+    },
+    {
+      "id": "preset-conditional-is-unknown",
+      "spec": "§6 row 6: a conditional preset row is unknown until a session context decides the gate",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "standard",
+            "isDefault": true,
+            "rows": [
+              {
+                "entryId": "tool-bash",
+                "moduleName": "@deepseek-ai/dsh-tool-bash",
+                "enabled": "conditional",
+                "condition": "process.platform === 'win32'",
+                "fiberPhase": null
+              }
+            ]
+          }
+        ]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.preset-conditional" }
+    },
+    {
+      "id": "preset-broken-is-unjudged",
+      "spec": "§3 preset row: a preset whose composition cannot be read stays listed as unknown with its reason",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [{ "id": "cordis", "broken": "composition file is not readable", "isDefault": false, "rows": [] }]
+      },
       "expect": { "conclusion": "unknown", "code": "runtime.preset-unjudged" }
+    },
+    {
+      "id": "preset-disabled-row-is-silent",
+      "spec": "§3 preset row: a disabled row is a composition choice (the shipped minimal preset is made of them), not a finding",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "minimal",
+            "isDefault": false,
+            "rows": [{ "entryId": "tool-bash", "moduleName": "@deepseek-ai/dsh-tool-bash", "enabled": false, "fiberPhase": null }]
+          }
+        ]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "preset-divergence-is-named",
+      "spec": "§3 hard constraint 3: the same entry reaching different phases under different presets is named, never rounded to the friendlier one",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "ptc",
+            "isDefault": false,
+            "rows": [{ "entryId": "workflow-ptc", "moduleName": "@deepseek-ai/dsh-workflow-ptc", "enabled": true, "fiberPhase": "active" }]
+          },
+          {
+            "id": "standard",
+            "isDefault": true,
+            "rows": [{ "entryId": "workflow-ptc", "moduleName": "@deepseek-ai/dsh-workflow-ptc", "enabled": true, "fiberPhase": "failed" }]
+          }
+        ]
+      },
+      "expect": { "conclusion": "risky", "code": "runtime.preset-divergence" }
+    },
+    {
+      "id": "prefixed-loader-id-matches-the-declared-row",
+      "spec": "§3: the loader spells a grouped row as `<group>:<id>`; the declared row is the bare id, and the two are the same row",
+      "declared": [{ "entryId": "tool-bash", "module": "@deepseek-ai/dsh-tool-bash" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "include:tool-bash", "moduleName": "@deepseek-ai/dsh-tool-bash", "enabled": true, "fiberPhase": "active" }
+        ]
+      },
+      "expect": { "conclusion": "none" }
+    },
+    {
+      "id": "ambiguous-loader-id-is-not-guessed",
+      "spec": "§3: the same row id under two groups is reported as ambiguous instead of attributed to one of them",
+      "declared": [{ "entryId": "shared", "module": "@deepseek-ai/dsh-shared" }],
+      "snapshot": {
+        "entries": [
+          { "entryId": "a:shared", "moduleName": "@deepseek-ai/dsh-shared", "enabled": true, "fiberPhase": "active" },
+          { "entryId": "b:shared", "moduleName": "@deepseek-ai/dsh-shared", "enabled": true, "fiberPhase": "active" }
+        ]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.ambiguous-entry" }
+    },
+    {
+      "id": "transport-value-is-validated",
+      "spec": "§3 hard constraint 1: a sample must name a transport this build knows, because the evidence row repeats it",
+      "declared": [],
+      "snapshot": { "transport": "carrier-pigeon", "entries": [] },
+      "expect": { "error": "inventory-invalid" }
+    },
+    {
+      "id": "projection-never-claims-the-remote",
+      "spec": "§3 hard constraint 1: an in-process projection is the same projection as the Remote, but it is not a Remote call",
+      "declared": [],
+      "snapshot": {
+        "transport": "in-process-projection",
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "failed" }]
+      },
+      "expect": {
+        "conclusion": "blocked",
+        "code": "runtime.fiber-failed",
+        "evidence_method_not": "plugin-inventory/list",
+        "evidence_method_is": "readPluginInventory (in-process projection)"
+      }
+    },
+    {
+      "id": "unstated-transport-is-not-called-remote",
+      "spec": "§3 hard constraint 1: a sample that never says how it was taken must not be described as a Remote call either",
+      "declared": [],
+      "snapshot": {
+        "entries": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "failed" }]
+      },
+      "expect": {
+        "conclusion": "blocked",
+        "code": "runtime.fiber-failed",
+        "evidence_method_not": "plugin-inventory/list",
+        "evidence_method_is": "inventory snapshot (transport unstated)"
+      }
+    },
+    {
+      "id": "broken-preset-with-rows-is-refused",
+      "spec": "§3 hard constraint 3: a preset cannot be unreadable and carry rows at the same time — judging one would hide the other",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          {
+            "id": "cordis",
+            "broken": "composition file is not readable",
+            "rows": [{ "entryId": "tools", "moduleName": "@deepseek-ai/dsh-tools", "enabled": true, "fiberPhase": "failed" }]
+          }
+        ]
+      },
+      "expect": { "error": "inventory-invalid" }
+    },
+    {
+      "id": "duplicate-preset-id-is-refused",
+      "spec": "§3 hard constraint 3: two presets with one id cannot be told apart, so their rows must not be attributed",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          { "id": "dup", "rows": [] },
+          { "id": "dup", "rows": [] }
+        ]
+      },
+      "expect": { "error": "inventory-invalid" }
+    },
+    {
+      "id": "preset-row-error-names-the-row",
+      "spec": "§6: a refused preset row must name the offending row and field, not blame agentPresets for not being an array",
+      "declared": [],
+      "snapshot": {
+        "entries": [],
+        "agentPresets": [
+          { "id": "standard", "rows": [{ "entryId": "tools", "enabled": true, "fiberPhase": "active" }] }
+        ]
+      },
+      "expect": { "error": "inventory-invalid", "error_includes": "moduleName" }
+    },
+    {
+      "id": "suffix-match-must-load-the-declared-package",
+      "spec": "§3.2: a tail match on the id alone lets an unrelated row satisfy a declaration, cancelling a real gap into silence",
+      "declared": [{ "entryId": "tools", "module": "@deepseek-ai/dsh-tools" }],
+      "snapshot": {
+        "entries": [{ "entryId": "other:tools", "moduleName": "@other/pkg/tools", "enabled": true, "fiberPhase": "active" }]
+      },
+      "expect": { "conclusion": "unknown", "code": "runtime.missing-entry" }
     },
     {
       "id": "disabled-and-undeclared-is-not-called-running",

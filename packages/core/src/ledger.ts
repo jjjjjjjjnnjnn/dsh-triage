@@ -99,6 +99,82 @@ function visit(node: unknown, source: string, depth: number, out: EntryClaim[]):
 }
 
 /**
+ * Read the preset compositions a patch document declares.
+ *
+ * A preset file does not compose the loader tree: it inserts one
+ * `@deepseek-ai/dsh-agent-preset` row whose `config.plugins` list *is* the composition.
+ * `extractEntryClaims` deliberately skips `config` (it can hold arbitrary user data),
+ * so preset rows need their own reader — without it, a preset declaration reports
+ * "1 entry" (the wrapper) and every row inside it stays invisible.
+ */
+export function extractPresetDeclarations(document: unknown, source: string): readonly PresetDeclaration[] {
+  const out: PresetDeclaration[] = []
+  const walk = (node: unknown, depth: number): void => {
+    if (depth > 32 || node === null || typeof node !== 'object') return
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item, depth + 1)
+      return
+    }
+    const record = node as Record<string, unknown>
+    if (record['name'] === PRESET_FQN) {
+      const config = record['config']
+      if (config !== null && typeof config === 'object' && !Array.isArray(config)) {
+        const presetId = (config as Record<string, unknown>)['id']
+        const plugins = (config as Record<string, unknown>)['plugins']
+        if (typeof presetId === 'string' && presetId !== '' && Array.isArray(plugins)) {
+          out.push({
+            presetId,
+            source,
+            rowId: typeof record['id'] === 'string' ? record['id'] : null,
+            rows: plugins.flatMap((plugin) => readPresetRow(plugin)),
+          })
+          return
+        }
+      }
+    }
+    for (const [key, value] of Object.entries(record)) walk(value, depth + 1)
+  }
+  walk(document, 0)
+  return out.sort((left, right) => left.presetId.localeCompare(right.presetId))
+}
+
+const PRESET_FQN = '@deepseek-ai/dsh-agent-preset'
+
+function readPresetRow(plugin: unknown): PresetDeclaration['rows'] {
+  if (plugin === null || typeof plugin !== 'object' || Array.isArray(plugin)) return []
+  const record = plugin as Record<string, unknown>
+  const id = record['id']
+  const name = record['name']
+  if (typeof id !== 'string' || id === '') return []
+  const disabled = record['disabled']
+  // `disabled: !!js <expr>` arrives as the expression text: the author gated it, and
+  // only a Loader context can evaluate that gate — call it conditional, never "off".
+  const enabled: boolean | 'conditional' = disabled === true ? false : typeof disabled === 'string' ? 'conditional' : true
+  return [
+    {
+      id,
+      module: typeof name === 'string' && name !== '' ? name : null,
+      enabled,
+      condition: typeof disabled === 'string' ? disabled : null,
+    },
+  ]
+}
+
+/** One declared preset composition, as the deployment writes it. */
+export interface PresetDeclaration {
+  readonly presetId: string
+  readonly source: string
+  /** The tree row id that carries the preset (`preset-standard`), when it has one. */
+  readonly rowId: string | null
+  readonly rows: readonly {
+    readonly id: string
+    readonly module: string | null
+    readonly enabled: boolean | 'conditional'
+    readonly condition: string | null
+  }[]
+}
+
+/**
  * Detect duplicate loader entry ids that are actually fatal.
  *
  * WHY THIS IS NOT A NAIVE GROUP-BY (learned the hard way):

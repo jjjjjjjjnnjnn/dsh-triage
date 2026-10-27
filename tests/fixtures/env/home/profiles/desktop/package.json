@@ -1,0 +1,13 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "description": "Fixture profile used to re-render synthetic inventory samples (see docs/specs/M2-inventory.md §8). It is not a real deployment: it only gives `loadEnv` a manifest to fingerprint, so a synthetic sample can be replayed by anyone with the same --stamp.",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.2"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": []
+    }
+  }
+}

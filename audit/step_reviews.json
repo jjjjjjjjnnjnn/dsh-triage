@@ -518,10 +518,10 @@
         "adversary": "反例三连：① 把 fiberPhase 改成上游没有的 sleeping → 解析直接拒绝（inventory-invalid），不会退化成「一切正常」；② 删掉某 entry 的 moduleName → 拒绝（无法归因就不猜）；③ 快照为空数组 → 每个声明行出 unknown 而不是静默"
       },
       "real_test": {
-        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp 2026-10-27T00:00:00.000Z",
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
-        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
-        "outcome": "5 entries · 1 missing · 1 undeclared · {risky:2, blocked:1, unknown:2}（synthetic；unknown 之一来自 agentPresets 未判通道）"
+        "sha256": "241a7f85b4d38b3e473261357ea52d393f4867bf65a45ffed0cec40145f3cffb",
+        "outcome": "5 entries · 0 missing · 5 undeclared · {risky:5, blocked:2, unknown:1}（synthetic；R12 用当前引擎从同一夹具重放：preset 命名空间从 `preset-unjudged` 扩成 4 档后，旧产物的 params 不再满足 catalog；输入夹具未改）"
       }
     },
     {
@@ -541,10 +541,10 @@
         "adversary": "反例：把快照里的 fiberPhase 改成上游已改名的值 → CLI exit 3 且 stderr 点名该值，绝不打印「no runtime finding」；把 declared 行从快照删掉 → 出现 unknown 而非静默"
       },
       "real_test": {
-        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp 2026-10-27T00:00:00.000Z",
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
-        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
-        "outcome": "同一引擎路径：CLI 与脚本对同一快照给出同一结论（e2e 3 条 + 单测 14 条全过）"
+        "sha256": "241a7f85b4d38b3e473261357ea52d393f4867bf65a45ffed0cec40145f3cffb",
+        "outcome": "同一引擎路径：CLI 与脚本对同一快照给出同一结论（e2e 3 条 + 单测 14 条全过；sha256 为 R12 重放后的值）"
       }
     },
     {
@@ -615,10 +615,10 @@
         "adversary": "反例复现：① 改 spec 表一行 → 门红；② 删掉 agentPresets 处理 → 单测「preset 行不得不可见」红；③ 把 fixture 声明成 live 但不给 sampled_at → render 脚本 exit 2"
       },
       "real_test": {
-        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp 2026-10-27T00:00:00.000Z",
         "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
-        "sha256": "bff4628f5cedad6cf39fbcb13abc8c646f7816a7abaa5a319b0f48cf61a9afa3",
-        "outcome": "{risky:2, blocked:1, unknown:2}；unknown 含 preset 未判通道与一行「声明有但快照里没有」"
+        "sha256": "241a7f85b4d38b3e473261357ea52d393f4867bf65a45ffed0cec40145f3cffb",
+        "outcome": "{risky:5, blocked:2, unknown:1}；R12 用当前引擎重放后 preset 行按 T-112 分档（含 conditional 一档），旧的「未判通道」档已不存在"
       }
     },
     {
@@ -1084,6 +1084,189 @@
         "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T21:35:00.000Z",
         "artifact": "data/results/gates-mutate-2026-10-27T21-35-00.000Z.json",
         "sha256": "4e4ab8d5f3fc3d7e0aabfa393b52a46138db702d4b2884072180e1ac8d4b8367",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R12-S1",
+      "batch": "R12",
+      "step": "T-201 P1：在沙箱 Host 内挂一行探针，用上游导出的 readPluginInventory(ctx) 采真实相位，并跑 CLI 交叉校验后落 SSOT",
+      "changed": [
+        "scripts/probe_hooks/inventory-hook.mjs",
+        "scripts/record_live_inventory.mjs",
+        "docs/specs/M2-inventory.md",
+        "docs/07-environment.md"
+      ],
+      "review": {
+        "correctness": "PASS：探针只调用上游 `list()` 内部同一个函数 `readPluginInventory(ctx)`，不重复实现投影；等树稳定（无 pending/loading，或 15s 超时）才采样，`wait_ms` 入产物；抛错写 `{error}`，记录器把「没有文件/带 error」判成 blocked，绝不产出半份快照",
+        "reproducibility": "PASS：`--stamp` 强制 ISO-8601；临时目录 `mkdtempSync` 建在沙盒旁、`finally` 整目录删除；`taskkill /T` 收尾；同一环境重跑可对比 `host.log_sha256` / `seconds` / `wait_ms`（真机时序不可逐字节重放，产物如实记录这三个测量值）",
+        "licence": "PASS：未 vendor 上游代码；只 import 已安装的 `@deepseek-ai/dsh-host-plugin-inventory`（MIT），且用 `createRequire(resolveFrom)` 指向运行中的 profile；不读写 `~/.dsh`、不联网、不碰凭据",
+        "ssot": "PASS：`inventory-live-2026-10-27T22-00-00.000Z.json` 带 produced_by/generated_at/schema_version + 纯 hash 的 `.sha256`；`excluded` 显式记录探针自己那一行；脱敏覆盖 `file:///` 百分号编码路径",
+        "adversary": "反例三连：① 探针不等待树稳定直接采样 → 会读到 pending/loading，产物 `wait_ms` 暴露这一点；② 让 hook 写半份快照（只有 entries 没有 sample 元信息）→ `parseInventorySnapshot` 会拒绝或记录器判 blocked；③ 把 `transport` 写成 `remote` 而实际是进程内投影 → 门 `inventory-contract` 的 `evidence_method_not` 与 fixture 双向断言打红"
+      },
+      "real_test": {
+        "command": "node scripts/record_live_inventory.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T22:00:00.000Z",
+        "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
+        "sha256": "e97021a2f873cefeae341ff4d97bc5fba400fe7fa699985950abfe18cdad16c2",
+        "outcome": "outcome=sampled · sample.kind=live · transport=in-process-projection（快照内也带）· 194 行（167 active / 27 disabled，探针已排除且不在快照里）· 4 preset / 98 行 · cross_check.agree=true（逐行相位 + 身份表 + preset 行表）"
+      }
+    },
+    {
+      "id": "R12-S2",
+      "batch": "R12",
+      "step": "T-112：preset 维度落地——解析 agentPresets、五档分行判法、跨 preset 分歧显式化，并新增 transport 契约（证据不得冒充 Remote）",
+      "changed": [
+        "packages/core/src/inventory.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/render_inventory.mjs",
+        "tests/fixtures/inventory/cases.json",
+        "docs/specs/M2-inventory.md",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：preset 行不照抄主表——上游把 preset 的 fiberPhase 定义为「组合活着时的 root fiber 相位，否则 null」，所以 `enabled:true` + `null` 判 `unknown`（runtime.preset-no-fiber）而不是 `blocked`；`conditional` / `failed` / `broken` / 派生分歧各有独立文案；`enabled:false` 的 preset 行**故意不出 verdict**（minimal preset 就是由这些行组成的），但仍出现在 preset 段与 `--json`",
+        "reproducibility": "PASS：preset 判定是纯函数（`verdictsFromInventory` 内 `presetVerdicts`），同输入同输出；preset 按 id 排序、分歧按 entryId 排序；`--json` 与终端两路同源",
+        "licence": "PASS：无新增依赖；文案中英双语齐全，门 `inventory-contract` 逐条断言两份模板存在",
+        "ssot": "PASS：合成样本用当前引擎按同一 stamp 重放（夹具未改）：`inventory-2026-10-27T00-00-00.000Z.json` 的 preset 档位从「1 条未判通道」变成五档；sha256 同步进 R7 的三条步骤记录并注明原因",
+        "adversary": "反例：① 同一 entry 在 ptc=active、standard=failed → 必须两侧都在且多一条 `runtime.preset-divergence`（fixture `preset-divergence-is-named` 锁死）；② preset `broken` 但 `rows` 为空 → 仍出 `unknown` 且带原因（不静默）；③ `transport` 写成不存在的值 → 解析拒绝（fixture `transport-value-is-validated`）；④ 把 disabled preset 行也报成 risky → 单测立即红（「组合选择不是发现」）"
+      },
+      "real_test": {
+        "command": "node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp 2026-10-27T00:00:00.000Z",
+        "artifact": "data/results/inventory-2026-10-27T00-00-00.000Z.json",
+        "sha256": "241a7f85b4d38b3e473261357ea52d393f4867bf65a45ffed0cec40145f3cffb",
+        "outcome": "5 entries · presets 分行判定（含 conditional 一档）· {risky:5, blocked:2, unknown:1} · 夹具未改，仅引擎重放"
+      }
+    },
+    {
+      "id": "R12-S3",
+      "batch": "R12",
+      "step": "真机暴露的两个 bug：dsh.bundle.patch 数组形态被静默丢弃、loader id 带 group 前缀导致声明/运行对不上（新增歧义不猜）",
+      "changed": [
+        "packages/plugin/src/load.ts",
+        "packages/core/src/inventory.ts",
+        "packages/core/src/ledger.ts",
+        "packages/core/src/messages.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/inventory.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`readBundlePatchPaths` 同时接受字符串与数组（上游 dsh-web-app 就是数组）；字段存在但畸形 → 报 `errors[]` 而不是空层；`patchScopeOf` 让 `presets/*.yml` 同时贡献 loader 载体行与 preset 组合（前者进 tree，后者进 preset_declarations）。id 解析严格三级：精确 → 唯一 `*:<id>` 后缀 → 多候选 `runtime.ambiguous-entry`，`resolveRuntimeId` 的返回类型让「随便挑一个」写不出来",
+        "reproducibility": "PASS：两条修复都能在沙盒上重复（同一 profile 同一 stamp 跑 record_live_inventory，`missing`/`undeclared` 稳定为 0/4）；单测用构造快照覆盖前缀匹配、精确优先、歧义三种情形",
+        "licence": "PASS：只读 profile/node_modules 的 package.json 与 patch 文件，未引入上游代码",
+        "ssot": "PASS：修复前后数字都写进审核报告（96/195 → 0/4）；真机产物 `cli.missing` / `cli.undeclared` 与 `host_summary` 并列，可复核",
+        "adversary": "反例：① 改回「只读字符串 patch」→ 沙盒 profile 上 dsh-web-app 整层消失，`undeclared` 回到 195；② 改回「字面量比较 id」→ `missing` 回到 96；③ 把后缀匹配改成「按后缀取第一个」→ 单测 `a:shared`/`b:shared` 立刻红（必须出 ambiguous，不许猜）"
+      },
+      "real_test": {
+        "command": "node scripts/record_live_inventory.mjs --dsh-home sandbox/upstream/0.2.1-rc.4/home --profile upstream --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T22:00:00.000Z",
+        "artifact": "data/results/inventory-live-2026-10-27T22-00-00.000Z.json",
+        "sha256": "e97021a2f873cefeae341ff4d97bc5fba400fe7fa699985950abfe18cdad16c2",
+        "outcome": "同一份真机样本：missing=0、undeclared=3（include 根 group + 2 条动态挂载；探针已排除），Host 与 CLI 按逐行相位与身份表逐项一致"
+      }
+    },
+    {
+      "id": "R12-S4",
+      "batch": "R12",
+      "step": "测试与门：inventory fixtures 扩到 11 个 reason 码 + evidence_method_not 断言 + 单测 22 / e2e 4，并确认 9 门全绿",
+      "changed": [
+        "tests/unit/inventory.test.ts",
+        "tests/e2e/inventory-cli.test.ts",
+        "tests/fixtures/inventory/cases.json",
+        "tests/fixtures/env/home/profiles/desktop/package.json",
+        "scripts/gate_inventory_contract.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：门把 spec §3/§3.1/§3.2 的每一行都变成可回放断言（11 个 runtime reason 码），并新加 `evidence_method_not`——用来锁死「进程内投影不得自称 Remote」；单测覆盖 preset 六种状态、transport 三种取值、id 解析三种情形",
+        "reproducibility": "PASS：全部测试是 `node --test` 直跑 TS，无外部网络；e2e 用 `mkdtempSync` 建临时 home，跑完删除；fixture home 已入库，所以合成样本重放不再依赖某台机器的临时目录",
+        "licence": "PASS：测试只读仓内夹具与临时目录；未引入第三方测试框架",
+        "ssot": "PASS：`gates-2026-10-27T23-00-00.000Z.json` 记录九门逐个结果（9/9 PASS），是「全绿」的可重算证据而不是一段 stdout",
+        "adversary": "反例：① 把 fixture `projection-never-claims-the-remote` 的期望删掉、又把引擎改回硬写 `plugin-inventory/list` → `evidence_method_not` 断言打红（单门实测）；② 把 spec 表里 preset 那行的结论从 unknown 改成 blocked → `spec-table:runtime.preset-no-fiber` 红；③ 删掉 `preset-disabled-row-is-silent` 的 `none` 期望 → 门红（因为引擎会静默跳过而夹具要求「无 verdict」也是一种断言）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T23:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T23-00-00.000Z.json",
+        "sha256": "13801668a3207d8e0b9554a0dcdb3254a05cbe366217af7775d2b0e9f680934d",
+        "outcome": "ALL GREEN · 9 gates（含 inventory-contract 与 step-review）"
+      }
+    },
+    {
+      "id": "R12-S5",
+      "batch": "R12",
+      "step": "负对照与文档收尾：9 门仍可被打红、HANDOFF/BACKLOG/INDEX/spec/blind spots 同步、SSOT 全部被步骤引用",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/05-verdict-contract.md",
+        "docs/07-environment.md",
+        "INDEX.md",
+        "AGENTS.md",
+        ".agents/prompts/kickoff.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/AUDIT_2026-10-27_R12.md"
+      ],
+      "review": {
+        "correctness": "PASS：文档口径与产物一致——HANDOFF §8 关掉 B1/B2、把「用户机器实测」改成「仓内沙盒实测」、登记 `BS-19`（静态侧不全）与 `BS-20`（preset null 歧义）；BACKLOG 把 T-201/T-112 标成完成并新增 R12 交付表；INDEX 增加真机样本与 preset 维度两行",
+        "reproducibility": "PASS：`--mutate` 对每道门注入违规，9/9 全 CAUGHT；负对照产物只记 id 与 exitCode，不含时长，可逐字节比较",
+        "licence": "PASS：文档不含凭据与用户 home 路径；`results-privacy` 相关脱敏在本轮补了 `file:///` 形态",
+        "ssot": "PASS：`gates-mutate-2026-10-27T23-05-00.000Z.json` 被本条引用，`data/results` 无孤儿产物（47 步）",
+        "adversary": "反例：若某道门在本轮改动后变成「永远绿」，`--mutate` 会显示 MISSED 并让套件 exit 1；本轮 9/9 CAUGHT，其中 `inventory-contract` 的注入点是 fixture 期望被改坏，`step-review` 的注入点是 adversary 轴被清空"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T23:05:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T23-05-00.000Z.json",
+        "sha256": "026ec64d02f1a6b725efe152750c72b4fc593ad01383198e74d6718ca1e020ab",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
+      }
+    },
+    {
+      "id": "R12-S6",
+      "batch": "R12",
+      "step": "按独立复核的 6 条必须修整改完后复跑：交叉校验按身份比对、探针排除断言、同包 id 解析、transport 进快照 + 门正向断言、preset 拒绝理由",
+      "changed": [
+        "scripts/probe_hooks/inventory-hook.mjs",
+        "scripts/record_live_inventory.mjs",
+        "packages/core/src/inventory.ts",
+        "scripts/gate_inventory_contract.mjs",
+        "tests/unit/inventory.test.ts",
+        "tests/fixtures/inventory/cases.json",
+        "audit/AUDIT_2026-10-27_R12.md"
+      ],
+      "review": {
+        "correctness": "PASS：复核 M1–M5 逐条关闭——① `cross_check` 改按身份（逐 entry 相位、disabled/failed/no-fiber 的 id 列表、每 preset 行表、conditional 的 preset:id）比对，并写 `scope[]` 与 `caveat`（两侧读同一次投影，只证摘要器与引擎一致）；② 探针行从发布快照剔除，加 `excluded-rows-absent` 硬断言；③ 后缀匹配必须同包（`packageNameOf`），否则 `absent`；④ `transport` 写进快照内部，门新增 `evidence_method_is` 与「断言必须存在」两项非空检查；⑤ preset 拒绝逐条给出位置与字段名",
+        "reproducibility": "PASS：重跑同一 stamp 两次，`missing=0 / undeclared=3 / 194 行` 稳定；门与单测都是可重复命令",
+        "licence": "PASS：只改自有代码与夹具；未引入上游实现",
+        "ssot": "PASS：真机与合成两份产物按同一 stamp 重放，sha256 同步进 S1/S2/S3 与 R7 的三条记录；`excluded` 现在记的是真实 composed id",
+        "adversary": "反例：① 把 87 条 preset 行改成 failed（计数不变）→ 现在 `agree=false`（逐行相位/身份表不等）；② 让探针留在快照里 → `excluded-rows-absent` 直接 blocked；③ 声明 `tools` 只留 `other:tools`（`@other/pkg`）→ 现在报 `missing-entry`，不再 0 条；④ 删掉 fixture 的 `evidence_method_not` → `method-negative-control-present` 红"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T23:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-27T23-40-00.000Z.json",
+        "sha256": "5d81abd8c343008b991df78eea588cb89f3c85a24247e47a36f3095cb3a520a9",
+        "outcome": "ALL GREEN · 9 gates（135 测试；fixture 24 例；门新增正向 method 断言与非空检查）"
+      }
+    },
+    {
+      "id": "R12-S7",
+      "batch": "R12",
+      "step": "收尾负对照：整改后 9 门仍能被注入违规打红（不是「全绿的空门」）",
+      "changed": [
+        "scripts/gate_inventory_contract.mjs",
+        "scripts/gate.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`--mutate` 下每道门都按注入点失败，9/9 CAUGHT；`inventory-contract` 的注入点是 fixture 期望被改坏，`step-review` 是 adversary 轴被清空，`ssot` 是 hash 末位被改",
+        "reproducibility": "PASS：同一命令重跑结论一致；产物只记 id 与 exitCode，不含时长",
+        "licence": "PASS：负对照只在本机注入违规",
+        "ssot": "PASS：`gates-mutate-2026-10-27T23-45-00.000Z.json` 被本条引用，`data/results` 无孤儿产物",
+        "adversary": "反例：若某道门在新断言下变成「永远绿」（例如把 method 断言写成精确相等又让未声明态不匹配），`--mutate` 会显示 MISSED 并让套件 exit 1；本轮 9/9"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-10-27T23:45:00.000Z",
+        "artifact": "data/results/gates-mutate-2026-10-27T23-45-00.000Z.json",
+        "sha256": "e71585a3d295890fcfa28faed70e4cda0bd1c9fa44b21301eb3db423cef507ef",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
     }

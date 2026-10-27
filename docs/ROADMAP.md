@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | W0 | **M0 骨架** ✅ | 治理 / 9 门 / 引擎 / CLI / SSOT | `verify` 全绿 + 9 门 mutate 全 CAUGHT | 已完成 |
 | W1 | **M1 收口** ✅ | 21 条金标 + `why` 归因 + 10 例真实案例 | 真实案例 ≥8/10 命中 —— **R6 达成 9/10**（`data/results/d1-*.json`） | 已完成 |
-| W2 | **M2-a 运行时台账** | 🟨 `pluginInventory` 相位：**P2 已交付**（`audit --snapshot` + 门 `inventory-contract`），P1 待真机；tools/commands/settings 快照未开始（T-202） | `audit` 能显示每行相位；与 patch 静态声明交叉校验 —— 合成样本已过，**真机采样未验证** | 1 |
+| W2 | **M2-a 运行时台账** | ✅ **P1+P2 已交付**：`pluginInventory` 相位在仓内沙盒真采样（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`，194 行）+ `audit --snapshot` + 门 `inventory-contract` + preset 维度（T-112）；tools/commands/settings 快照未开始（T-202） | `audit` 能显示每行相位；与 patch 静态声明交叉校验（真机 `missing=0`，Host↔CLI 逐行一致） | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |
 | W4 | **M3 probe 执行器** | 独立 `DSH_HOME` 装 → boot → http → render → inventory → namespace-diff | 单次 ≤20s；稳定复现 1 例「装了就白屏」；失败必清理 | 2（并行） |
 | W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮 | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |

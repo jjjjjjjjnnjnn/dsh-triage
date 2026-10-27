@@ -21,7 +21,9 @@ import {
   compareInventory,
   evaluateAdmission,
   extractEntryClaims,
+  extractPresetDeclarations,
   findEntryIdCollisions,
+  findPresetDivergence,
   format,
   groupClaimsBySource,
   judgeVersionDrift,
@@ -42,6 +44,8 @@ import {
   type EntryClaim,
   type EnvFingerprint,
   type InventorySnapshot,
+  type InventoryPreset,
+  type PresetDeclaration,
   type Locale,
   type Verdict,
   type VersionDrift,
@@ -346,12 +350,28 @@ function renderRegistryExplain(drift: VersionDrift, locale: Locale): string {
   return lines.join('\n')
 }
 
+/** One line that says how a preset differs from "everything in it is running". */
+function countPresetRows(preset: InventoryPreset): string {
+  let active = 0
+  let disabled = 0
+  let conditional = 0
+  let other = 0
+  for (const row of preset.rows) {
+    if (row.enabled === 'conditional') conditional += 1
+    else if (row.enabled === false) disabled += 1
+    else if (row.fiberPhase === 'active') active += 1
+    else other += 1
+  }
+  return `${active} active · ${disabled} disabled · ${conditional} conditional · ${other} other`
+}
+
 async function commandAudit(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
   const dshHome = resolveDshHome(flags)
   const composition = await loadComposition(env, dshHome)
   const claims = collectClaims(composition, [])
+  const presetDeclarations = collectPresetDeclarations(composition, [])
   const grouped = groupClaimsBySource(claims)
   const collisions = findEntryIdCollisions(claims)
   const artifacts = await discoverLocalArtifacts({ root: env.profileDir })
@@ -365,9 +385,14 @@ async function commandAudit(flags: Flags): Promise<number> {
 
   let snapshot: InventorySnapshot | null = null
   let inventoryVerdicts: readonly Verdict[] = []
-  let diff: { readonly missing: readonly { entryId: string; module: string | null }[]; readonly undeclared: readonly InventorySnapshot['entries'][number][] } = {
+  let diff: {
+    readonly missing: readonly { entryId: string; module: string | null }[]
+    readonly undeclared: readonly InventorySnapshot['entries'][number][]
+    readonly ambiguous: readonly { readonly entryId: string; readonly candidates: readonly string[] }[]
+  } = {
     missing: [],
     undeclared: [],
+    ambiguous: [],
   }
   const declared = claims.map((claim) => ({ entryId: claim.id, module: claim.name }))
 
@@ -410,6 +435,14 @@ async function commandAudit(flags: Flags): Promise<number> {
         kind: duplicate.kind,
         copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
       })),
+      preset_declarations: presetDeclarations.map((declaration) => ({
+        preset_id: declaration.presetId,
+        source: declaration.source,
+        row_id: declaration.rowId,
+        rows: declaration.rows.length,
+        ids: declaration.rows.map((row) => row.id).sort((left, right) => left.localeCompare(right)),
+        conditional: declaration.rows.filter((row) => row.enabled === 'conditional').map((row) => row.id),
+      })),
       rows: auditRows.map((row) => ({
         row_id: row.rowId,
         module: row.module,
@@ -424,6 +457,7 @@ async function commandAudit(flags: Flags): Promise<number> {
               sampled_at: snapshot.sampledAt,
               profile: snapshot.profile,
               source: snapshot.source,
+              transport: snapshot.transport,
               management_available: snapshot.managementAvailable,
               unknown_keys: snapshot.unknownKeys,
               entries: snapshot.entries.map((entry) => ({
@@ -432,9 +466,22 @@ async function commandAudit(flags: Flags): Promise<number> {
                 enabled: entry.enabled,
                 phase: entry.fiberPhase,
               })),
-              unjudged: snapshot.unjudged,
+              presets: snapshot.presets.map((preset) => ({
+                id: preset.id,
+                name: preset.name,
+                is_default: preset.isDefault,
+                broken: preset.broken,
+                rows: preset.rows.map((row) => ({
+                  entry_id: row.entryId,
+                  module: row.moduleName,
+                  enabled: row.enabled,
+                  condition: row.condition,
+                  phase: row.fiberPhase,
+                })),
+              })),
               declared_without_module: declared.filter((row) => row.module === null).length,
               missing: diff.missing,
+              ambiguous: diff.ambiguous,
               undeclared: diff.undeclared.map((entry) => ({
                 entry_id: entry.entryId,
                 module: entry.moduleName,
@@ -491,15 +538,34 @@ async function commandAudit(flags: Flags): Promise<number> {
   }
   if (snapshot !== null) {
     process.stdout.write(
-      `\nruntime inventory · sampled ${snapshot.sampledAt} · profile ${snapshot.profile ?? 'unknown'} · ${snapshot.entries.length} entries\n`,
+      `\nruntime inventory · sampled ${snapshot.sampledAt} · transport ${snapshot.transport ?? 'unstated'} · profile ${snapshot.profile ?? 'unknown'} · ${snapshot.entries.length} entries\n`,
     )
     if (snapshot.unknownKeys.length > 0) {
       process.stdout.write(`warn  snapshot has keys this build does not know: ${snapshot.unknownKeys.join(', ')}\n`)
     }
-    for (const channel of snapshot.unjudged) {
-      process.stdout.write(
-        `warn  ${channel.channel} carries ${channel.rows} row(s) this build cannot judge yet (T-112); reported as unknown\n`,
-      )
+    if (snapshot.presets.length > 0) {
+      process.stdout.write(`\nagent presets (${snapshot.presets.length}) — judged per preset, never merged\n`)
+      for (const preset of snapshot.presets) {
+        if (preset.broken !== null) {
+          process.stdout.write(`  ${preset.id}${preset.isDefault ? ' (default)' : ''}  broken: ${preset.broken}\n`)
+          continue
+        }
+        const counts = countPresetRows(preset)
+        process.stdout.write(
+          `  ${preset.id}${preset.isDefault ? ' (default)' : ''}  ${preset.rows.length} rows · ${counts}\n`,
+        )
+        for (const row of preset.rows) {
+          if (row.enabled === true && row.fiberPhase === 'active') continue
+          process.stdout.write(
+            `      ${(row.entryId ?? '(no id)').padEnd(28)} ${String(row.enabled).padEnd(12)} phase=${row.fiberPhase ?? 'none'}\n`,
+          )
+        }
+      }
+      const divergence = findPresetDivergence(snapshot.presets)
+      if (divergence.length > 0) {
+        process.stdout.write(`  cross-preset divergence: ${divergence.length} entry/entries\n`)
+        for (const item of divergence) process.stdout.write(`    ${item.entryId}  ${item.summary}\n`)
+      }
     }
     const withoutModule = declared.filter((row) => row.module === null).length
     if (withoutModule > 0) {
@@ -507,6 +573,12 @@ async function commandAudit(flags: Flags): Promise<number> {
     }
     process.stdout.write(`  declared but not in the sample: ${diff.missing.length}\n`)
     for (const row of diff.missing) process.stdout.write(`    ${row.entryId}  ->  ${row.module ?? '(no module)'}\n`)
+    if (diff.ambiguous.length > 0) {
+      process.stdout.write(`  declared ids matching more than one runtime row: ${diff.ambiguous.length}\n`)
+      for (const row of diff.ambiguous) {
+        process.stdout.write(`    ${row.entryId}  ->  ${row.candidates.join(', ')}  (not attributed)\n`)
+      }
+    }
     process.stdout.write(`  in the sample but not declared: ${diff.undeclared.length}\n`)
     for (const entry of diff.undeclared) {
       process.stdout.write(`    ${entry.entryId}  ->  ${entry.moduleName}  phase=${entry.fiberPhase ?? 'none'}\n`)
@@ -611,10 +683,46 @@ function collectClaims(
     }
     claims.push(...extractEntryClaims(parsed.value, source))
   }
-  for (const layer of composition.layers) add(layer.patchText, `bundle:${layer.name}`)
+  for (const layer of composition.layers) {
+    const multi = layer.patchFiles.length > 1
+    for (const file of layer.patchFiles) {
+      // A preset patch file does double duty: it inserts the preset *carrier* row into
+      // the tree (a real loader entry, e.g. `preset-standard`) and declares the
+      // composition inside that row's `config.plugins`. The carrier belongs here; the
+      // composition belongs to `collectPresetDeclarations`.
+      add(file.text, multi ? `bundle:${layer.name}/${file.relative}` : `bundle:${layer.name}`)
+    }
+  }
   add(composition.profilePatch.text, 'patch:profile')
   add(composition.homePatch.text, 'patch:home')
   return claims
+}
+
+/**
+ * Rows a deployment's preset patch files name, kept out of the loader-tree claims.
+ *
+ * They are not entries: the loader never mounts them, a preset composition does. Mixing
+ * them in would both invent "conflicting definitions" (the same row id legitimately
+ * appears in the tree *and* in a preset) and make the declared/runtime diff meaningless.
+ */
+function collectPresetDeclarations(
+  composition: Awaited<ReturnType<typeof loadComposition>>,
+  errors: string[],
+): readonly PresetDeclaration[] {
+  const out: PresetDeclaration[] = []
+  for (const layer of composition.layers) {
+    for (const file of layer.patchFiles) {
+      if (file.scope !== 'preset' || file.text === null) continue
+      const source = `bundle:${layer.name}/${file.relative}`
+      const parsed = parsePatchYaml(file.text)
+      if (!parsed.ok) {
+        errors.push(`${source}: ${parsed.error.code} — ${parsed.error.detail}`)
+        continue
+      }
+      out.push(...extractPresetDeclarations(parsed.value, source))
+    }
+  }
+  return out
 }
 
 function exitFor(flags: Flags, verdicts: readonly Verdict[]): number {

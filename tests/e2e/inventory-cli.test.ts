@@ -154,3 +154,65 @@ test('without --snapshot the audit output is unchanged (the layer is opt-in)', (
     rmSync(fixture.root, { recursive: true, force: true })
   }
 })
+
+test('presets reach the terminal and the JSON, and the transport is printed', () => {
+  const fixture = buildFixture()
+  try {
+    const snapshot = writeSnapshot(fixture, {
+      kind: 'live',
+      transport: 'in-process-projection',
+      sampled_at: '2026-10-25T08:00:00.000Z',
+      profile: 'web',
+      snapshot: {
+        entries: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'active' }],
+        agentPresets: [
+          {
+            id: 'standard',
+            isDefault: true,
+            rows: [
+              { entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'active' },
+              { entryId: 'tool-bash', moduleName: '@deepseek-ai/dsh-tool-bash', enabled: false, fiberPhase: null },
+            ],
+          },
+          {
+            id: 'ptc',
+            isDefault: false,
+            rows: [{ entryId: 'tools', moduleName: '@deepseek-ai/dsh-tools', enabled: true, fiberPhase: 'failed' }],
+          },
+        ],
+      },
+    })
+
+    const result = runCli(['audit', '--snapshot', snapshot, '--dsh-home', fixture.dshHome, '--stamp', STAMP], fixture)
+    // T-112: the two presets disagree about `tools`, and the failing side must survive.
+    assert.equal(result.status, 1, result.stderr)
+    assert.match(result.stdout, /transport in-process-projection/, 'the sample transport is part of the header')
+    assert.match(result.stdout, /agent presets \(2\)/, 'the preset section must render')
+    assert.match(result.stdout, /standard \(default\)/, 'the default preset is named')
+    assert.match(result.stdout, /cross-preset divergence: 1/, 'the disagreement is counted')
+    assert.ok(!result.stdout.includes('plugin-inventory/list'), 'a projection must not print the Remote endpoint')
+
+    const json = runCli(
+      ['audit', '--json', '--snapshot', snapshot, '--dsh-home', fixture.dshHome, '--stamp', STAMP],
+      fixture,
+    )
+    const payload = JSON.parse(json.stdout)
+    assert.equal(payload.inventory.transport, 'in-process-projection')
+    assert.deepEqual(
+      payload.inventory.presets.map((preset: { id: string; rows: unknown[] }) => [preset.id, preset.rows.length]),
+      [
+        ['ptc', 1],
+        ['standard', 2],
+      ],
+      'presets are sorted by id and keep their rows',
+    )
+    const presetCodes = payload.inventory.verdicts
+      .flatMap((verdict: { reasons: { code: string }[] }) => verdict.reasons.map((reason) => reason.code))
+      .filter((code: string) => code.startsWith('runtime.preset-'))
+    assert.ok(presetCodes.includes('runtime.preset-fiber-failed'), 'the failing preset row blocks')
+    assert.ok(presetCodes.includes('runtime.preset-divergence'), 'the disagreement is a verdict, not only a line')
+    assert.ok(!presetCodes.includes('runtime.preset-disabled'), 'a disabled preset row is not a finding')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})

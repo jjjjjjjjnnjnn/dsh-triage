@@ -18,8 +18,32 @@ export interface BundleLayer {
   readonly manifest: unknown
   readonly version: string | null
   readonly dir: string
+  /**
+   * Every patch file the bundle declares, in `dsh.bundle.patch` order.
+   *
+   * WHY THIS IS A LIST: upstream allows `patch` to be one file *or* an ordered list,
+   * and the shipped `dsh-web-app` uses the list form (its own layer plus four
+   * `presets/*.patch.yml` compositions). Reading only the string form silently
+   * dropped that whole bundle on a real sandbox: 96 rows vanished from the static
+   * composition and every one of them looked "running but undeclared".
+   */
+  readonly patchFiles: readonly BundlePatchFile[]
+  /** First tree-scope patch file, for callers that only want one path. */
   readonly patchPath: string | null
   readonly patchText: string | null
+}
+
+/** A patch file a bundle declares, and which composition it belongs to. */
+export interface BundlePatchFile {
+  /** Path as written in `package.json`. */
+  readonly relative: string
+  readonly path: string
+  /**
+   * `tree` files compose the loader tree; `preset` files compose an agent preset
+   * and are *not* part of that tree (their rows never become loader entries).
+   */
+  readonly scope: 'tree' | 'preset'
+  readonly text: string | null
 }
 
 export interface CompositionEntry {
@@ -88,33 +112,74 @@ export async function loadBundleLayers(
       errors.push(`bundle ${name} package.json is invalid JSON: ${describe(error)}`)
       continue
     }
-    const patchRelative = readBundlePatchPath(manifest)
-    const patchPath = patchRelative === null ? null : join(dir, patchRelative)
+    const relatives = readBundlePatchPaths(manifest)
+    if (relatives.length === 0 && declaresBundlePatch(manifest)) {
+      errors.push(`bundle ${name} declares a dsh.bundle.patch that is neither a string nor a list of strings`)
+      continue
+    }
+    const patchFiles: BundlePatchFile[] = []
+    for (const relative of relatives) {
+      const path = join(dir, relative)
+      const text = await readTextOrNull(path)
+      if (text === null) errors.push(`bundle ${name} declares patch ${relative} but the file is not readable`)
+      patchFiles.push({ relative, path, scope: patchScopeOf(relative), text })
+    }
+    const firstTree = patchFiles.find((file) => file.scope === 'tree') ?? null
     layers.push({
       name,
       manifest,
       version: readVersion(manifest),
       dir,
-      patchPath,
-      patchText: patchPath === null ? null : await readTextOrNull(patchPath),
+      patchFiles,
+      patchPath: firstTree?.path ?? null,
+      patchText: firstTree?.text ?? null,
     })
-    if (patchPath !== null && layers[layers.length - 1]?.patchText === null) {
-      errors.push(`bundle ${name} declares patch ${patchRelative} but the file is not readable`)
-    }
   }
 
   return { layers }
 }
 
+/** The composition a patch file belongs to. Upstream ships preset files under `presets/`. */
+export function patchScopeOf(relative: string): 'tree' | 'preset' {
+  return relative.replaceAll('\\', '/').split('/').includes('presets') ? 'preset' : 'tree'
+}
+
+function declaresBundlePatch(manifest: unknown): boolean {
+  if (manifest === null || typeof manifest !== 'object') return false
+  const dsh = (manifest as Record<string, unknown>)['dsh']
+  if (dsh === null || typeof dsh !== 'object') return false
+  const bundle = (dsh as Record<string, unknown>)['bundle']
+  if (bundle === null || typeof bundle !== 'object') return false
+  return (bundle as Record<string, unknown>)['patch'] !== undefined
+}
+
+/**
+ * Read `package.json#dsh.bundle.patch` as an ordered list.
+ *
+ * Returns an empty list when the package declares no patch at all *and* when the
+ * field is malformed — the caller distinguishes the two via `declaresBundlePatch`,
+ * so a typo becomes a reported error instead of a silently thinner tree.
+ */
+export function readBundlePatchPaths(manifest: unknown): readonly string[] {
+  if (manifest === null || typeof manifest !== 'object') return []
+  const dsh = (manifest as Record<string, unknown>)['dsh']
+  if (dsh === null || typeof dsh !== 'object') return []
+  const bundle = (dsh as Record<string, unknown>)['bundle']
+  if (bundle === null || typeof bundle !== 'object') return []
+  const patch = (bundle as Record<string, unknown>)['patch']
+  if (typeof patch === 'string') return patch === '' ? [] : [patch]
+  if (!Array.isArray(patch)) return []
+  const paths: string[] = []
+  for (const item of patch) {
+    if (typeof item !== 'string' || item === '') return []
+    paths.push(item)
+  }
+  return paths
+}
+
 /** Read `package.json#dsh.bundle.patch`, the marker that makes a package a profile layer. */
 export function readBundlePatchPath(manifest: unknown): string | null {
-  if (manifest === null || typeof manifest !== 'object') return null
-  const dsh = (manifest as Record<string, unknown>)['dsh']
-  if (dsh === null || typeof dsh !== 'object') return null
-  const bundle = (dsh as Record<string, unknown>)['bundle']
-  if (bundle === null || typeof bundle !== 'object') return null
-  const patch = (bundle as Record<string, unknown>)['patch']
-  return typeof patch === 'string' ? patch : null
+  return readBundlePatchPaths(manifest)[0] ?? null
 }
 
 export function readVersion(manifest: unknown): string | null {

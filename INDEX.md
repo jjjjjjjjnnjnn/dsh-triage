@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R10 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R12 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -14,15 +14,17 @@
 | **仓内 0.2.x 沙盒** | `sandbox/`（git 忽略）· `scripts/bootstrap_upstream.mjs` | runtime + profile 依赖装进仓内（0.2.1-rc.4，compose 191 条），可挂载可观测；删掉整个目录即重置，不碰真实 DSH home |
 | **dist-tag 失步 / 区间形状** | `packages/core/src/version-drift.ts` + `check --explain` → `data/results/registry-*.json` | 同通道比较 `latest` / `next` / 已发布最新（`latest` 是稳定版时不把更新的预发布当失步）；`registry.*` 只出 `measured-registry` 证据，**不改结论**；`judgeRangeShape` 提示「精确钉定会被下一个 patch 打挂」与「无上界会自动放大版本」；真机事实见 `data/results/registry-2026-10-27T19-00-00.000Z.json` |
 | **副本来源与重复副本** | `packages/core/src/duplicates.ts` + `scripts/record_audit.mjs` → `data/results/audit-*.json` | 同名同版本不算问题；同名不同版本 → `collision-duplicate-copy`（两条路径 + 两个版本）；行被拒时点名「这份副本来自谁的 dependencies」（借 npm explain / Maven） |
-| **运行时相位（M2-a P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` → `data/results/inventory-*.json` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff、`sample.kind` 自曝 synthetic/live；当前证据是**合成样本**（无真机 profile） |
-| **相位契约门** | `scripts/gate_inventory_contract.mjs` + `tests/fixtures/inventory/cases.json` | 9 门之一：fixtures 逐行回放 spec §3 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性 |
+| **运行时相位（M2-a P1+P2）** | `packages/core/src/inventory.ts` + `scripts/render_inventory.mjs` + `scripts/record_live_inventory.mjs` | 相位→结论映射（`runtime.*`）、声明/运行双向 diff（id 前缀 `include:` 已归一）、`sample.kind` 自曝 synthetic/live、`transport` 自曝 `remote`/`in-process-projection`；**R12 起有真机样本**：`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`（194 行 / 167 active / 27 disabled / 4 preset 98 行 / Host↔CLI 结论逐行一致） |
+| **真机采样（Host 内探针）** | `scripts/probe_hooks/inventory-hook.mjs` + `scripts/record_live_inventory.mjs` | 用 `--patch` 挂一行探针进沙箱 Host，调上游导出的 `readPluginInventory(ctx)`（与 Remote 方法同一函数），等树稳定后落盘；用完即删目录；探针行在产物里记 `excluded` |
+| **preset 维度（T-112）** | `packages/core/src/inventory.ts#presetVerdicts` | 五档：`preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-unjudged` / `preset-divergence`；`enabled:false` 的 preset 行不刷屏；跨 preset 相位不同两侧分别成立 |
+| **相位契约门** | `scripts/gate_inventory_contract.mjs` + `tests/fixtures/inventory/cases.json` | 9 门之一：fixtures 逐行回放 spec §3/§3.1/§3.2 + 上游 `fiberPhase` 枚举比对 + 中英文案存在性 + `evidence_method_not`（投影不得自称 Remote） |
 | **复现脚本** | `scripts/record_case.mjs` | 案例 → 隔离沙盒 → verdicts → `data/results/why-case-*.json` + `.sha256` + `hit` |
 | **上游沙盒** | `scripts/bootstrap_upstream.mjs` | 0.2.x 隔离运行时 + `pluginInventory` 契约实测（不写真实 DSH home） |
 | **执行计划** | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 指标看板 + 分发时间线 + kill criteria |
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R10.md`（最新）· `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R10：dist-tag 失步 + 区间形状（`registry.*` 命名空间）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本；R7：M2-a P2 相位层 + 新门 |
+| **审核报告** | `audit/AUDIT_2026-10-27_R12.md`（最新）· `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
 | **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验） |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
