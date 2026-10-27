@@ -34,6 +34,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 审核报告 | `audit/AUDIT_2026-10-27_R13.md`（本轮）· `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；B1/B2 已于 R12 关闭；**能力层未做「工具缺失」判断**——R13 取证证明它不可判（`BS-21` / `BS-22`），T-202a 需要一次真实会话或 M3 probe |
 | **环境（本轮沿用）** | 仓内沙盒 `sandbox/upstream/0.2.1-rc.4`（git 忽略）：`install/` + `home/profiles/upstream`（依赖 191 条）· `dsh --profile upstream --patch <overlay>` 9.2s 起服务并采到样 · 探针目录用完即删 |
+| 交接快照（R13 收尾） | R13 = `2a9e4c5`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **142 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **46 产物 / 57 步**全被引用 |
 | 交接快照（R12 收尾） | R12 = `ec33e94`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **135 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **41 产物 / 50 步**全被引用 |
 | 交接快照（R11 收尾） | R11 = `b92190e`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9** |
 | 交接快照（R10 收尾） | R10 = `cc76ea0`（随后只有本文件的交接提交）；`git status` 干净；`pnpm run verify` = **124 测试 / 9 门全绿**；`--mutate` = **9/9**；`data/results` **32 产物 / 39 步**全被引用 |
