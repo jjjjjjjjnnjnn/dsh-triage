@@ -8,7 +8,7 @@
  * first, then the shared `profiles/node_modules` (pnpm `nodeLinker: hoisted`).
  */
 
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import type { CopyLocation, DuplicateCopy, EnvFingerprint, InstallOrigin, RowDeclaration, RowTarget } from '@dsh-triage/core'
 
@@ -184,8 +184,17 @@ export async function resolveRows(
 
 /* ---------------------------- install provenance ---------------------------- */
 
-const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const
-type DependencyField = (typeof DEPENDENCY_FIELDS)[number]
+/**
+ * Fields that actually materialise a copy on disk.
+ *
+ * `peerDependencies` never installs anything, so it is not an origin: naming it
+ * would tell the user to edit the one field that is already correct. A
+ * *dependency's* `devDependencies` are not installed either — only the profile's
+ * own devDependencies are.
+ */
+const INSTALL_FIELDS = ['dependencies', 'optionalDependencies'] as const
+const PROFILE_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const
+type InstallField = (typeof PROFILE_FIELDS)[number]
 
 interface InstalledManifest {
   readonly name: string
@@ -193,10 +202,12 @@ interface InstalledManifest {
   readonly relativePath: string
   readonly dir: string
   readonly manifest: Record<string, unknown>
+  /** True when the path is a symlink/junction (pnpm `isolated`, `link:`). */
+  readonly linked: boolean
 }
 
 /**
- * Which installed packages declare `modules` under a dependency field?
+ * Which installed packages declare `modules` under a field that installs them?
  *
  * This is the `npm explain` idea ("why is this package here?") applied to the
  * shadowing cases: the useful sentence is not "the row is denied" but "the copy is
@@ -210,23 +221,29 @@ export async function findDeclarers(
   if (modules.size === 0) return out
 
   const profileManifest = await readManifestRecord(env.profileDir)
+  const declarers: { name: string; manifest: Record<string, unknown>; fields: readonly InstallField[] }[] = []
+  if (profileManifest !== null) {
+    declarers.push({
+      name: String(profileManifest['name'] ?? '(profile)'),
+      manifest: profileManifest,
+      fields: PROFILE_FIELDS,
+    })
+  }
   const installed = [
-    ...(profileManifest === null
-      ? []
-      : [{ name: String(profileManifest['name'] ?? '(profile)'), version: readVersion(profileManifest), manifest: profileManifest }]),
     ...(await listInstalledPackages(join(env.profileDir, 'node_modules'))),
     ...(await listInstalledPackages(join(dirname(env.profileDir), 'node_modules'))),
   ]
+  for (const pkg of installed) declarers.push({ name: pkg.name, manifest: pkg.manifest, fields: INSTALL_FIELDS })
 
-  for (const pkg of installed) {
-    for (const field of DEPENDENCY_FIELDS) {
-      const declared = pkg.manifest[field]
+  for (const declarer of declarers) {
+    for (const field of declarer.fields) {
+      const declared = declarer.manifest[field]
       if (declared === null || typeof declared !== 'object') continue
       for (const module of Object.keys(declared as Record<string, unknown>)) {
         if (!modules.has(module)) continue
         const bucket = out.get(module) ?? []
-        if (!bucket.some((origin) => origin.name === pkg.name && origin.field === field)) {
-          bucket.push({ name: pkg.name, version: readVersion(pkg.manifest), field })
+        if (!bucket.some((origin) => origin.name === declarer.name && origin.field === field)) {
+          bucket.push({ name: declarer.name, version: readVersion(declarer.manifest), field })
         }
         out.set(module, bucket)
       }
@@ -240,12 +257,19 @@ export async function findDeclarers(
 }
 
 /**
- * Same package name, different versions, two physical copies (Maven
- * `dependencyConvergence` for a single module tree).
+ * Same package name, two physical copies at two *known, different* versions
+ * (Maven `dependencyConvergence` for a single module tree).
  *
- * Only **different versions** are reported: pnpm hard-links one version into both
- * roots, and flagging that would bury the real finding. Paths are relative to the
- * DSH home on purpose — verdicts land in publishable SSOT.
+ * Rules learned the hard way (R8 adversary pass):
+ * - an unknown version is **not** evidence of a different version;
+ * - nested copies count even when the name is absent from the root: two plugins
+ *   each bundling their own copy is exactly the identity-split case;
+ * - symlinked entries (`link:`, pnpm isolated) are followed, because a linked copy
+ *   is still a second copy at runtime;
+ * - the same version in two roots is the normal pnpm picture (hard link) and stays
+ *   silent.
+ *
+ * Paths are relative to the DSH home on purpose — verdicts land in publishable SSOT.
  */
 export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly DuplicateCopy[]> {
   const sharedModules = join(dirname(env.profileDir), 'node_modules')
@@ -253,7 +277,12 @@ export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly
 
   const add = (pkg: InstalledManifest, scope: CopyLocation['scope']): void => {
     const bucket = copies.get(pkg.name) ?? []
-    bucket.push({ path: pkg.relativePath, version: readVersion(pkg.manifest), scope })
+    bucket.push({
+      path: pkg.relativePath,
+      version: readVersion(pkg.manifest),
+      scope,
+      ...(pkg.linked ? { linked: true } : {}),
+    })
     copies.set(pkg.name, bucket)
   }
 
@@ -263,27 +292,25 @@ export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly
   // One level of nesting is where the interesting failure lives: a plugin's own
   // dependency copy. Deeper trees are pnpm's business, not a diagnosis.
   for (const pkg of await listInstalledPackages(join(env.profileDir, 'node_modules'))) {
-    for (const nested of await listInstalledPackages(join(pkg.dir, 'node_modules'))) {
-      if (!copies.has(nested.name)) continue
-      add(nested, 'nested')
-    }
+    for (const nested of await listInstalledPackages(join(pkg.dir, 'node_modules'))) add(nested, 'nested')
   }
 
   const duplicates: DuplicateCopy[] = []
   for (const [name, list] of [...copies.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     if (list.length < 2) continue
-    const versions = new Set(list.map((copy) => copy.version ?? 'unknown'))
+    const known = [...new Set(list.map((copy) => copy.version).filter((version): version is string => version !== null))]
+    if (known.length < 2) continue
     duplicates.push({
       name,
       copies: [...list].sort((left, right) => left.path.localeCompare(right.path)),
-      kind: versions.size > 1 ? 'different-versions' : 'same-version',
+      kind: 'different-versions',
     })
   }
   return duplicates
 }
 
 async function listInstalledPackages(root: string): Promise<readonly InstalledManifest[]> {
-  let entries: readonly { name: string; isDirectory(): boolean }[]
+  let entries: readonly { name: string; isDirectory(): boolean; isSymbolicLink(): boolean }[]
   try {
     entries = await readdir(root, { withFileTypes: true })
   } catch {
@@ -291,44 +318,59 @@ async function listInstalledPackages(root: string): Promise<readonly InstalledMa
   }
   const out: InstalledManifest[] = []
   for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    if (entry.name.startsWith('.')) continue
+    // `Dirent.isDirectory()` is false for a symlinked package directory, which is
+    // how `link:` and pnpm's isolated linker appear. Follow the link instead of
+    // pretending the package does not exist.
+    const linked = entry.isSymbolicLink()
+    if (!entry.isDirectory() && !linked) continue
+    if (linked && !(await isDirectory(join(root, entry.name)))) continue
     if (entry.name.startsWith('@')) {
       const scopeDir = join(root, entry.name)
-      let scoped: readonly { name: string; isDirectory(): boolean }[]
+      let scoped: readonly { name: string; isDirectory(): boolean; isSymbolicLink(): boolean }[]
       try {
         scoped = await readdir(scopeDir, { withFileTypes: true })
       } catch {
         continue
       }
       for (const child of scoped) {
-        if (!child.isDirectory()) continue
-        const pkg = await readInstalled(join(scopeDir, child.name), `${entry.name}/${child.name}`, root)
+        const childLinked = child.isSymbolicLink()
+        if (!child.isDirectory() && !childLinked) continue
+        if (childLinked && !(await isDirectory(join(scopeDir, child.name)))) continue
+        const pkg = await readInstalled(join(scopeDir, child.name), `${entry.name}/${child.name}`, root, childLinked)
         if (pkg !== null) out.push(pkg)
       }
       continue
     }
-    const pkg = await readInstalled(join(root, entry.name), entry.name, root)
+    const pkg = await readInstalled(join(root, entry.name), entry.name, root, linked)
     if (pkg !== null) out.push(pkg)
   }
   return out
 }
 
-async function readInstalled(dir: string, name: string, root: string): Promise<InstalledManifest | null> {
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    const info = await stat(path)
+    return info.isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function readInstalled(dir: string, name: string, root: string, linked: boolean): Promise<InstalledManifest | null> {
   const manifest = await readManifestRecord(dir)
   if (manifest === null) return null
   const declaredName = typeof manifest['name'] === 'string' && manifest['name'] !== '' ? manifest['name'] : name
-  // Relative to the DSH home (`<dshHome>/profiles/<p>/...`), so the path in SSOT
-  // never contains a user name.
-  const relative = relativeFromProfiles(root, declaredName)
-  return { name: declaredName, relativePath: relative, dir, manifest }
+  return { name: declaredName, relativePath: relativeFromProfiles(root, declaredName), dir, manifest, linked }
 }
 
 function relativeFromProfiles(root: string, name: string): string {
-  // `root` is always `<dshHome>/profiles/node_modules` or `<dshHome>/profiles/<p>/node_modules`.
+  // `root` is always `<dshHome>/profiles/node_modules` or
+  // `<dshHome>/profiles/<p>/node_modules` (or a nested `node_modules` below it).
   const parts = root.split(/[\\/]/)
   const profilesIndex = parts.lastIndexOf('profiles')
-  const tail = profilesIndex === -1 ? [] : parts.slice(profilesIndex)
-  return [...tail, ...name.split('/')].join('/')
+  const tailParts = profilesIndex === -1 ? [] : parts.slice(profilesIndex)
+  return [...tailParts, ...name.split('/')].join('/')
 }
 
 async function readManifestRecord(dir: string): Promise<Record<string, unknown> | null> {

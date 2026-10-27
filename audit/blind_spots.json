@@ -111,7 +111,7 @@
     {
       "id": "BS-16",
       "area": "install-provenance",
-      "cannot_see": "副本来源归因只读**已安装 manifest 的 dependency 字段**：pnpm `overrides`/`resolutions`、lockfile 里手工钉的版本、`link:` 目标、以及嵌套超过一层的副本，都不会被点名；重复副本扫描也只覆盖「profile / shared / 一层嵌套」三处",
+      "cannot_see": "副本来源归因只读**已安装 manifest 的 dependency 字段**：pnpm `overrides`/`resolutions`、lockfile 里手工钉的版本、以及嵌套超过一层的副本，都不会被点名；重复副本扫描只覆盖「profile / shared / 一层嵌套」三处，且**未知版本不参与比较**（无法证明不同就当没事）。软链/`link:` 已能跟随（`linked: true`），但深层 pnpm 树仍不扫",
       "mitigation": "结论措辞只说「这份副本来自 X 的 dependencies」，不说「唯一来源」；T-113（入口矩阵）与 M3 probe 是补全路径；出现误判时先补样本再改扫描器",
       "owner": "core/duplicates"
     }

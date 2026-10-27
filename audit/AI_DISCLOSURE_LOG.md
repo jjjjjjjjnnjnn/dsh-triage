@@ -59,6 +59,7 @@
 - 审核：`audit/AUDIT_2026-10-27_R8.md`（6 向对抗性反例：单副本 / 同版本 / peer 来源 / 假称已做 attw / 假称做安全扫描 / 绝对路径入 SSOT）
 - 门禁：`verify` **91 测试 / 9 门全绿**；`--mutate` **9/9 CAUGHT**；`audit/step_reviews.json` 共 29 步
 - 过程中的真实缺陷：`findDuplicateCopies` 一开始把 `env.profileDir` 当 `node_modules` 扫描 → 0 条命中；e2e 直接红，修后单测补上该回归。另两次 `node -e` 在 PowerShell 里被引号吃掉 → 已写入坑表
+- 独立复核：另起只读 adversary 会话 → **PARTLY CONFIRMED**；当轮修 5 个真缺陷：同版本双副本仍被上报、依赖方 `devDependencies` 被当来源、软链/`link:` 目录被忽略、未知版本被当版本比较、嵌套副本必须先有根副本；另纠正「gate 锁死 params」的过度声称（改登记 T-116），并把产物/步骤数字按实测改写（23/30）
 - SessionID：待 HUMAN 回填
 - 备注：attw 矩阵 / `triage bisect` / 区间对齐都**只是设计**（T-113/T-114/T-115），前置条件写在 `docs/09` §3，别当成已交付
 

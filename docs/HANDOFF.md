@@ -27,10 +27,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅** · **M1 真实案例验收 ✅（D1 通过：9/10 命中）** · **M2-a P2 ✅ / P1 待真机**（T-201） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **5 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **91 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
+| 规模 | **96 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 有意 miss）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`，由门 `step-review` 重算 sha256（`PROJECT_RULES.md` 铁律 11） |
 | 本轮交付 | **开源借鉴落地**（台账 `docs/09-open-source-borrowing.md`，14 来源分三档）：① npm `explain` 式**副本来源归因**（`admission-row-declared-by`：「这份副本来自 `dsh-pdf@0.1.0` 的 `dependencies`」）；② Maven `dependencyConvergence` 式**重复副本检测**（`collision-duplicate-copy`，两条路径 + 两个版本）；③ `scripts/record_audit.mjs` 把 audit 写成 SSOT；④ 只设计：T-113 attw 矩阵 / T-114 bisect / T-115 区间对齐；明确不做：`npm audit` 式漏洞扫描、作者侧打包 lint |
-| 证据 | `data/results/audit-2026-10-27T12-00-00.000Z.json`（2 rows / 1 duplicate group / 2 verdicts）· `inventory-2026-10-27T00-00-00.000Z.json`（相位层）· `gates-2026-10-27T12-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 21 个产物、29 个已审步骤 |
+| 证据 | `data/results/audit-2026-10-27T12-00-00.000Z.json`（2 rows / 1 duplicate group / 2 verdicts）· `inventory-2026-10-27T00-00-00.000Z.json`（相位层）· `gates-2026-10-27T12-00-00.000Z.json`（9 门全绿）· `gates-mutate-...`（9/9 CAUGHT）；共 23 个产物、30 个已审步骤 |
 | 审核报告 | `audit/AUDIT_2026-10-27_R8.md`（本轮）· `AUDIT_2026-10-27_R7.md` · `AUDIT_2026-10-26_R6.md` · `R5` · `R4` · `R3` |
 | 未通过的门槛 | D2–D4 尚未到点；**B1/B2 真机采样未验证**（P1 未实现，见 §8） |
 

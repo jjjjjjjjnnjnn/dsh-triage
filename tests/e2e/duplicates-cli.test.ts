@@ -148,3 +148,22 @@ test('a single copy produces neither a duplicate nor an origin line', () => {
     rmSync(fixture.root, { recursive: true, force: true })
   }
 })
+
+test('the same version in both roots is silent (pnpm hard link, not a finding)', () => {
+  const fixture = buildFixture()
+  try {
+    // Make the profile copy identical in version to the shared one.
+    manifest(join(fixture.dshHome, 'profiles', 'desktop', 'node_modules', '@deepseek-ai', 'dsh-tools'), {
+      name: '@deepseek-ai/dsh-tools',
+      version: '0.2.1-rc.2',
+      peerDependencies: { '@deepseek-ai/dsh-agent': '0.2.1-rc.2' },
+    })
+
+    const audit = runCli(['audit', '--json', '--dsh-home', fixture.dshHome, '--profile', 'desktop', '--stamp', STAMP], fixture)
+    const payload = JSON.parse(audit.stdout) as { duplicates: unknown[] }
+    assert.deepEqual(payload.duplicates, [], 'same version twice is the normal layout')
+    assert.ok(!audit.stdout.includes('duplicate copies'), 'no duplicate section in text output either')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})

@@ -14,6 +14,7 @@
 | T-113 | attw 式「入口可加载性矩阵」：按解析模式 × 入口判定候选包会不会 import 失败 | M2-b | implementer | — | 先在沙箱实测 loader 的解析模式（两种），再实现矩阵；否则会造出假警告 | ⬜ R8 借鉴台账（`docs/09`，attw 仅设计） |
 | T-114 | `triage bisect`：禁用一半行 → 重启 → 收敛（VS Code Extension Bisect 思路） | M3 | implementer | T-301 | 需要稳定启停一次 boot；输出「坏行 + 时间线证据」 | ⬜ R8 借鉴台账（`docs/09`） |
 | T-115 | 版本区间对齐建议：peer 精确钉定 → 上游每次 patch 都会打挂（syncpack 思路） | M2 | implementer | T-109 | 与 T-109 合并设计；只提示不阻断 | ⬜ R8 借鉴台账（`docs/09`） |
+| T-116 | `messageId` 的 `{占位符}` 必须由 `reasons[].params` 提供，缺一即红 | 流程 | implementer | — | `gate_verdict_contract` 新增占位符完整性断言 + 负对照；现状只校验 messageId/severity | ⬜ R8 独立复核 F7（文档曾声称已锁死，实际没有） |
 | T-102 | `why` 支持 stderr 归因（import/apply 失败 → 行） | M2-b | implementer | T-201 | 3 类真实故障都能点名 | ⬜ |
 | T-103 | 补 6 条金标：`workspace:` peer、`engines` 畸形、`^0.2.0` prerelease 边界 | M1 | implementer | — | parity 门绿 + 夹具 `why` 说明 | ⬜ |
 | T-201 | 接入 `pluginInventory/list`（相位）到 `audit`/`why` | M2-a | implementer | — | 契约已在 `docs/specs/M2-inventory.md` 锁定（B1–B5）；实现走 P1 进程内 + P2 快照文件 | 🟨 **P2 已交付（2026-10-27）**：`audit --snapshot` + 门 `inventory-contract` + 13 条测试；**P1 待真机**（需 0.2.x 可启动 profile）；B1/B2 目前只有合成样本 |
@@ -46,7 +47,8 @@
 | NEW | **重复副本检测**（借 Maven `dependencyConvergence`）：同名不同版本 → `collision-duplicate-copy`，两条路径 + 两个版本；同版本硬链不算 | ✅ |
 | NEW | `scripts/record_audit.mjs`：把一次 audit（行 + 来源 + 重复副本 + 结论）写成 SSOT | ✅ |
 | 测试 | +15（单测 9 + e2e 3 + 其他回归），总 **91**；9 门 / `--mutate` 9/9 | ✅ |
-| 登记 | 只设计：T-113（attw 矩阵）、T-114（bisect）、T-115（区间对齐）；明确不做：`npm audit` 式漏洞扫描、作者侧打包 lint | ✅ |
+| 复核修正 | 独立对抗性会话（只读、不看实现）判定 PARTLY CONFIRMED，抓出 5 个必须当场修的洞：同版本双副本仍被上报、`devDependencies` 被当来源（依赖方 devDeps 根本不装）、软链/`link:` 目录被当成不存在、未知版本被当版本比较、嵌套副本必须先有根副本；另把「gate 锁死 params」的过度声称改成事实 | ✅ 见 `audit/AUDIT_2026-10-27_R8.md` §7 |
+| 登记 | 只设计：T-113（attw 矩阵）、T-114（bisect）、T-115（区间对齐）、T-116（占位符完整性）；明确不做：`npm audit` 式漏洞扫描、作者侧打包 lint | ✅ |
 
 ---
 

@@ -15,7 +15,7 @@
 | 3 | **`pip check`** | 「已安装集合自洽吗？」 | ① 用**已安装集合**而不是候选包做一致性检查；② 文案模板「X requires Y, which is not installed」「X has requirement R, but you have V」；③ 有问题时 exit 1 | ✅ 部分落地：我们的 duplicate/missing-entry 文案照这个句式；`audit` 有 finding 即 exit 1 | MIT（仅借鉴机制） | A（pip.pypa.io） |
 | 4 | **`arethetypeswrong` (attw)** | 包能装但 import 会失败（ESM/CJS、exports 条件） | **解析矩阵**：按 (运行时解析模式 × 入口) 逐格判定，并给失败格一个**命名分类**（resolution failed / false CJS / false ESM / unexpected module syntax / internal resolution error） | ⬜ **设计**（T-113）：给 `check` 加「候选入口可加载性」矩阵。**前置条件**：先从上游沙箱实测 loader 用哪种解析模式，否则会造出假警告 | MIT | A（GitHub README） |
 | 5 | **`publint`** | 包发布内容在别的环境不可用 | 「按环境逐条 lint 打包产物」的清单式输出 | ⛔ **不做**：这是插件作者侧的 linter，不是用户侧判断层。我们可以把结论输出成可粘贴给作者的段落，但不做 lint | MIT | A（GitHub README） |
-| 6 | **`cargo-semver-checks`** | 新版本悄悄破坏 API | **witness 原则**：每条失败必须给出「哪一项、哪一行、为什么算破坏」的证据，否则不算失败；并有明确 exit status 契约 | ✅ 已作为**工程原则**：我们的 `reasons[].params` 必须带 key/range/mode，`gate_verdict_contract` 锁死；后续 M5-b 升级影响清单沿用此原则 | MIT/Apache-2.0 | A（GitHub README） |
+| 6 | **`cargo-semver-checks`** | 新版本悄悄破坏 API | **witness 原则**：每条失败必须给出「哪一项、哪一行、为什么算破坏」的证据，否则不算失败；并有明确 exit status 契约 | ✅ 已作为**工程原则**：结论必须带可复算 `params`（见下方「口径修正」：`gate_verdict_contract` 目前锁的是 messageId/severity/条件断言，占位符完整性尚未纳入 → T-116）；后续 M5-b 升级影响清单沿用此原则 | MIT/Apache-2.0 | A（GitHub README） |
 | 7 | **VS Code `Extension Bisect`** | 装了 24 个扩展，不知道哪个坏的 | **二分**：一次禁用一半，逐步收敛；灵感来自 `git bisect` | ⬜ **设计**（T-114，M3）：`triage bisect`——需要能真启停（probe），因此排在 M3 | MIT | A（code.visualstudio.com） |
 | 8 | **`dpkg --audit`** | 「装了但没配好」的包 | 把**安装成功 ≠ 状态正确**做成一等公民视图 | ✅ 概念已落地：M2-a 相位层（`failed` / `no-fiber` / `disabled` 三态） | GPL（仅借鉴概念） | B |
 | 9 | **systemd `systemctl --failed`** | 系统里哪些单元失败了、为什么 | ① failed 优先展示；② `status` 给出「为什么」而不是只给状态 | ✅ 已落地：`audit` 先给相位结论卡再给明细 | LGPL（仅借鉴概念） | B |
@@ -50,6 +50,16 @@ fix      [remove-plugin] move @deepseek-ai/dsh-tools from dsh-pdf dependencies t
 
 **输出**：`risky`（不是 blocked——宿主可能还能启动），`collision-duplicate-copy`，两条副本各自 scope/版本/相对路径。
 
+**边界（R8 独立复核后写清，别当成全覆盖）**：
+
+| 项 | 现在的行为 | 不覆盖 |
+|---|---|---|
+| 同版本两份 | **静默**（pnpm 硬链的正常形态） | — |
+| 版本读不到 | 静默（未知 ≠ 不同；无法证明就不报） | 清单里被人手改坏的情况 |
+| 嵌套副本 | 扫**一层** `node_modules`，且不需要根目录先有同名副本 | 两层以上（pnpm 深层树） |
+| 软链 / `link:` | 会跟随（`linked: true` 标在副本上） | — |
+| 来源字段 | 只认真正会落地副本的 `dependencies` / `optionalDependencies`（profile 自身另含 `devDependencies`） | `peerDependencies`（不装卸）、`overrides`/`resolutions`、lockfile 手钉 |
+
 ---
 
 ## 3. 借了但**没有**落地的，以及为什么
@@ -66,7 +76,9 @@ fix      [remove-plugin] move @deepseek-ai/dsh-tools from dsh-pdf dependencies t
 
 ## 4. 借鉴纪律（防止「抄了个热闹」）
 
+0. **可审计性**：本轮 A 级来源的抓取日期为 2026-10-27，URL 见 §1 表末列之外的原始链接（`https://docs.npmjs.com/cli/v10/commands/npm-explain`、`https://maven.apache.org/enforcer/enforcer-rules/dependencyConvergence.html`、`https://pip.pypa.io/en/stable/cli/pip_check/`、`https://github.com/arethetypeswrong/arethetypeswrong.github.io`、`https://github.com/bluwy/publint`、`https://github.com/obi1kenobi/cargo-semver-checks`、`https://code.visualstudio.com/blogs/2021/02/16/extension-bisect`）。**本仓未提交抓取原文**，所以 A/B 分级本身不可被第三方独立复核——这是已知限制，登记在案，不假装是实测证据。
 1. **先有失败样本，再借机制**：每个借鉴条目必须对应 `data/cases/` 里的真实案例或 `audit/` 里的明确缺口；没有样本的机制先记在本文件 §3。
 2. **只借机制，不抄代码**：本文件「许可」列说明来源；真要抄代码 → 先 `quarantine/` + `vendor-manifest`。
 3. **呈现方式也要借**：Maven 的两条路径、pip 的句式、systemd 的「failed 优先」，这些**格式**决定了诊断是否可行动；只借算法不借呈现，等于没借。
 4. **不借边界**：别人做安全、做市场、做启动器，我们不做（见 `docs/01-competitors.md`、`PROJECT_RULES.md` 严禁行为）。
+5. **复核优先于自信**：R8 的独立复核推翻了本文件两处措辞（「同版本从不被报」与「gate 锁死 params」），当轮即修；每轮如此。

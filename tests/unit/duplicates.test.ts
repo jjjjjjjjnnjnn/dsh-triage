@@ -85,6 +85,63 @@ test('a nested copy inside another plugin counts as the dangerous case', () => {
   assert.ok(verdict?.evidence.some((item) => item.source.includes('dsh-pdf/node_modules')))
 })
 
+test('an unknown version is not evidence of a different version', () => {
+  const unknownVsKnown = duplicate({
+    copies: [
+      { path: 'profiles/desktop/node_modules/x', version: null, scope: 'profile' },
+      { path: 'profiles/node_modules/x', version: '1.0.0', scope: 'shared' },
+    ],
+  })
+  assert.deepEqual(
+    verdictsFromDuplicateCopies({ env, duplicates: [unknownVsKnown], generatedAt: STAMP }),
+    [],
+    'cannot prove two different versions from one unreadable manifest',
+  )
+
+  const twoUnknowns = duplicate({
+    kind: 'same-version',
+    copies: [
+      { path: 'profiles/desktop/node_modules/x', version: null, scope: 'profile' },
+      { path: 'profiles/node_modules/x', version: null, scope: 'shared' },
+    ],
+  })
+  assert.deepEqual(verdictsFromDuplicateCopies({ env, duplicates: [twoUnknowns], generatedAt: STAMP }), [])
+})
+
+test('versions are ordered numerically, so the subject carries the higher one', () => {
+  const [verdict] = verdictsFromDuplicateCopies({
+    env,
+    duplicates: [
+      duplicate({
+        copies: [
+          { path: 'profiles/desktop/node_modules/x', version: '0.9.0', scope: 'profile' },
+          { path: 'profiles/node_modules/x', version: '0.10.0', scope: 'shared' },
+        ],
+      }),
+    ],
+    generatedAt: STAMP,
+  })
+  assert.equal(verdict?.reasons[0]?.params?.['versions'], '0.9.0 vs 0.10.0')
+  assert.equal(verdict?.subject.version, '0.10.0', 'string ordering would have picked 0.9.0')
+})
+
+test('a linked copy is reported and marked in evidence', () => {
+  const [verdict] = verdictsFromDuplicateCopies({
+    env,
+    duplicates: [
+      duplicate({
+        copies: [
+          { path: 'profiles/desktop/node_modules/x', version: '1.0.0', scope: 'profile' },
+          { path: 'profiles/desktop/node_modules/linked-x', version: '2.0.0', scope: 'nested', linked: true },
+        ],
+      }),
+    ],
+    generatedAt: STAMP,
+  })
+  assert.equal(verdict?.conclusion, 'risky')
+  assert.equal(verdict?.evidence.length, 2)
+})
+
 test('output is deterministic and sorted by package name', () => {
   const input = {
     env,

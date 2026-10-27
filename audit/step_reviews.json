@@ -720,6 +720,40 @@
         "sha256": "30aef7cfdd3ec3108a2e624862e555e13f75ba91cec85b0063163b6c8487462f",
         "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation"
       }
+    },
+    {
+      "id": "R8-S5",
+      "batch": "R8",
+      "step": "独立对抗性复核后的修正：同版本不再上报、dev/peer 不算来源、跟随软链、未知版本不配对、审计数字与文档口径",
+      "changed": [
+        "packages/plugin/src/load.ts",
+        "packages/core/src/duplicates.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_audit.mjs",
+        "tests/unit/duplicates.test.ts",
+        "tests/unit/rows-origin.test.ts",
+        "tests/e2e/duplicates-cli.test.ts",
+        "docs/09-open-source-borrowing.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "audit/AUDIT_2026-10-27_R8.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：复核抓到 5 处真缺陷并全部修掉——① 同版本双副本仍被 audit/SSOT 报出来（与「同版本静默」的文档冲突）；② devDependencies 被当来源（依赖方的 devDeps 根本不安装）；③ 软链/`link:` 目录被 `Dirent.isDirectory()` 判成「不存在」；④ 未知版本被当作一个版本参与比较；⑤ 嵌套副本必须先有同名根副本才被计入。修法都有测试：同版本 e2e 静默、optionalDeps 算来源、linked 标记、unknown 不配对、嵌套独立计入",
+        "reproducibility": "PASS：重放同一沙盒后产物 sha256 未变（99495e3d…），说明改动只收紧判定、不改变已记录事实；新增 5 条单测 + 1 条 e2e 覆盖修正点",
+        "licence": "PASS：仍零网络零第三方代码；复核指出的「A 级证据不可审计」已在 docs/09 加抓取日期与可审计性说明",
+        "ssot": "PASS：`audit --json` 新增 `rows[].declared_by`（不再只有 why 能看到来源）；`record_audit` 的 `errors[]` 也做脱敏；数字口径改为 23 产物 / 29 步",
+        "adversary": "反例复现：① 同版本两副本 → 不再有任何 duplicate 输出（e2e）；② 依赖方 devDependencies → 不出原因（单测）；③ 软链目录 → 能扫到并带 linked 标记（单测）；④ 未知版本 → 沉默（单测）"
+      },
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp 2026-10-27T12:00:00.000Z",
+        "artifact": "data/results/audit-2026-10-27T12-00-00.000Z.json",
+        "sha256": "99495e3d7c3648bf5286b91a0c3defc16ad3d959b2e5811af2482571f5b61c59",
+        "outcome": "2 rows · 1 duplicate group · 2 verdicts（修正后同一沙盒产物字节不变）"
+      }
     }
   ]
 }

@@ -92,7 +92,10 @@ const payload = {
     copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
   })),
   verdicts: [...rowVerdicts, ...duplicateVerdicts].map((verdict) => core.redactVerdict(verdict, redactRoots)),
-  errors: composition.errors,
+  // Composition errors can name files; redact them the same way as everything else.
+  errors: composition.errors.map((error) =>
+    redactRoots.reduce((text, root) => (root === '' ? text : text.split(root).join('~')), error),
+  ),
 }
 
 const fileName = `audit-${stamp.replaceAll(':', '-')}.json`

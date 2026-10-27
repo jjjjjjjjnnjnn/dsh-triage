@@ -60,6 +60,16 @@ test('a dependency-declared copy names the declaring plugin and the field', () =
   )
 })
 
+test('an optionalDependencies copy is still an origin', () => {
+  const [verdict] = verdictsFromRowAdmission({
+    env,
+    rows: [row({ declaredBy: [{ name: 'dsh-opt', version: '2.0.0', field: 'optionalDependencies' }] })],
+    generatedAt: STAMP,
+  })
+  const origin = verdict?.reasons.find((reason) => reason.code === 'admission-row-declared-by')
+  assert.equal(origin?.params?.['fields'], 'optionalDependencies', 'optional deps do materialise a copy')
+})
+
 test('a peerDependencies edge is not an origin and adds no noise', () => {
   const [verdict] = verdictsFromRowAdmission({
     env,
@@ -78,7 +88,7 @@ test('several declaring plugins are listed together, deterministically', () => {
       row({
         declaredBy: [
           { name: 'b-plugin', version: '2.0.0', field: 'dependencies' },
-          { name: 'a-plugin', version: '1.0.0', field: 'devDependencies' },
+          { name: 'a-plugin', version: '1.0.0', field: 'optionalDependencies' },
         ],
       }),
     ],
@@ -86,7 +96,7 @@ test('several declaring plugins are listed together, deterministically', () => {
   })
   const origin = verdict?.reasons.find((reason) => reason.code === 'admission-row-declared-by')
   assert.equal(origin?.params?.['by'], 'b-plugin@2.0.0, a-plugin@1.0.0')
-  assert.equal(origin?.params?.['fields'], 'dependencies, devDependencies')
+  assert.equal(origin?.params?.['fields'], 'dependencies, optionalDependencies')
 })
 
 test('without an origin the verdict is unchanged (no extra reason, no extra fix)', () => {

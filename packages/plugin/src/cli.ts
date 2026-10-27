@@ -280,6 +280,9 @@ async function commandAudit(flags: Flags): Promise<number> {
   const artifacts = await discoverLocalArtifacts({ root: env.profileDir })
   const duplicates = await findDuplicateCopies(env)
   const duplicateFindings = duplicates.filter((duplicate) => duplicate.kind === 'different-versions')
+  // Resolving rows here is what lets `audit` answer "who put this copy here" for
+  // every row, not only for the denied ones (R8 adversary finding F11).
+  const auditRows = await resolveRows(env, rowTargets(claims))
 
   /* --------------------------- runtime inventory --------------------------- */
 
@@ -329,6 +332,13 @@ async function commandAudit(flags: Flags): Promise<number> {
         name: duplicate.name,
         kind: duplicate.kind,
         copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
+      })),
+      rows: auditRows.map((row) => ({
+        row_id: row.rowId,
+        module: row.module,
+        source: row.source,
+        version: row.version,
+        declared_by: (row.declaredBy ?? []).map((origin) => ({ name: origin.name, version: origin.version, field: origin.field })),
       })),
       inventory:
         snapshot === null

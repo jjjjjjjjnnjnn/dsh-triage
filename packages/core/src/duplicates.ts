@@ -18,14 +18,17 @@
  * Pure: the scan lives in `packages/plugin/src/load.ts`, the judgement lives here.
  */
 
+import { compare } from 'semver'
 import type { EnvFingerprint, Reason, Remediation, Verdict } from './types.js'
 
 export interface CopyLocation {
-  /** Where the copy sits, e.g. `<profile>/node_modules/x` or `<profile>/node_modules/a/node_modules/x`. */
+  /** Where the copy sits, e.g. `profiles/<profile>/node_modules/x`. */
   readonly path: string
   readonly version: string | null
   /** `profile` = the profile's own node_modules, `shared` = profiles/node_modules, `nested` = inside another package. */
   readonly scope: 'profile' | 'shared' | 'nested'
+  /** True when the copy is a symlink/junction (`link:`, pnpm isolated linker). */
+  readonly linked?: boolean
 }
 
 export interface DuplicateCopy {
@@ -54,10 +57,15 @@ export function verdictsFromDuplicateCopies(input: DuplicateCopyInput): readonly
   for (const duplicate of [...input.duplicates].sort((left, right) => left.name.localeCompare(right.name))) {
     // Never trust the caller's classification: recompute from the copies. A single
     // copy is not a duplicate, and one version in two roots is the normal pnpm
-    // picture (hard link), so neither may become a finding.
+    // picture (hard link), so neither may become a finding. An unknown version is
+    // not evidence of a *different* version either.
     if (duplicate.copies.length < 2) continue
-    const versions = [...new Set(duplicate.copies.map((copy) => copy.version ?? 'unknown'))].sort()
-    if (versions.length < 2) continue
+    const known = [
+      ...new Set(duplicate.copies.map((copy) => copy.version).filter((version): version is string => version !== null)),
+    ]
+    if (known.length < 2) continue
+    const versions = [...known].sort(byVersion)
+    const unknownCopies = duplicate.copies.filter((copy) => copy.version === null).length
     const reason: Reason = {
       code: 'collision-duplicate-copy',
       severity: 'warn',
@@ -75,7 +83,7 @@ export function verdictsFromDuplicateCopies(input: DuplicateCopyInput): readonly
         params: { name: duplicate.name, versions: versions.join(' vs ') },
         note: `keep one copy of "${duplicate.name}" in the profile (the copies are at ${duplicate.copies
           .map((copy) => `${copy.scope}:${copy.version ?? 'unknown'}`)
-          .join(', ')}); a delegating plugin should declare it under peerDependencies instead of dependencies`,
+          .join(', ')}); a delegating plugin should declare it under peerDependencies instead of dependencies${unknownCopies > 0 ? `; ${unknownCopies} copy has no readable version, so the pair is reported from the known ones only` : ''}`,
       },
       {
         kind: 'report',
@@ -106,4 +114,13 @@ export function verdictsFromDuplicateCopies(input: DuplicateCopyInput): readonly
     })
   }
   return out
+}
+
+/** Numeric-semver ordering so `0.10.0` sorts above `0.9.0`; unparsable tags fall back to string order. */
+function byVersion(left: string, right: string): number {
+  try {
+    return compare(left, right)
+  } catch {
+    return left.localeCompare(right)
+  }
 }
