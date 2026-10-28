@@ -138,12 +138,12 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 | 候选行必须**唯一**：0 行 → `blocked`（`probe.row-missing`）；≥2 行 → `unknown`（`probe.row-ambiguous`） | 不猜归属（与 `runtime.ambiguous-entry` 同一条纪律） |
 | 候选行存在但相位不是 `active` → `blocked`（`probe.row-inactive`），并点名相位 | `failed` 与 `null` 是两种失败形状，不许合并成「没起来」 |
 | **测量失败 ≠ 插件失败**（R17 / BS-25）：hook 读不到树（`inactive context`）或树仍在动（`settled:false`）→ `unknown` + `missing.inventory`（`probe.tree-not-settled`），**禁止**判 `blocked`。**`ADR-0008` E（R26）只改等待、不改判据**：`settled:false` 立即收敛（`inventory.replacement_waited=false`，detail 里写明「没有再等替换样本」），`{error}` 仍等满窗口——两种形状的结论一模一样，都是 `unknown` | 只有 `valid` 读数（读到、无 error、`settled:true`）才能把失败归给候选；候选行相位仍是 `pending/loading/unloading` 时同样只能 `unknown`（N19 / N21） |
-| 树已稳定但端口窗口内无应答 → 仍 `blocked`（`probe.http-unreachable`） | 负对照 N20：防止本行上一条把「全都变 unknown」 |
-| 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |
+| 探针自己的临时目录准备/删除失败（R37：Windows 句柄 → `EPERM`）→ `unknown` + `missing.probe`（`probe.measurement-unavailable`） | 清理失败还**不许**销毁已经拿到的样本；`boot` 步抛任何异常都记成 `bootSetupError`，不再落到 `probe.boot-timeout`（N24 / N24b） |
+| 树已稳定但端口窗口内无应答 → 仍 `blocked`（`probe.http-unreachable`） | 负对照 N20：防止本行上一条把「全都变 unknown」 || 清理不干净 → `risky`（`probe.cleanup-incomplete`），但测量结论不变 | 清理失败不是测量失败 |
 | 实测运行时不在候选声明区间 → 降为 `unknown`（`probe.runtime-mismatch`） | 结论不可外推到没跑过的运行时 |
 | `evidence[].method` 必须写真实传输 | `boot + <transport> inventory sample`；探针行自身从评分行里剔除 |
 
-命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.install-failed-code` / `probe.install-build-refused` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.tree-not-settled` / `probe.startup-failed` / `probe.port-unavailable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch` / `probe.profile-copy-unusable` / `probe.profile-link-dangling` / `probe.profile-build-refused`。
+命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.install-failed-code` / `probe.install-build-refused` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.tree-not-settled` / `probe.startup-failed` / `probe.port-unavailable` / `probe.measurement-unavailable`（R37） / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch` / `probe.profile-copy-unusable` / `probe.profile-link-dangling` / `probe.profile-build-refused`。
 
 > `probe.profile-*` 三条（R22 / T-304）都属于**组合侧**而非候选侧：前两条只能伴随 `unknown` + `missing.probe`，第三条是 `warn`（可以出现在 `go` 旁边，用来声明「沙盒跳过了组合自身的构建脚本」）。判据表见 `docs/specs/M3-probe.md` §3 与 §8.5。
 

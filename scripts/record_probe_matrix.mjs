@@ -17,10 +17,10 @@
  * Exit codes: 0 recorded · 1 a run did not meet its expectation · 2 bad usage.
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { cpus, homedir, tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
@@ -58,6 +58,21 @@ const scratch = mkdtempSync(join(tmpdir(), 'triage-matrix-'))
 const redact = makeRedactor([abs('.'), homedir(), tmpdir()])
 const runs = []
 let expectationMisses = 0
+
+/**
+ * OPTIONAL BACKGROUND LOAD (`--load <n>`), for `BS-32`'s second half.
+ *
+ * WHY (R36→R37): every stability batch so far was taken on an idle machine, so the project could
+ * describe a spread but not its source. This flag starts `n` CPU-busy Node processes for the whole
+ * batch and records what the machine actually did (`observed_busy_percent`, computed from
+ * `os.cpus()` deltas — `os.loadavg()` is always 0 on Windows, so it would be a fake reading).
+ *
+ * WHAT IT IS NOT: a benchmark harness. The busy loop is one shape of load (CPU saturation in this
+ * user), chosen because it is measurable, reproducible, and leaves the disk/network mostly alone —
+ * a disk-heavy load would confound install time with boot time.
+ */
+const loadWorkers = Number(argOf('--load', '0'))
+const loadState = startLoad(loadWorkers)
 
 for (const [index, candidate] of plan.candidates.entries()) {
   const label = String(candidate.label ?? `run-${index + 1}`).replace(/[^a-zA-Z0-9._-]+/g, '-')
@@ -124,11 +139,17 @@ for (const [index, candidate] of plan.candidates.entries()) {
 }
 
 const summary = summarize(runs)
+const load = stopLoad(loadState)
 const matrix = {
   schema_version: 1,
   produced_by: 'scripts/record_probe_matrix.mjs',
   generated_at: stamp,
   plan: { path: redact(planPath), candidates: plan.candidates.length, note: plan.note ?? null },
+  /*
+   * R37 (`BS-32` second half): what the machine was doing during this batch. `workers: 0` means an
+   * idle-machine batch; anything else is a loaded batch and must be read as such.
+   */
+  load,
   runs,
   summary,
   limits: [
@@ -136,6 +157,12 @@ const matrix = {
     'each run is embedded verbatim (already redacted by record_probe) with its own sha256',
     'boot→sample is the only timing judged against the 20s budget; install and render are separate segments',
     'n is still small: a percentage is a description of this batch, not a population estimate',
+    ...(load.workers === 0
+      ? []
+      : [
+          'this batch ran under locally generated CPU load; it describes the probe under THAT load, not the default budget path',
+          'the load is CPU-busy loops in this user account, not memory/disk/network pressure and not parallel probe runs',
+        ]),
   ],
 }
 
@@ -150,6 +177,86 @@ process.stdout.write(`wrote ${target}\n`)
 process.exitCode = expectationMisses === 0 ? 0 : 1
 
 /* --------------------------------- helpers -------------------------------- */
+
+/**
+ * Start `workers` CPU-busy Node processes for the duration of the batch.
+ *
+ * Busy is a tight loop that touches `Date.now()` every iteration: without a syscall the JIT can turn
+ * an empty loop into nothing, and then "loaded" would be a label with no load behind it.
+ */
+function startLoad(workers) {
+  const cores = cpus().length
+  const state = {
+    workers: Number.isFinite(workers) && workers > 0 ? Math.floor(workers) : 0,
+    cores,
+    kind: 'cpu-busy-loop',
+    started_at: null,
+    ended_at: null,
+    duration_ms: null,
+    cpu: null,
+    children: [],
+    killed: null,
+  }
+  if (state.workers === 0) {
+    delete state.children
+    return state
+  }
+  state.cpu = cpuTimes()
+  state.started_at = new Date().toISOString()
+  const source = 'const end = Date.now() + 6 * 60 * 60 * 1000; while (Date.now() < end) {}'
+  for (let index = 0; index < state.workers; index += 1) {
+    const child = spawn(process.execPath, ['-e', source], { stdio: 'ignore', windowsHide: true })
+    child.on('error', () => {
+      // A worker that cannot start is reported by `killed`/count rather than crashing the batch.
+    })
+    state.children.push(child)
+  }
+  process.stdout.write(`load: ${state.workers} cpu-busy worker(s) on ${cores} core(s) for the whole batch\n`)
+  return state
+}
+
+/** Stop the load and measure what the machine actually did meanwhile. */
+function stopLoad(state) {
+  if (state.workers > 0) {
+    let killed = 0
+    for (const child of state.children) {
+      try {
+        child.kill('SIGKILL')
+        killed += 1
+      } catch {
+        // Already gone; the count below is what the artifact reports.
+      }
+    }
+    state.killed = killed
+    state.ended_at = new Date().toISOString()
+    state.duration_ms = Date.parse(state.ended_at) - Date.parse(state.started_at)
+    const after = cpuTimes()
+    if (state.cpu !== null && after.total > state.cpu.total) {
+      const idleDelta = after.idle - state.cpu.idle
+      const totalDelta = after.total - state.cpu.total
+      state.cpu = {
+        source: 'os.cpus() cumulative times, delta over the batch',
+        observed_busy_percent: Math.round(((totalDelta - idleDelta) / totalDelta) * 1000) / 10,
+      }
+    } else {
+      state.cpu = { source: 'os.cpus() cumulative times', observed_busy_percent: null }
+    }
+    delete state.children
+  }
+  return state
+}
+
+/** Aggregate cumulative CPU times; `loadavg` is unusable on Windows, this is not. */
+function cpuTimes() {
+  let idle = 0
+  let total = 0
+  for (const core of cpus()) {
+    const times = core.times
+    idle += times.idle
+    total += times.user + times.nice + times.sys + times.idle + times.irq
+  }
+  return { idle, total }
+}
 
 function shapeOf(assertions) {
   return assertions

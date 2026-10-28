@@ -138,6 +138,10 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         segments: boot.segments,
         // ADR-0008 E: whether a replacement window was opened at all, and why it ended.
         replacement: boot.replacement,
+        // R37: our own scratch failures must reach the judge; otherwise "no sample" reads as
+        // "the Host never came up" and a plugin gets blamed for a Windows file lock.
+        setupError: boot.setupError ?? null,
+        scratchCleanupError: boot.scratchCleanupError ?? null,
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),

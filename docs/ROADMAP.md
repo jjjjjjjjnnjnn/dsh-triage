@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）12 周
 
-> **Stand**: R36 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R37 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 
 ---
@@ -20,7 +20,7 @@
 | W1 | **M1 收口** ✅ | 27 条金标（R14 由 21 扩）+ `why` 归因 + 10 例真实案例 | 真实案例 ≥8/10 命中 —— **R6 达成 9/10**（`data/results/d1-*.json`） | 已完成 |
 | W2 | **M2-a 运行时台账** | ✅ **P1+P2 已交付**：`pluginInventory` 相位在仓内沙盒真采样（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`，194 行）+ `audit --snapshot` + 门 `inventory-contract` + preset 维度（T-112）；tools/commands/settings 快照：T-202b 事实+差分 ✅（R13），**agent 作用域读数**归 T-202a（需真实会话/M3） | `audit` 能显示每行相位；与 patch 静态声明交叉校验（真机 `missing=0`，Host↔CLI 逐行一致） | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |
-| W4 | **M3 probe 执行器** | ✅ **R14 交付执行器（T-301）**；✅ **R15 补判据**：白屏可判（T-302，真浏览器 + CDP）+ 就绪来自 Host 自打印 URL（T-306）+ 真实 registry 分母（T-305：install 5.4s / boot 7.7s）；✅ **R22 补「我的组合」**（T-304：`--copy-profile`，复制声明 → 装依赖 → 装候选 → boot，三形状真机）；`namespace-diff`（T-303）仍未测 | `boot→sample ≤20s`（R14 11.7–19.9s，R15 7.7–8.7s，R22 复制模式 7.4s）；「装了就白屏」两形状稳定复现（phase=failed / null）+ 白屏检测有红/绿对照；失败必清理（目录 + 全部端口） | 2（并行） |
+| W4 | **M3 probe 执行器** | ✅ **R14 交付执行器（T-301）**；✅ **R15 补判据**：白屏可判（T-302，真浏览器 + CDP）+ 就绪来自 Host 自打印 URL（T-306）+ 真实 registry 分母（T-305：install 5.4s / boot 7.7s）；✅ **R22 补「我的组合」**（T-304：`--copy-profile`，复制声明 → 装依赖 → 装候选 → boot，三形状真机）；**R37 有载对照**：`--load 8`（58–62% CPU）把 `boot→sample` 中位数 4.9s → 7.4s，两条件都没越过 20s；`namespace-diff`（T-303）仍未测 | `boot→sample ≤20s`（R14 11.7–19.9s，R15 7.7–8.7s，R22 复制模式 7.4s，**R37 空载 4.9s / 有载 7.4s 中位**）；「装了就白屏」两形状稳定复现（phase=failed / null）+ 白屏检测有红/绿对照；失败必清理（目录 + 全部端口） | 2（并行） |
 | W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮。**R26：只读契约 spike 完成**（`docs/specs/M4-surface.md` §3.1 的 C1–C6：`settings.plugins.tab` 插槽 / `ctx.slots.register` / props 由 `inject` 提供 / `remote.pluginInventory.list()` 形状 / `ctx.effect`+`locale`），**`client.js` 未写** | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |
 | W6 | **M4-b 分发件** | ✅ **三件交付：徽章 SVG（T-402 · R34）+ format-1 索引源（T-403 · R34，用上游校验器验证）+ `compat_verdict` Agent 工具（T-404 · R36，真机三形状 + 八步回归）**。**未做（HUMAN）**：把索引源托管成可被 Discover 添加的 URL | 索引源可在 Discover 添加（**要求一次发布动作**）；徽章可按 插件×dsh×os 渲染 | 2 |
 | W7 | **M5-a 回流** | opt-in 匿名 outcome + 本地先验 | 上传可关闭、可删除；0 PII；数据可用率 ≥80% | 1 |

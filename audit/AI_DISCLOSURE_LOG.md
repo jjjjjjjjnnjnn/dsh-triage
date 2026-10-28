@@ -448,3 +448,15 @@
 - 过程中的真实缺陷：① 第一次真机期望写错（dsh-status-rotator 不声明任何范围）；② 第二次真机**跨 profile 取期望**（Host 0.2.1-rc.4 vs 操作者 ~/.dsh 0.1.0-rc.6），工具答案正确、期望错误——两份红产物保留并各自成步（R36-S1/S2）
 - 未做：BS-32 有载对照（下一轮，独占机器）、BS-39 的 ptc 真机、BS-29/BS-36 剩余面、索引源公开托管（HUMAN）
 
+
+### 2026-10-29 R37｜`BS-32` 有载对照 + 真发现 T-321（探针自己的临时目录失败被记成插件失败）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R37-S1…S7）
+- 范围：`scripts/{record_probe_matrix,stability_report,record_probe}.mjs`、`packages/probe/src/{host,exec}.ts`、`packages/plugin/src/probe-run.ts`、`packages/core/src/messages.ts`、`tests/unit/probe-exec.test.ts`、`docs/{HANDOFF,BACKLOG,ROADMAP,05-verdict-contract,specs/M3-probe}.md`、`INDEX.md`、`audit/{AUDIT_2026-10-29_R37.md,blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 起因：HUMAN「同意，继续，处理所有问题」（R36 收口 M4-b 后，按 HANDOFF §3 的第一优先做有载对照）
+- 结果：① **有载对照**：矩阵新增 `--load <n>`（CPU-busy worker + `os.cpus()` 累计时间差算占用率——`os.loadavg()` 在 Windows 恒为 0，用它就是假读数），`stability_report` 新增 `conditions[]`（idle / cpu-load×N / unlabelled）与 `runs_without_artifact`。两批 idle 24 次真实观测 3.7–6.2s（median 4.9s）+ 两批 8-worker 有载（58–62% 占用）24 次 5.8–8.3s（median 7.4s），**两侧 0 次越过 20s**，13 个真实候选结论一致。② **真发现 T-321**：idle 批里 `real-unlag@1.12.5` 被记成 `blocked`，`boot.detail` = `EPERM … triage-live-…`（探针自己的 scratch 被 Windows 锁住）→ 异常逃出 → 判据落到 `probe.boot-timeout`。修法：scratch 准备/清理失败**记录不抛**（`setupError`/`scratchCleanupError`），boot 步异常记 `bootSetupError`，判据新增 `probe.measurement-unavailable` → `unknown` + `missing.probe`，并**不再让清理失败销毁已拿到的样本**；N24/N24b 两条负对照。缺陷产物原样保留作唯一见证。③ **新盲区** `BS-40`（有载 1/40 子进程崩 `0xC0000409`，未复现未归因）、`BS-41`（句柄占用无法按需复现）
+- 实测：350 测试 / 9 门全绿 / `--mutate` 9/9 / 190 步 / 174 产物
+- 过程中的真实缺陷：① 第一份对照报告的 idle 侧只有 1 批，不足以与 2 批有载并列 → 补跑一批 idle；② 15:10 / 15:50 两份中间报告从未被引用且被 16:30 取代 → 删除（本轮自己刚生成、未入库，同 R31 删中间录制）；③ `stability_report` 第一版把「无产物」折成 `unknown` → 改为 `no-artifact` 单列
+- 未做：`BS-40` 的崩溃归因、`BS-41` 的可复现夹具、内存/磁盘/并发探针型载荷、非 Windows、`BS-38`/`BS-39` 的 ptc 真机
+

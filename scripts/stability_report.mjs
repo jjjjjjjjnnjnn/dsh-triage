@@ -94,6 +94,21 @@ const matrices = inputs.map((path) => {
   return { path, sha256: createHash('sha256').update(text).digest('hex'), payload }
 })
 
+/**
+ * What the machine was doing during each batch (`load` block, R37).
+ *
+ * WHY THIS IS READ RATHER THAN ASSUMED: before R37 every batch was idle, so "the spread" and "the
+ * loaded-machine behaviour" were the same unlabelled number. A batch that does not carry a `load`
+ * block predates R37 — it is reported as `unlabelled` instead of being silently counted as idle.
+ */
+const conditionOf = (payload) => {
+  const load = payload?.load
+  if (load === undefined || load === null || typeof load !== 'object') return { key: 'unlabelled', workers: null, busy: null }
+  const workers = typeof load.workers === 'number' ? load.workers : null
+  const busy = typeof load.cpu?.observed_busy_percent === 'number' ? load.cpu.observed_busy_percent : null
+  return { key: workers === 0 ? 'idle' : `cpu-load×${String(workers)}`, workers, busy }
+}
+
 /** label → every observation across the batches. */
 const byLabel = new Map()
 for (const matrix of matrices) {
@@ -123,7 +138,9 @@ for (const matrix of matrices) {
     const final = payload.timings?.bootToFinalSampleMs
     if (typeof final === 'number') entry.final.push(final)
     if (typeof run.install_ms === 'number') entry.install.push(run.install_ms)
-    const verdict = String(run.conclusion ?? 'unknown')
+    // A run that produced no artifact at all is its own answer, not "unknown" (R37: a crashed
+    // child used to be folded into `unknown`, which read as a judgement the probe never made).
+    const verdict = run.conclusion === null || run.conclusion === undefined ? 'no-artifact' : String(run.conclusion)
     entry.verdicts.set(verdict, (entry.verdicts.get(verdict) ?? 0) + 1)
     entry.batches += 1
     byLabel.set(label, entry)
@@ -160,6 +177,52 @@ const realObservations = matrices.flatMap((matrix) =>
 )
 const unstable = candidates.filter((candidate) => candidate.verdict_stable === false)
 
+/**
+ * The same numbers, grouped by machine condition instead of pooled.
+ *
+ * WHY (`BS-32`'s second half, R37): pooling an idle batch with a loaded one produces a spread that
+ * cannot answer "does load matter?" — the question is a comparison, not a distribution. Each group
+ * keeps every real observation and counts the runs that produced NO artifact at all (a dropped run
+ * is a reliability fact, and it is the one failure a timing table would silently swallow).
+ */
+const conditions = (() => {
+  const groups = new Map()
+  for (const matrix of matrices) {
+    const condition = conditionOf(matrix.payload)
+    const entry = groups.get(condition.key) ?? {
+      condition: condition.key,
+      workers: condition.workers,
+      observed_busy_percent: [],
+      matrices: [],
+      real_observations: [],
+      runs_without_artifact: 0,
+      runs: 0,
+    }
+    entry.matrices.push(displayPath(matrix.path))
+    if (condition.busy !== null) entry.observed_busy_percent.push(condition.busy)
+    for (const run of matrix.payload.runs) {
+      entry.runs += 1
+      if (run.conclusion === null || run.conclusion === undefined) entry.runs_without_artifact += 1
+      if (run.real !== true) continue
+      const boot = typeof run.boot_to_sample_ms === 'number' ? run.boot_to_sample_ms : run.artifact?.payload?.timings?.bootToSampleMs
+      if (typeof boot === 'number') entry.real_observations.push(boot)
+    }
+    groups.set(condition.key, entry)
+  }
+  return [...groups.values()]
+    .map((entry) => ({
+      condition: entry.condition,
+      workers: entry.workers,
+      observed_busy_percent: entry.observed_busy_percent.length === 0 ? null : entry.observed_busy_percent,
+      matrices: entry.matrices.length,
+      runs: entry.runs,
+      runs_without_artifact: entry.runs_without_artifact,
+      real_boot_to_sample_ms: describe(entry.real_observations),
+      over_budget: entry.real_observations.filter((value) => value > budget).length,
+    }))
+    .sort((left, right) => String(left.condition).localeCompare(String(right.condition)))
+})()
+
 const artifact = {
   schema_version: 1,
   produced_by: 'scripts/stability_report.mjs',
@@ -170,6 +233,8 @@ const artifact = {
     plan: matrix.payload.plan?.path ?? null,
     generated_at: matrix.payload.generated_at ?? null,
     runs: matrix.payload.runs.length,
+    // R37: the machine condition travels with each input, so a loaded batch cannot be read as idle.
+    load: conditionOf(matrix.payload),
   })),
   summary: {
     matrices: matrices.length,
@@ -182,7 +247,12 @@ const artifact = {
     verdict_unstable: unstable.map((candidate) => candidate.label),
     // A spread of one run is not a spread; the schema enforces >= 2 matrices, and this states it.
     min_runs_per_candidate: Math.min(...candidates.map((candidate) => candidate.runs)),
+    // R37: the idle/loaded comparison. Same plan, different machine condition; pooled numbers are
+    // still above, these are the ones that answer "does load move it?".
+    conditions: conditions.map((entry) => entry.condition),
+    condition_comparison: conditions.length < 2 ? null : conditions,
   },
+  conditions,
   candidates,
   definitions: {
     verdict_stable:
@@ -198,6 +268,8 @@ const artifact = {
     'the spread is what it is; a low p90 does not promise anything about the next run (`BS-32`)',
     'real candidates are a hand-picked convenience sample (`BS-27`)',
     'no gate here on purpose: the budget gate lives in `d2_report` (T-317 --strict for automation)',
+    'the load is CPU-busy loops in this user account: it says nothing about memory/disk pressure or about several probes running at once',
+    'each condition covers a different number of batches; a condition with one batch is a slice, not a distribution',
   ],
 }
 
@@ -224,6 +296,15 @@ process.stdout.write(
 process.stdout.write(
   `  unstable verdicts ${unstable.length === 0 ? 'none' : unstable.map((candidate) => `${candidate.label} ${JSON.stringify(candidate.verdicts)}`).join('; ')}\n`,
 )
+for (const group of conditions) {
+  const stats = group.real_boot_to_sample_ms
+  process.stdout.write(
+    `  ${String(group.condition).padEnd(12)} ${group.matrices} batch(es) · real n=${stats.n} · boot→sample ` +
+      `${String(stats.min)}–${String(stats.max)}ms · median ${String(stats.median)} · p90 ${String(stats.p90)}` +
+      ` · over ${budget}ms: ${group.over_budget}/${stats.n}` +
+      `${group.runs_without_artifact > 0 ? ` · runs without artifact: ${group.runs_without_artifact}/${group.runs}` : ''}\n`,
+  )
+}
 for (const candidate of candidates.filter((entry) => entry.real)) {
   const boot = candidate.boot_to_sample_ms
   process.stdout.write(

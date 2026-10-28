@@ -219,6 +219,16 @@ export interface ProbeRun {
   /** Ports the Host could not bind; if ours is among them the failure is the probe's. */
   readonly bindFailedPorts: readonly number[]
   /**
+   * Our own scratch preparation failed, so the candidate was never given a chance (R37).
+   *
+   * WHY IT IS A FIELD: without it, the judge's only branch for "no sample, no URL, no startup
+   * failure" was `probe.boot-timeout` → `blocked`. Measured cost: one candidate was reported
+   * blocked because Windows held a handle on the probe's temp directory.
+   */
+  readonly bootSetupError: string | null
+  /** Our scratch directory survived removal; a leak of OUR files, never a candidate fact. */
+  readonly bootScratchCleanupError: string | null
+  /**
    * The package manager's own reason for a failed install (T-310).
    *
    * Separate from `steps[].detail` because a reason is evidence, not prose: the judge
@@ -375,6 +385,10 @@ export interface ProbeExecDeps {
     segments?: BootSegments
     /** ADR-0008 E: what the sample loop did about the replacement window. */
     replacement?: SampleReplacement
+    /** R37: the probe could not prepare its own scratch files (nothing about the candidate ran). */
+    setupError?: string | null
+    /** R37: our scratch directory survived its own removal. */
+    scratchCleanupError?: string | null
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
   /**
@@ -443,6 +457,8 @@ interface MutableRun {
   errorTail: string | null
   startupFailed: boolean
   bindFailedPorts: readonly number[]
+  bootSetupError: string | null
+  bootScratchCleanupError: string | null
   installDiagnosis: InstallDiagnosis | null
   installAuthUsed: boolean | null
   installIgnoredPackages: readonly string[]
@@ -477,6 +493,8 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     errorTail: null,
     startupFailed: false,
     bindFailedPorts: [],
+    bootSetupError: null,
+    bootScratchCleanupError: null,
     installDiagnosis: null,
     installAuthUsed: null,
     installIgnoredPackages: [],
@@ -679,6 +697,9 @@ async function runSequence(
     if (boot.errorTail !== undefined) run.errorTail = boot.errorTail
     if (boot.startupFailed !== undefined) run.startupFailed = boot.startupFailed
     if (boot.bindFailedPorts !== undefined) run.bindFailedPorts = [...boot.bindFailedPorts]
+    // R37: our own scratch failures are recorded, never judged as candidate behaviour.
+    if (boot.setupError !== undefined) run.bootSetupError = boot.setupError ?? null
+    if (boot.scratchCleanupError !== undefined) run.bootScratchCleanupError = boot.scratchCleanupError ?? null
     // T-314: record the segmentation even on a no-sample boot — that is exactly the case whose
     // 42.7s wall time nobody could explain.
     if (boot.segments !== undefined) run.timings.bootSegments = boot.segments
@@ -762,6 +783,8 @@ function freeze(run: MutableRun): ProbeRun {
     errorTail: run.errorTail,
     startupFailed: run.startupFailed,
     bindFailedPorts: run.bindFailedPorts,
+    bootSetupError: run.bootSetupError,
+    bootScratchCleanupError: run.bootScratchCleanupError,
     installDiagnosis: run.installDiagnosis,
     installAuthUsed: run.installAuthUsed,
     installIgnoredPackages: run.installIgnoredPackages,
@@ -790,7 +813,17 @@ async function runStep(
   try {
     outcome = await body()
   } catch (error) {
-    outcome = { status: 'failed', detail: error instanceof Error ? error.message : String(error), exitCode: null }
+    const detail = error instanceof Error ? error.message : String(error)
+    /*
+     * A THROWN BOOT IS A MEASUREMENT FAILURE (R37).
+     *
+     * Before this, an exception from `bootAndSample` (measured: `rmSync` → EPERM on Windows) only
+     * became `steps[boot].detail`; the judge then saw "no sample, no URL, no startup failure" and
+     * fell through to `probe.boot-timeout` → `blocked`. Recording the throw as a setup failure is
+     * what lets the judge say `unknown` instead of blaming a plugin for our own file lock.
+     */
+    if (id === 'boot') run.bootSetupError = `boot-step-threw: ${detail}`
+    outcome = { status: 'failed', detail, exitCode: null }
   }
   const step = { id, status: outcome.status, ms: deps.now() - started, detail: outcome.detail, exitCode: outcome.exitCode }
   run.steps.push(step)
@@ -1264,6 +1297,19 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
           detail: `no inventory sample in ${Math.round((run.timings.bootToSampleMs ?? 0) / 1000)}s while the Host was serving`,
         },
       })
+    } else if (bootStep?.status === 'failed' && run.bootSetupError !== null) {
+      // OUR filesystem failed (R37): the probe could not prepare or remove its own scratch
+      // directory, so the candidate was never measured. A `blocked` here would blame a plugin for
+      // a Windows file lock — the same class of self-harm as R17's port collision.
+      state.conclusion = 'unknown'
+      state.level = 'medium'
+      missingEvidence.push('missing.probe')
+      reasons.push({
+        code: 'probe-measurement-unavailable',
+        severity: 'warn',
+        messageId: 'probe.measurement-unavailable',
+        params: { detail: run.bootSetupError.slice(0, 200) },
+      })
     } else if (state.conclusion !== 'blocked' && run.startupFailed) {
       // The launcher's own verdict, quoted rather than paraphrased: "startup failed: N
       // required plugins did not activate", plus the first line of its diagnosis.
@@ -1570,11 +1616,19 @@ export function probeAssertions(run: ProbeRun): readonly ProbeAssertionResult[] 
    */
   const profileUnusable = step('profile')?.status === 'failed'
   const compositionNotUpdated = run.installBuildRefusedProfileOnly && step('install')?.status === 'failed'
-  const notMeasured = profileUnusable
-    ? 'the copied profile could not be made usable, so the candidate was never booted'
-    : compositionNotUpdated
-      ? 'the package manager refused to build the copied profile’s own dependencies, so the composition was not updated and the candidate was never booted'
-      : null
+  /**
+   * R37: our own scratch directory failed to prepare or clean. Nothing about the candidate was
+   * measured, so every assertion that depends on a boot must read `unmeasured`, and the run must
+   * not look like a plugin that failed to start.
+   */
+  const probeEnvironmentFailed = run.bootSetupError !== null
+  const notMeasured = probeEnvironmentFailed
+    ? `the probe could not prepare its own scratch files (${run.bootSetupError.slice(0, 160)}), so the candidate was never booted`
+    : profileUnusable
+      ? 'the copied profile could not be made usable, so the candidate was never booted'
+      : compositionNotUpdated
+        ? 'the package manager refused to build the copied profile’s own dependencies, so the composition was not updated and the candidate was never booted'
+        : null
   return [
     {
       // `failed` is "nothing was written"; `unmeasured` is "something was written but it is

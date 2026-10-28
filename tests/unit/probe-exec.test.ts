@@ -671,8 +671,49 @@ test('no sample with no Host URL is a blocked boot (N22)', async () => {
   assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.boot-timeout'))
 })
 
-test('no sample while the Host was serving is a measurement failure (N22b)', async () => {
+test('our own scratch failure is never a blocked candidate (N24, R37)', async () => {
+  // Measured shape: Windows held a handle on the probe's temp dir, `rmSync` threw EPERM, the boot
+  // step failed, and the judge read "no sample, no URL, no startup failure" as `probe.boot-timeout`
+  // → blocked. The candidate (`real-unlag@1.12.5`) was never measured.
   const { run } = await runWith({
+    sample: null,
+    deps: {
+      bootAndSample: async () => ({
+        sample: null,
+        seconds: 37,
+        detail: "EPERM, Permission denied: \\\\?\\C:\\Users\\x\\AppData\\Local\\Temp\\triage-live-abc",
+        urlPrinted: false,
+        startupFailed: false,
+        setupError: 'scratch-setup-failed: EPERM, Permission denied',
+        scratchCleanupError: null,
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown', 'our filesystem is not the plugin')
+  assert.equal(judgement.reasons.some((reason) => reason.messageId === 'probe.boot-timeout'), false)
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.measurement-unavailable'))
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+  assert.equal(probeAssertions(run).find((item) => item.id === 'boot-sampled')?.status, 'unmeasured')
+})
+
+test('a boot step that throws is a measurement failure too, not a blocked boot (N24b)', async () => {
+  // The same rule one level up: whatever makes the boot step throw (a cleanup EPERM that escaped,
+  // a bug in our own code) must not become a verdict about the candidate.
+  const { run } = await runWith({
+    sample: null,
+    deps: {
+      bootAndSample: async () => {
+        throw new Error('EPERM, Permission denied: triage-live-xyz')
+      },
+    },
+  })
+  const judgement = judgeProbe({ run, at: AT })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.measurement-unavailable'))
+})
+
+test('no sample while the Host was serving is a measurement failure (N22b)', async () => {  const { run } = await runWith({
     sample: null,
     deps: {
       bootAndSample: async () => ({

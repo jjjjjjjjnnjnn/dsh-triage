@@ -83,6 +83,15 @@
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
+### R37 新增事实（0.2.1-rc.4，同一台 Windows 机器，有载/空载对照）
+
+| # | 事实 | 怎么测的 |
+|---|---|---|
+| F52 | **探针自己的临时目录失败会被判成插件失败**：`bootAndSampleHost` 里 `rmSync(probeDir)` 抛 `EPERM`（Windows 持有句柄）→ 异常逃出 → 执行器把它记成失败的 `boot` 步 → 判据只剩「没有样本 + 没打印 URL + 没 `startup failed`」这一条路 → `probe.boot-timeout` → **`blocked`**。真实见证：`real-unlag@1.12.5` 在一批 idle 矩阵里被记成 `blocked`，`boot.detail` 是 `EPERM, Permission denied: …\triage-live-…`。修法：scratch 的准备与删除失败都**记录不抛**（`setupError` / `scratchCleanupError`），执行器把 `boot` 步的异常也记成 `bootSetupError`，判据新增 `probe.measurement-unavailable` → `unknown` + `missing.probe`；顺手让「清理失败」不再销毁已经拿到的样本 | `data/results/probe-matrix-2026-10-29T15-30-00.000Z.json`（`real-unlag`，唯一见证；此后再没复现）· 单测 `tests/unit/probe-exec.test.ts` N24 / N24b |
+| F53 | **有载（8 个 CPU-busy worker / 24 逻辑核，实测 58–62% 占用）把 `boot→sample` 中位数从 5.1s 抬到 7.4s**（空载 4.4–11.8s / 有载 5.8–8.3s），**但没有一次越过 20s**，13 个真实候选的结论也没有变（唯一例外是上面那条探针自身故障）。同时有载批 40 次里出现 **1 次子进程直接崩掉（`0xC0000409`，635ms，无任何输出）**，空载 40 次里 0 次——所以「有载会不会让探针更不可靠」的答案是「会，但那一次没被归因」 | `record_probe_matrix.mjs --load 8` 的 `load.observed_busy_percent`（`os.cpus()` 累计时间差，`os.loadavg()` 在 Windows 恒为 0）· `data/results/stability-2026-10-29T16:30-00.000Z.json` 的 `conditions[]` |
+
+**F52 是产品级发现**：它证明「测量失败 ≠ 插件失败」这条纪律在**清理路径**上还没落地（R17 只覆盖了端口与 hook），而清理失败恰恰是 Windows 上最常见的一种。
+
 ---
 
 ## 3. 步骤机
@@ -164,7 +173,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 
 | assertion | 本轮状态 | 依据 |
 |---|---|---|
-| `boot-sampled` | 测 | 样本文件存在、可解析、且**可判**（无 `{error}`、`settled≠false`）。没写出样本但 Host 打印过 URL → `unmeasured`（不是 `failed`） |
+| `boot-sampled` | 测 | 样本文件存在、可解析、且**可判**（无 `{error}`、`settled≠false`）。没写出样本但 Host 打印过 URL → `unmeasured`（不是 `failed`）；探针自己的 scratch 目录准备失败（R37 `setup_error`）→ 三件套一起 `unmeasured`，结论最多 `unknown` |
 | `http-served` | 测 | `redirect:'manual'` 的状态码。**读数不是 `valid` 时本项必须 `unmeasured`**：树还在动时的静默端口回答不了这个问题（R17） |
 | `client-rendered` | **测（需浏览器）** | 真浏览器 + CDP 读 DOM：**必须存在 `#root`/`#app` 挂载点**、其子节点 ≥1、可见文本 ≥20 字符、`readyState` 非 `loading`；无挂载点（浏览器错误页 / 非挂载文档）→ `inconclusive`；有挂载点但零可见文本（canvas/icon-only）→ `inconclusive`；无浏览器 → `unmeasured` |
 | `inventory-active` | 测 | 候选行的 `fiberPhase`；读数不可判时 `unmeasured`。**复制模式下若组合没被更新（`install` 失败且 `candidate_registered≠true`）或副本本身不可用，`boot-sampled` / `http-served` / `inventory-active` 必须一起 `unmeasured`**——候选根本没被 boot（R22） |
@@ -182,6 +191,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 | install / boot / http 失败（**settled 树**） | `blocked` | `measured-local`（high） |
 | **launcher 说 `startup failed`** | `blocked` + `probe.startup-failed`（原文进 `params.detail`） | `measured-local`（high） |
 | **读数不可判**（`{error}` / `settled:false` / 候选行 transient / 我们的端口绑不上 / Host 起了但探针没写出样本） | `unknown` + `missing.inventory` 或 `missing.probe` | `measured-local` |
+| **探针自己的临时目录准备/删除失败**（R37：`rmSync` → EPERM，Windows 持有句柄） | `unknown` + `probe.measurement-unavailable` + `missing.probe` | `measured-local`（`boot-sampled`/`http-served`/`inventory-active` 全 `unmeasured`） |
 | 清理不干净 | `risky`（结论仍引自测量） | `measured-local` |
 | 运行时与候选声明不匹配 / 候选行 ≥2 条 / 样本读不出 | `unknown` + `missingEvidence` | `measured-local` |
 
@@ -225,7 +235,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 
 新增 `probe.*` 原因码（**三处同改**：`messages.ts` 中英 / 门 `verdict-contract` 白名单 / `docs/05` §3）：
 
-`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）** · **`probe.install-failed-code`（block，R19）** · **`probe.install-build-refused`（block，R19）** · **`probe.profile-copy-unusable`（warn→unknown，R22）** · **`probe.profile-link-dangling`（warn→unknown，R22）** · **`probe.profile-build-refused`（warn，R22，可伴随 `go`）**
+`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）** · **`probe.measurement-unavailable`（warn→unknown，R37：探针自己的临时目录准备/清理失败）** · **`probe.install-failed-code`（block，R19）** · **`probe.install-build-refused`（block，R19）** · **`probe.profile-copy-unusable`（warn→unknown，R22）** · **`probe.profile-link-dangling`（warn→unknown，R22）** · **`probe.profile-build-refused`（warn，R22，可伴随 `go`）**
 
 > 新增文案一律**只加不改**：给已有 messageId 增加 `{占位符}` 会让 `data/results` 里的历史产物在门 `verdict-contract` 变红（HANDOFF 坑表）。R19 的三条安装归因因此是**新 messageId**，`probe.install-failed` 原样保留（无码时仍用它）。
 
@@ -260,6 +270,8 @@ runtime → (profile) → install → boot → http → render → inventory →
 | N21 | 候选行相位 `pending`/`loading` | `unknown`，**不得** `probe.row-inactive` |
 | N22 | 没写出样本，但 Host 打印过 `?token=` URL | `unknown` + `missing.inventory`；`boot-sampled: unmeasured`（**不得** `failed`） |
 | N23 | Host 报绑定失败，且失败端口 = 探针自己选的端口 | `unknown` + `missing.probe` + `probe.port-unavailable`（**不得**算到候选头上） |
+| N24 | 探针自己的 scratch 目录 `rmSync` 抛 `EPERM`（R37 真机：Windows 持有句柄） | `unknown` + `missing.probe` + `probe.measurement-unavailable`，三件套 `unmeasured`；**不得** `probe.boot-timeout` |
+| N24b | `boot` 步直接抛异常（任何原因） | 同上：`run.bootSetupError` 被记下，判据走 `unknown`，不落到 `probe.boot-timeout` |
 | N24 | 显式把 `--readiness-timeout` 调成 1000 | 如实 `readiness.outcome='timeout'` / `waited_ms≈1000`，不静默升级成 `served` |
 | N25 | launcher 打印 `startup failed` | 立即收敛（不等 120s），`blocked` + `probe.startup-failed`，`params.detail` 是原文 |
 | N26 | 安装失败且 launcher stderr 带 `ERR_*` 码 | `blocked` + `probe.install-failed-code`，`params.code` 就是那个码（**不得**退回「退出码 1」） |

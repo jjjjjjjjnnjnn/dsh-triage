@@ -380,6 +380,13 @@ const artifact = {
     // Ports the Host could not bind. Present even on a sampled run: it is how the artifact
     // shows that a failure was ours (R17: this machine excludes 53461-53560).
     bind_failed_ports: [...run.bindFailedPorts],
+    /*
+     * R37: our own filesystem, not the candidate. `setup_error` non-null means the probe never
+     * prepared its files, so every other field is "not measured"; `scratch_cleanup_error`
+     * non-null means the probe leaked its own temp directory (a fact worth publishing).
+     */
+    setup_error: run.bootSetupError === null ? null : redact(run.bootSetupError),
+    scratch_cleanup_error: run.bootScratchCleanupError === null ? null : redact(run.bootScratchCleanupError),
   },
   readiness: run.readiness === null ? null : {
     source: run.readiness.source,

@@ -175,6 +175,13 @@ export interface BootSampleResult {
    * "did we wait" from `sampleWaitMs - sampleMtimeMs`.
    */
   readonly replacement: SampleReplacement
+  /**
+   * The probe could not prepare its own scratch files, so nothing about the candidate was measured
+   * (R37). `null` means preparation succeeded — it does NOT mean the boot succeeded.
+   */
+  readonly setupError?: string | null
+  /** Our scratch directory survived its own removal; a leak, reported instead of thrown (R37). */
+  readonly scratchCleanupError?: string | null
 }
 
 /**
@@ -382,49 +389,80 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     sampleUpgradeWindowMs = 15_000,
     settleMs = 1_000,
   } = options
-  mkdirSync(scratchRoot, { recursive: true })
-  const probeDir = mkdtempSync(join(scratchRoot, 'triage-live-'))
+  /*
+   * THE PROBE'S OWN SCRATCH DIR IS NOT PART OF THE MEASUREMENT (R37).
+   *
+   * Measured failure this prevents: `rmSync(probeDir)` threw EPERM (Windows held a handle), the
+   * exception escaped `bootAndSampleHost`, the executor caught it as a failed `boot` step, and the
+   * judge fell through to `probe.boot-timeout` — so a candidate was reported `blocked` because OUR
+   * scratch directory could not be deleted
+   * (`data/results/probe-matrix-2026-10-29T15-30-00.000Z.json`, `real-unlag`).
+   *
+   * So: preparation failures and scratch-cleanup failures are recorded as facts on the result and
+   * never thrown, and a cleanup failure can no longer destroy a sample we already have.
+   */
+  let setupError: string | null = null
+  let scratchCleanupError: string | null = null
+  let probeDir: string | null = null
+  try {
+    mkdirSync(scratchRoot, { recursive: true })
+    probeDir = mkdtempSync(join(scratchRoot, 'triage-live-'))
+  } catch (error) {
+    const detail = `scratch-setup-failed: ${error instanceof Error ? error.message : String(error)}`
+    return unmeasuredBoot(detail, detail)
+  }
   const samplePath = join(probeDir, 'sample.json')
   const patchPath = join(probeDir, 'overlay.patch.yml')
   const hookPath = join(probeDir, 'inventory-hook.mjs')
   let child: ChildProcess | null = null
   try {
-    copyFileSync(hookSource, hookPath)
-    /**
-     * Merge the caller's hook config over the defaults instead of appending it.
-     *
-     * WHY (T-316): `resolveFrom` / `profile` used to be emitted before `config`, so a caller
-     * could not override them — and an experiment that needs the hook to talk to a different
-     * tree (e.g. one with no projection package, to make the hook write a real `{error}`) had
-     * no way to say so. Duplicate YAML keys were the alternative and they are a parser trap.
-     * `out` is written LAST on purpose: the sample path is the loop's contract, not a knob.
-     */
-    const hookConfig = { resolveFrom: profileDir.replaceAll('\\', '/'), profile, ...config }
-    const configLines = [
-      ...Object.entries(hookConfig)
-        .filter(([key]) => key !== 'out')
-        .map(([key, value]) => `        ${key}: ${JSON.stringify(value)}`),
-      `        out: '${samplePath.replaceAll('\\', '/')}'`,
-    ]
-    writeFileSync(
-      patchPath,
-      [
-        '- insert:',
-        '    - id: triage-inventory-probe',
-        "      name: './inventory-hook.mjs'",
-        '      config:',
-        ...configLines,
-        // Experiment overlays come after the probe so a row the probe targets is already
-        // composed when the overlay patches it (the launcher applies them in order).
-        ...extraPatch.flatMap((entry) => [
-          `- id: ${entry.id}`,
-          ...(entry.name === undefined ? [] : [`  name: '${entry.name}'`]),
-          ...(entry.disabled === undefined ? [] : [`  disabled: ${entry.disabled}`]),
-        ]),
-        '',
-      ].join('\n'),
-      'utf8',
-    )
+    try {
+      copyFileSync(hookSource, hookPath)
+
+      /**
+       * Merge the caller's hook config over the defaults instead of appending it.
+       *
+       * WHY (T-316): `resolveFrom` / `profile` used to be emitted before `config`, so a caller
+       * could not override them — and an experiment that needs the hook to talk to a different
+       * tree (e.g. one with no projection package, to make the hook write a real `{error}`) had
+       * no way to say so. Duplicate YAML keys were the alternative and they are a parser trap.
+       * `out` is written LAST on purpose: the sample path is the loop's contract, not a knob.
+       */
+      const hookConfig = { resolveFrom: profileDir.replaceAll('\\', '/'), profile, ...config }
+      const configLines = [
+        ...Object.entries(hookConfig)
+          .filter(([key]) => key !== 'out')
+          .map(([key, value]) => `        ${key}: ${JSON.stringify(value)}`),
+        `        out: '${samplePath.replaceAll('\\', '/')}'`,
+      ]
+      writeFileSync(
+        patchPath,
+        [
+          '- insert:',
+          '    - id: triage-inventory-probe',
+          "      name: './inventory-hook.mjs'",
+          '      config:',
+          ...configLines,
+          // Experiment overlays come after the probe so a row the probe targets is already
+          // composed when the overlay patches it (the launcher applies them in order).
+          ...extraPatch.flatMap((entry) => [
+            `- id: ${entry.id}`,
+            ...(entry.name === undefined ? [] : [`  name: '${entry.name}'`]),
+            ...(entry.disabled === undefined ? [] : [`  disabled: ${entry.disabled}`]),
+          ]),
+          '',
+        ].join('\n'),
+        'utf8',
+      )
+    } catch (error) {
+      setupError = `scratch-setup-failed: ${error instanceof Error ? error.message : String(error)}`
+      try {
+        rmSync(probeDir, { recursive: true, force: true })
+      } catch {
+        // Leaving the directory behind is reported by the caller; the reason above is what matters.
+      }
+      return unmeasuredBoot(setupError, setupError)
+    }
 
     const started = Date.now()
     child = spawn(process.execPath, [dshMain, '--profile', profile, '--patch', patchPath, ...appArgs], {
@@ -657,7 +695,7 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     // Measured here rather than in `finally`, because a segment nobody can read is not a
     // measurement. `finally` keeps the same call as a backstop if this throws.
     const scratchStarted = Date.now()
-    rmSync(probeDir, { recursive: true, force: true })
+    scratchCleanupError = removeScratch(probeDir)
     const scratchCleanupMs = Date.now() - scratchStarted
     child = null
 
@@ -676,12 +714,83 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       totalMs: Date.now() - started,
     }
     if (!collected) {
-      return { payload: null, host, error: 'the hook wrote nothing within the timeout', seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement }
+      return { payload: null, host, error: 'the hook wrote nothing within the timeout', seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement, setupError, scratchCleanupError }
     }
-    return { payload, host, error: null, seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement }
+    return { payload, host, error: null, seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement, setupError, scratchCleanupError }
   } finally {
     if (child !== null) killTree(child)
-    rmSync(probeDir, { recursive: true, force: true })
+    // Backstop only: a failure here must not turn a measurement into a throw (R37).
+    removeScratch(probeDir)
+  }
+}
+
+/**
+ * Remove the probe's own scratch directory, reporting instead of throwing.
+ *
+ * @returns `null` on success, else the OS message — the caller publishes it, because a leaked
+ *          directory in %TEMP% is a fact and silence would hide it.
+ */
+function removeScratch(directory: string): string | null {
+  try {
+    rmSync(directory, { recursive: true, force: true })
+    return existsSync(directory) ? `the scratch directory is still there after rm -r: ${directory}` : null
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
+
+/**
+ * The result of a boot that never happened because OUR side could not prepare its files.
+ *
+ * Every field says "not measured": no sample, no URL, no readiness, no segments. The reason is
+ * carried twice on purpose — `error` for humans, `setupError` for the judge, which must report
+ * `unknown` rather than blaming the candidate (R37).
+ */
+function unmeasuredBoot(reason: string, setupError: string): BootSampleResult {
+  return {
+    payload: null,
+    host: {
+      status: 'no-sample',
+      seconds: 0,
+      log_sha256: sha256Of(''),
+      first_line: '',
+      error_tail: null,
+      url_printed: false,
+      startup_failed: false,
+      bind_failed_ports: [],
+    },
+    error: reason,
+    seconds: 0,
+    finalSeconds: 0,
+    http: null,
+    readiness: null,
+    render: null,
+    renderSkipped: null,
+    segments: {
+      spawnMs: 0,
+      sampleWaitMs: 0,
+      sampleMtimeMs: null,
+      finalSampleMtimeMs: null,
+      settleMs: 0,
+      readinessMs: 0,
+      renderMs: 0,
+      killMs: 0,
+      postKillWaitMs: 0,
+      scratchCleanupMs: 0,
+      totalMs: 0,
+    },
+    replacement: {
+      policy: 'error-only',
+      waited: false,
+      waitedMs: 0,
+      reason: null,
+      samples: 0,
+      stoppedBy: 'timeout',
+      upgraded: false,
+      upgradeWaitedMs: 0,
+    },
+    setupError,
+    scratchCleanupError: null,
   }
 }
 

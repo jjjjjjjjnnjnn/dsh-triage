@@ -1,0 +1,970 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/stability_report.mjs",
+  "generated_at": "2026-10-29T16:30:00.000Z",
+  "inputs": [
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-00-00.000Z.json",
+      "sha256": "457512e8c452a4efec7ca56f80ae90ac57273e90a50eb7d499de8aaca02b3acc",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:00:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "idle",
+        "workers": 0,
+        "busy": null
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T16-10-00.000Z.json",
+      "sha256": "82946e41c029b2379558da016d4d880e6211caf55561a2a418ab4690f5fb0be6",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T16:10:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "idle",
+        "workers": 0,
+        "busy": null
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-30-00.000Z.json",
+      "sha256": "ef8a0d1b6afb77b2fbc78f5a177c7c35f3c909d0c1e69d9d08682e69d5fd379a",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:30:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 58.4
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-50-00.000Z.json",
+      "sha256": "2306cceef60be759dc442cb408ce4bb8d0470bf7886aa30f202cba01be3ae56c",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:50:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 61.6
+      }
+    }
+  ],
+  "summary": {
+    "matrices": 4,
+    "candidates": 20,
+    "real_candidates": 13,
+    "real_observations": 48,
+    "real_boot_to_sample_ms": {
+      "n": 48,
+      "min": 3700,
+      "median": 6000,
+      "p90": 7800,
+      "max": 9200
+    },
+    "real_runs_over_budget": 0,
+    "budget_ms": 20000,
+    "verdict_unstable": [
+      "synthetic-private-registry"
+    ],
+    "min_runs_per_candidate": 4,
+    "conditions": [
+      "cpu-load×8",
+      "idle"
+    ],
+    "condition_comparison": [
+      {
+        "condition": "cpu-load×8",
+        "workers": 8,
+        "observed_busy_percent": [
+          58.4,
+          61.6
+        ],
+        "matrices": 2,
+        "runs": 40,
+        "runs_without_artifact": 1,
+        "real_boot_to_sample_ms": {
+          "n": 24,
+          "min": 5800,
+          "median": 7400,
+          "p90": 7800,
+          "max": 8300
+        },
+        "over_budget": 0
+      },
+      {
+        "condition": "idle",
+        "workers": 0,
+        "observed_busy_percent": null,
+        "matrices": 2,
+        "runs": 40,
+        "runs_without_artifact": 0,
+        "real_boot_to_sample_ms": {
+          "n": 24,
+          "min": 3700,
+          "median": 4900,
+          "p90": 6000,
+          "max": 9200
+        },
+        "over_budget": 0
+      }
+    ]
+  },
+  "conditions": [
+    {
+      "condition": "cpu-load×8",
+      "workers": 8,
+      "observed_busy_percent": [
+        58.4,
+        61.6
+      ],
+      "matrices": 2,
+      "runs": 40,
+      "runs_without_artifact": 1,
+      "real_boot_to_sample_ms": {
+        "n": 24,
+        "min": 5800,
+        "median": 7400,
+        "p90": 7800,
+        "max": 8300
+      },
+      "over_budget": 0
+    },
+    {
+      "condition": "idle",
+      "workers": 0,
+      "observed_busy_percent": null,
+      "matrices": 2,
+      "runs": 40,
+      "runs_without_artifact": 0,
+      "real_boot_to_sample_ms": {
+        "n": 24,
+        "min": 3700,
+        "median": 4900,
+        "p90": 6000,
+        "max": 9200
+      },
+      "over_budget": 0
+    }
+  ],
+  "candidates": [
+    {
+      "label": "real-archive-manager",
+      "real": true,
+      "shape": "real-workspace",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4800,
+        "median": 6250,
+        "p90": 8100,
+        "max": 8100,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 3865,
+        "median": 6180,
+        "p90": 7539,
+        "max": 7539
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7600,
+        "median": 10800,
+        "p90": 13600,
+        "max": 13600
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2051,
+        "median": 2893,
+        "p90": 3366,
+        "max": 3366
+      }
+    },
+    {
+      "label": "real-claude-style",
+      "real": true,
+      "shape": "real-ui-theme",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 3900,
+        "median": 6100,
+        "p90": 7600,
+        "max": 7600,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 3629,
+        "median": 6849,
+        "p90": 7459,
+        "max": 7459
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 6500,
+        "median": 11450,
+        "p90": 12700,
+        "max": 12700
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1742,
+        "median": 2962,
+        "p90": 8120,
+        "max": 8120
+      }
+    },
+    {
+      "label": "real-dream-skin",
+      "real": true,
+      "shape": "real-ui-theme",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 3900,
+        "median": 6850,
+        "p90": 9200,
+        "max": 9200,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4166,
+        "median": 6695,
+        "p90": 7205,
+        "max": 7205
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7100,
+        "median": 11750,
+        "p90": 14200,
+        "max": 14200
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1767,
+        "median": 2149,
+        "p90": 2563,
+        "max": 2563
+      }
+    },
+    {
+      "label": "real-dsh-cron",
+      "real": true,
+      "shape": "real-scheduler",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1755,
+        "median": 2845,
+        "p90": 3601,
+        "max": 3601
+      }
+    },
+    {
+      "label": "real-free-search",
+      "real": true,
+      "shape": "real-tool-provider",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4200,
+        "median": 6150,
+        "p90": 7600,
+        "max": 7600,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4384,
+        "median": 6263,
+        "p90": 8283,
+        "max": 8283
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7300,
+        "median": 10800,
+        "p90": 13900,
+        "max": 13900
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1804,
+        "median": 2518,
+        "p90": 3329,
+        "max": 3329
+      }
+    },
+    {
+      "label": "real-git-worktree",
+      "real": true,
+      "shape": "real-git",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4700,
+        "median": 5450,
+        "p90": 7800,
+        "max": 7800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4951,
+        "median": 5532,
+        "p90": 7526,
+        "max": 7526
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 8200,
+        "median": 9400,
+        "p90": 13300,
+        "max": 13300
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2435,
+        "median": 2712,
+        "p90": 3146,
+        "max": 3146
+      }
+    },
+    {
+      "label": "real-mcp-connector",
+      "real": true,
+      "shape": "real-mcp",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4900,
+        "median": 6600,
+        "p90": 7800,
+        "max": 7800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 8396,
+        "median": 8945,
+        "p90": 13254,
+        "max": 13254
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 12600,
+        "median": 13250,
+        "p90": 18900,
+        "max": 18900
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2238,
+        "median": 2641,
+        "p90": 5513,
+        "max": 5513
+      }
+    },
+    {
+      "label": "real-plugin-notify",
+      "real": true,
+      "shape": "real-notification",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 3700,
+        "median": 6300,
+        "p90": 7600,
+        "max": 7600,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4208,
+        "median": 6224,
+        "p90": 7722,
+        "max": 7722
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7000,
+        "median": 10950,
+        "p90": 13300,
+        "max": 13300
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2076,
+        "median": 2675,
+        "p90": 3189,
+        "max": 3189
+      }
+    },
+    {
+      "label": "real-qqbot",
+      "real": true,
+      "shape": "real-im-channel-compat",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4400,
+        "median": 5550,
+        "p90": 6900,
+        "max": 6900,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4251,
+        "median": 5629,
+        "p90": 7117,
+        "max": 7117
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7600,
+        "median": 9700,
+        "p90": 12000,
+        "max": 12000
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2018,
+        "median": 2182,
+        "p90": 3315,
+        "max": 3315
+      }
+    },
+    {
+      "label": "real-remote",
+      "real": true,
+      "shape": "real-remote",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4200,
+        "median": 5700,
+        "p90": 6800,
+        "max": 6800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4024,
+        "median": 5660,
+        "p90": 6892,
+        "max": 6892
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 7200,
+        "median": 9750,
+        "p90": 11800,
+        "max": 11800
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1885,
+        "median": 3061,
+        "p90": 6302,
+        "max": 6302
+      }
+    },
+    {
+      "label": "real-skills-manager",
+      "real": true,
+      "shape": "real-settings-only",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4700,
+        "median": 5400,
+        "p90": 8300,
+        "max": 8300,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4519,
+        "median": 5442,
+        "p90": 9058,
+        "max": 9058
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 8000,
+        "median": 9350,
+        "p90": 15200,
+        "max": 15200
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1468,
+        "median": 1925,
+        "p90": 2263,
+        "max": 2263
+      }
+    },
+    {
+      "label": "real-status-rotator",
+      "real": true,
+      "shape": "real-ui-status",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 5800,
+        "median": 7700,
+        "p90": 8800,
+        "max": 8800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4977,
+        "median": 7102,
+        "p90": 8904,
+        "max": 8904
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 9400,
+        "median": 13000,
+        "p90": 15400,
+        "max": 15400
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2118,
+        "median": 3077,
+        "p90": 9035,
+        "max": 9035
+      }
+    },
+    {
+      "label": "real-unlag",
+      "real": true,
+      "shape": "real-desktop-refresh-engines-only",
+      "runs": 4,
+      "verdicts": {
+        "go": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 5100,
+        "median": 5500,
+        "p90": 7400,
+        "max": 7400,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4871,
+        "median": 6169,
+        "p90": 7469,
+        "max": 7469
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 8600,
+        "median": 10000,
+        "p90": 12900,
+        "max": 12900
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 1717,
+        "median": 2293,
+        "p90": 3282,
+        "max": 3282
+      }
+    },
+    {
+      "label": "fixture-apply-fail",
+      "real": false,
+      "shape": "fixture-row-failed",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4100,
+        "median": 5600,
+        "p90": 6900,
+        "max": 6900,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 3829,
+        "median": 5087,
+        "p90": 7156,
+        "max": 7156
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 6900,
+        "median": 9100,
+        "p90": 11800,
+        "max": 11800
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 409,
+        "median": 495,
+        "p90": 541,
+        "max": 541
+      }
+    },
+    {
+      "label": "fixture-import-fail",
+      "real": false,
+      "shape": "fixture-import-error",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4900,
+        "median": 5850,
+        "p90": 7400,
+        "max": 7400,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4699,
+        "median": 5694,
+        "p90": 6690,
+        "max": 6690
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 8400,
+        "median": 9700,
+        "p90": 12300,
+        "max": 12300
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 455,
+        "median": 492,
+        "p90": 573,
+        "max": 573
+      }
+    },
+    {
+      "label": "fixture-no-row",
+      "real": false,
+      "shape": "fixture-no-observable-row",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 4700,
+        "median": 5650,
+        "p90": 6700,
+        "max": 6700,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 4490,
+        "median": 5332,
+        "p90": 6573,
+        "max": 6573
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 8100,
+        "median": 9350,
+        "p90": 11600,
+        "max": 11600
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 424,
+        "median": 468,
+        "p90": 739,
+        "max": 739
+      }
+    },
+    {
+      "label": "fixture-slow-overrun",
+      "real": false,
+      "shape": "fixture-tree-not-settled",
+      "runs": 4,
+      "verdicts": {
+        "unknown": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 4,
+        "min": 5500,
+        "median": 5650,
+        "p90": 7500,
+        "max": 7500,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 4,
+        "min": 16587,
+        "median": 16665,
+        "p90": 17156,
+        "max": 17156
+      },
+      "boot_to_final_sample_ms": {
+        "n": 4,
+        "min": 20700,
+        "median": 20900,
+        "p90": 22500,
+        "max": 22500
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 480,
+        "median": 489,
+        "p90": 621,
+        "max": 621
+      }
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "real": false,
+      "shape": "synthetic-bogus-version",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2850,
+        "median": 3744,
+        "p90": 4398,
+        "max": 4398
+      }
+    },
+    {
+      "label": "synthetic-missing",
+      "real": false,
+      "shape": "synthetic-missing-package",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 4
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 4,
+        "min": 2215,
+        "median": 3291,
+        "p90": 4267,
+        "max": 4267
+      }
+    },
+    {
+      "label": "synthetic-private-registry",
+      "real": false,
+      "shape": "synthetic-unreachable-registry",
+      "runs": 4,
+      "verdicts": {
+        "blocked": 3,
+        "no-artifact": 1
+      },
+      "verdict_stable": false,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 3,
+        "min": 78724,
+        "median": 78736,
+        "p90": 78859,
+        "max": 78859
+      }
+    }
+  ],
+  "definitions": {
+    "verdict_stable": "every run of this pinned candidate produced the SAME conclusion; `unknown` is a real answer, so go→unknown counts as unstable",
+    "boot_to_sample_ms": "the judged budget: spawn → the FIRST sample. T-312 made this the provisional sample, so it no longer includes the final settle",
+    "hook_wait_ms": "the hook's own settle wait, published in the inventory block (`wait_ms`)",
+    "exceeded_budget": "runs whose boot_to_sample_ms > 20000ms (published per candidate, never hidden)",
+    "real_runs_over_budget": "aggregate over real candidates only; fixtures are kept in the per-candidate rows"
+  },
+  "limits": [
+    "same machine, same sandbox runtime, same plan: this describes one Windows box, not the ecosystem",
+    "the spread is what it is; a low p90 does not promise anything about the next run (`BS-32`)",
+    "real candidates are a hand-picked convenience sample (`BS-27`)",
+    "no gate here on purpose: the budget gate lives in `d2_report` (T-317 --strict for automation)",
+    "the load is CPU-busy loops in this user account: it says nothing about memory/disk pressure or about several probes running at once",
+    "each condition covers a different number of batches; a condition with one batch is a slice, not a distribution"
+  ]
+}
