@@ -18,7 +18,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { bootAndSampleHost, isReadableSample, isUsableSample } from '@dsh-triage/probe'
+import { bootAndSampleHost, isProvisionalSample, isReadableSample, isUsableSample } from '@dsh-triage/probe'
 
 const FAKE_LAUNCHER = `
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -30,6 +30,9 @@ const write = (payload) => writeFileSync(out, JSON.stringify(payload, null, 2) +
 
 const UNSETTLED = { kind: 'live', settled: false, wait_ms: 15000, applies: 1, attempts: [{ n: 1, ok: true }] }
 const GOOD = { kind: 'live', settled: true, wait_ms: 400, applies: 2, attempts: [{ n: 1, ok: true }] }
+// T-312: the same body twice — first as the hook's provisional write, then as the settled one.
+const PROVISIONAL = { kind: 'live', settled: false, provisional: true, wait_ms: 900, applies: 1, attempts: [{ n: 1, ok: true }] }
+const SETTLED = { kind: 'live', settled: true, provisional: false, wait_ms: 2400, applies: 1, attempts: [{ n: 1, ok: true }] }
 const ERROR = {
   kind: 'live',
   settled: false,
@@ -46,6 +49,11 @@ if (mode === 'unsettled') {
   setTimeout(() => write(GOOD), 400)
 } else if (mode === 'error-only') {
   setTimeout(() => write(ERROR), 50)
+} else if (mode === 'provisional-then-final') {
+  setTimeout(() => write(PROVISIONAL), 50)
+  setTimeout(() => write(SETTLED), 700)
+} else if (mode === 'provisional-only') {
+  setTimeout(() => write(PROVISIONAL), 50)
 }
 // Stay alive like a Host would: the probe kill is part of what this loop is measured with.
 setInterval(() => {}, 1000)
@@ -71,7 +79,7 @@ function harness(): Harness {
   return { dshMain, scratchRoot: join(root, 'scratch'), dshHome, profileDir: join(dshHome, 'profiles', 'web'), hookSource }
 }
 
-function boot(mode: string, extra: { sampleReplaceWindowMs?: number; timeoutMs?: number } = {}) {
+function boot(mode: string, extra: { sampleReplaceWindowMs?: number; timeoutMs?: number; sampleUpgradeWindowMs?: number } = {}) {
   const each = harness()
   return bootAndSampleHost({
     dshMain: each.dshMain,
@@ -85,6 +93,7 @@ function boot(mode: string, extra: { sampleReplaceWindowMs?: number; timeoutMs?:
     settleMs: 0,
     timeoutMs: extra.timeoutMs ?? 30_000,
     sampleReplaceWindowMs: extra.sampleReplaceWindowMs ?? 5_000,
+    ...(extra.sampleUpgradeWindowMs === undefined ? {} : { sampleUpgradeWindowMs: extra.sampleUpgradeWindowMs }),
   })
 }
 
@@ -131,4 +140,35 @@ test('a launcher that never writes a sample reports the timeout, not a wait', as
   assert.equal(result.replacement.samples, 0)
   assert.equal(result.replacement.waited, false)
   assert.equal(result.replacement.stoppedBy, 'timeout')
+})
+
+/* ------------------------- two-phase sampling (T-312) --------------------- */
+
+test('T-312: a provisional sample opens a bounded upgrade window and the final one wins', async () => {
+  const result = await boot('provisional-then-final', { sampleUpgradeWindowMs: 5_000 })
+  // The verdict rests on the settled sample…
+  assert.equal(isProvisionalSample(result.payload), false)
+  assert.equal(isUsableSample(result.payload), true)
+  assert.equal(result.replacement.upgraded, true)
+  assert.equal(result.replacement.samples, 2)
+  assert.equal(result.replacement.stoppedBy, 'readable-sample')
+  // …while the JUDGED number is still the first sample: that is the whole point of T-312.
+  assert.ok(result.seconds < 2, `first sample must be the provisional one (got ${result.seconds}s)`)
+  assert.ok(result.finalSeconds >= result.seconds, 'the final sample cannot arrive before the first')
+  assert.ok(
+    (result.segments.sampleMtimeMs ?? 0) < (result.segments.finalSampleMtimeMs ?? 0),
+    'the artifact must publish both mtimes',
+  )
+})
+
+test('T-312: a provisional sample with no upgrade ends unknown rather than waiting forever', async () => {
+  const result = await boot('provisional-only', { sampleUpgradeWindowMs: 600 })
+  assert.equal(isProvisionalSample(result.payload), true)
+  // Provisional means `settled: false`, so it can never support `go`/`blocked`.
+  assert.equal(isUsableSample(result.payload), false)
+  assert.equal(result.replacement.upgraded, false)
+  assert.equal(result.replacement.stoppedBy, 'upgrade-window')
+  assert.ok(result.replacement.upgradeWaitedMs >= 500, `expected a real upgrade wait, got ${result.replacement.upgradeWaitedMs}ms`)
+  // The budget still judges the EARLY sample.
+  assert.ok(result.seconds < 2, `judged number must be the provisional sample (got ${result.seconds}s)`)
 })

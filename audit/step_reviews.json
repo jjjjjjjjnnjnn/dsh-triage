@@ -3512,6 +3512,108 @@
         "sha256": "141ed8ca9ed995562ca0699aef8bbfd694aaa273c8e64872c80805260280af7c",
         "outcome": "ALL GREEN · 9 gates（141 步 / 126 产物全部被引用）"
       }
+    },
+    {
+      "id": "R28-S1",
+      "batch": "R28",
+      "step": "T-312 两阶段取样：hook 先写 provisional 样本再覆盖最终样本；执行器识别 provisional、开有界升级窗口（= 样本自报 settle 预算 + 1s）、预算改判第一份样本；新增 3 条单测",
+      "changed": [
+        "packages/probe/hooks/inventory-hook.mjs",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "packages/plugin/src/probe-run.ts",
+        "scripts/record_probe.mjs",
+        "scripts/d2_report.mjs",
+        "tests/unit/probe-host-sample.test.ts",
+        "tests/unit/probe-hook-two-phase.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：provisional 带 `settled:false`，`measurementState` 仍判 unsettled → 只能 `unknown`，不会被读成 `go`；`isUsableSample()` / `judgeProbe()` 一字未改。真机 `slow-plugin`：第一份 5.4s、最终 10.7s、`upgraded=true`、行 active、仍 `go`。E（最终 `settled:false` 立即收敛）与 `{error}`（等满替换窗口）的回归仍绿",
+        "reproducibility": "PASS：3 条单测 + 3 份真机产物；窗口 margin 的教训写进 ADR（第一版固定 15s 会错过恰好 15s 才写完的最终样本，改为从 `settle_timeout_ms` 推）",
+        "licence": "PASS：无新增候选（仓内夹具 + R18 已登记 pin），不读凭据，沙盒临时目录跑完即删",
+        "ssot": "PASS：预算新口径写进 6 处（spec §4 + F50、ADR-0008 §T-312、BACKLOG T-312、HANDOFF §2、SIGNOFF、INDEX 的 D2 行），且都写明「D2 必须按新口径重跑矩阵才有结论」",
+        "adversary": "反例一：用「预算判第一份」把慢候选洗成达标而隐去最终样本 —— 最终样本时刻另记 `bootToFinalSampleMs`，`inventory.upgraded`/`upgrade_waited_ms` 同时公开，`limits[]` 明写口径。反例二：让 provisional 冒充可判样本 —— 它只有 `settled:false`，单测断言 `isUsableSample=false`。反例三：把 `dsh-mcp-connector` 重跑到 `go` —— 第三次仍是 `unknown`，`--expect go` 的 exit 1 与产物原样保留"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t312-slow --expect go --browser <chrome> --stamp 2026-10-29T04:00:00.000Z",
+        "artifact": "data/results/probe-t312-slow-2026-10-29T04-00-00.000Z.json",
+        "sha256": "6f6a4024c68cecc4b206bacf5dfa17c03892cb0d1f3f1bab93bc21724c9e4f25",
+        "outcome": "go · 第一份样本 5.4s（判预算）/ 最终 10.7s · upgraded=true · 行 active · 渲染通过"
+      }
+    },
+    {
+      "id": "R28-S2",
+      "batch": "R28",
+      "step": "T-312 反面对照：不可判夹具在新口径下的行为（预算达标、结论仍 unknown、最终样本时刻可见、墙钟略增）",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/hooks/inventory-hook.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`slow-overrun` 第一份 9.4s / 最终 24.5s（`upgraded=true`、`settled:false`）→ `unknown` + `missing.inventory`，预算 **9.4s ≤20s**；旧口径下同一夹具是 22.7s。墙钟（boot 步）30.4s，比 E 之后的 28.6s 多出等最终样本的那一段",
+        "reproducibility": "PASS：命令在 real_test.command；窗口 margin 改动后重跑一次，`upgraded` 由 `false` 变 `true`（说明 margin 生效）",
+        "licence": "PASS：仓内夹具，无新增候选、无凭据",
+        "ssot": "PASS：不可判墙钟 28.6s → 30.4s 的**代价**写进 spec F50 与 ADR-0008 §T-312，与「预算达标」成对陈述",
+        "adversary": "反例一：只说「预算从 22.7s 降到 9.4s」而不说结论仍是 unknown、墙钟反而变长 —— 两处文档都成对写。反例二：把 `upgraded=true` 说成「树稳定了」—— 最终样本自己写着 `settled:false`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t312-overrun-b --expect unknown --browser <chrome> --stamp 2026-10-29T04:40:00.000Z",
+        "artifact": "data/results/probe-t312-overrun-b-2026-10-29T04-40-00.000Z.json",
+        "sha256": "77e62758bd09a0e2ce55ad5fb6c7785c87b7de0ca1e27c3688b4e1a25677aed1",
+        "outcome": "unknown · 第一份 9.4s / 最终 24.5s · upgraded=true · settled=false · boot 步 30386ms"
+      }
+    },
+    {
+      "id": "R28-S3",
+      "batch": "R28",
+      "step": "T-312 对真实候选的第三次观测：dsh-mcp-connector@0.2.83 在新口径下预算达标，但最终样本仍是 settled:false（结论 unknown）",
+      "changed": [
+        "packages/probe/src/host.ts"
+      ],
+      "review": {
+        "correctness": "PASS：第一份 10.1s（预算 ✓）、最终 25.2s、`upgraded=true`、`settled:false`、候选行 `loading` → `unknown`。与 R27 的 16.0/22.5/23.8s 对照说明：**预算问题被 T-312 解决了，但「这个候选的树今天不稳定」没有被解决**",
+        "reproducibility": "PASS：同 pin、同机器、串行执行；三次观测（R27 两次 + R28 一次）全部入账",
+        "licence": "PASS：R18 已登记的 MIT 候选，无新增、无 vendor、无凭据",
+        "ssot": "PASS：这条同时写进 BS-32 与 ADR-0008 §T-312 的代价段——「预算达标 ≠ 候选可判」",
+        "adversary": "反例一：用这条的 `unknown` 宣称 T-312 破坏了 `go` —— 不成立：同轮 `slow-plugin` 仍是 `go`（R28-S1）；这条的最终样本自己写着 `settled:false`。反例二：改 `--expect` 让脚本 exit 0 —— 没有，exit 1 保留"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-mcp-connector@0.2.83 --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t312-mcp --expect go --browser <chrome> --stamp 2026-10-29T04:20:00.000Z",
+        "artifact": "data/results/probe-t312-mcp-2026-10-29T04-20-00.000Z.json",
+        "sha256": "1db151a4dc86587c1869bc464b562dce9c3628b6b70bb8db530e8fd22226128d",
+        "outcome": "unknown（--expect go 未满足，exit 1）· 第一份 10.1s / 最终 25.2s · upgraded=true · settled=false · 行 loading"
+      }
+    },
+    {
+      "id": "R28-S4",
+      "batch": "R28",
+      "step": "文档与台账同步（R28）：spec §4 预算新口径 + F50、ADR-0008 §T-312 实施记录与签字、ADR-0009 自评结论 A、BACKLOG（T-312 ✅ / T-303·T-202a 收束为当前不做）、HANDOFF §2·§3、SIGNOFF、INDEX、审核报告；门禁录一次全绿",
+      "changed": [
+        "docs/specs/M3-probe.md",
+        "docs/adr/0008-unsettled-wait.md",
+        "docs/adr/0009-agent-scope-reads.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/SIGNOFF.md",
+        "audit/AUDIT_2026-10-29_R28.md",
+        "audit/step_reviews.json",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：预算口径的改动在六处一致；`ADR-0009` 的结论只是「自评」，签字区勾的是 A、B 仍空，`T-303`/`T-202a` 明确标「当前不做」而不是「完成」；`ADR-0008` 的签字区把 C 标成「R28 已实施」并注明 HUMAN 原话",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T05:00:00.000Z` 一条命令重放 9 门（145 步 / 130 产物全部被引用）",
+        "licence": "PASS：本轮无新增候选、未动 quarantine；`ADR-0009` 结论 A 意味着**没有**引入任何凭据路径，铁律 4 原样",
+        "ssot": "PASS：T-312 的状态在 BACKLOG（✅ + 剩余）、HANDOFF（本轮交付 + 未通过门槛）、ADR-0008（实施记录 + 代价）、spec（§4 + F50）、SIGNOFF、INDEX 六处一致；「D2 需按新口径重跑」在四处出现",
+        "adversary": "反例一：把 `ADR-0009` 的 A 写成「HUMAN 已批准」——签字区注明「agent 自评结论，不是 HUMAN 签」。反例二：把 T-312 说成「probe 更快了」——文档成对写「墙钟 28.6s → 30.4s，只是答案更早」。反例三：把 D2 写成已恢复——四处都写「必须按新口径重跑矩阵才有结论」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T05:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T05-00-00.000Z.json",
+        "sha256": "2504e86c5572bfd3a070c20c2b93add6c1acb0e507d002767b9d263391f40612",
+        "outcome": "ALL GREEN · 9 gates（274 测试；145 步 / 130 产物全部被引用）"
+      }
     }
   ]
 }

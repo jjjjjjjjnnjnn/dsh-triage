@@ -79,11 +79,28 @@ export interface ProbeSampleView {
   readonly candidateRows: readonly ProbeCandidateRow[]
   /** Probe rows the hook excluded from scoring (its own instrument). */
   readonly excluded: readonly string[]
+  /**
+   * T-312: the hook's first, not-yet-settled write.
+   *
+   * `null` for payloads written before the field existed. A run that ended on a provisional
+   * sample can only ever be `unknown` (its `settled` is `false`), and the artifact has to say
+   * whether the final sample ever arrived.
+   */
+  readonly provisional: boolean | null
 }
 
 export interface ProbeTimings {
   readonly installMs: number | null
+  /** Spawn → the FIRST sample (T-312). This is the number the 20s budget judges. */
   readonly bootToSampleMs: number | null
+  /**
+   * Spawn → the FINAL sample (T-312). Equal to {@link bootToSampleMs} when the hook wrote once.
+   *
+   * WHY BOTH: the budget has to mean "the user got an answer this fast", and with two-phase
+   * sampling the first answer is provisional. Publishing only one of the two would let a
+   * reader conclude either "we are fast" or "we waited 24s" without seeing the other half.
+   */
+  readonly bootToFinalSampleMs: number | null
   readonly httpMs: number | null
   /** Client-render segment (T-302). Never part of the 20s boot→sample budget. */
   readonly renderMs: number | null
@@ -324,6 +341,8 @@ export interface ProbeExecDeps {
   bootAndSample(input: BootInput): Promise<{
     sample: unknown | null
     seconds: number
+    /** T-312: spawn → the FINAL sample; absent means "same as `seconds`". */
+    finalSeconds?: number
     detail: string
     http?: { status: number | null; detail: string } | null
     /** T-306: where the readiness port came from. Absent means "not reported". */
@@ -395,7 +414,7 @@ interface MutableRun {
   port: number
   runtimeVersion: string | null
   steps: ProbeStepRun[]
-  timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null; bootSegments: BootSegments | null }
+  timings: { installMs: number | null; bootToSampleMs: number | null; bootToFinalSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null; bootSegments: BootSegments | null }
   sample: ProbeSampleView | null
   sampleReplacement: SampleReplacement | null
   http: { status: number | null; detail: string } | null
@@ -428,7 +447,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     port: input.plan.port,
     runtimeVersion: null,
     steps: [],
-    timings: { installMs: null, bootToSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null, bootSegments: null },
+    timings: { installMs: null, bootToSampleMs: null, bootToFinalSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null, bootSegments: null },
     sample: null,
     sampleReplacement: null,
     http: null,
@@ -641,6 +660,9 @@ async function runSequence(
     // the settle, the readiness probe and the post-kill wait, so the two numbers differ on
     // purpose and only one of them is judged (docs/specs/M3-probe.md §4).
     run.timings.bootToSampleMs = Math.round(boot.seconds * 1000)
+    // T-312: the judged number is the first sample; the final one says when the sample the
+    // verdict may rest on arrived.
+    run.timings.bootToFinalSampleMs = Math.round((boot.finalSeconds ?? boot.seconds) * 1000)
     return { status: 'passed' as const, detail: `${boot.seconds}s to sample`, exitCode: null }
   })
   if (run.abortedAt !== null) return
@@ -768,6 +790,8 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
     : []
   const settled = typeof record?.['settled'] === 'boolean' ? Boolean(record['settled']) : null
   const attempts = attemptsOf(record)
+  // T-312: `null` for payloads written before the field existed.
+  const provisional = typeof record?.['provisional'] === 'boolean' ? Boolean(record['provisional']) : null
   const applies = readNumber(record?.['applies'])
 
   if (record !== null && record['error'] !== undefined && record['error'] !== null) {
@@ -783,6 +807,7 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
       settled,
       attempts,
       applies,
+      provisional,
       candidateRows: [],
       excluded,
     }
@@ -799,6 +824,7 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
       settled,
       attempts,
       applies,
+      provisional,
       candidateRows: [],
       excluded,
     }
@@ -818,6 +844,7 @@ export function readSample(payload: unknown, candidatePackage: string, sandboxHo
     settled,
     attempts,
     applies,
+    provisional,
     candidateRows,
     excluded,
   }
@@ -938,6 +965,7 @@ function measurementDetail(run: ProbeRun): string {
   }
   // ADR-0008 E: say out loud whether a replacement was even attempted. Without this the
   // reader sees only a shorter wall clock and has to guess why.
+  if (sample !== null && sample.provisional !== null) parts.push(`provisional=${String(sample.provisional)}`)
   const replacement = run.sampleReplacement
   if (replacement !== null) {
     parts.push(

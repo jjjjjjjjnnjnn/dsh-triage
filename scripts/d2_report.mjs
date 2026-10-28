@@ -219,7 +219,7 @@ const bootBreakdown = {
   runs_with_segments: segmentRuns.length,
   max_per_segment: segmentMax,
   note:
-    'sampleWaitMs is the sample wait only; since ADR-0008 E the replacement window is opened for an {error} sample alone, so a settled:false reading converges immediately (the artifacts record inventory.replacement_waited instead of leaving it to be inferred)',
+    'sampleWaitMs is the sample wait only; since ADR-0008 E the replacement window is opened for an {error} sample alone, and since T-312 the budget judges the FIRST sample while bootToFinalSampleMs records when the settled one arrived (inventory.provisional / inventory.upgraded say which one a run ended on)',
 }
 
 /**

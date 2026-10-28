@@ -121,7 +121,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 | 段 | 预算 | 超时 | 实测 |
 |---|---|---|---|
 | `install` | 不计入 20s（网络与 pnpm 波动不可控） | 本地 60s / registry 180s | 0.53–5.4s（本地 / 真实 registry）；**复制模式的 `profile` 步另计**：首跑 138s（含解析整棵组合后因构建审批失败）→ 加沙盒构建策略后 **18.5–19.7s**（R22） |
-| `boot → sample` | **≤ 20s**（M3 出口门禁） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s；**R17：6.2–6.9s（12 次真跑）** |
+| `boot → sample` | **≤ 20s**（M3 出口门禁）—— **T-312 起判的是「第一份样本」**（provisional） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s；**R17：6.2–6.9s（12 次真跑）**；**R28（T-312）：`slow-plugin` 5.4s（最终样本 10.7s，仍 `go`）· `slow-overrun` 9.4s（最终样本 24.5s，仍 `unknown`）· 真实候选 `dsh-mcp-connector` 10.1s（最终 25.2s）** |
 | `readiness`（settled 树） | **≤ 5s**（**阈值不变**） | 5s | R17：`waited_ms` 10–32ms（URL 与端口同轮询，命中即返回） |
 | `readiness`（unsettled 树） | **≤ 20s，可配**（`--unsettled-timeout`）；**该窗口只能产出 `unknown`** | 20s | R17 新增；settled 树的 5s 判据未被放松 |
 | `sample 替换等待` | ≤ `--unsettled-timeout`（默认 20s）；**ADR-0008 E 起只对 `{error}` 样本生效** | 同上 | 只对**不可读**样本生效：等 Cordis 重新 apply 覆盖出可判样本（F29）；`settled:false` 立即收敛（R26），产物记 `inventory.replacement_waited` |
@@ -297,6 +297,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 | **F47** | **sample 等待本身在波动**：同一台机器、同一批夹具，hook 写出样本的时刻受 Host 组合时间影响 —— R26 三次真跑 `boot→sample` 11.5s / 14.7s / 22.7s（行相位分别是 active / active / null），`boot` 步 21.7–28.6s；R18 的 `slow-plugin` 只有 10.1s。因此墙钟只能给**区间**，预算仍只判 `spawn→sample`（`BS-32`） | `probe-adr0008e-slow-2026-10-28T22-40-00.000Z.json` · `probe-adr0008e-real-2026-10-28T22-50-00.000Z.json` |
 | **F48** | **真 hook 会写 `{error}`，而且执行器为它等满整个窗口**（T-316）：用 `--hook-config` 把 hook 的 `resolveFrom` 指向一个没有 projection 包的 profile，**真实的 `inventory-hook.mjs`** 就写出 `error.code=projection-missing`、`settled:false`；执行器 `replacement_waited=true`、`waited_ms=5203`（窗口 5000）、`stoppedBy=unreadable-window`，结论仍是 `unknown` + `missing.inventory` + `probe.sample-unreadable`。**这就是 E 的反面**：`settled:false` 等 0ms，`{error}` 等满窗口 | `data/results/probe-adr0008e-hook-error-2026-10-29T00-10-00.000Z.json`（`unknown`，`inventory.error_code=projection-missing`） |
 | **F49** | **复制源的 `nodeLinker: hoisted` 不会打断候选行识别**（T-315 遗留项）：把 `nodeLinker: hoisted` 写进复制源自己的 `pnpm-workspace.yaml`（`pnpm_policy=source`，沙盒不覆盖用户文件），install exit 0、`candidate_registered=true`、候选行 `include:triage-probe-ok` 相位 `active`、渲染通过 → `go`。**边界**：产物证明「这种形状不会把候选判丢」，**不证明** pnpm 真的切到了 hoisted 布局（布局未记录在产物里） | `data/results/probe-t315-node-linker-2026-10-29T00-40-00.000Z.json` |
+| **F50** | **两阶段取样（T-312）把「预算」和「慢候选」解耦**：hook 先在**第一次读到树**时写出 `provisional: true` / `settled: false` 的样本，settle 循环结束后再覆盖成最终样本；执行器判 `boot→sample` 用**第一份**，等最终样本的窗口取「样本自报的 `settle_timeout_ms` + 1s」。真机三例：`slow-plugin` 第一份 **5.4s** / 最终 10.7s / **仍 `go`**（行 active）；`slow-overrun` 第一份 **9.4s** / 最终 24.5s / 仍 `unknown`；真实候选 `dsh-mcp-connector@0.2.83` 第一份 **10.1s** / 最终 25.2s / `settled:false` → `unknown`（该候选今天两次复测都未在 hook 的 15s 内稳定）。**代价**：不可判的墙钟从 ≈28.6s 升到 ≈30.4s（多了等最终样本的 15s，但因为第一份已经给了答案，**预算不再被顶穿**） | `data/results/probe-t312-slow-2026-10-29T04-00-00.000Z.json` · `probe-t312-overrun-b-2026-10-29T04-40-00.000Z.json` · `probe-t312-mcp-2026-10-29T04-20-00.000Z.json` |
 
 **T-304 的退出条件（R22 全部达成）**：
 

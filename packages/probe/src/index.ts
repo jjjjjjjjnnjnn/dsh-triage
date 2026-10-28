@@ -36,6 +36,7 @@ export {
   findFreePort,
   ignoredBuildPackages,
   installDiagnosis,
+  isProvisionalSample,
   isReadableSample,
   isUsableSample,
   killTree,

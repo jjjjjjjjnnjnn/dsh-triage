@@ -115,6 +115,9 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
       return {
         sample: boot.payload,
         seconds: boot.host.seconds,
+        // T-312: the first sample is what the budget judges; the final one is what the verdict
+        // may rest on. Both travel so neither can be silently swapped for the other.
+        finalSeconds: boot.finalSeconds,
         detail:
           boot.error === null
             ? `sampled in ${boot.host.seconds}s (${boot.host.status})`

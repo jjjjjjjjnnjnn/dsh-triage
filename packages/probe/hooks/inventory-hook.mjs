@@ -106,6 +106,74 @@ export function apply(ctx, config = {}) {
       return
     }
 
+    /**
+     * Publish one sample. Used twice (T-312): the first readable snapshot goes out as
+     * `provisional: true` / `settled: false`, and the same call writes the final one when the
+     * settle loop ends.
+     *
+     * WHY TWO WRITES: the judged budget is "spawn → first sample", and a tree that takes 10–18s
+     * to settle used to make that number 16–23s even though the reading itself was available in
+     * ~2s. Writing the provisional sample early keeps the budget honest (the executor really did
+     * get an answer) while the final sample still carries the settled phase table. The executor
+     * decides how long to wait for the upgrade; the hook never claims `settled: true` early.
+     */
+    const publish = (current, settledFlag, provisionalFlag) => {
+      const selfEntryId = findSelfEntryId(current.entries, selfId)
+      const published = withoutProbe(current, selfEntryId)
+      const sampledAt = new Date().toISOString()
+      write({
+        kind: 'live',
+        sampled_at: sampledAt,
+        // Who answered, so the artifact never claims a Remote it did not use.
+        transport: 'in-process-projection',
+        method: 'readPluginInventory',
+        profile: config.profile ?? null,
+        runtime_version: config.runtimeVersion ?? null,
+        wait_ms: Date.now() - started,
+        applies: generation,
+        attempts,
+        // `settled: false` means the sample was taken while rows were still moving. The
+        // executor must not read a transient phase as a dead plugin (R17 / BS-25).
+        settled: settledFlag,
+        // T-312: `true` means "readable, but the settle loop is still running".
+        provisional: provisionalFlag,
+        settle_timeout_ms: settleTimeoutMs,
+        // The published snapshot must be the deployment, not the deployment plus our
+        // instrument: the probe row is recorded here instead of being scored.
+        excluded:
+          selfEntryId === null
+            ? []
+            : [
+                {
+                  entryId: selfEntryId,
+                  reason: 'the probe row itself, mounted through a launcher --patch overlay for this sample only',
+                },
+              ],
+        snapshot: {
+          ...published,
+          // Inside the snapshot on purpose: `audit --snapshot` reads the transport from
+          // here, and a provenance field that only lives beside the data is one nobody
+          // reads (the adversary showed the artifact audited as "unstated").
+          transport: 'in-process-projection',
+        },
+        host_summary: summarize(published),
+        // Facts, not judgements: the registry's own list, plus what this build does not
+        // read yet. `registry: null` means "no tool service composed", which is not the
+        // same answer as "a registry with zero tools".
+        capabilities: readCapabilities(ctx, sampledAt),
+      })
+    }
+
+    // Phase 1b (T-312): the first readable snapshot goes out now, explicitly marked provisional.
+    // A failure to write it is not fatal: the final write below is the one the old path made.
+    if (isNewest()) {
+      try {
+        publish(snapshot, false, true)
+      } catch {
+        // Keep settling; the final write is still the authoritative one.
+      }
+    }
+
     // Phase 2: wait until no entry is transient. The budget starts at the first successful
     // read, not at apply time: the retry above already consumed part of the wall clock.
     const settleStarted = Date.now()
@@ -141,47 +209,8 @@ export function apply(ctx, config = {}) {
     // A newer apply owns the file from here on.
     if (!isNewest()) return
 
-    const sampledAt = new Date().toISOString()
-    const published = withoutProbe(snapshot, selfEntryId)
-    write({
-      kind: 'live',
-      sampled_at: sampledAt,
-      // Who answered, so the artifact never claims a Remote it did not use.
-      transport: 'in-process-projection',
-      method: 'readPluginInventory',
-      profile: config.profile ?? null,
-      runtime_version: config.runtimeVersion ?? null,
-      wait_ms: Date.now() - started,
-      applies: generation,
-      attempts,
-      // `settled: false` means the sample was taken while rows were still moving. The
-      // executor must not read a transient phase as a dead plugin (R17 / BS-25).
-      settled,
-      settle_timeout_ms: settleTimeoutMs,
-      // The published snapshot must be the deployment, not the deployment plus our
-      // instrument: the probe row is recorded here instead of being scored.
-      excluded:
-        selfEntryId === null
-          ? []
-          : [
-              {
-                entryId: selfEntryId,
-                reason: 'the probe row itself, mounted through a launcher --patch overlay for this sample only',
-              },
-            ],
-      snapshot: {
-        ...published,
-        // Inside the snapshot on purpose: `audit --snapshot` reads the transport from
-        // here, and a provenance field that only lives beside the data is one nobody
-        // reads (the adversary showed the artifact audited as "unstated").
-        transport: 'in-process-projection',
-      },
-      host_summary: summarize(published),
-      // Facts, not judgements: the registry's own list, plus what this build does not
-      // read yet. `registry: null` means "no tool service composed", which is not the
-      // same answer as "a registry with zero tools".
-      capabilities: readCapabilities(ctx, sampledAt),
-    })
+    // Final sample (T-312): same path, `provisional: false`, and the settle loop's own verdict.
+    publish(snapshot, settled, false)
   })()
 }
 

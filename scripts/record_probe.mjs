@@ -343,6 +343,11 @@ const artifact = {
     transport: run.sample === null ? null : run.sample.transport,
     entries: run.sample === null ? null : run.sample.entries,
     wait_ms: run.sample === null ? null : run.sample.waitMs,
+    // T-312: `true` means the run ended on the hook's provisional write (so the verdict can
+    // only be `unknown`), and `upgraded` says whether the settled sample ever arrived.
+    provisional: run.sample === null ? null : run.sample.provisional,
+    upgraded: run.sampleReplacement === null ? null : run.sampleReplacement.upgraded,
+    upgrade_waited_ms: run.sampleReplacement === null ? null : run.sampleReplacement.upgradeWaitedMs,
     // R17: whether the reading can support a verdict at all. `settled:false` and an
     // `error_code` are what separate "slow" from "broken".
     settled: run.sample === null ? null : run.sample.settled,
@@ -463,6 +468,9 @@ const artifact = {
     // T-314 + ADR-0008 E: the boot step's segments are published, so "we waited N s" is never a
     // single opaque number, and `inventory.replacement_waited` says whether the window was used.
     'timings.bootSegments splits the boot step (spawn, sample wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only, and inventory.replacement_waited records whether a replacement window was opened at all',
+    // T-312: two-phase sampling — the judged number is the first sample, and the artifact has
+    // to say so instead of letting "20s" quietly mean "the settled sample".
+    'the 20s budget judges the FIRST sample (T-312): the hook publishes a provisional reading immediately and overwrites it once the tree settles, so timings.bootToFinalSampleMs can be larger than timings.bootToSampleMs and a run that ended on a provisional sample is unjudgeable',
     // T-316: a diagnostic run must say so in the artifact, not only in the command line.
     ...(hookConfig === null
       ? []

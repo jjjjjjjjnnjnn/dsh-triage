@@ -75,6 +75,17 @@ export interface BootSampleOptions {
    * hook's own final word and converges immediately. See {@link SampleReplacement}.
    */
   readonly sampleReplaceWindowMs?: number
+  /**
+   * How long to wait for the FINAL sample after a provisional one (T-312).
+   *
+   * WHY THIS EXISTS: the hook now publishes its first readable snapshot immediately
+   * (`provisional: true`) and overwrites it once the settle loop ends. The judged budget is
+   * "spawn → first sample", so a tree that needs 10–18s to settle no longer breaches it — but
+   * the verdict should still use the settled phase table when it arrives in time. Defaults to
+   * the hook's own settle budget (`settleTimeoutMs`, 15s in the shipped hook): waiting longer
+   * than the hook can possibly take would buy nothing.
+   */
+  readonly sampleUpgradeWindowMs?: number
   /** Settle time between the sample and the readiness probe, so a binding server is seen. */
   readonly settleMs?: number
   /**
@@ -131,6 +142,13 @@ export interface BootSampleResult {
   readonly payload: unknown | null
   readonly host: HostObservation
   readonly error: string | null
+  /**
+   * Spawn → the FIRST sample (T-312). This is the judged number: the executor had an answer
+   * this long after the boot started, even when that answer was the provisional one.
+   */
+  readonly seconds: number
+  /** Spawn → the FINAL sample (equal to {@link seconds} when no upgrade happened). */
+  readonly finalSeconds: number
   /** Readiness measured while the Host was still alive; `null` when not requested. */
   readonly http: { readonly status: number | null; readonly detail: string } | null
   /** Where the readiness port came from (T-306); `null` when readiness was not requested. */
@@ -179,7 +197,16 @@ export interface SampleReplacement {
   /** Distinct sample bodies the loop read; `>= 2` means the file was overwritten. */
   readonly samples: number
   /** Which condition ended the loop. */
-  readonly stoppedBy: 'readable-sample' | 'unreadable-window' | 'timeout' | 'startup-failed'
+  readonly stoppedBy: 'readable-sample' | 'upgrade-window' | 'unreadable-window' | 'timeout' | 'startup-failed'
+  /**
+   * T-312: the first sample was provisional and a final one replaced it.
+   *
+   * `false` with `samples >= 2` means the file was overwritten by something the loop did NOT
+   * count as an upgrade (a different `applies` generation = another apply wrote it).
+   */
+  readonly upgraded: boolean
+  /** T-312: how long the loop waited for that final sample (`0` when none was awaited). */
+  readonly upgradeWaitedMs: number
 }
 
 /**
@@ -191,10 +218,12 @@ export interface SampleReplacement {
 export interface BootSegments {
   /** spawn() returned. */
   readonly spawnMs: number
-  /** spawn → the sample loop exited (may be after a replacement, or a startup failure). */
+  /** spawn → the sample loop exited (may be after an upgrade, or a startup failure). */
   readonly sampleWaitMs: number
-  /** spawn → the sample file's own mtime: exactly what `boot→sample` judges. */
+  /** spawn → the FIRST sample file's mtime: exactly what `boot→sample` judges (T-312). */
   readonly sampleMtimeMs: number | null
+  /** spawn → the FINAL sample file's mtime; equal to `sampleMtimeMs` when no upgrade happened. */
+  readonly finalSampleMtimeMs: number | null
   /** Sample loop exit → settle sleep finished. Includes the settle budget itself. */
   readonly settleMs: number
   /** Settle → the readiness window ended. */
@@ -232,6 +261,11 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     readinessTimeoutMs = 5_000,
     unsettledReadinessMs = 20_000,
     sampleReplaceWindowMs = unsettledReadinessMs,
+    /**
+     * T-312: how long to wait for the final sample after a provisional one. Tied to the shipped
+     * hook's own settle budget (15s) — waiting longer than the hook can take would buy nothing.
+     */
+    sampleUpgradeWindowMs = 15_000,
     settleMs = 1_000,
   } = options
   mkdirSync(scratchRoot, { recursive: true })
@@ -302,16 +336,22 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
      * we have and wait, bounded, for a better one instead of freezing the first write.
      *
      * ADR-0008 E narrows who is worth waiting for: an unreadable `{error}` sample still opens
-     * the window (that is exactly R17's recovery path), but a `settled: false` sample is the
-     * hook's own final word — it already spent its whole settle budget before writing — so it
-     * converges here instead of buying another full window that never paid off.
+     * the window (that is exactly R17's recovery path), but a FINAL `settled: false` sample is
+     * the hook's own last word, so it converges here instead of buying another full window.
+     *
+     * T-312 adds the other half: a `provisional: true` sample is readable but explicitly not
+     * the hook's last word, so it opens a bounded upgrade window instead of converging. The
+     * judged budget is the FIRST sample; the verdict uses the final one when it arrives.
      */
     let payload: unknown = null
     let sampleText: string | null = null
     let firstSampleAtMs: number | null = null
+    let firstSampleWrittenAtMs: number | null = null
     let sampleWrittenAtMs: number | null = null
     let sampleReads = 0
     let waitedForReplacement = false
+    let upgradeStartedAtMs: number | null = null
+    let upgraded = false
     let stoppedBy: SampleReplacement['stoppedBy'] = 'timeout'
     for (;;) {
       const text = readTextOrNull(samplePath)
@@ -319,16 +359,34 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
         sampleText = text
         sampleReads += 1
         payload = parseSample(text)
-        firstSampleAtMs ??= Date.now()
-        sampleWrittenAtMs = mtimeMsOf(samplePath)
+        const writtenAt = mtimeMsOf(samplePath)
+        if (firstSampleAtMs === null) {
+          firstSampleAtMs = Date.now()
+          firstSampleWrittenAtMs = writtenAt
+        }
+        sampleWrittenAtMs = writtenAt ?? sampleWrittenAtMs
+        // A final sample that replaces a provisional one is an upgrade, not a new apply.
+        if (sampleReads > 1 && isReadableSample(payload) && !isProvisionalSample(payload)) upgraded = true
       }
       const readable = isReadableSample(payload)
+      const provisional = readable && isProvisionalSample(payload)
+      // T-312: when the provisional sample tells us its own settle budget, wait exactly that long
+      // plus a margin — waiting less loses upgrades at the boundary, waiting more buys nothing.
+      // A payload without the field (older hook) falls back to the configured window.
+      const settleBudget = provisional ? settleTimeoutOf(payload) : null
+      const upgradeWindowMs = settleBudget === null ? sampleUpgradeWindowMs : settleBudget + 1_000
       // `dsh: startup failed: …` is the launcher's own verdict: no sample will follow, and
       // waiting the whole boot timeout for one costs two minutes per broken candidate (R17).
       const startupFailed = `${stdout}\n${stderr}`.includes('startup failed')
       // ADR-0008 E: only an UNREADABLE sample is worth replacing, and only for one window.
       const replacedEnough = firstSampleAtMs !== null && !readable && Date.now() - firstSampleAtMs >= sampleReplaceWindowMs
-      if (readable) {
+      // T-312: a provisional sample is readable, so E would converge on it. Instead give the
+      // hook one bounded window to publish the settled snapshot (it cannot exceed its own
+      // settle budget, which is what the default window is tied to).
+      if (provisional && upgradeStartedAtMs === null) upgradeStartedAtMs = Date.now()
+      const upgradeEnough =
+        provisional && upgradeStartedAtMs !== null && Date.now() - upgradeStartedAtMs >= upgradeWindowMs
+      if (readable && !provisional) {
         stoppedBy = 'readable-sample'
         break
       }
@@ -338,6 +396,10 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       }
       if (replacedEnough) {
         stoppedBy = 'unreadable-window'
+        break
+      }
+      if (upgradeEnough) {
+        stoppedBy = 'upgrade-window'
         break
       }
       if (startupFailed) {
@@ -350,7 +412,10 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       await new Promise((resolveWait) => setTimeout(resolveWait, 250))
     }
     const collected = payload !== null
-    const seconds = Math.round(((sampleWrittenAtMs ?? Date.now()) - started) / 100) / 10
+    // The judged number is the FIRST sample (T-312); `finalSeconds` says when the sample the
+    // verdict rests on arrived.
+    const seconds = Math.round((((firstSampleWrittenAtMs ?? sampleWrittenAtMs) ?? Date.now()) - started) / 100) / 10
+    const finalSeconds = Math.round(((sampleWrittenAtMs ?? Date.now()) - started) / 100) / 10
     // T-314 boundaries, all relative to `started` (the same origin as the judged budget). Each
     // is set to the previous phase's end until that phase actually runs, so a skipped phase
     // contributes 0 rather than a gap.
@@ -361,6 +426,8 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       waitedMs: waitedForReplacement && firstSampleAtMs !== null ? loopEndedAt - firstSampleAtMs : 0,
       samples: sampleReads,
       stoppedBy,
+      upgraded,
+      upgradeWaitedMs: upgradeStartedAtMs === null ? 0 : loopEndedAt - upgradeStartedAtMs,
     }
     let settleEndedAt = loopEndedAt
     let readinessEndedAt = loopEndedAt
@@ -464,7 +531,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     const segments: BootSegments = {
       spawnMs: spawnedAt - started,
       sampleWaitMs: loopEndedAt - started,
-      sampleMtimeMs: sampleWrittenAtMs === null ? null : Math.round(sampleWrittenAtMs - started),
+      // T-312: the judged number is the FIRST sample; the final one is recorded beside it.
+      sampleMtimeMs: firstSampleWrittenAtMs === null ? null : Math.round(firstSampleWrittenAtMs - started),
+      finalSampleMtimeMs: sampleWrittenAtMs === null ? null : Math.round(sampleWrittenAtMs - started),
       settleMs: collected ? settleEndedAt - loopEndedAt : 0,
       readinessMs: readinessEndedAt - settleEndedAt,
       renderMs: renderEndedAt - readinessEndedAt,
@@ -474,9 +543,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       totalMs: Date.now() - started,
     }
     if (!collected) {
-      return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped, segments, replacement }
+      return { payload: null, host, error: 'the hook wrote nothing within the timeout', seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement }
     }
-    return { payload, host, error: null, http, readiness, render, renderSkipped, segments, replacement }
+    return { payload, host, error: null, seconds, finalSeconds, http, readiness, render, renderSkipped, segments, replacement }
   } finally {
     if (child !== null) killTree(child)
     rmSync(probeDir, { recursive: true, force: true })
@@ -1002,6 +1071,26 @@ export function isReadableSample(payload: unknown): boolean {
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return false
   const record = payload as Record<string, unknown>
   return record['error'] === undefined || record['error'] === null
+}
+
+/**
+ * Is this the hook's first, not-yet-settled write? (T-312)
+ *
+ * A provisional sample is readable on purpose (the phase table exists), but it explicitly says
+ * `settled: false` and `provisional: true`. The executor may rest an `unknown` on it, and it
+ * keeps a bounded window open for the final write. Anything that is not explicitly marked is
+ * treated as final, so an older hook (no field) behaves exactly as before.
+ */
+export function isProvisionalSample(payload: unknown): boolean {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return false
+  return (payload as Record<string, unknown>)['provisional'] === true
+}
+
+/** The settle budget the hook published with its provisional sample (T-312), or `null`. */
+function settleTimeoutOf(payload: unknown): number | null {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return null
+  const value = (payload as Record<string, unknown>)['settle_timeout_ms']
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
 }
 
 /** Remove the sandbox home and report whether it is really gone. */

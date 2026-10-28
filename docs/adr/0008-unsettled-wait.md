@@ -82,6 +82,24 @@
 
 **没有改的东西（逐条核对）**：`--unsettled-timeout` 默认 `20000`、hook 的 `settle 15s`、settled 树 readiness `5s`、`boot→sample ≤20s` 判据、`isUsableSample()`、`judgeProbe` 的结论映射。
 
+## T-312 实施记录（R28，2026-10-29）
+
+> **HUMAN 决定**：「立项 T-312 两阶段」（本会话原话）。C 案原本被标为「超过一轮预算」；这里记下它实际做了什么、代价是什么。
+
+| # | 改动 | 落地位置 |
+|---|---|---|
+| 1 | hook 在**第一次读到树**时先写 `provisional: true` / `settled: false`，settle 循环结束后覆盖成最终样本（同路径、同代际） | `packages/probe/hooks/inventory-hook.mjs`（抽出 `publish()`，两次调用；`isNewest()` 代际保护不变） |
+| 2 | 执行器识别 provisional：可读但**不收敛**，开一个有界升级窗口；窗口 = 样本自报的 `settle_timeout_ms` + 1s（没有该字段时退回 `sampleUpgradeWindowMs`，默认 15s） | `packages/probe/src/host.ts`（`isProvisionalSample()`、`sampleUpgradeWindowMs`、`stoppedBy: 'upgrade-window'`） |
+| 3 | **预算口径改为「第一份样本」**：`seconds` / `timings.bootToSampleMs` 取第一份，`finalSeconds` / `bootToFinalSampleMs` 记录最终样本 | `host.ts`（`finalSeconds`、`segments.finalSampleMtimeMs`）→ `exec.ts`（`bootToFinalSampleMs`）→ `probe-run.ts` → `record_probe.mjs` |
+| 4 | 产物自曝：`inventory.provisional` / `upgraded` / `upgrade_waited_ms`，`limits[]` 写明「预算判第一份」 | `record_probe.mjs`、`d2_report.mjs` 的 `boot_breakdown.note` |
+| 5 | 回归：`settled:false` 的**最终**样本仍立即收敛（E 不变）；`{error}` 仍等满替换窗口（T-316 产物仍成立）；provisional 场景由 2 条 host 单测 + 1 条真 hook 单测钉死 | `tests/unit/probe-host-sample.test.ts`（+2）· `tests/unit/probe-hook-two-phase.test.ts`（+1） |
+
+**真机结果（三例，见 F50）**：`slow-plugin` 第一份 5.4s / 最终 10.7s / `go`；`slow-overrun` 第一份 9.4s / 最终 24.5s / `unknown`；`dsh-mcp-connector@0.2.83` 第一份 10.1s / 最终 25.2s / `unknown`（该候选今天两次都没在 15s 内稳定）。
+
+**代价（必须一起说）**：不可判的**墙钟**从 ≈28.6s 升到 ≈30.4s —— 我们并没有让 probe 更快，只是把「用户多快拿到一个答案」与「答案有多细」拆成了两个数字。**20s 预算现在判的是前者**，`bootToFinalSampleMs` 与 `upgrade_waited_ms` 公开后者。
+
+**仍未解决**：D2 的 `boot-budget` 红项需要**用新口径重跑矩阵**才有结论（R27 的红是在旧口径下测的）；在那之前不许说「D2 已恢复」。
+
 ## 剩余项：把「不可判」也压进 20s（未授权）
 
 E 之后不可判的墙钟 ≈29s（R26 实测 28.6s），仍然 >20s。剩下的结构是：
@@ -112,8 +130,8 @@ hook settle 上限 15s（真机上不可判的树一定撞满）+ boot ~2-4s + s
 [ ] A. `--unsettled-timeout` 默认 20000 → 5000
 [x] E. 只对 `{error}` 保留替换等待，`settled:false` 立即返回（推荐）  ← 2026-10-28 交接时「同意」，R26 已实施
 [ ] A′. hook 的 settle 上限 15s → 10s（不可判 ≈29s → ≈24s；**代价已实测**：`dsh-mcp-connector` 会从 `go` 变 `unknown`）
-[ ] C. 立项 T-312 两阶段（**唯一**能同时保住 20s 预算与慢候选的路；R27 证据支持）
-[ ] B. 维持现状（保持 48s / 写进文案）
+[x] C. 立项 T-312 两阶段 —— **2026-10-29 会话内「立项 T-312 两阶段：唯一能同时保住预算与慢候选的路」**；R28 已实施（见 §T-312 实施记录）
+[ ] B. 维持现状（保持 ≈29s / 写进文案）
 ```
 
 > **E 已于 R26 实施**（上表 §实施记录）。签字授权的是做法，实施与三条回归由 R26 完成；`audit/SIGNOFF.md` 有对应实施行。
