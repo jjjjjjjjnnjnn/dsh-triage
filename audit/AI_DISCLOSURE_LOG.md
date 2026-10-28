@@ -460,3 +460,15 @@
 - 过程中的真实缺陷：① 第一份对照报告的 idle 侧只有 1 批，不足以与 2 批有载并列 → 补跑一批 idle；② 15:10 / 15:50 两份中间报告从未被引用且被 16:30 取代 → 删除（本轮自己刚生成、未入库，同 R31 删中间录制）；③ `stability_report` 第一版把「无产物」折成 `unknown` → 改为 `no-artifact` 单列
 - 未做：`BS-40` 的崩溃归因、`BS-41` 的可复现夹具、内存/磁盘/并发探针型载荷、非 Windows、`BS-38`/`BS-39` 的 ptc 真机
 
+
+### 2026-10-29 R38｜索引源托管成 URL + D3 渠道取证（一个卡点）+ 全面整理 + 15 条通道的真机回归
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R38-S1…S16）
+- 范围：`scripts/{publish_index_source,record_market_channels}.mjs`、`docs/market/{index.json,listing_zh.md,submissions/*}`、`docs/{HANDOFF,AI_HANDOVER,BACKLOG,ROADMAP}.md`、`INDEX.md`、`audit/{blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}`；真机/复算产物 15 份
+- 起因：HUMAN「索引源托管成 URL、D3 两个渠道收录 进行这些，然后维护整理项目文件，全方面模拟测试项目，归档过期和历史文件，确保所有用于你工作的文件为最新不冲突状态」
+- 结果：① **索引源已托管**：`publish_index_source.mjs` 先过上游校验器、再发 public gist、再把 URL 抓回来逐字节比对（`index-hosting-2026-10-29T18-10-00.000Z.json`：HTTP 200 / bytes match / cors `*` / 5 插件 5 版本）。② **D3 只差一次可见性决定**：条目已通过 `dsh-community-plugins` **自己的**校验器（148 entries + 9 测试全绿），但实测 `repo.private=true` 且 registry 上 `dsh-triage` 是 404 → `live: 0`；PR 正文与解锁命令已写好（`docs/market/submissions/`），**没有开 PR**（会提交死链）。③ **文件整理**：合并重复 T-310 行、`AI_HANDOVER` 的 R5 过期状态改为指针、`listing_zh` 全面更新、新文档登记 INDEX、清 6 个沙箱残留。④ **全方面模拟测试**：探针绿/红、渲染 blank/rendered、面板冒烟、设置页八步、Agent 工具十一项、D1（9/10）、D2（`gate PASSED`，13 真实 / 预算 12-12）、真实 profile 只读扫描（156 行 / 4 结论）、组合侧 audit —— 15 份产物全部进台账
+- 实测：350 测试 / 9 门全绿 / `--mutate` 9/9 / 207 步 / 190 产物
+- 过程中的真实缺陷：① `gh api -f q=...` 在 PowerShell 下参数被拆（改用 URL 里的查询串）；② `git clone` 拉 GitHub 超时，但 HTTP 可用 → 改成取 tarball（脚本里也用同一路径，可复现）；③ `record_market_channels` 第一版用 `npm view` 触发 Windows 上的 `shell: true` 弃用告警 → 改为直接问 registry；④ 重跑时留了一份被取代的 `market-channels-18-30`（阻塞文案用词过时）→ 删除；⑤ `INDEX` 新行里的反引号 token（含 `/` 的 `text/plain` 与命令）触发 `governance/index-references` → 改写为纯文本
+- 未做：转 public / npm 发布（**需 HUMAN 决定与凭据**）、`BS-39` 的 ptc 真机、`BS-40` 崩溃率、`BS-41` 可复现夹具、`T-501`（M5-a 本地半边）
+

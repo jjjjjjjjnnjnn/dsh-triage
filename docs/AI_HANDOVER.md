@@ -1,6 +1,6 @@
 # AI_HANDOVER · 接手清单
 
-> **Stand**: R5 (2026-10-26)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`
+> **Stand**: R38 (2026-10-29)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
 
 ## 1. 五分钟检查（禁跳过）
 
@@ -23,7 +23,7 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
   - 失败分类 → `docs/03-failure-taxonomy.md`
   - 信号与许可 → `docs/02-signal-sources.md` + `quarantine/vendor-manifest.json`
   - 工程约定 → `docs/08-conventions.md`
-- **当前状态**：M0 ✅（9 门 / 96 测试）· M1 金标对等 ✅ · M1 真实案例验收 ✅（**10/10 例，9 命中 / 1 有意 miss**，D1 判定见 `data/results/d1-*.json`）· M2-a 契约已锁定，**P2（`audit --snapshot` + 相位门）已交付**，P1（Host 内取相位）待真机。**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）。
+- **当前状态**：见 `docs/HANDOFF.md` §2 的「里程碑」行（本文件不重复数字，避免两处再次漂移；上一次漂移是 R5 的「96 测试 / P1 待真机」留到 R37 才被清理）。**这一句是 2026-10-29 整理的直接原因**：任何写在这里的计数都会过期，而交接文档只有一个真相源。
 
 ## 3. 防幻觉规则（本仓特有）
 

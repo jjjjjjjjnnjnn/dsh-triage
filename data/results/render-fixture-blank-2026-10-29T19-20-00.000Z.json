@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_render_fixture.mjs",
+  "generated_at": "2026-10-29T19:20:00.000Z",
+  "sample": {
+    "kind": "render-control",
+    "mode": "blank",
+    "served_at": "http://127.0.0.1:56454/"
+  },
+  "expectation": "blank",
+  "expectation_met": true,
+  "render": {
+    "state": "blank",
+    "detail": "mount point \"root\" has no children",
+    "ms": 3092,
+    "signals": {
+      "title_length": 20,
+      "ready_state": "complete",
+      "body_children": 2,
+      "root_id": "root",
+      "root_children": 0,
+      "text_length": 0,
+      "html_bytes": 204
+    }
+  },
+  "judged": {
+    "state": "blank",
+    "detail": "mount point \"root\" has no children"
+  },
+  "limits": [
+    "this is a detector control, not a measurement of any plugin",
+    "blank: a 200 response with an empty mount point must be caught",
+    "error: a browser error page must not be scored as a rendered plugin",
+    "blocked: a renderer whose main thread never yields must still return within the budget",
+    "the page is static; a real Host serving a broken client is a different shape (T-305 keeps collecting those)"
+  ]
+}

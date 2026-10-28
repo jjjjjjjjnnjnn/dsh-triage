@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_audit.mjs",
+  "generated_at": "2026-10-29T20:40:00.000Z",
+  "command": "audit",
+  "env": {
+    "dsh": null,
+    "node": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "profile": "desktop",
+    "profileDir": "tests\\fixtures\\env\\home\\profiles\\desktop",
+    "bundles": [],
+    "installed": [
+      {
+        "name": "@deepseek-ai/dsh",
+        "version": null
+      }
+    ]
+  },
+  "scanned": {
+    "bundles": 0,
+    "rows": 0,
+    "import_targets": 0
+  },
+  "rows": [],
+  "duplicates": [],
+  "verdicts": [],
+  "errors": []
+}

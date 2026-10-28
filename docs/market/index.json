@@ -1,0 +1,106 @@
+{
+  "format": 1,
+  "title": {
+    "en": "Triage-verified DSH plugins",
+    "zh": "分诊台实测通过的 DSH 插件"
+  },
+  "description": {
+    "en": "Only versions a local dsh-triage run reached \"go\" on, measured against dsh 0.2.1-rc.4. An absent package was never measured here — not a judgement.",
+    "zh": "只收录在本地 dsh-triage 实测得到 go 的版本，测量基准是 dsh 0.2.1-rc.4。没出现的包=这里没测过，不是判定。"
+  },
+  "metadata": {
+    "categories": {},
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-cost-meter",
+      "metadata": {
+        "keywords": [
+          "dsh-plugin"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.9.41",
+          "publishTimestamp": 1792987849,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-mcp-connector",
+      "metadata": {
+        "keywords": [
+          "dsh-plugin"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.2.83",
+          "publishTimestamp": 1793020989,
+          "source": {
+            "type": "npm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-plugin-model-proxy",
+      "metadata": {
+        "keywords": [
+          "dsh-plugin"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.6",
+          "publishTimestamp": 1790270037,
+          "source": {
+            "type": "npm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-status-rotator",
+      "metadata": {
+        "keywords": [
+          "dsh-plugin"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.38.0",
+          "publishTimestamp": 1793030244,
+          "source": {
+            "type": "npm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-whale-widget",
+      "metadata": {
+        "keywords": [
+          "dsh-plugin"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.4.2",
+          "publishTimestamp": 1791721632,
+          "source": {
+            "type": "npm"
+          }
+        }
+      ]
+    }
+  ]
+}

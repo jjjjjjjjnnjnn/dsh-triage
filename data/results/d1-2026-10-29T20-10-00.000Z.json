@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/d1_report.mjs",
+  "generated_at": "2026-10-29T20:10:00.000Z",
+  "gate": {
+    "id": "D1",
+    "criterion": "why names the real root cause in >=8 of >=10 real cases",
+    "minimum_hits": 8,
+    "minimum_total": 10,
+    "samples_ok": true,
+    "hits_ok": true,
+    "passed": true
+  },
+  "totals": {
+    "cases": 10,
+    "hit": 9,
+    "miss": 1,
+    "hit_rate": 0.9,
+    "required": "8/10",
+    "miss_by_kind": {
+      "explicit-unknown": 1
+    }
+  },
+  "label_key_sources": {
+    "derived-from-reported-manifest": 2,
+    "report-explicit": 4,
+    "unstated": 4
+  },
+  "cases": [
+    {
+      "id": "CASE-10201",
+      "artifact": "data/results/why-case-CASE-10201-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "849229845408ec285caf7c86404b434e94ae8147aa725e11b75b908ec244a343",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "candidate",
+      "verdict": "hit",
+      "label": {
+        "kind": "candidate-admission",
+        "module": "@deepseek-ai/dsh-hooks-claude-code",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-agent",
+        "requirement_key_source": "report-explicit"
+      },
+      "matched_module": "@deepseek-ai/dsh-hooks-claude-code",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-10364",
+      "artifact": "data/results/why-case-CASE-10364-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "5e6e9caae575bb13273a1e4de80b811a315cfa366e1f12ff60183a45a534f565",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "tools",
+        "module": "@deepseek-ai/dsh-tools",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-agent",
+        "requirement_key_source": "derived-from-reported-manifest"
+      },
+      "matched_module": "@deepseek-ai/dsh-tools",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-10759",
+      "artifact": "data/results/why-case-CASE-10759-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "6f5f0621ef90c17cd343d394bc37f70591b20d58693f2dd442822db8f3fb0b63",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "tools",
+        "module": "@deepseek-ai/dsh-tools",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-agent",
+        "requirement_key_source": "report-explicit"
+      },
+      "matched_module": "@deepseek-ai/dsh-tools",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-10849",
+      "artifact": "data/results/why-case-CASE-10849-2026-10-26T00-00-00.000Z.json",
+      "artifact_sha256": "d639c6b580fbf0b88db286489f9235d59a2655e99f69c9ecc5be8137bd1f6543",
+      "generated_at": "2026-10-26T00:00:00.000Z",
+      "mode": "candidate",
+      "verdict": "hit",
+      "label": {
+        "kind": "candidate-admission",
+        "module": "@deepseek-ai/dsh-mcp-client",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-llm"
+      },
+      "matched_module": "@deepseek-ai/dsh-mcp-client",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-11012",
+      "artifact": "data/results/why-case-CASE-11012-2026-10-26T00-00-00.000Z.json",
+      "artifact_sha256": "2fa1d160a1ea36a046943b7cb36465901dd34d834082c754d1f49afd0b48b494",
+      "generated_at": "2026-10-26T00:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "mcp-client",
+        "module": "@deepseek-ai/dsh-mcp-client",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-llm"
+      },
+      "matched_module": "@deepseek-ai/dsh-mcp-client",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-11080",
+      "artifact": "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "72d66bf28274a3468d11b62076d66e59ba4bf1b80cb3d8d2329e5fed7f5cb51a",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "hooks-claude-code",
+        "module": "@deepseek-ai/dsh-hooks-claude-code",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-llm"
+      },
+      "matched_module": "@deepseek-ai/dsh-hooks-claude-code",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-7590",
+      "artifact": "data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json",
+      "artifact_sha256": "22e3757c251d8ba3558bdfefd9d5857d49291a065e0d7011a6fcee2d64cf9f45",
+      "generated_at": "2026-10-27T15:00:00.000Z",
+      "mode": "profile",
+      "verdict": "miss",
+      "label": {
+        "kind": "runtime-api-drift",
+        "entry_id": "modlens",
+        "module": "@liustack/modlens",
+        "reason_code": "runtime-api-removed",
+        "requirement_key": "settings.register",
+        "requirement_key_source": "report-explicit"
+      },
+      "matched_module": null,
+      "why": "no blocked verdict named the labelled row with the labelled unmet requirement",
+      "verdict_count": 2,
+      "conclusions": [
+        "unknown"
+      ],
+      "miss_kind": "explicit-unknown"
+    },
+    {
+      "id": "CASE-8202",
+      "artifact": "data/results/why-case-CASE-8202-2026-10-26T00-00-00.000Z.json",
+      "artifact_sha256": "1db883baf7c69366943a324b042774c738501500eeb456839587ad43ca6728b5",
+      "generated_at": "2026-10-26T00:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "mcp-client",
+        "module": "@deepseek-ai/dsh-mcp-client",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-llm"
+      },
+      "matched_module": "@deepseek-ai/dsh-mcp-client",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-8220",
+      "artifact": "data/results/why-case-CASE-8220-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "595da44fcb91feccf9958694c12cf37d1515e878367effae0436a0b25951850f",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "candidate",
+      "verdict": "hit",
+      "label": {
+        "kind": "candidate-admission",
+        "module": "@deepseek-ai/dsh-code-runtime-worker-thread",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-code-runtime",
+        "requirement_key_source": "report-explicit"
+      },
+      "matched_module": "@deepseek-ai/dsh-code-runtime-worker-thread",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 2,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    },
+    {
+      "id": "CASE-8751",
+      "artifact": "data/results/why-case-CASE-8751-2026-10-26T12-00-00.000Z.json",
+      "artifact_sha256": "b1ca460e320b42354c629499a2a28af1fee70c752b1f019dc0e6c339fca64cfa",
+      "generated_at": "2026-10-26T12:00:00.000Z",
+      "mode": "profile",
+      "verdict": "hit",
+      "label": {
+        "kind": "row-admission",
+        "entry_id": "session",
+        "module": "@deepseek-ai/dsh-session",
+        "reason_code": "admission-denied-peer",
+        "requirement_key": "@deepseek-ai/dsh-scope",
+        "requirement_key_source": "derived-from-reported-manifest"
+      },
+      "matched_module": "@deepseek-ai/dsh-session",
+      "why": "the labelled target is named and the labelled requirement is the one that failed",
+      "verdict_count": 1,
+      "conclusions": [
+        "blocked"
+      ],
+      "miss_kind": null
+    }
+  ],
+  "superseded": [
+    "data/results/why-case-CASE-11080-2026-10-26T00-00-00.000Z.json",
+    "data/results/why-case-CASE-7590-2026-10-26T12-00-00.000Z.json"
+  ]
+}

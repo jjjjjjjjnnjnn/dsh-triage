@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R37 (2026-10-29)",
+  "stand": "R38 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -4703,6 +4703,354 @@
         "artifact": "data/results/gates-2026-10-29T17-20-00.000Z.json",
         "sha256": "4bcaaf4322480f76246c2d6f3f77f96fc3464231783ee404601fe77b3a59aa42",
         "outcome": "ALL GREEN · 9 gates（350 测试；191 步 / 175 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R38-S1",
+      "batch": "R38",
+      "step": "索引源重新生成并用**上游校验器**验证（`record_index_source`）：把「有记录的运行得到 go」的 registry 版本重新收一遍，确认这个文档是当前证据的产物",
+      "changed": [
+        "scripts/record_index_source.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：文档由 CLI 生成、由沙盒里那份 `@deepseek-ai/dsh-plugin-market-index` 解析；`publishTimestamp` 仍是逐版本 registry `time`，拿不到就排除（没有拿整包时间冒充）",
+        "reproducibility": "PASS：一条命令重放；产物同时保存 `document` 与 `document_sha256`，离线可再校验",
+        "licence": "PASS：只读 npm 公开元数据；索引里不含第三方数据内容，只有包名 / 版本 / 时间戳 / 声明的范围",
+        "ssot": "PASS：`produced_by`/`generated_at`/`schema_version` + `.sha256`；`validation.status=passed` 与退出码一致",
+        "adversary": "反例一：拿旧的 04:00 产物直接发布——那份是 R34 的证据，今天的 `data/results` 又多了 6 批 probe，重生成才叫「当前的索引」；反例二：校验器缺席时当作 valid——脚本里缺席即 `unmeasured`，本次它在了"
+      },
+      "real_test": {
+        "command": "node scripts/record_index_source.mjs --stamp 2026-10-29T18:00:00.000Z",
+        "artifact": "data/results/index-source-2026-10-29T18-00-00.000Z.json",
+        "sha256": "86741727eb8766fafb220c6ee11c56c716dd5f1ca14d552d3f885142de0132f3",
+        "outcome": "validation:passed · 5 plugins / 5 versions"
+      }
+    },
+    {
+      "id": "R38-S2",
+      "batch": "R38",
+      "step": "把索引源托管成**真实公开 URL**（T-403 剩余项）：新增 `publish_index_source.mjs` —— 先拒绝未通过校验的文档、再写 repo 内副本、再把 URL 抓回来逐字节比对",
+      "changed": [
+        "scripts/publish_index_source.mjs",
+        "docs/market/index.json"
+      ],
+      "review": {
+        "correctness": "PASS：发布前用上游校验器**再验一次实际写盘的字节**（不是内存对象重序列化）；发布后 `fetch` 回来的 body 与 repo 副本逐字节相等（2116B）；`document.sha256` 与生成产物记录的一致",
+        "reproducibility": "PASS：`gh gist create --public` 一条命令；产物记录 gist id、raw URL、HTTP 状态、content-type、CORS、尝试次数与 bytes 比对结果，任何人可重抓复核",
+        "licence": "PASS：文档内容只有公开 registry 元数据；gist 是公开托管，不含路径/凭据/PII（产物里 URL 只有 gist id）",
+        "ssot": "PASS：repo 内副本 `docs/market/index.json` 与 gist 同字节，两者都可复核；INDEX 已登记；产物带 `.sha256`",
+        "adversary": "反例一：把「上传成功」当「可被添加」——产物 `limits` 明写 gist 不是站点、也没有证明 Discover UI 接受它；反例二：不抓回来就宣称已发布——那样 URL 打错一个字也算成功；反例三：直接转 public 仓库来换 raw URL——那是 HUMAN 的可见性决定，本轮没有替他做"
+      },
+      "real_test": {
+        "command": "node scripts/publish_index_source.mjs --artifact data/results/index-source-2026-10-29T18-00-00.000Z.json --gist --stamp 2026-10-29T18:10:00.000Z",
+        "artifact": "data/results/index-hosting-2026-10-29T18-10-00.000Z.json",
+        "sha256": "086295a1c3277810c5a53bd33a9ff279d3cb53f5f256e40eaf487e3444103145",
+        "outcome": "published+verified · HTTP 200 · text/plain; charset=utf-8 · bytes match true · cors * · 5 plugins / 5 versions"
+      }
+    },
+    {
+      "id": "R38-S3",
+      "batch": "R38",
+      "step": "渠道调研 + 用**渠道自己的校验器**验证条目：新增 `record_market_channels.mjs`（下载上游 tarball → 追加条目 → 跑它的 `community-index.cjs --check` 与 9 条测试 → 记录仓库可见性与 npm 发布状态）",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "docs/market/submissions/community-plugins-entry.json"
+      ],
+      "review": {
+        "correctness": "PASS：条目被 `zhu1090093659/dsh-community-plugins` 自己的 `community-index.cjs` 接受（`community-index: OK (149 entries) · entries 149`），其 9 条测试同样全绿；两个决定性事实是实测的（`repo.private=true`、`npm.registry_status=404`）",
+        "reproducibility": "PASS：脚本自己下载并解压上游 tarball（记录了 tarball sha256 与包版本），追加条目后跑它们的命令；同一天重跑会得到同一结论",
+        "licence": "PASS：只在临时目录里改上游仓库的副本用于校验，不 vendor、不复制其源码进本仓；条目内容是我们自己的描述",
+        "ssot": "PASS：每个渠道的规则来源、我们能做什么、当前状态、以及唯一卡点都在产物里；`limits` 明写「跑通校验器不等于被收录」",
+        "adversary": "反例一：直接开 PR——三个渠道都要求「公开可访问的来源」，现在必然不通过，那是噪声（产物里 `live: 0` 就是这么来的）；反例二：把「条目合法」写成「已被收录」；反例三：为了让状态好看而把 repo 转 public——可见性不是 agent 的决定"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T18:40:00.000Z",
+        "artifact": "data/results/market-channels-2026-10-29T18-40-00.000Z.json",
+        "sha256": "2c23a4585b9c37f000f92dc68fdaeac9d25e9b9b9a14461c54ff7d2aac792252",
+        "outcome": "validated 1 · ready 1 · live 0 · 卡点：the source repository is private and the npm package is not published: every cha"
+      }
+    },
+    {
+      "id": "R38-S4",
+      "batch": "R38",
+      "step": "上架文案与提交包重写：`docs/market/listing_zh.md`（27 金标 / 39 负对照 / 索引源 URL / 真实边界）与 `docs/market/submissions/*`（渠道清单、PR 正文、两个 awesome 列表与 dsh.so 文案），并登记 INDEX",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/community-plugins-pr.md",
+        "docs/market/submissions/awesome-lists.md"
+      ],
+      "review": {
+        "correctness": "PASS：文案里的每个数字都能指到产物（12/13 + Wilson 0.667–0.986、7.4s/4.9s、39 条负对照、27 金标、5 插件 5 版本）；旧版的「21 条金标 / 面板与索引源按路线图落地」这类过期叙述已删",
+        "reproducibility": "PASS：提交包里每条命令都可直接复制（clone → 追加 → 跑校验器 → push → `gh pr create`），前置条件写成可检查的命令",
+        "licence": "PASS：文案只描述本仓能力；明确写「没有使用 dsh.so 数据，因此无需 CC BY 署名」",
+        "ssot": "PASS：`docs/market/index.json` 与 `submissions/*` 已登记进 INDEX；listing 的 Stand 改为 R38",
+        "adversary": "反例一：上架文案继续写「21 条金标」——那是 R3 的数字，通道会把它当自我陈述；反例二：写「92% 可用」——必须带 Wilson 区间与便利样本限定；反例三：把 gist URL 写成永久站点"
+      },
+      "real_test": {
+        "command": "（文档改动；数字来源见本步 artifact 与 `docs/HANDOFF.md` §2）",
+        "artifact": "data/results/market-channels-2026-10-29T18-40-00.000Z.json",
+        "sha256": "2c23a4585b9c37f000f92dc68fdaeac9d25e9b9b9a14461c54ff7d2aac792252",
+        "outcome": "文案与渠道状态一致：live 0、一个卡点、解锁命令写在 submissions/README.md"
+      }
+    },
+    {
+      "id": "R38-S5",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 探针绿样本：夹具 `ok-plugin` 必须 go，且渲染 / 台账 / 清理三条同时成立",
+      "changed": [
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：结论 `go` 来自四条断言同时成立（样本可判、端口应答、渲染出 DOM、候选行 active），不是单条读数",
+        "reproducibility": "PASS：同一夹具、同一 pin、同一运行时；一条命令重放，`--expect` 让结论不达标时退出码非 0",
+        "licence": "PASS：夹具是本仓测试件；安装走沙盒，不碰 registry 凭据",
+        "ssot": "PASS：产物含 `assertions[]` 与 `timings.bootSegments`，`.sha256` 落盘",
+        "adversary": "反例一：只跑绿样本就说「探针没问题」——所以下面还有红样本；反例二：把渲染 `rendered` 当成「功能正确」——判据只回答「挂没挂载出可见 DOM」"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label smoke-ok --expect go --stamp 2026-10-29T19:00:00.000Z",
+        "artifact": "data/results/probe-smoke-ok-2026-10-29T19-00-00.000Z.json",
+        "sha256": "2e9f9f9758938df98eaef570598f9970b6833de8dd8d784c86d8f1cedddd3d60",
+        "outcome": "go · boot→sample 5.0s · http 401 · render rendered · 1 行 active · cleanup removed+port_closed"
+      }
+    },
+    {
+      "id": "R38-S6",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 探针红样本：`throw-plugin` 必须 blocked，且失败后仍清理干净（红也要清）",
+      "changed": [
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`blocked` 归因点名「行不是 active」而不是笼统失败；同一次运行里渲染读数是 `ok`（说明宿主起来了，问题在候选行）",
+        "reproducibility": "PASS：一条命令重放；`--expect blocked` 是断言，不是观察",
+        "licence": "PASS：夹具自造，无第三方代码",
+        "ssot": "PASS：红样本也落盘并进台账（历史红项不删）",
+        "adversary": "反例一：只留绿样本当回归——那正是「判据恒绿」的温床；反例二：把红样本的清理失败当无关紧要——产物里 cleanup 必须同时是 removed 与 port_closed"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/throw-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label smoke-red --expect blocked --stamp 2026-10-29T19:10:00.000Z",
+        "artifact": "data/results/probe-smoke-red-2026-10-29T19-10-00.000Z.json",
+        "sha256": "48022d365226cbfce105eccb22c20436d141690d1762a31e7f48220a1267780c",
+        "outcome": "blocked · reasons probe.render-ok + probe.row-inactive · cleanup removed+port_closed"
+      }
+    },
+    {
+      "id": "R38-S7",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 渲染判据的「白屏」形态：真浏览器 + CDP，200 但挂载点为空必须判 blank",
+      "changed": [
+        "scripts/record_render_fixture.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：判据给出的是具体形状（挂载点存在但零子节点），不是「看起来空」",
+        "reproducibility": "PASS：一条命令；同一脚本另有 rendered 形态做正对照",
+        "licence": "PASS：只起本机无头浏览器，无外部数据",
+        "ssot": "PASS：形态、字数、耗时、判定理由都在产物里",
+        "adversary": "反例一：拿浏览器错误页当 blank——判据要求「存在挂载点」才谈 blank，错误页走 inconclusive；反例二：无浏览器时判 passed——那必须是 unmeasured"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp 2026-10-29T19:20:00.000Z",
+        "artifact": "data/results/render-fixture-blank-2026-10-29T19-20-00.000Z.json",
+        "sha256": "b95aa030d32ef99b31ed18d9da2d125752cebc5fbc4608c57ae396e2e5c7ae1f",
+        "outcome": "served blank · judged blank（mount point \"root\" has no children）· 3092ms"
+      }
+    },
+    {
+      "id": "R38-S8",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 渲染判据的正对照：有内容必须判 rendered（否则 S7 的 blank 无意义）",
+      "changed": [
+        "scripts/record_render_fixture.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：与 S7 同一套判据、同一台浏览器、同一脚本，只有页面内容不同",
+        "reproducibility": "PASS：`--expect rendered` 让「判据恒 blank」也会红",
+        "licence": "PASS：只渲染一份静态 HTML 夹具，不引入任何第三方内容或数据源",
+        "ssot": "PASS：正反对照成对落盘，缺一份则另一份说明不了判据方向",
+        "adversary": "反例一：只跑 blank（判据可能恒 blank 也看不出来）；反例二：把 77 字符当「内容丰富」——阈值是 ≥20，判据只区分空与非空"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode rendered --expect rendered --stamp 2026-10-29T19:30:00.000Z",
+        "artifact": "data/results/render-fixture-rendered-2026-10-29T19-30-00.000Z.json",
+        "sha256": "ac3b721d201225390a11d133d6843388656a3ffba915341a6a3ade70bd71ca8b",
+        "outcome": "served rendered · judged rendered（挂载根 1 个子节点、77 可见字符）· 1211ms"
+      }
+    },
+    {
+      "id": "R38-S9",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 本地面板冒烟：`serve` 的路由 / 鉴权 / 跨源 / 只读 / 与 CLI 同源逐条检查",
+      "changed": [
+        "scripts/record_serve_smoke.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：面板不是「另算一遍」——`audit-parity` 比的是同一条引擎的输出；脱敏在序列化边界生效",
+        "reproducibility": "PASS：一条命令；脚本自己起服务、取 token、走完请求后关连接",
+        "licence": "PASS：只读夹具 profile，不碰真实 `~/.dsh`",
+        "ssot": "PASS：每项检查单独成条，失败项会带原因",
+        "adversary": "反例一：只测 200——跨源/无 token/POST 三类必须各有预期（403/401/403）；反例二：把面板测试跑在真实 profile 上——那会读到用户数据"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-29T19:40:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-29T19-40-00.000Z.json",
+        "sha256": "bbc687c34e8e7078e27e93b04f382e97f9965110f8d8fb0b4103aa3f63e69d02",
+        "outcome": "全部通过（含 `audit-parity`：面板的 8 条 inventory 判定与 `audit --json` 逐条一致；`audit-redacted`：`env.profileDir=~\\profiles\\desktop`）"
+      }
+    },
+    {
+      "id": "R38-S10",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 设置页八步真机回归：bundle / install / boot / graph / client / mount / visible / same-source + cleanup",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`same-source` 让「面板显示 CLI 的结论」变成断言；`visible` 逐跳记录（关浮层 → 开设置 → 内置插件 → tab）",
+        "reproducibility": "PASS：一条命令；四个 workspace 包按 `file:` 装进一次性 home，跑完删沙盒",
+        "licence": "PASS：不碰 registry、不注入凭据（空 userconfig）",
+        "ssot": "PASS：产物含 `host_log` 尾巴与每步状态，`.sha256` 落盘",
+        "adversary": "反例一：只断言注册（`window.__dshTriage`）——那不等于设置页里看得见；反例二：把浅层 DOM 命中当可见——所以要点开 tab 并读 body 标记"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T19:50:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-29T19-50-00.000Z.json",
+        "sha256": "068b1977bb3c25e09a2ae3cc4e5e7790b0aff1338e40170562f960c6b7cfd4e9",
+        "outcome": "served · 八步全绿（mount passed / visible passed / same-source passed）· cleanup passed"
+      }
+    },
+    {
+      "id": "R38-S11",
+      "batch": "R38",
+      "step": "全方面模拟测试 · Agent 工具真机：`compat_verdict` 在真实 Host 里注册、模型可见、三形状调用都走 `tools.execute()`",
+      "changed": [
+        "scripts/record_agent_tool.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：三次调用都 `via: registry`；结论与同口径 `check` 一致；未注册名在 `tools.get()` 里查不到（负对照）",
+        "reproducibility": "PASS：一条命令；`--call-go/--call-blocked/--absent` 可覆盖，期望写进 `sandbox.calls[].expected`",
+        "licence": "PASS：`file:` 安装、不碰 registry 凭据；候选 pin 版本（ADR-0004）",
+        "ssot": "PASS：产物的 `verdict`/`verdicts[]` 被 `gate_verdict_contract` 直接校验",
+        "adversary": "反例一：把「在 schemas() 里」当「能调」——所以真的调了；反例二：用另一个 home 的 `check` 结果当期望——`BS-38` 就是这么来的"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T20:00:00.000Z",
+        "artifact": "data/results/agent-tool-2026-10-29T20-00-00.000Z.json",
+        "sha256": "8a7567cd5c935c5cc621d1c88296873e5a07990a6621a196c610965e1ec18cca",
+        "outcome": "passed · 11 项全绿（registered / model-visible / negative-control-absent / go / blocked / unknown / limits / cleanup）"
+      }
+    },
+    {
+      "id": "R38-S12",
+      "batch": "R38",
+      "step": "全方面模拟测试 · D1 命中率复算：10 例真实案例的 hit/miss 由产物重算，不手填",
+      "changed": [
+        "scripts/d1_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`miss_by_kind=explicit-unknown`——唯一 miss 是「信息通道不全」而不是「判据错」，与 R9 的口径一致",
+        "reproducibility": "PASS：只读 `why-case-*.json` 汇总；同一 stamp 逐字节一致",
+        "licence": "PASS：案例输入是公开元数据快照，已脱敏",
+        "ssot": "PASS：`label_key_sources` 与 `miss_kind` 都在产物里，可反查",
+        "adversary": "反例一：把 superseded 的旧产物也算进去——脚本会去重并标注；反例二：把 0.9 当总体命中率——同一批手挑样本，不能外推"
+      },
+      "real_test": {
+        "command": "node scripts/d1_report.mjs --stamp 2026-10-29T20:10:00.000Z",
+        "artifact": "data/results/d1-2026-10-29T20-10-00.000Z.json",
+        "sha256": "5323cb18da6c04364123873d82062afa41ecbf9257bf59dbb4badb73f2843554",
+        "outcome": "10 例 / 9 命中 / 1 显式 unknown（命中率 0.9，门槛 8/10）· 另有 2 份 R6 早期产物标为 superseded 不计入"
+      }
+    },
+    {
+      "id": "R38-S13",
+      "batch": "R38",
+      "step": "全方面模拟测试 · D2 判定复算：用修后（T-321）的空载矩阵重算可靠性 / 预算 / 失败形状",
+      "changed": [
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：判定用的是 `real:true` 的分母；`unknown` 不算通过也不算失败（与 R18/R19 口径一致）",
+        "reproducibility": "PASS：一条命令；矩阵本身带 `load.workers=0`，读者知道这是空载批次",
+        "licence": "PASS：只读已有矩阵产物，不新增外部数据或依赖",
+        "ssot": "PASS：报告含每条判据的明细与 Wilson 区间；`.sha256` 落盘",
+        "adversary": "反例一：拿 R37 有载批去算 D2——那会把「有载条件」混进默认预算结论；反例二：用 `--strict` 之外的方式判断通过（默认模式失败也 exit 0）"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-29T16-10-00.000Z.json --stamp 2026-10-29T20:20:00.000Z",
+        "artifact": "data/results/d2-2026-10-29T20-20-00.000Z.json",
+        "sha256": "6c32c4dd8d29496918d61e343f80da6fd4db9801c5e9bcd6a6ed4a720af951e9",
+        "outcome": "gate PASSED · 13 真实启动 · 清理 20/20 · boot-budget 12/12 · 可靠性 100% · 失败形状 6"
+      }
+    },
+    {
+      "id": "R38-S14",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 真实 profile 的只读扫描：`scan_env` 在操作者自己的 `~/.dsh` 上跑一次 `why`（本项目唯一碰真实 profile 的通道，只读）",
+      "changed": [
+        "scripts/scan_env.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：行级 `unknown` 仍逐条给缺失证据（不是静默跳过）；结论数量与 R9 同形状",
+        "reproducibility": "PASS：一条命令；产物记录 profile 名与脱敏后的路径",
+        "licence": "PASS：只读；不读 `~/.dsh/credentials`（铁律 4），产物已脱敏",
+        "ssot": "PASS：`data/results/why-*.json` + `.sha256`",
+        "adversary": "反例一：把「本机 4 条结论」当用户群体结论——这是 0.1.0-rc.6 的单机 profile；反例二：把 unknown 说成失败"
+      },
+      "real_test": {
+        "command": "node scripts/scan_env.mjs --stamp 2026-10-29T20:30:00.000Z",
+        "artifact": "data/results/why-2026-10-29T20-30-00.000Z.json",
+        "sha256": "7641c793d372cdd389c8c50a7fb54c6083e4cad8fb658fa9412e1186ac6f916c",
+        "outcome": "156 行 · 4 条结论（go 2 / unknown 2）· 与 R9 的基线形状一致（不刷屏）"
+      }
+    },
+    {
+      "id": "R38-S15",
+      "batch": "R38",
+      "step": "全方面模拟测试 · 组合侧取证：`record_audit` 在夹具 profile 上跑一次（行结论 / 副本来源 / 重复副本 / 产物清单），确认这条通道在整理后仍可用",
+      "changed": [
+        "scripts/record_audit.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：夹具（无插件、空的 profile）如实给出 0 行 / 0 重复组 —— 一个「什么都没有」的 profile 必须得到空结果，而不是编出来的发现（{}）",
+        "reproducibility": "PASS：`--dsh-home tests/fixtures/env/home --profile desktop` 一条命令；夹具在仓内，路径固定",
+        "licence": "PASS：只读仓内夹具，不碰真实 `~/.dsh`",
+        "ssot": "PASS：产物含 `produced_by`/`generated_at`/`schema_version` 与 `.sha256`",
+        "adversary": "反例一：拿空 profile 的结果说「归因没价值」——它证明的是判据不无中生有；反例二：把夹具路径写成真实 home——那会读到用户数据（本步明确用 `tests/fixtures/env/home`）"
+      },
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --dsh-home tests/fixtures/env/home --profile desktop --stamp 2026-10-29T20:40:00.000Z",
+        "artifact": "data/results/audit-2026-10-29T20-40-00.000Z.json",
+        "sha256": "62de99ae97cb09530e699fe51199bedcdeb129dc38d2a78a3ff52b1ff3bdd983",
+        "outcome": "0 row(s) · 0 duplicate group(s) · 0 verdict(s)（夹具 profile 本就空）"
+      }
+    },
+    {
+      "id": "R38-S16",
+      "batch": "R38",
+      "step": "收口：文件整理（重复 T-310 合并 / `AI_HANDOVER` 过期状态改为指针 / `listing_zh` 全面更新 / 新文档登记 INDEX / 沙箱残留清理）+ 交接文档 R38 批行与「第一件事」重写 + 台账 stands 同步，然后录一次门禁全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/AI_HANDOVER.md",
+        "docs/BACKLOG.md",
+        "docs/market/listing_zh.md",
+        "docs/ROADMAP.md",
+        "INDEX.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：整理只动「已经过期或不一致」的东西——重复的 T-310 行（两条内容重复）、R5 时代的「96 测试 / P1 待真机」、上架文案里「21 条金标 / 面板按路线图落地」、6 个沙箱残留；历史产物与历史批行一律不动",
+        "reproducibility": "PASS：`pnpm run verify` 全绿 + `node scripts/gate.mjs --mutate` 9/9，再用 `--record` 把整轮门禁写成这一份产物",
+        "licence": "PASS：只改文档与索引登记，无新增数据源、无第三方内容",
+        "ssot": "PASS：`no-orphan-results` 189 份全部被引用；`doc-stand` 要求的三份入口文档与两份台账 stands 一致（R38）；新文档（`docs/market/index.json`、`docs/market/submissions/*`）已登记 INDEX",
+        "adversary": "反例一：顺手把 `docs/00`–`08` 的 R5 Stand 也改成 R38——那是在没有重读内容的情况下宣称「已复核」，是另一种撒谎；反例二：把 `AI_HANDOVER` 的过期段删掉了事——它的价值是防幻觉规则清单，所以只把那句会漂移的状态换成指针；反例三：为了让索引源 URL 看起来像站点而把它写进 README 当官网"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T21:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T21-00-00.000Z.json",
+        "sha256": "44f9c84ef95dda1bdd35cdf67d3169179bcdc0e427e28d8043a58607379d5954",
+        "outcome": "ALL GREEN · 9 gates（350 测试；206 步 / 189 产物全部被引用）"
       }
     }
   ]

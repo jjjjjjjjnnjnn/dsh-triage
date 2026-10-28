@@ -1,0 +1,12 @@
+{
+  "id": "dsh-triage",
+  "name": "分诊台",
+  "nameEn": "Triage",
+  "author": "jjjjjjjjnnjnn",
+  "description": "装前判断与装后归因：一条命令说明插件为什么从你的组合里消失（被 admission 拒绝的行 / 模块导入失败 / 声明了但没注册上的能力），在隔离的 DSH_HOME 里真装真启动并落证据，只读展示当前组合。不安装、不卸载、不判安全。",
+  "descriptionEn": "Pre-install judgement and post-mortem attribution: one command says why a plugin disappeared from your profile (rows denied by admission, modules that failed to import, capabilities declared but never registered), measures a candidate inside an isolated DSH_HOME with recorded evidence, and shows the current composition read-only. It never installs, never removes, and never claims a plugin is safe.",
+  "repo": "https://github.com/jjjjjjjjnnjnn/dsh-triage",
+  "npm": "dsh-triage",
+  "category": "tools",
+  "subcategory": "dev"
+}
