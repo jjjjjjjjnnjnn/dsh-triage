@@ -36,6 +36,7 @@ export {
   findFreePort,
   ignoredBuildPackages,
   installDiagnosis,
+  isReadableSample,
   isUsableSample,
   killTree,
   pluginArgv,
@@ -61,6 +62,7 @@ export type {
   InstallDiagnosis,
   InstallResult,
   RuntimeReadResult,
+  SampleReplacement,
 } from './host.js'
 
 export {

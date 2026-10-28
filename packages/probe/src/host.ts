@@ -65,11 +65,14 @@ export interface BootSampleOptions {
    */
   readonly unsettledReadinessMs?: number
   /**
-   * How long a first sample may be replaced before we accept it.
+   * How long an **unreadable** first sample may be replaced before we accept it.
    *
    * Cordis re-applies a plugin when its injected services come back, so an `{error}`
    * payload written by a task whose context died can be superseded by a healthy sample
    * from the new apply (measured in R17). We wait for that, bounded.
+   *
+   * ADR-0008 option E narrows this to `{error}` only: a `settled: false` sample is the
+   * hook's own final word and converges immediately. See {@link SampleReplacement}.
    */
   readonly sampleReplaceWindowMs?: number
   /** Settle time between the sample and the readiness probe, so a binding server is seen. */
@@ -145,6 +148,38 @@ export interface BootSampleResult {
    * segment below is a clock reading taken around one await, so the sum has to add up.
    */
   readonly segments: BootSegments
+  /**
+   * What the sample loop did about the replacement window (ADR-0008 E).
+   *
+   * WHY IT IS A FIELD AND NOT A TIME DIFFERENCE: after E a `settled: false` sample converges
+   * immediately while an `{error}` sample still waits the full window, so two runs can share
+   * a `boot` wall clock and mean completely different things. Readers must not have to infer
+   * "did we wait" from `sampleWaitMs - sampleMtimeMs`.
+   */
+  readonly replacement: SampleReplacement
+}
+
+/**
+ * The sample loop's replacement decision, recorded per run (ADR-0008 E).
+ *
+ * THE MEASUREMENT THAT PRODUCED IT: the 20.3s of an unjudgeable boot was one whole
+ * replacement window, and across the 29 recorded artifacts that window never once produced a
+ * better sample (`scripts/report_replacement_window.mjs`, `replacements_observed = 0`). So a
+ * `settled: false` reading — the hook already spent its own settle budget — is accepted as
+ * final, and only an unreadable `{error}` sample (the R17 dead-context shape, where a new
+ * apply really can overwrite the file) still opens the window.
+ */
+export interface SampleReplacement {
+  /** Only an unreadable sample opens the window; `settled: false` does not. */
+  readonly policy: 'error-only'
+  /** Did the loop keep running after the first sample landed? */
+  readonly waited: boolean
+  /** How long it kept running after that first sample (`0` when it did not wait). */
+  readonly waitedMs: number
+  /** Distinct sample bodies the loop read; `>= 2` means the file was overwritten. */
+  readonly samples: number
+  /** Which condition ended the loop. */
+  readonly stoppedBy: 'readable-sample' | 'unreadable-window' | 'timeout' | 'startup-failed'
 }
 
 /**
@@ -249,31 +284,59 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     })
 
     /**
-     * Wait for a sample we can actually judge from.
+     * Wait for a sample we can judge from.
      *
      * A file appearing is not enough (R17): the hook can write `{error}` when its context
      * died mid-compose, and Cordis re-applies the plugin once the services are back — the
      * next apply overwrites the same file with a healthy sample. So we keep the best sample
      * we have and wait, bounded, for a better one instead of freezing the first write.
+     *
+     * ADR-0008 E narrows who is worth waiting for: an unreadable `{error}` sample still opens
+     * the window (that is exactly R17's recovery path), but a `settled: false` sample is the
+     * hook's own final word — it already spent its whole settle budget before writing — so it
+     * converges here instead of buying another full window that never paid off.
      */
     let payload: unknown = null
     let sampleText: string | null = null
     let firstSampleAtMs: number | null = null
     let sampleWrittenAtMs: number | null = null
+    let sampleReads = 0
+    let waitedForReplacement = false
+    let stoppedBy: SampleReplacement['stoppedBy'] = 'timeout'
     for (;;) {
       const text = readTextOrNull(samplePath)
       if (text !== null && text !== sampleText) {
         sampleText = text
+        sampleReads += 1
         payload = parseSample(text)
         firstSampleAtMs ??= Date.now()
         sampleWrittenAtMs = mtimeMsOf(samplePath)
       }
-      const accept = isUsableSample(payload) || Date.now() - started >= timeoutMs
-      const replacedEnough = firstSampleAtMs !== null && Date.now() - firstSampleAtMs >= sampleReplaceWindowMs
+      const readable = isReadableSample(payload)
       // `dsh: startup failed: …` is the launcher's own verdict: no sample will follow, and
       // waiting the whole boot timeout for one costs two minutes per broken candidate (R17).
       const startupFailed = `${stdout}\n${stderr}`.includes('startup failed')
-      if (accept || replacedEnough || startupFailed) break
+      // ADR-0008 E: only an UNREADABLE sample is worth replacing, and only for one window.
+      const replacedEnough = firstSampleAtMs !== null && !readable && Date.now() - firstSampleAtMs >= sampleReplaceWindowMs
+      if (readable) {
+        stoppedBy = 'readable-sample'
+        break
+      }
+      if (Date.now() - started >= timeoutMs) {
+        stoppedBy = 'timeout'
+        break
+      }
+      if (replacedEnough) {
+        stoppedBy = 'unreadable-window'
+        break
+      }
+      if (startupFailed) {
+        stoppedBy = 'startup-failed'
+        break
+      }
+      // About to sleep while already holding a sample: that is the replacement wait, in the
+      // only place where it can be observed without arithmetic.
+      if (firstSampleAtMs !== null) waitedForReplacement = true
       await new Promise((resolveWait) => setTimeout(resolveWait, 250))
     }
     const collected = payload !== null
@@ -282,6 +345,13 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     // is set to the previous phase's end until that phase actually runs, so a skipped phase
     // contributes 0 rather than a gap.
     const loopEndedAt = Date.now()
+    const replacement: SampleReplacement = {
+      policy: 'error-only',
+      waited: waitedForReplacement,
+      waitedMs: waitedForReplacement && firstSampleAtMs !== null ? loopEndedAt - firstSampleAtMs : 0,
+      samples: sampleReads,
+      stoppedBy,
+    }
     let settleEndedAt = loopEndedAt
     let readinessEndedAt = loopEndedAt
     let renderEndedAt = loopEndedAt
@@ -394,9 +464,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       totalMs: Date.now() - started,
     }
     if (!collected) {
-      return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped, segments }
+      return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped, segments, replacement }
     }
-    return { payload, host, error: null, http, readiness, render, renderSkipped, segments }
+    return { payload, host, error: null, http, readiness, render, renderSkipped, segments, replacement }
   } finally {
     if (child !== null) killTree(child)
     rmSync(probeDir, { recursive: true, force: true })
@@ -897,12 +967,31 @@ function parseSample(text: string): unknown {
  * `{error}` means the hook could not read the tree (e.g. `inactive context` while the Host
  * was still composing) and `settled: false` means rows were still moving when it gave up.
  * Both are measurement failures: the executor must report `unknown`, never `blocked`.
+ *
+ * DO NOT REDEFINE THIS (ADR-0008 E): the replacement window narrowed to `{error}`, but
+ * "usable" still means "settled and readable". The judge and the assertions decide verdicts
+ * from this predicate, so weakening it here would turn a race into a `blocked`.
  */
 export function isUsableSample(payload: unknown): boolean {
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return false
   const record = payload as Record<string, unknown>
   if (record['error'] !== undefined && record['error'] !== null) return false
   return record['settled'] !== false
+}
+
+/**
+ * Did the hook manage to write *something we can interpret*?
+ *
+ * This is deliberately weaker than {@link isUsableSample}: a `settled: false` sample is a
+ * real reading of a tree that was still moving (the hook spent its settle budget and then
+ * wrote down what it saw), while an `{error}` payload is the hook saying it could not read at
+ * all. Only the second one can be improved by Cordis re-applying the plugin, which is the
+ * whole reason the replacement window exists (ADR-0008 E).
+ */
+export function isReadableSample(payload: unknown): boolean {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return false
+  const record = payload as Record<string, unknown>
+  return record['error'] === undefined || record['error'] === null
 }
 
 /** Remove the sandbox home and report whether it is really gone. */

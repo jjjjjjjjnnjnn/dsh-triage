@@ -1,6 +1,8 @@
 # ADR 0008 · 不可判的树要等多久（`BS-25` / `BS-28` / T-311 / T-312）
 
-> **状态**：**已授权方案 E（2026-10-28 交接时，HUMAN 原话「同意。先进行项目交接，即将切换会话」）——尚未实施。** 默认值仍为 `--unsettled-timeout 20000`、`settle 15s`、readiness 5s，`boot→sample ≤20s` 仍是判据；实施由下一轮按 §实施清单 完成。
+> **状态**：**方案 E 已实施（2026-10-28，R26）。** 实施记录见本文件 §实施记录。
+> 改动范围：`packages/probe/src/host.ts` 的样本循环 —— `settled:false` 的样本立即收敛，`{error}` 仍等满 `--unsettled-timeout`。
+> **默认值仍未动**：`--unsettled-timeout 20000`、`settle 15s`、readiness 5s、`boot→sample ≤20s` 一字未改。
 > **由 R23 的实测逼出来**：`boot` 步分段后，「不可判」的 48.4s 里 **20.3s 是替换等待**（不是 settle）。这笔等待从未在 29 份已记录产物里产生过更好的样本。
 
 ## 背景（全部实测）
@@ -46,6 +48,8 @@
 
 ## 实施清单（方案 E，下一轮做）
 
+> **2026-10-28 / R26：以下 5 条已全部落地，逐条结果见 §实施记录。**
+
 1. `packages/probe/src/host.ts` 的样本循环：`replacedEnough` 只在样本**不可读**（`{error}`，尤其 `errorCode === 'inactive-context'`）时参与判定；`settled === false` 的样本一旦写出就**立即收敛**（仍照常 `settle` + readiness + render + 杀树）。
    - 关键：`isUsableSample()` 的语义**不要改**（它同时被 judge 与断言使用）；改的是「要不要继续等」。
 2. 产物：`timings.bootSegments` 已经能反映缩短后的替换等待；另在 `inventory` 段加一个显式布尔（例如 `replacement_waited: false`），让读者不必从时间差推断。
@@ -56,6 +60,28 @@
    - `{error}` + `inactive-context` 负对照 → **仍等满窗口**，且能等到替换样本（需要能强制写 `{error}` 的夹具；可先复用 hook 的单测注入）。
 5. 重跑 `d2_report`（用现有矩阵）确认 `boot-budget` 与 `reliability` 不因此变红。
 
+## 实施记录（R26，2026-10-28）
+
+| # | 改动 | 落地位置 |
+|---|---|---|
+| 1 | 样本循环只在**不可读**时开替换窗口；`settled:false` 立即收敛 | `packages/probe/src/host.ts`（循环改为 `readable → timeout → replacedEnough → startupFailed` 四段判据；新增纯函数 `isReadableSample()`，**`isUsableSample()` 一字未改**） |
+| 2 | 产物显式布尔，不让人从时间差推断 | `host.ts` 新增 `SampleReplacement`（`policy/waited/waitedMs/samples/stoppedBy`）→ `exec.ts#ProbeRun.sampleReplacement` → `record_probe.mjs` 的 `inventory.replacement_waited / _waited_ms / _observed / _samples / _policy / _stopped_by` |
+| 3 | 文案写明「没有再等替换样本」 | `exec.ts#measurementDetail()` 追加 `replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced)`（真等过则给 `replacement=waited(Nms, samples=k)`）；`record_probe.mjs` 的 `limits[]`、`d2_report.mjs` 的 `wall_clock.note` 与 `boot_breakdown.note` 同步 |
+| 4 | 三条回归 | 见下 |
+| 5 | 重跑 `d2_report`（现有矩阵） | `data/results/d2-2026-10-28T23-00-00.000Z.json`：`reliability 20/20`、`boot-budget` 12/12 真实候选、`fixtures_over_budget` 仍只有那个永不 settle 的夹具，`gate.passed=true`。**没有变红** |
+
+### 三条回归（缺一即回滚）—— 全部真跑或单测
+
+| 回归 | 结果 | 证据 |
+|---|---|---|
+| `slow-overrun-plugin`（顶层 await 20s）→ 仍 `unknown` + `missing.inventory` | ✅ `unknown`，`missing.inventory` 在，`probe.tree-not-settled` 的 detail 含 `replacement=not-waited(ADR-0008 E…)`，`inventory.replacement_waited=false` | `data/results/probe-adr0008e-overrun-2026-10-28T22-30-00.000Z.json` |
+| `slow-plugin`（导入 6s）→ 仍 `go` | ✅ `go`，行 `active`，HTTP 401，渲染 289 字符 | `data/results/probe-adr0008e-slow-2026-10-28T22-40-00.000Z.json` |
+| `{error}` / `inactive-context` → **仍等满窗口**且能等到替换样本 | ✅ 单测逐个钉死：`{error}` 后被替换 → 采用替换样本（`samples=2`）；`{error}` 永不替换 → `stoppedBy=unreadable-window` 且真的等满；`settled:false` → `waited=false`、`sampleWaitMs < 窗口` | `tests/unit/probe-host-sample.test.ts`（4 条，用一个只会写 overlay `out:` 的**假 launcher** 驱动真实循环） |
+
+**真机对照（同一夹具、E 前后）**：不可判的 `boot` 步 **48.4s（R23）→ 28.6s（R26）**，差额正好是被删掉的替换窗口；`inventory.replacement_waited=false` 是本轮新增的**显式**证据，不必再从时间差推断。同轮另两份回归：`slow-plugin` = `go`（`boot` 步 25.4s）、真实候选 `dsh-status-rotator@0.38.0` = `go`（`boot` 步 21.7s、`boot→sample` 11.5s）。**墙钟是区间**（21.7–28.6s）：sample 等待在 11.5–22.7s 之间波动（`BS-32`），不许把任何一次观测写成承诺。
+
+**没有改的东西（逐条核对）**：`--unsettled-timeout` 默认 `20000`、hook 的 `settle 15s`、settled 树 readiness `5s`、`boot→sample ≤20s` 判据、`isUsableSample()`、`judgeProbe` 的结论映射。
+
 ## 签字区（HUMAN）
 
 ```
@@ -65,7 +91,7 @@
 [ ] B. 维持现状（保持 48s / 写进文案）
 ```
 
-> **E 已授权，但尚未实施**：签字只授权了做法，实现与三条回归由下一轮完成（`docs/HANDOFF.md` §3 第一条）。在实现落地之前，默认值与前一轮**完全一致**——不要因为「已经签了」就声称等待时间已经变短。
+> **E 已于 R26 实施**（上表 §实施记录）。签字授权的是做法，实施与三条回归由 R26 完成；`audit/SIGNOFF.md` 有对应实施行。
 
 > 未勾选之前，`--unsettled-timeout`、`settle 15s`、readiness 5s 与 `boot→sample ≤20s` **一律不动**（铁律 4：阈值变更需 spec + HUMAN-SIGN）。
 >

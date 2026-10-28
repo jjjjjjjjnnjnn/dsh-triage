@@ -219,7 +219,7 @@ const bootBreakdown = {
   runs_with_segments: segmentRuns.length,
   max_per_segment: segmentMax,
   note:
-    'sampleWaitMs includes the replacement window (a sample that cannot be judged is waited on again); render/kill/post-kill happen inside the boot step but are not part of the spawn→sample budget',
+    'sampleWaitMs is the sample wait only; since ADR-0008 E the replacement window is opened for an {error} sample alone, so a settled:false reading converges immediately (the artifacts record inventory.replacement_waited instead of leaving it to be inferred)',
 }
 
 /**
@@ -351,7 +351,7 @@ const artifact = {
       max_ms: wallClockMax,
       source: 'steps[boot].ms — the whole step, including the settle wait and the kill wait',
       note:
-        'measured (T-314): a judged candidate takes ≈16s (render + kill + post-kill dominate); a tree that never settles takes ≈48s because the executor waits a full replacement window after the sample',
+        'measured (T-314): a judged candidate is dominated by the sample wait plus render + kill + post-kill; a tree that never settles no longer pays a replacement window — ADR-0008 E removed it for settled:false samples (that window alone was ≈20s in R23), so what is left is the hook settle plus the same render/kill tail',
     },
     // T-314: the segmentation behind `wall_clock`. Descriptive only.
     boot_breakdown: bootBreakdown,

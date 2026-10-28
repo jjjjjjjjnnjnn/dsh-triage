@@ -119,6 +119,8 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         bindFailedPorts: boot.host.bind_failed_ports,
         // T-314: the boot step's wall clock, split where it actually went.
         segments: boot.segments,
+        // ADR-0008 E: whether a replacement window was opened at all, and why it ended.
+        replacement: boot.replacement,
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),

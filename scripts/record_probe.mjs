@@ -323,6 +323,14 @@ const artifact = {
     candidate_rows: run.sample === null ? [] : run.sample.candidateRows.map((row) => ({ ...row, moduleName: redact(row.moduleName) })),
     excluded: run.sample === null ? [] : [...run.sample.excluded],
     error: run.sample === null || run.sample.error === null ? null : redact(run.sample.error),
+    // ADR-0008 E: whether the executor opened a replacement window after the first sample.
+    // Published explicitly so nobody has to infer it from `sampleWaitMs - sampleMtimeMs`.
+    replacement_waited: run.sampleReplacement === null ? null : run.sampleReplacement.waited,
+    replacement_waited_ms: run.sampleReplacement === null ? null : run.sampleReplacement.waitedMs,
+    replacement_observed: run.sampleReplacement === null ? null : run.sampleReplacement.samples > 1,
+    replacement_samples: run.sampleReplacement === null ? null : run.sampleReplacement.samples,
+    replacement_policy: run.sampleReplacement === null ? null : run.sampleReplacement.policy,
+    replacement_stopped_by: run.sampleReplacement === null ? null : run.sampleReplacement.stoppedBy,
   },
   http: run.http === null ? null : { status: run.http.status, detail: redact(run.http.detail) },
   // R17: was the Host up at all? `url_printed` is a fact (the launcher printed its URL),
@@ -417,13 +425,15 @@ const artifact = {
     'a plugin that needs credentials is unverified, not verified-safe',
     // R20: the sandbox stops inheriting the operator's npm credentials; this is the claim.
     'the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)',
-    // ADR-0006 (accepted 2026-10-28, measured and corrected in R23 / T-314): the judged number
-    // is spawn→sample; the wall clock is segmented in `timings.bootSegments`.
-    'a tree that never settles is returned by ≈48s, not 20s: the hook settle is inside the sample wait, and the executor then waits one more replacement window',
+    // ADR-0006 + ADR-0008 E (accepted 2026-10-28, measured in R23/T-314 and implemented in
+    // R26): the judged number is spawn→sample; the wall clock is segmented in
+    // `timings.bootSegments`, and the replacement window is only opened for an `{error}` sample.
+    'a tree that never settles is returned well past the 20s budget, not at 20s: the hook settle is inside the sample wait and the render/kill tail is inside the step; ADR-0008 E means no replacement window is opened for a settled:false sample (that window alone was ≈20s before)',
     // T-304: the copy is declarations only, and that boundary has its own honest failure shape.
     'the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate',
-    // T-314: the boot step's segments are published, so "we waited N s" is never a single opaque number.
-    'timings.bootSegments splits the boot step (spawn, sample wait, replacement wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only',
+    // T-314 + ADR-0008 E: the boot step's segments are published, so "we waited N s" is never a
+    // single opaque number, and `inventory.replacement_waited` says whether the window was used.
+    'timings.bootSegments splits the boot step (spawn, sample wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only, and inventory.replacement_waited records whether a replacement window was opened at all',
   ],
 }
 

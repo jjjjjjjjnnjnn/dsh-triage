@@ -30,6 +30,7 @@ import type {
 import { parseInventorySnapshot } from '@dsh-triage/core'
 import type { InstallDiagnosis } from './host.js'
 import type { BootSegments } from './host.js'
+import type { SampleReplacement } from './host.js'
 import type { ProbePlan } from './plan.js'
 import type { RenderCheck } from './render.js'
 
@@ -170,6 +171,14 @@ export interface ProbeRun {
   readonly steps: readonly ProbeStepRun[]
   readonly timings: ProbeTimings
   readonly sample: ProbeSampleView | null
+  /**
+   * What the sample loop did about the replacement window (ADR-0008 E).
+   *
+   * `null` when the boot step never ran (a fake dependency that does not report it, or an
+   * earlier step aborted). A run that could not be judged should read `waited: false` with
+   * `policy: 'error-only'` — "we did not buy another window for a settled:false sample".
+   */
+  readonly sampleReplacement: SampleReplacement | null
   readonly http: { readonly status: number | null; readonly detail: string } | null
   /** Where the readiness port came from (T-306); `null` when readiness was not requested. */
   readonly readiness: ProbeReadiness | null
@@ -335,6 +344,8 @@ export interface ProbeExecDeps {
     bindFailedPorts?: readonly number[]
     /** T-314: where the boot step's wall time went. Absent means "not reported". */
     segments?: BootSegments
+    /** ADR-0008 E: what the sample loop did about the replacement window. */
+    replacement?: SampleReplacement
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
   /**
@@ -386,6 +397,7 @@ interface MutableRun {
   steps: ProbeStepRun[]
   timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null; bootSegments: BootSegments | null }
   sample: ProbeSampleView | null
+  sampleReplacement: SampleReplacement | null
   http: { status: number | null; detail: string } | null
   readiness: ProbeReadiness | null
   render: RenderCheck | null
@@ -418,6 +430,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     steps: [],
     timings: { installMs: null, bootToSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null, bootSegments: null },
     sample: null,
+    sampleReplacement: null,
     http: null,
     readiness: null,
     render: null,
@@ -617,6 +630,9 @@ async function runSequence(
     // T-314: record the segmentation even on a no-sample boot — that is exactly the case whose
     // 42.7s wall time nobody could explain.
     if (boot.segments !== undefined) run.timings.bootSegments = boot.segments
+    // ADR-0008 E: record the replacement decision even when no sample arrived — "we waited"
+    // and "we did not" have to be readable without subtracting two timestamps.
+    if (boot.replacement !== undefined) run.sampleReplacement = boot.replacement
     // `seconds` is the recorder's own clock (spawn → sample). `runStep` measures the same
     // interval and overwrites `bootToSampleMs`, so the 20s budget is judged on one number.
     if (boot.sample === null) return { status: 'failed' as const, detail: boot.detail, exitCode: null }
@@ -680,6 +696,7 @@ function freeze(run: MutableRun): ProbeRun {
     steps: run.steps,
     timings: run.timings,
     sample: run.sample,
+    sampleReplacement: run.sampleReplacement,
     http: run.http,
     readiness: run.readiness,
     render: run.render,
@@ -918,6 +935,16 @@ function measurementDetail(run: ProbeRun): string {
     if (sample.candidateRows.length > 0) {
       parts.push(`rows=${sample.candidateRows.map((row) => `${row.entryId}:${row.phase ?? 'none'}`).join(',')}`)
     }
+  }
+  // ADR-0008 E: say out loud whether a replacement was even attempted. Without this the
+  // reader sees only a shorter wall clock and has to guess why.
+  const replacement = run.sampleReplacement
+  if (replacement !== null) {
+    parts.push(
+      replacement.waited
+        ? `replacement=waited(${replacement.waitedMs}ms, samples=${replacement.samples})`
+        : `replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced)`,
+    )
   }
   if (run.readiness !== null) {
     parts.push(`readiness=${run.readiness.outcome}(${run.readiness.waited_ms}ms/${run.readiness.window_ms}ms)`)

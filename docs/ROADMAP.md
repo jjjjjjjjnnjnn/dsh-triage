@@ -54,7 +54,7 @@
 > - **真实 13 个候选**（+`@lolkda/dsh-skills-manager@0.3.1` / `dsh-unlag@1.12.5`（只声明 `engines.dsh`）/ `@tencent-connect/dsh-qqbot@0.5.3`）：**12 `go` / 1 `blocked`**，通过率 **12/13 = 0.923**，Wilson 95% **0.667–0.986**；
 > - **可靠性 20/20 = 100%**、清理 20/20、失败形状 **6 种**；
 > - **口径修正（`audit/SIGNOFF.md` R19）**：`boot-budget` 只对**真实候选**判定——一棵永不 settle 的树要 `boot(≈5s)+settle 上限 15s≈21s`，结构上不可能进 20s（R18 的 19.1s 是运气）。真实候选仍是 100% 必须达标；夹具的 21.3s 原样单列在 `timing.fixtures_over_budget`。
-> - **仍未解除**：默认 `--unsettled-timeout 20000` 可能让一次真实探针超过 20s 的产品承诺 → `BS-28` / `T-311`（改阈值需 ADR）。
+> - **R26 收窄（`ADR-0008` E）**：`settled:false` 样本不再等替换窗口 → 不可判的 `boot` 步 48.4s → 28.6s（`probe-adr0008e-overrun-*`）；默认 `--unsettled-timeout 20000` 与 `settle 15s` **仍未动**，所以「不可判的一次探针也 ≤20s」仍不成立（`BS-28` / T-311 部分解除，T-312 未开）。`d2_report` 用现有矩阵复算仍 `gate.passed=true`（`data/results/d2-2026-10-28T23-00-00.000Z.json`），产品数字不变：真实 12/13 `go`，Wilson 0.667–0.986。
 >
 > **Kill criteria**：D1 与 D2 同时不达标 → 停止投入，把已有引擎作为 `dsh-doctor` 式小工具维护，不追总榜。
 

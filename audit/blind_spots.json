@@ -206,9 +206,9 @@
       "id": "BS-28",
       "area": "d2/boot-budget",
       "cannot_see": "「20s 预算」与「20s 未稳定窗口」在结构上重叠：一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**必然**超预算。R18 的批次只是恰好落在 19.1s 才通过；R19 真跑 21.3s 就翻了。这意味着任何「真的需要完整未稳定窗口」的候选都会被记成预算突破，而那不是它的错",
-      "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`），夹具耗时照旧单列在 `timing.fixtures_over_budget`；真实候选仍是 100% 必需（没有放宽到 90%）。**仍未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺——要改默认值属于阈值变更，需 ADR + HUMAN 签（T-311）",
+      "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`），夹具耗时照旧单列在 `timing.fixtures_over_budget`；真实候选仍是 100% 必需（没有放宽到 90%）。**R26 已按 `ADR-0008` 方案 E 收窄等待**：`settled:false` 不再等替换窗口（同一夹具 `boot` 步 48.4s → 28.6s，`inventory.replacement_waited=false`），但 `settle 15s` 与 `--unsettled-timeout` 默认 20000 **仍未动**——所以「不可判的一次 probe 也在 20s 内」这句话**仍然不成立**（R26 实测 ≈29s）。要压进 20s 只能改 settle 上限或做两阶段取样（T-312）",
       "owner": "scripts/d2_report.mjs + packages/probe/src/host.ts",
-      "status": "partially mitigated (R19)"
+      "status": "narrowed (R26): the replacement window is now error-only; the settle budget and the default window are unchanged"
     },
     {
       "id": "BS-29",
@@ -233,6 +233,14 @@
       "mitigation": "四条都在 `probe.profile-*` 的原因里点名（悬空链接给 `count`+`links`，装不上给包管理器原文）。**不许**把这种 `unknown` 说成「你的组合有问题」——它是「沙盒里复现不了」，对外文案必须一起说",
       "owner": "packages/probe/src/profile-copy.ts + docs/specs/M3-probe.md §8.5",
       "status": "open (R22)"
+    },
+    {
+      "id": "BS-32",
+      "area": "probe/wall-clock-variance",
+      "cannot_see": "「一次 probe 要多久」在同一台机器上**不是常数**：R26 的三次真跑里，`boot→sample` 分别是 11.5s（真实候选）/ 14.7s（`slow-plugin`）/ 22.7s（不可判夹具），`boot` 步 21.7–28.6s；R18 同一个 `slow-plugin` 只有 10.1s。差额来自 Host 组合出行的时刻（hook 开始计时的时间点），探针无法从外部观测它。因此任何「一次 probe ≈X 秒」都只是区间，不是承诺",
+      "mitigation": "对外只说区间（R26 三次真跑 `boot` 步 21.7–28.6s，sample 等待 11.5–22.7s）；预算仍只判 `spawn→sample`（`timings.bootToSampleMs`），墙钟由 `timings.bootSegments` 逐段公开；**不许**把某一次实测的秒数写成产品承诺。要缩小这条缝只能让 hook 自报「我什么时候开始等」（超出 `ADR-0006` 的测量口径，需另开 ADR）",
+      "owner": "packages/probe/src/host.ts + docs/specs/M3-probe.md §4",
+      "status": "open (R26)"
     }
   ]
 }

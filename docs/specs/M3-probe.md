@@ -124,13 +124,13 @@ runtime → (profile) → install → boot → http → render → inventory →
 | `boot → sample` | **≤ 20s**（M3 出口门禁） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s；**R17：6.2–6.9s（12 次真跑）** |
 | `readiness`（settled 树） | **≤ 5s**（**阈值不变**） | 5s | R17：`waited_ms` 10–32ms（URL 与端口同轮询，命中即返回） |
 | `readiness`（unsettled 树） | **≤ 20s，可配**（`--unsettled-timeout`）；**该窗口只能产出 `unknown`** | 20s | R17 新增；settled 树的 5s 判据未被放松 |
-| `sample 替换等待` | ≤ `--unsettled-timeout`（默认 20s） | 同上 | 只对不可判样本生效：等 Cordis 重新 apply 覆盖出可判样本（F29） |
+| `sample 替换等待` | ≤ `--unsettled-timeout`（默认 20s）；**ADR-0008 E 起只对 `{error}` 样本生效** | 同上 | 只对**不可读**样本生效：等 Cordis 重新 apply 覆盖出可判样本（F29）；`settled:false` 立即收敛（R26），产物记 `inventory.replacement_waited` |
 | `startup failed` | 立即收敛（不占满 120s） | — | 实测从 126s 降到 ~6s（F30） |
 | `render` | ≤ 15s（**独立预算，不进 20s 口径**） | 15s | 1.1–4.2s（`readyState=complete` 即停） |
 | `cleanup` | ≤ 5s | 10s | 8–61ms |
 | 总时长 | 只记录，不设判据 | — | — |
 
-> `timings.bootToSampleMs` 取 `host.seconds`（spawn→样本）；`steps[boot].ms` 是整步墙钟（含 settle、就绪探测与杀树后等待，实测约 20s）。预算只看前者，两者都进产物，避免「用总时长糊」。 
+> `timings.bootToSampleMs` 取 `host.seconds`（spawn→样本）；`steps[boot].ms` 是整步墙钟（含 settle、就绪探测、渲染、杀树与杀后等待，R26 实测 21.7–28.6s）。预算只看前者，两者都进产物，避免「用总时长糊」。 
 >
 > **T-314 起 `steps[boot]` 的每一段都有独立读数**（`timings.bootSegments`：`spawnMs` / `sampleWaitMs` / `sampleMtimeMs` / `settleMs` / `readinessMs` / `renderMs` / `killMs` / `postKillWaitMs` / `scratchCleanupMs` / `totalMs`）。三段之和必须与 `steps[boot].ms` 相差 ≤100ms（R23 实测三份：15748 vs 15741、48453 vs 48384、16217 vs 16216）；`d2_report.timing.boot_breakdown` 给出各段最大值。**新增 await 时必须加段**，否则又会回到「差额没人解释」。
 
@@ -150,6 +150,8 @@ runtime → (profile) → install → boot → http → render → inventory →
 > - 不可判 = **48.4s**，主导项是**为一份可判样本再等一整个替换窗口（20.3s）**；hook 自己的 settle（15s 上限）**已含在 sample 里**；
 > - 对外口径：**可判 ≈16s；不可判 ≈48s**。旧数字（25s / 43s）作废。
 > - **这笔 20.3s 是「为一份可判样本再等一整个替换窗口」**，不是 settle。要改它必须签 `docs/adr/0008-unsettled-wait.md`（提议中，默认值**未动**）：`scripts/report_replacement_window.mjs` 扫 29 份产物，4 次不可判样本里**替换从未出现**（`attempts` 全 1、`applies` 全 1），同一夹具把窗口从 20s 降到 1s 只省时间、结论仍是 `unknown`（`measured_saving_ms = 19092`）。
+> **R26 口径（`ADR-0008` 方案 E 已实施）**：替换窗口**只对 `{error}` 样本打开**；`settled:false`（hook 已花完自己的 settle 预算后写下的最后读数）立即收敛。同一夹具真跑：不可判的 `boot` 步 **48.4s（R23）→ 28.6s（R26）**（`data/results/probe-adr0008e-overrun-2026-10-28T22-30-00.000Z.json`；`inventory.replacement_waited=false`、`waited_ms=0`、`samples=1`、`stoppedBy=readable-sample`），差额正是被删掉的替换窗口。同轮另两份：`slow-plugin` = `go`（`boot` 步 25.4s / `boot→sample` 14.7s / 渲染 5.4s）、真实候选 `dsh-status-rotator@0.38.0` = `go`（`boot` 步 21.7s / `boot→sample` 11.5s / 渲染 4.9s）。
+> - ⚠️ R26 同时暴露一件事：**sample 等待本身在波动**（同机同夹具 11.5–22.7s，取决于 Host 组合出行的时刻），所以墙钟只能给区间：**R26 三次真跑 21.7–28.6s**（`BS-32`）。**不许**把任何一次实测的秒数写成产品承诺；预算仍只看 `spawn→sample`，夹具仍单列。
 > **仍未解决**：默认 `--unsettled-timeout 20000` 与 hook 的 `settle 15s` **没有动**（方案 A/C 未授权）。要把「不可判」也压进 20s，只能改 settle 上限（少测）或改两阶段取样（T-312）。
 > **未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺。改默认值属于阈值变更，需要 ADR + HUMAN 签（`BS-28` / T-311）。
 
@@ -291,6 +293,8 @@ runtime → (profile) → install → boot → http → render → inventory →
 | **F43** | **沙盒 profile 的 `pnpm-workspace.yaml` 写 `strictDepBuilds: false` 能让同一操作退出 0 并注册 bundle**，而**不批准任何构建**（`onlyBuiltDependencies` 仍为空、`Ignored build scripts:` 照旧打印）。`.npmrc` 里的同名设置**无效**（exit 1） | R22 两组对照（`repro-pnpm-policy`）：`workspace-strict-false` → exit 0 + `registered=true`；`npmrc-strict-false` → exit 1 |
 | **F44** | 复制模式真机 `go`：`copy:upstream` + `ok-plugin` → boot→sample **7.4s**、HTTP 401、渲染 2182ms、候选行 `active`、`registry_auth_used=false`；候选确实进了组合（`candidate_registered=true`） | `data/results/probe-copy-profile-ok-2026-10-28T14-30-00.000Z.json` |
 | **F45** | 两个负形状都真跑过：装不上 → `ERR_PNPM_FETCH_404` → `unknown`（只有 runtime/profile/cleanup 三步）；悬空 → **install exit 0** 但 `link:./not-here` 不存在 → `unknown`，`dangling_links` 点名 | `probe-copy-profile-unusable-2026-10-28T14-40-00.000Z.json` / `probe-copy-profile-dangling-2026-10-28T14-50-00.000Z.json` |
+| **F46** | **`ADR-0008` 方案 E 落地后，不可判的墙钟从 48.4s 降到 28.6s**：同一 `slow-overrun-plugin`，`inventory.replacement_waited=false`、`waited_ms=0`、`samples=1`、`stoppedBy=readable-sample`——**没有再等替换窗口**（R23 那 20.3s 就是它），结论仍 `unknown` + `missing.inventory` | `data/results/probe-adr0008e-overrun-2026-10-28T22-30-00.000Z.json`（对照 R23 的 `probe-boot-segments-overrun-…17-10-00`） |
+| **F47** | **sample 等待本身在波动**：同一台机器、同一批夹具，hook 写出样本的时刻受 Host 组合时间影响 —— R26 三次真跑 `boot→sample` 11.5s / 14.7s / 22.7s（行相位分别是 active / active / null），`boot` 步 21.7–28.6s；R18 的 `slow-plugin` 只有 10.1s。因此墙钟只能给**区间**，预算仍只判 `spawn→sample`（`BS-32`） | `probe-adr0008e-slow-2026-10-28T22-40-00.000Z.json` · `probe-adr0008e-real-2026-10-28T22-50-00.000Z.json` |
 
 **T-304 的退出条件（R22 全部达成）**：
 
@@ -347,7 +351,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 | 项 | 状态 |
 |---|---|
 | registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20）。**R17**：矩阵 n=7（真实启动 2 次 / 合成失败 5 次）。**R19**：n=20（真实 13 / 夹具 4 / 合成 3），真实 12 `go` / 1 `blocked`；boot 9.6–18.x s。安装失败**现在能点名错误码**（F34/F35）：`ERR_PNPM_IGNORED_BUILDS` / `ERR_PNPM_NO_MATCHING_VERSION` / `ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR` |
-| **20s 预算 vs 20s 未稳定窗口** | 两者结构重叠：永不 settle 的树 ≈ 21s，必然超预算（`BS-28`）。R19 起 `boot-budget` 只判真实候选（HUMAN 签），夹具单列；**默认窗口是否要降到 <20s 仍未决**（T-311，改阈值需 ADR） |
+| **20s 预算 vs 20s 未稳定窗口** | 两者结构重叠：永不 settle 的树 ≈ 21s（`boot→sample`），必然超预算（`BS-28`）。R19 起 `boot-budget` 只判真实候选（HUMAN 签），夹具单列。**R26**：`ADR-0008` 方案 E 已实施（`settled:false` 不再等替换窗口），同一夹具墙钟 48.4s → 28.6s；但 `settle 15s` 与 `--unsettled-timeout` 默认值**仍未动**——「不可判也压进 20s」仍需 T-312（两阶段）或改 settle 上限 |
 | 私有源 / 不可达 registry 的失败形状 | **R16 已测**（F24，profile 级 `.npmrc`）；R17 未重测 |
 | `namespace-diff`（T-303） | 需要 agent/preset 作用域（T-202a），仍 `unmeasured` |
 | 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归 |
@@ -355,4 +359,4 @@ runtime → (profile) → install → boot → http → render → inventory →
 | 引擎差异 | Windows（Chrome 154 / Edge 146）+ **Linux CI（ubuntu-latest 自带 Chrome 155）** 都跑过同一套对照（`ADR-0005`） |
 | **端口排除段** | R17 实测本机 53461–53560 被排除且**会变化**。现在每次 `findFreePort()` 向 OS 申请，产物记 `sandbox.port_origin=allocated`；仍存在「释放到 Host 绑定」之间的竞态，届时由 `probe.port-unavailable` 兜底。**未测**：Linux/macOS 上是否有等价排除段（CI 目前不跑真 probe） |
 | **「慢到超过 settle 预算」的真机样本** | ✅ **R18 已补**（F31/F32）：`slow-overrun-plugin`（顶层 await 20s）真机 `unknown` + `missing.inventory`；同批 `slow-plugin`（6s）是 `go`。⚠️ R17 的写法（延迟在 `apply` 里）**没有**制造 transient 行，R18 已换成顶层 await 并重采 |
-| **`settled:false` 时的等待成本** | 不可判样本要等一份替换（默认 20s）。对坏候选是纯成本，对间歇慢的候选是唯一恢复路径；R17 选择后者（`BS-25` 的教训） |
+| **`settled:false` 时的等待成本** | **R26 已改（`ADR-0008` E）**：不可判样本**不再**等一份替换（默认 20s）——只有 `{error}` 才等，因为只有它可能被 Cordis 的新 apply 覆盖。代价是「`settled:false` 后来被替换成可判样本」这条恢复路径消失；29 份历史产物里它**从未出现**（`replacements_observed=0`），且两种情形本来就只可能出 `unknown`，不会把结论变坏。回归见 `ADR-0008` §实施记录 |

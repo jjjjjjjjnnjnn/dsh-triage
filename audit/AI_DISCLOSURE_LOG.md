@@ -324,3 +324,14 @@
 - 实测：265 测试 / 9 门全绿 / `--mutate` 9/9；114 份 SSOT 产物 / 130 步台账
 - 过程中的真实缺陷：无（本轮无实现）；交接时特意在四处写明「授权≠已实施」，避免下一位把签字读成「等待已经变短」
 - 未做：方案 E 的实现本身、`{error}` 夹具、`nodeLinker` 设置审计、T-401
+
+### 2026-10-28 R26｜实施 `ADR-0008` 方案 E：`settled:false` 不再等替换窗口（判据与阈值一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R26-S1…S5）
+- 范围：`packages/probe/src/{host,exec,index}.ts`、`packages/plugin/src/probe-run.ts`、`tests/unit/probe-host-sample.test.ts`（新）、`scripts/{record_probe,d2_report,report_replacement_window}.mjs`、`docs/{adr/0008,adr/0006,specs/M3-probe,05-verdict-contract,HANDOFF,BACKLOG,ROADMAP}.md`、`audit/{SIGNOFF.md,blind_spots.json,AUDIT_2026-10-28_R26.md,step_reviews.json}`、`INDEX.md`
+- 起因：HUMAN 2026-10-28「同意，继续，处理所有问题」——执行上一轮已授权的 `ADR-0008` 方案 E
+- 结果：① 样本循环改为 `readable → timeout → replacedEnough → startupFailed`，`replacedEnough` 只在样本**不可读**（`{error}`）时成立；新增 `isReadableSample()`（`isUsableSample()` 零 diff）；② 产物新增 `inventory.replacement_waited/_waited_ms/_observed/_samples/_policy/_stopped_by`，`probe.tree-not-settled` 的 detail 写明「没有再等替换样本（ADR-0008 E）」；③ 三条回归全过：`slow-overrun` 仍 `unknown` + `missing.inventory`（`boot` 步 48.4s → 28.6s）、`slow-plugin` 仍 `go`、`{error}` 仍等满窗口并能采用替换样本（4 条单测，假 launcher 驱动真实循环）；④ 真实候选 `dsh-status-rotator@0.38.0` 仍 `go`；⑤ `d2_report` 用既有矩阵复算 `gate.passed=true`
+- 实测：269 测试 / 9 门全绿 / `--mutate` 9/9；119 份 SSOT 产物 / 135 步台账；墙钟 21.7–28.6s（区间，`BS-32`）
+- 过程中的真实缺陷：① 初版把「≈32s」写进 `limits[]` 与文档，而同一夹具第二次真跑是 28.6s —— 已把产物文案改成不含秒数的结构描述，文档统一给区间；② `gate.mjs --record` 第一次在台账补登前跑，录下一份「step-review FAIL」的门禁产物，已删除并用补齐台账后的第二次 `--record` 重录（全绿）
+- 未做：真 hook 的 `{error}` 夹具（`T-316`，本轮只有假 launcher 单测）、post-E 矩阵重测（`T-309` 后续）、`--unsettled-timeout` 默认值（仍 20000，改它需新签）

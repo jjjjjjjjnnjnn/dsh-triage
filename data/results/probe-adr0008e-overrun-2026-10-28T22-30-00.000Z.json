@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-28T22:30:00.000Z",
+  "label": "adr0008e-overrun",
+  "expectation": "unknown",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "<repo>\\tests\\fixtures\\probe\\slow-overrun-plugin",
+    "package": "triage-probe-fixture-slow-overrun",
+    "kind": "path",
+    "resolved": null
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\slow-overrun-plugin-450cd77a",
+    "profile": "web",
+    "profile_origin": "template",
+    "profile_source": null,
+    "profile_copy": null,
+    "port_origin": "allocated",
+    "port": 55520,
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "preinit": null
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 211,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "ms": 748,
+      "detail": "dsh: initialized profile web at ~\\AppData\\Local\\Temp\\dsh-triage-probe\\slow-overrun-plugin-450cd77a\\profiles\\web",
+      "exitCode": 0
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "ms": 28641,
+      "detail": "22.7s to sample",
+      "exitCode": null
+    },
+    {
+      "id": "http",
+      "status": "passed",
+      "ms": 0,
+      "detail": "HTTP 401",
+      "exitCode": null
+    },
+    {
+      "id": "render",
+      "status": "skipped",
+      "ms": 0,
+      "detail": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render",
+      "exitCode": null
+    },
+    {
+      "id": "inventory",
+      "status": "passed",
+      "ms": 0,
+      "detail": "include:triage-probe-slow-overrun none",
+      "exitCode": null
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 21,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": 748,
+    "bootToSampleMs": 22700,
+    "httpMs": 0,
+    "renderMs": 0,
+    "cleanupMs": 21,
+    "bootSegments": {
+      "spawnMs": 24,
+      "sampleWaitMs": 22763,
+      "sampleMtimeMs": 22713,
+      "settleMs": 1015,
+      "readinessMs": 80,
+      "renderMs": 0,
+      "killMs": 3543,
+      "postKillWaitMs": 1207,
+      "scratchCleanupMs": 4,
+      "totalMs": 28613
+    }
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "passed",
+      "detail": "sampled while the tree was still moving (settled=false)"
+    },
+    {
+      "id": "http-served",
+      "status": "unmeasured",
+      "detail": "not attributable: the inventory reading was unsettled"
+    },
+    {
+      "id": "inventory-active",
+      "status": "unmeasured",
+      "detail": "no settled reading (unsettled)"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "unmeasured",
+      "detail": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": "in-process-projection",
+    "entries": 195,
+    "wait_ms": 17246,
+    "settled": false,
+    "error_code": null,
+    "attempts": 1,
+    "applies": 1,
+    "candidate_rows": [
+      {
+        "entryId": "include:triage-probe-slow-overrun",
+        "moduleName": "triage-probe-fixture-slow-overrun",
+        "phase": null
+      }
+    ],
+    "excluded": [
+      "include:triage-inventory-probe"
+    ],
+    "error": null,
+    "replacement_waited": false,
+    "replacement_waited_ms": 0,
+    "replacement_observed": false,
+    "replacement_samples": 1,
+    "replacement_policy": "error-only",
+    "replacement_stopped_by": "readable-sample"
+  },
+  "http": {
+    "status": 401,
+    "detail": "HTTP 401"
+  },
+  "boot": {
+    "url_printed": false,
+    "first_line": "",
+    "error_tail": null,
+    "startup_failed": false,
+    "bind_failed_ports": []
+  },
+  "readiness": {
+    "source": "plan-port",
+    "port": 55520,
+    "outcome": "served",
+    "waited_ms": 80,
+    "window_ms": 20000,
+    "url_seen": false
+  },
+  "render": {
+    "status": "unmeasured",
+    "reason": "the Host printed no http://127.0.0.1:<port>/?token=… line, so there was nothing to render"
+  },
+  "install": {
+    "lockfile": {
+      "present": true,
+      "bytes": 403,
+      "sha256": "d4b0750e32e6d87b29195c67f2f8f7b95bcce7b5e31fea0737940b17bf709904"
+    },
+    "endpoints": [],
+    "exit_code": 0,
+    "diagnosis": {
+      "code": null,
+      "key_line": null,
+      "source": "none"
+    },
+    "registry_auth_used": false,
+    "ignored_packages": [],
+    "build_refused_profile_only": false,
+    "candidate_registered": null
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "unknown",
+  "confidence": {
+    "level": "medium",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-tree-not-settled",
+      "severity": "warn",
+      "messageId": "probe.tree-not-settled",
+      "params": {
+        "detail": "settled=false · attempts=1 · rows=include:triage-probe-slow-overrun:none · replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced) · readiness=served(80ms/20000ms)"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-28T22:30:00.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-install",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\slow-overrun-plugin",
+      "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+      "at": "2026-10-28T22:30:00.000Z"
+    },
+    {
+      "id": "probe-boot",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\slow-overrun-plugin",
+      "method": "boot + in-process-projection inventory sample",
+      "at": "2026-10-28T22:30:00.000Z",
+      "detail": "entries=195 wait_ms=17246"
+    },
+    {
+      "id": "probe-cleanup",
+      "tier": "measured-local",
+      "source": "sandbox removed · port closed",
+      "method": "directory + port check",
+      "at": "2026-10-28T22:30:00.000Z"
+    }
+  ],
+  "missing_evidence": [
+    "missing.inventory"
+  ],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe",
+    "the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)",
+    "a tree that never settles is returned well past the 20s budget, not at 20s: the hook settle is inside the sample wait and the render/kill tail is inside the step; ADR-0008 E means no replacement window is opened for a settled:false sample (that window alone was ≈20s before)",
+    "the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate",
+    "timings.bootSegments splits the boot step (spawn, sample wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only, and inventory.replacement_waited records whether a replacement window was opened at all"
+  ]
+}

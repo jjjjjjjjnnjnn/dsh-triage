@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: R19 (2026-10-28)｜M0 ✅（9 门 / 9-9 CAUGHT · 239 测试）· M1 金标对等 ✅（27 条）· M1 真实案例验收 ✅（9/10）· M2-a ✅ · M2-b 事实+差分 ✅（工具级结论不可判，`BS-21`/`BS-22`）· **M3 probe：执行器 ✅（R14）+ 判据 ✅（R15–R17）+ 安装归因 ✅（R19）** · **M4 形态 A ✅（`serve` v1：只读面板 + `--audit`）**（`docs/HANDOFF.md` §2 为准）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（private）｜**Stand**: R26 (2026-10-28)｜M0 ✅（9 门 / 9-9 CAUGHT · 269 测试）· M1 金标对等 ✅（27 条）· M1 真实案例验收 ✅（9/10）· M2-a ✅ · M2-b 事实+差分 ✅（工具级结论不可判，`BS-21`/`BS-22`）· **M3 probe：执行器 ✅（R14）+ 判据 ✅（R15–R17）+ 安装归因 ✅（R19）+ 不可判等待收窄 ✅（`ADR-0008` E，R26）** · **M4 形态 A ✅（`serve` v1：只读面板 + `--audit`）**（`docs/HANDOFF.md` §2 为准）
 > **Mission**: 做 DSH 生态里「装之前判断该不该装、装完坏了定位为什么」的判断层，并靠真实失败数据成为默认安装件 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
@@ -57,7 +57,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 ├── packages/
 │   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 与 registry 次要通道 / verdict 组装（纯函数、可离线）
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
-│   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：plan 生成 + exec 执行/判定 + host 唯一一份 Host I/O + render 白屏判定（CDP）+ hooks/inventory-hook.mjs
+│   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：plan 生成 + exec 执行/判定 + host 唯一一份 Host I/O（样本循环：`{error}` 才开替换窗口，ADR-0008 E）+ render 白屏判定（CDP）+ hooks/inventory-hook.mjs
 │   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板 + bin CLI + probe-run.ts + serve.ts（本地面板）+ audit-data.ts（audit 的纯数据层，CLI 与面板共用）
 ├── scripts/                       # 门禁（gate_*，9 门）+ 真跑落盘（scan_env / record_case / record_audit / record_registry / record_probe / record_render_fixture / record_serve_smoke / render_inventory / d1_report / probe_live_sample / bootstrap_upstream）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R14 (2026-10-28)",
+  "stand": "R26 (2026-10-28)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -3223,6 +3223,130 @@
         "artifact": "data/results/gates-2026-10-28T22-30-00.000Z.json",
         "sha256": "c44011c0e55aca8c8e98a7154de87923ece882811e4e31ddedd32b7322594a59",
         "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 265；代码零变更）"
+      }
+    },
+    {
+      "id": "R26-S1",
+      "batch": "R26",
+      "step": "ADR-0008 方案 E 实施：样本循环只在样本不可读时开替换窗口，settled:false 立即收敛；新增 isReadableSample / SampleReplacement 并接线到执行器；新增 4 条单测",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "packages/plugin/src/probe-run.ts",
+        "tests/unit/probe-host-sample.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：循环判据改为 readable → timeout → replacedEnough → startupFailed；replacedEnough 只在「有样本但不可读」时成立，settled:false 立即收敛。isUsableSample() 与 judgeProbe() 的 diff 为空，所以「树还在动/读不到」仍只能出 unknown + missing.inventory，blocked 仍只允许 valid 读数。waited 用显式布尔记录（「手里有样本仍去睡」），不从两个时间戳相减推断",
+        "reproducibility": "PASS：4 条单测用一个只会写 overlay out: 的假 launcher 驱动真实循环（不依赖 DSH 安装）：settled:false → waited=false 且 sampleWaitMs << 5s 窗口；{error} 后被替换 → samples=2 且采用新样本；{error} 永不替换 → stoppedBy=unreadable-window 且真等满；完全不写样本 → stoppedBy=timeout。`pnpm typecheck` 与 `pnpm test`（269）全绿",
+        "licence": "PASS：无新外部候选、无 vendor 条目、不读凭据、不触碰 ~/.dsh；沙盒仍只在临时目录并跑完即删",
+        "ssot": "PASS：真实响应值写进产物而非只在测试里 —— inventory.replacement_waited/_waited_ms/_observed/_samples/_policy/_stopped_by 六个字段由 record_probe.mjs 落盘，与 SampleReplacement 一一对应",
+        "adversary": "反例一：把等待改名而不是去掉 —— 分段读数可查 sampleWaitMs 22700 与 sampleMtimeMs 22700 只差 13ms，waitedMs=0，等待真的不在了。反例二：顺手放宽 isUsableSample() 让「树还在动」也能出 blocked —— 本轮该函数零 diff，且单测断言 isUsableSample(settled:false)=false。反例三：让假 launcher 测试冒充「真 hook 的 {error} 路径已回归」—— 已在新任务 T-316 与 SIGNOFF 的未逐条复核栏点名，本节不主张该结论"
+      },
+      "real_test": {
+        "command": "pnpm build && pnpm typecheck && node --test \"tests/unit/probe-host-sample.test.ts\" && node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label adr0008e-slow --expect go --browser <chrome> --stamp 2026-10-28T22:40:00.000Z",
+        "artifact": "data/results/probe-adr0008e-slow-2026-10-28T22-40-00.000Z.json",
+        "sha256": "1400ab96da3140e1c9a22acc7ef84b1ae3b38c7cde15362439a10925928556a5",
+        "outcome": "go · triage-probe-fixture-slow · boot→sample 14.7s · http 401 · 行 active · 渲染 rendered（回归 2 成立：导入慢 6s 仍 go）；单测 4/4 通过"
+      }
+    },
+    {
+      "id": "R26-S2",
+      "batch": "R26",
+      "step": "产物自曝与文案同步：record_probe 的 inventory 段新增 6 个 replacement 字段、limits[] 去掉过时的「≈48s」表述；d2_report 的 wall_clock/boot_breakdown 说明改口径；measurementDetail 写明「没有再等替换样本」",
+      "changed": [
+        "scripts/record_probe.mjs",
+        "scripts/d2_report.mjs",
+        "scripts/report_replacement_window.mjs",
+        "packages/probe/src/exec.ts"
+      ],
+      "review": {
+        "correctness": "PASS：不可判夹具真跑仍是 unknown + missing.inventory，且 probe.tree-not-settled 的 detail 现在含 replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced)；waited 为真时改写成 replacement=waited(Nms, samples=k)，两种情况都不会被读成「树稳定了」",
+        "reproducibility": "PASS：产物里的六个字段与本轮代码一一对应；同一命令可重放出相同结论（时间不同，见 BS-32）",
+        "licence": "PASS：只改文案与产物字段，无新执行面、无新候选、无 vendor 变更",
+        "ssot": "PASS：文案里的「≈48s」是旧行为的陈述，本轮从 limits[] 删除并改成不含秒数的结构描述（秒数只留在带日期戳的产物与文档区间里），避免下一轮再次过期；d2_report 的两处 note 同步改口",
+        "adversary": "反例一：让读者从「boot 步变短」自己推断出了什么事 —— 已改成显式布尔 + detail 文案，不需要推断。反例二：把「不可判 ≈32s」写死进产物文案 —— 该数字只在 R26 的某一次运行成立（同夹具两次实测 32.5s / 28.6s），因此 limits[] 改为不带具体秒数的表述，数字交给带时间戳的证据"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label adr0008e-overrun --expect unknown --browser <chrome> --stamp 2026-10-28T22:30:00.000Z",
+        "artifact": "data/results/probe-adr0008e-overrun-2026-10-28T22-30-00.000Z.json",
+        "sha256": "271d95ba6a1d5a6955ec5dd5526f82be7d210af7776bc80f533791d1647d07aa",
+        "outcome": "unknown + missing.inventory（回归 1 成立）· boot 步 28641ms（R23 同夹具 48384ms）· replacement_waited=false / waited_ms=0 / samples=1 / stopped_by=readable-sample · detail 含 ADR-0008 E 说明"
+      }
+    },
+    {
+      "id": "R26-S3",
+      "batch": "R26",
+      "step": "E 之后真实候选仍可判：用 R18 已登记的 dsh-status-rotator@0.38.0 真跑一次，确认 go / 行 active / 渲染通过 / 无替换等待",
+      "changed": [
+        "scripts/record_probe.mjs",
+        "docs/adr/0008-unsettled-wait.md"
+      ],
+      "review": {
+        "correctness": "PASS：结论 go，候选行 include:status-rotator 相位 active，HTTP 401，渲染 rendered 3595ms（289 字符）；replacement_waited=false 说明正常路径根本没有出现替换窗口",
+        "reproducibility": "PASS：pin 版本 + 仓内沙盒 + 固定命令；时间不进判据（boot 步 21697ms、boot→sample 11500ms 只作观测）",
+        "licence": "PASS：该包在 R18 已登记（MIT），本轮未新增候选、未 vendor、未读凭据",
+        "ssot": "PASS：本行产物与 S1/S2 的结论方向一致（正常路径不受 E 影响）；墙钟波动记入 BS-32，不写成承诺",
+        "adversary": "反例一：拿一个夹具冒充「真实候选也验证过」—— 本轮特意跑的是 R18 已登记的 registry 包而不是仓内夹具。反例二：把 boot 步 21.7s 说成「不可判也 20s 内」—— 该数字是可判样本的墙钟，且预算只看 spawn→sample 11.5s"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-status-rotator@0.38.0 --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label adr0008e-real --expect go --browser <chrome> --stamp 2026-10-28T22:50:00.000Z",
+        "artifact": "data/results/probe-adr0008e-real-2026-10-28T22-50-00.000Z.json",
+        "sha256": "a7a4b6a3d85ddc6ea5a4828f7c327587eca93eef30a5166bd5edc3123b794a3b",
+        "outcome": "go · dsh-status-rotator · boot→sample 11.5s · boot 步 21.7s · 渲染 rendered · 行 active · replacement_waited=false"
+      }
+    },
+    {
+      "id": "R26-S4",
+      "batch": "R26",
+      "step": "ADR 第 5 条：用既有矩阵复算 d2_report，确认 boot-budget / reliability 没有因 E 变红（并说明这不是 post-E 的分母重测）",
+      "changed": [
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：gate.passed=true；reliability 20/20、real_starts 13、通过率 12/13（Wilson 0.667–0.986）与 R19 完全一致；boot-budget 仍只判 real:true，fixtures_over_budget 只有 fixture-slow-overrun=21300ms",
+        "reproducibility": "PASS：一条命令从既有矩阵产物重算（scripts/d2_report.mjs --matrix ... --stamp 2026-10-28T23:00:00.000Z），不依赖网络、不依赖本轮真跑",
+        "licence": "PASS：只读历史产物并重算，无新候选、无新执行",
+        "ssot": "PASS：产物内 definitions/limits 自带「便利样本」「单机单运行时」口径；**本轮不据此声称 post-E 的产品数字**，post-E 矩阵重测列为 T-309 的后续",
+        "adversary": "反例一：把「用旧矩阵复算通过」说成「新引擎也通过」—— 不成立，历史产物由 pre-E 代码产出；本轮只证明报告与预算判定没被文档/文案改动弄坏，已在产物与审核报告里写明。反例二：为了让矩阵「更好看」而重挑候选 —— 本轮一个候选都没加"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T11-40-00.000Z.json --stamp 2026-10-28T23:00:00.000Z",
+        "artifact": "data/results/d2-2026-10-28T23-00-00.000Z.json",
+        "sha256": "82d5d135ed1666bb776eafde39c782984ddf399015d2e41015e1e2b91aa265c7",
+        "outcome": "PASSED · 13 real run(s) · reliability 20/20 · boot-budget 12/12 真实候选 · 失败形状 6"
+      }
+    },
+    {
+      "id": "R26-S5",
+      "batch": "R26",
+      "step": "文档与台账同步：ADR-0008 状态改「已实施」+ §实施记录、ADR-0006 覆盖段、spec §4/§9（F46/F47）、docs/05、HANDOFF、BACKLOG（T-311 ✅ / T-316 新开）、ROADMAP、INDEX、blind_spots（BS-28 收窄 + BS-32 新开）、SIGNOFF、审核报告；门禁录一次全绿",
+      "changed": [
+        "docs/adr/0008-unsettled-wait.md",
+        "docs/adr/0006-probe-budget-promise.md",
+        "docs/specs/M3-probe.md",
+        "docs/05-verdict-contract.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "INDEX.md",
+        "audit/blind_spots.json",
+        "audit/SIGNOFF.md",
+        "audit/AUDIT_2026-10-28_R26.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：文档里的每个数字都能回溯到本轮或 R23 的产物；ADR-0008 从「已授权、未实施」改为「已实施」并附逐条落地位置；同时显式保留「默认值仍未动」的事实，避免被读成「阈值已改」",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T23:40:00.000Z` 一条命令重放全部门禁（9 门全绿）；产物 sha256 由门 `step-review` 重算",
+        "licence": "PASS：只改文档与台账；未新增候选、未改 quarantine、未读凭据。SIGNOFF 新增行把授权来源指向 R24 的 HUMAN 原话，本轮指令「同意，继续，处理所有问题」作为执行依据",
+        "ssot": "PASS：同一件事在 7 处一致（ADR-0008/ADR-0006/spec §4+§9/docs 05/HANDOFF §2·§3·§4/BACKLOG/INDEX）；INDEX 的每步台账计数（135 步 / 119 产物）与本轮实际一致；新增的两个盲区 BS-28 收窄与 BS-32 各自带 owner 与退出条件",
+        "adversary": "反例一：把「不可判 ≈32s」写成新常数 —— 同夹具两次实测 32.5s/28.6s，因此文档统一给区间（boot 步 21.7–28.6s）并把波动记成 BS-32。反例二：让 limits[] 里的秒数过期 —— 已改成不含秒数的结构描述。反例三：把 d2 的通过说成「新引擎的产品数字」—— 逐处写明那是既有（pre-E）矩阵的复算，post-E 重测留给 T-309"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T23:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T23-40-00.000Z.json",
+        "sha256": "7b3bc998279e203bf71e96c4d7a0c8f61e337f5ac6440d6d3080a5217e333ff4",
+        "outcome": "ALL GREEN · 9 gates（269 测试；`--mutate` 同轮另跑一次，见提交说明）"
       }
     }
   ]

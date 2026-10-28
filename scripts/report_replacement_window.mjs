@@ -7,6 +7,11 @@
  * dominant cost of a non-settled run (20.3s of a 48.4s boot step). So: has it ever actually
  * produced a better sample?
  *
+ * STATUS (R26): ADR-0008 option E is implemented — the window is now opened for an `{error}`
+ * sample only, and `settled:false` converges immediately (`inventory.replacement_waited`). This
+ * script therefore reads the PRE-E artifacts as history: it is the measurement that justified E,
+ * not a description of what the executor does today.
+ *
  * WHAT IT DOES: scans every `probe-*.json` artifact, reports (a) how many samples were not
  * usable, (b) how many times a replacement was ever observed (`attempts > 1` or `applies > 1`),
  * and (c) a comparison table for runs of the same fixture at different windows, so the cost of
