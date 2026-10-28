@@ -75,11 +75,11 @@
 
 | 周 | 动作 | 产出 |
 |---|---|---|
-| W1 | 注册 npm 名 `dsh-triage`；建立 GitHub private → 后续转 public | 占位发布 0.0.1（仅 CLI `env`） |
+| W1 | 注册 npm 名 `dsh-triage`；建立 GitHub private → **2026-10-29 已转 public（HUMAN 决定，见 `audit/AI_DISCLOSURE_LOG.md` R38 追加）** | 仓库公开可读；npm 发布仍未做（registry 404） |
 | W2 | 写 3 篇中文案例帖（消失的工具 / 白屏 / 升级后起不来） | 社区曝光第一批 |
-| W4 | 提交 `dsh-plugin-catalog`（dshmarket 目录） | 进入市场搜索 |
-| W5 | 提交 omdsh hub catalog + dsh.so | 两个收录 |
-| W6 | 发布 format-1 索引源（个性化推荐） | 无需安装即可被使用 |
+| W4 | 提交 dsh 社区插件索引：**`zhu1090093659/dsh-community-plugins` PR #65**（`community.json` +12/-0，用其自带校验器验证） | 已提交待审；合并后 dsh-market 商店自动收录 |
+| W5 | **`awesome-deepseekharness/awesome-deepseek-harness` PR #193**（README +1/-0）已提交待审；dsh.so **卡在 npm 未发布** | 一条待审、一条待 npm |
+| W6 | **format-1 索引源已发布**：仓库 raw URL（首选，跟着分支走）与 public gist（备份），两条都逐字节校验过 | 无需安装即可被使用（Discover 里添加仍是一次人工动作） |
 | W7 | 作者徽章上线，主动联系 10 个头部插件作者 | 徽章进入 README |
 | W8 | 升级日预案：每次 rc 发布 24h 出清单 | 周期性流量峰 |
 | W9–W12 | 拉 2 家关键路径集成（dshmarket / launcher / Desktop） | 冲总榜的必要条件 |
