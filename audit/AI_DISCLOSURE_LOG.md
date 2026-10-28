@@ -422,3 +422,8 @@
 - 结果：① 徽章 `dsh-triage badge <pkg[@ver]>` 交付（只读 SSOT、无测量即 `not measured`、不做分数、确定性渲染、8 条单测、真机两例产物）。② format-1 索引源**只取证不实现**：实读上游校验器得到完整规则 + 两条实现约束，写进 spec。③ 又踩一次 stamp 覆盖（R27 的 gates 产物），已恢复并换 stamp 重录。
 - 实测：322 测试 / 9 门全绿 / `--mutate` 9/9 / 176 步 / 160 产物
 - 未做：T-403 生成器实现、`BS-32` 有载对照、`BS-29` 剩余面、`T-320`（Typert 客户端生成链，当前不做）
+
+#### R34 追加：T-403 索引源交付（同一会话续做）
+
+- 范围：`packages/plugin/src/{index-source,cli}.ts`、`scripts/record_index_source.mjs`、`tests/unit/index-source.test.ts`、`docs/{HANDOFF,BACKLOG,specs/M4-surface}.md`、`INDEX.md`
+- 结果：`dsh-triage index [--out]` 只收实测 go 的 registry 版本，`publishTimestamp` 取 registry 逐版本 `time`；**用上游校验器验证**，真机 5 插件 / 5 版本通过；8 条单测。**没做**：把索引托管成公开 URL（需 HUMAN 发布动作）

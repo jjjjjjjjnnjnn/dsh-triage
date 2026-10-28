@@ -187,7 +187,7 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 **产物**：`data/results/badge-2026-10-29T02-30-00.000Z.json`（两例：`dsh-status-rotator` = `go`；不存在的包 = `not measured`），单测 `tests/unit/badge.test.ts`（8 条）。
 
-### 7.2 格式 1 索引源（T-403，R34 只做取证，未实现）
+### 7.2 格式 1 索引源（T-403，R34 交付）
 
 **取证方式**：实读上游校验器 `@deepseek-ai/dsh-plugin-market-index@0.2.1-rc.4`（`lib/index.js`），不按 Agent Note 转载复述。
 
@@ -203,3 +203,14 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 1. **`publishTimestamp` 必须逐版本**，而本仓现有 `registry-*.json` 只有 `newest_published_at`（整包一条）——生成器要么联网取 packument 的 `time` 字段（`scripts/record_registry.mjs` 已有取数路径），要么只收录「有逐版本时间戳」的条目；**不许**拿 `newest_published_at` 冒充某个具体版本的时间。
 2. **索引格式里没有「结论」字段**，任何把 verdict 塞进 metadata 的做法在校验器里会被**静默丢弃**。所以索引源的差异化只能是**筛选**（只列出实测 `go` 且 `engines.dsh` 覆盖当前运行时的版本），不是「给插件打分」。
+
+#### 7.2.1 实现（R34）
+
+`dsh-triage index [--results <dir>] [--out <file>] [--json]`（`packages/plugin/src/index-source.ts`）：
+
+- **收录判据**：只收「有记录的一次运行得到 `go`」的版本；每次取**最新**的那次；候选必须是 **registry** 来源（本地目录没有 npm 版本可列）；`sandbox.hook_config` 的诊断产物排除（R26 规则）；`blocked` / `unknown` 一律不进索引，并在 `excluded[]` 里写明原因。
+- **时间戳**：`publishTimestamp` 取 registry **逐版本** `time`（`publishedAt`）折算的整数秒；拿不到就**排除**该版本，绝不拿整包的 `newest_published_at` 冒充某个版本的时间。
+- **范围**：`engines.dsh` 只在包声明了、且不是 `workspace:` 时才写；索引里出现范围是给读者判断兼容性用的，不是我们的结论。
+- **校验**：`scripts/record_index_source.mjs` 跑完 CLI 后，用**上游校验器**（沙盒里的 `@deepseek-ai/dsh-plugin-market-index`）验证文档；校验器不在 → `unmeasured`，**不是**「valid」。校验失败 → exit 1。
+- **真机产物**：`data/results/index-source-2026-10-29T04-00-00.000Z.json` —— **5 个插件 / 5 个版本被上游校验器接受**（`dsh-cost-meter@1.9.41`、`dsh-mcp-connector@0.2.83`、`dsh-plugin-model-proxy@0.1.6`、`dsh-status-rotator@0.38.0`、`dsh-whale-widget@0.4.2`）。
+- **边界**：索引是**筛选**不是背书——格式里没有结论字段，未定义成员会被校验器**丢弃**；描述文案明写「没出现的包 = 这里没测过，不是判定」。单测 8 条钉死这些规则。

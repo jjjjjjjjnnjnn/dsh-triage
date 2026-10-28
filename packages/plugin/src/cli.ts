@@ -62,6 +62,7 @@ import {
   redactedVerdicts,
 } from './audit-data.js'
 import { renderBadge, summarizeEvidence, type ProbeRecord } from './badge.js'
+import { buildMarketIndex, entriesFromEvidence, type MeasuredCandidate } from './index-source.js'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
 import {
   candidatePackageName,
@@ -144,6 +145,7 @@ Usage
   dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)
   dsh-triage serve                   open a read-only local evidence panel (127.0.0.1)
   dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence
+  dsh-triage index                   format-1 market index of versions measured "go" here
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -196,6 +198,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandProbe(flags, positionals[0])
     case 'badge':
       return commandBadge(flags, positionals[0])
+    case 'index':
+      return commandIndex(flags)
     case 'serve':
       return commandServe(flags)
     default:
@@ -269,6 +273,107 @@ async function commandBadge(flags: Flags, subject: string | undefined): Promise<
     return EXIT_OK
   }
   process.stdout.write(svg)
+  return EXIT_OK
+}
+
+/**
+ * `index [--out <file>]`: emit a format-1 market index containing only versions a recorded run
+ * reached `go` on (T-403). Needs the registry for per-version publish times, so it is not pure — but
+ * it invents nothing: every version and timestamp comes from a probe artifact plus the packument.
+ */
+async function commandIndex(flags: Flags): Promise<number> {
+  const resultsDir = flags.results === null ? resolve('data', 'results') : resolve(flags.results)
+  let entries: string[] = []
+  try {
+    entries = readdirSync(resultsDir)
+  } catch {
+    process.stderr.write(`no evidence directory at ${resultsDir}\n`)
+    return EXIT_UNAVAILABLE
+  }
+  const records: { artifact: string; payload: MeasuredCandidate }[] = []
+  for (const entry of entries) {
+    if (!entry.startsWith('probe-') || !entry.endsWith('.json')) continue
+    try {
+      records.push({ artifact: entry, payload: JSON.parse(readFileSync(join(resultsDir, entry), 'utf8')) as MeasuredCandidate })
+    } catch {
+      // Half-written artifacts contribute nothing; they never become a version claim.
+    }
+  }
+
+  // The registry is only asked about candidates that could appear in the index at all.
+  const wanted = new Map<string, Set<string>>()
+  for (const record of records) {
+    const name = record.payload.candidate?.package
+    const version = record.payload.candidate?.resolved?.version
+    if (typeof name !== 'string' || typeof version !== 'string') continue
+    if (record.payload.candidate?.kind !== 'registry' || record.payload.conclusion !== 'go') continue
+    const set = wanted.get(name) ?? new Set<string>()
+    set.add(version)
+    wanted.set(name, set)
+  }
+  const publishedAt = new Map<string, Record<string, string>>()
+  const engineRanges = new Map<string, Record<string, string | null>>()
+  const fetchFailures: { package: string; detail: string }[] = []
+  let runtime: string | null = null
+  for (const [name, versions] of wanted) {
+    // The registry read is stamped with the CLI stamp so the evidence line stays reproducible.
+    const packument = await fetchPackument(name, { at: stampOf(flags) })
+    if (!packument.ok) {
+      fetchFailures.push({ package: name, detail: `${packument.error.code} — ${packument.error.detail}` })
+      continue
+    }
+    publishedAt.set(name, { ...packument.value.publishedAt })
+    const ranges: Record<string, string | null> = {}
+    for (const version of versions) {
+      const manifest = packument.value.versions.get(version)
+      const engines = manifest === undefined || manifest === null ? null : (manifest.engines as { dsh?: unknown } | undefined)
+      ranges[version] = engines !== undefined && engines !== null && typeof engines.dsh === 'string' ? engines.dsh : null
+    }
+    engineRanges.set(name, ranges)
+  }
+  // The runtime the evidence was measured against (newest recorded run wins; it is one sandbox version).
+  for (const record of records) {
+    const version = record.payload.runtime?.version
+    if (typeof version === 'string' && (runtime === null || version > runtime)) runtime = version
+  }
+
+  const built = entriesFromEvidence(
+    records,
+    (name, version) => {
+      const iso = publishedAt.get(name)?.[version]
+      if (typeof iso !== 'string') return null
+      const milliseconds = Date.parse(iso)
+      return Number.isFinite(milliseconds) ? Math.floor(milliseconds / 1000) : null
+    },
+    (name, version) => engineRanges.get(name)?.[version] ?? null,
+  )
+  const { document, skipped } = buildMarketIndex(built.entries, { generatedFor: runtime === null ? undefined : `dsh ${runtime}` })
+  const payload = {
+    schema_version: 1,
+    command: 'index',
+    format: 1,
+    generated_for: runtime,
+    plugins: document.plugins.length,
+    versions: document.plugins.reduce((total, plugin) => total + plugin.versions.length, 0),
+    skipped,
+    excluded: built.excluded,
+    fetch_failures: fetchFailures,
+    document,
+  }
+  if (flags.out !== null) {
+    writeFileSync(flags.out, `${JSON.stringify(document, null, 2)}\n`, 'utf8')
+    if (!flags.json) {
+      process.stdout.write(
+        `wrote ${flags.out} · ${payload.plugins} plugins / ${payload.versions} versions · skipped ${skipped.length} · excluded ${built.excluded.length}\n`,
+      )
+      return EXIT_OK
+    }
+  }
+  if (!flags.json) {
+    process.stdout.write(`${JSON.stringify(document, null, 2)}\n`)
+    return EXIT_OK
+  }
+  writeJson(payload)
   return EXIT_OK
 }
 

@@ -4338,6 +4338,34 @@
         "sha256": "fc97d1d89be6a213d2bd1ff5bac8e2ec90e73476827acc02dad2822431c12329",
         "outcome": "门禁复跑产物（本步新增 badge 产物后，step-review 会先红一次，补齐台账后转绿）"
       }
+    },
+    {
+      "id": "R34-S3",
+      "batch": "R34",
+      "step": "M4-b 索引源（T-403）：`dsh-triage index [--out]` 只收实测 `go` 的 registry 版本，用**上游校验器**验证文档，8 条单测；真机 5 插件 / 5 版本通过",
+      "changed": [
+        "packages/plugin/src/index-source.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_index_source.mjs",
+        "tests/unit/index-source.test.ts",
+        "docs/specs/M4-surface.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：收录判据是「有记录的运行得到 `go`」+ registry 来源 + 非诊断样本 + 最新一次；`publishTimestamp` 取 registry 逐版本 `time`，拿不到就排除（不拿整包 `newest_published_at` 冒充）；`engines.dsh` 只在声明且非 `workspace:` 时写；`blocked`/`unknown` 与本地夹具全部进 `excluded[]` 并写原因。**上游校验器**（沙盒里的 `@deepseek-ai/dsh-plugin-market-index@0.2.1-rc.4`）接受真机文档：5 插件 / 5 版本（`index-source-2026-10-29T04-00-00.000Z.json`）",
+        "reproducibility": "PASS：`node scripts/record_index_source.mjs --stamp <iso>` 一条命令重放（生成器只依赖 registry 的 `time` 与本地产物）；文档连同 `document_sha256` 一起落盘，可离线复校验；单测 8 条离线跑（注入假的 publishTimes/ranges）",
+        "licence": "PASS：只用 registry 公开元数据与上游 MIT 包的**验证器行为**（沙盒内 import，不 vendor、不复制源码）；索引里不包含任何第三方数据内容，只有包名/版本/时间戳/声明的范围",
+        "ssot": "PASS：产物含 produced_by/generated_at/schema_version + .sha256，`validation` 三态（passed/unmeasured/failed）与退出码一致（failed → exit 1）；「没出现的包=这里没测过」写进文档的 `description`，且 `excluded[]` 给出每个未收录包的原因",
+        "adversary": "反例一：把 verdict 塞进 metadata 当卖点——校验器会丢弃未定义成员，所以只做筛选，并在 spec 里写明。反例二：拿整包最新发布时间当某个版本的时间——单测「a version the registry never timestamped is excluded, not invented」钉死。反例三：把 `workspace:*` 写进索引——单测钉死该范围不出现在产物里。反例四：校验器缺席时当成 valid——脚本里缺席即 `unmeasured`。反例五：本地夹具包混进索引——单测与真机 `excluded[]` 都显示 `not a registry candidate`"
+      },
+      "real_test": {
+        "command": "node scripts/record_index_source.mjs --stamp 2026-10-29T04:00:00.000Z",
+        "artifact": "data/results/index-source-2026-10-29T04-00-00.000Z.json",
+        "sha256": "f0285611ae817f4660a56e6dbac773631b1822fb5f554cfc9355410bc07d4078",
+        "outcome": "validation:passed（5 plugins / 5 versions，上游校验器 0.2.1-rc.4 接受）"
+      }
     }
   ]
 }

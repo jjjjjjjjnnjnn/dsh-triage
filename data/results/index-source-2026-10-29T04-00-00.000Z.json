@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_index_source.mjs",
+  "generated_at": "2026-10-29T04:00:00.000Z",
+  "label": "index-source",
+  "outcome": {
+    "plugins": 5,
+    "versions": 5,
+    "validation": "passed"
+  },
+  "validation": {
+    "status": "passed",
+    "detail": "5 plugins accepted by sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh-plugin-market-index\\lib\\index.js",
+    "validator": "0.2.1-rc.4",
+    "index_url": "https://triage.invalid/index.json"
+  },
+  "skipped": [],
+  "excluded": [
+    {
+      "package": "@aiwayds/dsh-cron",
+      "reason": "conclusion was blocked"
+    },
+    {
+      "package": "dsh-does-not-exist-xyzzy",
+      "reason": "conclusion was blocked"
+    },
+    {
+      "package": "dsh-plugin-triage-missing",
+      "reason": "conclusion was blocked"
+    },
+    {
+      "package": "triage-probe-fixture-broken",
+      "reason": "not a registry candidate (no npm version to list)"
+    },
+    {
+      "package": "triage-probe-fixture-ok",
+      "reason": "not a registry candidate (no npm version to list)"
+    },
+    {
+      "package": "triage-probe-fixture-slow",
+      "reason": "not a registry candidate (no npm version to list)"
+    },
+    {
+      "package": "triage-probe-fixture-slow-overrun",
+      "reason": "not a registry candidate (no npm version to list)"
+    },
+    {
+      "package": "triage-probe-fixture-throw",
+      "reason": "not a registry candidate (no npm version to list)"
+    }
+  ],
+  "fetch_failures": [],
+  "document": {
+    "format": 1,
+    "title": {
+      "en": "Triage-verified DSH plugins",
+      "zh": "分诊台实测通过的 DSH 插件"
+    },
+    "description": {
+      "en": "Only versions a local dsh-triage run reached \"go\" on, measured against dsh 0.2.1-rc.4. An absent package was never measured here — not a judgement.",
+      "zh": "只收录在本地 dsh-triage 实测得到 go 的版本，测量基准是 dsh 0.2.1-rc.4。没出现的包=这里没测过，不是判定。"
+    },
+    "metadata": {
+      "categories": {},
+      "labels": {},
+      "sortKeys": {}
+    },
+    "plugins": [
+      {
+        "name": "dsh-cost-meter",
+        "metadata": {
+          "keywords": [
+            "dsh-plugin"
+          ]
+        },
+        "versions": [
+          {
+            "version": "1.9.41",
+            "publishTimestamp": 1792987849,
+            "source": {
+              "type": "npm"
+            },
+            "engines": {
+              "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+            }
+          }
+        ]
+      },
+      {
+        "name": "dsh-mcp-connector",
+        "metadata": {
+          "keywords": [
+            "dsh-plugin"
+          ]
+        },
+        "versions": [
+          {
+            "version": "0.2.83",
+            "publishTimestamp": 1793020989,
+            "source": {
+              "type": "npm"
+            }
+          }
+        ]
+      },
+      {
+        "name": "dsh-plugin-model-proxy",
+        "metadata": {
+          "keywords": [
+            "dsh-plugin"
+          ]
+        },
+        "versions": [
+          {
+            "version": "0.1.6",
+            "publishTimestamp": 1790270037,
+            "source": {
+              "type": "npm"
+            }
+          }
+        ]
+      },
+      {
+        "name": "dsh-status-rotator",
+        "metadata": {
+          "keywords": [
+            "dsh-plugin"
+          ]
+        },
+        "versions": [
+          {
+            "version": "0.38.0",
+            "publishTimestamp": 1793030244,
+            "source": {
+              "type": "npm"
+            }
+          }
+        ]
+      },
+      {
+        "name": "dsh-whale-widget",
+        "metadata": {
+          "keywords": [
+            "dsh-plugin"
+          ]
+        },
+        "versions": [
+          {
+            "version": "0.4.2",
+            "publishTimestamp": 1791721632,
+            "source": {
+              "type": "npm"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "document_sha256": "a6fee64658b116e8dca644fb8287ef774a5d5d3dddce4c320068d5a8db4256bb",
+  "limits": [
+    "the index contains ONLY versions a recorded probe reached \"go\" on; absent plugins were never measured here, which is not a judgement about them",
+    "format 1 has no verdict field — unknown members are dropped by the validator — so this index filters, it never scores",
+    "publishTimestamp comes from the registry per-version time; a version without one is excluded instead of guessed",
+    "validated against the upstream validator in the sandbox; when it is absent the result is \"unmeasured\", never \"valid\""
+  ]
+}
