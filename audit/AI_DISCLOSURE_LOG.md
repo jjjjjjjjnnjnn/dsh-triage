@@ -390,3 +390,14 @@
 - 实测：296 测试 / 9 门全绿 / `--mutate` 9/9；164 步 / 149 产物
 - 过程中的真实缺陷：① 布局读数连错两次（R30 的 `.pnpm` 判据 + R31 第一版的「首个条目是否 symlink」），真机对照才暴露；② `record_client_serve` 前 6 次栽在「裸 URL 一律 404，必须用 `?rev=` 组合 URL」；③ cleanup 连续 EPERM 的真因是**先删后杀**（Host 还持有文件），改成先 `killTree` 再删；④ 用 20:00 做 gate stamp 时**覆盖了 R23-S5 的产物**，用 `git checkout` 恢复后改用不冲突的 stamp；⑤ gate_namespace 的 `row-names-resolve` 旧规则强制子路径（正好是会让浏览器半边静默消失的形状），改为「裸包名 main 或 exports 子路径才算可解析」
 - 未做：设置页肉眼可见断言、Host 侧只读 Remote、`strictPeerDependencies`、有载/空载对照（`BS-32` 的下一半）、`BS-29` 剩余面
+
+### 2026-10-28 R32｜交接（只交接，不改行为）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R32-S1）
+- 范围：`docs/HANDOFF.md`（头部 Stand/当前批次、§2 交接行与里程碑、未通过门槛的八条缺口、§3 复核命令新增 `stability_report` 与 `record_client_serve`）、`INDEX.md`（台账计数）、`audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 起因：HUMAN「同意。先进行项目交接，即将切换会话」
+- 结果：**一行代码、一个阈值都没动**；交接把「哪件事是真的、哪件事还没做」分开写：D2 两批通过（旧口径那条红保留为历史）、稳定性 36 次观测但只覆盖空载机、T-401 真机注册通过但**可见性与同源结论未做**、T-315 只剩 `strictPeerDependencies`；两道待签题已于 R30 按委托签完且**可撤销**
+- 实测：296 测试 / 9 门全绿 / `--mutate` 9/9；165 步 / 150 产物
+- 过程中的真实缺陷：无新增（本轮只有文档）；上一轮自找的 stamp 冲突已在「未通过的门槛」里留档
+- 未做：T-401 最后两件、`strictPeerDependencies`、`BS-32` 的有载对照、`BS-29` 剩余面、`BS-35` 的上游漂移预警

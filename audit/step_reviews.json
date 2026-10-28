@@ -4059,6 +4059,29 @@
         "sha256": "4f04f897e475b42c11f793135e87176d7447c4cfecb3ca161eb7218a19f0664f",
         "outcome": "ALL GREEN · 9 gates（296 测试；164 步 / 149 产物全部被引用）"
       }
+    },
+    {
+      "id": "R32-S1",
+      "batch": "R32",
+      "step": "交接（R32）：HANDOFF 头部 Stand/当前批次、§2 交接行与里程碑、未通过门槛的缺口清单、§3 的复核命令（新增 stability_report 与 record_client_serve）全部对齐 R31 的产物，然后录一次门禁全绿并提交",
+      "changed": [
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：交接里的每个数字都能在产物里找到——296 测试 / 9 门 / 164 步 / 149 产物；D2 两批 gate.passed=true；稳定性 36 次观测 3.5–9.6s、0/36 超预算；T-401 六步全绿；T-315 布局 hoisted。**本轮只改文档，没有改任何代码或阈值**",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T22:10:00.000Z` 一条命令重放 9 门；`git log -1` 即交接提交、`git status` 干净；新增的两条复核命令（stability_report / record_client_serve）都写进 §3 的命令清单",
+        "licence": "PASS：交接不改代码、不加候选、不碰 quarantine；AI 披露追加 R32 一条，写明本轮无实现改动",
+        "ssot": "PASS：两个待签题的状态三处一致（SIGNOFF 两行 / ADR-0008 签字区 [x] B / ADR-0009 accepted(A)）；「仍开着的缺口」八条与 BACKLOG、blind_spots 的 status 对齐；冻结项（阈值五条 + 金标 + 铁律）在交接行里逐条点名",
+        "adversary": "反例一：把交接写成「R31 已完成一切」——没有，§2 与 §3 都列了 T-401 剩两件、T-315 剩一项、BS-32 剩一半。反例二：交接漏掉上一轮自找的 stamp 冲突——「未通过的门槛」里记录了 11:00 与 21:30 两次门禁红，后者是 R31 自己造成的。反例三：为了让数字好看删掉文件——没有，149 份产物全部保留并被引用"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T22:10:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T22-10-00.000Z.json",
+        "sha256": "d400e66c447c39155ae74c1b8058ff3738bdc346292eb9cf8177bebb12127b1f",
+        "outcome": "ALL GREEN · 9 gates（296 测试；165 步 / 150 产物全部被引用）"
+      }
     }
   ]
 }
