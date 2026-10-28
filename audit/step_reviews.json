@@ -2770,7 +2770,7 @@
         "correctness": "PASS：`pnpm run verify` = 239 测试 / 9 门全绿；`--mutate` 9/9；ADR-0006 状态是 **proposed**，签字区为空，spec §4 的 20s / 15s / 20000 三个数字与改动前逐字相同（`git diff` 可查）；T-304 的 F38–F40 都是本轮真跑出来的，不是推断",
         "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T15:00:00.000Z` 可重放；ADR 的三种 spike 都写了最小可重放步骤；HANDOFF §3 首条仍是单条可执行命令",
         "licence": "PASS：本轮无新外部候选，`quarantine/vendor-manifest.json` 未改；`BS-29` 与 T-313 明确写出「还有别的凭据来源未审计」，没有把一次修复说成全域结论",
-        "ssot": "PASS：98 个产物全部被 112 步台账引用；`ADR-0004` 的 R20 修订段与 `M3-probe.md` F37/N31 同口径；`INDEX`/`AGENTS` 的 ADR 清单同步；`audit/SIGNOFF.md` 本轮**未改**（没有阈值变更，也没有新候选授权——凭据修复是收紧既有铁律，不是放宽）",
+        "ssot": "PASS：99 个产物全部被 112 步台账引用；`ADR-0004` 的 R20 修订段与 `M3-probe.md` F37/N31 同口径；`INDEX`/`AGENTS` 的 ADR 清单同步；`audit/SIGNOFF.md` 本轮**未改**（没有阈值变更，也没有新候选授权——凭据修复是收紧既有铁律，不是放宽）",
         "adversary": "反例一：写一份 ADR 然后顺手把默认值改了——本轮没改，ADR 状态与签字区共同证明这一点。反例二：把「user config 关了」写成「沙盒无凭据」——`BS-29`/T-313 与审核报告 §6 都写明其余来源未测。反例三：把 T-304 的取证当成实现——BACKLOG 仍是 🟨 且只列退出条件。反例四：为了绿门删掉不合规产物——本轮只新增产物，未删任何东西；INDEX 的路由写法第三次踩 `index-references`，已改成不含斜杠的表述并写进坑表"
       },
       "real_test": {
