@@ -93,6 +93,6 @@
 
 > **E 已于 R26 实施**（上表 §实施记录）。签字授权的是做法，实施与三条回归由 R26 完成；`audit/SIGNOFF.md` 有对应实施行。
 
-> 未勾选之前，`--unsettled-timeout`、`settle 15s`、readiness 5s 与 `boot→sample ≤20s` **一律不动**（铁律 4：阈值变更需 spec + HUMAN-SIGN）。
+> **E 之外的项（A/C/B）仍未勾选**，因此 `--unsettled-timeout`、`settle 15s`、readiness 5s 与 `boot→sample ≤20s` **一律不动**（铁律 4：阈值变更需 spec + HUMAN-SIGN）。E 只改「等谁」，不改这三个阈值。
 >
-> **本轮（R23/R24）只交付材料**：分段读数、29 份产物的替换统计（`data/results/replacement-window-2026-10-28T21-30-00.000Z.json`，`replacements_observed = 0`）、三组窗口对照（`measured_saving_ms = 19092`）、本 ADR。**没有改任何默认值。**
+> **历史（R23/R24）**：那两轮只交付材料 —— 分段读数、29 份产物的替换统计（`data/results/replacement-window-2026-10-28T21-30-00.000Z.json`，`replacements_observed = 0`）、三组窗口对照（`measured_saving_ms = 19092`）、本 ADR，**没有改任何默认值**。
