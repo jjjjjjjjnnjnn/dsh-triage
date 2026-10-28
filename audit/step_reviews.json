@@ -2687,7 +2687,7 @@
         "audit/blind_spots.json"
       ],
       "review": {
-        "correctness": "PASS：`pnpm run verify` = 232 测试 / 9 门全绿；`--mutate` 9/9；D2 数字（真实 13 / 12 go / 1 blocked / Wilson 0.667–0.986 / 可靠性 20/20 / 形状 6）在 ROADMAP、HANDOFF、INDEX、AUDIT_R19、BACKLOG 五处一致；T-310 与 T-406 从 ⬜ 改为 ✅ 并写明剩余",
+        "correctness": "PASS：`pnpm run verify` = 236 测试 / 9 门全绿；`--mutate` 9/9；D2 数字（真实 13 / 12 go / 1 blocked / Wilson 0.667–0.986 / 可靠性 20/20 / 形状 6）在 ROADMAP、HANDOFF、INDEX、AUDIT_R19、BACKLOG 五处一致；T-310 与 T-406 从 ⬜ 改为 ✅ 并写明剩余",
         "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T13:00:00.000Z` 可重放；HANDOFF §3 的首条命令仍是单条可执行（`pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate`）；D2 重算命令带上具体矩阵路径",
         "licence": "PASS：`audit/SIGNOFF.md` 新增两行（D2 预算口径 / +3 外部候选），沿用 ADR-0004 边界且写明「未扩大机制」；`quarantine/vendor-manifest.json` 三条元数据条目带 `dist.integrity`",
         "ssot": "PASS：95 个产物全部被 108 步台账引用（`no-orphan-results` 绿）；被取代的中间产物（两版矩阵、11:00/11:30 两版 d2）在提交前删除，未进历史；`INDEX.md` 的新引用写成 `data/results/...` 全路径，避免门把裸文件名当路径（R19 又踩了一次）",
