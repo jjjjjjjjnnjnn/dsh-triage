@@ -251,3 +251,13 @@
 - 实测：220 测试 / 9 门全绿 / `--mutate` 9/9；矩阵 17 次运行；`d2_report` 7 条契约测试
 - 过程中的真实缺陷（本轮自己抓到）：R17 夹具「按预期通过」但没测到它宣称的东西；D2 第一版把 info 原因算成失败形状（9 种 → 5 种）；矩阵首版只有 16 次且缺 `row-missing` 形状，补夹具后重跑
 - 未做：`T-310` 安装失败归因、Linux/macOS 真 probe、D2 数字外推（`BS-27`）、M4 面板
+
+### 2026-10-28 R19｜T-310 安装失败归因 + T-406 面板 v1（serve --audit）+ D2 分母 10→13 与预算口径收窄
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未派 subagent，四轴与对抗性由同一会话自查；audit/step_reviews.json R19-S1…S5）
+- 范围：packages/probe/src/{host,exec,index}.ts、packages/core/src/messages.ts、packages/plugin/src/{audit-data.ts（新）,cli.ts,serve.ts}、scripts/{record_probe.mjs,record_serve_smoke.mjs,d2_report.mjs}、tests/{unit/{probe-exec,serve}.test.ts（扩）,governance/d2-report.test.ts（扩）,fixtures/probe/{install-failure/*（新）,matrix-r19.json（新）}}、docs/{HANDOFF,BACKLOG,ROADMAP,05-verdict-contract,specs/M3-probe,specs/M4-surface}.md、INDEX.md、AGENTS.md、quarantine/vendor-manifest.json、audit/{SIGNOFF.md,blind_spots.json,step_reviews.json,AUDIT_2026-10-28_R19.md（新）}、data/results/{probe-real-dsh-cron-*,serve-smoke-*,probe-matrix-*,d2-*,gates-*}
+- 起因：HUMAN 指令「交接项目过来，进行下一步计划」+ 两轮拍板（范围 = T-310 + T-406 + 加候选；/api/audit 显式 --audit 才开）
+- 结果：① T-310：installDiagnosis（launcher 优先 / 日志兜底 / dsh: 行不算原因 / URL 去凭据与查询串）→ install.diagnosis{code,key_line,source}；新增 probe.install-failed-code 与 probe.install-build-refused；真机 @aiwayds/dsh-cron@0.6.1 = ERR_PNPM_IGNORED_BUILDS（装上了但 pnpm 11 拒绝跑构建脚本）。② T-406：抽出 loadAuditData()/auditJsonPayload()，serve --audit 暴露只读路由（默认 501 / 读不到 409）+ 页面「当前组合」；抽取前后 audit --json 逐字节一致（夹具 EE1D3AC5… / 真实 BEC85449…）。③ D2：+3 个 MIT 候选（skills-manager / unlag（engines-only）/ qqbot（compatibility）），真实 12 go / 1 blocked（0.923，Wilson 0.667–0.986），可靠性 20/20、形状 6。④ 预算口径：boot-budget 只判 real:true（HUMAN 签），夹具 21.3s 单列；BS-28 / T-311 新开。
+- 实测：232 测试 / 9 门全绿 / --mutate 9/9；矩阵 20 次运行（两版重采，旧版提交前删除）；serve 冒烟 13/13
+- 过程中的真实缺陷（本轮自己抓到，均在提交前修）：诊断日志只有 67 字节（假设错误，改为 launcher 优先）；key_line 只取码行（改找解释行）；把 dsh: 行当原因（加过滤）；成功安装也留「诊断」（exit 0 归零）
+- 未做：T-303 / T-202a（需 ADR + HUMAN 签）、T-304（profile 副本，下一轮）、T-401（R20 契约 spike）、默认 --unsettled-timeout 的调整（T-311）

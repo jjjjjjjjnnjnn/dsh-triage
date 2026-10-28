@@ -136,6 +136,82 @@ test('--allow-execute opens the gate but actions stay unimplemented (501, not 20
   }
 })
 
+/* ----------------------------- the audit route (T-406) --------------------- */
+
+test('/api/audit is off by default and says so with 501, never an empty ledger', async () => {
+  const dir = fixtureDir()
+  const panel = await startPanel({ resultsDir: dir })
+  try {
+    const off = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
+    assert.equal(off.status, 501)
+    const body = (await off.json()) as { error: string }
+    assert.match(body.error, /--audit/, 'the answer has to name the switch that turns it on')
+
+    const health = await fetch(`http://127.0.0.1:${panel.port}/api/health?token=${panel.token}`)
+    assert.equal(((await health.json()) as { audit: boolean }).audit, false)
+
+    const anonymous = await fetch(`http://127.0.0.1:${panel.port}/api/audit`, { redirect: 'manual' })
+    assert.equal(anonymous.status, 401, 'the audit route inherits the token gate')
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('/api/audit returns the payload it was given, not a re-derivation', async () => {
+  const dir = fixtureDir()
+  const payload = { schema_version: 1, command: 'audit', row_verdicts: [{ conclusion: 'blocked' }], collisions: [] }
+  const panel = await startPanel({ resultsDir: dir, audit: async () => ({ ok: true, payload }) })
+  try {
+    const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), payload, 'byte-for-byte what the loader produced')
+
+    const crossOrigin = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`, {
+      headers: { origin: 'http://evil.example' },
+    })
+    assert.equal(crossOrigin.status, 403)
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('an unreadable profile is 409 with the CLI sentence, not a clean 200', async () => {
+  const dir = fixtureDir()
+  const panel = await startPanel({
+    resultsDir: dir,
+    audit: async () => ({ ok: false, message: 'cannot read the profile: profile-not-found — nope' }),
+  })
+  try {
+    const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
+    assert.equal(response.status, 409)
+    assert.match(((await response.json()) as { error: string }).error, /profile-not-found/)
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a loader that throws is a 500, and the panel keeps serving', async () => {
+  const dir = fixtureDir()
+  const panel = await startPanel({
+    resultsDir: dir,
+    audit: async () => {
+      throw new Error('boom')
+    },
+  })
+  try {
+    const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
+    assert.equal(response.status, 500)
+    const health = await fetch(`http://127.0.0.1:${panel.port}/api/health?token=${panel.token}`)
+    assert.equal(health.status, 200, 'one bad route must not kill the server')
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('the page ships no remote assets, in both locales', () => {
   for (const locale of ['zh', 'en'] as const) {
     const html = renderPanelHtml(locale)

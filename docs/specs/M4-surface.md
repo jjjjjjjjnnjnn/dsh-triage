@@ -38,13 +38,15 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 > **状态（R16）**：**v0 已交付** —— 零依赖、token 鉴权、跨源拒绝、POST 403（`--allow-execute` 也只回 501）；当前只列 `data/results` 的产物与 sha256，**还没有** `/api/audit`（见 T-406）。
 > 冒烟证据：`data/results/serve-smoke-2026-10-27T14-12-16.000Z.json`（8/8）；单测 `tests/unit/serve.test.ts`（6 条）。
+>
+> **状态（R19 / T-406）：v1** —— 新增 `GET /api/audit`（**默认关闭**，`--audit` 才开；关闭时回 **501**、读不到 profile 时回 **409**、绝不用空账本冒充「没有问题」）。数据来自**同一份** `loadAuditData()` + `auditJsonPayload()`（`packages/plugin/src/audit-data.ts`），所以面板与 `audit --json` 不是「两套实现」。冒烟 `serve-smoke-2026-10-28T10-20-00.000Z.json`（13/13，含 `/api/audit` 501 / 200 / 与 CLI 逐条一致 / token 与端口不入产物）。
 
 | 项 | 设计 |
 |---|---|
 | 依赖 | **零**（`node:http` + 内联 HTML/CSS/JS，和门禁同一条纪律） |
 | 绑定 | `127.0.0.1:<随机端口>`，打印带一次性 token 的 URL（与 DSH 自己的 `?token=` 同思路） |
 | 鉴权 | token 校验 + `Origin`/`Sec-Fetch-Site` 同源检查；不读到任何凭据 |
-| 数据 | `GET /api/audit`（复用 `audit` 引擎，只读本机 profile）、`GET /api/probe/:id`（读 `data/results/probe-*.json`）、`GET /api/ssot`（列出产物与 sha256） |
+| 数据 | `GET /api/audit`（`--audit` 才开；复用 `loadAuditData()`，只读本机 profile；关闭 = 501、读不到 = 409）、`GET /api/probe/:id`（读 `data/results/probe-*.json`）、`GET /api/ssot`（列出产物与 sha256） |
 | 动作 | `POST /api/probe`（需 `--allow-execute` 才启用；默认只渲染 dry-run 计划） |
 | 安全 | 不监听公网、不写 `~/.dsh`、不下载候选（执行由 probe 的既有沙盒负责） |
 | 证据 | 页面上的每条结论都带 `messageId` + 产物路径 + sha256 |
@@ -102,7 +104,7 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 | 序 | 交付 | 依赖 | 出口 | 状态 |
 |---|---|---|---|---|
 | 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 | ✅ R16 |
-| 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0：只列 SSOT，尚未接 audit） |
+| 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0）· **R19（v1：`/api/audit` + 当前组合区块）** |
 | 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
 | 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | ⬜ |
 | 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |

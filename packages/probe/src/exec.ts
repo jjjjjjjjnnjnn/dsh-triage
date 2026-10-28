@@ -28,6 +28,7 @@ import type {
   Verdict,
 } from '@dsh-triage/core'
 import { parseInventorySnapshot } from '@dsh-triage/core'
+import type { InstallDiagnosis } from './host.js'
 import type { ProbePlan } from './plan.js'
 import type { RenderCheck } from './render.js'
 
@@ -139,6 +140,13 @@ export interface ProbeRun {
   readonly startupFailed: boolean
   /** Ports the Host could not bind; if ours is among them the failure is the probe's. */
   readonly bindFailedPorts: readonly number[]
+  /**
+   * The package manager's own reason for a failed install (T-310).
+   *
+   * Separate from `steps[].detail` because a reason is evidence, not prose: the judge
+   * branches on `code`, and the artifact publishes `key_line` verbatim.
+   */
+  readonly installDiagnosis: InstallDiagnosis | null
   readonly cleanup: ProbeCleanupResult
   readonly abortedAt: ProbeStepId | null
 }
@@ -206,7 +214,13 @@ export interface CleanupInput {
 export interface ProbeExecDeps {
   now(): number
   readRuntimeVersion(input: RuntimeReadInput): Promise<{ version: string | null; detail: string }>
-  install(input: InstallInput): Promise<{ exitCode: number | null; detail: string; endpoints?: readonly string[] }>
+  install(input: InstallInput): Promise<{
+    exitCode: number | null
+    detail: string
+    endpoints?: readonly string[]
+    /** T-310: what the package manager said. Absent means "not reported", never "none said". */
+    diagnosis?: InstallDiagnosis
+  }>
   /**
    * `http` is the readiness measured *before* the Host was killed. It is optional so a
    * fake can omit it; when present, the executor records it instead of probing a port
@@ -274,6 +288,7 @@ interface MutableRun {
   errorTail: string | null
   startupFailed: boolean
   bindFailedPorts: readonly number[]
+  installDiagnosis: InstallDiagnosis | null
   cleanup: ProbeCleanupResult
   abortedAt: ProbeStepId | null
 }
@@ -298,6 +313,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     errorTail: null,
     startupFailed: false,
     bindFailedPorts: [],
+    installDiagnosis: null,
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
     abortedAt: null,
   }
@@ -357,6 +373,9 @@ async function runSequence(
         candidate: input.plan.candidate,
         timeoutMs: timeouts.installMs,
       })
+      // Recorded before the status branch: a *passing* install can still have printed a
+      // warning, and a failed one is exactly what the judge needs (T-310).
+      run.installDiagnosis = result.diagnosis ?? null
       return result.exitCode === 0
         ? { status: 'passed' as const, detail: result.detail, exitCode: result.exitCode }
         : {
@@ -459,6 +478,7 @@ function freeze(run: MutableRun): ProbeRun {
     errorTail: run.errorTail,
     startupFailed: run.startupFailed,
     bindFailedPorts: run.bindFailedPorts,
+    installDiagnosis: run.installDiagnosis,
     cleanup: run.cleanup,
     abortedAt: run.abortedAt,
   }
@@ -723,11 +743,45 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
 
   const installStep = stepOf('install')
   if (installStep !== undefined && installStep.status === 'failed') {
-    block('probe-install-failed', 'probe.install-failed', {
-      step: 'install',
-      exit: installStep.exitCode ?? 'unknown',
-    })
-    remediation.push({ kind: 'report', messageId: 'remediation.report', note: 'report the install failure to the plugin author with the probe artifact' })
+    // T-310: name the package manager's reason, not just its exit code. Three shapes, and
+    // the difference matters to the reader: a build-script refusal is a package-manager
+    // policy (the plugin is fine, it just never got built), a code is a cause, and the
+    // third branch is the honest "it failed and said nothing usable".
+    const diagnosis = run.installDiagnosis
+    const code = diagnosis?.code ?? null
+    const keyLine = diagnosis?.key_line ?? null
+    const spoken = keyLine === null ? 'the package manager printed no line that explains this' : keyLine
+    if (diagnosis !== null && diagnosis.source !== 'none') {
+      evidence.push({
+        id: 'probe-install-diagnosis',
+        tier: 'measured-local',
+        source: run.candidate.spec,
+        method: `package manager output (${diagnosis.source}, sandbox)`,
+        at,
+        detail: code === null ? spoken : `code=${code} · ${spoken}`,
+      })
+    }
+    if (code === 'ERR_PNPM_IGNORED_BUILDS') {
+      block('probe-install-build-refused', 'probe.install-build-refused', { code, detail: spoken })
+      remediation.push({
+        kind: 'report',
+        messageId: 'remediation.install-build-refused',
+        note: 'the package manager installed the package but refused to run its build scripts, so nothing was built; allow build scripts for this package or ask the author for a prebuilt release',
+      })
+    } else if (code !== null) {
+      block('probe-install-failed-code', 'probe.install-failed-code', {
+        exit: installStep.exitCode ?? 'unknown',
+        code,
+        detail: spoken,
+      })
+      remediation.push({ kind: 'report', messageId: 'remediation.report', note: 'report the install failure to the plugin author with the probe artifact' })
+    } else {
+      block('probe-install-failed', 'probe.install-failed', {
+        step: 'install',
+        exit: installStep.exitCode ?? 'unknown',
+      })
+      remediation.push({ kind: 'report', messageId: 'remediation.report', note: 'report the install failure to the plugin author with the probe artifact' })
+    }
   } else if (installStep !== undefined && installStep.status === 'passed') {
     evidence.push({
       id: 'probe-install',

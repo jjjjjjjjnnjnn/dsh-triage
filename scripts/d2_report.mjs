@@ -161,20 +161,32 @@ function wilson(successes, total) {
 }
 
 const boots = measured.map((run) => run.bootMs).filter((value) => typeof value === 'number').sort((left, right) => left - right)
-const bootWithinBudget = measured.filter((run) => run.bootMs !== null && run.bootMs <= bootBudgetMs).length
+/**
+ * The 20s budget is a promise about a REAL candidate's probe, so it gates on real runs only
+ * (R19, HUMAN-signed: `audit/SIGNOFF.md`). A never-settling fixture costs `boot + 15s settle`
+ * ≈ 21s by construction — it can never fit, and counting it would make the gate unpassable for
+ * a reason that says nothing about the product. Fixtures are still measured and reported
+ * separately; the check does not become a 90% rule for real runs, it stays "all of them".
+ */
+const realSampled = realRuns.filter((run) => run.bootMs !== null)
+const realWithinBudget = realSampled.filter((run) => run.bootMs !== null && run.bootMs <= bootBudgetMs).length
+const fixturesOverBudget = measured.filter((run) => !run.real && run.bootMs !== null && run.bootMs > bootBudgetMs)
 const sampled = measured.filter((run) => run.bootMs !== null).length
+/** Descriptive only: every sampled run inside the budget, real or not (the gate ignores this). */
+const withinBudgetAll = measured.filter((run) => run.bootMs !== null && run.bootMs <= bootBudgetMs).length
 
 /**
  * A run "reliably measured" when it produced an artifact, cleaned up, stayed inside the boot
  * budget (when it sampled) and ended in a stated conclusion. `unknown` counts: refusing to
- * judge a tree that never settled is a correct answer, not a broken run.
+ * judge a tree that never settled is a correct answer, not a broken run. The budget term only
+ * applies to real candidates, for the same reason as above.
  */
 const reliable = measured.filter(
   (run) =>
     run.hasArtifact &&
     run.cleanupOk &&
     run.conclusion !== null &&
-    (run.bootMs === null || run.bootMs <= bootBudgetMs),
+    (run.bootMs === null || !run.real || run.bootMs <= bootBudgetMs),
 )
 const reliabilityRate = measured.length === 0 ? 0 : reliable.length / measured.length
 
@@ -209,8 +221,15 @@ const checks = [
   },
   {
     id: 'boot-budget',
-    ok: sampled === bootWithinBudget,
-    detail: `${bootWithinBudget}/${sampled} sampled run(s) within ${bootBudgetMs}ms`,
+    // Real runs only (R19, HUMAN-signed): see the comment above `realSampled`.
+    ok: realSampled.length === realWithinBudget,
+    detail:
+      `${realWithinBudget}/${realSampled.length} real sampled run(s) within ${bootBudgetMs}ms` +
+      (fixturesOverBudget.length === 0
+        ? ''
+        : ` · ${fixturesOverBudget.length} fixture(s) over budget by construction (${fixturesOverBudget
+            .map((run) => `${run.label}=${run.bootMs}ms`)
+            .join(', ')})`),
   },
   {
     id: 'probe-reliability',
@@ -238,9 +257,11 @@ const artifact = {
   },
   definitions: {
     probe_reliability:
-      'a run counts when it produced an artifact, the sandbox was removed, every port it used is closed, the boot stayed inside the budget, and the run stated a conclusion (unknown included: refusing to judge an unsettled tree is an answer)',
+      'a run counts when it produced an artifact, the sandbox was removed, every port it used is closed, the boot stayed inside the budget (real runs only — see R19 below), and the run stated a conclusion (unknown included: refusing to judge an unsettled tree is an answer)',
     real_pass_rate: 'go / (go + blocked) over real runs; unknown is listed separately and never folded into either side',
     failure_shape: 'conclusion + reason messageId (+ the row phase when the reason names one)',
+    boot_budget:
+      'the 20s boot budget gates REAL candidates only. A fixture built to never settle costs boot + the 15s settle timeout ≈ 21s by construction, so counting it would fail the gate for a reason that says nothing about a candidate. Fixture timings are published below and never hidden (R19, HUMAN-signed)',
   },
   denominator: {
     runs: measured.length,
@@ -270,7 +291,11 @@ const artifact = {
   timing: {
     sampled,
     budget_ms: bootBudgetMs,
-    within_budget: bootWithinBudget,
+    // Two scopes on purpose: what the gate reads, and what actually happened (R19).
+    real_sampled: realSampled.length,
+    real_within_budget: realWithinBudget,
+    fixtures_over_budget: fixturesOverBudget.map((run) => ({ label: run.label, boot_to_sample_ms: run.bootMs })),
+    within_budget: withinBudgetAll,
     min: boots[0] ?? null,
     median: boots.length === 0 ? null : boots[Math.floor(boots.length / 2)],
     max: boots.at(-1) ?? null,

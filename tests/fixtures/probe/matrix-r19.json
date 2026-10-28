@@ -1,0 +1,135 @@
+{
+  "note": "R19 D2 denominator: the R18 ten (unchanged, so the batch is comparable) plus three NEW pinned npm plugins chosen for shapes the batch did not have yet — a settings-only UI (0.2MB), a plugin that declares ONLY `engines.dsh` (no peerDependencies, so admission takes the engines branch), and an IM channel with `dsh.compatibility` (the secondary channel). No expectation is predicted for the real ones: their verdict is the measurement. All MIT, no install scripts, installed into a throwaway DSH_HOME and deleted afterwards; nothing is vendored (ADR-0004). The four fixture shapes and three synthetic failures are unchanged and marked real:false — they never count toward the denominator.",
+  "candidates": [
+    {
+      "label": "real-status-rotator",
+      "spec": "dsh-status-rotator@0.38.0",
+      "shape": "real-ui-status",
+      "real": true
+    },
+    {
+      "label": "real-dream-skin",
+      "spec": "dsh-dream-skin@10.28.1",
+      "shape": "real-ui-theme",
+      "real": true
+    },
+    {
+      "label": "real-claude-style",
+      "spec": "dsh-claude-style@0.19.5",
+      "shape": "real-ui-theme",
+      "real": true
+    },
+    {
+      "label": "real-free-search",
+      "spec": "dsh-free-search@0.9.17",
+      "shape": "real-tool-provider",
+      "real": true
+    },
+    {
+      "label": "real-dsh-cron",
+      "spec": "@aiwayds/dsh-cron@0.6.1",
+      "shape": "real-scheduler",
+      "real": true
+    },
+    {
+      "label": "real-plugin-notify",
+      "spec": "@goodandready/dsh-plugin-notify@0.4.7",
+      "shape": "real-notification",
+      "real": true
+    },
+    {
+      "label": "real-archive-manager",
+      "spec": "@michengai/dsh-archive-manager@1.1.18",
+      "shape": "real-workspace",
+      "real": true
+    },
+    {
+      "label": "real-mcp-connector",
+      "spec": "dsh-mcp-connector@0.2.83",
+      "shape": "real-mcp",
+      "real": true
+    },
+    {
+      "label": "real-remote",
+      "spec": "dsh-remote@0.8.53",
+      "shape": "real-remote",
+      "real": true
+    },
+    {
+      "label": "real-git-worktree",
+      "spec": "@laoyuehanni/dsh-git-worktree@0.4.13",
+      "shape": "real-git",
+      "real": true
+    },
+    {
+      "label": "real-skills-manager",
+      "spec": "@lolkda/dsh-skills-manager@0.3.1",
+      "shape": "real-settings-only",
+      "real": true
+    },
+    {
+      "label": "real-unlag",
+      "spec": "dsh-unlag@1.12.5",
+      "shape": "real-desktop-refresh-engines-only",
+      "real": true
+    },
+    {
+      "label": "real-qqbot",
+      "spec": "@tencent-connect/dsh-qqbot@0.5.3",
+      "shape": "real-im-channel-compat",
+      "real": true
+    },
+    {
+      "label": "fixture-no-row",
+      "spec": "tests/fixtures/probe/no-row-plugin",
+      "expect": "blocked",
+      "shape": "fixture-no-observable-row",
+      "real": false
+    },
+    {
+      "label": "fixture-apply-fail",
+      "spec": "tests/fixtures/probe/throw-plugin",
+      "expect": "blocked",
+      "shape": "fixture-row-failed",
+      "real": false
+    },
+    {
+      "label": "fixture-import-fail",
+      "spec": "tests/fixtures/probe/broken-plugin",
+      "expect": "blocked",
+      "shape": "fixture-import-error",
+      "real": false
+    },
+    {
+      "label": "fixture-slow-overrun",
+      "spec": "tests/fixtures/probe/slow-overrun-plugin",
+      "expect": "unknown",
+      "shape": "fixture-tree-not-settled",
+      "real": false,
+      "note": "R19: this fixture's module import takes 20s on purpose, so it never settles. Its readiness window is bounded at 8s (below the 20s boot budget) because the thing being demonstrated is 'an unsettled tree must not be judged', not 'the probe may take 22s'. With the default 20s window this run lands at ~22s and would be counted as a boot-budget breach by `d2_report` (R19 finding: the 20s budget and the 20s unsettled window overlap — see BS-28 / T-311).",
+      "unsettledTimeoutMs": 8000
+    },
+    {
+      "label": "synthetic-missing",
+      "spec": "dsh-plugin-triage-missing@0.0.1",
+      "expect": "blocked",
+      "shape": "synthetic-missing-package",
+      "real": false
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "spec": "dsh-plugin-model-proxy@99.99.99",
+      "expect": "blocked",
+      "shape": "synthetic-bogus-version",
+      "real": false
+    },
+    {
+      "label": "synthetic-private-registry",
+      "spec": "dsh-cost-meter@1.9.41",
+      "expect": "blocked",
+      "npmrcRegistry": "http://127.0.0.1:1/",
+      "shape": "synthetic-unreachable-registry",
+      "real": false
+    }
+  ]
+}

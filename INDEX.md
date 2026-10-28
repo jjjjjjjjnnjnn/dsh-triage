@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R18 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R19 (2026-10-28)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -26,8 +26,8 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R18.md`（最新：D2 判定 + R17 夹具纠错）· `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md`· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
-| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R18 起 **104 步 / 91 产物**） |
+| **审核报告** | `audit/AUDIT_2026-10-28_R19.md`（最新：T-310 安装归因 / T-406 面板 v1 / D2 扩容与预算口径）· `audit/AUDIT_2026-10-27_R18.md` · `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R19：安装失败能点名 `ERR_PNPM_*` + `serve --audit` 与 CLI 同源（逐字节负对照）+ D2 分母 13、预算口径收窄（HUMAN 签）；R18：D2 判定工具 + 慢夹具纠错；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
+| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R19 起 **109 步 / 95 产物**） |
 | **授权/签署台账** | `audit/SIGNOFF.md` | 谁授权 / 谁执行出结论 / HUMAN 未逐条复核的部分，三者分列；冻结区改动必须有对应条目 |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -46,17 +46,17 @@
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |
 | 判断引擎 | `packages/core/src/`（admission / env / ledger / verdict / compat-channel / version-drift / duplicates / inventory） | 纯函数、零网络、可离线；`compat-channel` 与 `version-drift` 只出次要证据 |
 | 信号适配 | `packages/signals/src/`（npm / dsh.so / local-artifacts） | 每个信号带 tier + 出处 |
-| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/render.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→render→inventory→cleanup` 七步；判定是纯函数（`judgeProbe` / `judgeRender`），I/O 全部注入；**R15 起 `client-rendered` 可测**（真浏览器 + CDP；无浏览器 → `unmeasured`），`namespace-diff` 仍 `unmeasured`（T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；**R17 起端口由 `findFreePort()` 向 OS 申请**（`--readiness-timeout` / `--unsettled-timeout` 可配），产物记 `sandbox.port_origin` |
+| **probe 执行器（M3 / T-301）** | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/render.ts` · `scripts/record_probe.mjs` · `packages/probe/hooks/inventory-hook.mjs` | `runtime→install→boot→http→render→inventory→cleanup` 七步；判定是纯函数（`judgeProbe` / `judgeRender`），I/O 全部注入；**R15 起 `client-rendered` 可测**（真浏览器 + CDP；无浏览器 → `unmeasured`），`namespace-diff` 仍 `unmeasured`（T-303）；默认 dry-run，`--execute --dsh-main` 才真跑；**R17 起端口由 `findFreePort()` 向 OS 申请**（`--readiness-timeout` / `--unsettled-timeout` 可配），产物记 `sandbox.port_origin`；**R19 起安装失败给原因**：`installDiagnosis`（launcher 优先 / 诊断日志兜底 / `dsh:` 行不算原因 / URL 去凭据与查询串）→ `install.diagnosis{code,key_line,source}` |
 | **「慢 ≠ 坏」（R17 / T-308）** | `packages/probe/src/host.ts` · `packages/probe/src/exec.ts` · `packages/probe/hooks/inventory-hook.mjs` · `tests/fixtures/probe/slow-plugin` | 判定把读数分成 `valid`、`unsettled`、`unreadable`：只有 valid（读到 + 无 error + `settled:true`）能出 `blocked`；候选行仍 transient（pending、loading）、hook 的 `inactive context`、我们自己的端口绑不上 → `unknown` + `missing.inventory`/`missing.probe`；launcher 的 `startup failed` 照抄原文进 `blocked` 并提前收敛。证据 `data/results/probe-slow-normal-2026-10-27T17-00-00.000Z.json`（慢=go）· `data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json`（R16 的 blocked → 现在 go） |
 | **白屏判定（T-302）** | `packages/probe/src/render.ts` · `scripts/record_render_fixture.mjs` | `judgeRender` 判「挂载点有子节点 + 可见文本 ≥20 字符 + 非 loading」；`findBrowser`（显式/env/常见路径）；`renderUrl` 用无头 Chromium + CDP（`--dump-dom` 在本机不可用）；红/绿对照产物 `data/results/render-fixture-*.json` |
 | **M3 probe 契约** | `docs/specs/M3-probe.md` | 实测事实 **F1–F30**（+R17 的端口排除段、fiber unload、startup 诊断、换端口后 go）+ 计时契约（boot→sample ≤20s；settled 就绪 5s 不变，unsettled 20s 只能出 unknown）+ 断言→结论映射 + **25 条负对照** |
 | **渲染后端选择** | `docs/adr/0005-render-backends.md` | 系统浏览器 + CDP 是唯一能给 `passed` 的后端；DOM 模拟/应用内上报/静态检查的定位与代价；CI 真浏览器作业 |
 | **控制面设计（M4）** | `docs/specs/M4-surface.md` | `dsh-triage serve` 本地面板 / DSH 设置面板（`dsh.client` + slots，row id = settings 命名空间）/ SEA 单文件 exe；三者都只展示与触发，不新增判据 |
-| **本地证据面板（T-405）** | `packages/plugin/src/serve.ts` + `scripts/record_serve_smoke.mjs` | `dsh-triage serve [--port N] [--results DIR] [--allow-execute]`：零依赖、只绑 127.0.0.1、token + HttpOnly cookie、跨源 403、POST 默认 403（`--allow-execute` 也只回 501）；列出 `data/results` 全部产物与 sha256 |
+| **本地证据面板（T-405 / T-406）** | `packages/plugin/src/serve.ts` + `scripts/record_serve_smoke.mjs` | `dsh-triage serve [--port N] [--results DIR] [--audit] [--allow-execute]`：零依赖、只绑 127.0.0.1、token + HttpOnly cookie、跨源 403、POST 默认 403（`--allow-execute` 也只回 501）；列出 `data/results` 全部产物与 sha256。**R19（T-406）** 新增只读 audit 路由（默认关闭，关闭时 501、读不到 profile 时报 409）与页面「当前组合」区块，数据来自与 CLI **同一份** `loadAuditData()`；冒烟 13/13（`data/results/serve-smoke-2026-10-28T10-20-00.000Z.json`） |
 | **外部候选取用边界** | `docs/adr/0004-external-candidate-boundary.md` | pin 版本 / 临时沙盒 / 不 vendor / 不注入凭据 / 不判安全 / 失败即证据；`vendor-manifest` 只登记 `kind: probe-candidate` 元数据 |
 | 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出；R17 起 boot 事实（`url_printed` / `startup_failed` / `bind_failed_ports` / `error_tail`）在 early return 之前落账 |
-| **D2 分母矩阵** | `scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r18.json` → `data/results/probe-matrix-*.json` | 摘要区分 `real_starts` / `synthetic_failures` / `by_conclusion`；R18 批次 n=17（真实 10 / 夹具 4 / 合成 3，清理 17-17） |
-| **D2 判定（R18）** | `scripts/d2_report.mjs` + `tests/governance/d2-report.test.ts` → `data/results/d2-*.json` | 把矩阵算成可重算报告：**可靠性**（产物 + 清理 + 预算 + 结论）/ **真实通过率**（`go` ÷ (`go` + `blocked`)，带 Wilson 95%）/ 失败形状 / 计时；真实启动 <10 时**拒绝判定**。R18 结果 `data/results/d2-2026-10-27T21-00-00.000Z.json`：可靠性 17/17、真实 10、形状 5、通过 9/10（Wilson 0.596–0.982），`gate.passed=true` |
+| **D2 分母矩阵** | `scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r19.json` → `data/results/probe-matrix-*.json` | 摘要区分 `real_starts` / `synthetic_failures` / `by_conclusion`；**R19 批次 n=20（真实 13 / 夹具 4 / 合成 3，清理 20-20，boot 9.6–21.3s）** |
+| **D2 判定（R18 / R19 复算）** | `scripts/d2_report.mjs` + `tests/governance/d2-report.test.ts` → `data/results/d2-*.json` | 把矩阵算成可重算报告：**可靠性**（产物 + 清理 + 预算 + 结论）/ **真实通过率**（`go` ÷ (`go` + `blocked`)，带 Wilson 95%）/ 失败形状 / 计时；真实启动 <10 时**拒绝判定**。**R19**：真实 13 → 12 `go` / 1 `blocked`（0.923，Wilson 0.667–0.986）、可靠性 20/20、形状 6，`gate.passed=true`（`data/results/d2-2026-10-28T12-10-00.000Z.json`）。**预算口径（HUMAN 签）**：`boot-budget` 只判真实候选，夹具超预算单列 `timing.fixtures_over_budget`（`BS-28`） |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
 | 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约（含 `{占位符}` 完整性）/ SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |
 | 真跑落盘 | `scripts/scan_env.mjs` | 扫本机 profile → `data/results/*.json` + `.sha256` |

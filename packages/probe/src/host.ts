@@ -379,6 +379,136 @@ export interface InstallResult {
    * credentials/query/fragment, and publish at most a few — never the log itself.
    */
   readonly endpoints?: readonly string[]
+  /** The package manager's own reason, when it said one (T-310). */
+  readonly diagnosis: InstallDiagnosis
+}
+
+/**
+ * What the package manager said, not just that it said no (T-310).
+ *
+ * WHY THIS IS NOT `detail`: `detail` is the launcher's last line
+ * (`dsh: plugin command failed; diagnostics: …`), which carries no cause at all. Measured in
+ * R19: the diagnostics log for a pnpm failure contains exactly one line
+ * (`Command failed with exit code 1: pnpm add …`), while the real code
+ * (`ERR_PNPM_IGNORED_BUILDS`) is printed on the launcher's **stderr**. So the extraction
+ * reads both, prefers the launcher, and says which one it used.
+ */
+export interface InstallDiagnosis {
+  /** `ERR_PNPM_*` (or any `ERR_*`) code, or `null` when the output carries none. */
+  readonly code: string | null
+  /** One sanitised line that explains the failure, or `null` when there was nothing to read. */
+  readonly key_line: string | null
+  /** Where the reading came from — a claim about provenance, not a guess. */
+  readonly source: 'launcher' | 'diagnostics-log' | 'none'
+}
+
+const ERROR_CODE = /\bERR_[A-Z0-9_]{2,}\b/
+
+/** One line of package-manager output, stripped of decoration, URLs' secrets and length. */
+export function sanitizeDiagnosisLine(line: string): string {
+  const stripped = line
+    // ANSI colour, then the box-drawing/arrow prefixes pnpm puts on `×`/`╰─▶` lines.
+    .replace(/\u001b\[[0-9;]*m/g, '')
+    .replace(/^[\s>×✖✗╰├│└─▶›—·•]+/u, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  // A private registry URL can carry credentials in the userinfo part …
+  const noUserInfo = stripped.replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi, '$1')
+  // … or a token in the query string. Neither ever belongs in an artifact.
+  const noQuery = noUserInfo.replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\s?#]+)[?#][^\s]*/gi, '$1')
+  return sanitizeLogLine(noQuery).slice(0, 240)
+}
+
+/** Does this line say anything beyond its label? (`Error:` alone does not.) */
+function substantive(text: string): boolean {
+  return text.replace(/[^A-Za-z0-9]/g, '').length >= 8
+}
+
+/**
+ * The line that explains `code`.
+ *
+ * pnpm splits a failure across lines: `Error: ERR_PNPM_IGNORED_BUILDS` names the code, and
+ * the very next lines carry the cause (`Ignored build scripts: …`). Publishing only the code
+ * line would leave the reader with the same dead end as an exit code (R19 measured this).
+ * So: use the code line when it explains itself, otherwise the first explanatory line below
+ * it — never the harness's own `dsh: …` line and never a `help:`/`hint:` line, which are
+ * pointers, not causes.
+ */
+function explanationFor(text: string, code: string): string | null {
+  const lines = text.split(/\r?\n/)
+  const index = lines.findIndex((line) => line.includes(code))
+  if (index === -1) return null
+  const raw = lines[index]
+  if (raw === undefined) return null
+  const codeLine = sanitizeDiagnosisLine(raw)
+  if (substantive(codeLine.replace(code, ''))) return codeLine
+  for (const line of lines.slice(index + 1, index + 9)) {
+    const clean = sanitizeDiagnosisLine(line)
+    if (clean === '') continue
+    // `dsh: plugin command failed; diagnostics: <path>` is the launcher talking about itself:
+    // it names no cause, and taking it would hide the package manager's own sentence (R19:
+    // the missing-package run published exactly that line before this filter existed).
+    if (/^dsh:/i.test(clean)) continue
+    if (/^(help|hint|note|usage)\s*:/i.test(clean)) continue
+    // Either pnpm's `label: detail` shape, or a plain sentence worth reading.
+    if (/^[a-z][a-z ]{0,24}:\s*\S/i.test(clean) || clean.replace(/[^A-Za-z0-9]/g, '').length >= 20) return clean
+  }
+  return codeLine === '' ? null : codeLine
+}
+
+/** First line that reads like an error, else the first line that says anything at all. */
+function firstErrorLine(text: string): string | null {
+  const lines = text.split(/\r?\n/).map(sanitizeDiagnosisLine).filter((line) => line !== '')
+  const loud = lines.find((line) => /\b(error|failed|cannot|unable|refused|denied|ignored)\b/i.test(line))
+  return loud ?? lines[0] ?? null
+}
+
+/**
+ * Pure core of {@link installDiagnosis}: no filesystem, so every rule is testable.
+ *
+ * Order matters and is measured, not assumed: the launcher's own output wins, because the
+ * diagnostics log is a *summary* that drops the code (R19 fact F34).
+ */
+export function diagnosisFromText(input: { launcher: string; log?: string | null }): InstallDiagnosis {
+  const launcher = input.launcher
+  const log = input.log ?? null
+  const launcherCode = ERROR_CODE.exec(launcher)?.[0] ?? null
+  const logCode = log === null ? null : (ERROR_CODE.exec(log)?.[0] ?? null)
+  const code = launcherCode ?? logCode
+  if (code !== null) {
+    const fromLauncher = launcherCode !== null
+    const text = fromLauncher ? launcher : (log ?? '')
+    return {
+      code,
+      key_line: explanationFor(text, code) ?? firstErrorLine(text),
+      source: fromLauncher ? 'launcher' : 'diagnostics-log',
+    }
+  }
+  const keyLine = firstErrorLine(launcher) ?? (log === null ? null : firstErrorLine(log))
+  return {
+    code: null,
+    key_line: keyLine,
+    source: keyLine === null ? 'none' : log !== null && firstErrorLine(launcher) === null ? 'diagnostics-log' : 'launcher',
+  }
+}
+
+/**
+ * Extract the failure reason from a launcher run, reading its diagnostics log when named.
+ *
+ * The log is capped at 64KB and read through the same guard as {@link failureEndpoints}: a
+ * missing log is normal (the install may fail before one is written).
+ */
+export function installDiagnosis(output: string): InstallDiagnosis {
+  const named = /diagnostics:\s*(.+?\.log)/.exec(output)?.[1]
+  let log: string | null = null
+  if (named !== undefined) {
+    try {
+      log = readFileSync(named.trim(), 'utf8').slice(0, 64 * 1024)
+    } catch {
+      log = null
+    }
+  }
+  return diagnosisFromText({ launcher: output, log })
 }
 
 /**
@@ -404,7 +534,16 @@ export function runInstall(input: {
   })
   const text = `${run.stdout ?? ''}${run.stderr ?? ''}`.trim()
   const lastLine = text.split(/\r?\n/).filter((line) => line.trim() !== '').slice(-1)[0] ?? ''
-  return { exitCode: run.status, detail: lastLine.slice(0, 240), endpoints: failureEndpoints(text) }
+  return {
+    exitCode: run.status,
+    detail: lastLine.slice(0, 240),
+    endpoints: failureEndpoints(text),
+    // T-310: the launcher's last line names no cause; this is the line that does. A passing
+    // install has nothing to diagnose — publishing "Already up to date" as a diagnosis would
+    // make a healthy run look like a failed one.
+    diagnosis:
+      run.status === 0 ? { code: null, key_line: null, source: 'none' } : installDiagnosis(text),
+  }
 }
 
 /**

@@ -325,6 +325,17 @@ const artifact = {
     lockfile: installFacts.lockfile,
     // T-305b: which endpoints the package manager actually tried (sanitised in host.ts).
     endpoints: installFacts.endpoints,
+    exit_code: run.steps.find((step) => step.id === 'install')?.exitCode ?? null,
+    // T-310: the reason, not just the exit code. `source` records where it was read from
+    // (R19 fact F34: the diagnostics log drops the code, the launcher stderr keeps it).
+    diagnosis:
+      run.installDiagnosis === null
+        ? null
+        : {
+            code: run.installDiagnosis.code,
+            key_line: run.installDiagnosis.key_line,
+            source: run.installDiagnosis.source,
+          },
   },
   cleanup: {
     removed: run.cleanup.removed,

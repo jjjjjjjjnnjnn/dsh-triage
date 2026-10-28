@@ -52,6 +52,14 @@ import {
 } from '@dsh-triage/core'
 import { buildProbePlan, executeProbe, findFreePort, judgeProbe, probeVerdict } from '@dsh-triage/probe'
 import { discoverLocalArtifacts, fetchPackument } from '@dsh-triage/signals'
+import {
+  auditExitOutcome,
+  auditJsonPayload,
+  auditRedactRoots,
+  loadAuditData,
+  redactedEnv,
+  redactedVerdicts,
+} from './audit-data.js'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
 import {
   candidatePackageName,
@@ -61,7 +69,7 @@ import {
   realProbeDeps,
   sandboxBundles,
 } from './probe-run.js'
-import { startPanel } from './serve.js'
+import { startPanel, type AuditSnapshot } from './serve.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -101,6 +109,8 @@ interface Flags {
   readonly results: string | null
   /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
   readonly allowExecute: boolean
+  /** `serve --audit`: expose `GET /api/audit` (read-only; off by default, and 501 when off). */
+  readonly audit: boolean
   /** `probe --execute --readiness-timeout <ms>`: budget for a settled tree (R17). */
   readonly readinessTimeoutMs: number | null
   /** `probe --execute --unsettled-timeout <ms>`: window for a tree still composing (R17). */
@@ -142,6 +152,7 @@ Flags
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
   --results <dir>       (serve) directory of evidence to display (default: ./data/results)
   --allow-execute       (serve) enable actions; without it the panel is read-only
+  --audit               (serve) expose GET /api/audit (current composition, same engine as the CLI)
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -404,143 +415,28 @@ async function commandAudit(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
   const dshHome = resolveDshHome(flags)
-  const composition = await loadComposition(env, dshHome)
-  const claims = collectClaims(composition, [])
-  const presetDeclarations = collectPresetDeclarations(composition, [])
-  const grouped = groupClaimsBySource(claims)
-  const collisions = findEntryIdCollisions(claims)
-  const artifacts = await discoverLocalArtifacts({ root: env.profileDir })
-  const duplicates = await findDuplicateCopies(env)
-  const duplicateFindings = duplicates.filter((duplicate) => duplicate.kind === 'different-versions')
-  // Resolving rows here is what lets `audit` answer "who put this copy here" for
-  // every row, not only for the denied ones (R8 adversary finding F11).
-  const auditRows = await resolveRows(env, rowTargets(claims))
-  // T-105: `why` and `audit` must reach the SAME row-level admission conclusion. They
-  // already resolved the same rows from the same layers; only `why` judged them, so the
-  // two commands could disagree about the same profile without anyone noticing.
-  const rowVerdicts = verdictsFromRowAdmission({ env, rows: auditRows, generatedAt: stampOf(flags) })
+  // T-406: the collection lives in `audit-data.ts` so `serve` can show the same object.
+  // The text and JSON below are byte-for-byte what they were before the extraction.
+  const loaded = await loadAuditData({
+    env,
+    dshHome,
+    stamp: stampOf(flags),
+    snapshotPath: flags.snapshot,
+    noRedact: flags.noRedact,
+  })
+  if (!loaded.ok) {
+    process.stderr.write(`${loaded.message}\n`)
+    return EXIT_UNAVAILABLE
+  }
+  const data = loaded.data
+  const { grouped, collisions, artifacts, duplicates, duplicateFindings, snapshot, diff, rowVerdicts, inventoryVerdicts, declared } = data
   const rowConclusion = new Map(
     rowVerdicts.map((verdict) => [verdict.subject.name, verdict.conclusion] as const),
   )
 
-  /* --------------------------- runtime inventory --------------------------- */
-
-  let snapshot: InventorySnapshot | null = null
-  let inventoryVerdicts: readonly Verdict[] = []
-  let diff: {
-    readonly missing: readonly { entryId: string; module: string | null }[]
-    readonly undeclared: readonly InventorySnapshot['entries'][number][]
-    readonly ambiguous: readonly { readonly entryId: string; readonly candidates: readonly string[] }[]
-  } = {
-    missing: [],
-    undeclared: [],
-    ambiguous: [],
-  }
-  const declared = claims.map((claim) => ({ entryId: claim.id, module: claim.name }))
-
-  if (flags.snapshot !== null) {
-    const source = flags.noRedact ? flags.snapshot : redactPath(flags.snapshot, [homedir(), resolveDshHome(flags), tmpdir()])
-    let raw: unknown
-    try {
-      raw = JSON.parse(readFileSync(flags.snapshot, 'utf8'))
-    } catch (error) {
-      process.stderr.write(`cannot read snapshot ${source}: ${error instanceof Error ? error.message : String(error)}\n`)
-      return EXIT_UNAVAILABLE
-    }
-    const parsed = parseInventorySnapshot(raw, { source, sampledAt: stampOf(flags), profile: env.profile })
-    if (!parsed.ok) {
-      // A renamed upstream field must fail loudly: silently dropping the layer
-      // would turn "I could not read the phases" into "no problems found".
-      process.stderr.write(`snapshot rejected: ${parsed.error.code} — ${parsed.error.detail}\n`)
-      return EXIT_UNAVAILABLE
-    }
-    snapshot = parsed.value
-    inventoryVerdicts = verdictsFromInventory({ env, snapshot, declared, generatedAt: stampOf(flags) })
-    diff = compareInventory(snapshot, declared)
-  }
-
   if (flags.json) {
-    writeJson({
-      schema_version: 1,
-      command: 'audit',
-      env: safeEnv(flags, env),
-      claims: [...grouped.entries()].map(([source, list]) => ({ source, entries: list })),
-      collisions,
-      localArtifacts: artifacts.map((artifact) => ({
-        path: artifact.path,
-        kind: artifact.kind,
-        bytes: artifact.bytes,
-        note: artifact.note,
-      })),
-      duplicates: duplicates.map((duplicate) => ({
-        name: duplicate.name,
-        kind: duplicate.kind,
-        copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
-      })),
-      preset_declarations: presetDeclarations.map((declaration) => ({
-        preset_id: declaration.presetId,
-        source: declaration.source,
-        row_id: declaration.rowId,
-        rows: declaration.rows.length,
-        ids: declaration.rows.map((row) => row.id).sort((left, right) => left.localeCompare(right)),
-        conditional: declaration.rows.filter((row) => row.enabled === 'conditional').map((row) => row.id),
-      })),
-      rows: auditRows.map((row) => ({
-        row_id: row.rowId,
-        module: row.module,
-        source: row.source,
-        version: row.version,
-        declared_by: (row.declaredBy ?? []).map((origin) => ({ name: origin.name, version: origin.version, field: origin.field })),
-      })),
-      // Same engine as `why`: an e2e test compares these two outputs on one profile.
-      row_verdicts: safeVerdicts(flags, rowVerdicts),
-      inventory:
-        snapshot === null
-          ? null
-          : {
-              sampled_at: snapshot.sampledAt,
-              profile: snapshot.profile,
-              source: snapshot.source,
-              transport: snapshot.transport,
-              management_available: snapshot.managementAvailable,
-              unknown_keys: snapshot.unknownKeys,
-              entries: snapshot.entries.map((entry) => ({
-                entry_id: entry.entryId,
-                module: entry.moduleName,
-                enabled: entry.enabled,
-                phase: entry.fiberPhase,
-              })),
-              presets: snapshot.presets.map((preset) => ({
-                id: preset.id,
-                name: preset.name,
-                is_default: preset.isDefault,
-                broken: preset.broken,
-                rows: preset.rows.map((row) => ({
-                  entry_id: row.entryId,
-                  module: row.moduleName,
-                  enabled: row.enabled,
-                  condition: row.condition,
-                  phase: row.fiberPhase,
-                })),
-              })),
-              declared_without_module: declared.filter((row) => row.module === null).length,
-              missing: diff.missing,
-              ambiguous: diff.ambiguous,
-              undeclared: diff.undeclared.map((entry) => ({
-                entry_id: entry.entryId,
-                module: entry.moduleName,
-                phase: entry.fiberPhase,
-              })),
-              verdicts: safeVerdicts(flags, inventoryVerdicts),
-            },
-      errors: composition.errors,
-    })
-    return collisions.length === 0 &&
-      duplicateFindings.length === 0 &&
-      inventoryVerdicts.every((verdict) => verdict.conclusion === 'go') &&
-      rowVerdicts.every((verdict) => verdict.conclusion === 'go' || verdict.conclusion === 'unknown')
-      ? EXIT_OK
-      : EXIT_FINDINGS
+    writeJson(auditJsonPayload(data, { noRedact: flags.noRedact, roots: auditRedactRoots(dshHome) }))
+    return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
   }
 
   process.stdout.write(`capability ledger · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`)
@@ -665,12 +561,7 @@ async function commandAudit(flags: Flags): Promise<number> {
       }
     }
   }
-  return collisions.length === 0 &&
-    duplicateFindings.length === 0 &&
-    inventoryVerdicts.every((verdict) => verdict.conclusion === 'go') &&
-    rowVerdicts.every((verdict) => verdict.conclusion === 'go' || verdict.conclusion === 'unknown')
-    ? EXIT_OK
-    : EXIT_FINDINGS
+  return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
 }
 
 async function commandProbe(flags: Flags, spec: string | undefined): Promise<number> {
@@ -795,11 +686,37 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
  */
 async function commandServe(flags: Flags): Promise<number> {
   const resultsDir = flags.results === null ? resolve(process.cwd(), 'data/results') : resolve(flags.results)
+  const dshHome = resolveDshHome(flags)
+  // T-406: `--audit` is explicit. Without it the panel still works (artifacts only) and
+  // `/api/audit` answers 501 — the panel never silently "reads nothing" and calls it clean.
+  const audit = flags.audit
+    ? async (): Promise<AuditSnapshot> => {
+        const loadedEnv = await loadEnv({ dshHome, profile: flags.profile })
+        if (!loadedEnv.ok) {
+          return { ok: false, message: `cannot read the profile: ${loadedEnv.error.code} — ${loadedEnv.error.detail}` }
+        }
+        const loaded = await loadAuditData({
+          env: loadedEnv.value,
+          dshHome,
+          // The panel answers "what is true now", so the stamp is the request time; the CLI
+          // keeps `--stamp` for reproducible output.
+          stamp: new Date().toISOString(),
+          snapshotPath: null,
+          noRedact: false,
+        })
+        if (!loaded.ok) return { ok: false, message: loaded.message }
+        return {
+          ok: true,
+          payload: auditJsonPayload(loaded.data, { noRedact: false, roots: auditRedactRoots(dshHome) }),
+        }
+      }
+    : null
   const panel = await startPanel({
     resultsDir,
     port: flags.port ?? 0,
     allowExecute: flags.allowExecute,
     locale: flags.locale,
+    audit,
   })
   const readOnly = !flags.allowExecute
   if (flags.json) {
@@ -884,32 +801,6 @@ function collectClaims(
   return claims
 }
 
-/**
- * Rows a deployment's preset patch files name, kept out of the loader-tree claims.
- *
- * They are not entries: the loader never mounts them, a preset composition does. Mixing
- * them in would both invent "conflicting definitions" (the same row id legitimately
- * appears in the tree *and* in a preset) and make the declared/runtime diff meaningless.
- */
-function collectPresetDeclarations(
-  composition: Awaited<ReturnType<typeof loadComposition>>,
-  errors: string[],
-): readonly PresetDeclaration[] {
-  const out: PresetDeclaration[] = []
-  for (const layer of composition.layers) {
-    for (const file of layer.patchFiles) {
-      if (file.scope !== 'preset' || file.text === null) continue
-      const source = `bundle:${layer.name}/${file.relative}`
-      const parsed = parsePatchYaml(file.text)
-      if (!parsed.ok) {
-        errors.push(`${source}: ${parsed.error.code} — ${parsed.error.detail}`)
-        continue
-      }
-      out.push(...extractPresetDeclarations(parsed.value, source))
-    }
-  }
-  return out
-}
 
 function exitFor(flags: Flags, verdicts: readonly Verdict[]): number {
   if (!flags.strict) return EXIT_OK
@@ -942,13 +833,13 @@ function writeJson(payload: unknown): void {
  */
 function safeEnv(flags: Flags, env: EnvFingerprint): EnvFingerprint {
   if (flags.noRedact) return env
-  return redactEnv(env, [homedir(), resolveDshHome(flags)])
+  return redactedEnv(env, { noRedact: false, roots: [homedir(), resolveDshHome(flags)] })
 }
 
 function safeVerdicts(flags: Flags, verdicts: readonly Verdict[]): readonly Verdict[] {
   if (flags.noRedact) return verdicts
   const roots = [homedir(), resolveDshHome(flags)]
-  return verdicts.map((verdict) => redactVerdict(verdict, roots))
+  return redactedVerdicts(verdicts, { noRedact: false, roots })
 }
 
 function parseArgs(argv: readonly string[]): Parsed | null {
@@ -971,6 +862,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let port: number | null = null
   let results: string | null = null
   let allowExecute = false
+  let audit = false
   let readinessTimeoutMs: number | null = null
   let unsettledReadinessMs: number | null = null
 
@@ -1068,6 +960,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--allow-execute':
         allowExecute = true
         break
+      case '--audit':
+        audit = true
+        break
       case '--readiness-timeout': {
         const value = takeValue()
         if (value === null) return null
@@ -1095,7 +990,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, readinessTimeoutMs, unsettledReadinessMs }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

@@ -103,6 +103,42 @@
       "integrity": "sha512-IPRi0qMWVmVDA1sOtkJ9moXTh8JCisNefa+4AlB53B5MbbB3/8jfAH/d3xR1IzMv234xdvvnQxk4xxPAPP5BAg==",
       "commercial_ok": true,
       "recorded_at": "2026-10-27"
+    },
+    {
+      "id": "probe-candidate-skills-manager",
+      "kind": "probe-candidate",
+      "name": "@lolkda/dsh-skills-manager@0.3.1",
+      "source": "https://registry.npmjs.org/@lolkda/dsh-skills-manager/-/dsh-skills-manager-0.3.1.tgz",
+      "license": "MIT",
+      "used_for": "R19 D2 分母：settings-only UI（0.2MB，最小候选）的形状",
+      "usage": "reference-only, never vendored：只在临时沙盒 DSH_HOME 里执行一次，源码不进仓；产物只记元数据（ADR-0004）",
+      "integrity": "sha512-CqRCGGd4/hwWhOIMCVjUKkGpJ1znb3UceTZLCnFuMXanXQ4wUlGAfNj565btGkZTHL4Nke4qS0w/opBzvTwTOQ==",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-28"
+    },
+    {
+      "id": "probe-candidate-unlag",
+      "kind": "probe-candidate",
+      "name": "dsh-unlag@1.12.5",
+      "source": "https://registry.npmjs.org/dsh-unlag/-/dsh-unlag-1.12.5.tgz",
+      "license": "MIT",
+      "used_for": "R19 D2 分母：只声明 `engines.dsh`（无 peerDependencies）的 admission 分支形状",
+      "usage": "reference-only, never vendored：同上",
+      "integrity": "sha512-eJwbdm/R0cLJS7M38ffA43csMouml++X05j3iR9Y/xDIlkkqr+tlInk2wjsyoM5FkqqDsScsGB1Jn46+ZJizHA==",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-28"
+    },
+    {
+      "id": "probe-candidate-qqbot",
+      "kind": "probe-candidate",
+      "name": "@tencent-connect/dsh-qqbot@0.5.3",
+      "source": "https://registry.npmjs.org/@tencent-connect/dsh-qqbot/-/dsh-qqbot-0.5.3.tgz",
+      "license": "MIT",
+      "used_for": "R19 D2 分母：IM 通道形状 + `dsh.compatibility` 次要通道",
+      "usage": "reference-only, never vendored：同上",
+      "integrity": "sha512-F1jwH2w/KB1QgxBW2M+DyBDaw6oitanEK9qevWwdR3Z9oLagnIVYDEuu8YyCW5DwISAqECB3PSqgdFC+o8QDVg==",
+      "commercial_ok": true,
+      "recorded_at": "2026-10-28"
     }
   ]
 }

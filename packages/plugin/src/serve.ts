@@ -35,7 +35,26 @@ export interface ServeOptions {
   readonly locale?: 'en' | 'zh'
   /** Reserved for M4-a: allow `POST /api/probe` to actually run a probe. */
   readonly allowExecute?: boolean
+  /**
+   * T-406: the current composition, as the `audit` engine sees it.
+   *
+   * Injected rather than imported on purpose: the panel stays a *display* layer, and
+   * "which home, which profile, which stamp" is the CLI's decision, not the server's.
+   * `null`/absent means `/api/audit` answers **501** — never a 200 with an empty list,
+   * because "not enabled" and "nothing to report" must not look alike.
+   */
+  readonly audit?: (() => Promise<AuditSnapshot>) | null
 }
+
+/**
+ * One `audit` run, in the two shapes the panel can display.
+ *
+ * The payload is the exact object `dsh-triage audit --json` prints, so the panel and the CLI
+ * cannot disagree without someone editing the engine (T-406's acceptance rule).
+ */
+export type AuditSnapshot =
+  | { readonly ok: true; readonly payload: Record<string, unknown> }
+  | { readonly ok: false; readonly message: string }
 
 export interface ArtifactSummary {
   readonly name: string
@@ -141,15 +160,25 @@ function readString(value: Record<string, unknown> | null, path: readonly string
 
 export function createPanelServer(options: ServeOptions): PanelServer {
   const token = randomBytes(18).toString('base64url')
-  const host = options.host ?? '127.0.0.1'
   const allowExecute = options.allowExecute === true
+  const context: HandlerContext = {
+    resultsDir: options.resultsDir,
+    token,
+    allowExecute,
+    locale: options.locale ?? 'zh',
+    audit: options.audit ?? null,
+  }
 
   const server = createServer((request, response) => {
-    try {
-      handle(request, response, { resultsDir: options.resultsDir, token, allowExecute, locale: options.locale ?? 'zh' })
-    } catch (error) {
+    // `handle` is async since T-406 (the audit route reads a profile); a rejected promise
+    // must become a 500, not an unhandled rejection that kills the panel.
+    handle(request, response, context).catch((error: unknown) => {
+      if (response.headersSent) {
+        response.end()
+        return
+      }
       sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
-    }
+    })
   })
 
   // Port 0 is resolved on listen; the URL is filled in by `startPanel`.
@@ -172,9 +201,10 @@ interface HandlerContext {
   readonly token: string
   readonly allowExecute: boolean
   readonly locale: 'en' | 'zh'
+  readonly audit: (() => Promise<AuditSnapshot>) | null
 }
 
-function handle(request: IncomingMessage, response: ServerResponse, context: HandlerContext): void {
+async function handle(request: IncomingMessage, response: ServerResponse, context: HandlerContext): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1')
 
   // A panel that answers a browser on any other origin is a CSRF gadget; refuse loudly.
@@ -257,7 +287,29 @@ function handle(request: IncomingMessage, response: ServerResponse, context: Han
   }
 
   if (url.pathname === '/api/health') {
-    sendJson(response, 200, { ok: true, readOnly: !context.allowExecute, resultsDir: context.resultsDir })
+    sendJson(response, 200, {
+      ok: true,
+      readOnly: !context.allowExecute,
+      resultsDir: context.resultsDir,
+      audit: context.audit !== null,
+    })
+    return
+  }
+
+  if (url.pathname === '/api/audit') {
+    if (context.audit === null) {
+      // 501, not 200 with an empty ledger: "the route is off" is information the user needs.
+      sendJson(response, 501, { error: 'audit is not enabled; restart the panel with `dsh-triage serve --audit`' })
+      return
+    }
+    const snapshot = await context.audit()
+    if (!snapshot.ok) {
+      // Same sentence the CLI would print on stderr, and a status that is not 200: a profile
+      // that cannot be read must never render as "no findings".
+      sendJson(response, 409, { error: snapshot.message })
+      return
+    }
+    sendJson(response, 200, snapshot.payload)
     return
   }
 
@@ -318,6 +370,9 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
           hash: 'sha256',
           pick: '点一行看详情',
           readOnly: '只读模式',
+          composition: '当前组合（audit，与 CLI 同一个引擎）',
+          compositionOff: '未启用 /api/audit：用 `dsh-triage serve --audit` 重启面板才显示当前组合',
+          compositionFailed: '读不到当前组合',
         }
       : {
           title: 'Triage · evidence panel',
@@ -332,6 +387,9 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
           hash: 'sha256',
           pick: 'Pick a row to see the payload',
           readOnly: 'read-only',
+          composition: 'Current composition (audit, same engine as the CLI)',
+          compositionOff: '/api/audit is not enabled: restart with `dsh-triage serve --audit` to see the current composition',
+          compositionFailed: 'the composition could not be read',
         }
   return `<!doctype html>
 <html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -349,12 +407,18 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
   tbody tr { cursor:pointer; } tbody tr:hover { background:#8881; }
   code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; }
   #detail { margin-top:18px; }
+  #composition { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:14px; }
+  #composition h2 { font-size:13px; margin:0 0 6px; color:var(--muted); }
   pre { background:#8881; padding:12px; border-radius:8px; overflow:auto; max-height:60vh; }
   .ok { color:#2b8a3e; } .bad { color:#c92a2a; } .warn { color:#e8590c; } .unknown { color:#868e96; }
 </style></head>
 <body>
   <h1>${copy.title}</h1>
   <p class="lede">${copy.lede}</p>
+  <section id="composition">
+    <h2>${copy.composition}</h2>
+    <div id="composition-body" class="badge" data-off="${copy.compositionOff}" data-failed="${copy.compositionFailed}">…</div>
+  </section>
   <div class="bar">
     <button id="refresh">${copy.refresh}</button>
     <span class="badge" id="mode">${copy.readOnly}</span>
@@ -399,7 +463,42 @@ async function show(name) {
     esc(JSON.stringify(data.payload ?? data, null, 2)) + '</pre>';
 }
 document.getElementById('refresh').onclick = load;
+/**
+ * T-406: the current composition, straight from /api/audit.
+ *
+ * Three answers are kept apart on purpose: disabled (501), unreadable (409 + message), and a
+ * real ledger. Collapsing them would let a broken profile look like a clean one.
+ */
+async function loadAudit() {
+  const body = document.getElementById('composition-body');
+  let response;
+  try {
+    response = await fetch('/api/audit');
+  } catch (error) {
+    body.textContent = body.dataset.failed + ': ' + error.message;
+    return;
+  }
+  if (response.status === 501) { body.textContent = body.dataset.off; return; }
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    body.textContent = body.dataset.failed + ': ' + (detail.error ?? response.status);
+    return;
+  }
+  const data = await response.json();
+  const verdicts = data.row_verdicts ?? [];
+  const counts = {};
+  for (const verdict of verdicts) counts[verdict.conclusion] = (counts[verdict.conclusion] ?? 0) + 1;
+  const parts = [
+    'dsh ' + ((data.env ?? {}).dsh ?? 'unknown'),
+    'profile ' + ((data.env ?? {}).profile ?? 'unknown'),
+    verdicts.length + ' rows',
+  ];
+  for (const key of ['blocked', 'risky', 'unknown', 'go']) if (counts[key]) parts.push(key + ' ' + counts[key]);
+  parts.push('collisions ' + ((data.collisions ?? []).length));
+  body.textContent = parts.join(' · ');
+}
 load();
+loadAudit();
 </script>
 </body></html>`
 }

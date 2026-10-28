@@ -140,6 +140,38 @@ test('a run over the boot budget fails the gate', () => {
   })
 })
 
+test('a never-settling fixture over budget does not fail the gate, and is never hidden', () => {
+  withTempDir((dir) => {
+    const runs = [
+      ...Array.from({ length: 10 }, (_unused, index) => matrixRun({ label: `real-${index}`, real: true, conclusion: 'go', bootMs: 7000 })),
+      // A fixture that never settles costs boot + the 15s settle timeout ≈ 21s by construction.
+      matrixRun({
+        label: 'fixture-slow-overrun',
+        real: false,
+        conclusion: 'unknown',
+        bootMs: 21_300,
+        reasons: [{ severity: 'warn', messageId: 'probe.tree-not-settled' }],
+      }),
+      matrixRun({ label: 'fixture-apply-fail', real: false, conclusion: 'blocked', bootMs: 10_300, reasons: [{ severity: 'block', messageId: 'probe.row-inactive', phase: 'failed' }] }),
+      matrixRun({ label: 'fixture-no-row', real: false, conclusion: 'blocked', bootMs: 13_700, reasons: [{ severity: 'block', messageId: 'probe.row-missing' }] }),
+      matrixRun({ label: 'fixture-build-refused', real: false, conclusion: 'blocked', bootMs: 2_100, reasons: [{ severity: 'block', messageId: 'probe.install-build-refused' }] }),
+      matrixRun({ label: 'fixture-bad-version', real: false, conclusion: 'blocked', bootMs: null, reasons: [{ severity: 'block', messageId: 'probe.install-failed-code' }] }),
+    ]
+    const path = join(dir, 'probe-matrix-2026-10-27T20-00-00.000Z.json')
+    writeFileSync(path, `${JSON.stringify({ generated_at: STAMP, plan: { path: 'x' }, runs }, null, 2)}\n`, 'utf8')
+    run(['--matrix', path, '--out', dir, '--stamp', STAMP, '--json'])
+    const report = JSON.parse(readFileSync(join(dir, `d2-${STAMP.replaceAll(':', '-')}.json`), 'utf8'))
+    const budget = report.gate.checks.find((item: { id: string }) => item.id === 'boot-budget')
+    assert.equal(budget.ok, true, 'the budget gates real candidates, not a fixture built to overrun it')
+    assert.match(budget.detail, /10\/10 real/)
+    assert.match(budget.detail, /fixture-slow-overrun=21300ms/, 'the overrun is published, not swept away')
+    assert.deepEqual(report.timing.fixtures_over_budget, [{ label: 'fixture-slow-overrun', boot_to_sample_ms: 21_300 }])
+    assert.equal(report.timing.within_budget, 13, 'the descriptive count still includes every run')
+    assert.equal(report.probe_reliability.rate, 1, 'a fixture over budget is not an unreliable run')
+    assert.equal(report.gate.passed, true)
+  })
+})
+
 test('info reasons are evidence, not failure shapes', () => {
   withTempDir((dir) => {
     const runs = Array.from({ length: 10 }, (_unused, index) =>

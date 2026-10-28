@@ -1,0 +1,9 @@
+dsh: initialized profile web at <sandbox>\profiles\web
+Error: ERR_PNPM_IGNORED_BUILDS
+
+  × adding a new package
+  ╰─▶ Ignored build scripts: @aiwayds/dsh-cron@0.6.1
+  help: Run "pnpm approve-builds" to pick which dependencies should be allowed
+        to run scripts.
+
+dsh: plugin command failed; diagnostics: <sandbox>\profiles\web\.plugin-manager\logs\operation-AFREKD\pnpm.log

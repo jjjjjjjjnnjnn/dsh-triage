@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-28T09:30:00.000Z",
+  "label": "real-dsh-cron",
+  "expectation": "blocked",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "@aiwayds/dsh-cron@0.6.1",
+    "package": "@aiwayds/dsh-cron",
+    "kind": "registry",
+    "resolved": {
+      "version": "0.6.1",
+      "claim": "registry-metadata (not verified against the tarball)",
+      "license": "MIT",
+      "unpacked_size": 217015,
+      "integrity": "sha512-Y8wd1QzHRrjStvdeLeMahfLBDhWDykjOXsx4K1cd9m1n8eg2NNnyDll2cjgpoNuCybbcKrgGERiVxjVSdjTdhg==",
+      "tarball": "https://registry.npmjs.org/@aiwayds/dsh-cron/-/dsh-cron-0.6.1.tgz",
+      "deprecated": null,
+      "dependencies": 0
+    }
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cron-0.6.1-59e432fe",
+    "profile": "web",
+    "port_origin": "allocated",
+    "port": 60330,
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "preinit": null
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 130,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "install",
+      "status": "failed",
+      "ms": 1982,
+      "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\dsh-cron-0.6.1-59e432fe\\profiles\\web\\.plugin-manager\\logs\\operation-MXkvoW\\pnpm.log",
+      "exitCode": 1
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 41,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": 1982,
+    "bootToSampleMs": null,
+    "httpMs": null,
+    "renderMs": null,
+    "cleanupMs": 41
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "failed",
+      "detail": "no sample"
+    },
+    {
+      "id": "http-served",
+      "status": "unmeasured",
+      "detail": "not attributable: the inventory reading was unreadable"
+    },
+    {
+      "id": "inventory-active",
+      "status": "unmeasured",
+      "detail": "no settled reading (unreadable)"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "unmeasured",
+      "detail": "render check not requested"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": null,
+    "entries": null,
+    "wait_ms": null,
+    "settled": null,
+    "error_code": null,
+    "attempts": null,
+    "applies": null,
+    "candidate_rows": [],
+    "excluded": [],
+    "error": null
+  },
+  "http": null,
+  "boot": {
+    "url_printed": false,
+    "first_line": null,
+    "error_tail": null,
+    "startup_failed": false,
+    "bind_failed_ports": []
+  },
+  "readiness": null,
+  "render": {
+    "status": "unmeasured",
+    "reason": "render check not requested"
+  },
+  "install": {
+    "lockfile": {
+      "present": true,
+      "bytes": 1202,
+      "sha256": "b7c3869ac6ffb124acc8f3a5c7a3c8544ac296c13ca04979d97e265152a3a3bd"
+    },
+    "endpoints": [],
+    "exit_code": 1,
+    "diagnosis": {
+      "code": "ERR_PNPM_IGNORED_BUILDS",
+      "key_line": "Ignored build scripts: @aiwayds/dsh-cron@0.6.1",
+      "source": "launcher"
+    }
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "blocked",
+  "confidence": {
+    "level": "high",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-install-build-refused",
+      "severity": "block",
+      "messageId": "probe.install-build-refused",
+      "params": {
+        "code": "ERR_PNPM_IGNORED_BUILDS",
+        "detail": "Ignored build scripts: @aiwayds/dsh-cron@0.6.1"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-28T09:30:00.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-install-diagnosis",
+      "tier": "measured-local",
+      "source": "@aiwayds/dsh-cron@0.6.1",
+      "method": "package manager output (launcher, sandbox)",
+      "at": "2026-10-28T09:30:00.000Z",
+      "detail": "code=ERR_PNPM_IGNORED_BUILDS · Ignored build scripts: @aiwayds/dsh-cron@0.6.1"
+    },
+    {
+      "id": "probe-cleanup",
+      "tier": "measured-local",
+      "source": "sandbox removed · port closed",
+      "method": "directory + port check",
+      "at": "2026-10-28T09:30:00.000Z"
+    }
+  ],
+  "missing_evidence": [],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe"
+  ]
+}

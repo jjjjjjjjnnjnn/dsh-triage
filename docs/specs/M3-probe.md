@@ -72,6 +72,14 @@
 | F32 | **真机上两条「慢」的结论不同**：导入慢 6s → `go`（boot 10.1s、`wait_ms` 7.3s、`settled:true`、行 active）；导入慢 20s（超过 15s settle 预算）→ `unknown` + `missing.inventory` + `probe.tree-not-settled`，即使 HTTP 401 有应答也仍是 `http-served: unmeasured` | `data/results/probe-slow-normal-v2-2026-10-27T19-10-00.000Z.json` · `data/results/probe-slow-overrun-2026-10-27T19-20-00.000Z.json` |
 | F33 | **真实候选的分布（n=10，pin 版本）**：9 个 `go`（boot 6.2–8.2s），1 个 `blocked` 且失败在**安装**阶段（`@aiwayds/dsh-cron@0.6.1`，pnpm 退出 1；产物只留最后一行 + 端点，读不到 pnpm 的错误码 —— 见 T-310）。清理 17/17 | `data/results/probe-matrix-2026-10-27T20-30-00.000Z.json` · `data/results/d2-2026-10-27T21-00-00.000Z.json` |
 
+### R19 新增事实（0.2.1-rc.4 + pnpm 11，同一台 Windows 机器）
+
+| # | 事实 | 怎么测的 |
+|---|---|---|
+| F34 | **诊断日志比 launcher 的 stderr 更没用**：`dsh: plugin command failed; diagnostics: <profile>/.plugin-manager/logs/operation-*/pnpm.log` 指向的那个文件**只有 67 字节**——`Command failed with exit code 1: pnpm add "@aiwayds/dsh-cron@0.6.1"`，**没有** `ERR_*` 码。真正的 `Error: ERR_PNPM_IGNORED_BUILDS` ＋ `Ignored build scripts: …` 只打在 launcher 的 **stderr**。`failureEndpoints` 原来只读日志是对的（端点在那儿），但**归因**必须两边都读且以 launcher 优先 | R19 spike：同一候选，launcher stdout/stderr 全文 + 日志全文对比（日志 67 B，stderr 有码） |
+| F35 | **D2 里唯一「装不上」的候选其实装上了，死在构建审批**：pnpm 11 默认不执行依赖的 build scripts，输出 `ERR_PNPM_IGNORED_BUILDS` + `help: Run "pnpm approve-builds"`；stdout 同时打印 `+ @aiwayds/dsh-cron 0.6.1`。所以这是**包管理器策略**，不是插件写坏——`blocked` 仍成立（「在这里跑不起来」），但用户下一步动作与 404 完全不同 | 同上 spike（`+ @aiwayds/dsh-cron 0.6.1` 与 `ERR_PNPM_IGNORED_BUILDS` 同一次运行）；`data/results/probe-real-dsh-cron-*.json` |
+| F36 | **20s 预算与 20s 未稳定窗口结构重叠**：`fixture-slow-overrun`（顶层 await 20s）实测 boot→sample **21.3s**——`boot(≈5s) + settle 上限 15s`。把它的 `--unsettled-timeout` 从 20s 降到 8s 只省下 ~2.5s（另一次实测 19.6s），因为主导项是 settle 上限而不是那个窗口。R18 的 19.1s 是**运气**，不是性质；因此 D2 的预算判定从 R19 起只对真实候选（`BS-28`）。顺带：`ERR_PNPM_*` 行常与解释分行（`Error: ERR_PNPM_X` 之后才是原因），只取码行等于没归因 | `data/results/probe-matrix-2026-10-28T11-40-00.000Z.json`（21.3s，单列在 `timing.fixtures_over_budget`）· `data/results/d2-2026-10-28T12-10-00.000Z.json` |
+
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
 ---
@@ -87,7 +95,7 @@ runtime → install → boot → http → render → inventory → cleanup
 | 步 | 输入 | 成功判据 | 失败码 |
 |---|---|---|---|
 | `runtime` | `--dsh-main <path>`（本轮显式传，不猜 PATH） | `node <main> --version` 有输出且可解析 | `probe.runtime-unavailable` |
-| `install` | 候选 spec（路径 / tarball / npm spec，registry 必须 pin 版本） | 退出码 0 且 profile 的 `package.json` 里出现该包 | `probe.install-failed` |
+| `install` | 候选 spec（路径 / tarball / npm spec，registry 必须 pin 版本） | 退出码 0 且 profile 的 `package.json` 里出现该包 | `probe.install-failed`（无码）/ `probe.install-failed-code`（有 `ERR_*` 码）/ `probe.install-build-refused`（`ERR_PNPM_IGNORED_BUILDS`，R19） |
 | `boot` | profile 名 + 探针 overlay | 探针写出**可判**的样本（无 `{error}` 且 `settled≠false`）。写不出时：launcher 说过 `startup failed` → `blocked`（原文归因）；Host 打印过 URL 或**我们自己的端口**绑不上 → `unknown`；两者都没有 → `blocked` | `probe.startup-failed` / `probe.boot-timeout` / `probe.tree-not-settled` / `probe.port-unavailable` |
 | `http` | Host 自打印 URL 的端口（T-306），回退 `plan.port`；URL 与端口**同轮询**（R17） | `redirect:'manual'` 下收到 2xx/3xx/401（303+token、401 无 token 都算活）。**读数不是 `valid` 时本步不出结论**（`unmeasured`） | `probe.http-unreachable`（仅 settled 树） |
 | `render` | 同一 URL + 浏览器 | DOM 有挂载点、有可见文本（≥20 字符）、且 `readyState` 前进 | `probe.render-blank`；拿不到结论时 `unmeasured` |
@@ -121,6 +129,9 @@ runtime → install → boot → http → render → inventory → cleanup
 > `timings.bootToSampleMs` 取 `host.seconds`（spawn→样本）；`steps[boot].ms` 是整步墙钟（含 settle、就绪探测与杀树后等待，实测约 20s）。预算只看前者，两者都进产物，避免「用总时长糊」。 
 
 `install` 超预算时**不得**把总时长写成结论；产物里 `timings` 分段记账。
+
+> **R19 口径（HUMAN 已签，`audit/SIGNOFF.md`）**：`boot → sample ≤20s` 只对**真实候选**判定。一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**结构上**不可能达标——R19 实测 `fixture-slow-overrun` = 21.3s（R18 只是恰好 19.1s 才过）。真实候选仍是 100% 必须达标，没有放宽成 90%；夹具耗时照旧进产物，并在 `d2_report` 的 `timing.fixtures_over_budget` 与 `boot-budget` 的 detail 里单列。
+> **未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺。改默认值属于阈值变更，需要 ADR + HUMAN 签（`BS-28` / T-311）。
 
 ---
 
@@ -171,7 +182,7 @@ runtime → install → boot → http → render → inventory → cleanup
   "boot": { "url_printed": true, "first_line": "dsh web: http://127.0.0.1:53052/?token=<redacted>", "error_tail": null, "startup_failed": false, "bind_failed_ports": [] },
   "sandbox": { "home": "<temp>/…", "profile": "probe", "port_origin": "allocated", "port": 53052, "overlap_check": "disjoint", "env_scrubbed": true },
   "render": { "status": "rendered", "detail": "mount root with 1 child(ren), 289 visible chars", "ms": 1785, "signals": { "ready_state": "complete", "root_children": 1, "text_length": 289, "html_bytes": 540955 } },
-  "install": { "lockfile": { "present": true, "bytes": 1717, "sha256": "…" } },
+  "install": { "lockfile": { "present": true, "bytes": 1717, "sha256": "…" }, "exit_code": 1, "endpoints": ["http://127.0.0.1:1/dsh-cost-meter"], "diagnosis": { "code": "ERR_PNPM_IGNORED_BUILDS", "key_line": "Ignored build scripts: @aiwayds/dsh-cron@0.6.1", "source": "launcher" } },
   "assertions": [{ "id": "boot-sampled", "status": "passed", "detail": null }, { "id": "client-rendered", "status": "passed", "detail": "rendered: mount root with 1 child(ren), 289 visible chars" }],
   "inventory": { "transport": "in-process-projection", "entries": 98, "settled": true, "error_code": null, "attempts": 1, "applies": 1, "candidate_rows": [{ "entryId": "include:triage-probe-ok", "phase": "active" }], "excluded": ["include:triage-probe-ok"?] },
   "verdict": { "conclusion": "go", "reasons": [], "evidence": [], "missingEvidence": [] },
@@ -191,9 +202,9 @@ runtime → install → boot → http → render → inventory → cleanup
 
 新增 `probe.*` 原因码（**三处同改**：`messages.ts` 中英 / 门 `verdict-contract` 白名单 / `docs/05` §3）：
 
-`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）**
+`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）** · **`probe.install-failed-code`（block，R19）** · **`probe.install-build-refused`（block，R19）**
 
-> 新增文案一律**只加不改**：给已有 messageId 增加 `{占位符}` 会让 `data/results` 里的历史产物在门 `verdict-contract` 变红（HANDOFF 坑表）。
+> 新增文案一律**只加不改**：给已有 messageId 增加 `{占位符}` 会让 `data/results` 里的历史产物在门 `verdict-contract` 变红（HANDOFF 坑表）。R19 的三条安装归因因此是**新 messageId**，`probe.install-failed` 原样保留（无码时仍用它）。
 
 `go` 的渲染必须包含限定：**「仅证明装得上 + Host 起得来 + 端口有应答 + 行在跑（+ 页面有可见内容），不证明功能」**。
 
@@ -228,6 +239,11 @@ runtime → install → boot → http → render → inventory → cleanup
 | N23 | Host 报绑定失败，且失败端口 = 探针自己选的端口 | `unknown` + `missing.probe` + `probe.port-unavailable`（**不得**算到候选头上） |
 | N24 | 显式把 `--readiness-timeout` 调成 1000 | 如实 `readiness.outcome='timeout'` / `waited_ms≈1000`，不静默升级成 `served` |
 | N25 | launcher 打印 `startup failed` | 立即收敛（不等 120s），`blocked` + `probe.startup-failed`，`params.detail` 是原文 |
+| N26 | 安装失败且 launcher stderr 带 `ERR_*` 码 | `blocked` + `probe.install-failed-code`，`params.code` 就是那个码（**不得**退回「退出码 1」） |
+| N27 | 码只在诊断日志里（launcher 没打） | 仍能点名，且 `install.diagnosis.source = "diagnostics-log"`（来源不许编） |
+| N28 | 安装失败但两边都没有码 | `blocked` + `probe.install-failed`（旧文案），**不得**伪造一个码或空 `detail` |
+| N29 | 包管理器 URL 带凭据 / 查询串 | `key_line` 里不出现 userinfo、`?token=`、`#frag`（与端点同一套纪律） |
+| N30 | `ERR_PNPM_IGNORED_BUILDS` | `blocked` + `probe.install-build-refused` + `remediation.install-build-refused`（**不是**「插件写坏了」） |
 
 ---
 
@@ -235,7 +251,8 @@ runtime → install → boot → http → render → inventory → cleanup
 
 | 项 | 状态 |
 |---|---|
-| registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20）。**R17**：矩阵 n=7（真实启动 2 次 / 合成失败 5 次），真实 2 次全 `go` |
+| registry 候选的真实安装时长与失败形状 | **R15 开始有分母**：成功 5.4s（`dsh-plugin-model-proxy@0.1.6`，450KB/1 依赖）；E404 与「版本不存在」都是 `blocked`，但元数据层分不出两者（F20）。**R17**：矩阵 n=7（真实启动 2 次 / 合成失败 5 次）。**R19**：n=20（真实 13 / 夹具 4 / 合成 3），真实 12 `go` / 1 `blocked`；boot 9.6–18.x s。安装失败**现在能点名错误码**（F34/F35）：`ERR_PNPM_IGNORED_BUILDS` / `ERR_PNPM_NO_MATCHING_VERSION` / `ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR` |
+| **20s 预算 vs 20s 未稳定窗口** | 两者结构重叠：永不 settle 的树 ≈ 21s，必然超预算（`BS-28`）。R19 起 `boot-budget` 只判真实候选（HUMAN 签），夹具单列；**默认窗口是否要降到 <20s 仍未决**（T-311，改阈值需 ADR） |
 | 私有源 / 不可达 registry 的失败形状 | **R16 已测**（F24，profile 级 `.npmrc`）；R17 未重测 |
 | `namespace-diff`（T-303） | 需要 agent/preset 作用域（T-202a），仍 `unmeasured` |
 | 渲染判据的强度 | 只判「`#root`/`#app` 挂载 + 可见文本 ≥20 字符 + 文本两次读数稳定」。骨架屏与内容区的区别靠「等 `complete` + 文本稳定」近似，**不是**视觉回归 |

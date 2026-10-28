@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { test } from 'node:test'
@@ -7,8 +7,10 @@ import { buildProbePlan } from '@dsh-triage/probe'
 import type { ProbeExecDeps, ProbeRun, ProbeSampleView } from '@dsh-triage/probe'
 import {
   bindFailedPorts,
+  diagnosisFromText,
   executeProbe,
   failureEndpoints,
+  installDiagnosis,
   isCandidateModule,
   isUsableSample,
   judgeProbe,
@@ -311,6 +313,154 @@ test('trailing punctuation from pnpm logs is not part of the endpoint', () => {
   assert.deepEqual(failureEndpoints('Failed to fetch metadata from http://127.0.0.1:1/dsh-cost-meter: error'), [
     'http://127.0.0.1:1/dsh-cost-meter',
   ])
+})
+
+/* --------------------- install failure diagnosis (T-310) -------------------- */
+
+test('the package manager code is read from the launcher, where it actually is', () => {
+  // Measured in R19 against @aiwayds/dsh-cron@0.6.1 (fixture is the real stderr, sandbox
+  // path replaced by <sandbox>): the code is on the launcher's stderr, and the diagnostics
+  // log named in the last line contains only "Command failed".
+  const launcher = readFileSync(new URL('../fixtures/probe/install-failure/ignored-builds.stderr.txt', import.meta.url), 'utf8')
+  const log = readFileSync(new URL('../fixtures/probe/install-failure/ignored-builds.pnpm-log.txt', import.meta.url), 'utf8')
+  const diagnosis = diagnosisFromText({ launcher, log })
+  assert.equal(diagnosis.code, 'ERR_PNPM_IGNORED_BUILDS')
+  assert.equal(diagnosis.source, 'launcher', 'the log drops the code, so the launcher has to win')
+  // The code line alone is a dead end; the cause is the line below it.
+  assert.equal(diagnosis.key_line, 'Ignored build scripts: @aiwayds/dsh-cron@0.6.1')
+})
+
+test('a code line that explains itself is not replaced by the next line', () => {
+  const diagnosis = diagnosisFromText({
+    launcher: 'ERR_PNPM_FETCH_404 GET https://registry.example/@scope/pkg: Not Found — 404\n',
+  })
+  assert.equal(diagnosis.code, 'ERR_PNPM_FETCH_404')
+  assert.match(diagnosis.key_line ?? '', /^ERR_PNPM_FETCH_404 GET https:\/\/registry\.example\/@scope\/pkg: Not Found/)
+})
+
+test('the harness line is never the explanation, even when it is the loudest one', () => {
+  // Measured shape (R19, missing package): "Error: ERR_PNPM_…" alone, then pnpm's block,
+  // then the launcher's own `dsh: plugin command failed; diagnostics: <path>`.
+  const diagnosis = diagnosisFromText({
+    launcher: [
+      'Error: ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR',
+      '',
+      '  × adding a new package',
+      '  ╰─▶ Failed to fetch metadata',
+      'dsh: plugin command failed; diagnostics: C:\\Temp\\x\\pnpm.log',
+    ].join('\n'),
+  })
+  assert.equal(diagnosis.code, 'ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR')
+  assert.equal(diagnosis.key_line, 'Failed to fetch metadata')
+  assert.doesNotMatch(diagnosis.key_line ?? '', /^dsh:/)
+})
+
+test('a plain sentence below the code is accepted as the explanation', () => {
+  const diagnosis = diagnosisFromText({
+    launcher: 'Error: ERR_PNPM_NO_MATCHING_VERSION\nNo matching version found for dsh-plugin-model-proxy@99.99.99\n',
+  })
+  assert.equal(diagnosis.code, 'ERR_PNPM_NO_MATCHING_VERSION')
+  assert.equal(diagnosis.key_line, 'No matching version found for dsh-plugin-model-proxy@99.99.99')
+})
+
+test('a code that only the diagnostics log carries is found, and labelled as such', () => {
+  const diagnosis = diagnosisFromText({
+    launcher: 'dsh: plugin command failed; diagnostics: C:\\Temp\\x\\pnpm.log\n',
+    log: 'ERR_PNPM_FETCH_404 GET https://registry.example/@scope/pkg: not found\n',
+  })
+  assert.equal(diagnosis.code, 'ERR_PNPM_FETCH_404')
+  assert.equal(diagnosis.source, 'diagnostics-log')
+})
+
+test('no code at all falls back to the loudest line, and invents nothing', () => {
+  const diagnosis = diagnosisFromText({ launcher: 'resolving packages\npnpm failed to resolve\n' })
+  assert.equal(diagnosis.code, null)
+  assert.equal(diagnosis.source, 'launcher')
+  assert.equal(diagnosis.key_line, 'pnpm failed to resolve')
+  // No error-shaped line at all: the first line is the honest answer, not an empty string.
+  assert.equal(diagnosisFromText({ launcher: 'resolving packages\n' }).key_line, 'resolving packages')
+  assert.equal(diagnosisFromText({ launcher: '  \n\n' }).source, 'none')
+})
+
+test('credentials and query strings never survive into the key line', () => {
+  const diagnosis = diagnosisFromText({
+    launcher: 'Error: ERR_PNPM_META_FETCH_FAIL GET https://user:secret@registry.example/pkg?token=abc: failed\n',
+  })
+  assert.equal(diagnosis.code, 'ERR_PNPM_META_FETCH_FAIL')
+  assert.ok(!(diagnosis.key_line ?? '').includes('secret'), 'userinfo must be stripped')
+  assert.ok(!(diagnosis.key_line ?? '').includes('token=abc'), 'query strings must be stripped')
+  assert.match(diagnosis.key_line ?? '', /https:\/\/registry\.example\/pkg/)
+})
+
+test('installDiagnosis reads the named diagnostics log, and survives a missing one', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'triage-diagnosis-'))
+  try {
+    const log = join(dir, 'pnpm.log')
+    writeFileSync(log, 'ERR_PNPM_OUTDATED_LOCKFILE cannot install with frozen-lockfile\n', 'utf8')
+    const diagnosis = installDiagnosis(`dsh: plugin command failed; diagnostics: ${log}\n`)
+    assert.equal(diagnosis.code, 'ERR_PNPM_OUTDATED_LOCKFILE')
+    assert.equal(diagnosis.source, 'diagnostics-log')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+  const missing = installDiagnosis(`dsh: plugin command failed; diagnostics: ${join(tmpdir(), 'nope', 'x.log')}\n`)
+  assert.equal(missing.code, null)
+  assert.equal(missing.source, 'launcher')
+})
+
+test('an IGNORED_BUILDS refusal is a build-policy refusal, not a broken plugin', async () => {
+  const { run } = await runWith({
+    deps: {
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: {
+          code: 'ERR_PNPM_IGNORED_BUILDS',
+          key_line: 'Ignored build scripts: @aiwayds/dsh-cron@0.6.1',
+          source: 'launcher',
+        },
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'blocked', 'it still cannot run here, so it is not a go')
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.install-build-refused')
+  assert.ok(reason, 'the refusal has its own message: the next action is different from a 404')
+  assert.equal(reason?.params?.code, 'ERR_PNPM_IGNORED_BUILDS')
+  assert.ok(judgement.remediation.some((item) => item.messageId === 'remediation.install-build-refused'))
+  assert.ok(
+    judgement.evidence.some((item) => item.id === 'probe-install-diagnosis'),
+    'the reason has to be cited as evidence, not asserted',
+  )
+})
+
+test('a generic package-manager code rides into the reason instead of a bare exit 1', async () => {
+  const { run } = await runWith({
+    deps: {
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_FETCH_404', key_line: 'GET https://registry.example/pkg: not found', source: 'launcher' },
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.install-failed-code')
+  assert.ok(reason)
+  assert.equal(reason?.params?.code, 'ERR_PNPM_FETCH_404')
+  assert.equal(reason?.params?.exit, 1)
+  assert.ok(!judgement.reasons.some((item) => item.messageId === 'probe.install-failed'), 'one install reason, not two')
+})
+
+test('an install that failed with nothing to read keeps the old message', async () => {
+  const { run } = await runWith({
+    deps: {
+      install: async () => ({ exitCode: 1, detail: 'exit 1', diagnosis: { code: null, key_line: null, source: 'none' } }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.ok(judgement.reasons.some((item) => item.messageId === 'probe.install-failed'))
+  assert.ok(!judgement.evidence.some((item) => item.id === 'probe-install-diagnosis'), 'nothing to cite when nothing was said')
 })
 
 /* --------------------------- client render (T-302) ------------------------- */

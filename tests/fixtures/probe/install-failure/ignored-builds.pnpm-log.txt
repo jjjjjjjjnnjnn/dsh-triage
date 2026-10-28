@@ -1,0 +1,1 @@
+Command failed with exit code 1: pnpm add "@aiwayds/dsh-cron@0.6.1"

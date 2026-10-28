@@ -144,7 +144,7 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 | 实测运行时不在候选声明区间 → 降为 `unknown`（`probe.runtime-mismatch`） | 结论不可外推到没跑过的运行时 |
 | `evidence[].method` 必须写真实传输 | `boot + <transport> inventory sample`；探针行自身从评分行里剔除 |
 
-命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.tree-not-settled` / `probe.startup-failed` / `probe.port-unavailable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch`。
+命名空间成员：`probe.served` / `probe.row-active` / `probe.row-inactive` / `probe.row-missing` / `probe.row-ambiguous` / `probe.install-failed` / `probe.install-failed-code` / `probe.install-build-refused` / `probe.boot-timeout` / `probe.http-unreachable` / `probe.runtime-unavailable` / `probe.runtime-mismatch` / `probe.sample-unreadable` / `probe.tree-not-settled` / `probe.startup-failed` / `probe.port-unavailable` / `probe.cleanup-incomplete` / `probe.render-ok` / `probe.render-blank` / `probe.render-unmeasured` / `probe.port-mismatch`。
 
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |

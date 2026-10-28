@@ -199,8 +199,16 @@
       "id": "BS-27",
       "area": "d2/denominator",
       "cannot_see": "D2 的 10 个真实候选是**手挑的便利样本**（npm 搜索 + pin 版本 + 可装），不是生态随机抽样。因此 `real_pass_rate` 只能描述这一批，不能外推；而且只有一个运行时（0.2.1-rc.4）、一台 Windows 机器、一次陪跑。安装失败的那 1 个（@aiwayds/dsh-cron）也只知道 exit 1，不知道 pnpm 的错误码",
-      "mitigation": "D2 报告里 `limits[]` 与 `definitions` 固定写明「便利样本 / 单机 / 单运行时」；`real_pass_rate` 必须带 Wilson 95% 区间一起出现（9/10 → 0.596–0.982），禁止只报点估计。补全路径：T-310（安装失败归因）+ 后续批次持续加入真实候选；跨平台结论要等 Linux 真 probe",
+      "mitigation": "D2 报告里 `limits[]` 与 `definitions` 固定写明「便利样本 / 单机 / 单运行时」；`real_pass_rate` 必须带 Wilson 95% 区间一起出现（10 个候选 → 0.596–0.982；R19 起 13 个 → 0.667–0.986），禁止只报点估计。补全路径：T-310 已交付（错误码可见）+ 后续批次持续加入真实候选；跨平台结论要等 Linux 真 probe",
       "owner": "scripts/d2_report.mjs"
+    },
+    {
+      "id": "BS-28",
+      "area": "d2/boot-budget",
+      "cannot_see": "「20s 预算」与「20s 未稳定窗口」在结构上重叠：一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**必然**超预算。R18 的批次只是恰好落在 19.1s 才通过；R19 真跑 21.3s 就翻了。这意味着任何「真的需要完整未稳定窗口」的候选都会被记成预算突破，而那不是它的错",
+      "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`），夹具耗时照旧单列在 `timing.fixtures_over_budget`；真实候选仍是 100% 必需（没有放宽到 90%）。**仍未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺——要改默认值属于阈值变更，需 ADR + HUMAN 签（T-311）",
+      "owner": "scripts/d2_report.mjs + packages/probe/src/host.ts",
+      "status": "partially mitigated (R19)"
     }
   ]
 }

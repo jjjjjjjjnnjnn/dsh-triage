@@ -2565,6 +2565,140 @@
         "sha256": "2a108116c5e47312f0fb64208bae85636bd7a1e71880660162d7fac1c05421a7",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9；pnpm test = 220）"
       }
+    },
+    {
+      "id": "R19-S1",
+      "batch": "R19",
+      "step": "T-310 安装失败归因：先抓真机输出，再写提取规则；错误码/关键行进产物，凭据与查询串不进",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "packages/core/src/messages.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-exec.test.ts",
+        "tests/fixtures/probe/install-failure/ignored-builds.stderr.txt",
+        "tests/fixtures/probe/install-failure/ignored-builds.pnpm-log.txt",
+        "docs/specs/M3-probe.md",
+        "docs/05-verdict-contract.md"
+      ],
+      "review": {
+        "correctness": "PASS：真机产物 `probe-real-dsh-cron-2026-10-28T09-30-00.000Z.json` 的 `install.diagnosis = {code:\"ERR_PNPM_IGNORED_BUILDS\", key_line:\"Ignored build scripts: @aiwayds/dsh-cron@0.6.1\", source:\"launcher\"}`，reason = `probe.install-build-refused`；判据未改（仍是 `blocked`），只把原因与下一步动作说清楚。11 条新单测覆盖：launcher 优先 / 仅日志有码 / 无码退回旧文案 / `dsh:` 行不算原因 / 纯句子行 / 凭据与查询串剥离 / exit 0 无诊断",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --candidate @aiwayds/dsh-cron@0.6.1 --expect blocked --stamp …` 可重放（同一 pnpm store 下稳定复现）；夹具是**实测** stderr 与 pnpm 日志原文（沙盒路径替换为 `<sandbox>`），不是手写想象；`diagnosisFromText` 纯函数，无 I/O",
+        "licence": "PASS：只用 node 内置模块；未新增依赖；测试夹具是 pnpm 的输出文本（不含候选源码），与 ADR-0004「产物只记元数据」一致",
+        "ssot": "PASS：`produced_by`/`generated_at`/纯 hash `.sha256` 齐全；`docs/specs/M3-probe.md` 新增 F34–F36 与 N26–N30，`docs/05-verdict-contract.md` 同步两个新 messageId；`results-privacy` 门绿（URL userinfo/query 被剥，`?token=` 仍走 `sanitizeLogLine`）",
+        "adversary": "反例一：第一版只取「含码的那一行」，产物里于是出现「code=ERR_PNPM_IGNORED_BUILDS · Error: ERR_PNPM_IGNORED_BUILDS」——与退出码同样无用，已改成「码行没解释就往下找第一条 label: detail」。反例二：`synthetic-missing` 的 key_line 被填成 `dsh: plugin command failed; diagnostics: …`（launcher 在说它自己），已加 `^dsh:` 与 `help:/hint:` 过滤并写成单测。反例三：本地夹具 `go` 的产物曾写 `key_line: \"Already up to date\"`，看起来像失败 → `exit 0` 时 diagnosis 归零。反例四：私有源 URL 带 `user:secret@` 与 `?token=` 的注入测试必须被剥掉"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate @aiwayds/dsh-cron@0.6.1 --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label real-dsh-cron --expect blocked --stamp 2026-10-28T09:30:00.000Z",
+        "artifact": "data/results/probe-real-dsh-cron-2026-10-28T09-30-00.000Z.json",
+        "sha256": "19215757683b3508328694680dd36a54c5cd36cf582bff058d4a398f38efe9d0",
+        "outcome": "blocked · @aiwayds/dsh-cron · install.diagnosis.code=ERR_PNPM_IGNORED_BUILDS（source=launcher）· reason=probe.install-build-refused · 清理完成"
+      }
+    },
+    {
+      "id": "R19-S2",
+      "batch": "R19",
+      "step": "T-406 面板 v1：把 audit 抽成数据层，serve 用同一份 payload 暴露只读路由（默认 501、读不到 409）",
+      "changed": [
+        "packages/plugin/src/audit-data.ts",
+        "packages/plugin/src/cli.ts",
+        "packages/plugin/src/serve.ts",
+        "scripts/record_serve_smoke.mjs",
+        "tests/unit/serve.test.ts",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：`audit --json` 抽取前后**逐字节一致**（HEAD 的独立 worktree 构建旧 CLI 对比：夹具 profile `EE1D3ACD…`、真实 profile `BEC854496…`，两条 sha256 全同）；`serve` 冒烟 13/13，其中 `/api/audit` 与 `audit --json`（同 profile + 同 snapshot）的 8 条 inventory 结论逐条相同；10 条 serve 单测覆盖 501 / 200 / 409 / 500 / 401 / 403",
+        "reproducibility": "PASS：`node scripts/record_serve_smoke.mjs --stamp <iso>` 一条命令重放；数据源是夹具 profile + 合成 snapshot（不读操作者机器）；旧 CLI 对比用的 worktree 用完即删（未进仓、未留配置）",
+        "licence": "PASS：面板仍零依赖（`node:http` + 内联 HTML），没有引入框架或远程资源；`audit-data.ts` 只复用 core/signals 的既有纯函数",
+        "ssot": "PASS：产物 `produced_by`/`generated_at`/`.sha256` 齐；顺带修掉 v0 产物自相矛盾（写着「token 与端口不入产物」却写了 `port: <n>`，现在 `port: null`）；`--audit` 默认关闭写进 spec §2 与 HELP",
+        "adversary": "反例一：把「未启用」渲染成空的「当前组合」——那是把关闭伪装成干净，故 `/api/audit` 关闭时回 **501** 并在文案里点名 `--audit`，单测断言状态码不是 200。反例二：profile 读不到时返回空账本 → 409 + CLI 原文，单测锁住。反例三：`handle()` 变 async 后，一个 rejected promise 会带走整个面板 → `createServer` 里 catch 成 500，并有「同一进程再问 /api/health 仍 200」的单测。反例四：`/api/audit` 若自己重新推导结论，面板与 CLI 就会漂移 → 只回传 `auditJsonPayload()` 的结果，冒烟做集合比对"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-28T10:20:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-28T10-20-00.000Z.json",
+        "sha256": "278c53955cae13ebdfd363bbb9d7d586d27c8cd95315c393bf4b71807adecad3",
+        "outcome": "13/13：token-required · page-renders · health(audit=false) · artifacts-listed · artifact-detail · traversal-refused · cross-origin-refused · post-read-only · audit-off-501 · audit-enabled(8 条结论) · audit-redacted · audit-parity(与 CLI 逐条一致) · audit-has-evidence"
+      }
+    },
+    {
+      "id": "R19-S3",
+      "batch": "R19",
+      "step": "D2 分母 10→13：新增 3 个 MIT 真实候选（settings-only / engines-only 声明 / IM+compatibility），跑满 20 次",
+      "changed": [
+        "tests/fixtures/probe/matrix-r19.json",
+        "quarantine/vendor-manifest.json",
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：真实 13 个候选 → 12 `go` / 1 `blocked`（仍是 `@aiwayds/dsh-cron` 的 build-script 拒绝），清理 20/20，期望 0 miss；三个新候选各自 `go`（boot 10.8–13.5s）；`dsh-unlag` 走的是 `engines.dsh` 分支（只声明 engines、无 peerDependencies），是此前 10 个候选都没有覆盖的 admission 形态",
+        "reproducibility": "PASS：`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --stamp <iso>` 一条命令重放；每个 run 的产物被嵌进矩阵并各自带 sha256；三版中间矩阵（10:40 / 11:10）在提交前删除，只留最终一版",
+        "licence": "PASS：三个新候选全部 MIT、无 install/postinstall 脚本、pin 精确版本；元数据（含 `dist.integrity`）登记进 `quarantine/vendor-manifest.json`，源码不进仓；**主动放弃**了 `@feng0531/dsh-vcs@0.4.10`（`SEE LICENSE IN LICENSE`，元数据层证不了可再分发）",
+        "ssot": "PASS：矩阵摘要带 `real_starts` / `by_conclusion` / `cleanup_*` / `boot_to_sample_ms`；`limits[]` 写明「合成失败不是关于真实插件质量的证据」；产物被本步与 R19-S4 引用，无孤儿",
+        "adversary": "反例一：为了数字好看只挑「已知能装」的包——本轮特意选了两种新声明形态（engines-only / compatibility），不按通过率挑。反例二：把 3 个合成失败混进真实分母——`real` 标记由 plan 显式给出，`d2_report` 只按 `real:true` 算通过率。反例三：许可只看 `license` 字段的存在性——`SEE LICENSE IN LICENSE` 就是反例，已排除并在审核报告里留痕"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T11:40:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T11-40-00.000Z.json",
+        "sha256": "5522f7c6aea575667c9f6882bf4d723a514ab69343edb11ed31c1c0f46d60a1c",
+        "outcome": "n=20 · 真实 13（12 go / 1 blocked）· 夹具 4 · 合成 3 · 清理 20/20 · 期望 0 miss · boot 9.6–21.3s（21.3s 是永不稳定夹具）"
+      }
+    },
+    {
+      "id": "R19-S4",
+      "batch": "R19",
+      "step": "D2 预算口径：boot-budget 只判真实候选（HUMAN 签），夹具超预算单列而不隐藏",
+      "changed": [
+        "scripts/d2_report.mjs",
+        "tests/governance/d2-report.test.ts",
+        "docs/specs/M3-probe.md",
+        "docs/ROADMAP.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：D2 复算 `gate.passed=true`——真实 12/12 在 20s 内、可靠性 20/20、形状 6、通过率 0.923（Wilson 0.667–0.986）；`check.detail` 明确写出「12/12 real sampled run(s) within 20000ms · 1 fixture(s) over budget by construction (fixture-slow-overrun=21300ms)」，产物 `timing.fixtures_over_budget` 同一事实",
+        "reproducibility": "PASS：`node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T11-40-00.000Z.json --stamp <iso>`；同矩阵同 stamp 逐字节一致（既有测试）；新增 1 条契约测试把「夹具超预算不判红 / 真实超预算仍判红」两侧都钉住",
+        "licence": "PASS：脚本零依赖、只读 JSON；无网络；未新增任何运行时依赖",
+        "ssot": "PASS：`definitions.boot_budget` 把新口径写进**产物本身**（不只在文档里）；`audit/SIGNOFF.md` 有对应签署行（HUMAN 原话 + agent 执行 + 未逐条复核项）；`BS-28` 记入 `audit/blind_spots.json`，`T-311` 记入 BACKLOG/HANDOFF",
+        "adversary": "反例一：把口径收窄当成「放宽到 90%」——真实候选仍要求 **100%** 在预算内，单测「a run over the boot budget fails the gate」用真实 24s 跑证明仍红。反例二：只在产物里删掉夹具的 21.3s 让门变绿——那等于隐藏证据，故 `fixtures_over_budget` 与 `check.detail` 双写并有单测断言。反例三：把 reliability 的预算项也一起放宽到「只算真实」却没说明——已在 `definitions.probe_reliability` 同一段落写明原因，并与 §4 的 spec 段落对齐"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T11-40-00.000Z.json --stamp 2026-10-28T12:10:00.000Z",
+        "artifact": "data/results/d2-2026-10-28T12-10-00.000Z.json",
+        "sha256": "551bc9ce5a9fa8e8e080ffe077503be599adbae46b4dad41458907e2959e1b9f",
+        "outcome": "gate.passed=true · 真实 13（12 go / 1 blocked，0.923，Wilson 0.667–0.986）· 可靠性 20/20 · 清理 20/20 · 形状 6 · boot-budget 12/12 real（1 个夹具单列）"
+      }
+    },
+    {
+      "id": "R19-S5",
+      "batch": "R19",
+      "step": "交接与口径：R19 的结论写进 HANDOFF/BACKLOG/INDEX/AGENTS/ROADMAP，签署与盲区台账补齐，全链录一次绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/specs/M4-surface.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/AUDIT_2026-10-28_R19.md",
+        "audit/SIGNOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 232 测试 / 9 门全绿；`--mutate` 9/9；D2 数字（真实 13 / 12 go / 1 blocked / Wilson 0.667–0.986 / 可靠性 20/20 / 形状 6）在 ROADMAP、HANDOFF、INDEX、AUDIT_R19、BACKLOG 五处一致；T-310 与 T-406 从 ⬜ 改为 ✅ 并写明剩余",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T13:00:00.000Z` 可重放；HANDOFF §3 的首条命令仍是单条可执行（`pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate`）；D2 重算命令带上具体矩阵路径",
+        "licence": "PASS：`audit/SIGNOFF.md` 新增两行（D2 预算口径 / +3 外部候选），沿用 ADR-0004 边界且写明「未扩大机制」；`quarantine/vendor-manifest.json` 三条元数据条目带 `dist.integrity`",
+        "ssot": "PASS：95 个产物全部被 108 步台账引用（`no-orphan-results` 绿）；被取代的中间产物（两版矩阵、11:00/11:30 两版 d2）在提交前删除，未进历史；`INDEX.md` 的新引用写成 `data/results/...` 全路径，避免门把裸文件名当路径（R19 又踩了一次）",
+        "adversary": "反例一：把 D2 的「通过」写成「准确率 92%」——四处文档都要求连 Wilson 区间一起说，并保留 `BS-27`（便利样本不可外推）。反例二：把预算口径的放宽藏在代码里——`definitions.boot_budget` 写进产物、`SIGNOFF` 写原话、`BS-28` 写剩余风险，三处互相可追。反例三：为了「全绿」删掉不合规产物——本轮只删**同一步内**被我重采的中间产物，且在审核报告里点名；该中间产物从未提交。反例四：INDEX 里新增 `GET /api/audit` 与裸 `d2-*.json` 让 `index-references` 红两次——已改成不含斜杠的表述与全路径"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T13:00:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-28T13-00-00.000Z.json",
+        "sha256": "c90e12e9638a3ad7607c9690c632cb41523b68dd65bdc4e61d39c777d87eb547",
+        "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 232）"
+      }
     }
   ]
 }
