@@ -1,0 +1,115 @@
+{
+  "note": "R18 D2 denominator: ten real, pinned npm plugins with different shapes (theme / tool provider / workspace / scheduler / notify / MCP / remote / git / archive / status) plus three labelled synthetic failure shapes. No expectation is predicted for the real ones: their verdict is the measurement. All are permissively licensed (MIT / Apache-2.0), installed into a throwaway DSH_HOME and deleted afterwards; nothing is vendored (ADR-0004). Four fixture shapes (apply-time failure, import-time failure, no observable row, slower-than-the-settle-budget) are included so this batch also demonstrates that the probe tells those apart; they are marked real:false and never count toward the denominator.",
+  "candidates": [
+    {
+      "label": "real-status-rotator",
+      "spec": "dsh-status-rotator@0.38.0",
+      "shape": "real-ui-status",
+      "real": true
+    },
+    {
+      "label": "real-dream-skin",
+      "spec": "dsh-dream-skin@10.28.1",
+      "shape": "real-ui-theme",
+      "real": true
+    },
+    {
+      "label": "real-claude-style",
+      "spec": "dsh-claude-style@0.19.5",
+      "shape": "real-ui-theme",
+      "real": true
+    },
+    {
+      "label": "real-free-search",
+      "spec": "dsh-free-search@0.9.17",
+      "shape": "real-tool-provider",
+      "real": true
+    },
+    {
+      "label": "real-dsh-cron",
+      "spec": "@aiwayds/dsh-cron@0.6.1",
+      "shape": "real-scheduler",
+      "real": true
+    },
+    {
+      "label": "real-plugin-notify",
+      "spec": "@goodandready/dsh-plugin-notify@0.4.7",
+      "shape": "real-notification",
+      "real": true
+    },
+    {
+      "label": "real-archive-manager",
+      "spec": "@michengai/dsh-archive-manager@1.1.18",
+      "shape": "real-workspace",
+      "real": true
+    },
+    {
+      "label": "real-mcp-connector",
+      "spec": "dsh-mcp-connector@0.2.83",
+      "shape": "real-mcp",
+      "real": true
+    },
+    {
+      "label": "real-remote",
+      "spec": "dsh-remote@0.8.53",
+      "shape": "real-remote",
+      "real": true
+    },
+    {
+      "label": "real-git-worktree",
+      "spec": "@laoyuehanni/dsh-git-worktree@0.4.13",
+      "shape": "real-git",
+      "real": true
+    },
+    {
+      "label": "fixture-no-row",
+      "spec": "tests/fixtures/probe/no-row-plugin",
+      "expect": "blocked",
+      "shape": "fixture-no-observable-row",
+      "real": false
+    },
+    {
+      "label": "fixture-apply-fail",
+      "spec": "tests/fixtures/probe/throw-plugin",
+      "expect": "blocked",
+      "shape": "fixture-row-failed",
+      "real": false
+    },
+    {
+      "label": "fixture-import-fail",
+      "spec": "tests/fixtures/probe/broken-plugin",
+      "expect": "blocked",
+      "shape": "fixture-import-error",
+      "real": false
+    },
+    {
+      "label": "fixture-slow-overrun",
+      "spec": "tests/fixtures/probe/slow-overrun-plugin",
+      "expect": "unknown",
+      "shape": "fixture-tree-not-settled",
+      "real": false
+    },
+    {
+      "label": "synthetic-missing",
+      "spec": "dsh-plugin-triage-missing@0.0.1",
+      "expect": "blocked",
+      "shape": "synthetic-missing-package",
+      "real": false
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "spec": "dsh-plugin-model-proxy@99.99.99",
+      "expect": "blocked",
+      "shape": "synthetic-bogus-version",
+      "real": false
+    },
+    {
+      "label": "synthetic-private-registry",
+      "spec": "dsh-cost-meter@1.9.41",
+      "expect": "blocked",
+      "npmrcRegistry": "http://127.0.0.1:1/",
+      "shape": "synthetic-unreachable-registry",
+      "real": false
+    }
+  ]
+}

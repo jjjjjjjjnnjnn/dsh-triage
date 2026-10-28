@@ -241,3 +241,13 @@
 - 实测：213 测试 / 9 门全绿 / `--mutate` 9/9；矩阵 boot 6.2–6.9s（4 次有样本）
 - 过程中的真实缺陷（都由本轮自己抓到）：端口排除段会中途变化（15:05 能起、15:20 起不来）；boot 步骤在 `sample === null` 时提前 return，导致新字段全空（已修赋值顺序）；`error_tail` 只取 stderr，漏掉 launcher 打在 stdout 的诊断（已改为两流拼接）；改 `host.ts` 时忘记 `record_probe` 走的是 `dist/`（重建后才生效）
 - 未做：`slow-overrun`（>15s）真机夹具（`BS-26`）、Linux 端口排除段、D2 判定（R18 / `T-309`）
+
+### 2026-10-27 R18｜D2 判定（10 个真实候选 / 5 种失败形状）+ BS-26 真机补测 + R17 夹具纠错
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未派 subagent，四轴与对抗性由同一会话自查；`audit/step_reviews.json` R18-S1…S8）
+- 范围：`scripts/d2_report.mjs`（新）、`tests/governance/d2-report.test.ts`（新）、`tests/fixtures/probe/{matrix-r18.json（新）,slow-plugin/index.js,slow-overrun-plugin/*（新）,no-row-plugin/*（新）}`、`docs/{ROADMAP,BACKLOG,HANDOFF,specs/M3-probe}.md`、`INDEX.md`、`AGENTS.md`、`audit/{blind_spots.json,step_reviews.json,SIGNOFF.md,AUDIT_2026-10-27_R18.md（新）,AUDIT_2026-10-27_R17.md（补 §7）}`、`_archive/ARCHIVE_MANIFEST.md`、`data/results/{d2-*,probe-matrix-*,probe-slow-overrun-*,probe-slow-normal-v2-*}`
+- 起因：HUMAN 指令「继续」→ 按 R17 交接的 R18 = T-309（D2 分母扩容 + 判定）
+- 结果：① **D2 判定**：`scripts/d2_report.mjs` 从矩阵重算可靠性 / 真实通过率（Wilson 95%）/ 失败形状 / 计时 / 清理，真实启动 <10 时拒绝判定；`d2-2026-10-27T21-00-00.000Z.json` = **通过**（可靠性 17/17、真实 10、形状 5、清理 17/17、boot 6.2–19.1s；真实通过 9/10，Wilson 0.596–0.982）。② **10 个真实 pin 候选**：9 `go`，`@aiwayds/dsh-cron@0.6.1` 装不上（→ `T-310`）。③ **BS-26 关闭**：`slow-overrun-plugin`（顶层 await 20s）真机 `unknown` + `missing.inventory`。④ **R17 纠错**：R17 的慢夹具（延迟写在 `apply` 里）没有制造 transient 行（`wait_ms` 3.3s、行立刻 active），改成顶层 await 并重采；`AUDIT_2026-10-27_R17.md` 加 §7 修正。⑤ 新夹具 `no-row-plugin` 提供第 5 种失败形状。
+- 实测：220 测试 / 9 门全绿 / `--mutate` 9/9；矩阵 17 次运行；`d2_report` 7 条契约测试
+- 过程中的真实缺陷（本轮自己抓到）：R17 夹具「按预期通过」但没测到它宣称的东西；D2 第一版把 info 原因算成失败形状（9 种 → 5 种）；矩阵首版只有 16 次且缺 `row-missing` 形状，补夹具后重跑
+- 未做：`T-310` 安装失败归因、Linux/macOS 真 probe、D2 数字外推（`BS-27`）、M4 面板

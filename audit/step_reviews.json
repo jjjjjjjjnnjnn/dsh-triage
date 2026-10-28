@@ -2400,6 +2400,171 @@
         "sha256": "c46824c82bb716adf0b3c6b97e1692c738d6eef4ed248cf42355b7de74944faf",
         "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9；pnpm test = 213）"
       }
+    },
+    {
+      "id": "R18-S1",
+      "batch": "R18",
+      "step": "自查 R17 的「慢」夹具：延迟写在 apply 里不会让行走形，R17 的 settle 证据是过度声称",
+      "changed": [
+        "tests/fixtures/probe/slow-overrun-plugin/index.js",
+        "tests/fixtures/probe/slow-plugin/index.js"
+      ],
+      "review": {
+        "correctness": "PASS：老夹具（20s 延迟写在 apply 内）真机跑出 boot 7.5s、行 active、`wait_ms` 4173ms、结论 go —— 也就是说行在进入 apply 的那一刻就是 active，延迟根本没进入「树还在动」的状态。对照 R17 的 slow-normal（6s）也是 `wait_ms` 3295ms。结论：夹具测的是「晚注册」，不是 settle 路径",
+        "reproducibility": "PASS：同一命令 `node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin …` 可重放；产物里 `inventory.wait_ms` 与 `candidate_rows[].phase` 是判据",
+        "licence": "PASS：夹具是本仓原创，无第三方代码",
+        "ssot": "PASS：`probe-slow-overrun-2026-10-27T19-00-00.000Z.json` 保留（它是「错误夹具」的证据），R18-S2/S3 用修正版重采；`AUDIT_2026-10-27_R17.md` 加 §7 修正说明",
+        "adversary": "反例（本轮最重要）：如果只看「夹具按预期通过」就收工，这个假证据会一路带进 D2 报告。必须核对 `wait_ms` 与行相位，才能证明夹具制造了 transient 行。反例二：把「延迟在 apply 里」当成通用写法会误导后续所有慢样本"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label slow-overrun --expect unknown --stamp 2026-10-27T19:00:00.000Z",
+        "artifact": "data/results/probe-slow-overrun-2026-10-27T19-00-00.000Z.json",
+        "sha256": "ced0edece812d154e28a7f5712912829c67dc76de515e971bbba2216a287f981",
+        "outcome": "结论是 go（与期望 unknown 不符）—— 正是本步要证明的夹具缺陷：apply 内延迟不制造 transient 行"
+      }
+    },
+    {
+      "id": "R18-S2",
+      "batch": "R18",
+      "step": "修正 slow-plugin：把延迟移到模块顶层 await，重采「导入慢 6s = go」",
+      "changed": [
+        "tests/fixtures/probe/slow-plugin/index.js",
+        "docs/specs/M3-probe.md"
+      ],
+      "review": {
+        "correctness": "PASS：顶层 await 6s 之后 boot 10.1s、hook 真的等了 7283ms、`settled=true`、行 active、结论 go；与老夹具相比 `wait_ms` 从 3.3s 升到 7.3s，证明这次真的走了 settle 路径",
+        "reproducibility": "PASS：`--label slow-normal-v2` 的新产物与 R17 的旧产物并存，两条命令可对照重放；spec F31/F32 记下机制差异",
+        "licence": "PASS：无新依赖、无第三方代码",
+        "ssot": "PASS：`probe-slow-normal-v2-2026-10-27T19-10-00.000Z.json` 被本步引用；R17 的旧产物不被删除（历史留痕），只在 spec/audit 里标注它的证据强度",
+        "adversary": "反例：顶层 await 会让**整个导入**变慢，如果 loader 串行导入，它会同时拖慢别的行 —— 这正是真实大包的样子，但也就不能拿它证明「只有候选行慢」。结论只写「导入慢的候选会 go」，不写「只影响自己」"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label slow-normal-v2 --expect go --stamp 2026-10-27T19:10:00.000Z",
+        "artifact": "data/results/probe-slow-normal-v2-2026-10-27T19-10-00.000Z.json",
+        "sha256": "ac770c03e2386fdcec89e95b73e29b07a2e9b11010b2178aefaa22ed34eaec8a",
+        "outcome": "go（boot 10.1s / wait_ms 7283ms / settled=true / 行 active）"
+      }
+    },
+    {
+      "id": "R18-S3",
+      "batch": "R18",
+      "step": "BS-26：延迟 20s（超过 15s settle 预算）真机必须 unknown，不是 blocked 也不是 go",
+      "changed": [
+        "tests/fixtures/probe/slow-overrun-plugin/index.js",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：真机 `unknown` + `missing.inventory` + `probe.tree-not-settled`；`settled=false`、`wait_ms` 16258ms、`http-served: unmeasured`（虽然端口 401 有应答）、`inventory-active: unmeasured`；清理通过",
+        "reproducibility": "PASS：命令与期望（`--expect unknown`）都在台账里；同样的夹具与运行时下重复跑会落同一形状（settle 预算 15s < 导入 20s）",
+        "licence": "PASS：夹具原创；无外部执行",
+        "ssot": "PASS：`probe-slow-overrun-2026-10-27T19-20-00.000Z.json` 引用本步；`BS-26` 标 resolved 并写明证据路径",
+        "adversary": "反例：如果判成 blocked，就等于「慢 20s = 插件坏」——R17 修掉的错误会以另一种形式回来；如果判成 go，就是拿没 settle 的树背书。两个方向都有断言（`--expect unknown` + 断言列表）"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label slow-overrun --expect unknown --stamp 2026-10-27T19:20:00.000Z",
+        "artifact": "data/results/probe-slow-overrun-2026-10-27T19-20-00.000Z.json",
+        "sha256": "38d57d46a2c5f760baf10c09182fbdbb5e83ee18da0bf62510c9c27dc06d818a",
+        "outcome": "unknown（settled=false / wait_ms 16.3s / missing.inventory / cleanup ok）"
+      }
+    },
+    {
+      "id": "R18-S4",
+      "batch": "R18",
+      "step": "T-309 第一轮分母：10 个真实 pin 候选跑矩阵",
+      "changed": [
+        "tests/fixtures/probe/matrix-r18.json"
+      ],
+      "review": {
+        "correctness": "PASS：10 个真实候选 9 go / 1 blocked（`@aiwayds/dsh-cron@0.6.1` 失败在安装，不是运行时），清理 13/13，boot 6.3–8.2s 全在预算内；没有任何 run 变成 unknown",
+        "reproducibility": "PASS：`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r18.json … --stamp 2026-10-27T19:30:00.000Z`；每个候选都 pin 到具体版本，摘要内嵌每次产物的 sha256",
+        "licence": "PASS：全部 MIT / Apache-2.0（archive-manager）；只装进临时沙盒、跑完即删，源码不进仓（ADR-0004）",
+        "ssot": "PASS：`probe-matrix-2026-10-27T19-30-00.000Z.json` 的 `real_starts=10` 由脚本计数，不手填",
+        "adversary": "反例一：这 10 个是**手挑**的（npm 搜索里挑看起来能装的），不能当生态随机样本 —— 已写进 `BS-27` 与 D2 报告的 limits。反例二：唯一的失败是「装不上」而不是「起不来」，如果只报「9/10 成功」会掩盖「我们还不知道它为什么装不上」→ 开 `T-310`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r18.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T19:30:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-27T19-30-00.000Z.json",
+        "sha256": "30c8e3389ce1d14e88deb27734f681b8ad5d0fdd28166fd95912f4c4a22e403a",
+        "outcome": "n=13 / real_starts=10（9 go / 1 install-failed）/ cleanup 13-13 / boot 6.3–8.2s"
+      }
+    },
+    {
+      "id": "R18-S5",
+      "batch": "R18",
+      "step": "第 5 种失败形状：装上但零行的夹具 + 扩展矩阵（17 次）",
+      "changed": [
+        "tests/fixtures/probe/no-row-plugin/package.json",
+        "tests/fixtures/probe/no-row-plugin/index.js",
+        "tests/fixtures/probe/no-row-plugin/cordis.patch.yml",
+        "tests/fixtures/probe/matrix-r18.json"
+      ],
+      "review": {
+        "correctness": "PASS：`no-row-plugin`（空 patch）真机 = blocked + `probe.row-missing`（行 0 条），与 `row-inactive` 分开；扩展批次 n=17、真实 10、清理 17/17、boot 6.2–19.1s、结论 9 go / 7 blocked / 1 unknown",
+        "reproducibility": "PASS：`--stamp 2026-10-27T20:30:00.000Z` 可重放；旧的 n=16 批次按「只进不出」归档并登记（它是缺形状的中间状态）",
+        "licence": "PASS：夹具原创；外部候选取用范围未扩大",
+        "ssot": "PASS：`probe-matrix-2026-10-27T20-30-00.000Z.json` 引用本步；`_archive/ARCHIVE_MANIFEST.md` 记 n=16 的去向",
+        "adversary": "反例：空 patch 也可能被上游当成「无事发生」而静默通过 —— 这正是要测的形状；如果判成 go，用户会以为插件生效了。断言要求必须 `blocked` + `row-missing`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r18.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-27T20:30:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-27T20-30-00.000Z.json",
+        "sha256": "cec27f261e079b36e276d65131264c5ade8c8a74d39ca0f663661d2be1920826",
+        "outcome": "n=17 / real 10 / cleanup 17-17 / 5 种失败形状 / boot 6.2–19.1s"
+      }
+    },
+    {
+      "id": "R18-S6",
+      "batch": "R18",
+      "step": "D2 判定工具：把矩阵算成可重算报告，分母不足时拒绝判定",
+      "changed": [
+        "scripts/d2_report.mjs",
+        "tests/governance/d2-report.test.ts",
+        "docs/ROADMAP.md"
+      ],
+      "review": {
+        "correctness": "PASS：`d2-2026-10-27T21-00-00.000Z.json` = reliability 17/17、real 10、shapes 5、cleanup 17/17、pass 9/10（Wilson 0.596–0.982）、`gate.passed=true`；7 条契约测试覆盖可重算 / 分母不足 / 清理 / 预算 / info 原因 / unknown / 逐字节一致",
+        "reproducibility": "PASS：同矩阵 + 同 stamp 逐字节一致（测试断言）；`--matrix` 可指定任意批次；报告里写 `source.matrix_sha256`",
+        "licence": "PASS：脚本零依赖（只读 JSON，node 内置）；无新增运行时依赖",
+        "ssot": "PASS：`produced_by`/`generated_at`/纯 hash `.sha256`；`definitions` 段落把三个数字的口径写在产物里，不只在文档里",
+        "adversary": "反例一：第一版把 info 原因算成失败形状（9 种而不是 5 种），虚高覆盖度 —— 已修并加测试。反例二：`--min-real` 可被调小来「通过」，所以默认值写进产物、测试里有一条 2 个真实跑断言必须失败。反例三：只报点估计会被读成「90% 稳了」→ 强制 Wilson 区间 + limits"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --stamp 2026-10-27T21:00:00.000Z",
+        "artifact": "data/results/d2-2026-10-27T21-00-00.000Z.json",
+        "sha256": "8013ff0d632c988cee2bbf002580f5f333b29e55b987ee384b96282ea29f5c46",
+        "outcome": "gate.passed=true（reliability 17/17 · real 10 · shapes 5 · pass 9/10 Wilson 0.596–0.982）"
+      }
+    },
+    {
+      "id": "R18-S7",
+      "batch": "R18",
+      "step": "交接与口径：D2 判定写进 ROADMAP/HANDOFF/INDEX、BS-26 关闭 + BS-27 新增、审核报告与签署、全链录一次绿",
+      "changed": [
+        "docs/ROADMAP.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/specs/M3-probe.md",
+        "INDEX.md",
+        "audit/AUDIT_2026-10-27_R18.md",
+        "audit/AUDIT_2026-10-27_R17.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "audit/blind_spots.json",
+        "_archive/ARCHIVE_MANIFEST.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 220 测试 / 9 门全绿；`--mutate` 9/9；D2 的判定（reliability 17/17、real 10、shapes 5、pass 9/10 Wilson 0.596–0.982）在 ROADMAP、HANDOFF、INDEX、AUDIT 四处一致",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-27T22:00:00.000Z` 可重放；D2 重算命令 `node scripts/d2_report.mjs --stamp <iso>` 写进 HANDOFF §3",
+        "licence": "PASS：SIGNOFF 新增两行（D2 判定口径 / 10 个 pin 候选），仍沿用 ADR-0004 边界且写明未扩大机制",
+        "ssot": "PASS：91 产物全部被 104 步台账引用；n=16 的旧矩阵按「只进不出」归档并登记；`BS-26` resolved、`BS-27` 记录「便利样本不可外推」",
+        "adversary": "反例一：把 D2 的「通过」写成「判断层准确率 90%」是最容易的过度声称 —— 四处文档都分开写「可靠性」与「产品数字」，并强制带 Wilson 区间。反例二：R17 的慢夹具若不被自查发现，D2 报告会引用一个没测到 settle 路径的证据；本轮把它写进 AUDIT_R17 §7 而不是悄悄改掉。反例三：INDEX 里 `go/(go+blocked)` 这类带斜杠的短语会被门当成路径（本轮真踩），已改成 `go ÷ (go + blocked)`"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-27T22:00:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-27T22-00-00.000Z.json",
+        "sha256": "2a108116c5e47312f0fb64208bae85636bd7a1e71880660162d7fac1c05421a7",
+        "outcome": "ALL GREEN · 9 gates（同轮 mutate 9/9；pnpm test = 220）"
+      }
     }
   ]
 }

@@ -1,0 +1,9 @@
+# Slow-beyond-budget fixture (R18 / BS-26).
+#
+# delayMs is larger than the probe hook's settle budget (15s), so the sample is taken while
+# this row is still `loading`. `insert:` is required (R14 / M3-probe.md F3).
+- insert:
+    - id: triage-probe-slow-overrun
+      name: triage-probe-fixture-slow-overrun
+      config:
+        delayMs: 20000

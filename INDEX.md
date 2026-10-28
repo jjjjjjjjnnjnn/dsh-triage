@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R17 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R18 (2026-10-27)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -26,8 +26,8 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-27_R17.md`（最新：端口自伤 + 慢≠坏）· `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md`· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
-| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R17 起 **97 步 / 84 产物**） |
+| **审核报告** | `audit/AUDIT_2026-10-27_R18.md`（最新：D2 判定 + R17 夹具纠错）· `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md`· `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
+| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R18 起 **104 步 / 91 产物**） |
 | **授权/签署台账** | `audit/SIGNOFF.md` | 谁授权 / 谁执行出结论 / HUMAN 未逐条复核的部分，三者分列；冻结区改动必须有对应条目 |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -55,7 +55,8 @@
 | **本地证据面板（T-405）** | `packages/plugin/src/serve.ts` + `scripts/record_serve_smoke.mjs` | `dsh-triage serve [--port N] [--results DIR] [--allow-execute]`：零依赖、只绑 127.0.0.1、token + HttpOnly cookie、跨源 403、POST 默认 403（`--allow-execute` 也只回 501）；列出 `data/results` 全部产物与 sha256 |
 | **外部候选取用边界** | `docs/adr/0004-external-candidate-boundary.md` | pin 版本 / 临时沙盒 / 不 vendor / 不注入凭据 / 不判安全 / 失败即证据；`vendor-manifest` 只登记 `kind: probe-candidate` 元数据 |
 | 隔离实测 | `packages/probe/src/exec.ts` · `packages/probe/src/host.ts` · `packages/probe/src/plan.ts` | M3：默认 dry-run，独立 `DSH_HOME`；`packages/probe/src/host.ts` 是唯一一份 Host I/O，`scripts/lib/live.mjs` 只是再导出；R17 起 boot 事实（`url_printed` / `startup_failed` / `bind_failed_ports` / `error_tail`）在 early return 之前落账 |
-| **D2 分母矩阵** | `scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r17.json` → `data/results/probe-matrix-*.json` | 摘要区分 `real_starts` / `synthetic_failures` / `by_conclusion`；R17 首测 n=7（真实 2 次全 go，清理 7/7，boot 6.2–6.9s）。**2 次真实启动不是成功率** |
+| **D2 分母矩阵** | `scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r18.json` → `data/results/probe-matrix-*.json` | 摘要区分 `real_starts` / `synthetic_failures` / `by_conclusion`；R18 批次 n=17（真实 10 / 夹具 4 / 合成 3，清理 17-17） |
+| **D2 判定（R18）** | `scripts/d2_report.mjs` + `tests/governance/d2-report.test.ts` → `data/results/d2-*.json` | 把矩阵算成可重算报告：**可靠性**（产物 + 清理 + 预算 + 结论）/ **真实通过率**（`go` ÷ (`go` + `blocked`)，带 Wilson 95%）/ 失败形状 / 计时；真实启动 <10 时**拒绝判定**。R18 结果 `data/results/d2-2026-10-27T21-00-00.000Z.json`：可靠性 17/17、真实 10、形状 5、通过 9/10（Wilson 0.596–0.982），`gate.passed=true` |
 | 用户安装件 | `packages/plugin/`（`dsh-triage`） | bundle + patch + bin CLI + Web 面板（M4） |
 | 门禁 | `scripts/gate_*.mjs` + `scripts/gate.mjs` | 9 门：admission 对等 / verdict 契约（含 `{占位符}` 完整性）/ SSOT / 治理 / 命名 / 发布 / 发布内容 / 相位契约 / 每步审核 |
 | 真跑落盘 | `scripts/scan_env.mjs` | 扫本机 profile → `data/results/*.json` + `.sha256` |

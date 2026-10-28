@@ -1,27 +1,19 @@
-// Fixture: a candidate that is SLOW but not broken (R17 / BS-25).
+// Fixture: a candidate that is SLOW but not broken (R17 / BS-25, corrected in R18).
 //
-// The probe used to turn "the tree had not finished composing" into "the plugin is broken",
-// because a silent port inside a 5s window and a dead row looked identical. This fixture keeps
-// its row in `loading` for `delayMs` before it registers, so:
+// The first version delayed inside `apply` by returning a promise. Measured in R18:
+// Cordis marks the row `active` as soon as `apply` is entered, so that fixture never
+// produced a transient row (`wait_ms` 3.3s, phase `active` immediately) and proved less
+// than it claimed.
 //
-//   * `boot -> sample` is late by design (the hook waits for a settled tree),
-//   * the sample must come back with `settled: true`,
-//   * the verdict must be `go`, never `blocked`.
-//
-// It deliberately does nothing else: no timers left running, no tools, no side effects.
+// This version delays the MODULE IMPORT with a top-level await, which is what a large
+// real-world bundle actually does: the loader cannot finish composing this row until the
+// module resolves, so the row really is `loading` for the whole delay.
 export const name = 'triage-probe-slow'
 
-export function apply(ctx = {}, config = {}) {
-  const delayMs = Number(config.delayMs ?? 6000)
-  ctx.logger?.info?.(`triage-probe-slow: registering after ${delayMs}ms`)
-  // Returning a promise keeps the row `loading` until it resolves, which is exactly the
-  // "tree still moving" shape the settle logic has to survive.
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      ctx.logger?.info?.('triage-probe-slow mounted')
-      resolve()
-    }, delayMs)
-  })
+await new Promise((resolve) => setTimeout(resolve, 6000))
+
+export function apply(ctx = {}) {
+  ctx.logger?.info?.('triage-probe-slow mounted after a 6s import')
 }
 
 export default { name, apply }

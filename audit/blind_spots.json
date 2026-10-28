@@ -189,9 +189,18 @@
     {
       "id": "BS-26",
       "area": "probe/readiness-window",
-      "cannot_see": "「慢到超过 settle 预算」的真机形状没有夹具：判定层有 N19 单测（`settled:false` → unknown），但没有任何一个真机插件证明「延迟 >15s 的候选会得到 unknown 而不是 blocked」。同时 `settled:false` 的替换等待（默认 20s）是否足够也没测",
+      "cannot_see": "「慢到超过 settle 预算」的真机形状在 R17 没有夹具（只有 N19 单测）；而且 R17 那个「慢」夹具本身是错的：延迟写在 apply 里不会让行停在 loading（实测 wait_ms 3.3s、行立刻 active），所以它只能证明「晚注册」而不能证明 settle 路径",
       "mitigation": "不得把 N19 的单测说成「真机已验证」。补全路径：加一个延迟 20s 的 `slow-overrun` 夹具，真跑一次确认期望 `unknown`（不是 `blocked`，也不是 `go`）",
-      "owner": "probe/host"
+      "owner": "probe/host",
+      "status": "resolved (R18)",
+      "resolved_by": "R18-S1/S4: tests/fixtures/probe/slow-overrun-plugin (top-level await 20s) → data/results/probe-slow-overrun-2026-10-27T19-20-00.000Z.json is unknown + missing.inventory with settled:false, not blocked and not go. R18 also found that the R17 fixture (delay inside apply) never produced a transient row, and replaced it (probe-slow-normal-v2-*)."
+    },
+    {
+      "id": "BS-27",
+      "area": "d2/denominator",
+      "cannot_see": "D2 的 10 个真实候选是**手挑的便利样本**（npm 搜索 + pin 版本 + 可装），不是生态随机抽样。因此 `real_pass_rate` 只能描述这一批，不能外推；而且只有一个运行时（0.2.1-rc.4）、一台 Windows 机器、一次陪跑。安装失败的那 1 个（@aiwayds/dsh-cron）也只知道 exit 1，不知道 pnpm 的错误码",
+      "mitigation": "D2 报告里 `limits[]` 与 `definitions` 固定写明「便利样本 / 单机 / 单运行时」；`real_pass_rate` 必须带 Wilson 95% 区间一起出现（9/10 → 0.596–0.982），禁止只报点估计。补全路径：T-310（安装失败归因）+ 后续批次持续加入真实候选；跨平台结论要等 Linux 真 probe",
+      "owner": "scripts/d2_report.mjs"
     }
   ]
 }

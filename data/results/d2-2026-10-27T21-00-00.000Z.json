@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/d2_report.mjs",
+  "generated_at": "2026-10-27T21:00:00.000Z",
+  "source": {
+    "matrix": "data/results/probe-matrix-2026-10-27T20-30-00.000Z.json",
+    "matrix_sha256": "cec27f261e079b36e276d65131264c5ade8c8a74d39ca0f663661d2be1920826",
+    "matrix_generated_at": "2026-10-27T20:30:00.000Z",
+    "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r18.json"
+  },
+  "definitions": {
+    "probe_reliability": "a run counts when it produced an artifact, the sandbox was removed, every port it used is closed, the boot stayed inside the budget, and the run stated a conclusion (unknown included: refusing to judge an unsettled tree is an answer)",
+    "real_pass_rate": "go / (go + blocked) over real runs; unknown is listed separately and never folded into either side",
+    "failure_shape": "conclusion + reason messageId (+ the row phase when the reason names one)"
+  },
+  "denominator": {
+    "runs": 17,
+    "real_runs": 10,
+    "real_booted": 9,
+    "non_real_runs": 7,
+    "min_real_required": 10,
+    "enough": true
+  },
+  "verdicts": {
+    "go": 9,
+    "blocked": 7,
+    "unknown": 1
+  },
+  "real_verdicts": {
+    "go": 9,
+    "blocked": 1
+  },
+  "probe_reliability": {
+    "runs": 17,
+    "reliable": 17,
+    "unknown_runs": 1,
+    "rate": 1,
+    "threshold": 0.9
+  },
+  "real_pass_rate": {
+    "go": 9,
+    "blocked": 1,
+    "unknown": 0,
+    "decided": 10,
+    "rate": 0.9,
+    "wilson95": [
+      0.596,
+      0.982
+    ]
+  },
+  "timing": {
+    "sampled": 13,
+    "budget_ms": 20000,
+    "within_budget": 13,
+    "min": 7300,
+    "median": 8300,
+    "max": 19100
+  },
+  "cleanup": {
+    "ok": 17,
+    "checked": 17
+  },
+  "failure_shapes": [
+    {
+      "shape": "blocked:probe.install-failed",
+      "runs": [
+        "real-dsh-cron",
+        "synthetic-missing",
+        "synthetic-bogus-version",
+        "synthetic-private-registry"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-inactive(failed)",
+      "runs": [
+        "fixture-apply-fail"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-inactive(none)",
+      "runs": [
+        "fixture-import-fail"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-missing",
+      "runs": [
+        "fixture-no-row"
+      ]
+    },
+    {
+      "shape": "unknown:probe.tree-not-settled",
+      "runs": [
+        "fixture-slow-overrun"
+      ]
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "min-real-runs",
+        "ok": true,
+        "detail": "10 real run(s), need 10"
+      },
+      {
+        "id": "cleanup-complete",
+        "ok": true,
+        "detail": "17/17 cleaned up"
+      },
+      {
+        "id": "boot-budget",
+        "ok": true,
+        "detail": "13/13 sampled run(s) within 20000ms"
+      },
+      {
+        "id": "probe-reliability",
+        "ok": true,
+        "detail": "100% produced an artifact, cleaned up and stated a conclusion (need 90%)"
+      },
+      {
+        "id": "failure-shapes",
+        "ok": true,
+        "detail": "5 distinct failure shape(s), need 5"
+      }
+    ]
+  },
+  "limits": [
+    "real plugins are a convenience sample picked by hand from npm search, not a random sample of the ecosystem",
+    "the pass rate says \"this batch of pinned plugins composes on this sandbox runtime\", not \"plugins work\"",
+    "synthetic and fixture failures are labelled and excluded from the pass rate; they only count as shapes",
+    "measured on one machine / one sandbox runtime (0.2.1-rc.4); there is no Linux or macOS probe evidence yet"
+  ]
+}

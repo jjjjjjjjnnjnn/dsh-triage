@@ -68,6 +68,9 @@
 | F28 | **换端口后同一个候选是 `go`**：`findFreePort()`（bind :0 → 取端口 → 关闭）之后，`dsh-whale-widget@0.4.2` boot→sample **5.9–6.8s**、HTTP 401、行 `active`、渲染通过 | `data/results/probe-registry-whale-2026-10-27T17-05-00.000Z.json` · `probe-matrix-2026-10-27T17-20-00.000Z.json`（`runs[3]`） |
 | F29 | **`inactive context` 是「我们的 fiber 被 unload 了」，不是「插件坏」**：Cordis 在注入服务缺失时把 `fiber.store` 置 `undefined`（`_unload`），等服务回来**重新跑 apply**。因此同一个 task 里重试同一个 ctx 无效；有效的是「旧 task 不许写文件（代际保护）+ 新 apply 覆盖写出好样本 + Host 等一份可判的样本」 | 读 `@deepseek-ai/cordis/lib/index.js`（`_getImpl`/`_refresh`/`_setEpoch`/`_unload`）+ 五次真跑的三种形状（error / 好样本 / 无样本） |
 | F30 | **launcher 的启动诊断是免费的归因**：失败时 stdout 打印 `dsh: startup failed: N required plugins did not activate`，后面逐行列出 `Failed plugins` / `Plugins waiting for services`（含缺失服务名与原始错误）。它一出现就不会再写出样本，等满 120s 是纯浪费 | 一次 EACCES 真跑的完整 stdout（本轮 `boot.error_tail`） |
+| F31 | **`apply` 返回 promise 不会让行走形**：把延迟写在 `apply` 里（返回 6s/20s 后 resolve 的 promise），实测行**立刻**就是 `active`、hook 的 `wait_ms` 只有 3.3s —— 也就是说 R17 的 `slow-plugin` 并没有制造出 transient 行，它的 `go` 不能当作「settle 路径」的证据。要让行真的停在 `loading`，必须让**模块导入**变慢（顶层 `await`） | R18 两次对照：老夹具（20s 延迟写在 `apply` 内）→ boot 7.5s、行 active、`go`；改成顶层 await 后同参数 → boot 19.1s、`settled:false`、`unknown` |
+| F32 | **真机上两条「慢」的结论不同**：导入慢 6s → `go`（boot 10.1s、`wait_ms` 7.3s、`settled:true`、行 active）；导入慢 20s（超过 15s settle 预算）→ `unknown` + `missing.inventory` + `probe.tree-not-settled`，即使 HTTP 401 有应答也仍是 `http-served: unmeasured` | `data/results/probe-slow-normal-v2-2026-10-27T19-10-00.000Z.json` · `data/results/probe-slow-overrun-2026-10-27T19-20-00.000Z.json` |
+| F33 | **真实候选的分布（n=10，pin 版本）**：9 个 `go`（boot 6.2–8.2s），1 个 `blocked` 且失败在**安装**阶段（`@aiwayds/dsh-cron@0.6.1`，pnpm 退出 1；产物只留最后一行 + 端点，读不到 pnpm 的错误码 —— 见 T-310）。清理 17/17 | `data/results/probe-matrix-2026-10-27T20-30-00.000Z.json` · `data/results/d2-2026-10-27T21-00-00.000Z.json` |
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
@@ -239,5 +242,5 @@ runtime → install → boot → http → render → inventory → cleanup
 | 渲染的耗时 | 15s 是**循环预算**；阻塞渲染器的实测总耗时 15.0s（命令级超时 + 剩余预算封顶） |
 | 引擎差异 | Windows（Chrome 154 / Edge 146）+ **Linux CI（ubuntu-latest 自带 Chrome 155）** 都跑过同一套对照（`ADR-0005`） |
 | **端口排除段** | R17 实测本机 53461–53560 被排除且**会变化**。现在每次 `findFreePort()` 向 OS 申请，产物记 `sandbox.port_origin=allocated`；仍存在「释放到 Host 绑定」之间的竞态，届时由 `probe.port-unavailable` 兜底。**未测**：Linux/macOS 上是否有等价排除段（CI 目前不跑真 probe） |
-| **「慢到超过 settle 预算」的真机样本** | 判定有单测（N19），但**没有**真机夹具证明（要一条延迟 >15s 的插件）。补全路径：加一个 `slow-overrun` 夹具并在 R18 真跑一次 |
+| **「慢到超过 settle 预算」的真机样本** | ✅ **R18 已补**（F31/F32）：`slow-overrun-plugin`（顶层 await 20s）真机 `unknown` + `missing.inventory`；同批 `slow-plugin`（6s）是 `go`。⚠️ R17 的写法（延迟在 `apply` 里）**没有**制造 transient 行，R18 已换成顶层 await 并重采 |
 | **`settled:false` 时的等待成本** | 不可判样本要等一份替换（默认 20s）。对坏候选是纯成本，对间歇慢的候选是唯一恢复路径；R17 选择后者（`BS-25` 的教训） |
