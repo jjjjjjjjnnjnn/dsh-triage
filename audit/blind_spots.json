@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R16 (2026-10-27)",
+  "stand": "R22 (2026-10-28)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -217,6 +217,22 @@
       "mitigation": "对外口径只能是「user config 不继承（R20 实测 2/2）；其余来源未审计」。补全路径：T-313 逐个来源做黑盒对照（造一条会打印 auth 的失败安装，逐一关闭来源，看 `registry_auth_used` 何时变 false）",
       "owner": "packages/probe/src/host.ts + docs/adr/0004",
       "status": "open (R20)"
+    },
+    {
+      "id": "BS-30",
+      "area": "probe/profile-copy-builds",
+      "cannot_see": "复制模式（T-304）里沙盒**从不运行**组合依赖的构建脚本：`pnpm-workspace.yaml` 的 `strictDepBuilds: false` 只把 pnpm 的「错误」降成「提示」，`onlyBuiltDependencies` 保持为空，被跳过的包一律进 `install.ignored_packages`（R22 实测 5 个：`@deepseek-ai/dsh-subprocess-local` / `@google/genai` / `koffi` / `node-pty` / `protobufjs`）。所以复制模式的 `go` **不能**说明原生模块在你机器上构建后行为一致；反过来，启动失败也不能确定是候选造成的（判据已按此降级为 `unknown`，N37）",
+      "mitigation": "对外口径：「声明层一致、依赖装齐、原生模块未构建」。产物同时给 `install.ignored_packages`、`install.build_refused_profile_only`、`sandbox.profile_copy.pnpm_policy`，让读者自己看见这条缝。要缩小它只能靠用户机器上的真实构建（超出 ADR-0004 的沙盒边界），或等 pnpm 的审批策略可被沙盒化配置",
+      "owner": "packages/probe/src/{profile-copy,exec}.ts + docs/specs/M3-probe.md §8.5",
+      "status": "open (R22)"
+    },
+    {
+      "id": "BS-31",
+      "area": "probe/profile-copy-boundary",
+      "cannot_see": "副本只搬**四个声明文件**，因此：① 依赖 `link:`/`file:` 指向本机目录的组合一律 `unknown`（沙盒里没有那个目录，U 盘/工作区路径都不可能复现）；② 依赖 `.npmrc` 里私有 registry 的组合会装不上而 `unknown`（凭据不复制，铁律 4）；③ `node_modules` 里手工修补过的包在副本里不存在；④ `workspace:` 依赖要等 `pnpm-workspace.yaml` 真的被复制且指向的目录存在才可能成立",
+      "mitigation": "四条都在 `probe.profile-*` 的原因里点名（悬空链接给 `count`+`links`，装不上给包管理器原文）。**不许**把这种 `unknown` 说成「你的组合有问题」——它是「沙盒里复现不了」，对外文案必须一起说",
+      "owner": "packages/probe/src/profile-copy.ts + docs/specs/M3-probe.md §8.5",
+      "status": "open (R22)"
     }
   ]
 }

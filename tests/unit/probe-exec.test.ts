@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { test } from 'node:test'
 import { buildProbePlan } from '@dsh-triage/probe'
-import type { ProbeExecDeps, ProbeRun, ProbeSampleView } from '@dsh-triage/probe'
+import type { ProbeExecDeps, ProbeRun, ProbeSampleView, ProfilePrepareOutcome } from '@dsh-triage/probe'
 import {
   bindFailedPorts,
   diagnosisFromText,
@@ -13,6 +13,7 @@ import {
   installDiagnosis,
   isCandidateModule,
   isUsableSample,
+  ignoredBuildPackages,
   judgeProbe,
   modulePackageName,
   probeAssertions,
@@ -26,11 +27,20 @@ const workRoot = join(tmpdir(), 'dsh-triage-probe')
 const CANDIDATE = 'triage-probe-fixture-ok'
 const CANDIDATE_PATH = 'tests/fixtures/probe/ok-plugin'
 
-function plan() {
-  const built = buildProbePlan({ candidate: CANDIDATE_PATH, realDshHome, workRoot })
+function planWith(copyProfile?: string) {
+  const built = buildProbePlan({
+    candidate: CANDIDATE_PATH,
+    realDshHome,
+    workRoot,
+    ...(copyProfile === undefined ? {} : { copyProfile }),
+  })
   assert.ok(built.ok)
   if (!built.ok) throw new Error('plan failed')
   return built.value
+}
+
+function plan() {
+  return planWith()
 }
 
 /** The payload shape `inventory-hook.mjs` writes (R17 adds `settled`/`attempts`/error code). */
@@ -90,6 +100,8 @@ interface FakeOptions {
   readonly deps?: Partial<ProbeExecDeps>
   readonly sample?: unknown | null
   readonly skipInstall?: boolean
+  /** T-304: run the same fakes against a plan that copies a real profile. */
+  readonly copyProfile?: string
 }
 
 async function runWith(options: FakeOptions = {}): Promise<{ run: ProbeRun; cleaned: boolean }> {
@@ -114,8 +126,9 @@ async function runWith(options: FakeOptions = {}): Promise<{ run: ProbeRun; clea
     },
     ...(options.deps ?? {}),
   }
+  const built = planWith(options.copyProfile)
   const run = await executeProbe(
-    { plan: plan(), dshMain: '/fake/bin.js', candidatePackage: CANDIDATE, ...(options.skipInstall === true ? { skipInstall: true } : {}) },
+    { plan: built, dshMain: '/fake/bin.js', candidatePackage: CANDIDATE, ...(options.skipInstall === true ? { skipInstall: true } : {}) },
     deps,
   )
   return { run, cleaned }
@@ -754,4 +767,293 @@ test('a usable sample is one that was read on a settled tree', () => {
   assert.equal(isUsableSample({ kind: 'live', settled: false, snapshot: {} }), false)
   assert.equal(isUsableSample({ kind: 'live', error: { code: 'inactive-context', message: 'x' } }), false)
   assert.equal(isUsableSample(null), false)
+})
+
+/* ------------------------ T-304: the copied profile ------------------------ */
+
+/** The three shapes the copy experiment must be able to tell apart. */
+const copyOk: ProfilePrepareOutcome = {
+  copied: ['package.json', 'cordis.yml'],
+  missing: ['pnpm-workspace.yaml'],
+  install: { exitCode: 0, detail: 'Already up to date' },
+  danglingLinks: [],
+}
+
+test('a usable copy keeps a working candidate at go and records where it ran', async () => {
+  const { run } = await runWith({ copyProfile: 'desktop', deps: { prepareProfile: async () => copyOk } })
+  assert.equal(run.profileOrigin, 'copy:desktop')
+  assert.equal(run.profileCopy?.copied.length, 2)
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go')
+  assert.ok(
+    judgement.evidence.some((evidence) => evidence.id === 'probe-profile-copy' && evidence.detail?.includes('origin=copy:desktop')),
+    'the artifact must say which composition was measured',
+  )
+})
+
+test('a copy whose dependencies do not install is unknown, and never blamed on the candidate', async () => {
+  const { run, cleaned } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => ({ ...copyOk, install: { exitCode: 1, detail: 'ERR_PNPM_FETCH_404' } }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown', 'the candidate never ran, so no failure is attributed to it')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.profile-copy-unusable'))
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+  const stepIds = run.steps.map((step) => step.id)
+  assert.ok(stepIds.includes('profile'))
+  assert.ok(!stepIds.includes('install'), 'the candidate must not be installed into a profile that cannot work')
+  assert.ok(!stepIds.includes('boot'))
+  assert.equal(cleaned, true, 'a copied profile that fails still cleans its sandbox')
+})
+
+test('a dangling link: dependency is unknown even though the package manager exited 0 (F40)', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => ({
+        ...copyOk,
+        // The measured trap: exit 0 with a target that does not exist.
+        install: { exitCode: 0, detail: '+ local-thing <- not-here' },
+        danglingLinks: [{ name: 'local-thing', spec: 'link:./not-here', target: '/sandbox/profiles/desktop/not-here' }],
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown')
+  const reason = judgement.reasons.find((item) => item.messageId === 'probe.profile-link-dangling')
+  assert.ok(reason !== undefined, 'the dangling link is its own reason, not "install failed"')
+  assert.equal(reason?.params?.['count'], 1)
+  assert.ok(String(reason?.params?.['links']).includes('local-thing'))
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+})
+
+test('a copy plan without a copier fails closed instead of quietly measuring a template', async () => {
+  const { run } = await runWith({ copyProfile: 'desktop' })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.profile-copy-unusable'))
+})
+
+test('an unusable copy leaves the boot assertions unmeasured, not failed', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: { prepareProfile: async () => ({ ...copyOk, install: { exitCode: 1, detail: 'nope' } }) },
+  })
+  const byId = new Map(probeAssertions(run).map((assertion) => [assertion.id, assertion.status]))
+  assert.equal(byId.get('boot-sampled'), 'unmeasured')
+  assert.equal(byId.get('http-served'), 'unmeasured')
+  assert.equal(byId.get('inventory-active'), 'unmeasured')
+  // Cleanup is still a measurement this run made, so it keeps its real answer.
+  assert.equal(byId.get('cleanup-complete'), 'passed')
+})
+
+test('a composition that never received the candidate also leaves boot assertions unmeasured', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => copyOk,
+      profileBundles: () => ['@deepseek-ai/dsh-base'],
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts: node-pty@1.2.0', source: 'launcher' },
+        ignoredPackages: ['node-pty'],
+      }),
+    },
+  })
+  const byId = new Map(probeAssertions(run).map((assertion) => [assertion.id, assertion.status]))
+  assert.equal(byId.get('boot-sampled'), 'unmeasured', 'the candidate was never booted, so this is not a candidate failure')
+  assert.equal(byId.get('inventory-active'), 'unmeasured')
+})
+
+test('a template plan never calls the copier, so T-304 cannot leak into the old path', async () => {
+  let called = false
+  const { run } = await runWith({
+    deps: {
+      prepareProfile: async () => {
+        called = true
+        return copyOk
+      },
+    },
+  })
+  assert.equal(called, false)
+  assert.equal(run.profileCopy, null)
+  assert.equal(run.profileOrigin, 'template')
+})
+
+test('a build-script refusal in the copy is not "the profile is unusable" (R19 F35 shape)', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => ({
+        ...copyOk,
+        install: { exitCode: 1, detail: 'ERR_PNPM_IGNORED_BUILDS · Ignored build scripts: node-pty', code: 'ERR_PNPM_IGNORED_BUILDS' },
+      }),
+    },
+  })
+  assert.equal(run.steps.find((step) => step.id === 'profile')?.status, 'passed')
+  assert.equal(run.profileCopy?.buildRefused, true)
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go', 'the packages installed; refusing to build them is a policy fact, not a dead profile')
+  assert.ok(
+    judgement.reasons.some((reason) => reason.messageId === 'probe.profile-build-refused'),
+    'the caveat must be visible in the verdict, not only in the artifact',
+  )
+})
+
+test('a boot that fails on such a copy is unattributable, so unknown (not blocked)', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    sample: null,
+    deps: {
+      prepareProfile: async () => ({
+        ...copyOk,
+        install: { exitCode: 1, detail: 'ERR_PNPM_IGNORED_BUILDS', code: 'ERR_PNPM_IGNORED_BUILDS' },
+      }),
+      bootAndSample: async () => ({ sample: null, seconds: 0, detail: 'no sample', urlPrinted: false, startupFailed: true }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown', 'an unbuilt native dependency can stop a Host; that is not the candidate')
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+})
+
+test('a genuine failure to install the copy is still the copy, even with an error code', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => ({
+        ...copyOk,
+        install: { exitCode: 1, detail: 'ERR_PNPM_FETCH_404 · 404 Not Found', code: 'ERR_PNPM_FETCH_404' },
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.profile-copy-unusable'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.profile-build-refused'))
+})
+
+test('a build refusal naming only the copied profile continues only when the candidate registered (R21)', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => copyOk,
+      // The launcher registers the bundle after a clean run; here the read-back says it did.
+      profileBundles: () => ['@deepseek-ai/dsh-base', CANDIDATE],
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts: node-pty@1.2.0', source: 'launcher' },
+        ignoredPackages: ['node-pty', 'koffi'],
+      }),
+    },
+  })
+  assert.equal(run.steps.find((step) => step.id === 'install')?.status, 'passed')
+  assert.equal(run.installBuildRefusedProfileOnly, true)
+  assert.equal(run.candidateRegistered, true)
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'go')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.profile-build-refused'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.install-build-refused'))
+})
+
+test('a profile-only refusal that left the candidate out of the composition is unknown, not blocked', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => copyOk,
+      // Measured in R21 on a real profile copy: the dependency lands, the bundle does not.
+      profileBundles: () => ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts: node-pty@1.2.0', source: 'launcher' },
+        ignoredPackages: ['node-pty', 'koffi'],
+      }),
+    },
+  })
+  assert.equal(run.candidateRegistered, false)
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'unknown', 'the composition never contained the candidate')
+  assert.ok(judgement.missingEvidence.includes('missing.probe'))
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.profile-build-refused'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.install-build-refused'))
+  assert.ok(!judgement.reasons.some((reason) => reason.messageId === 'probe.row-missing'))
+})
+
+test('a build refusal naming the candidate still blocks, even inside a copied profile', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => copyOk,
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts: node-pty@1.2.0', source: 'launcher' },
+        ignoredPackages: ['node-pty', CANDIDATE],
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'blocked')
+  assert.ok(judgement.reasons.some((reason) => reason.messageId === 'probe.install-build-refused'))
+})
+
+test('an unreadable ignored list keeps the conservative block (no list, no leniency)', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => copyOk,
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts:', source: 'launcher' },
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(judgement.conclusion, 'blocked')
+})
+
+test('the same build refusal is reported once, not twice', async () => {
+  const { run } = await runWith({
+    copyProfile: 'desktop',
+    deps: {
+      prepareProfile: async () => ({
+        ...copyOk,
+        install: { exitCode: 1, detail: 'ERR_PNPM_IGNORED_BUILDS', code: 'ERR_PNPM_IGNORED_BUILDS' },
+      }),
+      profileBundles: () => ['@deepseek-ai/dsh-base'],
+      install: async () => ({
+        exitCode: 1,
+        detail: 'dsh: plugin command failed',
+        diagnosis: { code: 'ERR_PNPM_IGNORED_BUILDS', key_line: 'Ignored build scripts: node-pty@1.2.0', source: 'launcher' },
+        ignoredPackages: ['node-pty'],
+      }),
+    },
+  })
+  const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
+  assert.equal(
+    judgement.reasons.filter((reason) => reason.messageId === 'probe.profile-build-refused').length,
+    1,
+    'the copy install already said it; repeating it would look like two findings',
+  )
+})
+
+test('the ignored build list is parsed from the whole output, not from one truncated line', () => {
+  const text = [
+    'Error: ERR_PNPM_IGNORED_BUILDS',
+    '  Ignored build scripts: @deepseek-ai/dsh-subprocess-local@0.2.1-rc.4,',
+    '      @google/genai@2.21.0, koffi@3.1.1, node-pty@1.2.0-beta.15,',
+    '      protobufjs@7.6.6',
+    '',
+    'dsh: plugin command failed',
+  ].join('\n')
+  const packages = ignoredBuildPackages(text)
+  assert.deepEqual(packages, ['@deepseek-ai/dsh-subprocess-local', '@google/genai', 'koffi', 'node-pty', 'protobufjs'])
+  assert.deepEqual(ignoredBuildPackages('no refusal here'), [])
 })

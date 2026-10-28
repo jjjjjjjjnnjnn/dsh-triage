@@ -34,7 +34,7 @@ import type { RenderCheck } from './render.js'
 
 /* ---------------------------------- types ---------------------------------- */
 
-export type ProbeStepId = 'runtime' | 'install' | 'boot' | 'http' | 'render' | 'inventory' | 'cleanup'
+export type ProbeStepId = 'runtime' | 'profile' | 'install' | 'boot' | 'http' | 'render' | 'inventory' | 'cleanup'
 export type ProbeStepStatus = 'passed' | 'failed' | 'skipped'
 
 export interface ProbeStepRun {
@@ -94,6 +94,44 @@ export interface ProbeCleanupResult {
   readonly detail: string
 }
 
+/** One `link:`/`file:` dependency of the copied profile that points at nothing (T-304 / F40). */
+export interface ProbeDanglingLink {
+  readonly name: string
+  readonly spec: string
+  readonly target: string
+}
+
+/** What the profile-copy step observed; published verbatim so the shape of the copy survives. */
+export interface ProfilePrepareOutcome {
+  readonly copied: readonly string[]
+  readonly missing: readonly string[]
+  /**
+   * `dsh plugin --profile <p> install` on the copy; `null` when it was not attempted.
+   *
+   * `code` is the package manager's own error code (T-310 shape). It matters here because
+   * `ERR_PNPM_IGNORED_BUILDS` is a *policy* refusal: the packages installed, their build
+   * scripts did not run (R19 F35 / measured again for the copy in R21). Treating that as
+   * "the profile is unusable" would report `unknown` for every real profile that has a
+   * native dependency.
+   */
+  readonly install: { readonly exitCode: number | null; readonly detail: string; readonly code?: string | null } | null
+  readonly danglingLinks: readonly ProbeDanglingLink[]
+  /** Which build-script policy the sandbox used (T-304); see {@link ProbeProfileCopy.pnpmPolicy}. */
+  readonly pnpmPolicy?: 'source' | 'sandbox'
+}
+
+/** The copy facts as the run records them, tagged with where the declarations came from. */
+export interface ProbeProfileCopy extends ProfilePrepareOutcome {
+  readonly origin: string
+  /** The copy's own dependencies installed, but the package manager refused their build scripts. */
+  readonly buildRefused?: boolean
+  /**
+   * Where the sandbox's build-script policy came from: `source` (the copied profile's own
+   * `pnpm-workspace.yaml`) or `sandbox` (this tool wrote `strictDepBuilds: false`).
+   */
+  readonly pnpmPolicy?: 'source' | 'sandbox'
+}
+
 /**
  * Readiness facts, as measured while the Host was still alive (T-306 / R17).
  *
@@ -114,6 +152,10 @@ export interface ProbeRun {
   readonly candidate: { readonly spec: string; readonly package: string }
   readonly dshMain: string
   readonly sandboxHome: string
+  /** `template` or `copy:<name>` — the composition this measurement belongs to (T-304). */
+  readonly profileOrigin: string
+  /** The real profile the declarations were copied from; `null` for a template profile. */
+  readonly profileSourceDir: string | null
   readonly port: number
   readonly runtimeVersion: string | null
   readonly steps: readonly ProbeStepRun[]
@@ -149,6 +191,28 @@ export interface ProbeRun {
   readonly installDiagnosis: InstallDiagnosis | null
   /** Did the package manager report sending an authorization header? (`null` = not reported) */
   readonly installAuthUsed: boolean | null
+  /** Packages the candidate's install left unbuilt (R21); empty = the output named none. */
+  readonly installIgnoredPackages: readonly string[]
+  /**
+   * `true` when a build-script refusal was about the COPIED PROFILE's own dependencies rather
+   * than the candidate (T-304). It is a warning, not a block: the candidate was added, and
+   * blaming it for a profile it did not write would be the wrong verdict.
+   */
+  readonly installBuildRefusedProfileOnly: boolean
+  /**
+   * Did the candidate end up in the profile's `dsh.profile.bundles`? `null` = could not read.
+   *
+   * This is the difference between "added to the composition" and "just a dependency": the
+   * launcher registers the bundle only after a successful package-manager run (R21).
+   */
+  readonly candidateRegistered: boolean | null
+  /**
+   * The copied profile's own facts (T-304); `null` when the probe used a template profile.
+   *
+   * WHY IT IS IN THE RUN AND NOT ONLY A STEP DETAIL: the artifact has to answer "which
+   * composition was this measured in?", and a prose detail cannot be re-read by a script.
+   */
+  readonly profileCopy: ProbeProfileCopy | null
   readonly cleanup: ProbeCleanupResult
   readonly abortedAt: ProbeStepId | null
 }
@@ -192,6 +256,13 @@ export interface BootInput {
   readonly timeoutMs: number
 }
 
+/** Input for the profile-copy step (T-304); only called when the plan names a source profile. */
+export interface ProfilePrepareInput {
+  readonly plan: ProbePlan
+  readonly dshMain: string
+  readonly timeoutMs: number
+}
+
 export interface HttpInput {
   readonly port: number
   readonly timeoutMs: number
@@ -224,6 +295,8 @@ export interface ProbeExecDeps {
     diagnosis?: InstallDiagnosis
     /** R20: whether pnpm reported sending an authorization header. */
     authUsed?: boolean
+    /** R21: packages installed without their build scripts (empty = not reported). */
+    ignoredPackages?: readonly string[]
   }>
   /**
    * `http` is the readiness measured *before* the Host was killed. It is optional so a
@@ -253,6 +326,23 @@ export interface ProbeExecDeps {
     bindFailedPorts?: readonly number[]
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
+  /**
+   * The bundles a profile declares right now (`dsh.profile.bundles`).
+   *
+   * WHY THE EXECUTOR NEEDS THIS (T-304 / R21): `dsh plugin add` writes the dependency first and
+   * registers the bundle only when pnpm exits 0. Measured: with a build-script refusal the
+   * dependency is in `package.json` but `bundles` is unchanged, so the candidate never mounts
+   * and a naive "install exited 1, continue anyway" would produce `row-missing` — a `blocked`
+   * verdict about a package the composition never saw. `null` means "could not read".
+   */
+  profileBundles?(input: { readonly profileDir: string }): readonly string[] | null
+  /**
+   * Copy the plan's source profile into the sandbox and install its dependencies (T-304).
+   *
+   * Optional because a template-profile probe never needs it; a plan that names a source
+   * profile without a copier fails the step instead of silently measuring an empty profile.
+   */
+  prepareProfile?(input: ProfilePrepareInput): Promise<ProfilePrepareOutcome>
   cleanup(input: CleanupInput): Promise<ProbeCleanupResult>
 }
 
@@ -278,6 +368,8 @@ interface MutableRun {
   candidate: { spec: string; package: string }
   dshMain: string
   sandboxHome: string
+  profileOrigin: string
+  profileSourceDir: string | null
   port: number
   runtimeVersion: string | null
   steps: ProbeStepRun[]
@@ -294,6 +386,10 @@ interface MutableRun {
   bindFailedPorts: readonly number[]
   installDiagnosis: InstallDiagnosis | null
   installAuthUsed: boolean | null
+  installIgnoredPackages: readonly string[]
+  installBuildRefusedProfileOnly: boolean
+  candidateRegistered: boolean | null
+  profileCopy: ProbeProfileCopy | null
   cleanup: ProbeCleanupResult
   abortedAt: ProbeStepId | null
 }
@@ -304,6 +400,8 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     candidate: { spec: input.plan.candidate, package: input.candidatePackage },
     dshMain: input.dshMain,
     sandboxHome: input.plan.sandboxHome,
+    profileOrigin: input.plan.profileOrigin,
+    profileSourceDir: input.plan.profileSource === null ? null : input.plan.profileSource.dir,
     port: input.plan.port,
     runtimeVersion: null,
     steps: [],
@@ -320,6 +418,10 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     bindFailedPorts: [],
     installDiagnosis: null,
     installAuthUsed: null,
+    installIgnoredPackages: [],
+    installBuildRefusedProfileOnly: false,
+    candidateRegistered: null,
+    profileCopy: null,
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
     abortedAt: null,
   }
@@ -370,6 +472,45 @@ async function runSequence(
   })
   if (run.abortedAt !== null) return
 
+  if (input.plan.profileSource !== null) {
+    await runStep(run, deps, 'profile', async () => {
+      const prepare = deps.prepareProfile
+      if (prepare === undefined) {
+        return { status: 'failed' as const, detail: 'the plan copies a profile but no copier was supplied', exitCode: null }
+      }
+      const outcome = await prepare({ plan: input.plan, dshMain: input.dshMain, timeoutMs: timeouts.installMs })
+      // A build-script refusal is not a failed install: pnpm printed `+ pkg@ver`, it just did not
+      // run the scripts (R19 F35, remeasured for profile copies in R21). It is recorded as its
+      // own fact because it makes every later failure unattributable — see `judgeProbe`.
+      const buildRefused = outcome.install?.code === 'ERR_PNPM_IGNORED_BUILDS'
+      run.profileCopy = { origin: input.plan.profileOrigin, ...outcome, buildRefused }
+      // A dangling `link:`/`file:` target is checked BEFORE the exit code, because F40 measured
+      // that `plugin install` exits 0 in exactly that shape.
+      if (outcome.danglingLinks.length > 0) {
+        return {
+          status: 'failed' as const,
+          detail: `dangling local dependencies: ${outcome.danglingLinks.map((link) => `${link.name} (${link.spec})`).join(', ')}`,
+          exitCode: outcome.install?.exitCode ?? null,
+        }
+      }
+      if (outcome.install !== null && outcome.install.exitCode !== 0 && !buildRefused) {
+        return {
+          status: 'failed' as const,
+          detail: `the copied profile's dependencies did not install: ${outcome.install.detail}`,
+          exitCode: outcome.install.exitCode,
+        }
+      }
+      return {
+        status: 'passed' as const,
+        detail: `copied ${outcome.copied.join(', ') || 'no declarations'}${
+          outcome.missing.length === 0 ? '' : ` (absent: ${outcome.missing.join(', ')})`
+        }${buildRefused ? ' · dependencies installed, build scripts refused by the package manager' : ' · dependencies installed'}`,
+        exitCode: outcome.install?.exitCode ?? null,
+      }
+    })
+    if (run.abortedAt !== null) return
+  }
+
   if (input.skipInstall !== true) {
     await runStep(run, deps, 'install', async () => {
       const result = await deps.install({
@@ -383,6 +524,53 @@ async function runSequence(
       // warning, and a failed one is exactly what the judge needs (T-310).
       run.installDiagnosis = result.diagnosis ?? null
       run.installAuthUsed = result.authUsed ?? null
+      run.installIgnoredPackages = [...(result.ignoredPackages ?? [])]
+      /**
+       * A copy plan re-reports the PROFILE's unbuilt dependencies every time a candidate is
+       * added, and pnpm exits 1 for it (R21 measured: the ignored list was
+       * `@deepseek-ai/dsh-subprocess-local, @google/genai, koffi, node-pty, protobufjs` — the
+       * candidate was not one of them).
+       *
+       * WHY THE EXCEPTION IS NARROW: it needs a copied profile (so a template probe keeps R19's
+       * strict behaviour) AND a readable ignored list that does not name the candidate. With
+       * an unreadable list we stay conservative and block.
+       */
+      const refused = result.diagnosis?.code === 'ERR_PNPM_IGNORED_BUILDS'
+      const ignored = result.ignoredPackages ?? []
+      /**
+       * With the sandbox build policy in place (T-304) the same refusal exits 0 and pnpm still
+       * prints which packages it did not build, so the exit code alone cannot distinguish
+       * "nothing was skipped" from "five native modules were skipped".
+       */
+      const profileOnly =
+        input.plan.profileSource !== null &&
+        ignored.length > 0 &&
+        !ignored.includes(input.candidatePackage) &&
+        (refused || result.exitCode === 0)
+      run.installBuildRefusedProfileOnly = profileOnly
+      if (profileOnly) {
+        // The refusal is the profile's, but the command still exited 1 — and R21 measured that
+        // the launcher registers the bundle only after a clean run. So do not assume: read the
+        // composition back and let the registration decide whether this is measurable.
+        const bundles = deps.profileBundles?.({ profileDir: input.plan.sandboxProfileDir }) ?? null
+        const registered = bundles === null ? null : bundles.includes(input.candidatePackage)
+        run.candidateRegistered = registered
+        const why = `${result.detail} · the refusal is about the copied profile's own dependencies (${ignored.join(', ')}), not the candidate`
+        if (result.exitCode === 0) {
+          // The launcher's own run succeeded, so it registered the bundle; nothing to read back.
+          return { status: 'passed' as const, detail: `${why} · the launcher reported success`, exitCode: 0 }
+        }
+        if (registered === true) {
+          return { status: 'passed' as const, detail: `${why} · the candidate is registered in the composition`, exitCode: result.exitCode }
+        }
+        return {
+          status: 'failed' as const,
+          detail: `${why} · the candidate was NOT registered in ${
+            registered === null ? 'a composition that could not be read' : 'dsh.profile.bundles'
+          }`,
+          exitCode: result.exitCode,
+        }
+      }
       return result.exitCode === 0
         ? { status: 'passed' as const, detail: result.detail, exitCode: result.exitCode }
         : {
@@ -471,6 +659,8 @@ function freeze(run: MutableRun): ProbeRun {
     candidate: run.candidate,
     dshMain: run.dshMain,
     sandboxHome: run.sandboxHome,
+    profileOrigin: run.profileOrigin,
+    profileSourceDir: run.profileSourceDir,
     port: run.port,
     runtimeVersion: run.runtimeVersion,
     steps: run.steps,
@@ -487,6 +677,10 @@ function freeze(run: MutableRun): ProbeRun {
     bindFailedPorts: run.bindFailedPorts,
     installDiagnosis: run.installDiagnosis,
     installAuthUsed: run.installAuthUsed,
+    installIgnoredPackages: run.installIgnoredPackages,
+    installBuildRefusedProfileOnly: run.installBuildRefusedProfileOnly,
+    candidateRegistered: run.candidateRegistered,
+    profileCopy: run.profileCopy,
     cleanup: run.cleanup,
     abortedAt: run.abortedAt,
   }
@@ -749,8 +943,129 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
     return finishJudgement(run, { conclusion: state.conclusion, level: state.level, reasons, evidence, remediation, missingEvidence })
   }
 
+  /**
+   * The copied profile failed to become usable (T-304).
+   *
+   * WHY THIS RETURNS IMMEDIATELY: the candidate was never given a chance to run. Carrying on
+   * would let the generic paths below turn "your own dependencies did not install" into
+   * `probe.boot-timeout` or `probe.install-failed` — a `blocked` verdict about the wrong
+   * package. The two reasons are separate on purpose: a dangling `link:` is a *silent*
+   * success of the package manager (F40) and reads differently from a failed install.
+   */
+  const profileStep = stepOf('profile')
+  if (profileStep !== undefined && profileStep.status === 'failed') {
+    const copy = run.profileCopy
+    if (copy !== null) {
+      evidence.push({
+        id: 'probe-profile-copy',
+        tier: 'measured-local',
+        source: run.profileSourceDir ?? `copy:${copy.origin}`,
+        method: 'profile declaration copy + dependency install (sandbox)',
+        at,
+        detail: `origin=${copy.origin} copied=${copy.copied.join(',') || 'none'} missing=${copy.missing.join(',') || 'none'} install_exit=${copy.install?.exitCode ?? 'not attempted'}`,
+      })
+    }
+    state.conclusion = 'unknown'
+    state.level = 'medium'
+    missingEvidence.push('missing.probe')
+    const dangling = copy?.danglingLinks ?? []
+    if (dangling.length > 0) {
+      reasons.push({
+        code: 'probe-profile-link-dangling',
+        severity: 'warn',
+        messageId: 'probe.profile-link-dangling',
+        params: {
+          links: dangling.map((link) => `${link.name} → ${link.spec}`).join(', '),
+          count: dangling.length,
+        },
+      })
+    } else {
+      reasons.push({
+        code: 'probe-profile-copy-unusable',
+        severity: 'warn',
+        messageId: 'probe.profile-copy-unusable',
+        params: {
+          profile: copy?.origin ?? run.profileOrigin,
+          detail: (profileStep.detail ?? 'the copied profile could not be installed').slice(0, 240),
+        },
+      })
+    }
+    return finishJudgement(run, {
+      conclusion: state.conclusion,
+      level: state.level,
+      reasons,
+      evidence,
+      remediation,
+      missingEvidence,
+    })
+  }
+  if (profileStep !== undefined && profileStep.status === 'passed' && run.profileCopy !== null) {
+    evidence.push({
+      id: 'probe-profile-copy',
+      tier: 'measured-local',
+      source: run.profileSourceDir ?? `copy:${run.profileCopy.origin}`,
+      method: 'profile declaration copy + dependency install (sandbox)',
+      at,
+      detail: `origin=${run.profileCopy.origin} copied=${run.profileCopy.copied.join(',') || 'none'} missing=${run.profileCopy.missing.join(',') || 'none'} install_exit=${run.profileCopy.install?.exitCode ?? 'not attempted'}`,
+    })
+    /**
+     * The copy's dependencies installed but their build scripts were refused (R19 F35 shape).
+     *
+     * WHY IT IS NOT SILENT: native modules that never got built can make a Host fail to start
+     * for reasons that have nothing to do with the candidate. The caveat has to be visible in
+     * every verdict it could have touched, not only in the artifacts someone reads twice.
+     */
+    if (run.profileCopy.buildRefused === true) {
+      reasons.push({
+        code: 'probe-profile-build-refused',
+        severity: 'warn',
+        messageId: 'probe.profile-build-refused',
+        params: { detail: (run.profileCopy.install?.detail ?? 'the package manager refused to run build scripts').slice(0, 200) },
+      })
+    }
+  }
+
   const installStep = stepOf('install')
   if (installStep !== undefined && installStep.status === 'failed') {
+    /**
+     * The package-manager refusal was about the COPIED PROFILE, and the composition was not
+     * updated (T-304 / R21). Nothing here is evidence about the candidate: the install never
+     * completed, so the bundle was never registered and the Host never mounted it. Reporting
+     * `blocked` would blame a package for a profile it did not write.
+     */
+    if (run.installBuildRefusedProfileOnly) {
+      state.conclusion = 'unknown'
+      state.level = 'medium'
+      missingEvidence.push('missing.probe')
+      // One refusal, one reason: when the copy's own install already reported the same policy
+      // fact, repeating it here would read like two separate findings.
+      if (run.profileCopy?.buildRefused !== true) {
+        reasons.push({
+          code: 'probe-profile-build-refused',
+          severity: 'warn',
+          messageId: 'probe.profile-build-refused',
+          params: {
+            detail: `the package manager refused to build the copied profile's own dependencies (${run.installIgnoredPackages.join(', ')}), so the composition was not updated with the candidate`,
+          },
+        })
+      }
+      evidence.push({
+        id: 'probe-install-refused-by-profile',
+        tier: 'measured-local',
+        source: run.candidate.spec,
+        method: 'dsh plugin add (sandbox) + dsh.profile.bundles read-back',
+        at,
+        detail: `candidate_registered=${run.candidateRegistered === null ? 'unreadable' : String(run.candidateRegistered)} ignored=${run.installIgnoredPackages.join(',') || 'none'}`,
+      })
+      return finishJudgement(run, {
+        conclusion: state.conclusion,
+        level: state.level,
+        reasons,
+        evidence,
+        remediation,
+        missingEvidence,
+      })
+    }
     // T-310: name the package manager's reason, not just its exit code. Three shapes, and
     // the difference matters to the reader: a build-script refusal is a package-manager
     // policy (the plugin is fine, it just never got built), a code is a cause, and the
@@ -798,6 +1113,18 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
       method: 'dsh plugin --profile <p> add <candidate> (sandbox)',
       at,
     })
+    // The install passed but the package manager refused to build something. Name it, and name
+    // whose it is: a reader must not have to guess why `go` came with a build warning (T-304).
+    if (run.installBuildRefusedProfileOnly && run.profileCopy?.buildRefused !== true) {
+      reasons.push({
+        code: 'probe-profile-build-refused',
+        severity: 'warn',
+        messageId: 'probe.profile-build-refused',
+        params: {
+          detail: `the package manager refused to build the copied profile's own dependencies (${run.installIgnoredPackages.join(', ')}) while adding the candidate; the candidate is registered in the composition`,
+        },
+      })
+    }
   }
 
   const bootStep = stepOf('boot')
@@ -1043,6 +1370,33 @@ export function judgeProbe(input: JudgeProbeInput): ProbeJudgement {
     }
   }
 
+  /**
+   * A copy whose build scripts were refused cannot support a `blocked` verdict.
+   *
+   * WHY ONLY THE BOOT STEP: `abortedAt === 'boot'` covers every shape where the composition
+   * never came up (startup failed / no sample / boot timeout). Those are exactly the failures
+   * an unbuilt native module can cause. A failed candidate install or a dead row is the
+   * candidate's own fact and keeps its `blocked` — the downgrade must not become a blanket
+   * "we are never sure".
+   */
+  if (
+    (run.profileCopy?.buildRefused === true || run.installBuildRefusedProfileOnly) &&
+    state.conclusion === 'blocked' &&
+    run.abortedAt === 'boot'
+  ) {
+    state.conclusion = 'unknown'
+    state.level = 'medium'
+    missingEvidence.push('missing.probe')
+    reasons.push({
+      code: 'probe-profile-build-unattributable',
+      severity: 'warn',
+      messageId: 'probe.profile-build-refused',
+      params: {
+        detail: `the copy's dependencies installed without their build scripts, so the Host's failure to start cannot be attributed to the candidate (${run.firstLine ?? 'no launcher line'})`.slice(0, 240),
+      },
+    })
+  }
+
   if (!run.cleanup.removed || !run.cleanup.portClosed) {
     if (state.conclusion === 'go') state.conclusion = 'risky'
     reasons.push({
@@ -1099,58 +1453,80 @@ export function probeAssertions(run: ProbeRun): readonly ProbeAssertionResult[] 
   const httpStep = step('http')
   const measurement = measurementState(run.sample)
   const rows = run.sample?.candidateRows ?? []
+  /**
+   * A copy that never became usable means the candidate was never booted (T-304). Saying
+   * `failed` here would read as "the plugin failed", which is the one thing this run cannot
+   * know: nothing was measured.
+   *
+   * The second shape is the subtler one: the copy worked, but a build-script refusal left the
+   * candidate out of `dsh.profile.bundles` (R22 / F42), so the composition never contained it.
+   */
+  const profileUnusable = step('profile')?.status === 'failed'
+  const compositionNotUpdated = run.installBuildRefusedProfileOnly && step('install')?.status === 'failed'
+  const notMeasured = profileUnusable
+    ? 'the copied profile could not be made usable, so the candidate was never booted'
+    : compositionNotUpdated
+      ? 'the package manager refused to build the copied profile’s own dependencies, so the composition was not updated and the candidate was never booted'
+      : null
   return [
     {
       // `failed` is "nothing was written"; `unmeasured` is "something was written but it is
       // not a reading" (the hook's own context died). They are different facts (R17).
       id: 'boot-sampled',
       status:
-        run.sample === null
-          ? run.urlPrinted
-            ? 'unmeasured'
-            : 'failed'
-          : measurement === 'unreadable'
-            ? 'unmeasured'
-            : 'passed',
+        notMeasured !== null
+          ? 'unmeasured'
+          : run.sample === null
+            ? run.urlPrinted
+              ? 'unmeasured'
+              : 'failed'
+            : measurement === 'unreadable'
+              ? 'unmeasured'
+              : 'passed',
       detail:
-        run.sample === null
+        notMeasured ??
+        (run.sample === null
           ? run.urlPrinted
             ? 'the Host was serving but the probe wrote no sample'
             : 'no sample'
           : (run.sample.error ??
-            (run.sample.settled === false ? 'sampled while the tree was still moving (settled=false)' : null)),
+            (run.sample.settled === false ? 'sampled while the tree was still moving (settled=false)' : null))),
     },
     {
       // A silent port measured while the tree was still composing is NOT a failure of the
       // candidate: it is a reading that cannot answer this question (R17 / BS-25).
       id: 'http-served',
       status:
-        httpStep?.status === 'skipped' || measurement !== 'valid'
+        notMeasured !== null || httpStep?.status === 'skipped' || measurement !== 'valid'
           ? 'unmeasured'
           : run.http === null || run.http.status === null
             ? 'failed'
             : 'passed',
       detail:
-        httpStep?.status === 'skipped'
+        notMeasured ??
+        (httpStep?.status === 'skipped'
           ? httpStep.detail
           : measurement !== 'valid'
             ? `not attributable: the inventory reading was ${measurement}`
-            : (run.http?.detail ?? 'not probed'),
+            : (run.http?.detail ?? 'not probed')),
     },
     {
       id: 'inventory-active',
       status:
-        measurement !== 'valid'
+        notMeasured !== null
           ? 'unmeasured'
-          : rows.length === 1 && rows[0]?.phase === 'active'
-            ? 'passed'
-            : 'failed',
+          : measurement !== 'valid'
+            ? 'unmeasured'
+            : rows.length === 1 && rows[0]?.phase === 'active'
+              ? 'passed'
+              : 'failed',
       detail:
-        measurement !== 'valid'
+        notMeasured ??
+        (measurement !== 'valid'
           ? `no settled reading (${measurement})`
           : run.sample === null
             ? 'no sample'
-            : `${rows.length} candidate row(s)`,
+            : `${rows.length} candidate row(s)`),
     },
     {
       id: 'cleanup-complete',

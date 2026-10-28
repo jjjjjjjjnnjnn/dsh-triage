@@ -1,0 +1,12 @@
+{
+  "name": "dsh-profile-unusable",
+  "private": true,
+  "dependencies": {
+    "triage-probe-fixture-does-not-exist": "9.9.9"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": []
+    }
+  }
+}

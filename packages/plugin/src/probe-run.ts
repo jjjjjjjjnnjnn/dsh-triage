@@ -9,14 +9,21 @@ import { existsSync, readFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { InstallResult, ProbeExecDeps, RuntimeReadResult } from '@dsh-triage/probe'
+import type { InstallResult, ProbeExecDeps, ProfilePrepareOutcome, RuntimeReadResult } from '@dsh-triage/probe'
 import {
+  PROFILE_DECLARATION_FILES,
+  applySandboxBuildPolicy,
   bootAndSampleHost,
+  copyProfileDeclarations,
+  danglingLocalDependencies,
   findBrowser,
+  localDependencyTargets,
   probeHttp,
+  readProfileManifest,
   readRuntimeVersion,
   removeSandbox,
   runInstall,
+  runProfileInstall,
   scrubbedEnv,
 } from '@dsh-triage/probe'
 
@@ -113,6 +120,45 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),
+    // R21: read the composition back, so "the candidate joined it" is a measurement.
+    profileBundles: ({ profileDir }) => sandboxBundles(profileDir),
+    /**
+     * T-304: make the sandbox profile out of the user's own declarations, then install what
+     * those declarations ask for. Three facts come back, and the executor judges them:
+     * which files were copied, which were absent, and whether the copy can actually run.
+     */
+    prepareProfile: async ({ plan, dshMain, timeoutMs }): Promise<ProfilePrepareOutcome> => {
+      const source = plan.profileSource
+      if (source === null) throw new Error('prepareProfile called for a plan without a profile source')
+      const copy = copyProfileDeclarations({
+        sourceDir: source.dir,
+        targetDir: plan.sandboxProfileDir,
+        files: PROFILE_DECLARATION_FILES,
+      })
+      // Stop pnpm from failing over an approval policy it will not act on anyway (see
+      // `applySandboxBuildPolicy`). Done before any install so both installs benefit.
+      const pnpmPolicy = applySandboxBuildPolicy({ targetDir: plan.sandboxProfileDir, copiedFiles: copy.copied })
+      // F40: stat every `link:`/`file:` target BEFORE trusting the install's exit code, because
+      // `plugin install` exits 0 while creating a link to a directory that is not there.
+      const manifest = readProfileManifest(plan.sandboxProfileDir)
+      const danglingLinks = danglingLocalDependencies(localDependencyTargets(manifest, plan.sandboxProfileDir))
+      const installed = runProfileInstall({
+        dshMain,
+        dshHome: plan.sandboxHome,
+        profile: plan.profile,
+        timeoutMs,
+        env: scrubbedEnv(baseEnv, { DSH_HOME: plan.sandboxHome }),
+      })
+      return {
+        copied: copy.copied,
+        missing: copy.missing,
+        // The code travels so the executor can tell a build-script refusal (packages installed)
+        // from a genuine failure to install the copy's dependencies.
+        install: { exitCode: installed.exitCode, detail: installed.detail, code: installed.diagnosis.code },
+        danglingLinks: danglingLinks.map((link) => ({ name: link.name, spec: link.spec, target: link.target })),
+        pnpmPolicy,
+      }
+    },
     cleanup: async ({ dshHome, port, extraPorts, timeoutMs }) => {
       const removed = removeSandbox(dshHome)
       // "The directory is gone" is not "the process is gone": on Windows the Host keeps

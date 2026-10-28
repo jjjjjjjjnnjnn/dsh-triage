@@ -1,0 +1,5 @@
+# This fixture deliberately asks pnpm to FAIL on unapproved build scripts. The probe must not
+# overwrite a workspace file the profile already has (T-304), so this shape stays `unknown`:
+# the copy installs, but the launcher skips registering the bundle, and blaming the candidate
+# for that would be the misattribution `BS-30` warns about.
+strictDepBuilds: true

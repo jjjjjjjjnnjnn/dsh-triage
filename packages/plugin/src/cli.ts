@@ -115,6 +115,13 @@ interface Flags {
   readonly readinessTimeoutMs: number | null
   /** `probe --execute --unsettled-timeout <ms>`: window for a tree still composing (R17). */
   readonly unsettledReadinessMs: number | null
+  /**
+   * `probe --copy-profile <name>`: measure the candidate inside a copy of this profile's
+   * declarations instead of an empty template profile (T-304).
+   */
+  readonly copyProfile: string | null
+  /** Whether `--profile` was passed (the `web` default is not an explicit choice). */
+  readonly profileExplicit: boolean
 }
 
 interface Parsed {
@@ -149,6 +156,7 @@ Flags
   --browser <path>      (probe --execute) Chromium-family binary for the render check (T-302)
   --readiness-timeout <ms>  (probe --execute) readiness budget for a settled tree (default 5000)
   --unsettled-timeout <ms>  (probe --execute) readiness window while the tree is still composing (default 20000)
+  --copy-profile <name> (probe) measure inside a copy of this profile's declarations (T-304)
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
   --results <dir>       (serve) directory of evidence to display (default: ./data/results)
   --allow-execute       (serve) enable actions; without it the panel is read-only
@@ -581,13 +589,24 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
     candidate,
     realDshHome: dshHome,
     workRoot: probeScratchRoot(),
-    profile: flags.profile,
+    ...(flags.profileExplicit ? { profile: flags.profile } : {}),
+    ...(flags.copyProfile === null ? {} : { copyProfile: flags.copyProfile }),
     dshBin: flags.dshMain ?? 'dsh',
     ...(freePort === null ? {} : { basePort: freePort }),
   })
   if (!plan.ok) {
     process.stderr.write(`cannot build a safe probe plan: ${plan.error.code} (${plan.error.detail})\n`)
     return plan.error.code === 'invalid-profile' ? EXIT_USAGE : EXIT_UNAVAILABLE
+  }
+
+  // T-304: a copy of a profile that is not there is a usage error, not a measurement. Refusing
+  // here also stops a dry-run from advertising a composition that cannot be copied.
+  const profileSource = plan.value.profileSource
+  if (profileSource !== null && !existsSync(join(profileSource.dir, 'package.json'))) {
+    process.stderr.write(
+      `profile "${profileSource.name}" has no package.json at ${profileSource.dir}; nothing to copy (check --dsh-home and the profile name)\n`,
+    )
+    return EXIT_USAGE
   }
 
   if (!flags.execute) {
@@ -597,6 +616,10 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
       process.stdout.write(`probe plan (dry-run) for ${plan.value.candidate}\n`)
       process.stdout.write(`sandbox   DSH_HOME=${plan.value.sandboxHome}\n`)
       process.stdout.write(`profile   ${plan.value.profile}\n`)
+      // T-304: the composition is part of the plan, so the dry-run says which one it is.
+      process.stdout.write(
+        `origin    ${plan.value.profileOrigin}${plan.value.profileSource === null ? ' (launcher template)' : ` ← ${plan.value.profileSource.dir}`}\n`,
+      )
       process.stdout.write(`port      ${plan.value.port}\n`)
       for (const step of plan.value.steps) {
         process.stdout.write(`  ${step.id.padEnd(14)} ${step.argv.join(' ')}\n`)
@@ -627,6 +650,11 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   }
 
   const stamp = stampOf(flags)
+  // The sandbox is deleted by `executeProbe`'s cleanup, so the composition this run measured
+  // has to be read from the SOURCE before anything runs (T-304). Bundle names are declarations,
+  // not secrets; the source directory itself never enters an unredacted artifact.
+  const measuredBundles =
+    plan.value.profileSource === null ? [] : sandboxBundles(plan.value.profileSource.dir)
   const run = await executeProbe(
     { plan: plan.value, dshMain: flags.dshMain, candidatePackage, ...(flags.noHttp ? { skipHttp: true } : {}) },
     realProbeDeps({
@@ -644,7 +672,7 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
     arch: process.arch,
     profile: plan.value.profile,
     profileDir: plan.value.sandboxProfileDir,
-    bundles: sandboxBundles(plan.value.sandboxProfileDir),
+    bundles: measuredBundles.length > 0 ? measuredBundles : sandboxBundles(plan.value.sandboxProfileDir),
     installed: [],
   }
   const verdict = probeVerdict({ run, judgement, env, at: stamp })
@@ -656,6 +684,25 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
       command: 'probe',
       dryRun: false,
       candidate: { spec, package: candidatePackage },
+      // T-304: which composition was measured, and whether its declarations could be copied
+      // and installed at all. A copy that never became usable can only be `unknown`.
+      profile: {
+        origin: run.profileOrigin,
+        source: run.profileSourceDir === null ? null : redactPath(run.profileSourceDir, roots),
+        copy:
+          run.profileCopy === null
+            ? null
+            : {
+                files: [...run.profileCopy.copied],
+                missing: [...run.profileCopy.missing],
+                install: run.profileCopy.install,
+                dangling_links: run.profileCopy.danglingLinks.map((link) => ({
+                  name: link.name,
+                  spec: link.spec,
+                  target: redactPath(link.target, roots),
+                })),
+              },
+      },
       steps: run.steps,
       timings: run.timings,
       assertions: judgement.assertions,
@@ -663,6 +710,7 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
     })
   } else {
     process.stdout.write(`probe ${candidatePackage} · sandbox DSH_HOME=${plan.value.sandboxHome}\n`)
+    process.stdout.write(`profile   ${run.profileOrigin}\n`)
     for (const step of run.steps) {
       const mark = step.status === 'passed' ? 'ok  ' : step.status === 'skipped' ? 'skip' : 'FAIL'
       process.stdout.write(`  ${mark} ${step.id.padEnd(10)} ${String(step.ms).padStart(6)}ms  ${step.detail ?? ''}\n`)
@@ -851,6 +899,11 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let help = false
   let dshHome: string | null = null
   let profile = 'web'
+  /**
+   * Was `--profile` actually passed? `probe --copy-profile upstream` must keep the profile
+   * named `upstream`, so the default `web` cannot be treated as an explicit choice (T-304).
+   */
+  let profileExplicit = false
   let stamp: string | null = null
   let locale: Locale = defaultLocale()
   let noRedact = false
@@ -865,6 +918,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let audit = false
   let readinessTimeoutMs: number | null = null
   let unsettledReadinessMs: number | null = null
+  let copyProfile: string | null = null
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -917,6 +971,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         const value = takeValue()
         if (value === null) return null
         profile = value
+        profileExplicit = true
         break
       }
       case '--stamp': {
@@ -979,6 +1034,12 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         unsettledReadinessMs = parsed
         break
       }
+      case '--copy-profile': {
+        const value = takeValue()
+        if (value === null) return null
+        copyProfile = value
+        break
+      }
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -990,7 +1051,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

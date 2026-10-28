@@ -88,15 +88,18 @@
 ## 3. 步骤机
 
 ```
-runtime → install → boot → http → render → inventory → cleanup
-   │         │        │      │       │        │          │
-   └ 读版本   └ 装候选  └ 起 Host└ 探端口 └ 看画面   └ 读相位  └ 必删
+runtime → (profile) → install → boot → http → render → inventory → cleanup
+   │          │           │        │      │       │        │          │
+   └ 读版本    └ 复制组合   └ 装候选  └ 起 Host└ 探端口 └ 看画面   └ 读相位  └ 必删
 ```
+
+`profile` 步**只在 `--copy-profile <name>` 时出现**（T-304，R22）：没有复制请求时计划里没有这一步，模板路径的行为一字不动。
 
 | 步 | 输入 | 成功判据 | 失败码 |
 |---|---|---|---|
 | `runtime` | `--dsh-main <path>`（本轮显式传，不猜 PATH） | `node <main> --version` 有输出且可解析 | `probe.runtime-unavailable` |
-| `install` | 候选 spec（路径 / tarball / npm spec，registry 必须 pin 版本） | 退出码 0 且 profile 的 `package.json` 里出现该包 | `probe.install-failed`（无码）/ `probe.install-failed-code`（有 `ERR_*` 码）/ `probe.install-build-refused`（`ERR_PNPM_IGNORED_BUILDS`，R19） |
+| `profile`（T-304） | `--copy-profile <name>` + 真实 `$DSH_HOME/profiles/<name>` | 四个声明文件复制完、`dsh plugin install` 让副本可用、且 `link:`/`file:` 目标逐个 stat 都在 | `probe.profile-copy-unusable`（副本装不上）/ `probe.profile-link-dangling`（悬空链接，F40）——**两者都只能 `unknown`** |
+| `install` | 候选 spec（路径 / tarball / npm spec，registry 必须 pin 版本） | 退出码 0 且 profile 的 `package.json` 里出现该包；复制模式下若 pnpm 因**组合自身**的构建审批退出 1，还要读回 `dsh.profile.bundles` 确认候选**真的进了组合**（R22） | `probe.install-failed`（无码）/ `probe.install-failed-code`（有 `ERR_*` 码）/ `probe.install-build-refused`（`ERR_PNPM_IGNORED_BUILDS` **且被拒名单里有候选**，R19/R22） |
 | `boot` | profile 名 + 探针 overlay | 探针写出**可判**的样本（无 `{error}` 且 `settled≠false`）。写不出时：launcher 说过 `startup failed` → `blocked`（原文归因）；Host 打印过 URL 或**我们自己的端口**绑不上 → `unknown`；两者都没有 → `blocked` | `probe.startup-failed` / `probe.boot-timeout` / `probe.tree-not-settled` / `probe.port-unavailable` |
 | `http` | Host 自打印 URL 的端口（T-306），回退 `plan.port`；URL 与端口**同轮询**（R17） | `redirect:'manual'` 下收到 2xx/3xx/401（303+token、401 无 token 都算活）。**读数不是 `valid` 时本步不出结论**（`unmeasured`） | `probe.http-unreachable`（仅 settled 树） |
 | `render` | 同一 URL + 浏览器 | DOM 有挂载点、有可见文本（≥20 字符）、且 `readyState` 前进 | `probe.render-blank`；拿不到结论时 `unmeasured` |
@@ -117,7 +120,7 @@ runtime → install → boot → http → render → inventory → cleanup
 
 | 段 | 预算 | 超时 | 实测 |
 |---|---|---|---|
-| `install` | 不计入 20s（网络与 pnpm 波动不可控） | 本地 60s / registry 180s | 0.53–5.4s（本地 / 真实 registry） |
+| `install` | 不计入 20s（网络与 pnpm 波动不可控） | 本地 60s / registry 180s | 0.53–5.4s（本地 / 真实 registry）；**复制模式的 `profile` 步另计**：首跑 138s（含解析整棵组合后因构建审批失败）→ 加沙盒构建策略后 **18.5–19.7s**（R22） |
 | `boot → sample` | **≤ 20s**（M3 出口门禁） | 120s（可配） | R14：11.8 / 12.3 / 13.8s；R15：7.7–8.7s；**R17：6.2–6.9s（12 次真跑）** |
 | `readiness`（settled 树） | **≤ 5s**（**阈值不变**） | 5s | R17：`waited_ms` 10–32ms（URL 与端口同轮询，命中即返回） |
 | `readiness`（unsettled 树） | **≤ 20s，可配**（`--unsettled-timeout`）；**该窗口只能产出 `unknown`** | 20s | R17 新增；settled 树的 5s 判据未被放松 |
@@ -147,7 +150,7 @@ runtime → install → boot → http → render → inventory → cleanup
 | `boot-sampled` | 测 | 样本文件存在、可解析、且**可判**（无 `{error}`、`settled≠false`）。没写出样本但 Host 打印过 URL → `unmeasured`（不是 `failed`） |
 | `http-served` | 测 | `redirect:'manual'` 的状态码。**读数不是 `valid` 时本项必须 `unmeasured`**：树还在动时的静默端口回答不了这个问题（R17） |
 | `client-rendered` | **测（需浏览器）** | 真浏览器 + CDP 读 DOM：**必须存在 `#root`/`#app` 挂载点**、其子节点 ≥1、可见文本 ≥20 字符、`readyState` 非 `loading`；无挂载点（浏览器错误页 / 非挂载文档）→ `inconclusive`；有挂载点但零可见文本（canvas/icon-only）→ `inconclusive`；无浏览器 → `unmeasured` |
-| `inventory-active` | 测 | 候选行的 `fiberPhase`；读数不可判时 `unmeasured` |
+| `inventory-active` | 测 | 候选行的 `fiberPhase`；读数不可判时 `unmeasured`。**复制模式下若组合没被更新（`install` 失败且 `candidate_registered≠true`）或副本本身不可用，`boot-sampled` / `http-served` / `inventory-active` 必须一起 `unmeasured`**——候选根本没被 boot（R22） |
 | `cleanup-complete` | 测 | 目录 + **所有** Host 用过的端口双重判据 |
 | `namespace-diff` | **unmeasured**（T-303） | 工具表面在 agent/preset 作用域（R13 的 `BS-21`） |
 
@@ -205,7 +208,7 @@ runtime → install → boot → http → render → inventory → cleanup
 
 新增 `probe.*` 原因码（**三处同改**：`messages.ts` 中英 / 门 `verdict-contract` 白名单 / `docs/05` §3）：
 
-`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）** · **`probe.install-failed-code`（block，R19）** · **`probe.install-build-refused`（block，R19）**
+`probe.served`（info）· `probe.row-active`（info）· `probe.render-ok`（info，R15）· `probe.render-blank`（block，R15）· `probe.render-unmeasured`（warn→unknown，R15）· `probe.port-mismatch`（warn，R15）· `probe.row-inactive`（block）· `probe.row-missing`（block）· `probe.install-failed`（block）· `probe.boot-timeout`（block）· `probe.http-unreachable`（block，**仅 settled 树**）· `probe.runtime-mismatch`（warn→unknown）· `probe.cleanup-incomplete`（warn）· **`probe.tree-not-settled`（warn→unknown，R17）** · **`probe.startup-failed`（block，R17）** · **`probe.port-unavailable`（warn→unknown，R17）** · **`probe.install-failed-code`（block，R19）** · **`probe.install-build-refused`（block，R19）** · **`probe.profile-copy-unusable`（warn→unknown，R22）** · **`probe.profile-link-dangling`（warn→unknown，R22）** · **`probe.profile-build-refused`（warn，R22，可伴随 `go`）**
 
 > 新增文案一律**只加不改**：给已有 messageId 增加 `{占位符}` 会让 `data/results` 里的历史产物在门 `verdict-contract` 变红（HANDOFF 坑表）。R19 的三条安装归因因此是**新 messageId**，`probe.install-failed` 原样保留（无码时仍用它）。
 
@@ -248,26 +251,46 @@ runtime → install → boot → http → render → inventory → cleanup
 | N29 | 包管理器 URL 带凭据 / 查询串 | `key_line` 里不出现 userinfo、`?token=`、`#frag`（与端点同一套纪律） |
 | N30 | `ERR_PNPM_IGNORED_BUILDS` | `blocked` + `probe.install-build-refused` + `remediation.install-build-refused`（**不是**「插件写坏了」） |
 | N31 | 操作者机器上有 `~/.npmrc`（含 token） | 沙盒安装**不得**发送凭据：`install.registry_auth_used=false`；把 `npm_config_userconfig` 指回真实路径时该标志变 `true`（R20 黑盒对照 2/2） |
+| N32 | 复制的组合自己的依赖装不上（`ERR_PNPM_FETCH_404`） | `unknown` + `missing.probe` + `probe.profile-copy-unusable`；**没有** `install`/`boot` 步（候选没得到机会），断言 `boot-sampled` 等必须 `unmeasured`（R22） |
+| N33 | 复制的组合里有 `{"x":"link:./not-here"}`，`plugin install` **exit 0** | `unknown` + `probe.profile-link-dangling`（`count`/`links` 点名），产物里 `dangling_links` 与 `install.exit_code=0` 同时存在（F40，R22） |
+| N34 | 构建审批拒绝的是**复制组合**自己的依赖（被拒名单里没有候选） | 复制模式下读回 `dsh.profile.bundles`：候选已注册 → 可 `go` + `probe.profile-build-refused`（warn）；未注册 → `unknown`（**不得** `probe.row-missing`/`blocked`，R22） |
+| N35 | 构建审批拒绝名单里**有**候选 | 仍 `blocked` + `probe.install-build-refused`（复制模式不放宽这条，R22） |
+| N36 | 被拒名单读不出来（只有 `Ignored build scripts:` 一行头） | 保守判 `blocked`，**不得**借「读不到」换取宽松（R22） |
+| N37 | 复制模式启动失败且组合的构建被跳过 | `unknown` + `missing.probe`（未构建的原生模块可能是原因，不能算到候选头上）；候选自己的 install 失败不受此影响（R22） |
 
 ---
 
-## 8.5 T-304 前置取证（R20 spike，机制已验、**未实现**）
+## 8.5 T-304 真实组合复制（R20 取证 → **R22 实现**）
 
-> 目的：probe 现在只能回答「加到**模板** profile 会不会挂」，T-304 要回答「加到**我的**组合会不会挂」。本轮只取证，不改 probe 行为。
+> 目的：probe 原来只能回答「加到**模板** profile 会不会挂」，T-304 回答「加到**我的**组合会不会挂」。
+
+用法：`dsh-triage probe <pkg> --copy-profile <name> [--execute --dsh-main …]` / `node scripts/record_probe.mjs --copy-profile <name>`。
+沙盒 profile 名默认继承源名（`--profile` 显式给出才改名），产物记 `sandbox.profile_origin = "copy:<name>"` 与 `sandbox.profile_source`。
 
 | # | 实测事实 | 怎么测的 |
 |---|---|---|
 | F38 | **复制声明就够启动**：把真实 profile 的 `package.json` / `cordis.yml` / `cordis.patch.yml` / `pnpm-workspace.yaml` 四个文件复制进沙盒 `profiles/<name>`（**不复制** `node_modules`、不复制 `.plugin-manager/logs`、不复制任何凭据），Host 仍能起：打印 URL、HTTP 401。说明 bundles 由运行时 install 提供，声明层足够 | R20 spike（复制真实 `~/.dsh/profiles/web` → 沙盒，`--port 0 --no-open`，20s 内出现 `?token=` URL） |
 | F39 | **带第三方依赖的副本要先装一次**：`dsh plugin <args>` 直接把参数转发给 pnpm，所以 `dsh plugin --profile <p> install` 会按复制来的 `package.json` 装依赖（实测 0.5s，store 命中；`node_modules` 出现），随后 Host 起得来（401）。`dsh` **不会**在 boot 时自动装 profile 依赖（R12 的老坑） | R20 spike：复制 + 注入 `dsh-unlag@1.12.5` → `plugin install` → boot |
 | F40 | **`link:` 依赖会「假成功」**：`{"local-thing":"link:./not-here"}` 的 `plugin install` **exit 0** 并打印 `+ local-thing <- not-here`（真实路径不存在），`node_modules` 也建了。也就是说「装成功」不代表组合可用，T-304 必须**逐个检查 `link:`/`file:` 目标是否在沙盒里存在**，否则会把悬空链接当证据 | R20 spike 三组对照：不存在包 → `ERR_PNPM_FETCH_404`（exit 1）；`link:` → exit 0 但目标不存在；`file:./nope.tgz` → exit 1（原文「as it does not exist」） |
+| **F41** | **复制一个真实组合，`plugin install` 会因 pnpm 的构建审批**（`ERR_PNPM_IGNORED_BUILDS`）**退出 1，哪怕每个包都装上了**。被拒名单是组合自己的依赖（`@deepseek-ai/dsh-subprocess-local` / `@google/genai` / `koffi` / `node-pty` / `protobufjs`），不是候选。**这是「复制组合」与「模板组合」最重要的差别**：模板路径里 pnpm 只报候选 | R22：`--copy-profile upstream`（沙盒 0.2.1-rc.4 的 composed profile），14 次真跑前 3 次均 exit 1 + 138s |
+| **F42** | **`plugin add` 在 pnpm 非 0 退出时只写 `dependencies`，不写 `dsh.profile.bundles`**（手工复现：`triage-probe-fixture-ok` 出现在 dependencies，bundles 仍是 2 个）。所以「装失败还继续 boot」会得到 `row-missing` —— 一个把包管理器策略算成插件缺陷的 `blocked` | R22 手工复现（`repro-profile-add`）：逐字段对比 add 前后 `package.json` |
+| **F43** | **沙盒 profile 的 `pnpm-workspace.yaml` 写 `strictDepBuilds: false` 能让同一操作退出 0 并注册 bundle**，而**不批准任何构建**（`onlyBuiltDependencies` 仍为空、`Ignored build scripts:` 照旧打印）。`.npmrc` 里的同名设置**无效**（exit 1） | R22 两组对照（`repro-pnpm-policy`）：`workspace-strict-false` → exit 0 + `registered=true`；`npmrc-strict-false` → exit 1 |
+| **F44** | 复制模式真机 `go`：`copy:upstream` + `ok-plugin` → boot→sample **7.4s**、HTTP 401、渲染 2182ms、候选行 `active`、`registry_auth_used=false`；候选确实进了组合（`candidate_registered=true`） | `data/results/probe-copy-profile-ok-2026-10-28T14-30-00.000Z.json` |
+| **F45** | 两个负形状都真跑过：装不上 → `ERR_PNPM_FETCH_404` → `unknown`（只有 runtime/profile/cleanup 三步）；悬空 → **install exit 0** 但 `link:./not-here` 不存在 → `unknown`，`dangling_links` 点名 | `probe-copy-profile-unusable-2026-10-28T14-40-00.000Z.json` / `probe-copy-profile-dangling-2026-10-28T14-50-00.000Z.json` |
 
-**T-304 的退出条件（下一轮实现）**：
+**T-304 的退出条件（R22 全部达成）**：
 
-1. 新增 `probe --copy-profile <name>`：只按白名单复制声明文件（`package.json` / `cordis.yml` / `cordis.patch.yml` / `pnpm-workspace.yaml`），产物记 `sandbox.profile_origin = "copy:<name>"` 与复制清单；
-2. 复制后跑一次 `plugin install`；**它失败时只能 `unknown`**（新原因 `probe.profile-copy-unusable`）+ `missing.probe`，绝不把「用户的依赖装不上」算到候选头上；
-3. 对 `link:`/`file:` 依赖逐个 stat，悬空即 `unknown`（F40）；
-4. 源 profile 与沙盒重叠时拒绝执行（复用 `validateProbePlan` 的判据）；
-5. 真跑一次「复制我的组合 + 候选」并在产物里同时给出 `profile_origin` 与 `profile_copy` 三形状（成功 / 装不上 / 悬空链接）。
+1. ✅ `probe --copy-profile <name>`：只按白名单复制声明文件，产物记 `sandbox.profile_origin = "copy:<name>"` 与复制清单（`profile_copy.files` / `.missing`）；
+2. ✅ 复制后跑一次 `plugin install`；**失败时只能 `unknown`**（`probe.profile-copy-unusable`）+ `missing.probe`，且**不跑** `install`/`boot` 步；
+3. ✅ `link:`/`file:` 依赖逐个 stat，悬空即 `unknown`（`probe.profile-link-dangling`），**install 退出 0 也不放过**；
+4. ✅ 源 profile 与沙盒重叠时拒绝执行（`profile-source-overlaps-sandbox`，双向判）；
+5. ✅ 真跑「复制组合 + 候选」并给出三种形状（成功 / 装不上 / 悬空链接）。
+
+**构建审批的边界（R22，必须一起读）**：
+
+- 沙盒**从不批准**任何构建脚本；`strictDepBuilds: false` 只把「错误」降为「提示」，被跳过的包一律进 `install.ignored_packages`；
+- 该设置**只在源 profile 自己没有 `pnpm-workspace.yaml` 时**写入；用户自带的一律不覆盖（`profile_copy.pnpm_policy = "source"`），此时若仍是 `ERR_PNPM_IGNORED_BUILDS`，结果就是 `unknown`；
+- 因此「复制模式 `go`」的准确含义是：**声明层完全一致、依赖装齐、但原生模块未在沙盒里构建**。它是 `BS-30` 说的那条缝，不许说成「在我机器上验证过」。
 
 ---
 

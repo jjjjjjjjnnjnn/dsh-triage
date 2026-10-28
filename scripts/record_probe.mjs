@@ -56,7 +56,7 @@ if (stamp === null) {
 
 const rawCandidate = String(argOf('--candidate', ''))
 if (rawCandidate === '') {
-  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--npmrc-registry <url>] [--stamp <iso>]\n')
+  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--npmrc-registry <url>] [--copy-profile <name>] [--stamp <iso>]\n')
   process.exit(2)
 }
 const candidate = normalizeCandidateSpec(rawCandidate)
@@ -67,6 +67,15 @@ if (dshMain === '' || !existsSync(dshMain)) {
 }
 const installDir = pathFor(String(argOf('--install', '')))
 const profile = String(argOf('--profile', 'web'))
+/**
+ * T-304: measure inside a copy of a real profile's declarations instead of the launcher's
+ * empty template. The sandbox profile keeps the source's name unless `--profile` says
+ * otherwise, because the name decides which composition the launcher reads.
+ */
+const copyProfile = argOf('--copy-profile', null)
+/** Was `--profile` actually passed? The default `web` must not rename a copied profile. */
+const profileExplicit =
+  argv.includes('--profile') || argv.some((token) => String(token).startsWith('--profile='))
 const label = String(argOf('--label', 'probe')).replace(/[^a-zA-Z0-9._-]+/g, '-')
 const expectation = argOf('--expect', null)
 const outDir = pathFor(String(argOf('--out', 'data/results')))
@@ -156,12 +165,21 @@ const plan = buildProbePlan({
   candidate,
   realDshHome,
   workRoot: probeScratchRoot(),
-  profile,
+  // `--profile` counts as explicit only when it was actually passed; otherwise the copy keeps
+  // its own name (same rule as the CLI).
+  ...(profileExplicit ? { profile } : {}),
+  ...(copyProfile === null ? {} : { copyProfile }),
   dshBin: dshMain,
   ...(freePort === null ? {} : { basePort: freePort }),
 })
 if (!plan.ok) {
   process.stderr.write(`probe plan refused: ${plan.error.code} (${plan.error.detail})\n`)
+  process.exit(3)
+}
+if (plan.value.profileSource !== null && !existsSync(join(plan.value.profileSource.dir, 'package.json'))) {
+  process.stderr.write(
+    `profile "${plan.value.profileSource.name}" has no package.json at ${plan.value.profileSource.dir}; nothing to copy\n`,
+  )
   process.exit(3)
 }
 
@@ -177,7 +195,7 @@ if (npmrcRegistry !== null) {
   const initialized = runInstall({
     dshMain,
     dshHome: plan.value.sandboxHome,
-    profile,
+    profile: plan.value.profile,
     candidate: fixture,
     timeoutMs: 180_000,
     env,
@@ -243,6 +261,36 @@ const artifact = {
   sandbox: {
     home: redact(plan.value.sandboxHome),
     profile: plan.value.profile,
+    // T-304: which composition this measurement belongs to. `template` = the launcher's empty
+    // profile; `copy:<name>` = a copy of the user's own declarations.
+    profile_origin: run.profileOrigin,
+    profile_source: run.profileSourceDir === null ? null : redact(run.profileSourceDir),
+    // The copy facts, all three shapes of the experiment: what was copied, what the package
+    // manager did with it, and whether a `link:`/`file:` target was silently missing (F40).
+    profile_copy:
+      run.profileCopy === null
+        ? null
+        : {
+            files: [...run.profileCopy.copied],
+            missing: [...run.profileCopy.missing],
+            install:
+              run.profileCopy.install === null
+                ? null
+                : {
+                    exit_code: run.profileCopy.install.exitCode,
+                    code: run.profileCopy.install.code ?? null,
+                    detail: redact(run.profileCopy.install.detail),
+                  },
+            build_refused: run.profileCopy.buildRefused === true,
+            // T-304: `source` = the copied profile's own pnpm-workspace.yaml decided the policy;
+            // `sandbox` = this tool wrote `strictDepBuilds: false` (no build script is approved).
+            pnpm_policy: run.profileCopy.pnpmPolicy ?? null,
+            dangling_links: run.profileCopy.danglingLinks.map((link) => ({
+              name: link.name,
+              spec: link.spec,
+              target: redact(link.target),
+            })),
+          },
     // R17: was the port asked from the OS (`allocated`) or taken from the plan digest?
     port_origin: freePort === null ? 'plan-digest' : 'allocated',
     port: plan.value.port,
@@ -339,6 +387,12 @@ const artifact = {
     // R20: pnpm's own statement that it sent a credential. The sandbox redirects the user
     // npmrc, so this must be `false`; `true` means the redirect stopped working.
     registry_auth_used: run.installAuthUsed,
+    // R21: which packages were installed without their build scripts, and whether that list
+    // named the candidate or only the copied profile's own dependencies (T-304).
+    ignored_packages: [...run.installIgnoredPackages],
+    build_refused_profile_only: run.installBuildRefusedProfileOnly,
+    // R21: did the candidate actually join the composition, or is it only a dependency?
+    candidate_registered: run.candidateRegistered,
   },
   cleanup: {
     removed: run.cleanup.removed,
@@ -365,6 +419,8 @@ const artifact = {
     'the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)',
     // ADR-0006 (accepted 2026-10-28): 20s is a measurement budget, not a wall-clock promise.
     'a tree that never settles is returned by ≈25s (boot + the 15s settle wait), not 20s',
+    // T-304: the copy is declarations only, and that boundary has its own honest failure shape.
+    'the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate',
   ],
 }
 

@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-28T14:40:00.000Z",
+  "label": "copy-profile-unusable",
+  "expectation": "unknown",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+    "package": "triage-probe-fixture-ok",
+    "kind": "path",
+    "resolved": null
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7",
+    "profile": "web",
+    "profile_origin": "copy:web",
+    "profile_source": "<repo>\\tests\\fixtures\\probe\\profile-copy\\unusable\\profiles\\web",
+    "profile_copy": {
+      "files": [
+        "package.json"
+      ],
+      "missing": [
+        "cordis.yml",
+        "cordis.patch.yml",
+        "pnpm-workspace.yaml"
+      ],
+      "install": {
+        "exit_code": 1,
+        "code": "ERR_PNPM_FETCH_404",
+        "detail": "dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7\\profiles\\web\\.plugin-manager\\logs\\operation-3PSGHK\\pnpm.log"
+      },
+      "build_refused": false,
+      "pnpm_policy": "sandbox",
+      "dangling_links": []
+    },
+    "port_origin": "allocated",
+    "port": 49679,
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "preinit": null
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 124,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "profile",
+      "status": "failed",
+      "ms": 3761,
+      "detail": "the copied profile's dependencies did not install: dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7\\profiles\\web\\.plugin-manager\\logs\\operation-3PSGHK\\pnpm.log",
+      "exitCode": 1
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 36,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": null,
+    "bootToSampleMs": null,
+    "httpMs": null,
+    "renderMs": null,
+    "cleanupMs": 36
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "unmeasured",
+      "detail": "the copied profile could not be made usable, so the candidate was never booted"
+    },
+    {
+      "id": "http-served",
+      "status": "unmeasured",
+      "detail": "the copied profile could not be made usable, so the candidate was never booted"
+    },
+    {
+      "id": "inventory-active",
+      "status": "unmeasured",
+      "detail": "the copied profile could not be made usable, so the candidate was never booted"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "unmeasured",
+      "detail": "render check not requested"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": null,
+    "entries": null,
+    "wait_ms": null,
+    "settled": null,
+    "error_code": null,
+    "attempts": null,
+    "applies": null,
+    "candidate_rows": [],
+    "excluded": [],
+    "error": null
+  },
+  "http": null,
+  "boot": {
+    "url_printed": false,
+    "first_line": null,
+    "error_tail": null,
+    "startup_failed": false,
+    "bind_failed_ports": []
+  },
+  "readiness": null,
+  "render": {
+    "status": "unmeasured",
+    "reason": "render check not requested"
+  },
+  "install": {
+    "lockfile": null,
+    "endpoints": [],
+    "exit_code": null,
+    "diagnosis": null,
+    "registry_auth_used": null,
+    "ignored_packages": [],
+    "build_refused_profile_only": false,
+    "candidate_registered": null
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "unknown",
+  "confidence": {
+    "level": "medium",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-profile-copy-unusable",
+      "severity": "warn",
+      "messageId": "probe.profile-copy-unusable",
+      "params": {
+        "profile": "copy:web",
+        "detail": "the copied profile's dependencies did not install: dsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7\\profiles\\web\\.plugin-manager\\logs\\operation-3PSGHK\\pnpm.log"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-28T14:40:00.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-profile-copy",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\profile-copy\\unusable\\profiles\\web",
+      "method": "profile declaration copy + dependency install (sandbox)",
+      "at": "2026-10-28T14:40:00.000Z",
+      "detail": "origin=copy:web copied=package.json missing=cordis.yml,cordis.patch.yml,pnpm-workspace.yaml install_exit=1"
+    }
+  ],
+  "missing_evidence": [
+    "missing.probe"
+  ],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe",
+    "the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)",
+    "a tree that never settles is returned by ≈25s (boot + the 15s settle wait), not 20s",
+    "the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate"
+  ]
+}

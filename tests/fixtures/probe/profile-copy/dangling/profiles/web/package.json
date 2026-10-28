@@ -1,0 +1,12 @@
+{
+  "name": "dsh-profile-dangling",
+  "private": true,
+  "dependencies": {
+    "local-thing": "link:./not-here"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": []
+    }
+  }
+}

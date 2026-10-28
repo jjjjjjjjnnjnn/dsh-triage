@@ -2831,6 +2831,160 @@
         "sha256": "17b5bc2e785bcbdbe1138f170018fba52241c1d067b15a6ffd88992d8b5c27e4",
         "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 239）"
       }
+    },
+    {
+      "id": "R22-S1",
+      "batch": "R22",
+      "step": "计划层：`--copy-profile`（源名继承、声明文件白名单、双向重叠拒绝）+ `profile` 步进计划机",
+      "changed": [
+        "packages/probe/src/plan.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`buildProbePlan` 记录 `profileOrigin=\"copy:<name>\"` 与 `profileSource{name,dir}`；沙盒 profile 名默认继承源名（`--profile` 显式给出才改名，`Flags.profileExplicit` 区分默认值 `web`）；`profile` 步只在该模式下进 `steps`。单测：模板计划无 `profile` 步且 `profileOrigin=\"template\"`（模板路径行为不变）、非法复制名（`../evil` / `a/b` / `C:\\\\x` / `..` / `.`）全被 `invalid-copy-profile` 拒、源与沙盒重叠双向被 `profile-source-overlaps-sandbox` 拒",
+        "reproducibility": "PASS：`pnpm build && pnpm typecheck` 绿；`node --test tests/unit/probe.test.ts` 12 条全过；`node scripts/record_probe.mjs --copy-profile <name> --dsh-home <home>` 一条命令重放，`--dsh-home` 指向不存在的 profile 时 exit 3 并说明「nothing to copy」",
+        "licence": "PASS：复制清单是硬编码白名单（`package.json` / `cordis.yml` / `cordis.patch.yml` / `pnpm-workspace.yaml`），不读凭据、不搬 `node_modules`；本轮无新外部候选",
+        "ssot": "PASS：`PROFILE_DECLARATION_FILES` 单一来源，计划警告文本引用同一常量；spec §3 步骤表已同步；产物字段名 `profile_origin` / `profile_source` 与 `record_probe` 一致",
+        "adversary": "反例一：让默认 `--profile web` 覆盖复制源名 —— 会测到另一个 `profiles/<name>`，已用 `profileExplicit` 挡住并加单测。反例二：只判沙盒「在源里」不判「源在沙盒里」 —— 同样能覆盖源组合，已双向判。反例三：允许复制名带分隔符 —— 会写进真实 `~/.dsh/profiles` 之外，已用与 profile 同一个正则拒绝"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --dsh-home <sandbox>/home --copy-profile upstream --label copy-profile-ok --expect go --stamp 2026-10-28T14:30:00.000Z",
+        "artifact": "data/results/probe-copy-profile-ok-2026-10-28T14-30-00.000Z.json",
+        "sha256": "808db82bbaef303b263fd9ad532abb5da96bce2c7c5110c8f636053777a2eaad",
+        "outcome": "go · boot→sample 7.4s · http 401 · rows 1 · `sandbox.profile_origin=\"copy:upstream\"`"
+      }
+    },
+    {
+      "id": "R22-S2",
+      "batch": "R22",
+      "step": "复制器：`profile-copy.ts`（白名单复制 / `link:`·`file:` 目标 stat / 清单读取）",
+      "changed": [
+        "packages/probe/src/profile-copy.ts",
+        "packages/probe/src/index.ts",
+        "tests/unit/probe-profile.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`copyProfileDeclarations` 只搬传入的名单并分别报 `copied`/`missing`；`localDependencyTargets` 只认 `link:`/`file:`（`workspace:`/`npm:`/区间全跳过）并按 profile 目录解析；`danglingLocalDependencies` 用 `statSync`（跟随符号链接）判存在，断链算缺。单测 5 条：`.npmrc`/`node_modules`/`.plugin-manager` 必须不在副本里、`link:./not-here` 与 `file:./nope.tgz` 必须悬空、存在的 `link:./here` 不悬空、BOM 清单可读",
+        "reproducibility": "PASS：单测用真实临时目录（`mkdtempSync`）而非 mock，Windows/Linux 同路径语义；`node --test tests/unit/probe-profile.test.ts` 5 条全过",
+        "licence": "PASS：纯本地文件操作，无网络、无第三方代码；不读凭据文件（`.npmrc` 仅判「不复制」，不解析内容）",
+        "ssot": "PASS：`readProfileManifest` 是唯一清单读取入口（BOM 剥离与 `probe-run.ts` 的 `sandboxBundles` 同规则）；产物 `profile_copy.files/missing` 直接来自 `copied/missing`，不经二次解释",
+        "adversary": "反例一：把 `node_modules` 当「依赖声明」一起搬 —— 会把用户的目录体积与手工修补一起带进沙盒，白名单 + 单测双重挡住。反例二：用 `existsSync` 判悬空 —— 断链 `existsSync` 为 false 但语义上「存在一个链接」，用 `statSync` 抛错更准（单测覆盖）。反例三：把 `workspace:` 也当本地路径 stat —— 会在正常组合上造出假悬空"
+      },
+      "real_test": {
+        "command": "node --test tests/unit/probe-profile.test.ts && node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-home tests/fixtures/probe/profile-copy/dangling --copy-profile web --label copy-profile-dangling --expect unknown --stamp 2026-10-28T14:50:00.000Z",
+        "artifact": "data/results/probe-copy-profile-dangling-2026-10-28T14-50-00.000Z.json",
+        "sha256": "48b3331ba2e59cfe14c148b96d882c962e4dcef6622659c49f41e3fac39a925c",
+        "outcome": "unknown · `install.exit_code=0` 但 `dangling_links` 点名 `local-thing → link:./not-here`"
+      }
+    },
+    {
+      "id": "R22-S3",
+      "batch": "R22",
+      "step": "执行器：`profile` 步 + 三种失败归因（副本不可用 / 悬空链接 / 组合侧构建审批未注册）",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "packages/plugin/src/probe-run.ts",
+        "tests/unit/probe-exec.test.ts",
+        "tests/fixtures/probe/profile-copy/README.md",
+        "tests/fixtures/probe/profile-copy/unusable/profiles/web/package.json",
+        "tests/fixtures/probe/profile-copy/dangling/profiles/web/package.json"
+      ],
+      "review": {
+        "correctness": "PASS：`profile` 步失败即 abort（不再跑 `install`/`boot`），judge 在 runtime 之后**提前返回** `unknown` + `missing.probe`，避免落到 `probe.boot-timeout`；悬空优先于退出码；`probeAssertions` 在该形状下把 `boot-sampled`/`http-served`/`inventory-active` 标 `unmeasured`。单测 9 条覆盖：可用副本 → go、装不上 → unknown、悬空（exit 0）→ unknown、无复制器 → 失败关闭、断言 unmeasured、模板路径不调用复制器、被拒名单含候选 → blocked、名单不可读 → blocked、名单不含候选且未注册 → unknown",
+        "reproducibility": "PASS：三种失败形状都有真机产物（ok / unusable / dangling）；`node --test tests/unit/probe-exec.test.ts` 67 条全过；`executeProbe` 的依赖全部注入，失败路径离线可重放",
+        "licence": "PASS：新增原因文案只描述事实（谁拒绝、拒了什么、组合有没有更新），不含第三方代码引用；`recovery` 建议只指向「报告作者」",
+        "ssot": "PASS：三条新 `probe.profile-*` 三处同改（`messages.ts` 中英 / 门 `verdict-contract` 命名空间 / `docs/05` §2e）；spec §3 步骤表与 §8 负对照 N32–N37 同轮补上；产物 `install.ignored_packages`、`install.build_refused_profile_only`、`install.candidate_registered` 与 `run` 字段一一对应",
+        "adversary": "反例一：副本装不上就判 `blocked` —— 候选根本没被安装，等于把「你的组合有私有源」说成「插件坏」，已固定在提前返回里。反例二：非 0 退出仍继续 boot —— **实测**会得到 `row-missing`（F42：`dsh.profile.bundles` 未更新），现改为读回组合。反例三：名单读不出来就放宽 —— N36 与单测双向钉死「无名单无宽松」"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-home tests/fixtures/probe/profile-copy/unusable --copy-profile web --label copy-profile-unusable --expect unknown --stamp 2026-10-28T14:40:00.000Z",
+        "artifact": "data/results/probe-copy-profile-unusable-2026-10-28T14-40-00.000Z.json",
+        "sha256": "3fb8c724e80738579686db537b58110c23e0d6160b5d1aeeae02055afae9e5ed",
+        "outcome": "unknown · `ERR_PNPM_FETCH_404` · steps = runtime/profile/cleanup（无 install/boot）· 断言全 `unmeasured`"
+      }
+    },
+    {
+      "id": "R22-S4",
+      "batch": "R22",
+      "step": "沙盒构建策略：`strictDepBuilds: false`（不批准任何构建）+ 被拒名单跨行解析 + 组合注册读回",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/profile-copy.ts",
+        "packages/probe/src/exec.ts",
+        "packages/plugin/src/probe-run.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-exec.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`ignoredBuildPackages` 从整段输出解析（`key_line` 会被截断成一行，单测用真实 5 行样本钉住）；`applySandboxBuildPolicy` 只在源 profile 没带 `pnpm-workspace.yaml` 时写入，返回 `source`/`sandbox` 进产物；`runProfileInstall` 与 `runInstall` 共用一个 `runPluginCommand`（不再有第二份 spawn 逻辑）",
+        "reproducibility": "PASS：两组对照实测——`workspace-strict-false` → exit 0 + `registered=true`；`npmrc-strict-false` → exit 1（同名设置无效）。真机：`pnpm_policy=sandbox`、`ignored_packages` 5 个、`candidate_registered=true`、`registry_auth_used=false`",
+        "licence": "PASS：**不批准任何构建脚本**（`onlyBuiltDependencies` 保持为空，`Ignored build scripts:` 照旧打印）；只是把 pnpm 的「错误」降为「提示」。被跳过的包逐个公开在产物里，未隐藏风险",
+        "ssot": "PASS：`InstallResult.ignoredPackages` 是唯一来源，`record_probe` 直出 `install.ignored_packages`；`sandbox.profile_copy.pnpm_policy` 三态（`source`/`sandbox`/null）与 spec §8.5 边界段一致",
+        "adversary": "反例一：把 `strictDepBuilds: false` 说成「已经允许构建」 —— 实测 `onlyBuiltDependencies` 仍为空、被拒清单照旧打印，产物直接公开，不许口头上含糊。反例二：覆盖用户自己的 `pnpm-workspace.yaml` —— 会把用户的设置偷换成我们的；现只在文件不存在时写，用户自带时 `pnpm_policy=source` 且失败只能 `unknown`。反例三：用 `key_line` 判「被拒名单里有没有候选」 —— 截断会让候选名丢失，误判成「与候选无关」"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --dsh-home <sandbox>/home --copy-profile upstream --label copy-profile-ok --expect go --stamp 2026-10-28T14:30:00.000Z",
+        "artifact": "data/results/probe-copy-profile-ok-2026-10-28T14-30-00.000Z.json",
+        "sha256": "808db82bbaef303b263fd9ad532abb5da96bce2c7c5110c8f636053777a2eaad",
+        "outcome": "go · `profile_copy.install.exit_code=0`（首次为 1 + 138s）· `ignored_packages` 5 个 · `candidate_registered=true`"
+      }
+    },
+    {
+      "id": "R22-S5",
+      "batch": "R22",
+      "step": "交接与台账：spec §3/§4/§7/§8/§8.5、`docs/05` §2e、`BS-30`/`BS-31`、`T-315`、HANDOFF/BACKLOG/INDEX 同步，门禁录一次绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/specs/M3-probe.md",
+        "docs/05-verdict-contract.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-28_R22.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 263 测试 / 9 门全绿；`--mutate` 9/9。文档与代码逐项对照：spec §3 的 `profile` 步只在复制模式出现、§7 的三条新文案与 `messages.ts` 一一对应、§8 的 N32–N37 与单测/真机产物一一对应；HANDOFF 的数字（263 / 106 / 120）来自 `pnpm test` 与台账本身",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T15:30:00.000Z` 可重放；HANDOFF §3 的第一件事是单条命令块；三种复制形状各有单条 `record_probe` 命令",
+        "licence": "PASS：本轮无新候选、无 vendor 条目；`quarantine/` 未动；副本边界（不搬 `.npmrc` / `node_modules`）同时写进 spec、盲区、坑表与代码注释",
+        "ssot": "PASS：104 → 106 份产物、116 → 120 步台账全部可追；三份新产物被 S1–S4 引用，本步引用 `gates-2026-10-28T16-00-00.000Z.json`；`blind_spots` 29 → 31，`governance` 的 `blind-spots` 检查通过",
+        "adversary": "反例一：只写「T-304 完成」不提 `BS-30`/`BS-31` —— 会让读者把复制模式的 `go` 当成「在我机器上验证过」，交接区与 spec §8.5 已把限定写在同一段。反例二：把 `strictDepBuilds: false` 写成「允许构建」 —— 产物里 `onlyBuiltDependencies` 为空、`ignored_packages` 照旧公开，`T-315` 待 ADR。反例三：为了让门变绿改阈值或删产物 —— 本轮 `settle 15s` / `--unsettled-timeout 20000` / `boot→sample ≤20s` 的 diff 为空"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T15:30:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-28T16-00-00.000Z.json",
+        "sha256": "ecfdecc34bbfa74c3186c3be9578572232581ab99a1745624a485acd68b4970e",
+        "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 263）"
+      }
+    },
+    {
+      "id": "R22-S6",
+      "batch": "R22",
+      "step": "末轮加固：组合未更新的断言口径（boot 三项必须 unmeasured）+ 同一次构建拒绝只报一条 + 真机负对照（源 profile 自带严格 workspace）",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "tests/unit/probe-exec.test.ts",
+        "scripts/record_probe.mjs",
+        "docs/specs/M3-probe.md",
+        "tests/fixtures/probe/profile-copy/strict/profiles/web/package.json",
+        "tests/fixtures/probe/profile-copy/strict/profiles/web/pnpm-workspace.yaml"
+      ],
+      "review": {
+        "correctness": "PASS：`probeAssertions` 在「组合没被更新」时把 `boot-sampled` / `http-served` / `inventory-active` 标 `unmeasured`（新增单测）；同一次构建拒绝只产生一条 `probe.profile-build-refused`（新增单测，避免读成两个发现）；`record_probe` 用 `--profile` 是否真的出现过决定是否改名（不再用默认值 `web` 猜）",
+        "reproducibility": "PASS：新负夹具 `tests/fixtures/probe/profile-copy/strict/profiles/web`（自带 `pnpm-workspace.yaml: strictDepBuilds: true`）真跑一条命令即复现：`unknown` + `pnpm_policy=\"source\"` + `candidate_registered=false`；`node --test tests/unit/probe-exec.test.ts` 69 条全过",
+        "licence": "PASS：夹具只声明公开的 `@deepseek-ai/*` 依赖，无新供应商条目；严格 workspace 夹具的作用是证明「我们不覆盖用户设置」，未绕过任何构建审批",
+        "ssot": "PASS：spec §5 断言表新增该形状的说明；四处产物（ok / unusable / dangling / strict）各自对应一种判据，全部进 `data/results` 且有 `.sha256`；本节引用 strict 产物",
+        "adversary": "反例一：组合没更新却把断言写 `failed` —— 读者会认为插件挂了；本轮新增单测钉死 `unmeasured`。反例二：同一次拒绝报两条 —— 会让「一个发现」看起来像两处缺陷；已按 `profileCopy.buildRefused` 去重。反例三：覆盖用户的严格 workspace 让 run 变绿 —— 新夹具正是这一枪：`pnpm_policy=\"source\"`、`registered=false`、结论 `unknown`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --dsh-home tests/fixtures/probe/profile-copy/strict --copy-profile web --label copy-profile-strict --expect unknown --stamp 2026-10-28T15:00:00.000Z",
+        "artifact": "data/results/probe-copy-profile-strict-2026-10-28T15-00-00.000Z.json",
+        "sha256": "059de954bb84b07266744d42e0c1b17eef19e62962c02aff73b9394bebf15ffa",
+        "outcome": "unknown · `pnpm_policy=\"source\"` · `candidate_registered=false` · 一条 warn · boot 三项 unmeasured"
+      }
     }
   ]
 }

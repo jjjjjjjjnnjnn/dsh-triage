@@ -283,3 +283,14 @@
 - 实测：239 测试 / 9 门全绿 / `--mutate` 9/9；D2 复算 `gate.passed=true`（真实 12/12 在预算内）
 - 过程中的真实缺陷（本轮自己抓到）：把「boot + settle ≈25s」当成解释写进 ADR，被自己的量具否掉
 - 未做：T-304 实现（只完成 §8.5 的前置取证）、T-314 的分段计时、T-312 两阶段、T-401
+
+### 2026-10-28 R22｜T-304 真实组合复制（`--copy-profile`）：三形状真机产物 + 组合侧归因（构建审批 / 悬空链接 / 未注册）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未起 subagent；四轴与对抗性由同一会话自查，audit/step_reviews.json R22-S1…S5）
+- 范围：`packages/probe/src/{plan,profile-copy（新）,exec,host,index}.ts`、`packages/plugin/src/{cli,probe-run}.ts`、`packages/core/src/messages.ts`、`scripts/record_probe.mjs`、`tests/unit/{probe,probe-profile（新）,probe-exec}.test.ts`、`tests/fixtures/probe/profile-copy/*（新）`、`docs/{specs/M3-probe.md,05-verdict-contract.md,HANDOFF.md,BACKLOG.md}`、`INDEX.md`、`audit/{blind_spots.json（BS-30/BS-31）,step_reviews.json,AUDIT_2026-10-28_R22.md（新）}`、`data/results/{probe-copy-profile-ok-*,probe-copy-profile-unusable-*,probe-copy-profile-dangling-*,gates-*}`
+- 起因：HUMAN「同意，继续」→ 按 R21 交接的优先级做 T-304（probe 现在只能回答「加到模板 profile 会不会挂」）
+- 结果：① **`--copy-profile <name>`**：只复制四个声明文件（package.json / cordis.yml / cordis.patch.yml / pnpm-workspace.yaml），不搬 node_modules / .plugin-manager / .npmrc；新增 `profile` 步（仅该模式出现），产物记 `sandbox.profile_origin` / `profile_source` / `profile_copy{files,missing,install,pnpm_policy,dangling_links}`。② **两种「副本不可用」只能是 `unknown`**：装不上（`probe.profile-copy-unusable`）、悬空 `link:`（`probe.profile-link-dangling`，install **exit 0** 也抓）——都不跑 `install`/`boot`，断言全 `unmeasured`。③ **两个真归因**：复制真实组合时 pnpm 因**构建审批**退出 1（被拒的是组合自己的 5 个原生包，不是候选）；`plugin add` 在 pnpm 非 0 退出时**只写 dependencies、不写 `dsh.profile.bundles`**（实测），所以「继续 boot」会得到 `row-missing`。④ **解法且不越权**：沙盒 `pnpm-workspace.yaml` 写 `strictDepBuilds: false`（exit 0 且注册 bundle，但**不批准任何构建**，`onlyBuiltDependencies` 仍为空），并读回组合确认 `candidate_registered=true`。⑤ 新盲区 `BS-30`（沙盒不构建原生模块）/ `BS-31`（只搬声明：链接与私有源只能 unknown），新任务 `T-315`（该口径要 ADR）。
+- 实测：**263 测试 / 9 门全绿 / `--mutate` 9/9**；三形状真机产物（go / unknown×2）；`registry_auth_used=false`；`profile` 步 18.5–19.7s（首次 138s 是构建审批失败后的重复解析）
+- 过程中的真实缺陷（本轮自己抓到，均在提交前修）：把「副本装不上」直接当 `blocked`（会让私有源组合变成「插件坏」）；把 `ERR_PNPM_IGNORED_BUILDS` 一律按 R19 归到候选（复制模式下被拒的是组合）；以为被拒名单能从 `key_line` 读（截断丢名字，改整段解析）；`--profile` 默认值 `web` 会覆盖复制源名（已加 `profileExplicit`）
+- 未做：T-314（`boot` 分段计时，仍是首选纯测量项）、T-315 ADR、T-313（其余凭据来源）、T-401 面板契约 spike；阈值（settle 15s / 窗口 20000 / `boot→sample ≤20s`）**一字未动**

@@ -6,8 +6,26 @@
  * passes `--execute`, and it never accepts a plan that overlaps the real DSH home.
  */
 
-export type { ProbeAssertion, ProbePlan, ProbePlanError, ProbePlanErrorCode, ProbePlanInput, ProbeStep } from './plan.js'
-export { buildProbePlan, validateProbePlan } from './plan.js'
+export type {
+  ProbeAssertion,
+  ProbePlan,
+  ProbePlanError,
+  ProbePlanErrorCode,
+  ProbePlanInput,
+  ProbeProfileSource,
+  ProbeStep,
+} from './plan.js'
+export { PROFILE_DECLARATION_FILES, buildProbePlan, validateProbePlan } from './plan.js'
+
+export {
+  applySandboxBuildPolicy,
+  copiedFilesPresent,
+  copyProfileDeclarations,
+  danglingLocalDependencies,
+  localDependencyTargets,
+  readProfileManifest,
+} from './profile-copy.js'
+export type { LocalDependencyTarget, ProfileCopyResult } from './profile-copy.js'
 
 export {
   bootAndSampleHost,
@@ -16,6 +34,7 @@ export {
   failureEndpoints,
   bindFailedPorts,
   findFreePort,
+  ignoredBuildPackages,
   installDiagnosis,
   isUsableSample,
   killTree,
@@ -23,6 +42,7 @@ export {
   readRuntimeVersion,
   removeSandbox,
   runInstall,
+  runProfileInstall,
   sandboxNpmEnv,
   sanitizeDiagnosisLine,
   sanitizeLogLine,
@@ -71,8 +91,10 @@ export type {
   ProbeAssertionStatus,
   ProbeCandidateRow,
   ProbeCleanupResult,
+  ProbeDanglingLink,
   ProbeExecDeps,
   ProbeJudgement,
+  ProbeProfileCopy,
   ProbeRun,
   ProbeSampleView,
   ProbeStepId,
@@ -80,6 +102,8 @@ export type {
   ProbeStepStatus,
   ProbeTimeouts,
   ProbeTimings,
+  ProfilePrepareInput,
+  ProfilePrepareOutcome,
   RuntimeReadInput,
 } from './exec.js'
 export {

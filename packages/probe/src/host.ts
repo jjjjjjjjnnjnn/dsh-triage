@@ -382,6 +382,13 @@ export interface InstallResult {
   /** The package manager's own reason, when it said one (T-310). */
   readonly diagnosis: InstallDiagnosis
   /**
+   * Packages the package manager installed without running their build scripts (R19 F35).
+   *
+   * Empty means "the output named none" — never "none were affected", so callers must treat
+   * an empty list as unknown rather than as evidence.
+   */
+  readonly ignoredPackages: readonly string[]
+  /**
    * Did pnpm report sending an authorization header? (R20)
    *
    * WHY THIS IS A FIELD AND NOT A COMMENT: the sandbox inherits `$HOME`, so pnpm reads the
@@ -455,6 +462,28 @@ export function sanitizeDiagnosisLine(line: string): string {
 /** Does this line say anything beyond its label? (`Error:` alone does not.) */
 function substantive(text: string): boolean {
   return text.replace(/[^A-Za-z0-9]/g, '').length >= 8
+}
+
+/**
+ * Package names whose build scripts the package manager refused to run.
+ *
+ * WHY THIS IS PARSED FROM THE RAW OUTPUT AND NOT FROM `key_line`: pnpm wraps the list over
+ * several lines and `key_line` is one line (`Ignored build scripts: a@1.0.0,` — R21 measured
+ * exactly that truncation). Membership in this list is what tells "the candidate was not
+ * built" apart from "the profile I copied was not built", and those need opposite verdicts.
+ */
+export function ignoredBuildPackages(text: string): readonly string[] {
+  const marker = text.indexOf('Ignored build scripts')
+  if (marker === -1) return []
+  // The list ends at the first blank line; 800 characters is ample for any realistic profile.
+  const tail = text.slice(marker, marker + 800)
+  const stop = tail.search(/\r?\n\s*\r?\n/)
+  const block = stop === -1 ? tail : tail.slice(0, stop)
+  const names = new Set<string>()
+  for (const match of block.matchAll(/(@?[a-zA-Z0-9][a-zA-Z0-9._/-]*)@\d+\.\d+\.\d+/g)) {
+    if (match[1] !== undefined) names.add(match[1])
+  }
+  return [...names]
 }
 
 /**
@@ -558,8 +587,46 @@ export function runInstall(input: {
   timeoutMs: number
   env: NodeJS.ProcessEnv
 }): InstallResult {
-  const argv = [input.dshMain, 'plugin', '--profile', input.profile, 'add', input.candidate]
-  const run = spawnSync(process.execPath, argv, {
+  return runPluginCommand({
+    argv: [input.dshMain, 'plugin', '--profile', input.profile, 'add', input.candidate],
+    dshHome: input.dshHome,
+    timeoutMs: input.timeoutMs,
+    env: input.env,
+  })
+}
+
+/**
+ * `dsh plugin --profile <p> install` — install the PROFILE's own dependencies.
+ *
+ * WHY THIS IS A SEPARATE ENTRY POINT (T-304 / R20 fact F39): `dsh` does NOT install profile
+ * dependencies while booting (the R12 pitfall), but `dsh plugin <args>` forwards its arguments
+ * straight to pnpm, so `plugin install` does. A copied profile therefore has to run this once
+ * before it can boot — and if it fails, that failure belongs to the copy, not to the
+ * candidate.
+ */
+export function runProfileInstall(input: {
+  dshMain: string
+  dshHome: string
+  profile: string
+  timeoutMs: number
+  env: NodeJS.ProcessEnv
+}): InstallResult {
+  return runPluginCommand({
+    argv: [input.dshMain, 'plugin', '--profile', input.profile, 'install'],
+    dshHome: input.dshHome,
+    timeoutMs: input.timeoutMs,
+    env: input.env,
+  })
+}
+
+/** The one place that spawns a `dsh plugin …` child and reads its result. */
+function runPluginCommand(input: {
+  readonly argv: readonly string[]
+  readonly dshHome: string
+  readonly timeoutMs: number
+  readonly env: NodeJS.ProcessEnv
+}): InstallResult {
+  const run = spawnSync(process.execPath, [...input.argv], {
     // R20: the operator's `~/.npmrc` must not travel into the sandbox (see `sandboxNpmEnv`).
     env: sandboxNpmEnv(input.env, input.dshHome),
     encoding: 'utf8',
@@ -578,6 +645,7 @@ export function runInstall(input: {
     diagnosis:
       run.status === 0 ? { code: null, key_line: null, source: 'none' } : installDiagnosis(text),
     authUsed: /authorization header was used/i.test(text),
+    ignoredPackages: ignoredBuildPackages(text),
   }
 }
 

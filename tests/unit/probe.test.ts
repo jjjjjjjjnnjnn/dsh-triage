@@ -34,6 +34,54 @@ test('a sandbox nested inside the real DSH home is refused', () => {
   assert.equal(plan.error.code, 'sandbox-overlaps-real-home')
 })
 
+/**
+ * T-304: a copy plan must say where it came from, keep the source's profile name, and put the
+ * profile step before the candidate install.
+ */
+test('a copy plan records its origin, keeps the source profile name, and copies before installing', () => {
+  const plan = buildProbePlan({ candidate: 'x', realDshHome, workRoot, copyProfile: 'desktop' })
+  assert.ok(plan.ok)
+  if (!plan.ok) return
+  assert.equal(plan.value.profileOrigin, 'copy:desktop')
+  assert.equal(plan.value.profile, 'desktop', 'the source name decides which composition the launcher reads')
+  assert.equal(plan.value.profileSource?.dir, join(realDshHome, 'profiles', 'desktop'))
+  const ids = plan.value.steps.map((step) => step.id)
+  assert.deepEqual(ids.slice(0, 3), ['runtime', 'profile', 'install'])
+  assert.ok(plan.value.warnings.some((warning) => warning.includes('declarations only')))
+  // A template plan must not grow a profile step: the two shapes stay distinguishable.
+  const template = buildProbePlan({ candidate: 'x', realDshHome, workRoot })
+  assert.ok(template.ok)
+  if (!template.ok) return
+  assert.equal(template.value.profileOrigin, 'template')
+  assert.equal(template.value.profileSource, null)
+  assert.ok(!template.value.steps.some((step) => step.id === 'profile'))
+})
+
+test('a copy profile name that could climb out of the profiles directory is refused', () => {
+  for (const name of ['../evil', 'a/b', 'C:\\x', '..', '.']) {
+    const plan = buildProbePlan({ candidate: 'x', realDshHome, workRoot, copyProfile: name })
+    assert.equal(plan.ok, false, `"${name}" must be refused`)
+    if (plan.ok) continue
+    assert.equal(plan.error.code, 'invalid-copy-profile')
+  }
+})
+
+test('a source profile that overlaps the sandbox is refused, in both directions', () => {
+  const built = buildProbePlan({ candidate: 'x', realDshHome, workRoot, copyProfile: 'desktop' })
+  assert.ok(built.ok)
+  if (!built.ok) return
+  const base = built.value
+  for (const dir of [base.sandboxHome, join(base.sandboxHome, 'profiles', 'desktop', 'inner')]) {
+    const verdict = validateProbePlan({
+      plan: { ...base, profileSource: { name: 'desktop', dir } },
+      realDshHome,
+    })
+    assert.equal(verdict.ok, false, `${dir} must be refused`)
+    if (verdict.ok) continue
+    assert.equal(verdict.error.code, 'profile-source-overlaps-sandbox')
+  }
+})
+
 test('the plan always isolates DSH_HOME and documents cleanup', () => {
   const plan = buildProbePlan({ candidate: 'x', realDshHome, workRoot })
   assert.ok(plan.ok)
