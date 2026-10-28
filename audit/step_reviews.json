@@ -4683,6 +4683,27 @@
         "sha256": "3c8f18341c5ad8ea6c04d89fefb70af677ef2fd482e6e5978ba6722719a18c1d",
         "outcome": "ALL GREEN · 9 gates（350 测试；190 步 / 174 产物全部被引用）"
       }
+    },
+    {
+      "id": "R37-S8",
+      "batch": "R37",
+      "step": "交接口径修正（文档同步）：`HANDOFF §3` 的第一件事还写着刚做完的 `BS-32`，会把下一位引到重复劳动；改为 `BS-39`（ptc 折叠真机）→ `BS-40`（有载崩溃率）→ 候选扩容 → `BS-36`/`BS-29` → M5-a 本地半边，并新增 R37 的读数提醒（`probe.measurement-unavailable` / `load` 条件 / `runs_without_artifact` / 有载中位数）",
+      "changed": [
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：新的第一件事直接对应本轮新开的盲区（`BS-39` / `BS-40`），不再是已完成的 `BS-32`；每条都带「做不到就不许说什么」的口径",
+        "reproducibility": "PASS：`HANDOFF` 里的命令块仍可执行（三条门禁命令未变），新增的读数提醒全部指向已有产物字段",
+        "licence": "PASS：只改文档，无新增数据源与依赖",
+        "ssot": "PASS：台账另记一步（本轮第 8 步），`no-orphan-results` 仍全绿；`doc-stand` 要求的三份入口文档与两份台账仍一致（R37）",
+        "adversary": "反例一：让 `§3` 继续指向 `BS-32`（已完成）——下一位会重复跑一次对照并得到同样的数，浪费一轮；反例二：把 `BS-40` 写成「已知限制」而不给复跑口径——那就是把未归因的崩溃洗成结论"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T17:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T17-20-00.000Z.json",
+        "sha256": "4bcaaf4322480f76246c2d6f3f77f96fc3464231783ee404601fe77b3a59aa42",
+        "outcome": "ALL GREEN · 9 gates（350 测试；191 步 / 175 产物全部被引用）"
+      }
     }
   ]
 }
