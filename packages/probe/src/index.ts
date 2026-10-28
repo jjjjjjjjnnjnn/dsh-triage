@@ -42,6 +42,7 @@ export {
   killTree,
   pluginArgv,
   probeHttp,
+  readNodeLayout,
   readRuntimeVersion,
   removeSandbox,
   runInstall,
@@ -55,6 +56,7 @@ export {
 export type {
   BootSampleOptions,
   BootSampleResult,
+  NodeLayout,
   BootSegments,
   ExtraPatchEntry,
   HostObservation,

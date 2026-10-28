@@ -90,6 +90,10 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 **验收**：面板里的结论与 `audit --json` 逐条同源（同 `messageId` + 同 count）；契约不匹配时面板不渲染而不是报错白屏。
 
+> **R30 状态（写了一半，且明确写清哪一半没写）**：`packages/plugin/client.js` 已落地——手写 classic script（不引打包器）、`window.__ModuleLoader__.load({ id:'dsh-triage', factory })`、在 `settings.plugins.tab` 里注册 `{ id:'compat-triage', order:90, locale:'compat-triage', inject }`，文案走 `ctx.locale.register` + `bind`、副作用走 `ctx.effect`。**降级是默认路径**：缺 `slots.inject`/`slots.register`/`locale.register`、`require('react')` 不可用、或任意属性读取抛错 → **零注册**（连字典都不注册），`apply` 永不向外抛。**tab 里没有任何结论**：只有「跑 `dsh-triage audit`」的入口与「宿主报告 N 行插件」这一条事实（并明写「行数是事实，不是结论」）——浏览器读不到 `data/results`，在这里编结论就是违反铁律 1。单测用 `node:vm` 跑**真实文件**（9 条：loader id / 插槽名 / row id / 三种降级 / Proxy 抛错 / load 失败不假装 0 行 / 不 require 宿主模块 / manifest 形状）。
+>
+> **仍未做的两件（不许当成已做）**：① 沙盒 Host 里真的看到这个 tab（需要起 Host + 设置页断言）；② 「与 CLI 同源结论」——那要求 Host 侧有一条只读 Remote 暴露 `audit --json`，本轮**没有**为了填这个格去自造判据，所以 tab 先只给入口。
+
 ---
 
 ## 4. 形态 C：可双击的 exe（SEA）
@@ -126,5 +130,5 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 | 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 | ✅ R16 |
 | 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0）· **R19（v1：`/api/audit` + 当前组合区块）** |
 | 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
-| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | ⬜ |
+| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | 🟡 **R30：浏览器半边已交付**（`packages/plugin/client.js` + `dsh.client` + 9 条契约单测，含「不匹配 = 零注册」）；**剩余**：真机挂载 + 同源结论（需要 Host 侧只读 Remote） |
 | 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |

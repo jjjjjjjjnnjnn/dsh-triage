@@ -13,7 +13,7 @@
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { extractHostUrl, renderUrl, type HostUrl, type RenderCheck } from './render.js'
@@ -175,6 +175,45 @@ export interface BootSampleResult {
    * "did we wait" from `sampleWaitMs - sampleMtimeMs`.
    */
   readonly replacement: SampleReplacement
+}
+
+/**
+ * The pnpm layout a sandbox ended up with (T-315 residual, R30).
+ *
+ * WHY NOT TRUST THE CONFIG: R26 wrote `nodeLinker: hoisted` into a copied source and the probe
+ * still said `go`, but the artifact never recorded the layout — so the honest claim was "this
+ * shape is not misjudged", not "pnpm switched". Reading the dir is cheap and makes the claim
+ * checkable. Declared-but-not-applied is a real possibility (a shared store can win), which is
+ * why `declared` and the observed layout are separate fields instead of one boolean.
+ */
+export interface NodeLayout {
+  /** What `node_modules` looks like: `.pnpm` present = isolated, only flat dirs = hoisted. */
+  readonly linker: 'isolated' | 'hoisted' | 'absent'
+  /** `nodeLinker:` from `node_modules/.modules.yaml`, verbatim; `null` = not stated. */
+  readonly declared: string | null
+  /** Non-dot entries directly in `node_modules` (hoisted layouts put the packages here). */
+  readonly topLevel: number
+  /** Does `node_modules/.pnpm` exist (pnpm's per-package link store)? */
+  readonly pnpmStore: boolean
+}
+
+/** Read {@link NodeLayout} from a profile dir. `null` = could not read (never a guess). */
+export function readNodeLayout(dir: string): NodeLayout | null {
+  try {
+    const nodeModules = join(dir, 'node_modules')
+    if (!existsSync(nodeModules)) return { linker: 'absent', declared: null, topLevel: 0, pnpmStore: false }
+    const modulesYaml = join(nodeModules, '.modules.yaml')
+    let declared: string | null = null
+    if (existsSync(modulesYaml)) {
+      const match = /^\s*nodeLinker:\s*['"]?([A-Za-z0-9_-]+)['"]?\s*$/m.exec(readFileSync(modulesYaml, 'utf8'))
+      if (match !== null) declared = match[1] ?? null
+    }
+    const pnpmStore = existsSync(join(nodeModules, '.pnpm'))
+    const topLevel = readdirSync(nodeModules).filter((entry) => !entry.startsWith('.')).length
+    return { linker: pnpmStore ? 'isolated' : 'hoisted', declared, topLevel, pnpmStore }
+  } catch {
+    return null
+  }
 }
 
 /**

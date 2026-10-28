@@ -31,6 +31,7 @@ import { parseInventorySnapshot } from '@dsh-triage/core'
 import type { InstallDiagnosis } from './host.js'
 import type { BootSegments } from './host.js'
 import type { SampleReplacement } from './host.js'
+import type { NodeLayout } from './host.js'
 import type { ProbePlan } from './plan.js'
 import type { RenderCheck } from './render.js'
 
@@ -235,6 +236,15 @@ export interface ProbeRun {
    */
   readonly installBuildRefusedProfileOnly: boolean
   /**
+   * The pnpm layout the sandbox actually ended up with (T-315 residual, R30).
+   *
+   * WHY THIS EXISTS: R26 proved `nodeLinker: hoisted` in a copied source does not break row
+   * recognition, but the artifact did not record the layout — so the claim was "this shape is not
+   * misjudged", not "pnpm really switched". Recording `.pnpm` and the flat top level turns that
+   * into a fact you can re-read. `null` = not read (older deps fake, or unreadable dir).
+   */
+  readonly nodeLayout: NodeLayout | null
+  /**
    * Did the candidate end up in the profile's `dsh.profile.bundles`? `null` = could not read.
    *
    * This is the difference between "added to the composition" and "just a dependency": the
@@ -378,6 +388,13 @@ export interface ProbeExecDeps {
    */
   profileBundles?(input: { readonly profileDir: string }): readonly string[] | null
   /**
+   * Read the sandbox's pnpm layout (T-315 residual): `.pnpm` present = isolated, flat = hoisted.
+   *
+   * Optional so a pure fake does not have to answer it; `null` means "not read", which the
+   * artifact publishes instead of guessing.
+   */
+  readNodeLayout?(input: { readonly dir: string }): NodeLayout | null
+  /**
    * Copy the plan's source profile into the sandbox and install its dependencies (T-304).
    *
    * Optional because a template-profile probe never needs it; a plan that names a source
@@ -430,6 +447,7 @@ interface MutableRun {
   installAuthUsed: boolean | null
   installIgnoredPackages: readonly string[]
   installBuildRefusedProfileOnly: boolean
+  nodeLayout: NodeLayout | null
   candidateRegistered: boolean | null
   profileCopy: ProbeProfileCopy | null
   cleanup: ProbeCleanupResult
@@ -463,6 +481,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     installAuthUsed: null,
     installIgnoredPackages: [],
     installBuildRefusedProfileOnly: false,
+    nodeLayout: null,
     candidateRegistered: null,
     profileCopy: null,
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
@@ -632,6 +651,20 @@ async function runSequence(
     run.steps.push({ id: 'install', status: 'skipped', ms: 0, detail: 'skipInstall', exitCode: null })
   }
 
+  /*
+   * T-315 residual (R30): record the layout the sandbox ACTUALLY uses, right after install and
+   * before boot. Without this the artifact can only say "this hoisted shape was not misjudged";
+   * with it, `install.node_layout.linker` answers "did pnpm really switch". Read errors stay
+   * `null` (not read), never a guess.
+   */
+  if (deps.readNodeLayout !== undefined) {
+    try {
+      run.nodeLayout = deps.readNodeLayout({ dir: input.plan.sandboxProfileDir }) ?? null
+    } catch {
+      run.nodeLayout = null
+    }
+  }
+
   await runStep(run, deps, 'boot', async () => {
     const boot = await deps.bootAndSample({ plan: input.plan, dshMain: input.dshMain, timeoutMs: timeouts.bootMs })
     // Boot facts must be recorded BEFORE the no-sample early return (R17): "the Host printed
@@ -713,6 +746,7 @@ function freeze(run: MutableRun): ProbeRun {
     sandboxHome: run.sandboxHome,
     profileOrigin: run.profileOrigin,
     profileSourceDir: run.profileSourceDir,
+    nodeLayout: run.nodeLayout,
     port: run.port,
     runtimeVersion: run.runtimeVersion,
     steps: run.steps,

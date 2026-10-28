@@ -436,6 +436,21 @@ const artifact = {
     build_refused_profile_only: run.installBuildRefusedProfileOnly,
     // R21: did the candidate actually join the composition, or is it only a dependency?
     candidate_registered: run.candidateRegistered,
+    /*
+     * R30 (T-315 residual): the pnpm layout the sandbox REALLY used, read from
+     * `node_modules` after install. `linker: 'hoisted'` with `pnpmStore: false` is the only
+     * shape that supports "pnpm switched", and `declared` keeps the config claim separate
+     * from the observed result (a shared store can win over the setting).
+     */
+    node_layout:
+      run.nodeLayout === null
+        ? null
+        : {
+            linker: run.nodeLayout.linker,
+            declared: run.nodeLayout.declared,
+            top_level: run.nodeLayout.topLevel,
+            pnpm_store: run.nodeLayout.pnpmStore,
+          },
   },
   cleanup: {
     removed: run.cleanup.removed,

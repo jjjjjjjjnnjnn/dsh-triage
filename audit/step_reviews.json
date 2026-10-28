@@ -3810,6 +3810,66 @@
         "sha256": "fc8792e46dbbbf0dcee20895a60148003d4d3b2808fc2b0ce725b50c43069551",
         "outcome": "ALL GREEN · 9 gates（276 测试；154 步 / 139 产物全部被引用）"
       }
+    },
+    {
+      "id": "R30-S1",
+      "batch": "R30",
+      "step": "代签两道待签题（ADR-0008 勾 B 维持 15s / ADR-0009 勾 A 维持现状）+ T-401 浏览器半边落地 + T-315 把 pnpm 布局变成读数，并真跑一次模板 probe 验证新字段",
+      "changed": [
+        "packages/plugin/client.js",
+        "packages/plugin/package.json",
+        "packages/plugin/src/probe-run.ts",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/client-tab.test.ts",
+        "tests/unit/probe-node-layout.test.ts",
+        "docs/adr/0008-unsettled-wait.md",
+        "docs/adr/0009-agent-scope-reads.md",
+        "audit/SIGNOFF.md",
+        "data/results/probe-ok-2026-10-28T12-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：代签的两项都是「维持现状」（B：settle 15s 不动；A：不破铁律 4），判据、阈值、代码语义零改动。client.js 的降级有 4 条负对照（缺 slots / 缺 locale / 无 react / Proxy 抛错）全部断言「零注册」；node_layout 把观测（.pnpm 在不在）与配置自述（nodeLinker）分列。真跑：模板 + ok-plugin → go，boot→sample 8.1s，node_layout=isolated，replacement_reason=upgrade",
+        "reproducibility": "PASS：13 条新单测离线可跑（client-tab 9 + node-layout 4，跑真实文件与真实目录）；真跑一条 record_probe 并带 sha256 入账；boot→sample 8.1s 落在历史区间 4.6–9.8s 内（BS-32 仍 open）",
+        "licence": "PASS：无新增外部候选（ok-plugin 是仓内夹具）、无 vendor、未读凭据——代签的正是「继续不读」；client.js 不 require 宿主模块也不 require node 内置模块（两条断言）",
+        "ssot": "PASS：代签三处一致（SIGNOFF 两行 / ADR-0008 [x] B / ADR-0009 头部 accepted(A) 与签字区）；T-401 与 T-315 在 BACKLOG、M4-surface、INDEX、HANDOFF 四处都写「半交付 + 未做项」，没有一处标 ✅",
+        "adversary": "反例一：「代签=自己放行破例」——勾的是维持，破例项（A′/A″/B 案）保持未勾并写明需重开一轮。反例二：「面板里显示兼容良好」——没放，浏览器读不到证据，放了就是编造。反例三：「布局按配置推断」——配置会撒谎，所以观测与 declared 分列，读不到就 null。反例四：把 T-401 标完成——仍是 🟡"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label ok --expect go --stamp 2026-10-28T12:10:00.000Z",
+        "artifact": "data/results/probe-ok-2026-10-28T12-10-00.000Z.json",
+        "sha256": "291b99dc27a5c61debd41350de690ae132b2748373f42e6da662050721913f45",
+        "outcome": "go · boot→sample 8100ms · install.node_layout{linker:isolated,declared:null,top_level:1,pnpm_store:true} · replacement_reason=upgrade"
+      }
+    },
+    {
+      "id": "R30-S2",
+      "batch": "R30",
+      "step": "收口：代签与 T-401/T-315 的半交付写进文档（HANDOFF / INDEX / BACKLOG / M4-surface / 审核报告 / AI 披露），146→156 步台账补齐后录一次门禁全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/specs/M4-surface.md",
+        "audit/AUDIT_2026-10-28_R30.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：门禁 --record 输出 ALL GREEN · 9 gates；--mutate NEGATIVE CONTROL PASSED · 9/9；新产物 probe-ok 与 gates 都被台账引用，no-orphan-results 绿",
+        "reproducibility": "PASS：一条命令重放（node scripts/gate.mjs --record --stamp …）；客户端与布局测试均离线；git status 干净、git log -1 即交接提交",
+        "licence": "PASS：无外部产物入库、未动 quarantine 与金标；AI 披露写明代签的委托原话与「HUMAN 未逐条复核」的部分",
+        "ssot": "PASS：两道签名的状态在 SIGNOFF/ADR/HANDOFF §3 三处一致；T-401 与 T-315 在四处都是「半交付 + 未做项」；INDEX 的裸文件名被 governance 抓到一次并已改成 data/results 全路径",
+        "adversary": "反例一：为了让 no-orphan 变绿删掉 probe-ok 产物——没有，它是 node_layout 的唯一真机证据。反例二：把「代签」写成「HUMAN 逐条看过」——SIGNOFF 明确列了未复核部分。反例三：把 T-401 的真机挂载留在文档外——HANDOFF §3 第一条就是它"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T13:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T13-30-00.000Z.json",
+        "sha256": "d73608570abf3018fc09a2704798e87c2a46ee5bfb93d22ff9fae258dc81ab14",
+        "outcome": "ALL GREEN · 9 gates（289 测试；156 步 / 140 产物全部被引用）"
+      }
     }
   ]
 }

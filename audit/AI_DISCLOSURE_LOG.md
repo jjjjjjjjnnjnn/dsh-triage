@@ -368,3 +368,14 @@
 - 实测：276 测试 / 9 门全绿 / `--mutate` 9/9；154 步 / 139 产物
 - 过程中的真实缺陷：① 我最初相信「`replacement_waited=false` 才是 E 生效」，直到翻开第一批产物的 20 行才发现它在 T-312 之后恒为 `true`——**读产物还是比读自己的文档可靠**；② 新加的 `--strict` 单测第一条把正则写成 `gate {7}PASSED`，实际输出 8 个空格，测试当场红（改成 `\s+`）
 - 未做：`T-401` 的 `client.js`（下一位的第一件事）、`T-315` 剩余、`BS-29` 剩余面、`ADR-0008` §剩余项 B 与 `ADR-0009` 的签字（HUMAN 未给）
+
+### 2026-10-28 R30｜代签 `ADR-0008` B / `ADR-0009` A + T-401 浏览器半边 + T-315 布局读数
+
+- 生成者：DeepSeek V4.1 Flash（主会话；代签部分为 HUMAN 明确委托：「进行你自己评估讨论，代我签字，同意」）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R30-S1…S2）
+- 范围：`packages/plugin/{client.js,package.json,src/probe-run.ts}`、`packages/probe/src/{host,exec,index}.ts`、`scripts/record_probe.mjs`、`tests/unit/{client-tab,probe-node-layout}.test.ts`、`docs/{specs/M4-surface,BACKLOG,HANDOFF,adr/0008,adr/0009}.md`、`audit/{SIGNOFF.md,AUDIT_2026-10-28_R30.md,step_reviews.json}`、`INDEX.md`
+- 起因：HUMAN「必须一起说的诚实边界…进行这些处理，确保稳定…继续 T-401 / T-315…进行你自己评估讨论，代我签字，同意」
+- 结果：① **代签两道题都选维持**：`ADR-0008` 勾 B（settle 15s / `--unsettled-timeout 20000` / readiness 5s / `boot→sample ≤20s` 全部不动）、`ADR-0009` 勾 A（`accepted(A)`，不读会话作用域、不读凭据）；两行写进 `SIGNOFF`，含「HUMAN 未逐条复核」与可撤销说明。② **T-401 半交付**：`client.js`（classic script + `__ModuleLoader__.load` + `settings.plugins.tab` + `id=compat-triage`）+ `dsh.client` + 9 条 `node:vm` 契约单测（含「契约不匹配 = 零注册」）；tab **不含任何结论**（只给 CLI 入口 + 宿主行数这一条事实）。**未做**：真机挂载、同源结论。③ **T-315 半交付**：产物新增 `install.node_layout{linker,declared,top_level,pnpm_store}` + 4 条单测；真机模板 run `go`（`boot→sample` 8.1s、`isolated / declared=null / top_level=1`、`replacement_reason=upgrade`）。**仍缺** hoisted 复制 run 与 `strictPeerDependencies`
+- 实测：289 测试 / 9 门全绿 / `--mutate` 9/9；156 步 / 141 产物
+- 过程中的真实缺陷：① `client-tab` 第一版断言把「apply 的返回值」当成 registration，而 `slots.inject` 是**惰性**的（回调由 Host 在挂载时调用），当场红并改成断言假 ctx 的状态；② 「不 require node 内置模块」的断言第一版用 `source.includes('node:')`，被文件注释里的 `node:vm` 命中——改成只匹配 `require('node:…')`
+- 未做：真机挂载 tab、Host 侧只读 Remote、hoisted 复制 run、`strictPeerDependencies`、`BS-29` 剩余面

@@ -20,6 +20,7 @@ import {
   localDependencyTargets,
   probeHttp,
   readProfileManifest,
+  readNodeLayout,
   readRuntimeVersion,
   removeSandbox,
   runInstall,
@@ -142,6 +143,8 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),
     // R21: read the composition back, so "the candidate joined it" is a measurement.
     profileBundles: ({ profileDir }) => sandboxBundles(profileDir),
+    // T-315 residual (R30): the layout is a measurement now, not an inference.
+    readNodeLayout: ({ dir }) => readNodeLayout(dir),
     /**
      * T-304: make the sandbox profile out of the user's own declarations, then install what
      * those declarations ask for. Three facts come back, and the executor judges them:
