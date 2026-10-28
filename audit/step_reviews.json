@@ -3131,6 +3131,71 @@
         "sha256": "1f4d55261be8efb9a319721c178764e68a7a485846cff89ba6e3efd492696e4f",
         "outcome": "go · profile 步 15336ms（单列）· boot 步 16217ms（分段见上）· 行 active · 401 · 渲染 4720ms"
       }
+    },
+    {
+      "id": "R24-S1",
+      "batch": "R24",
+      "step": "替换窗口的代价量化：同一永不 settle 夹具在 `--unsettled-timeout` 1000/5000/20000 下真跑（只改参数，不改默认值）",
+      "changed": [
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：三组结论全部 `unknown`（永不 settle 的树在三种窗口下都不可能出别的结论）；`boot` 步 48384 / 33882 / 26247ms，替换等待 20276 / 5302 / 1184ms，差值就是纯等待。1s 那一轮 `url_seen=false` 导致 render 被跳过，产物里如实记 `renderMs=0`，没有拿它去冒充「窗口省了更多」",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --unsettled-timeout <ms> --stamp <iso>` 一条命令一组；`--unsettled-timeout` 是已发布参数，本轮没有新增开关",
+        "licence": "PASS：只跑本地夹具，无外部候选、无 vendor 条目",
+        "ssot": "PASS：三份产物的 `timings.bootSegments` 使用与 R23 相同的字段；`readiness.window_ms` 直接反映该轮窗口，读者无需猜",
+        "adversary": "反例一：把「1s 更快」直接归因给窗口 —— 那一轮 render 被跳过（`url_seen=false`），必须按 5s 那轮补正，产物里已写明。反例二：用「历史没出现过替换」直接宣布窗口无用 —— 只能说明**已记录证据里**没命中，R17 的机制是开发期观察到的，ADR 里已标注该限制"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main <sandbox>/lib/bin.js --unsettled-timeout 5000 --label settle-window-5s --expect unknown --stamp 2026-10-28T21:10:00.000Z",
+        "artifact": "data/results/probe-settle-window-5s-2026-10-28T21-10-00.000Z.json",
+        "sha256": "cf956901c6d874415aa9f3ce2aecd7a8421cc9e8a1f0b4f6c5144c851107daed",
+        "outcome": "unknown · boot 33882ms · sample 19262ms · 替换等待 5302ms（20s 那一轮是 20276ms）"
+      }
+    },
+    {
+      "id": "R24-S2",
+      "batch": "R24",
+      "step": "替换统计可复算：`scripts/report_replacement_window.mjs` 扫全部已记录 probe 产物并落 SSOT",
+      "changed": [
+        "scripts/report_replacement_window.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：扫 34 份 probe 产物、29 份有相位块；可判形状 9 / `settled:false` 4 / `{error}` **0**；4 次不可判样本的 `attempts` 与 `applies` 全为 1 → `replacements_observed = 0`；窗口对照表按 `readiness.window_ms` 分组，`measured_saving_ms = 19092`",
+        "reproducibility": "PASS：`node scripts/report_replacement_window.mjs --stamp <iso>` 一条命令，纯读已提交产物，不需要任何沙盒运行",
+        "licence": "PASS：只读 `data/results`，不触网、不碰候选",
+        "ssot": "PASS：报告与三份窗口产物互相引用；`limits[]` 写明「旧产物没有 settled/attempts 字段」（16 份）与「缺失不等于不可能发生」",
+        "adversary": "反例一：把 `undefined !== null` 当「不可判」—— 第一版临时统计因此把 13 份旧产物算成不可判；正式脚本显式归一为 `null` 并把旧产物单列为 `without_shape_fields`。反例二：跨夹具比较窗口 —— 分组键含候选与 `settled`，避免把不同形状混在一起"
+      },
+      "real_test": {
+        "command": "node scripts/report_replacement_window.mjs --stamp 2026-10-28T21:30:00.000Z",
+        "artifact": "data/results/replacement-window-2026-10-28T21-30-00.000Z.json",
+        "sha256": "4ec3680f8509186435ddcc6f85939477eb1c5e9c28c3090d7ffe014c462f2624",
+        "outcome": "29 份有相位块 · not-usable 4 · replacements 0 · 窗口 20000/5000/1000ms → boot 48384/33882/26247ms，全部 unknown"
+      }
+    },
+    {
+      "id": "R24-S3",
+      "batch": "R24",
+      "step": "ADR-0008（proposed）：四案 A/B/C/E + 实测成本表 + 签字区；spec §4 与 BACKLOG 同步（**默认值未动**）",
+      "changed": [
+        "docs/adr/0008-unsettled-wait.md",
+        "docs/specs/M3-probe.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：四案各自写清「省多少 / 风险 / 判据是否变」；推荐 E（只对 `{error}` 保留替换等待）并给出理由：主导成本来自 `settled:false`，而 `{error}` 在 29 份产物里出现 0 次，影响面更小。签字区四项，默认值明确「未勾选前一律不动」",
+        "reproducibility": "PASS：ADR 引用的三个数字（20276ms、19092ms、replacements 0）分别来自两份可重算产物",
+        "licence": "PASS：只改文档；`settle 15s` / `--unsettled-timeout 20000` / readiness 5s 的 diff 为空",
+        "ssot": "PASS：`ADR-0008` ↔ spec §4 ↔ BACKLOG T-311/T-312 三处指向同一份替换统计；T-312 的口径同步改成「不可判 48s」",
+        "adversary": "反例一：借「测量」之名顺手把默认值改掉 —— 本轮所有运行都用 `--unsettled-timeout` 显式传参，默认值一行未改。反例二：把 E 说成「去掉恢复路径」—— E 保留 `{error}` 的等待，只去掉 `settled:false`；ADR 里写明了失去的那一种情形"
+      },
+      "real_test": {
+        "command": "node scripts/report_replacement_window.mjs --stamp 2026-10-28T21:30:00.000Z && node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --unsettled-timeout 1000 --label settle-window-1s --expect unknown --stamp 2026-10-28T21:00:00.000Z",
+        "artifact": "data/results/probe-settle-window-1s-2026-10-28T21-00-00.000Z.json",
+        "sha256": "1e4deea639e2baef51bb556df99a7a500b04c0e8d687e117ef42606218cde674",
+        "outcome": "unknown · boot 26247ms · 替换等待 1184ms · `url_seen=false`（render 被跳过，已如实记录）"
+      }
     }
   ]
 }

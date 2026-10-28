@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/report_replacement_window.mjs",
+  "generated_at": "2026-10-28T21:30:00.000Z",
+  "question": "the executor waits another --unsettled-timeout window when a sample cannot be judged; has that wait ever produced a better sample, and what does shortening it cost?",
+  "source": {
+    "scanned": 34,
+    "with_inventory": 29,
+    "without_shape_fields": 16
+  },
+  "observations": {
+    "not_usable_samples": 4,
+    "replacements_observed": 0,
+    "replacement_ever_observed": false,
+    "shapes": {
+      "settled_true": 9,
+      "settled_false": 4,
+      "error_payload": 0
+    },
+    "not_usable_detail": [
+      {
+        "artifact": "probe-boot-segments-overrun-2026-10-28T17-10-00.000Z.json",
+        "settled": false,
+        "error_code": null,
+        "attempts": 1,
+        "applies": 1,
+        "hook_wait_ms": 16131,
+        "conclusion": "unknown"
+      },
+      {
+        "artifact": "probe-settle-window-1s-2026-10-28T21-00-00.000Z.json",
+        "settled": false,
+        "error_code": null,
+        "attempts": 1,
+        "applies": 1,
+        "hook_wait_ms": 16526,
+        "conclusion": "unknown"
+      },
+      {
+        "artifact": "probe-settle-window-5s-2026-10-28T21-10-00.000Z.json",
+        "settled": false,
+        "error_code": null,
+        "attempts": 1,
+        "applies": 1,
+        "hook_wait_ms": 16117,
+        "conclusion": "unknown"
+      },
+      {
+        "artifact": "probe-slow-overrun-2026-10-27T19-20-00.000Z.json",
+        "settled": false,
+        "error_code": null,
+        "attempts": 1,
+        "applies": 1,
+        "hook_wait_ms": 16258,
+        "conclusion": "unknown"
+      }
+    ]
+  },
+  "window_cost": {
+    "rows": [
+      {
+        "artifact": "probe-boot-segments-overrun-2026-10-28T17-10-00.000Z.json",
+        "candidate": "triage-probe-fixture-slow-overrun",
+        "window_ms": 20000,
+        "hook_wait_ms": 16131,
+        "sample_ms": 19128,
+        "replacement_wait_ms": 20276,
+        "render_ms": 4502,
+        "boot_step_ms": 48384,
+        "conclusion": "unknown"
+      },
+      {
+        "artifact": "probe-settle-window-5s-2026-10-28T21-10-00.000Z.json",
+        "candidate": "triage-probe-fixture-slow-overrun",
+        "window_ms": 5000,
+        "hook_wait_ms": 16117,
+        "sample_ms": 19262,
+        "replacement_wait_ms": 5302,
+        "render_ms": 4671,
+        "boot_step_ms": 33882,
+        "conclusion": "unknown"
+      },
+      {
+        "artifact": "probe-settle-window-1s-2026-10-28T21-00-00.000Z.json",
+        "candidate": "triage-probe-fixture-slow-overrun",
+        "window_ms": 1000,
+        "hook_wait_ms": 16526,
+        "sample_ms": 20442,
+        "replacement_wait_ms": 1184,
+        "render_ms": 0,
+        "boot_step_ms": 26247,
+        "conclusion": "unknown"
+      }
+    ],
+    "measured_saving_ms": 19092,
+    "note": "each row is a real run of the same never-settling fixture with a different --unsettled-timeout; the conclusion is `unknown` in all of them, so the difference is pure waiting"
+  },
+  "conclusion": "in the recorded evidence the replacement wait has never produced a better sample; shortening it costs waiting time only (the verdict stays unknown either way)",
+  "limits": [
+    "absence of a replacement in the artifacts is not proof it cannot happen: R17 observed the mechanism during development, before these fields were recorded",
+    "legacy artifacts have no settled/attempts/applies fields and cannot distinguish the shapes",
+    "one fixture never settles; a different plugin may sit on the boundary where a replacement arrives just after the window"
+  ]
+}

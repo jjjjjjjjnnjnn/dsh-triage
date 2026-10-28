@@ -304,3 +304,13 @@
 - 实测：**265 测试 / 9 门全绿 / `--mutate` 9/9**；三份分段产物 + 一份 10 组凭据审计产物；111 份 SSOT 产物 / 126 步台账
 - 过程中的真实缺陷（本轮自己抓到，均在提交前修）：用 pnpm 日志当凭据探测器（实测合成 token 不打印那行 → 假阴性）；`spawnSync` 起同进程假 registry（阻塞事件循环，挂死三次 90s）；被 kill 的 `pnpm add` 残留占着 store 锁（清进程才恢复）；把「旋钮未被读」当成「我们挡住了」（已分 `knob_honored` / `leaks_today` 两列）；审计产物带 home 路径（`results-privacy` 打红，已加脱敏）
 - 未做：T-311/T-312（压替换窗口需 ADR + HUMAN 签，阈值一字未动）、`BS-29` 剩余面（硬编码路径/非 Windows/其它版本）、T-315 的 `nodeLinker` / `strictPeerDependencies`、T-401
+### 2026-10-28 R24｜ADR-0008：不可判的树要等多久（替换窗口成本量化，默认值未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未起 subagent；四轴与对抗性由同一会话自查，`audit/step_reviews.json` R24-S1…S3）
+- 范围：`scripts/report_replacement_window.mjs`（新）、`docs/adr/0008-unsettled-wait.md`（新）、`docs/specs/M3-probe.md` §4、`docs/BACKLOG.md`（T-311/T-312）、`docs/HANDOFF.md`、`INDEX.md`、`audit/{step_reviews.json,AUDIT_2026-10-28_R24.md（新）}`、`data/results/{probe-settle-window-{1s,5s},replacement-window}-*.json`
+- 起因：HUMAN「继续」——R23 已把「不可判 ≈48s」归因到替换等待，本轮把「要不要改」变成可签字的题
+- 结果：① 同一永不 settle 夹具在 `--unsettled-timeout` 20000/5000/1000 三组真跑，**结论全部 `unknown`**，`boot` 步 48.4/33.9/26.2s，替换等待 20.3/5.3/1.2s；② `scripts/report_replacement_window.mjs` 扫 29 份有相位块的产物：4 次不可判样本的 `attempts`/`applies` **全为 1**（`{error}` 0 次），`measured_saving_ms = 19092`；③ `ADR-0008`（proposed）给出 A/B/C/E 四案与签字区，**推荐 E**（只对 `{error}` 保留等待）；spec §4 与 BACKLOG 同步。**默认值与判据一行未改**
+- 实测：265 测试 / 9 门全绿 / `--mutate` 9/9；114 份 SSOT 产物 / 129 步台账
+- 过程中的真实缺陷（本轮自己抓到）：第一版临时统计把旧产物的 `undefined` 当成「不可判」，报出 13 次（真实是 4 次）——正式脚本归一为 `null` 并把旧产物单列；1s 那一轮 `url_seen=false` 导致 render 被跳过，若不注明就会把 22s 全算成窗口收益
+- 未做：ADR-0008 的签字（HUMAN）、T-312 两阶段、T-315 的 `nodeLinker`/`strictPeerDependencies`、T-401

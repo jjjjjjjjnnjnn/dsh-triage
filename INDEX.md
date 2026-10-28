@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R23 (2026-10-28)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R24 (2026-10-28)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 
@@ -26,8 +26,8 @@
 | **任务清单** | `docs/BACKLOG.md` | T-101…T-701（角色 / 依赖 / 验收 / 状态），可直接领取 |
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
-| **审核报告** | `audit/AUDIT_2026-10-28_R23.md`（最新：T-314 墙钟分解 / T-315 ADR-0007 / T-313 凭据来源审计）· `audit/AUDIT_2026-10-28_R22.md`（T-304 真实组合复制 / 组合侧归因）· `audit/AUDIT_2026-10-28_R20.md` · `audit/AUDIT_2026-10-28_R19.md` · `audit/AUDIT_2026-10-27_R18.md` · `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R22：`--copy-profile` 三形状真机产物 + 构建审批两处真归因（`dsh.profile.bundles` 未注册、`strictDepBuilds` 只降错误不批准构建）；R20：沙盒不再继承 npm 凭据（`registry_auth_used`）+ 面板 audit 路由自带耗时 + ADR-0006（proposed）+ T-304 取证（`link:` 假成功）；R19：安装失败能点名 `ERR_PNPM_*` + `serve --audit` 与 CLI 同源（逐字节负对照）+ D2 分母 13、预算口径收窄（HUMAN 签）；R18：D2 判定工具 + 慢夹具纠错；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
-| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R23 起 **126 步 / 111 产物**） |
+| **审核报告** | `audit/AUDIT_2026-10-28_R24.md`（最新：`ADR-0008` 替换窗口成本量化，待签）· `audit/AUDIT_2026-10-28_R23.md`（T-314 墙钟分解 / T-315 ADR-0007 / T-313 凭据来源审计）· `audit/AUDIT_2026-10-28_R22.md`（T-304 真实组合复制 / 组合侧归因）· `audit/AUDIT_2026-10-28_R20.md` · `audit/AUDIT_2026-10-28_R19.md` · `audit/AUDIT_2026-10-27_R18.md` · `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R22：`--copy-profile` 三形状真机产物 + 构建审批两处真归因（`dsh.profile.bundles` 未注册、`strictDepBuilds` 只降错误不批准构建）；R20：沙盒不再继承 npm 凭据（`registry_auth_used`）+ 面板 audit 路由自带耗时 + ADR-0006（proposed）+ T-304 取证（`link:` 假成功）；R19：安装失败能点名 `ERR_PNPM_*` + `serve --audit` 与 CLI 同源（逐字节负对照）+ D2 分母 13、预算口径收窄（HUMAN 签）；R18：D2 判定工具 + 慢夹具纠错；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
+| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R24 起 **129 步 / 114 产物**） |
 | **授权/签署台账** | `audit/SIGNOFF.md` | 谁授权 / 谁执行出结论 / HUMAN 未逐条复核的部分，三者分列；冻结区改动必须有对应条目 |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |
@@ -40,7 +40,7 @@
 | admission 语义 | `docs/04-admission-semantics.md` | 上游判定规则逐条复刻 + 金标夹具口径 |
 | Verdict 契约 | `docs/05-verdict-contract.md` | 结论/证据/置信度/替代方案 JSON 契约 |
 | 工程约定 | `docs/08-conventions.md` | 模块边界/命名/错误/确定性/扩展方式/评审清单 |
-| 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` + `docs/adr/0004-external-candidate-boundary.md` + `docs/adr/0005-render-backends.md` + `docs/adr/0006-probe-budget-promise.md`（accepted，R23 按实测改正墙钟数字）· `docs/adr/0007-sandbox-build-policy.md`（R23 追认） | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 / 外部候选只在临时沙盒执行且不 vendor / 渲染只认系统浏览器 + CDP / probe 的「20s」到底承诺什么（待签） |
+| 决策记录 | `docs/adr/0001-result-over-exceptions.md` + `docs/adr/0002-override-is-not-a-collision.md` + `docs/adr/0003-zero-dep-gates-with-mutation.md` + `docs/adr/0004-external-candidate-boundary.md` + `docs/adr/0005-render-backends.md` + `docs/adr/0006-probe-budget-promise.md`（accepted，R23 按实测改正墙钟数字）· `docs/adr/0007-sandbox-build-policy.md`（R23 追认）· `docs/adr/0008-unsettled-wait.md`（proposed，待签） | Result 优先 / 覆写不是撞车 / 零依赖门禁+负对照 / 外部候选只在临时沙盒执行且不 vendor / 渲染只认系统浏览器 + CDP / probe 的「20s」到底承诺什么（待签） |
 | 路线 | `docs/ROADMAP.md` | 12 周阶段表 + 4 个决策门 + 增长阶梯/分发清单/指标（R14 起为唯一执行计划；旧的双 roadmap 之一已归档到 `_archive/`，见 `ARCHIVE_MANIFEST`） |
 | 本机环境 | `docs/07-environment.md` | Node/pnpm/DSH 版本、profile 路径、只读边界 |
 | 模块 spec | `docs/specs/M0-skeleton.md`、`docs/specs/M1-why.md`、`docs/specs/M2-inventory.md` | 判据先行、负对照、诚实边界 |

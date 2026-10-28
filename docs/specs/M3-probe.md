@@ -149,6 +149,7 @@ runtime → (profile) → install → boot → http → render → inventory →
 > - 正常候选的差额 = **render ≈4.7s + 杀树 ≈2.2–2.7s + 杀后固定等待 1.2s + settle 1.0s**（与 settle 上限无关）；
 > - 不可判 = **48.4s**，主导项是**为一份可判样本再等一整个替换窗口（20.3s）**；hook 自己的 settle（15s 上限）**已含在 sample 里**；
 > - 对外口径：**可判 ≈16s；不可判 ≈48s**。旧数字（25s / 43s）作废。
+> - **这笔 20.3s 是「为一份可判样本再等一整个替换窗口」**，不是 settle。要改它必须签 `docs/adr/0008-unsettled-wait.md`（提议中，默认值**未动**）：`scripts/report_replacement_window.mjs` 扫 29 份产物，4 次不可判样本里**替换从未出现**（`attempts` 全 1、`applies` 全 1），同一夹具把窗口从 20s 降到 1s 只省时间、结论仍是 `unknown`（`measured_saving_ms = 19092`）。
 > **仍未解决**：默认 `--unsettled-timeout 20000` 与 hook 的 `settle 15s` **没有动**（方案 A/C 未授权）。要把「不可判」也压进 20s，只能改 settle 上限（少测）或改两阶段取样（T-312）。
 > **未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺。改默认值属于阈值变更，需要 ADR + HUMAN 签（`BS-28` / T-311）。
 
