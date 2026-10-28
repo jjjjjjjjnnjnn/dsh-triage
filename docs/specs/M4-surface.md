@@ -114,6 +114,19 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 **仍未做**：设置页里**肉眼看到** tab（要点击导航后断言 DOM）；「与 CLI 同源结论」（要 Host 侧只读 Remote）。`mount` 证明的是「client runner 调了 `apply`、slot 接受了注册」，**不**证明用户点开设置就能看到。
 
+### 3.3 R33 收口：可见性 + 同源结论（**T-401 完成**）
+
+`ADR-0010` 定了通道：**同源只读 HTTP 路由**（`GET /compat-triage/audit`），不是 Typert Remote —— 后者在真机上「注册成功、浏览器拿不到」，要补一条带 `zod` 的客户端生成链，与我们「手写无依赖 client.js」的决定冲突。
+
+| 步 | 判据 | 真机读数 |
+|---|---|---|
+| `visible` | 关首启浮层 → 开设置 → 进「内置插件」section → DOM 里出现 `分诊台`，点击后 tab body 出现 `dsh-triage audit` | passed（`client-serve-2026-10-29T01-20-00.000Z.json`，6 跳逐条记录） |
+| `same-source` | tab 里渲染的行数/结论计数 == 同一 profile 上 `dsh-triage audit --json` 的数字 | passed：两侧都是 **192 行 / 0 go / 0 blocked / 184 unknown** |
+
+**两条负对照**（`--expect-tab-label` 与 `--cli-home`）：可见性换成不存在的标签 → `visible:failed` + exit 1；CLI 指到另一个 home → `same-source:failed`（192 vs 190）。两次都只换输入，不换代码路径。
+
+> 边界：`visible` 证明的是「设置页里渲染出我们的 tab」（不是视觉回归）；`same-source` 证明的是「两侧数字一致」（payload 里没有字段被谁重排）。**两个 profile 恰好行数相同**时 `same-source` 负对照会变成「一致」而失败，届时换 profile，别放宽比较。
+
 ---
 
 ## 4. 形态 C：可双击的 exe（SEA）
@@ -150,5 +163,5 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 | 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 | ✅ R16 |
 | 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0）· **R19（v1：`/api/audit` + 当前组合区块）** |
 | 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
-| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | 🟡 **R30 写 / R31 真机通过注册**：`client.js` + `dsh.client` + 10 条契约单测；真机六步（bundle/install/boot/graph/client/mount）全绿；**剩余**：设置页可见性 + 同源结论（需 Host 侧只读 Remote） |
+| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | ✅ **R30 写 / R31 真机注册 / R33 收口**：`client.js` + `dsh.client` + 契约单测；真机六步全绿；**R33 补上剩下两件** —— `visible`（设置页里真的渲染出 tab）+ `same-source`（tab 与 CLI 在同一 profile 上数字一致，`ADR-0010` 选了同源只读路由而不是 Typert Remote），两条负对照各一份产物 |
 | 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |

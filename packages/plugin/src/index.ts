@@ -7,5 +7,5 @@ export type { BundleLayer, Composition, CompositionEntry } from './load.js'
  * entry's name is a bare package specifier. Without this re-export the row would mount an empty
  * module and the settings tab would never be composed.
  */
-export { apply, name } from './host.js'
+export { apply, inject, name } from './host.js'
 export { default } from './host.js'

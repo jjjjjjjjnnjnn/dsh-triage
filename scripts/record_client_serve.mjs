@@ -8,13 +8,16 @@
  * throwaway DSH home as `file:` dependencies (no registry, no credentials), boots the Host once,
  * asks for the asset, and writes what came back.
  *
- * WHAT IT DOES NOT PROVE (stated here so nobody over-reads the artifact): that the tab is VISIBLE
- * in the settings page, or that its content matches the CLI. Those need a UI assertion and a
- * host-side read-only Remote; this script only answers "served or not, and with what bytes".
+ * WHAT IT DOES NOT PROVE (stated here so nobody over-reads the artifact): that the tab's CONTENT
+ * matches the CLI. That needs a host-side read-only Remote, which is a separate decision (R33
+ * spike, `docs/adr/0010`). Visibility is asserted since R33: after opening Settings the probe looks
+ * for the tab label in the DOM (`visible` step), and reports the controls it saw instead of guessing
+ * a selector when it cannot find the entry.
  *
  *   node scripts/record_client_serve.mjs --dsh-main <bin.js> --install <dir> --stamp 2026-10-28T18:00:00.000Z
  *
- * Exit codes: 0 artifact written · 1 the Host did not serve the bundle · 2 bad usage.
+ * Exit codes: 0 artifact written · 1 the Host did not serve the bundle, or the tab registered but never
+ * rendered in the settings page · 2 bad usage.
  */
 
 import { spawn } from 'node:child_process'
@@ -25,6 +28,7 @@ import { basename, isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { findBrowser } from '../packages/probe/dist/render.js'
 import { abs, isoStamp } from './lib/kit.mjs'
+import { controlNames, pickControl, tabMatch as matchTab } from './lib/ui-probe.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -67,7 +71,16 @@ const clean = (value) => {
   return text
 }
 
-const record = (id, status, detail, extra = {}) => steps.push({ id, status, detail: clean(detail), ...extra })
+const record = (id, status, detail, extra = {}) => {
+  steps.push({ id, status, detail: clean(detail), ...extra })
+  /*
+   * Progress goes to stderr only with `--verbose`: a real run spends minutes inside install/boot and
+   * silence makes a stuck run undiagnosable, but stderr is not evidence AND PowerShell treats native
+   * stderr writes as errors, which would make a successful run look failed to a wrapper (R33 met it).
+   */
+  if (verbose) process.stderr.write(`  ${id}: ${status}\n`)
+}
+const verbose = argv.includes('--verbose')
 const sha256 = (text) => createHash('sha256').update(text).digest('hex')
 
 /** Copy the four workspace packages and point the plugin's deps at their local copies. */
@@ -277,10 +290,13 @@ async function main() {
      * browser — and record `null` (unmeasured) when no browser is available, never a guess.
      */
     const browser = findBrowser({ explicit: argOf('--browser', null) })
+    let visibleStatus = 'unmeasured'
     if (browser === null) {
       record('mount', 'unmeasured', 'no browser found: the tab registration was not observed')
+      record('visible', 'unmeasured', 'no browser found: the settings page was never opened')
     } else {
-      const mount = await checkMount(browser, `${base}`, page.cookie)
+      const observed = await observePage(browser, `${base}`, page.cookie)
+      const mount = observed.marker
       record('mount', mount.registered === true ? 'passed' : mount.registered === false ? 'failed' : 'unmeasured', mount.detail, {
         browser: basename(browser),
         registered: mount.registered,
@@ -288,22 +304,63 @@ async function main() {
         tab_id: mount.tab_id ?? null,
         reason: mount.reason ?? null,
       })
+      visibleStatus = observed.visible.status
+      record('visible', observed.visible.status, observed.visible.detail, observed.visible.evidence)
+      /*
+       * SAME SOURCE (T-401 ②, R33): the tab's numbers must be the CLI's numbers for the SAME home and
+       * profile — otherwise "the panel shows the CLI's conclusions" is just a sentence. The comparison
+       * runs the real CLI against the sandbox the Host just served.
+       */
+      const fromTab = observed.visible.evidence?.marker_after_tab?.data ?? null
+      /*
+       * `--cli-home` exists ONLY for the negative control: pointing the CLI at a different home must
+       * produce a disagreement, which proves the comparison is real and not a tautology.
+       */
+      const cli = await readCliAudit(pathFor(String(argOf('--cli-home', home))), String(argOf('--cli-profile', 'web')), env)
+      if (fromTab === null || cli === null || cli.error !== undefined) {
+        record('same-source', 'unmeasured', 'the tab published no data or the CLI could not read the same profile', {
+          tab_data: fromTab,
+          cli_error: cli === null ? 'cli audit produced no payload' : (cli.error ?? null),
+        })
+      } else {
+        const same =
+          fromTab.rows === cli.rows &&
+          fromTab.verdicts?.go === cli.verdicts.go &&
+          fromTab.verdicts?.blocked === cli.verdicts.blocked &&
+          fromTab.verdicts?.unknown === cli.verdicts.unknown
+        record(
+          'same-source',
+          same ? 'passed' : 'failed',
+          same
+            ? `the tab and the CLI agree on this profile: ${cli.rows} rows, ${cli.verdicts.go} go / ${cli.verdicts.blocked} blocked / ${cli.verdicts.unknown} unknown`
+            : 'the tab and the CLI disagree on the same profile',
+          { tab_data: fromTab, cli_data: cli },
+        )
+      }
     }
-    return await finish({ served: asset.status === 200 && hasLoader && declaresId, composed_url: listed })
+    return await finish({ served: asset.status === 200 && hasLoader && declaresId, composed_url: listed, tab_visible: visibleStatus }, output)
   } finally {
     await killTree(host.pid)
   }
 }
 
-/** Follow the one-shot token 303 into the boot document and keep the cookie for later requests. */
 /**
- * Ask the real page whether our tab registered (T-401, R31).
+ * Ask the real page two DIFFERENT questions in ONE browser launch (T-401: R31 mount, R33 visible).
  *
- * WHY: serving `/plugins/...` proves discovery. It does not prove the client runner ever called our
- * `apply`. The bundle publishes `window.__dshTriage` for exactly this question, so the check reads
- * it over CDP instead of inferring anything from the DOM.
+ *   mount   — did the client runner call our `apply`, and did the settings slot accept the tab?
+ *             (the bundle publishes `window.__dshTriage` for exactly this question)
+ *   visible — after opening Settings, does the tab actually appear in the DOM? (R33)
+ *
+ * WHY ONE LAUNCH: the marker is published when the page loads, but the tab only renders once the
+ * settings page mounts that slot, so both answers belong to the same page instance. Two launches
+ * would double the boot cost and could observe two different configurations.
+ *
+ * WHY IT REPORTS ITS SEARCH: the settings DOM is not ours, and guessing a selector would turn a
+ * wrong guess into a red light (or worse, into a green one). So the probe records the controls the
+ * page actually offered, then clicks what it found; a miss is a readable "here is what the page
+ * showed", never "my selector did not match".
  */
-async function checkMount(browser, pageUrl, cookie) {
+async function observePage(browser, pageUrl, cookie) {
   const userDataDir = join(root, 'cdp-user-data')
   mkdirSync(userDataDir, { recursive: true })
   const chrome = spawn(
@@ -319,6 +376,10 @@ async function checkMount(browser, pageUrl, cookie) {
     ],
     { windowsHide: true },
   )
+  const nothingObserved = (detail, evidence = {}) => ({
+    marker: { registered: null, detail },
+    visible: { status: 'unmeasured', detail, evidence },
+  })
   try {
     const portFile = join(userDataDir, 'DevToolsActivePort')
     const port = await new Promise((resolvePromise) => {
@@ -336,10 +397,10 @@ async function checkMount(browser, pageUrl, cookie) {
         }
       }, 100)
     })
-    if (port === null) return { registered: null, detail: 'browser never exposed a debugging port' }
+    if (port === null) return nothingObserved('browser never exposed a debugging port')
     const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()
     const target = Array.isArray(targets) ? targets.find((entry) => entry.type === 'page') : null
-    if (target === null || target === undefined) return { registered: null, detail: 'no page target in the browser' }
+    if (target === null || target === undefined) return nothingObserved('no page target in the browser')
     const socket = new WebSocket(target.webSocketDebuggerUrl)
     const pending = new Map()
     let nextId = 1
@@ -354,7 +415,24 @@ async function checkMount(browser, pageUrl, cookie) {
     const send = (method, params = {}) =>
       new Promise((resolvePromise, rejectPromise) => {
         const id = nextId++
-        pending.set(id, { resolve: resolvePromise, reject: rejectPromise })
+        /*
+         * A closed socket never answers and never errors: without this timer the probe would wait
+         * forever and the whole run would hang after a successful boot (R33 hit exactly that).
+         */
+        const timer = setTimeout(() => {
+          pending.delete(id)
+          rejectPromise(new Error(`CDP ${method} timed out`))
+        }, 20_000)
+        pending.set(id, {
+          resolve: (value) => {
+            clearTimeout(timer)
+            resolvePromise(value)
+          },
+          reject: (error) => {
+            clearTimeout(timer)
+            rejectPromise(error)
+          },
+        })
         socket.send(JSON.stringify({ id, method, params }))
       })
     await new Promise((resolvePromise, rejectPromise) => {
@@ -370,40 +448,295 @@ async function checkMount(browser, pageUrl, cookie) {
       await send('Network.setCookie', { name, value, url: pageUrl })
     }
     await send('Page.navigate', { url: pageUrl })
+    const evaluate = async (expression) => {
+      const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
+      const value = result?.result?.value
+      if (typeof value !== 'string') return value === undefined ? null : value
+      try {
+        return JSON.parse(value)
+      } catch {
+        return null
+      }
+    }
     let marker = null
     for (let attempt = 0; attempt < 12; attempt += 1) {
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 800))
-      const evaluated = await send('Runtime.evaluate', {
-        expression: 'JSON.stringify(window.__dshTriage || null)',
-        returnByValue: true,
-      })
-      const value = evaluated?.result?.value
-      if (typeof value === 'string' && value !== 'null') {
-        marker = JSON.parse(value)
+      await pause(800)
+      const value = await evaluate('JSON.stringify(window.__dshTriage || null)')
+      if (value !== null && typeof value === 'object') {
+        marker = value
         break
       }
     }
-    socket.close()
+    let observed
     if (marker === null) {
-      return { registered: null, detail: 'the page never published window.__dshTriage (bundle not executed?)' }
+      observed = {
+        marker: { registered: null, detail: 'the page never published window.__dshTriage (bundle not executed?)' },
+        visible: {
+          status: 'unmeasured',
+          detail: 'the page never published window.__dshTriage, so the settings UI was not probed',
+          evidence: { page_url: clean(pageUrl) },
+        },
+      }
+    } else {
+      const mount = {
+        registered: marker.registered === true,
+        slot: typeof marker.slot === 'string' ? marker.slot : null,
+        tab_id: typeof marker.id === 'string' ? marker.id : null,
+        reason: typeof marker.reason === 'string' ? marker.reason : null,
+        detail:
+          marker.registered === true
+            ? 'the client runner called apply and the settings slot accepted the tab'
+            : `refused: ${String(marker.reason)}`,
+      }
+      observed = { marker: mount, visible: await probeVisibility(evaluate, mount).catch((error) => ({
+        status: 'unmeasured',
+        detail: `the visibility probe failed before it could answer: ${String(error && error.message ? error.message : error)}`,
+        evidence: { tab_registered: mount.registered === true },
+      })) }
     }
-    return {
-      registered: marker.registered === true,
-      slot: typeof marker.slot === 'string' ? marker.slot : null,
-      tab_id: typeof marker.id === 'string' ? marker.id : null,
-      reason: typeof marker.reason === 'string' ? marker.reason : null,
-      detail:
-        marker.registered === true
-          ? 'the client runner called apply and the settings slot accepted the tab'
-          : `refused: ${String(marker.reason)}`,
-    }
+    // Close only after BOTH questions are answered: the visibility probe drives the same page.
+    socket.close()
+    return observed
   } finally {
     await killTree(chrome.pid)
   }
 }
 
-async function fetchPage(base, tokenUrl, cookie = '') {
-  let current = cookie
+/**
+ * The labels our own tab registers (`client.js`: locale key `tab`), used only to look them up.
+ * `--expect-tab-label` overrides them, which is how the negative control proves this assertion can
+ * fail: same page, same hops, a label that is deliberately absent (R33).
+ */
+const TAB_LABELS = (() => {
+  const override = argOf('--expect-tab-label', null)
+  return override === null ? ['分诊台', 'Triage'] : [String(override)]
+})()
+/** Names a Host has used for the settings entry, in the two locales it ships. Matched, never assumed. */
+const SETTINGS_NAMES = ['settings', '设置', '偏好设置', 'preferences', 'preference']
+/** Menus that can hide the settings entry when the chrome does not show it directly. */
+const MENU_NAMES = ['更多', 'more', '账号菜单', 'account menu', '账户菜单', 'menu']
+/** First-run overlays: dismissed by name, and only when the page says it is one. */
+const INTRO_NAMES = ['继续', 'continue', '知道了', 'got it', '开始使用', 'get started', '关闭', 'close']
+/**
+ * The settings section that OWNS `settings.plugins.tab`. Upstream labels it 内置插件 / "Built-in
+ * plugins" — the bare word 插件 is the plugin manager in the app chrome, a different surface.
+ */
+const PLUGIN_SECTION_NAMES = ['内置插件', 'built-in plugins', '插件', 'plugins']
+/** Locale-independent marker of our tab body: the command the tab publishes (`client.js`). */
+const TAB_BODY_MARKER = 'dsh-triage audit'
+
+/**
+ * Click into Settings and look for our tab. Three outcomes, and only one of them is a claim:
+ * `passed` = the label was in the DOM after the click; `failed` = the settings UI opened and the
+ * label was not there; `unmeasured` = the page never offered a settings entry (we report what it did
+ * offer instead of inventing a selector).
+ */
+async function probeVisibility(evaluate, mount) {
+  const evidence = { tab_registered: mount.registered === true, hops: [] }
+  if (mount.registered !== true) {
+    return {
+      status: 'unmeasured',
+      detail: 'the tab never registered, so there is nothing to look for yet (fix mount first)',
+      evidence,
+    }
+  }
+  let snapshot = await waitForInteractivePage(evaluate)
+  if (snapshot === null) {
+    return { status: 'unmeasured', detail: 'the page rendered no controls in time; the settings UI was never reachable', evidence }
+  }
+  evidence.page_url = clean(snapshot.url)
+  evidence.controls_before = controlNames(snapshot).slice(0, 40)
+  evidence.text_head = clean(snapshot.text).slice(0, 200)
+
+  /** Click one recorded control, wait for the UI to settle, and hand back the new snapshot. */
+  const hop = async (action, control) => {
+    const clicked = await evaluate(clickExpression(control.name))
+    evidence.hops.push({ action, name: control.name, clicked: clicked?.ok === true })
+    await pause(900)
+    return (await evaluate(SNAPSHOT_EXPRESSION)) ?? snapshot
+  }
+
+  /*
+   * A first-run overlay is what a real Host shows here (measured R33): the "preview notice" dialog
+   * covered the chrome and no settings entry was among the controls. Dismissing it is part of
+   * reaching the settings page — recorded as a hop, never assumed.
+   */
+  const intro = pickControl(snapshot.controls, INTRO_NAMES)
+  if (intro !== null && /预览版|preview|beta|试用/i.test(snapshot.text)) {
+    snapshot = await hop('dismiss-intro', intro)
+    evidence.intro_dismissed = intro.name
+  } else if (/预览版说明|preview notice|欢迎使用/i.test(snapshot.text)) {
+    // Say it out loud instead of clicking blindly through an overlay that is still up.
+    evidence.intro_still_showing = true
+  }
+
+  // Settings: directly when the chrome offers it, otherwise behind one menu (More / account menu).
+  let settings = pickControl(snapshot.controls, SETTINGS_NAMES)
+  if (settings === null) {
+    for (const menuName of MENU_NAMES) {
+      const menu = pickControl(snapshot.controls, [menuName])
+      if (menu === null) continue
+      snapshot = await hop(`open-menu:${menuName}`, menu)
+      settings = pickControl(snapshot.controls, SETTINGS_NAMES)
+      if (settings !== null) break
+    }
+  }
+  if (settings === null) {
+    return {
+      status: 'unmeasured',
+      detail: 'no settings entry was reachable after dismissing the intro and trying the menus',
+      evidence: { ...evidence, controls_after: controlNames(snapshot).slice(0, 60) },
+    }
+  }
+  evidence.settings_entry = settings.name
+  snapshot = await hop('open-settings', settings)
+
+  let match = matchTab(snapshot, TAB_LABELS)
+  if (match === null) {
+    /*
+     * Second hop inside settings. The slot's owning section is labelled by ITS OWN dictionary, not by
+     * the slot name: upstream registers `settings.section` id `plugins` with label 内置插件 /
+     * "Built-in plugins" (verified in its client.js, and measured again here in R33). The chrome
+     * button named 插件 opens the plugin MANAGER, a different surface with no `settings.plugins.tab`.
+     */
+    const section = pickControl(snapshot.controls, PLUGIN_SECTION_NAMES)
+    if (section !== null) {
+      evidence.plugin_section = section.name
+      snapshot = await hop('open-plugin-settings-section', section)
+      match = matchTab(snapshot, TAB_LABELS)
+    }
+  }
+  evidence.controls_after = controlNames(snapshot).slice(0, 60)
+  if (match !== null) {
+    /*
+     * A label is not the same claim as a rendered tab: click the tab we just found and look for a
+     * marker that is identical in both locales (the command the tab publishes). This is still not
+     * "the content matches the CLI" — that needs the Host-side Remote (R33 spike) — but it does prove
+     * our component rendered instead of a label with nothing behind it.
+     */
+    const tab = pickControl(snapshot.controls, [match])
+    let body = 'unmeasured'
+    if (tab !== null) {
+      snapshot = await hop('open-tab', tab)
+      body = String(snapshot.text).includes(TAB_BODY_MARKER) ? 'passed' : 'failed'
+      evidence.tab_body = body
+      // The tab fills in asynchronously; wait until it publishes what it rendered, or say so.
+      let markerAfter = null
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        markerAfter = await evaluate('JSON.stringify(window.__dshTriage || null)')
+        if (markerAfter !== null && markerAfter.data !== undefined) break
+        await pause(400)
+      }
+      evidence.marker_after_tab = markerAfter
+    }
+    return {
+      status: body === 'failed' ? 'failed' : 'passed',
+      detail:
+        body === 'failed'
+          ? `the tab label ${JSON.stringify(match)} appeared, but clicking it rendered no tab body`
+          : `the settings page rendered ${JSON.stringify(match)}${body === 'passed' ? ' and its tab body' : ''} after opening Settings`,
+      evidence: { ...evidence, tab_match: match },
+    }
+  }
+  return {
+    status: 'failed',
+    detail: 'the settings page opened but our tab label never appeared in the DOM',
+    evidence: { ...evidence, text_head: clean(snapshot.text).slice(0, 400) },
+  }
+}
+
+/**
+ * Wait for a page that actually rendered controls (the SPA paints after the marker is published) AND
+ * has stopped changing: R33's second run sampled the shell one frame before the first-run overlay
+ * painted, so the intro was never dismissed and every later click landed on a modal.
+ */
+async function waitForInteractivePage(evaluate) {
+  let last = null
+  let previousKey = null
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const snapshot = await evaluate(SNAPSHOT_EXPRESSION)
+    if (snapshot !== null && Array.isArray(snapshot.controls) && snapshot.controls.length >= 3) {
+      const key = `${snapshot.controls.length}|${String(snapshot.text).length}`
+      if (key === previousKey) return snapshot
+      previousKey = key
+      last = snapshot
+    }
+    await pause(700)
+  }
+  return last
+}
+
+/** Exact match first, then prefix: "Settings" must not be satisfied by "Settings and more" first. */
+const pause = (milliseconds) => new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds))
+
+/** Structure of the page as the probe sees it: address, visible text, and every named control. */
+const SNAPSHOT_EXPRESSION = `(() => {
+  const normalize = (value) => String(value === null || value === undefined ? '' : value).replace(/\\s+/g, ' ').trim()
+  const labelOf = (element) => normalize(element.getAttribute('aria-label') || element.getAttribute('title') || element.textContent)
+  const nodes = Array.from(document.querySelectorAll('button, a, [role="tab"], [role="button"], [role="menuitem"], [role="option"], [aria-label], [data-testid], [title]'))
+  const seen = Object.create(null)
+  const controls = []
+  for (const element of nodes) {
+    const name = labelOf(element).slice(0, 80)
+    if (name === '') continue
+    const key = element.tagName + '|' + (element.getAttribute('role') || '') + '|' + name
+    if (seen[key] === true) continue
+    seen[key] = true
+    controls.push({ tag: element.tagName.toLowerCase(), role: element.getAttribute('role') || '', name: name })
+    if (controls.length >= 120) break
+  }
+  return JSON.stringify({
+    url: String(location.href),
+    text: normalize(document.body && document.body.innerText).slice(0, 1200),
+    controls: controls,
+  })
+})()`
+
+/** Click the control whose accessible name is exactly `name` (as recorded by the snapshot). */
+const clickExpression = (name) => `(() => {
+  const normalize = (value) => String(value === null || value === undefined ? '' : value).replace(/\\s+/g, ' ').trim()
+  const labelOf = (element) => normalize(element.getAttribute('aria-label') || element.getAttribute('title') || element.textContent)
+  const target = ${JSON.stringify(String(name))}
+  const nodes = Array.from(document.querySelectorAll('button, a, [role="tab"], [role="button"], [role="menuitem"], [role="option"], [aria-label], [data-testid], [title]'))
+  for (const element of nodes) {
+    if (labelOf(element) !== target) continue
+    element.click()
+    return JSON.stringify({ ok: true, tag: element.tagName.toLowerCase() })
+  }
+  return JSON.stringify({ ok: false })
+})()`
+
+/**
+ * Run the real CLI against the same sandbox profile and return the numbers it reports.
+ * `null` means the CLI itself could not read the profile — an honest `unmeasured`, not a mismatch.
+ */
+async function readCliAudit(home, profile, env) {
+  const cli = pathFor('packages/plugin/dist/cli.js')
+  const result = await run(process.execPath, [cli, 'audit', '--json', '--dsh-home', home, '--profile', profile], {
+    cwd: abs('.'),
+    env,
+    timeoutMs: 180_000,
+  })
+  if (result.code !== 0 && result.code !== 1) {
+    // Keep the reason: "the CLI refused" and "the numbers differ" are different findings.
+    return { error: { exit: result.code, stderr: clean(result.stderr).slice(-400) } }
+  }
+  try {
+    const payload = JSON.parse(result.stdout)
+    const verdicts = { go: 0, blocked: 0, unknown: 0 }
+    for (const verdict of Array.isArray(payload.row_verdicts) ? payload.row_verdicts : []) {
+      if (verdict && verdict.conclusion === 'go') verdicts.go += 1
+      else if (verdict && verdict.conclusion === 'blocked') verdicts.blocked += 1
+      else verdicts.unknown += 1
+    }
+    return { rows: Array.isArray(payload.rows) ? payload.rows.length : null, verdicts }
+  } catch {
+    return null
+  }
+}
+
+/** Follow the one-shot token 303 into the boot document and keep the cookie for later requests. */
+async function fetchPage(base, tokenUrl, cookie = '') {  let current = cookie
   if (current === '') {
     const first = await fetch(tokenUrl, { redirect: 'manual' })
     current = (first.headers.getSetCookie?.() ?? []).map((value) => value.split(';')[0]).join('; ')
@@ -436,7 +769,7 @@ async function killTree(pid) {  if (pid === undefined) return
   })
 }
 
-async function finish(outcome) {
+async function finish(outcome, hostLog = '') {
   /*
    * Kill the Host BEFORE removing the sandbox: while it runs it holds the install's files, and
    * R31's retry loop was chasing a lock that could never clear (cleanup failed on every run).
@@ -471,21 +804,30 @@ async function finish(outcome) {
     outcome,
     sandbox: { home: clean(home), profile: 'web', bundle: 'file:packages/* (workspace rewritten)' },
     steps,
+    // The Host's own words: a route that never mounted or refused must be diagnosable from the artifact.
+    host_log: clean(hostLog)
+      .replace(/\?token=[A-Za-z0-9._~-]+/g, '?token=<redacted>')
+      .split('\n')
+      .filter((line) => line.trim() !== '' && !/^\s*Progress:/.test(line))
+      .slice(-60),
     limits: [
       'the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved',
-      'this proves the Host serves /plugins/dsh-triage/client.js; it does not prove the tab is visible or that its content matches the CLI (that needs a UI assertion and a host-side read-only Remote)',
+      'this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)',
+      'the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing',
       'one sandbox runtime (0.2.1-rc.4) on one Windows machine',
     ],
   }
   const text = `${JSON.stringify(payload, null, 2)}\n`
   mkdirSync(outDir, { recursive: true })
-  const target = join(outDir, `client-serve-${stamp.replaceAll(':', '-')}.json`)
+  const target = join(outDir, `${label}-${stamp.replaceAll(':', '-')}.json`)
   writeFileSync(target, text, 'utf8')
   writeFileSync(`${target}.sha256`, `${sha256(text)}\n`, 'utf8')
   const relative = target.replaceAll('\\', '/').split('/data/results/').pop()
   process.stdout.write(`${outcome.served ? 'served' : 'NOT served'} · ${basename(target)} · ${steps.map((step) => `${step.id}:${step.status}`).join(' ')}\n`)
   process.stdout.write(`  ${relative}\n`)
-  process.exitCode = outcome.served ? 0 : 1
+  // `unmeasured` is not a failure (no browser / unreachable settings UI); a tab that registered but
+  // never rendered is, because that is exactly the regression this step exists to catch (R33).
+  process.exitCode = outcome.served && outcome.tab_visible !== 'failed' ? 0 : 1
 }
 
 await main()

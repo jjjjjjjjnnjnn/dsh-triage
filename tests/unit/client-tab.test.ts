@@ -30,7 +30,7 @@ interface Exports {
 }
 
 /** Execute the shipped file with a fake loader and return what the factory exported. */
-function loadBundle(options: { react?: boolean } = {}) {
+function loadBundle(options: { react?: boolean; fetch?: (url: string, init?: unknown) => Promise<unknown> } = {}) {
   const source = readFileSync(SOURCE_PATH, 'utf8')
   const loaded: Array<{ id: string; factory: (require: (id: string) => unknown) => Exports }> = []
   const sandbox: { window: Record<string, unknown> } = {
@@ -42,6 +42,14 @@ function loadBundle(options: { react?: boolean } = {}) {
       },
     },
   }
+  /*
+   * The tab reads the Host's read-only route over `fetch` (R33), so the vm sandbox gets a `fetch`
+   * like a browser would. Default: a failing fetch, so a test that forgets to provide one cannot
+   * accidentally look like a healthy Host.
+   */
+  ;(sandbox as unknown as Record<string, unknown>).fetch =
+    options.fetch ??
+    (async () => ({ ok: false, status: 599, json: async () => ({ error: 'no fetch configured in this test' }) }))
   vm.runInNewContext(source, sandbox, { filename: SOURCE_PATH })
   assert.equal(loaded.length, 1, 'the bundle must register itself exactly once with the loader')
   const entry = loaded[0]!
@@ -121,8 +129,8 @@ test('the bundle registers with the documented loader id and declares the servic
   assert.equal(exports.NS, 'compat-triage', 'the row id is also the settings namespace (S3)')
   assert.deepEqual(
     [...exports.inject].sort(),
-    ['locale', 'modules', 'remote', 'remote.pluginInventory', 'slots'],
-    'C4: the exact client services the upstream inventory tab injects',
+    ['locale', 'modules', 'slots'],
+    'C4: the tab needs the slot + locale; the Host facts arrive over the read-only route, not a Remote',
   )
   assert.equal(typeof exports.apply, 'function')
 })
@@ -207,31 +215,57 @@ test('an unexpected contract shape throws inside apply and is swallowed', () => 
   assert.equal(marker.id, 'compat-triage')
 })
 
-test('the injected loader reports failure instead of inventing an inventory count', async () => {
-  const { exports } = loadBundle()
-
-  const noRemote = fakeContext({ remote: {} })
-  exports.apply(noRemote.ctx)
-  noRemote.invokeInjection()
-  const missing = await (noRemote.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; detail: string | null }> })().load()
-  assert.equal(missing.ok, false, 'no Remote means "I cannot see it", not "0 rows"')
-  assert.equal(missing.count, null)
-  assert.match(String(missing.detail), /pluginInventory/)
-
-  const good = fakeContext({ remote: { pluginInventory: { list: async () => ({ ok: true, value: { entries: [{}, {}, {}] } }) } } })
+test('the tab counts what the Host route says and never invents a count', async () => {
+  const payload = {
+    rows: [{ row_id: 'a' }, { row_id: 'b' }, { row_id: 'c' }],
+    row_verdicts: [
+      { row_id: 'a', conclusion: 'go' },
+      { row_id: 'b', conclusion: 'blocked' },
+      { row_id: 'c', conclusion: 'unknown' },
+    ],
+  }
+  const { exports } = loadBundle({
+    fetch: async () => ({ ok: true, status: 200, json: async () => payload }),
+  })
+  const good = fakeContext()
   exports.apply(good.ctx)
   good.invokeInjection()
-  const ok = await (good.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null }> })().load()
-  assert.equal(ok.ok, true)
-  assert.equal(ok.count, 3)
+  const loaded = await (
+    good.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; verdicts: { go: number; blocked: number; unknown: number } | null }> }
+  )().load()
+  assert.equal(loaded.ok, true)
+  assert.equal(loaded.count, 3, 'the row count is the Host payload, not a local guess')
+  // Spread first: the tally object is created inside the vm realm, so only its fields may be compared.
+  assert.deepEqual({ ...loaded.verdicts }, { go: 1, blocked: 1, unknown: 1 }, 'the tally mirrors the CLI verdicts')
 
-  const failing = fakeContext({ remote: { pluginInventory: { list: async () => ({ ok: false, error: { code: 'unavailable', message: 'host busy' } }) } } })
-  exports.apply(failing.ctx)
-  failing.invokeInjection()
-  const failed = await (failing.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; detail: string | null }> })().load()
-  assert.equal(failed.ok, false)
+  // 409 with the CLI's own sentence: the tab must say it could not read, not "0 rows".
+  const unavailable = loadBundle({
+    fetch: async () => ({ ok: false, status: 409, json: async () => ({ error: 'profile-not-found — no such profile' }) }),
+  })
+  const bad = fakeContext()
+  unavailable.exports.apply(bad.ctx)
+  bad.invokeInjection()
+  const failed = await (
+    bad.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; detail: string | null }> }
+  )().load()
+  assert.equal(failed.ok, false, 'an unreadable profile is not "0 rows"')
   assert.equal(failed.count, null)
-  assert.match(String(failed.detail), /unavailable/)
+  assert.match(String(failed.detail), /profile-not-found/)
+
+  // A dead route (network error) is also a failure, never an empty ledger.
+  const thrown = loadBundle({
+    fetch: async () => {
+      throw new Error('failed to fetch')
+    },
+  })
+  const down = fakeContext()
+  thrown.exports.apply(down.ctx)
+  down.invokeInjection()
+  const noreply = await (
+    down.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null }> }
+  )().load()
+  assert.equal(noreply.ok, false)
+  assert.equal(noreply.count, null)
 })
 
 test('the tab component renders from injected props and never touches host modules', () => {

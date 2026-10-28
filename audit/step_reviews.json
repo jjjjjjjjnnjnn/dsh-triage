@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R27 (2026-10-29)",
+  "stand": "R33 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -4081,6 +4081,212 @@
         "artifact": "data/results/gates-2026-10-28T22-10-00.000Z.json",
         "sha256": "d400e66c447c39155ae74c1b8058ff3738bdc346292eb9cf8177bebb12127b1f",
         "outcome": "ALL GREEN · 9 gates（296 测试；165 步 / 150 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R33-S1",
+      "batch": "R33",
+      "step": "契约探测（T-401 ②）：第三方包手写 host-face Typert Remote，`./typert` manifest 是否被 `ctx.typert` 接受、浏览器能否调到",
+      "changed": [
+        "scripts/record_remote_spike.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：真机产物 `spike-typert-2026-10-28T23-30-00.000Z.json` 的 `registry` 步里，`ctx.typert.local.list()` 返回的端点包含 `compatSpike/ping` —— 手写 manifest（`createTypertRemoteInfo` + 手写 remote-methods 描述符，绕开 `.js` 无装饰器语法）被接受并注册。但 `call` 步是 `unmeasured`：客户端声明 `remote.compatSpike` 后整个客户端模块没有执行（页面从未发布 `window.__dshSpike`）。结论只写「注册成功、浏览器拿不到」，不写「不可行」",
+        "reproducibility": "PASS：`node scripts/record_remote_spike.mjs --channel typert --dsh-main <bin.js> --stamp <iso>` 一条命令重建一次性 home（file: 装本地包，不碰 registry/凭据），跑完自删；产物含 `host_log` 尾巴，注册失败可从产物读出原因",
+        "licence": "PASS：spike 包是本轮现写的一次性本地包，不 vendor、不进 packages/、不引用第三方代码；未读 `~/.dsh`，沙盒 `npm_config_userconfig` 指向空文件",
+        "ssot": "PASS：产物由脚本产出，含 produced_by/generated_at/schema_version 与 .sha256，`gate_ssot` 可校验；`outcome.remote_callable=unmeasured` 与 `call` 步状态一致，没有把「没调到」写成「不能用」",
+        "adversary": "反例一：把 `registry` 里出现端点当成「浏览器可用」——`call` 步的 `unmeasured` 明确否掉了这一步。反例二：把客户端模块没执行当成「上游禁止第三方」——本轮只观测到「声明该命名空间后模块消失」，没有证据说上游明确禁止。反例三：手工把 manifest 塞进上游包目录伪装成「上游支持」——spike 用的是独立包，与上游包无关"
+      },
+      "real_test": {
+        "command": "node scripts/record_remote_spike.mjs --channel typert --label spike-typert --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-28T23:30:00.000Z",
+        "artifact": "data/results/spike-typert-2026-10-28T23-30-00.000Z.json",
+        "sha256": "53114f27a52a92bee9f610f871a935737ad82d8c9ca42ae5a9c09ffede076587",
+        "outcome": "registry:passed（端点含 compatSpike/ping）· call:unmeasured（客户端模块未执行）"
+      }
+    },
+    {
+      "id": "R33-S2",
+      "batch": "R33",
+      "step": "契约探测（T-401 ②）：同源只读 HTTP 路由（`ctx.webServer.register`）+ 无打包器客户端 `fetch` 是否端到端可用",
+      "changed": [
+        "scripts/record_remote_spike.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`spike-route-2026-10-29T01-40-00.000Z.json` 六步全绿：Host 注册 `/compat-spike/ping`，真实页面里我方 classic-script 客户端 `fetch` 到 `{\"ok\":true,\"from\":\"host-route\"}`。这条通道不需要 zod、不需要打包器、不需要客户端 remote face",
+        "reproducibility": "PASS：`--channel route` 与 typert 同一脚本、同一装法，一条命令重放；产物记 `route` 步的 path 与 `call` 步的返回值",
+        "licence": "PASS：只用上游导出的 `ctx.webServer.register`（MIT 包，未 vendor）；spike 包一次性生成并删除",
+        "ssot": "PASS：产物含 produced_by/generated_at/schema_version + .sha256；`outcome.remote_callable=yes` 与 `call:passed` 一致，且 limits 里写明「证明的是通道，不是结论」",
+        "adversary": "反例一：本机浏览器缓存了上一次的页面导致假通过——每次 run 用新的 `--user-data-dir`，且 `marker` 只在本次页面里发布。反例二：把 200 当成数据正确——断言的是 `call` 返回体里的常量，不是状态码。反例三：以为路由默认安全——本轮只证明「能挂」，鉴权规则由下一轮的 `host-audit-route.ts` 与单测负责"
+      },
+      "real_test": {
+        "command": "node scripts/record_remote_spike.mjs --channel route --label spike-route --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T01:40:00.000Z",
+        "artifact": "data/results/spike-route-2026-10-29T01-40-00.000Z.json",
+        "sha256": "fddcc7457988c12581c38eb272db43b5d289a92400d6a2cc8472cc3c2ebe257e",
+        "outcome": "bundle/install/boot/route/graph/call 全绿 · cleanup:passed"
+      }
+    },
+    {
+      "id": "R33-S3",
+      "batch": "R33",
+      "step": "实现 T-401 ②：Host 侧只读路由 `GET /compat-triage/audit`（复用 `loadAuditData` + `auditJsonPayload`，与 CLI 同一引擎）+ 客户端改为同源 `fetch` + 7 条路由契约单测",
+      "changed": [
+        "packages/plugin/src/host-audit-route.ts",
+        "packages/plugin/src/host.ts",
+        "packages/plugin/src/index.ts",
+        "packages/plugin/client.js",
+        "tests/unit/host-audit-route.test.ts",
+        "tests/unit/client-tab.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：路由只允许 GET/HEAD、要求同源证据（Origin 与 Host 相符或 `Sec-Fetch-Site: same-origin`），不读凭据、只读 profile；读不到 profile → 409 带 CLI 同句，绝不回空账本；读抛错 → 500。真机：`client-serve-2026-10-29T01-20-00.000Z.json` 的 `same-source` 步判定 tab 与 CLI 在同一 profile 上完全一致（192 行 / 0 go / 0 blocked / 184 unknown）",
+        "reproducibility": "PASS：`pnpm build` 后 `node scripts/record_client_serve.mjs --dsh-main <bin.js> --stamp <iso>` 一条命令重放；单测 `tests/unit/host-audit-route.test.ts`（7 条）+ `tests/unit/client-tab.test.ts`（10 条）离线可跑",
+        "licence": "PASS：只新增本仓代码，无新第三方依赖；`ctx.webServer.register` 是上游 MIT 导出的公开方法（未 vendor、未复制源码）",
+        "ssot": "PASS：路由回的就是 `audit --json` 的 payload（同一函数，未重排字段），`tests/unit/host-audit-route.test.ts` 里有一条「路由不得改变 payload」的断言；产物 `same-source` 步同时记 tab 侧与 CLI 侧两个数字",
+        "adversary": "反例一：为让面板「有结论」在浏览器里自算 —— 没有，tab 只对 payload 里的 `rows`/`row_verdicts` 做计数。反例二：把路由做成 POST 或允许跨源 —— 单测钉死 405/403，且跨源请求必须在读 profile 之前被拒。反例三：读不到就回 `200 []` —— 单测钉死 409 + 原句。反例四：以为挂上了服务 —— 实测踩了两次（`ctx.baseUrl` 是目录不是文件、`ctx.webServer` 需要 `inject` + 默认导出也带 inject），`host_log` 留在产物里"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T01:20:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-29T01-20-00.000Z.json",
+        "sha256": "49f89dafde3256eac5f0a4019a63366a8d899972e47ed143c02b01fe45237a7d",
+        "outcome": "bundle/install/boot/graph/client/mount/visible/same-source 全绿（tab 与 CLI 同为 192 行 / 0-0-184）· cleanup:passed"
+      }
+    },
+    {
+      "id": "R33-S4",
+      "batch": "R33",
+      "step": "设置页可见性断言（T-401 ①）：`record_client_serve` 加 `visible` 步（先关首启浮层 → 开设置 → 进「内置插件」section → 断言 tab 标签并在点击后确认 tab body 渲染）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "scripts/lib/ui-probe.mjs",
+        "scripts/lib/ui-probe.d.mts",
+        "tests/unit/ui-probe.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`visible:passed` 的判据是 DOM 里出现 `分诊台` 且点击后 tab body 出现语言无关标记 `dsh-triage audit`；证据里逐跳记录 `dismiss-intro / open-menu / open-settings / open-plugin-settings-section / open-tab` 与每一步的控件名，找不到入口时只出 `unmeasured` 并列出页面实际提供的控件",
+        "reproducibility": "PASS：同一条 `record_client_serve` 命令重放；7 条纯函数单测（`tests/unit/ui-probe.test.ts`）钉死「精确优先于前缀」「内置插件优先于插件」「找不到即 null」",
+        "licence": "PASS：未引入新依赖；`ui-probe.mjs` 是本仓脚本模块，配手写 `.d.mts` 供 typecheck",
+        "ssot": "PASS：三次真机观测（2120 通过 / 2130 标签不存在 → failed / 0110 同源负对照）都留了产物；`component` 只做展示，判据在脚本里",
+        "adversary": "反例一：把「Host 服务了 client.js」当成「用户能看到 tab」——R31 的 `mount` 只证明 apply 被调用，本轮 `visible` 才断言 DOM。反例二：为过门禁写死一个选择器 —— 没有，先 recon 把页面提供的控件记进产物，再按名字点。反例三：以为「首启浮层不会出现在干净 home 里」—— 它出现了，且第一次因为浮层未绘制完采样太早导致后面全点空，已改成「稳定帧」判定"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T01:20:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-29T01-20-00.000Z.json",
+        "sha256": "49f89dafde3256eac5f0a4019a63366a8d899972e47ed143c02b01fe45237a7d",
+        "outcome": "visible:passed（6 跳全记录，tab_body:passed）· 同一次 run 的 same-source 也 passed"
+      }
+    },
+    {
+      "id": "R33-S5",
+      "batch": "R33",
+      "step": "可见性负对照：同一脚本、同一页面，只把期望标签换成一个不可能存在的字符串",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`visible:failed` + 脚本 exit 1（`client-serve-negctl-2026-10-29T01-30-00.000Z.json`），证明该断言不是恒真；其余步骤（mount/client 等）保持 passed，说明失败只出在标签断言上",
+        "reproducibility": "PASS：`--label client-serve-negctl --expect-tab-label absolutely-not-a-tab-xyz` 一条命令重放",
+        "licence": "PASS：无新依赖、无外部数据",
+        "ssot": "PASS：负对照产物与正产物同一脚本、同一 stamp 格式，`outcome.tab_visible=failed` 与步状态一致",
+        "adversary": "反例一：断言只看页面文本里有没有「分诊台」——如果页面里恰好别处有这个词就会假通过，因此正向跑还要求点击 tab 后出现 tab body 的标记。反例二：负对照改的是代码路径而不是输入 —— 只换 CLI 参数，代码路径完全相同"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T01:30:00.000Z --label client-serve-negctl --expect-tab-label absolutely-not-a-tab-xyz",
+        "artifact": "data/results/client-serve-negctl-2026-10-29T01-30-00.000Z.json",
+        "sha256": "d9f5ebc39753aac3a370c126155f95e0058426c5bc286ee17bba1a44c56d3919",
+        "outcome": "visible:failed · exit 1 · 其余步骤 passed"
+      }
+    },
+    {
+      "id": "R33-S6",
+      "batch": "R33",
+      "step": "同源负对照：同一 run，把 CLI 指到另一个 home（`--cli-home`），两个数字必须不一致",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`same-source:failed`（tab 192 行 / CLI 190 行，`client-serve-negctl-samesource-2026-10-29T01-10-00.000Z.json`），证明 same-source 比较的是两次独立计算，不是把同一个变量抄两遍",
+        "reproducibility": "PASS：`--cli-home sandbox/upstream/0.2.1-rc.4/home --cli-profile upstream` 一条命令重放",
+        "licence": "PASS：只读另一个仓内沙盒 profile，不写、不读凭据",
+        "ssot": "PASS：产物同时记 tab 侧与 CLI 侧数字（`tab_data` / `cli_data`），读者可自行复算差值",
+        "adversary": "反例一：CLI 读不到就当成「一致」——读不到走 `unmeasured` 分支并记 `cli_error`。反例二：负对照用的两个 profile 恰好行数相同 —— 192 vs 190 是目前沙盒的读数，若将来相同，这条对照会变成「一致」而失败，届时必须换一个不同的 profile 而不是放宽比较"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T01:10:00.000Z --label client-serve-negctl-samesource --cli-home sandbox/upstream/0.2.1-rc.4/home --cli-profile upstream",
+        "artifact": "data/results/client-serve-negctl-samesource-2026-10-29T01-10-00.000Z.json",
+        "sha256": "5bf9bf498b19eed2497a667a72a2a8cbc0264bb9c55f6566c280e3cbac7222a7",
+        "outcome": "same-source:failed（192 vs 190 行）· 其余步骤 passed"
+      }
+    },
+    {
+      "id": "R33-S7",
+      "batch": "R33",
+      "step": "T-315 剩余项：`strictPeerDependencies` 严格 A/B（同一复制源、同一候选，两组都写 `strictDepBuilds: false`，只差 peer 这一个键）",
+      "changed": [
+        "data/results/probe-t315-peer-strict-2026-10-28T22-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：strict 组 profile install `exit 1` + `ERR_PNPM_PEER_DEP_ISSUES` → `unknown` + `probe.profile-copy-unusable`；对照组 `exit 0` → `go`（boot→sample 4.7s / 401 / 行 active）。结论：该键**被 launcher 读到并生效**，且真实 profile 存在 peer 问题，开启后沙盒无法装依赖",
+        "reproducibility": "PASS：两个一次性 home 由 `%TEMP%/opencode/t315-peer.mjs` 生成（同一声明文件，仅差一个键），`record_probe --copy-profile strictpeer --dsh-home <home>` 重放；两轮重复（22:00/22:10 与 22:20/22:30）结论一致",
+        "licence": "PASS：只用上游 0.2.1-rc.4 运行时、仓内沙盒与本地夹具 `tests/fixtures/probe/ok-plugin`；候选从本地目录安装，不碰 registry、不读凭据、不 vendor 任何第三方代码，沙盒 `npm_config_userconfig` 指向空文件",
+        "ssot": "PASS：产物 `sandbox.profile_copy.install` 直接给出 exit_code/code/pnpm_policy，两组可比；`pnpm_policy=source` 写进产物，读者能看出沙盒没有覆盖源策略",
+        "adversary": "反例（本轮真踩）：第一版对照组的 `pnpm-workspace.yaml` 只有注释，结果 `pnpm_policy=source` 让沙盒不再写 `strictDepBuilds: false`，候选安装因构建审批失败 —— 一个「只差 peer 键」的对照实际差了两个变量。已重做成两组都带 `strictDepBuilds: false`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --copy-profile strictpeer --dsh-home %TEMP%/dsh-triage-t315/home-strict --label t315-peer-strict --stamp 2026-10-28T22:20:00.000Z",
+        "artifact": "data/results/probe-t315-peer-strict-2026-10-28T22-20-00.000Z.json",
+        "sha256": "3cfa123467ee33d32408f2eaf9628f8640392d87e2f71dd9b606bda42cba3293",
+        "outcome": "unknown · profile:failed · exit 1 · ERR_PNPM_PEER_DEP_ISSUES"
+      }
+    },
+    {
+      "id": "R33-S8",
+      "batch": "R33",
+      "step": "T-315 剩余项对照组：同一声明文件去掉 `strictPeerDependencies`",
+      "changed": [
+        "data/results/probe-t315-peer-off-2026-10-28T22-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`go`（boot→sample 4.7s / http 401 / 行 active / `candidate_registered=true` / `pnpm_policy=source`），与 strict 组构成唯一变量对照",
+        "reproducibility": "PASS：同 S7 的命令，`--dsh-home %TEMP%/dsh-triage-t315/home-off --label t315-peer-off`",
+        "licence": "PASS：与 S7 完全相同的运行时、沙盒与本地夹具；唯一的差别是复制源里少了一行 `strictPeerDependencies: true`，没有引入任何新依赖或外部数据",
+        "ssot": "PASS：两组产物同一 schema，`sandbox.profile_copy.install` 可直接比对（exit 1+code vs exit 0+null）",
+        "adversary": "反例：把 strict 组的失败说成「候选插件坏」——产物里 `probe.profile-copy-unusable` + `ERR_PNPM_PEER_DEP_ISSUES` 明确指出是复制源的依赖层，不是候选；`ignored_packages` 也照旧单列"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --copy-profile strictpeer --dsh-home %TEMP%/dsh-triage-t315/home-off --label t315-peer-off --stamp 2026-10-28T22:30:00.000Z",
+        "artifact": "data/results/probe-t315-peer-off-2026-10-28T22-30-00.000Z.json",
+        "sha256": "06436289812ef75d26a08aa15c03415112d1a8344475d1436393f53f03300d5c",
+        "outcome": "go · boot→sample 4.7s · profile install exit 0 · candidate_registered=true"
+      }
+    },
+    {
+      "id": "R33-S9",
+      "batch": "R33",
+      "step": "收尾：文档同步（HANDOFF / INDEX / ROADMAP / BACKLOG / M4-surface / ADR-0010 / SIGNOFF / blind_spots / 披露）+ 全链复跑并录一份门禁产物",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/specs/M4-surface.md",
+        "docs/adr/0010-same-source-in-tab.md",
+        "INDEX.md",
+        "audit/SIGNOFF.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "tests/governance/doc-stand.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` 全链绿（**314 测试** / build / typecheck / 9 门），`node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 9/9`；本轮数字（173 步 / 157 产物 / 192 行同源读数）都能在产物里复查",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T02:00:00.000Z` 一条命令重放 9 门并落盘；新增的 `tests/governance/doc-stand.test.ts` 让 stand 漂移（R32 时 HANDOFF=R32 / INDEX=R29 / ROADMAP=R15）在 `pnpm test` 里就红",
+        "licence": "PASS：文档同步不引入任何外部代码或数据；`docs/adr/0010` 引用的是本仓产物与上游公开 API 文档，未复制上游源码",
+        "ssot": "PASS：`no-orphan-results` 现在报「157 artifacts all cited」——R33 新增的 8 份产物每一份都被某一步的 `real_test.artifact` 指名；`INDEX.md` 的新行不含会被当成路径的反引号 token（路由与裸文件名一律不加反引号）",
+        "adversary": "反例一：为了让 stand 一致把测试放宽成「只要都写了 R 开头」——没有，断言的是三份文件的**轮次数字相等**，且 ledgers 也必须相等。反例二：把 `docs/adr/0010` 只写进 ADR 目录不登记 INDEX —— `doc-stand.test.ts` 有专门一条盯着它。反例三：为了让 `governance` 变绿而删掉路由描述 —— 只改了写法（去掉反引号），信息没少"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T02:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T02-00-00.000Z.json",
+        "sha256": "94a0e74d0910041ce2cee70a9596ba5e32d439a519e74bbdd667599f6a29e9f8",
+        "outcome": "ALL GREEN · 9 gates（314 测试；174 步 / 158 产物全部被引用）"
       }
     }
   ]

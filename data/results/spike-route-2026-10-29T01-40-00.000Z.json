@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_remote_spike.mjs",
+  "generated_at": "2026-10-29T01:40:00.000Z",
+  "label": "spike-route",
+  "channel": "route",
+  "outcome": {
+    "remote_callable": "yes"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "spike package written: route host half + fetch client half",
+      "channel": "route",
+      "files": [
+        "package.json",
+        "cordis.patch.yml",
+        "index.js",
+        "typert.host.js",
+        "client.js"
+      ]
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": "nloaded 0, added 458\nProgress: resolved 500, reused 562, downloaded 0, added 484\nProgress: resolved 544, reused 562, downloaded 0, added 529\nProgress: resolved 566, reused 562, downloaded 0, added 559\nPackages: +567\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 567, reused 562, downloaded 0, added 567, done\nIgnored build scripts: @deepseek-ai/dsh-subprocess-local@0.2.1-rc.4, @google/genai@2.21.0, koffi@3.1.1, node-pty@1.2.0-beta.15, protobufjs@7.6.6.\nRun \"pnpm approve-builds\" to pick which dependencies should be allowed to run scripts.\n[WARN] Issues with peer dependencies found. Run \"pnpm peers check\" to list them.\n\ndependencies:\n+ @deepseek-ai/dsh 0.2.1-rc.4\n+ @deepseek-ai/dsh-base 0.2.1-rc.4\n+ @deepseek-ai/dsh-web-app 0.2.1-rc.4\n+ dsh-remote-spike file:.spike-bundle/spike(@deepseek-ai/cordis@4.0.5)\n\nDone in 20.8s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "host printed http://127.0.0.1:54100/"
+    },
+    {
+      "id": "route",
+      "status": "passed",
+      "detail": "{\"ok\":true,\"path\":\"/compat-spike/ping\"}",
+      "path": "/compat-spike/ping"
+    },
+    {
+      "id": "graph",
+      "status": "passed",
+      "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,dsh-remot",
+      "client_module_listed": true,
+      "html_bytes": 38131
+    },
+    {
+      "id": "call",
+      "status": "passed",
+      "detail": "the browser called compatSpike/ping and got {\"ok\":true,\"from\":\"host-route\",\"at\":\"spike\"}",
+      "browser": "msedge.exe",
+      "marker": {
+        "ok": true,
+        "value": {
+          "ok": true,
+          "from": "host-route",
+          "at": "spike"
+        }
+      }
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "host_log": [
+    "SPIKE_ROUTE {\"ok\":true,\"path\":\"/compat-spike/ping\"}\ndsh web: http://127.0.0.1:54100/??token=<redacted>\n"
+  ],
+  "limits": [
+    "this spike proves a CHANNEL (a third-party package answering a read-only Remote call) and nothing about conclusions; the answer is a constant",
+    "the marker descriptor is hand-written under the protocol key instead of using the @Remote decorator, because plain .js has no decorator syntax — a product implementation in TypeScript may take the supported path",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine; the package is installed from a local directory, no registry and no credentials"
+  ]
+}

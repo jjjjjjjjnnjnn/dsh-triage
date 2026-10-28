@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R23 (2026-10-28)",
+  "stand": "R33 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -268,6 +268,24 @@
       "owner": "packages/plugin/{package.json,cordis.patch.yml,client.js} + scripts/record_client_serve.mjs + docs/specs/M4-surface.md",
       "status": "narrowed (R31): all three rules are documented and covered by a real-run regression, but discovery stays silent by design",
       "resolved_by": "R31: packages/plugin/cordis.patch.yml row name dsh-triage (bare package), package.json exports[\"./client\"] = ./client.js, src/index.ts re-exports the host plugin; scripts/record_client_serve.mjs proves graph composition + 200 asset + CDP marker in a real Host. Evidence: data/results/client-serve-2026-10-28T19-20-00.000Z.json (bundle/install/boot/graph/client/mount all passed)"
+    },
+    {
+      "id": "BS-36",
+      "area": "probe/profile-copy",
+      "cannot_see": "当复制源自带 `pnpm-workspace.yaml` 时，探针会原样采用源的 pnpm 策略（`pnpm_policy=source`），并**不再写自己那条 `strictDepBuilds: false`**（`ADR-0007` 的既定边界）。后果是一份普通用户 profile（带 workspace 文件的概率不低）在沙盒里可能因**构建审批**让候选安装失败、结论退成 `unknown`。R33 真踩：第一次「只差一个 peer 键」的 A/B，对照组因为多了一个只有注释的 workspace 文件而丢掉构建策略，候选安装失败——两个变量同时变了",
+      "mitigation": "R33 起 A/B 两组都显式写 `strictDepBuilds: false`，只留被测的键不同；产物 `sandbox.profile_copy.pnpm_policy` 与 `install.ignored_packages` 可读出这一点。**仍看不到的**：一个真实用户 profile 里还有哪些继承设置（`onlyBuiltDependencies`、`packageManager`、`.npmrc` 键）会改变沙盒行为——只逐个测过 `nodeLinker`、`strictPeerDependencies`、`strictDepBuilds` 三个",
+      "owner": "packages/probe/src/profile-copy.ts + docs/adr/0007-sandbox-build-policy.md + docs/adr/0010",
+      "status": "open (R33): the boundary is documented, but the sandbox still inherits whatever the user file says",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-37",
+      "area": "plugin/host-route",
+      "cannot_see": "Host 半边能不能拿到 `ctx.webServer`、以及 `ctx.baseUrl` 到底指向 profile 目录还是 `cordis.yml`，在 0.2.1-rc.4 上**只能靠真机试**：R33 先后因为「`ctx.baseUrl` 是目录」和「`ctx.webServer` 需要 `inject` 且默认导出也得带 inject」白跑两轮，两次的表现都是同一个 404（路由没挂上），Host 侧日志只能靠我们自己打印的 `console.log` 才能看见",
+      "mitigation": "R33 起 `host.ts` 在两条失败路径上都 `console.log` 原因（`no profile anchor (<baseUrl>)` / `no webServer service`），`scripts/record_client_serve.mjs` 把 Host 日志尾巴写进产物 `host_log`；`same-source` 步与两条负对照让「路由没挂」和「数字不一致」可区分。**仍看不到的**：上游换 Cordis 版本后 `baseUrl`/服务注入语义若再变，只能靠这条路再试一次",
+      "owner": "packages/plugin/src/host.ts + packages/plugin/src/host-audit-route.ts + scripts/record_client_serve.mjs",
+      "status": "narrowed (R33): diagnosable from the artifact, still empirical",
+      "resolved_by": "R33: host.ts logs both skip reasons to stdout, artifact records host_log, and same-source has a recorded negative control (data/results/client-serve-negctl-samesource-2026-10-29T01-10-00.000Z.json)"
     }
   ]
 }

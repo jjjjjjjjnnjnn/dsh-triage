@@ -32,17 +32,20 @@ window.__ModuleLoader__.load({
     /** Owned dictionary + registration namespace. Row id is also the settings namespace (C3/S3). */
     const NS = 'compat-triage'
     /** Services this tab needs; the loader only exposes these to `require`/ctx (C4). */
-    const inject = ['slots', 'locale', 'remote', 'remote.pluginInventory', 'modules']
+    const inject = ['slots', 'locale', 'modules']
 
     const zh = {
       tab: '分诊台',
       title: '分诊台 · 装之前判断，坏之后定位',
-      hint: '结论由命令行给出（同一份证据、同一条 messageId）。这里只显示宿主事实与入口。',
+      hint: '结论由命令行的同一个引擎给出（同一份证据、同一条 messageId）。这里只显示宿主事实与入口。',
       command: 'dsh-triage audit',
       commandHint: '在本机终端运行；加 --json 可拿到逐行结论。',
       rows: '宿主报告 {count} 行插件',
-      rowsUnknown: '没拿到宿主插件清单（Remote 不可用）',
+      rowsUnknown: '没拿到宿主插件清单（只读路由不可用）',
       rowsFact: '行数是事实，不是结论。',
+      verdicts: 'CLI 同一引擎的结论：{go} go · {blocked} blocked · {unknown} unknown',
+      verdictsUnknown: '没拿到结论（只读路由不回答）',
+      source: '数据来自宿主只读路由 /compat-triage/audit，与 dsh-triage audit --json 同源。',
       reload: '刷新',
       failed: '读取失败',
       panel: '也可以开本地面板：dsh-triage serve',
@@ -50,12 +53,15 @@ window.__ModuleLoader__.load({
     const en = {
       tab: 'Triage',
       title: 'Triage · judge before install, attribute after breakage',
-      hint: 'Verdicts come from the CLI (same evidence, same messageId). This tab shows host facts and entry points only.',
+      hint: 'Verdicts come from the same engine as the CLI (same evidence, same messageId). This tab shows host facts and entry points only.',
       command: 'dsh-triage audit',
       commandHint: 'Run it in a local terminal; add --json for per-row verdicts.',
       rows: 'The host reports {count} plugin rows',
-      rowsUnknown: 'Host plugin inventory unavailable (Remote not available)',
+      rowsUnknown: 'Host plugin inventory unavailable (read-only route not answering)',
       rowsFact: 'A row count is a fact, not a verdict.',
+      verdicts: 'Conclusions from the CLI engine: {go} go · {blocked} blocked · {unknown} unknown',
+      verdictsUnknown: 'No conclusions (the read-only route did not answer)',
+      source: 'Read from the host route /compat-triage/audit, the same payload as dsh-triage audit --json.',
       reload: 'Refresh',
       failed: 'Read failed',
       panel: 'Local panel: dsh-triage serve',
@@ -72,7 +78,7 @@ window.__ModuleLoader__.load({
       const jsxs = jsxRuntime.jsxs
       return function CompatTriageTab(props) {
         const copy = props.copy
-        const [state, setState] = useState({ status: 'idle', count: null, detail: null })
+        const [state, setState] = useState({ status: 'idle', count: null, verdicts: null, detail: null })
         const load = useCallback(() => {
           let cancelled = false
           setState((previous) => ({ ...previous, status: 'loading' }))
@@ -80,11 +86,16 @@ window.__ModuleLoader__.load({
             .then(() => props.load())
             .then((result) => {
               if (cancelled) return
-              setState({ status: result.ok ? 'ready' : 'failed', count: result.count ?? null, detail: result.detail ?? null })
+              setState({
+                status: result.ok ? 'ready' : 'failed',
+                count: result.count ?? null,
+                verdicts: result.verdicts ?? null,
+                detail: result.detail ?? null,
+              })
             })
             .catch((error) => {
               if (cancelled) return
-              setState({ status: 'failed', count: null, detail: String((error && error.message) || error) })
+              setState({ status: 'failed', count: null, verdicts: null, detail: String((error && error.message) || error) })
             })
           return () => {
             cancelled = true
@@ -95,19 +106,28 @@ window.__ModuleLoader__.load({
           state.count === null
             ? copy.rowsUnknown
             : copy.rows.replace('{count}', String(state.count))
+        const verdictsText =
+          state.verdicts === null
+            ? copy.verdictsUnknown
+            : copy.verdicts
+                .replace('{go}', String(state.verdicts.go))
+                .replace('{blocked}', String(state.verdicts.blocked))
+                .replace('{unknown}', String(state.verdicts.unknown))
         return jsxs('div', {
           children: [
             jsx('h3', { children: copy.title }),
             jsx('p', { children: copy.hint }),
-            jsxs('p', {
+            jsx('p', { children: rowsText }),
+            jsx('p', { children: verdictsText }),
+            jsx('p', { children: copy.source }),
+            jsx('p', { children: copy.rowsFact }),
+            jsx('p', {
               children: [
                 jsx('code', { children: copy.command }),
                 jsx('span', { children: ` — ${copy.commandHint}` }),
               ],
             }),
             jsx('p', { children: copy.panel }),
-            jsx('p', { children: rowsText }),
-            jsx('p', { children: copy.rowsFact }),
             state.status === 'failed' && state.detail !== null
               ? jsx('p', { children: `${copy.failed}: ${state.detail}` })
               : null,
@@ -175,29 +195,64 @@ window.__ModuleLoader__.load({
           rows: t('rows'),
           rowsUnknown: t('rowsUnknown'),
           rowsFact: t('rowsFact'),
+          verdicts: t('verdicts'),
+          verdictsUnknown: t('verdictsUnknown'),
+          source: t('source'),
           reload: t('reload'),
           failed: t('failed'),
           panel: t('panel'),
         },
-        /** Facts only. A failure is reported as `{ok:false}` so the tab can say so out loud. */
+        /*
+         * FACTS FROM THE HOST, NOT JUDGEMENTS MADE HERE (铁律 1). Since R33 the tab reads the Host's
+         * read-only route, which answers with the exact payload `dsh-triage audit --json` prints —
+         * built by the same `loadAuditData()`/`auditJsonPayload()` the CLI uses. The tab only counts
+         * what the payload says; it never decides a conclusion and never guesses a missing field.
+         */
         load: async () => {
-          const remote = ctx.remote
-          const list = remote === null || remote === undefined ? undefined : remote.pluginInventory
-          if (list === undefined || list === null || typeof list.list !== 'function') {
-            return { ok: false, count: null, detail: 'remote.pluginInventory.list is not available' }
-          }
-          try {
-            const result = await list.list()
-            if (!result || result.ok !== true) {
-              const error = (result && result.error) || {}
-              return { ok: false, count: null, detail: `${error.code || 'error'}: ${error.message || ''}`.trim() }
+          /** Publish what the tab just showed, so a real page can be asked for it (R33 same-source). */
+          const publishData = (result) => {
+            try {
+              if (typeof window === 'object' && window !== null) {
+                window.__dshTriage = { ...(window.__dshTriage || {}), data: { ok: result.ok, rows: result.count, verdicts: result.verdicts, detail: result.detail ?? null } }
+              }
+            } catch {
+              // A frozen window only costs the diagnostic marker, never the tab.
             }
-            const value = result.value || {}
-            const entries = Array.isArray(value.entries) ? value.entries : null
-            return { ok: true, count: entries === null ? null : entries.length, detail: null }
-          } catch (error) {
-            return { ok: false, count: null, detail: String((error && error.message) || error) }
+            return result
           }
+          let response
+          try {
+            response = await fetch('/compat-triage/audit', {
+              credentials: 'include',
+              headers: { accept: 'application/json' },
+            })
+          } catch (error) {
+            // A dead route is a fact to report, not an exception to render: `load` never throws.
+            return publishData({ ok: false, count: null, verdicts: null, detail: String((error && error.message) || error) })
+          }
+          if (!response.ok) {
+            let detail = `HTTP ${response.status}`
+            try {
+              const body = await response.json()
+              if (body && typeof body.error === 'string') detail = `${response.status}: ${body.error}`
+            } catch {
+              // A non-JSON error body is still an error; the status is the fact we have.
+            }
+            return publishData({ ok: false, count: null, verdicts: null, detail })
+          }
+          const payload = await response.json()
+          const rows = Array.isArray(payload?.rows) ? payload.rows.length : null
+          const verdicts = Array.isArray(payload?.row_verdicts) ? payload.row_verdicts : null
+          const tally = verdicts === null ? null : { go: 0, blocked: 0, unknown: 0 }
+          if (verdicts !== null) {
+            for (const verdict of verdicts) {
+              const conclusion = verdict && verdict.conclusion
+              if (conclusion === 'go') tally.go += 1
+              else if (conclusion === 'blocked') tally.blocked += 1
+              else tally.unknown += 1
+            }
+          }
+          return publishData({ ok: true, count: rows, verdicts: tally, detail: null })
         },
       })
       slots.inject('settings.plugins.tab', () =>

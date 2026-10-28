@@ -401,3 +401,14 @@
 - 实测：296 测试 / 9 门全绿 / `--mutate` 9/9；165 步 / 150 产物
 - 过程中的真实缺陷：无新增（本轮只有文档）；上一轮自找的 stamp 冲突已在「未通过的门槛」里留档
 - 未做：T-401 最后两件、`strictPeerDependencies`、`BS-32` 的有载对照、`BS-29` 剩余面、`BS-35` 的上游漂移预警
+
+### 2026-10-29 R33｜T-401 收口（可见性 + 同源结论）+ T-315 `strictPeerDependencies` + 两条通道的契约探测
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R33-S1…S8）
+- 范围：`packages/plugin/src/{host,index,host-audit-route}.ts`、`packages/plugin/client.js`、`scripts/{record_client_serve,record_remote_spike}.mjs`、`scripts/lib/ui-probe.{mjs,d.mts}`、`tests/unit/{client-tab,host-audit-route,ui-probe}.test.ts`、`tests/governance/doc-stand.test.ts`、`docs/{HANDOFF,BACKLOG,specs/M4-surface,ROADMAP,adr/0010-same-source-in-tab}.md`、`audit/{SIGNOFF.md,blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}`、`INDEX.md`
+- 起因：HUMAN「同意，继续，处理所有问题」（R33 计划：「收口 M4-a」+「T-401 ② 先时限 spike 再定」）
+- 结果：① **T-401 收口**：`visible`（关首启浮层 → 开设置 → 进「内置插件」→ DOM 出现 `分诊台` + 点击后 tab body 出现 `dsh-triage audit`）与 `same-source`（tab 与 CLI 在**同一 profile** 上同为 192 行 / 0-0-184）都有真机产物；两条负对照各自成产物。② **`ADR-0010`**：两条通道都真机测过——Typert Remote host 侧注册成功、浏览器侧拿不到（声明 `remote.compatSpike` 会让客户端模块不执行）；同源只读路由端到端可用，选后者。③ **T-315 剩余项**：`strictPeerDependencies` 严格 A/B（两组都写 `strictDepBuilds: false`）→ strict `ERR_PNPM_PEER_DEP_ISSUES` / 对照 `go`，两轮复现。④ **新盲区** `BS-36`（源带 workspace 文件即 `pnpm_policy=source`，连带丢构建策略）、`BS-37`（`ctx.baseUrl`/`ctx.webServer` 只能真机试）。⑤ **文档债**：HANDOFF 第 2 行的孤儿表格行已删，INDEX/ROADMAP 的 stand 追到 R33，新增 `tests/governance/doc-stand.test.ts`（不放宽任何门、不碰冻结台账）
+- 实测：314 测试 / 9 门全绿 / `--mutate` 9/9 / 173 步 / 157 产物
+- 过程中的真实缺陷：① `record_client_serve` 第一版把 `socket.close()` 写在可见性探测之前，评估永不返回 → 15 分钟静默超时（已修，并给每次 CDP 调用加 20s 超时 + `--verbose` 进度）；② 首启浮层绘制晚于首帧采样，导致浮层没关、后面全点空 → 改成「稳定帧」判定；③ `ctx.baseUrl` 是 profile 目录、`ctx.webServer` 需要 `inject` 且默认导出也带 inject —— 两次都表现为同一个 404，靠自打印的 `host_log` 才定位；④ 第一次 `strictPeerDependencies` 的「对照组」多了一个只有注释的 workspace 文件，实际差了构建策略，作废重做（`BS-36`）
+- 未做：Typert Remote 的客户端生成链（`T-320`，当前不做）、`BS-32` 的有载对照、`BS-29` 剩余面、M4-b 分发件
