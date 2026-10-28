@@ -100,6 +100,12 @@
 
 **仍未解决**：D2 的 `boot-budget` 红项需要**用新口径重跑矩阵**才有结论（R27 的红是在旧口径下测的）；在那之前不许说「D2 已恢复」。
 
+### R29 补记：T-312 让 `replacement_waited` 说错话（`BS-33`，已修）
+
+R28 引入升级等待时，样本循环里「睡前已经是拿着样本」这一条件就把**可读的 provisional**也记成了 replacement wait。R29 第一批矩阵 20/20 都是 `replacement_waited=true` + `replacement_stopped_by=readable-sample` + `upgraded=true`，`waited_ms` 与 `upgrade_waited_ms` 同值——与本 ADR 与 spec 教读者判断的方向相反。修法**只改读数**：`waited` 只在样本不可读时置 true、替换窗口时长在读到可读样本那一刻结算、新增 `replacement_reason`（`unreadable` / `upgrade` / `null`），升级等待仍由 `upgrade_waited_ms` 暴露。**等待条件、`--unsettled-timeout`、`settle 15s`、判据全部未动**；修后同 plan 重跑，结论与修前逐条相同。读 R28 的 `probe-t312-*` 与 R29 批次 A 产物时，该字段是旧语义。
+
+**R29 已按新口径重跑（两批）**：`boot-budget` 12/12、可靠性 20/20、清理 20/20、形状 6，`gate.passed=true`（`d2-2026-10-28T09-20-00.000Z.json` / `d2-2026-10-28T10-20-00.000Z.json`）。R27 那次红作为**旧口径的历史事实**保留，不删不改。
+
 ## 剩余项：把「不可判」也压进 20s（未授权）
 
 E 之后不可判的墙钟 ≈29s（R26 实测 28.6s），仍然 >20s。剩下的结构是：

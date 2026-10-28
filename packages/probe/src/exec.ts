@@ -968,11 +968,15 @@ function measurementDetail(run: ProbeRun): string {
   if (sample !== null && sample.provisional !== null) parts.push(`provisional=${String(sample.provisional)}`)
   const replacement = run.sampleReplacement
   if (replacement !== null) {
-    parts.push(
-      replacement.waited
-        ? `replacement=waited(${replacement.waitedMs}ms, samples=${replacement.samples})`
-        : `replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced)`,
-    )
+    if (replacement.waited) {
+      parts.push(`replacement=waited(${replacement.waitedMs}ms, samples=${replacement.samples})`)
+    } else if (replacement.upgraded || replacement.reason === 'upgrade') {
+      // T-312 (R29: BS-33): waiting for the final sample after a PROVISIONAL one is not a
+      // replacement wait. Naming it separately keeps E's claim checkable in one field.
+      parts.push(`replacement=not-waited(ADR-0008 E) · upgrade=waited(${replacement.upgradeWaitedMs}ms)`)
+    } else {
+      parts.push('replacement=not-waited(ADR-0008 E: only an unreadable sample is replaced)')
+    }
   }
   if (run.readiness !== null) {
     parts.push(`readiness=${run.readiness.outcome}(${run.readiness.waited_ms}ms/${run.readiness.window_ms}ms)`)

@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/d2_report.mjs",
+  "generated_at": "2026-10-28T09:20:00.000Z",
+  "source": {
+    "matrix": "data/results/probe-matrix-2026-10-28T08-40-00.000Z.json",
+    "matrix_sha256": "f52840101782fe7759d0540981640fcf6ba3ad10c57a41cf8a903e0ea651d56a",
+    "matrix_generated_at": "2026-10-28T08:40:00.000Z",
+    "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json"
+  },
+  "definitions": {
+    "probe_reliability": "a run counts when it produced an artifact, the sandbox was removed, every port it used is closed, the boot stayed inside the budget (real runs only — see R19 below), and the run stated a conclusion (unknown included: refusing to judge an unsettled tree is an answer)",
+    "real_pass_rate": "go / (go + blocked) over real runs; unknown is listed separately and never folded into either side",
+    "failure_shape": "conclusion + reason messageId (+ the row phase when the reason names one)",
+    "boot_budget": "the 20s boot budget gates REAL candidates only. A fixture built to never settle costs boot + the 15s settle timeout ≈ 21s by construction, so counting it would fail the gate for a reason that says nothing about a candidate. Fixture timings are published below and never hidden (R19, HUMAN-signed)"
+  },
+  "denominator": {
+    "runs": 20,
+    "real_runs": 13,
+    "real_booted": 12,
+    "non_real_runs": 7,
+    "min_real_required": 10,
+    "enough": true
+  },
+  "verdicts": {
+    "go": 12,
+    "blocked": 7,
+    "unknown": 1
+  },
+  "real_verdicts": {
+    "go": 12,
+    "blocked": 1
+  },
+  "probe_reliability": {
+    "runs": 20,
+    "reliable": 20,
+    "unknown_runs": 1,
+    "rate": 1,
+    "threshold": 0.9
+  },
+  "real_pass_rate": {
+    "go": 12,
+    "blocked": 1,
+    "unknown": 0,
+    "decided": 13,
+    "rate": 0.923,
+    "wilson95": [
+      0.667,
+      0.986
+    ]
+  },
+  "timing": {
+    "sampled": 16,
+    "budget_ms": 20000,
+    "real_sampled": 12,
+    "real_within_budget": 12,
+    "fixtures_over_budget": [],
+    "within_budget": 16,
+    "min": 4600,
+    "median": 7300,
+    "max": 9800,
+    "wall_clock": {
+      "max_ms": 29860,
+      "source": "steps[boot].ms — the whole step, including the settle wait and the kill wait",
+      "note": "measured (T-314): a judged candidate is dominated by the sample wait plus render + kill + post-kill; a tree that never settles no longer pays a replacement window — ADR-0008 E removed it for settled:false samples (that window alone was ≈20s in R23), so what is left is the hook settle plus the same render/kill tail"
+    },
+    "boot_breakdown": {
+      "runs_with_segments": 16,
+      "max_per_segment": {
+        "spawn_ms": null,
+        "sampleWait_ms": null,
+        "settle_ms": null,
+        "readiness_ms": null,
+        "render_ms": null,
+        "kill_ms": null,
+        "postKillWait_ms": null,
+        "scratchCleanup_ms": null
+      },
+      "note": "sampleWaitMs is the sample wait only; since ADR-0008 E the replacement window is opened for an {error} sample alone, and since T-312 the budget judges the FIRST sample while bootToFinalSampleMs records when the settled one arrived (inventory.provisional / inventory.upgraded say which one a run ended on)"
+    }
+  },
+  "cleanup": {
+    "ok": 20,
+    "checked": 20
+  },
+  "failure_shapes": [
+    {
+      "shape": "blocked:probe.install-build-refused",
+      "runs": [
+        "real-dsh-cron"
+      ]
+    },
+    {
+      "shape": "blocked:probe.install-failed-code",
+      "runs": [
+        "synthetic-missing",
+        "synthetic-bogus-version",
+        "synthetic-private-registry"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-inactive(failed)",
+      "runs": [
+        "fixture-apply-fail"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-inactive(none)",
+      "runs": [
+        "fixture-import-fail"
+      ]
+    },
+    {
+      "shape": "blocked:probe.row-missing",
+      "runs": [
+        "fixture-no-row"
+      ]
+    },
+    {
+      "shape": "unknown:probe.tree-not-settled",
+      "runs": [
+        "fixture-slow-overrun"
+      ]
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "checks": [
+      {
+        "id": "min-real-runs",
+        "ok": true,
+        "detail": "13 real run(s), need 10"
+      },
+      {
+        "id": "cleanup-complete",
+        "ok": true,
+        "detail": "20/20 cleaned up"
+      },
+      {
+        "id": "boot-budget",
+        "ok": true,
+        "detail": "12/12 real sampled run(s) within 20000ms"
+      },
+      {
+        "id": "probe-reliability",
+        "ok": true,
+        "detail": "100% produced an artifact, cleaned up and stated a conclusion (need 90%)"
+      },
+      {
+        "id": "failure-shapes",
+        "ok": true,
+        "detail": "6 distinct failure shape(s), need 5"
+      }
+    ]
+  },
+  "limits": [
+    "real plugins are a convenience sample picked by hand from npm search, not a random sample of the ecosystem",
+    "the pass rate says \"this batch of pinned plugins composes on this sandbox runtime\", not \"plugins work\"",
+    "synthetic and fixture failures are labelled and excluded from the pass rate; they only count as shapes",
+    "measured on one machine / one sandbox runtime (0.2.1-rc.4); there is no Linux or macOS probe evidence yet"
+  ]
+}

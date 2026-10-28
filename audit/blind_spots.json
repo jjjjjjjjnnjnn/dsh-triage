@@ -241,6 +241,15 @@
       "mitigation": "对外只说区间（R26 三次真跑 `boot` 步 21.7–28.6s，sample 等待 11.5–22.7s）；预算仍只判 `spawn→sample`（`timings.bootToSampleMs`），墙钟由 `timings.bootSegments` 逐段公开；**不许**把某一次实测的秒数写成产品承诺。要缩小这条缝只能让 hook 自报「我什么时候开始等」（超出 `ADR-0006` 的测量口径，需另开 ADR）",
       "owner": "packages/probe/src/host.ts + docs/specs/M3-probe.md §4",
       "status": "open (R26)"
+    },
+    {
+      "id": "BS-33",
+      "area": "probe/evidence-labels",
+      "cannot_see": "产物里的 `inventory.replacement_waited` 在 R28（T-312 两阶段取样）之后**不再等于**「为一份不可读样本等了替换窗口」：样本循环把「已经拿着样本还要再睡」一律记成 replacement wait，而 T-312 之后唯一的睡前场景还包括**可读的 provisional 样本**（升级等待）。R29 第一批矩阵 20/20 全部写着 `replacement_waited=true` + `replacement_stopped_by=readable-sample` + `upgraded=true`，且 `replacement_waited_ms == upgrade_waited_ms`（`real-status-rotator` 4198/4198）——而 R26 起所有文档都在教读者「`replacement_waited=false` 才说明 E 生效」。这是**读数说错**，不是等待逻辑错：等待、时长、结论都未变",
+      "mitigation": "R29 已修：`waited` 只在样本**不可读**时置 true，替换窗口时长在「读到可读样本那一刻」结算；新增 `replacement_reason`（`unreadable` / `upgrade` / `null`），升级等待只经 `upgrade_waited_ms` 与 `measurementDetail` 的 `upgrade=waited(…)` 暴露。**仍看不到的**：R28 期间产出的产物（`probe-t312-*`）沿用的是旧语义，读它们时 `replacement_waited=true` 不代表 E 失效；R29 批次 A 同理（已在本轮文档标注为「修前语义」）。判据与等待一字未改",
+      "owner": "packages/probe/src/host.ts + scripts/record_probe.mjs",
+      "status": "resolved (R29)",
+      "resolved_by": "R29-S4: host.ts SampleReplacement.reason + waited narrowed to unreadable samples; record_probe.mjs inventory.replacement_reason; exec.ts measurementDetail splits upgrade from replacement; tests/unit/probe-host-sample.test.ts 6/6 (provisional→final must be waited=false + reason=upgrade). Real evidence: data/results/probe-matrix-2026-10-28T09-40-00.000Z.json — 20/20 runs replacement_waited=false, replacement_reason=upgrade, verdicts identical to the pre-fix batch"
     }
   ]
 }

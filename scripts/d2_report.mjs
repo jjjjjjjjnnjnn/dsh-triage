@@ -21,9 +21,13 @@
  *   node scripts/d2_report.mjs
  *   node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-27T20-30-00.000Z.json --stamp 2026-10-27T21:00:00.000Z
  *   node scripts/d2_report.mjs --min-real 12 --min-shapes 6
+ *   node scripts/d2_report.mjs --strict        # automation: a failed gate is exit 1
  *
- * Exit code is 0 whenever the artifact was written: a failing D2 gate is data, not an
- * infrastructure error. Read `gate.passed`.
+ * Exit code is 0 whenever the artifact was written (R18): a failing D2 gate is data, not an
+ * infrastructure error, so the default keeps exit 0 and callers must read `gate.passed`.
+ * R27 proved how easy it is to wire that into CI and silently pass a red D2, so `--strict`
+ * (T-317, R29) is the opt-in for automation: the artifact is still written first (evidence
+ * before exit code), then a failed gate exits 1. Exit 2 stays "bad usage, nothing written".
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -52,6 +56,8 @@ const minReliability = Number(flagValue('--min-reliability', '0.9'))
 const minShapes = Number(flagValue('--min-shapes', '5'))
 const bootBudgetMs = Number(flagValue('--boot-budget-ms', '20000'))
 const asJson = argv.includes('--json')
+/** T-317: automation may judge on the exit code; the artifact is always written first. */
+const strict = argv.includes('--strict')
 for (const [name, value] of [
   ['--min-real', minReal],
   ['--min-reliability', minReliability],
@@ -395,5 +401,9 @@ if (asJson) {
   )
   process.stdout.write(`  shapes      ${failureShapes.length}: ${failureShapes.map((entry) => entry.shape).join(', ')}\n`)
   for (const check of checks) process.stdout.write(`  ${check.ok ? 'PASS' : 'FAIL'}  ${check.id} — ${check.detail}\n`)
-  process.stdout.write(`  gate        ${gatePassed ? 'PASSED' : 'NOT PASSED'}\n`)
+  process.stdout.write(`  gate        ${gatePassed ? 'PASSED' : 'NOT PASSED'}${strict && !gatePassed ? ' · strict → exit 1' : ''}\n`)
 }
+
+// T-317: the artifact and its sha256 are already on disk at this point, so a non-zero exit
+// here can never mean "no evidence was recorded".
+if (strict && !gatePassed) process.exit(1)

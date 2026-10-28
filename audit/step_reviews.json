@@ -3639,6 +3639,177 @@
         "sha256": "a647a8eda50721cc68313bc2bd71e117532da8b4a03e5ac6ba8679fd97946081",
         "outcome": "ALL GREEN · 9 gates（274 测试；146 步 / 130 产物全部被引用）"
       }
+    },
+    {
+      "id": "R29-S1",
+      "batch": "R29",
+      "step": "D2 按 T-312 新口径第一次完整重跑（批次 A）：基线 274 测试 / 9 门 / --mutate 9-9 之后，用 matrix-r19.json 跑 20 个候选，先拿到「预算判第一份样本」下的结论",
+      "changed": [
+        "data/results/probe-matrix-2026-10-28T08-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：矩阵 n=20 / 真实 13 / 12 go + 1 blocked / 清理 20-20 / 失败形状 6 / expectation_misses=0；boot→sample 4.6–9.8s（16/16 在 20s 内）。real-mcp-connector 8.0s（最终 19.5s）→ go，与 R27 的 22.5s 并列记入 BS-32，没有当成「修好了」",
+        "reproducibility": "PASS：一条命令可重放（脚本 + plan 都进 step 的 real_test.command）；矩阵期间没有并行跑测试或构建（R27 的坑）；跑前确认无 pnpm 残留进程",
+        "licence": "PASS：沿用 R19 的 13 个 pin 候选（MIT / 元数据可证），无新增依赖、未 vendor、未读凭据；沙盒在 %TEMP% 下跑完即删",
+        "ssot": "PASS：产物落在 data/results 并带 sha256；本批的 replacement_waited 是「T-312 修前语义」，已在 R29-S4 与 HANDOFF 中标注，没有被当成 E 的证据",
+        "adversary": "反例一：把「两批都过预算」写成「probe 稳定了」——同一候选 R27 是 22.5s、R28 两次 unknown，本轮只写区间。反例二：为了让批次更漂亮换一个更小的 plan——没有，real_starts 仍是 13"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T08:40:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T08-40-00.000Z.json",
+        "sha256": "f52840101782fe7759d0540981640fcf6ba3ad10c57a41cf8a903e0ea651d56a",
+        "outcome": "n=20 · real_starts=13 · go 12 / blocked 1 · cleanup 20/20 · shapes 6 · expectation_misses=0 · boot→sample 4.6–9.8s"
+      }
+    },
+    {
+      "id": "R29-S2",
+      "batch": "R29",
+      "step": "d2_report 用批次 A 复算：把新口径（预算判第一份样本）第一次落成一份可重算判定，检验 R27 的红是口径问题还是能力问题",
+      "changed": [
+        "data/results/d2-2026-10-28T09-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：gate.passed=true；boot-budget 12/12 真实采样 run ≤20s；可靠性 20/20；清理 20/20；失败形状 6；产品数字 12/13（Wilson 0.667–0.986）",
+        "reproducibility": "PASS：报告完全由矩阵产物推出，同一矩阵 + 同一 stamp 可逐字节重放（governance 测试里已有该断言）",
+        "licence": "PASS：报告只读本地产物，无网络、无凭据；limits[] 保留「便利样本 / 单机 / 单运行时」三条限制",
+        "ssot": "PASS：HANDOFF / INDEX / ROADMAP / ADR-0008 四处贴同一份数字（12/12、20/20、12/13）；R27 的红作为旧口径历史保留，没有被覆盖",
+        "adversary": "反例一：看到退出码 0 就说 D2 通过——本步明确只读产物 gate.passed，并在同轮加 --strict（R29-S3）。反例二：把 unknown 折进通过率——fixture-slow-overrun 仍单列"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T08-40-00.000Z.json --stamp 2026-10-28T09:20:00.000Z",
+        "artifact": "data/results/d2-2026-10-28T09-20-00.000Z.json",
+        "sha256": "680d8bcf04a1525d4c20766dfee581e9be9110d1a433571add77566a5a1bb1a0",
+        "outcome": "D2 gate.passed=true · boot-budget 12/12 · reliability 20/20 · pass rate 12/13"
+      }
+    },
+    {
+      "id": "R29-S3",
+      "batch": "R29",
+      "step": "T-317：d2_report 增加 --strict（判定失败 → 产物与 sha256 先落盘再 exit 1），默认行为保持 R18 的决定，并补两条单测",
+      "changed": [
+        "scripts/d2_report.mjs",
+        "tests/governance/d2-report.test.ts",
+        "data/results/d2-2026-10-28T10-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：--strict 只在 gate.passed=false 时 exit 1，且写盘在前；gate 行追加 strict → exit 1；默认模式仍 exit 0。单测 +2（红批次 exit 1 且产物/哈希都在、绿批次 exit 0），10/10 通过",
+        "reproducibility": "PASS：真跑一次 --strict（矩阵 A）写出本步产物，exit 0；单元测试用临时目录 + 合成矩阵，不依赖网络",
+        "licence": "PASS：只改脚本与测试，无新依赖；没有把任何候选数据写进仓库",
+        "ssot": "PASS：T-317 在 BACKLOG 标完成，HANDOFF §3 删掉该待办并在「D2 重跑」块写明 --strict 语义，INDEX 的 D2 行同步",
+        "adversary": "反例一：「--strict 会掩盖产物」——不会，写盘在 exit 之前，单测断言两文件都存在。反例二：「默认模式应该也改」——没有，R18 的「失败也是数据」保留，否则 CI 里无法把红 D2 当成可用证据"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T08-40-00.000Z.json --stamp 2026-10-28T10:00:00.000Z --strict",
+        "artifact": "data/results/d2-2026-10-28T10-00-00.000Z.json",
+        "sha256": "c58c1116dd568b874cbcbb9aea1172e5a7d2c5374e879f0e9e7e40cb5dddbc23",
+        "outcome": "strict 模式 · gate.passed=true · exit 0"
+      }
+    },
+    {
+      "id": "R29-S4",
+      "batch": "R29",
+      "step": "BS-33：修 T-312 之后 replacement_waited 把「升级等待」记成「替换等待」的字段语义（收窄 waited + 新增 replacement_reason），并重跑矩阵验证读数与结论",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-host-sample.test.ts",
+        "data/results/probe-matrix-2026-10-28T09-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：waited 只在样本不可读时置 true，替换窗口时长在读到可读样本那一刻结算；reason=unreadable/upgrade/null；升级等待仍由 upgrade_waited_ms 与 detail 的 upgrade=waited(…) 暴露。判据、等待条件、阈值一字未动；单测 +3 断言，probe-host-sample 6/6",
+        "reproducibility": "PASS：先 pnpm build 再真跑（record_probe 读 dist/），同 plan 重跑得出 20/20 replacement_waited=false + reason=upgrade，结论与修前逐条相同",
+        "licence": "PASS：无新依赖、无新候选；测试用假 launcher，不碰真实 DSH home",
+        "ssot": "PASS：BS-33 写入 blind_spots（resolved）、spec F51 与 §4 字段表、ADR-0008 §T-312 补记、HANDOFF §4 坑表；并明确 R28 的 probe-t312-* 与批次 A 是修前语义",
+        "adversary": "反例一：「改名字就掩盖 E 失效」——两个不可读形状仍 waited=true/unreadable（单测 + T-316 产物）。反例二：删掉批次 A 重跑掩盖——保留 A 作为修前/修后对照。反例三：顺手改 --unsettled-timeout——没有"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T09:40:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T09-40-00.000Z.json",
+        "sha256": "7294c83445ef0c9942d5599f8e70fd24fcbee0ce03cf762f17e11821d43273fe",
+        "outcome": "n=20 · 真实 13 · go 12 / blocked 1 · cleanup 20/20 · boot→sample 4.0–5.5s · 20/20 replacement_waited=false + reason=upgrade"
+      }
+    },
+    {
+      "id": "R29-S5",
+      "batch": "R29",
+      "step": "D2 权威判定：用修后批次 B 跑 d2_report --strict（既验证 T-317 在绿批次上的退出码，也给出本轮当作结论的那份判定）",
+      "changed": [
+        "data/results/d2-2026-10-28T10-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：gate.passed=true、boot-budget 12/12、可靠性 20/20、清理 20/20、形状 6、产品数字 12/13；与批次 A 的判定逐项相同，说明 BS-33 只改读数不改结论",
+        "reproducibility": "PASS：命令与 S2 同形（只换矩阵与 stamp），可重放；--strict 下 exit 0 也被单测钉住",
+        "licence": "PASS：只读本地矩阵产物；limits[] 三条限制原样保留",
+        "ssot": "PASS：HANDOFF §2 的「交接（R29）」行、§3 的 D2 块、INDEX 的 D2 行、ROADMAP §2 的 R29 段、ADR-0008 的补记都指向这两份 d2 产物",
+        "adversary": "反例一：只报批次 B（更好看）而不说批次 A——两批都列。反例二：声称「D2 从此稳定」——BS-32 保持 open 并给出同候选的 8.0 / 22.5 / 23.8s 三组观测"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-28T09-40-00.000Z.json --stamp 2026-10-28T10:20:00.000Z --strict",
+        "artifact": "data/results/d2-2026-10-28T10-20-00.000Z.json",
+        "sha256": "1feea714bd48d073c4b6b33ea06c2e46ce4b51f602484cf5da22e919571aad51",
+        "outcome": "D2 gate.passed=true · boot-budget 12/12 · strict 模式 exit 0"
+      }
+    },
+    {
+      "id": "R29-S6",
+      "batch": "R29",
+      "step": "收口第一步：文档同步（HANDOFF / INDEX / BACKLOG / ROADMAP / spec F51 / ADR-0008 / blind_spots / 审核报告 / AI 披露）后录一次门禁，被 governance 的 index-references 抓到 INDEX 里的裸文件名",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/specs/M3-probe.md",
+        "docs/adr/0008-unsettled-wait.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-28_R29.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "FAIL→PASS 的证据链保留：这一次录制是 2 GATE(S) FAILED（governance 的 index-references + step-review 的 no-orphan-results），原因是 INDEX 的 D2 行把 `probe-matrix-*.json` 写成裸文件名；修成 data/results 全路径后复录见 R29-S7",
+        "reproducibility": "PASS：node scripts/gate.mjs --record --stamp 2026-10-28T11:00:00.000Z 一条命令重放；git status 干净、git log -1 即交接提交",
+        "licence": "PASS：本轮无外部产物入库、无 vendor、未动 quarantine；AI_DISCLOSURE_LOG 追加 R29 一条并写明 SessionID 与未做项",
+        "ssot": "PASS：D2 状态四处一致（HANDOFF / INDEX / ROADMAP / ADR-0008）；BS-33 在 blind_spots 与 spec F51 一致；T-317/T-318 在 BACKLOG 标完成；SIGNOFF 明确本轮无判据/阈值变更",
+        "adversary": "反例一：为了让 step-review 变绿删掉旧产物——没有，R27 的红产物仍在并仍被引用。反例二：把 INDEX 里的裸文件名当路径写——governance 的 index-references 当场抓到并已改成 data/results 全路径"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T11:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T11-00-00.000Z.json",
+        "sha256": "d8777581c2a644e0c89c45c676304f1282e996358292ea8b17b20e5335568534",
+        "outcome": "2 GATE(S) FAILED · 9 gates（governance/index-references：裸文件名；step-review/no-orphan-results：6 份新产物尚未入账）"
+      }
+    },
+    {
+      "id": "R29-S7",
+      "batch": "R29",
+      "step": "收口第二步：修 INDEX 裸文件名、把本轮 6 份产物全部挂进台账、276 测试 / 9 门 / --mutate 9-9 复录，写成 R29 交接",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "docs/specs/M3-probe.md",
+        "docs/adr/0008-unsettled-wait.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-28_R29.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：ALL GREEN · 9 gates（276 测试）；--mutate NEGATIVE CONTROL PASSED · 9/9；138 份产物全部被 153 步引用；R29-S6 的红作为「门抓到真问题」的证据保留，没有删掉那份产物",
+        "reproducibility": "PASS：node scripts/gate.mjs --record --stamp 2026-10-28T11:30:00.000Z 一条命令重放；矩阵解析脚本可重算 12/12、20/20、12/13",
+        "licence": "PASS：无外部产物入库、无 vendor、未动 quarantine 与金标；本轮没读任何凭据（铁律 4 原样），也没改阈值",
+        "ssot": "PASS：D2 状态在 HANDOFF / INDEX / ROADMAP / ADR-0008 四处一致；BS-33 在 blind_spots（resolved）与 spec F51 一致；T-317 / T-318 在 BACKLOG 标完成；SIGNOFF 不用新增条目（无判据/阈值变更）",
+        "adversary": "反例一：删掉 11:00 那份红产物让门变绿——没有，它是「门真的能抓到裸文件名」的唯一证据。反例二：把 153 步/138 产物写成「差不多」——数字由 no-orphan-results 与 ledger 长度核对。反例三：在交接里说 D2 稳定——BS-32 仍 open"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T11:45:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T11-45-00.000Z.json",
+        "sha256": "fc8792e46dbbbf0dcee20895a60148003d4d3b2808fc2b0ce725b50c43069551",
+        "outcome": "ALL GREEN · 9 gates（276 测试；154 步 / 139 产物全部被引用）"
+      }
     }
   ]
 }

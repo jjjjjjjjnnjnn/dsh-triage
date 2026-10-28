@@ -43,6 +43,8 @@
 | 仓库转 public | HUMAN | 不可逆的对外动作（git 历史永久可见） |
 | T-202a 真实会话（读 agent 作用域） | HUMAN 先签 ADR | 与铁律 4（不得读凭据 / 不得向沙盒注入真实凭据）冲突，改宪法必须有明文 ADR |
 | 门禁阈值变更（若有） | HUMAN | 铁律 4：阈值变更需 spec + HUMAN-SIGN |
+| `ADR-0008` §剩余项 B：把 `settle` 上限 15s 压到 10s（A′）/ 8s（A″） | HUMAN | 属判据相邻的阈值变更；R26 已实测代价（`dsh-mcp-connector` 会从 `go` 变 `unknown`），R29 未改任何阈值 |
+| `ADR-0009`：会话作用域读数（要不要破铁律 4） | HUMAN | 与铁律 4 冲突，agent 已自评 A（不做），B 需明文授权 |
 
 ## 记录格式（后续照此追加）
 

@@ -11,6 +11,9 @@
  *   1. `settled: false` converges immediately (no replacement window);
  *   2. an `{error}` sample still opens the window and can catch the replacement sample;
  *   3. an `{error}` that is never replaced waits the whole window out.
+ *
+ * R29 (`BS-33`) adds a fourth property the T-312 tests now pin: waiting for a FINAL sample
+ * after a readable provisional one is an UPGRADE, not a replacement, so `waited` stays false.
  */
 
 import assert from 'node:assert/strict'
@@ -108,6 +111,7 @@ test('ADR-0008 E: a settled:false sample converges without opening a replacement
   // default). 5s window here, so anything near it means the window was opened again.
   assert.equal(result.replacement.waited, false)
   assert.equal(result.replacement.waitedMs, 0)
+  assert.equal(result.replacement.reason, null, 'no wait happened at all, so there is no reason to name')
   assert.equal(result.replacement.stoppedBy, 'readable-sample')
   assert.ok(
     result.segments.sampleWaitMs < 4_000,
@@ -121,6 +125,7 @@ test('ADR-0008 E: an {error} sample still waits for the apply that replaces it',
   assert.equal(isUsableSample(result.payload), true, 'the replacement sample must win')
   assert.equal(result.replacement.waited, true)
   assert.equal(result.replacement.samples, 2)
+  assert.equal(result.replacement.reason, 'unreadable', 'the window opened on an unreadable sample')
   assert.equal(result.replacement.stoppedBy, 'readable-sample')
 })
 
@@ -129,6 +134,7 @@ test('ADR-0008 E: an {error} that is never replaced still waits the whole window
   assert.equal(isUsableSample(result.payload), false)
   assert.equal(isReadableSample(result.payload), false)
   assert.equal(result.replacement.waited, true)
+  assert.equal(result.replacement.reason, 'unreadable')
   assert.equal(result.replacement.stoppedBy, 'unreadable-window')
   assert.ok(result.replacement.waitedMs >= 800, `expected a real wait, got ${result.replacement.waitedMs}ms`)
 })
@@ -152,6 +158,12 @@ test('T-312: a provisional sample opens a bounded upgrade window and the final o
   assert.equal(result.replacement.upgraded, true)
   assert.equal(result.replacement.samples, 2)
   assert.equal(result.replacement.stoppedBy, 'readable-sample')
+  // R29 (`BS-33`): the wait for the FINAL sample is an upgrade, not a replacement. Before this
+  // assertion existed, every T-312 run recorded `replacement_waited: true` — the opposite of
+  // what ADR-0008 E claims, and what the docs taught readers to infer.
+  assert.equal(result.replacement.waited, false, 'a readable provisional sample is an upgrade, not a replacement')
+  assert.equal(result.replacement.reason, 'upgrade')
+  assert.ok(result.replacement.upgradeWaitedMs > 0, 'the upgrade wait is still published, just under its own field')
   // …while the JUDGED number is still the first sample: that is the whole point of T-312.
   assert.ok(result.seconds < 2, `first sample must be the provisional one (got ${result.seconds}s)`)
   assert.ok(result.finalSeconds >= result.seconds, 'the final sample cannot arrive before the first')
@@ -168,6 +180,9 @@ test('T-312: a provisional sample with no upgrade ends unknown rather than waiti
   assert.equal(isUsableSample(result.payload), false)
   assert.equal(result.replacement.upgraded, false)
   assert.equal(result.replacement.stoppedBy, 'upgrade-window')
+  // R29 (`BS-33`): even when the upgrade never arrives, the wait is an upgrade wait.
+  assert.equal(result.replacement.waited, false)
+  assert.equal(result.replacement.reason, 'upgrade')
   assert.ok(result.replacement.upgradeWaitedMs >= 500, `expected a real upgrade wait, got ${result.replacement.upgradeWaitedMs}ms`)
   // The budget still judges the EARLY sample.
   assert.ok(result.seconds < 2, `judged number must be the provisional sample (got ${result.seconds}s)`)

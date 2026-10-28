@@ -190,10 +190,25 @@ export interface BootSampleResult {
 export interface SampleReplacement {
   /** Only an unreadable sample opens the window; `settled: false` does not. */
   readonly policy: 'error-only'
-  /** Did the loop keep running after the first sample landed? */
+  /**
+   * Did the loop wait for a REPLACEMENT, i.e. sleep while holding an unreadable `{error}` sample?
+   *
+   * R29 (`BS-33`): before T-312 this flag was set by any sleep after the first sample, which
+   * meant the T-312 upgrade wait (a provisional sample that is perfectly readable) was recorded
+   * as a replacement wait — every matrix run after R28 read `replacement_waited: true` while
+   * `stoppedBy: 'readable-sample'`. E's whole point is that the two waits are different
+   * decisions, so the flag now means what the docs always claimed: `true` only for `{error}`.
+   */
   readonly waited: boolean
   /** How long it kept running after that first sample (`0` when it did not wait). */
   readonly waitedMs: number
+  /**
+   * Why the loop outlived the first sample, or `null` when it did not.
+   *
+   * `unreadable` = ADR-0008 E's replacement window; `upgrade` = T-312's provisional→final
+   * wait. Before R29 this distinction was only inferable from `stoppedBy` + `upgraded`.
+   */
+  readonly reason: 'unreadable' | 'upgrade' | null
   /** Distinct sample bodies the loop read; `>= 2` means the file was overwritten. */
   readonly samples: number
   /** Which condition ended the loop. */
@@ -350,6 +365,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     let sampleWrittenAtMs: number | null = null
     let sampleReads = 0
     let waitedForReplacement = false
+    /** R29 (`BS-33`): when the run started waiting on an UNREADABLE sample, and how long that lasted. */
+    let replacementWaitStartedAtMs: number | null = null
+    let replacementWaitedMs = 0
     let upgradeStartedAtMs: number | null = null
     let upgraded = false
     let stoppedBy: SampleReplacement['stoppedBy'] = 'timeout'
@@ -370,6 +388,12 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       }
       const readable = isReadableSample(payload)
       const provisional = readable && isProvisionalSample(payload)
+      // R29 (`BS-33`): the replacement window ends the moment a readable sample lands, so its
+      // duration is measured here rather than inferred from the loop's end (the T-312 upgrade
+      // wait can follow it and would otherwise be folded into the same number).
+      if (readable && replacementWaitStartedAtMs !== null && replacementWaitedMs === 0) {
+        replacementWaitedMs = Date.now() - replacementWaitStartedAtMs
+      }
       // T-312: when the provisional sample tells us its own settle budget, wait exactly that long
       // plus a margin — waiting less loses upgrades at the boundary, waiting more buys nothing.
       // A payload without the field (older hook) falls back to the configured window.
@@ -406,9 +430,13 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
         stoppedBy = 'startup-failed'
         break
       }
-      // About to sleep while already holding a sample: that is the replacement wait, in the
-      // only place where it can be observed without arithmetic.
-      if (firstSampleAtMs !== null) waitedForReplacement = true
+      // About to sleep while already holding a sample. R29 (`BS-33`): this is a REPLACEMENT
+      // wait only when that sample was unreadable — E's decision. T-312 also sleeps here, but
+      // on a readable provisional sample, and that wait is reported as `upgradeWaitedMs`.
+      if (firstSampleAtMs !== null && !readable) {
+        if (replacementWaitStartedAtMs === null) replacementWaitStartedAtMs = Date.now()
+        waitedForReplacement = true
+      }
       await new Promise((resolveWait) => setTimeout(resolveWait, 250))
     }
     const collected = payload !== null
@@ -423,7 +451,13 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     const replacement: SampleReplacement = {
       policy: 'error-only',
       waited: waitedForReplacement,
-      waitedMs: waitedForReplacement && firstSampleAtMs !== null ? loopEndedAt - firstSampleAtMs : 0,
+      waitedMs:
+        replacementWaitStartedAtMs === null
+          ? 0
+          : replacementWaitedMs > 0
+            ? replacementWaitedMs
+            : loopEndedAt - replacementWaitStartedAtMs,
+      reason: waitedForReplacement ? 'unreadable' : upgradeStartedAtMs === null ? null : 'upgrade',
       samples: sampleReads,
       stoppedBy,
       upgraded,

@@ -357,3 +357,14 @@
 - 实测：274 测试 / 9 门全绿 / `--mutate` 9/9；146 步 / 130 产物
 - 过程中的真实缺陷：① 第一版升级窗口用固定 15s，`slow-overrun` 的最终样本 15.25s 才写完 → `upgraded` 误记 `false`；改为从样本自报 `settle_timeout_ms` 推 +1s 后修正；② 改 `exec.ts` 时漏了 `ProbeSampleView.provisional` 的三个返回分支，typecheck 抓到并补全
 - 未做：**D2 没有按新口径重跑**（下一位的第一件事）、`T-317`、`T-315` 剩余、`T-401` 的 `client.js`
+
+### 2026-10-28 R29｜D2 按 T-312 新口径重跑两批（`gate.passed=true`）+ `T-317 --strict` + `BS-33` 字段语义修复
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R29-S1…S6）
+- 范围：`packages/probe/src/{host,exec}.ts`、`scripts/{d2_report,record_probe}.mjs`、`tests/{unit/probe-host-sample,governance/d2-report}.test.ts`、`docs/{specs/M3-probe,adr/0008,BACKLOG,HANDOFF,ROADMAP}.md`、`audit/{AUDIT_2026-10-28_R29.md,blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}`、`INDEX.md`
+- 起因：HUMAN 会话内「同意，继续，处理所有问题」，范围按 R28 交接单的阶段 0+1+2；两道待签题（`ADR-0008` §剩余项 B、`ADR-0009`）HUMAN 明确**本轮不签**
+- 结果：① **D2 按新口径重跑两批**（`matrix-r19.json`，先后于 08:40 与 09:40 UTC）：两批都是 n=20 / 真实 13 / 12 `go` + 1 `blocked` / 清理 20-20 / 形状 6 / `expectation_misses=0`，`boot→sample` 4.6–9.8s 与 4.0–5.5s；`d2_report` 两批 `gate.passed=true`、`boot-budget` **12/12**、可靠性 20/20，产品数字 12/13（Wilson 0.667–0.986）。R27 那条红作为旧口径历史**原样保留**。② **`T-317`**：`d2_report --strict`（产物先落盘再 exit 1），单测 +2。③ **`BS-33`（本轮真发现的缺陷）**：T-312 让 `replacement_waited` 把升级等待记成替换等待（第一批 20/20 都是 `true`，`waited_ms == upgrade_waited_ms`），修法是收窄 `waited` 到不可读样本 + 新增 `replacement_reason` + detail 分开写，**判据与等待一字未动**；修后 20/20 `replacement_waited=false` + `reason=upgrade`，结论逐条相同
+- 实测：276 测试 / 9 门全绿 / `--mutate` 9/9；154 步 / 139 产物
+- 过程中的真实缺陷：① 我最初相信「`replacement_waited=false` 才是 E 生效」，直到翻开第一批产物的 20 行才发现它在 T-312 之后恒为 `true`——**读产物还是比读自己的文档可靠**；② 新加的 `--strict` 单测第一条把正则写成 `gate {7}PASSED`，实际输出 8 个空格，测试当场红（改成 `\s+`）
+- 未做：`T-401` 的 `client.js`（下一位的第一件事）、`T-315` 剩余、`BS-29` 剩余面、`ADR-0008` §剩余项 B 与 `ADR-0009` 的签字（HUMAN 未给）

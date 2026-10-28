@@ -8,11 +8,13 @@
  *   2. a batch with too few real runs is REFUSED (gate.passed=false), not averaged;
  *   3. an unclean sandbox fails the gate even when every verdict is go;
  *   4. info reasons are evidence, not failure shapes — counting them inflates the shape count.
+ *   5. `--strict` is the only way to judge D2 from an exit code, and it writes the artifact
+ *      before it exits non-zero (R27 judged a red D2 while the process still exited 0).
  */
 
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -108,6 +110,37 @@ test('a batch with too few real runs is refused instead of averaged', () => {
     const check = report.gate.checks.find((item: { id: string }) => item.id === 'min-real-runs')
     assert.equal(check.ok, false)
     assert.match(check.detail, /need 10/)
+  })
+})
+
+test('--strict turns a failed gate into exit 1, but only after the artifact is written', () => {
+  withTempDir((dir) => {
+    const matrix = {
+      schema_version: 1,
+      produced_by: 'scripts/record_probe_matrix.mjs',
+      generated_at: STAMP,
+      plan: { path: 'tests/fixtures/probe/small.json' },
+      runs: [matrixRun({ label: 'a', real: true, conclusion: 'go' })],
+    }
+    const path = join(dir, 'probe-matrix-2026-10-27T20-00-00.000Z.json')
+    writeFileSync(path, `${JSON.stringify(matrix, null, 2)}\n`, 'utf8')
+    const name = `d2-${STAMP.replaceAll(':', '-')}.json`
+    const result = run(['--matrix', path, '--out', dir, '--stamp', STAMP, '--strict'])
+    assert.equal(result.status, 1, 'automation asked for an exit code, so it gets one')
+    const target = join(dir, name)
+    assert.ok(existsSync(target), 'the evidence is written before the non-zero exit')
+    assert.ok(existsSync(`${target}.sha256`), 'and it is hashed, so the step ledger can cite it')
+    const report = JSON.parse(readFileSync(target, 'utf8'))
+    assert.equal(report.gate.passed, false)
+    assert.match(result.stdout, /strict → exit 1/)
+  })
+})
+
+test('--strict keeps exit 0 for a passing gate, so a green D2 can gate CI', () => {
+  withTempDir((dir) => {
+    const result = run(['--matrix', join(repoRoot, REAL_MATRIX), '--out', dir, '--stamp', STAMP, '--strict'])
+    assert.equal(result.status, 0, result.stderr)
+    assert.match(result.stdout, /gate\s+PASSED/)
   })
 })
 

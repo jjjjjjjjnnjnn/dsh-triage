@@ -62,6 +62,11 @@
 >   - **根因（同一条候选连跑三次的隔离复测）**：`dsh-mcp-connector@0.2.83` 的 `wait_ms` = 10.6 / 16.2 / 18.0s，`boot→sample` = **16.0 / 22.5 / 23.8s** —— 同 pin、同机器、同运行时，两次跨过 20s。**这不是 E 造成的**（`replacement_waited=false`，E 只动样本之后的等待），而是 `boot(≈4–5s) + settle(≤15s)` 的结构与 20s 预算**重叠**（`BS-28` 从「夹具问题」升级为「真实候选问题」，`BS-32` 是它的抖动面）。
 >   - **没有做的事**：没有为了让 D2 变绿去放宽 `boot-budget`、也没有删掉那条 run。三条出路（保 15s / 压到 10s / T-312 两阶段）都要 HUMAN 签，见 `docs/adr/0008` §剩余项。
 >
+> - **R29 按 T-312 新口径重跑：D2 `gate.passed=true`（两批）。** 证据 `data/results/d2-2026-10-28T09-20-00.000Z.json`（批次 A）与 `data/results/d2-2026-10-28T10-20-00.000Z.json`（批次 B，`--strict` exit 0），源矩阵 `probe-matrix-2026-10-28T08-40-00.000Z.json` / `probe-matrix-2026-10-28T09-40-00.000Z.json`：
+>   - 两批都是 n=20 / 真实 13 / 清理 20-20 / 失败形状 6 / `expectation_misses=0`；`boot-budget` **12/12**（`boot→sample` 4.6–9.8s 与 4.0–5.5s）；可靠性 20/20；产品数字仍是真实 **12/13 `go`**（Wilson **0.667–0.986**）。
+>   - **R27 的红不撤销**：那是旧口径（预算判最终样本）下的真实历史，产物原样保留。**`BS-32` 仍 open**：同一 `dsh-mcp-connector@0.2.83` 在 R27 是 22.5s、R28 两次 `unknown`、R29 两批 8.0s / 5.5s（`go`）——本轮只是「这两批没踩线」，不是「稳定了」。
+>   - **D2 的自动化接口**：`scripts/d2_report.mjs --strict`（T-317，R29）在判定失败时 exit 1，且产物与 `.sha256` 先落盘；默认模式仍 exit 0（R18 决定）。
+>
 > **Kill criteria**：D1 与 D2 同时不达标 → 停止投入，把已有引擎作为 `dsh-doctor` 式小工具维护，不追总榜。
 
 ---

@@ -364,6 +364,7 @@ const artifact = {
     replacement_observed: run.sampleReplacement === null ? null : run.sampleReplacement.samples > 1,
     replacement_samples: run.sampleReplacement === null ? null : run.sampleReplacement.samples,
     replacement_policy: run.sampleReplacement === null ? null : run.sampleReplacement.policy,
+    replacement_reason: run.sampleReplacement === null ? null : run.sampleReplacement.reason,
     replacement_stopped_by: run.sampleReplacement === null ? null : run.sampleReplacement.stoppedBy,
   },
   http: run.http === null ? null : { status: run.http.status, detail: redact(run.http.detail) },
