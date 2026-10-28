@@ -222,6 +222,12 @@ node scripts/d2_report.mjs --matrix data/results/probe-matrix-<新 stamp>.json -
 | 用 `os.loadavg()` 证明「机器有载」 | Windows 上它**恒为 0**，于是「有载批」只是标签 | 用 `os.cpus()` 的累计时间差算 `observed_busy_percent`（R37 起矩阵产物自带）；`--load <n>` 的 worker 数也要进产物 |
 | 把「没写出产物的 run」当 `unknown` 统计 | 那是一次**没有判定**的运行，折进 `unknown` 会让分布少一条命、也会让「不可判」看起来像判定 | `stability_report` 起把 `no-artifact` 单列，并按机器条件（`conditions[]`）分组；矩阵摘要也照旧单列 |
 
+| 把「已提交」写成「已收录」 | 两条 PR 只是 **open**：维护者仍可否掉；`merged` 才是收录 | 渠道状态只读 `market-channels-*` 产物的 `submitted[].state`（R38 起 `live` 只统计 OPEN pull） |
+| PR 里混进无关 diff | R38 第一版用 `JSON.stringify` 重排上游 `community.json`，把两处旧格式规范化，一条追加变成 **+16/-4** | 往别人仓里加条目用**文本插入**，并对**将要推送的字节**跑一次它们的校验器；PR 开出后用 `gh pr diff` 复核 diff 规模 |
+| `gh repo fork <repo> --clone=false --remote=false` 什么都不做 | `--remote` 与「给出仓库参数」互斥，gh 只打印用法然后退出；`catch` 里不打印就会白等 | 只用 `--clone=false`，并且**从仓外目录**执行（否则它会改写当前仓的 remote 名） |
+| 轮询 fork 状态永远失败 | `gh api --jq .default_branch` 输出的是**裸文本**（`main`），不是 JSON；`JSON.parse('main')` 抛错并被 catch，就变成「一直没就绪」 | `--jq` 的返回值用 `gh(...).trim()` 读；只有**不带 `--jq`** 的输出才是 JSON |
+| `git push` 报 `Failed to connect to github.com:443 after 21s`，但 `gh` / `Invoke-WebRequest` 都正常 | 这台机器的 443 直连不通，PowerShell/.NET 走系统代理（R38 实测 `127.0.0.1:19828`），而 git 是直连 | `git -c http.proxy=http://127.0.0.1:19828 -c https.proxy=http://127.0.0.1:19828 push`；端口可能变，查 `HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings` 的 `ProxyServer` |
+
 ---
 
 ## 5. 冻结区（改之前必须问 HUMAN）

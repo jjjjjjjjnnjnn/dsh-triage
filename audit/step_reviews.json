@@ -5149,7 +5149,7 @@
     {
       "id": "R38-S21",
       "batch": "R38",
-      "step": "路线图对齐现实：`docs/ROADMAP.md` §3 分发时间线仍写着「W4 提交目录 / W5 提交 hub + dsh.so / W6 发布索引源」，而三件都已发生或卡在具体一处——改成逐条事实（PR #65 / PR #193 待审、raw URL 已发布、dsh.so 等 npm），并保留「没做」的部分",
+      "step": "路线图对齐现实：`docs/ROADMAP.md` §3 分发时间线仍写着「W4 提交目录 / W5 提交 hub + dsh.so / W6 发布索引源」，而三件都已发生或卡在具体一处——改成逐条事实（PR #65 / PR #193 待审、raw URL 已发布、dsh.so 等 npm），并保留「没做」的部分；顺带把本轮真踩的四条环境/流程坑写进 HANDOFF §4 坑表（`JSON.stringify` 重排、`gh repo fork` 的 `--remote` 互斥、`gh api --jq` 输出不是 JSON、git 直连 443 不通要走本机代理）",
       "changed": [
         "docs/ROADMAP.md",
         "docs/HANDOFF.md",
@@ -5157,7 +5157,7 @@
       ],
       "review": {
         "correctness": "PASS：四行都指向真实对象（两条 PR 的编号与 diff、两条索引 URL、registry 404）；没有把「待审」写成「收录」，没有把仓库转 public 写成「已发布 npm」",
-        "reproducibility": "PASS：`node scripts/gate.mjs --record` 一条命令；行内物件都可用 `gh pr view` / `curl` 复核",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record` 一条命令落盘；四条新坑都给了可复制的处置命令（含代理端口怎么查），而不是「注意一下」",
         "licence": "PASS：只改计划文档，无外部数据",
         "ssot": "PASS：与 `data/results/market-channels-2026-10-29T22-40-00.000Z.json` 的 `submitted[]` 一致；计数已按门自己报的 212 步 / 195 产物改正（此前写 193 是因为 S20/S21 各自又添了一份 gates 产物）",
         "adversary": "反例一：把 W4/W5 改成 ✅ 却不写「待审」——路线图是承诺表，待审不等于达成；反例二：把 W6 的 gist 说成唯一下载点（raw 才是首选）；反例三：顺手把 W1 的 npm 发布也标 ✅（registry 仍 404）"
