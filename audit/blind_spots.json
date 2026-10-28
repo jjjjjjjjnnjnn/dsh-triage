@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R33 (2026-10-29)",
+  "stand": "R34 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {

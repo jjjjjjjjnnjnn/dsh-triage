@@ -412,3 +412,13 @@
 - 实测：314 测试 / 9 门全绿 / `--mutate` 9/9 / 173 步 / 157 产物
 - 过程中的真实缺陷：① `record_client_serve` 第一版把 `socket.close()` 写在可见性探测之前，评估永不返回 → 15 分钟静默超时（已修，并给每次 CDP 调用加 20s 超时 + `--verbose` 进度）；② 首启浮层绘制晚于首帧采样，导致浮层没关、后面全点空 → 改成「稳定帧」判定；③ `ctx.baseUrl` 是 profile 目录、`ctx.webServer` 需要 `inject` 且默认导出也带 inject —— 两次都表现为同一个 404，靠自打印的 `host_log` 才定位；④ 第一次 `strictPeerDependencies` 的「对照组」多了一个只有注释的 workspace 文件，实际差了构建策略，作废重做（`BS-36`）
 - 未做：Typert Remote 的客户端生成链（`T-320`，当前不做）、`BS-32` 的有载对照、`BS-29` 剩余面、M4-b 分发件
+
+### 2026-10-29 R34｜M4-b 徽章交付（T-402）+ format-1 索引源取证（T-403）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R34-S1…S2）
+- 范围：`packages/plugin/src/{badge,cli}.ts`、`scripts/record_badge.mjs`、`tests/unit/badge.test.ts`、`docs/{HANDOFF,BACKLOG,specs/M4-surface,ROADMAP}.md`、`INDEX.md`、`audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 起因：HUMAN「不管 HUMAN 事项，继续」
+- 结果：① 徽章 `dsh-triage badge <pkg[@ver]>` 交付（只读 SSOT、无测量即 `not measured`、不做分数、确定性渲染、8 条单测、真机两例产物）。② format-1 索引源**只取证不实现**：实读上游校验器得到完整规则 + 两条实现约束，写进 spec。③ 又踩一次 stamp 覆盖（R27 的 gates 产物），已恢复并换 stamp 重录。
+- 实测：322 测试 / 9 门全绿 / `--mutate` 9/9 / 176 步 / 160 产物
+- 未做：T-403 生成器实现、`BS-32` 有载对照、`BS-29` 剩余面、`T-320`（Typert 客户端生成链，当前不做）

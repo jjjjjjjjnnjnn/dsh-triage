@@ -12,7 +12,8 @@
  * Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { homedir, tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -60,6 +61,7 @@ import {
   redactedEnv,
   redactedVerdicts,
 } from './audit-data.js'
+import { renderBadge, summarizeEvidence, type ProbeRecord } from './badge.js'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
 import {
   candidatePackageName,
@@ -105,8 +107,10 @@ interface Flags {
   readonly browser: string | null
   /** `serve --port <n>`: 0 picks a free port. */
   readonly port: number | null
-  /** `serve --results <dir>`: where the panel reads artifacts from. */
+  /** `serve --results <dir>`, `badge --results <dir>`: where the panel/command reads artifacts from. */
   readonly results: string | null
+  /** `badge --out <file>`: write the SVG to a file instead of stdout. */
+  readonly out: string | null
   /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
   readonly allowExecute: boolean
   /** `serve --audit`: expose `GET /api/audit` (read-only; off by default, and 501 when off). */
@@ -139,6 +143,7 @@ Usage
   dsh-triage audit                   capability ledger of the installed set
   dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)
   dsh-triage serve                   open a read-only local evidence panel (127.0.0.1)
+  dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -158,7 +163,8 @@ Flags
   --unsettled-timeout <ms>  (probe --execute) readiness window while the tree is still composing (default 20000)
   --copy-profile <name> (probe) measure inside a copy of this profile's declarations (T-304)
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
-  --results <dir>       (serve) directory of evidence to display (default: ./data/results)
+  --results <dir>       (serve, badge) directory of evidence to read (default: ./data/results)
+  --out <file>          (badge) write the SVG here instead of stdout
   --allow-execute       (serve) enable actions; without it the panel is read-only
   --audit               (serve) expose GET /api/audit (current composition, same engine as the CLI)
   --help                this text
@@ -188,6 +194,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandCheck(flags, positionals[0])
     case 'probe':
       return commandProbe(flags, positionals[0])
+    case 'badge':
+      return commandBadge(flags, positionals[0])
     case 'serve':
       return commandServe(flags)
     default:
@@ -198,8 +206,73 @@ async function run(argv: readonly string[]): Promise<number> {
 
 /* ------------------------------- commands ------------------------------- */
 
-async function commandEnv(flags: Flags): Promise<number> {
-  const env = await requireEnv(flags)
+/** Split `name@version`, keeping scoped names (`@scope/name@1.2.3`) intact. */
+function splitSubject(subject: string): { name: string; version: string | null } {
+  const at = subject.lastIndexOf('@')
+  if (at <= 0) return { name: subject, version: null }
+  return { name: subject.slice(0, at), version: subject.slice(at + 1) }
+}
+
+/**
+ * `badge <pkg[@ver]>`: render what the recorded evidence already says (T-402).
+ *
+ * Reads only `probe-*.json` artifacts from the evidence directory — never the network, never the
+ * registry — so a badge cannot claim something no run measured. `not measured` is a first-class
+ * answer: an author with no evidence gets a grey badge and a pointer to `dsh-triage probe`.
+ */
+async function commandBadge(flags: Flags, subject: string | undefined): Promise<number> {
+  if (subject === undefined) {
+    process.stderr.write('usage: dsh-triage badge <pkg[@version]> [--results <dir>] [--out <file>] [--json]\n')
+    return EXIT_USAGE
+  }
+  const { name, version } = splitSubject(subject)
+  const resultsDir = flags.results === null ? resolve('data', 'results') : resolve(flags.results)
+  const records: { artifact: string; payload: ProbeRecord }[] = []
+  let entries: string[] = []
+  try {
+    entries = readdirSync(resultsDir)
+  } catch {
+    process.stderr.write(`no evidence directory at ${resultsDir}\n`)
+    return EXIT_UNAVAILABLE
+  }
+  for (const entry of entries) {
+    if (!entry.startsWith('probe-') || !entry.endsWith('.json')) continue
+    try {
+      const payload = JSON.parse(readFileSync(join(resultsDir, entry), 'utf8')) as ProbeRecord
+      // `--version` narrows the choice; without it the newest usable run wins.
+      if (version !== null) {
+        const resolvedVersion = payload.candidate?.resolved?.version
+        if (typeof resolvedVersion === 'string' && resolvedVersion !== version) continue
+        if (typeof resolvedVersion !== 'string') continue
+      }
+      records.push({ artifact: entry, payload })
+    } catch {
+      // A half-written artifact must not break the badge; it simply contributes no evidence.
+    }
+  }
+  const evidence = summarizeEvidence(name, records)
+  const svg = renderBadge(evidence)
+  if (flags.json) {
+    writeJson({
+      schema_version: 1,
+      command: 'badge',
+      subject: { name, version },
+      evidence,
+      svg_sha256: createHash('sha256').update(svg).digest('hex'),
+      svg,
+    })
+    return EXIT_OK
+  }
+  if (flags.out !== null) {
+    writeFileSync(flags.out, svg, 'utf8')
+    process.stdout.write(`wrote ${flags.out} (${evidence.conclusion ?? 'not measured'})\n`)
+    return EXIT_OK
+  }
+  process.stdout.write(svg)
+  return EXIT_OK
+}
+
+async function commandEnv(flags: Flags): Promise<number> {  const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
   if (flags.json) {
     writeJson({ schema_version: 1, env: safeEnv(flags, env) })
@@ -914,6 +987,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let browser: string | null = null
   let port: number | null = null
   let results: string | null = null
+  let out: string | null = null
   let allowExecute = false
   let audit = false
   let readinessTimeoutMs: number | null = null
@@ -1012,6 +1086,12 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         results = value
         break
       }
+      case '--out': {
+        const value = takeValue()
+        if (value === null) return null
+        out = value
+        break
+      }
       case '--allow-execute':
         allowExecute = true
         break
@@ -1051,7 +1131,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

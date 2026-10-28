@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R33 (2026-10-29)",
+  "stand": "R34 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -4287,6 +4287,56 @@
         "artifact": "data/results/gates-2026-10-29T02-00-00.000Z.json",
         "sha256": "94a0e74d0910041ce2cee70a9596ba5e32d439a519e74bbdd667599f6a29e9f8",
         "outcome": "ALL GREEN · 9 gates（314 测试；174 步 / 158 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R34-S1",
+      "batch": "R34",
+      "step": "M4-b 徽章（T-402）：`dsh-triage badge <pkg[@ver]>` 只读 `probe-*` 产物渲染 shields 风格 SVG，8 条单测 + 真机两例（有测量 / 无测量）",
+      "changed": [
+        "packages/plugin/src/badge.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/badge.test.ts",
+        "scripts/record_badge.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：结论只来自记录过的那次运行（`conclusion` / `runtime.version` / `timings.bootToSampleMs` / `generated_at`），徽章右侧写「结论 · dsh 版本」，`<title>` 写包名@版本、`boot→sample`、采样时间与产物名；**没有证据时渲染 `not measured`**（`data/results/badge-2026-10-29T02-30-00.000Z.json` 两例都按预期：`go` 与 `null`）。单测 8 条覆盖「诊断样本不计入」「较新的一次胜出」「别的包不串味」「非 go/blocked/unknown 不当作结论」「转义」「同输入同字节」",
+        "reproducibility": "PASS：`node scripts/record_badge.mjs --stamp <iso>` 一条命令重放两例；SVG 是纯函数 + 固定字宽表，无 `Date.now()`、无随机、无宿主字体度量，产物带 `svg_sha256` 可逐字节比对",
+        "licence": "PASS：只读本仓产物，不联网、不读 registry、不引用第三方数据；**未使用 dsh.so 数据，因此本产物不需要 CC BY 4.0 署名**（将来接入其信号时必须在徽章上署名）",
+        "ssot": "PASS：产物由脚本产出（produced_by/generated_at/schema_version + .sha256），`cases[]` 里同时记 `expected_conclusion` 与 `evidence`，判据可复算；徽章不新增任何判据，只复述已有结论",
+        "adversary": "反例一：给「质量」打分——没有，本项目对质量没有证据，打分就是不可证伪的背书（严禁行为 2）。反例二：拿 `--hook-config` 的诊断样本当真实通过——单测钉死该样本被排除（R26 规则）。反例三：把 `unknown` 渲染成绿色的「没问题」——`unknown` 是琥珀色且文字就是 `unknown`。反例四：把版本号写死成「latest」——徽章只用产物里 `candidate.resolved.version`，没有就留空"
+      },
+      "real_test": {
+        "command": "node scripts/record_badge.mjs --stamp 2026-10-29T02:30:00.000Z",
+        "artifact": "data/results/badge-2026-10-29T02-30-00.000Z.json",
+        "sha256": "d955895831d17e791b3b5eda71c8cc35775c46d1a2e6ba1191e95d7ee670738b",
+        "outcome": "measured:passed（dsh-status-rotator → go · dsh 0.2.1-rc.4）· not-measured:passed（not measured）"
+      }
+    },
+    {
+      "id": "R34-S2",
+      "batch": "R34",
+      "step": "M4-b 索引源（T-403）取证 + 文档同步 + 全链复跑：实读上游格式 1 校验器，把必填字段与两条实现约束写进 spec；HANDOFF/INDEX/BACKLOG 追到 R34",
+      "changed": [
+        "docs/specs/M4-surface.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：格式事实来自**实读** `@deepseek-ai/dsh-plugin-market-index@0.2.1-rc.4/lib/index.js`（不是转载 Agent Note）：`format===1`、`title` 对象必含 `en`、`plugins[].name` 唯一、`versions` 非空且版本唯一、`publishTimestamp` 是**整数 Unix 秒**、`source` npm/git 二选一、`engines.dsh` 不得是 `workspace:`、未声明的 metadata id 直接失败、未定义成员被丢弃。**没有实现生成器**，T-403 标 🟨 并写明实现前置",
+        "reproducibility": "PASS：取证命令可重放（读沙盒里的校验器文件）；`node scripts/gate.mjs --record --stamp 2026-10-29T03:40:00.000Z` 一条命令复跑 9 门并落盘",
+        "licence": "PASS：只读上游 MIT 包的**代码行为**并用自己的话写下规则，未复制源码；文档同步不引入外部数据",
+        "ssot": "PASS：`no-orphan-results` 报全部产物被引用；T-403 的状态（🟨 取证完成、未实现）与 `docs/specs/M4-surface.md` §7.2、HANDOFF §3 三处一致",
+        "adversary": "反例一：按「Market Index format」的名字凭印象写字段——没有，逐条从校验器读。反例二：把 `newest_published_at` 当某个具体版本的发布时间——spec 里明确禁止，因为校验器要的是**逐版本**时间戳。反例三：把 verdict 塞进 metadata 当作索引的差异化——校验器会静默丢弃未定义成员，所以差异化只能是筛选"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T03:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T03-40-00.000Z.json",
+        "sha256": "fc97d1d89be6a213d2bd1ff5bac8e2ec90e73476827acc02dad2822431c12329",
+        "outcome": "门禁复跑产物（本步新增 badge 产物后，step-review 会先红一次，补齐台账后转绿）"
       }
     }
   ]

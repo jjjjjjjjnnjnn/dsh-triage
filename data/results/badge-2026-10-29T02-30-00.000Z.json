@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_badge.mjs",
+  "generated_at": "2026-10-29T02:30:00.000Z",
+  "label": "badge",
+  "outcome": {
+    "cases": 2,
+    "passed": 2
+  },
+  "evidence_dir": "data/results",
+  "cases": [
+    {
+      "id": "measured",
+      "subject": "dsh-status-rotator",
+      "status": "passed",
+      "expected_conclusion": "go",
+      "evidence": {
+        "package": "dsh-status-rotator",
+        "version": "0.38.0",
+        "conclusion": "go",
+        "dsh": "0.2.1-rc.4",
+        "bootToSampleMs": 11500,
+        "sampledAt": "2026-10-28T22:50:00.000Z",
+        "artifact": "probe-adr0008e-real-2026-10-28T22-50-00.000Z.json"
+      },
+      "svg_sha256": "2c9069792ea2c4ab0ea87bd10ae298062fabbbc25b17eb7061c6824a718f9936",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"195\" height=\"20\" role=\"img\" aria-label=\"triage: go · dsh 0.2.1-rc.4\">\n  <title>dsh-triage: dsh-status-rotator@0.38.0 → go on dsh 0.2.1-rc.4, boot→sample 11.5s, sampled 2026-10-28T22:50:00.000Z (probe-adr0008e-real-2026-10-28T22-50-00.000Z.json)</title>\n  <linearGradient id=\"s\" x2=\"0\" y2=\"100%\"><stop offset=\"0\" stop-color=\"#bbb\" stop-opacity=\".1\"/><stop offset=\"1\" stop-opacity=\".1\"/></linearGradient>\n  <clipPath id=\"r\"><rect width=\"195\" height=\"20\" rx=\"3\" fill=\"#fff\"/></clipPath>\n  <g clip-path=\"url(#r)\">\n    <rect width=\"57\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"57\" width=\"138\" height=\"20\" fill=\"#2ea44f\"/>\n    <rect width=\"195\" height=\"20\" fill=\"url(#s)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\" font-family=\"Verdana,DejaVu Sans,sans-serif\" font-size=\"11\">\n    <text x=\"29\" y=\"15\">triage</text>\n    <text x=\"126\" y=\"15\">go · dsh 0.2.1-rc.4</text>\n  </g>\n</svg>\n",
+      "stderr": null
+    },
+    {
+      "id": "not-measured",
+      "subject": "triage-no-such-package",
+      "status": "passed",
+      "expected_conclusion": null,
+      "evidence": {
+        "package": "triage-no-such-package",
+        "version": null,
+        "conclusion": null,
+        "dsh": null,
+        "bootToSampleMs": null,
+        "sampledAt": null,
+        "artifact": null
+      },
+      "svg_sha256": "5b1e7c67be7cda3fb0ef22b69a6edd45b0dc07b6bd8137522066c0d0c6ce45fd",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"151\" height=\"20\" role=\"img\" aria-label=\"triage: not measured\">\n  <title>dsh-triage: no usable measurement for triage-no-such-package (not measured)</title>\n  <linearGradient id=\"s\" x2=\"0\" y2=\"100%\"><stop offset=\"0\" stop-color=\"#bbb\" stop-opacity=\".1\"/><stop offset=\"1\" stop-opacity=\".1\"/></linearGradient>\n  <clipPath id=\"r\"><rect width=\"151\" height=\"20\" rx=\"3\" fill=\"#fff\"/></clipPath>\n  <g clip-path=\"url(#r)\">\n    <rect width=\"57\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"57\" width=\"94\" height=\"20\" fill=\"#6e7781\"/>\n    <rect width=\"151\" height=\"20\" fill=\"url(#s)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\" font-family=\"Verdana,DejaVu Sans,sans-serif\" font-size=\"11\">\n    <text x=\"29\" y=\"15\">triage</text>\n    <text x=\"104\" y=\"15\">not measured</text>\n  </g>\n</svg>\n",
+      "stderr": null
+    }
+  ],
+  "limits": [
+    "a badge restates a RECORDED run: it reads probe-* artifacts only, never the registry and never the network",
+    "runs recorded through a diagnostic hook (sandbox.hook_config) are excluded, so a hook experiment cannot become a public claim",
+    "the badge names the dsh version it was measured against; it is not portable to another runtime",
+    "no measurement renders \"not measured\" — there is no fallback to \"probably fine\""
+  ]
+}

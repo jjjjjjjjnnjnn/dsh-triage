@@ -165,3 +165,41 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 | 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
 | 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | ✅ **R30 写 / R31 真机注册 / R33 收口**：`client.js` + `dsh.client` + 契约单测；真机六步全绿；**R33 补上剩下两件** —— `visible`（设置页里真的渲染出 tab）+ `same-source`（tab 与 CLI 在同一 profile 上数字一致，`ADR-0010` 选了同源只读路由而不是 Typert Remote），两条负对照各一份产物 |
 | 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |
+
+---
+
+## 7. 徽章与格式索引（M4-b）
+
+### 7.1 徽章 `dsh-triage badge <pkg[@ver]>`（T-402，R34 完成）
+
+**一句话**：把**已经记录过的那次运行**写成 shields 风格 SVG，可供作者放进 README。
+
+| 项 | 实现 |
+|---|---|
+| 数据源 | 只读 `--results <dir>` 里的 `probe-*.json`；**不联网、不读 registry、不跑 probe** |
+| 排除项 | `sandbox.hook_config` 非空的诊断产物不计入（R26 规则：诊断样本不得进通过率） |
+| 文案 | 左 `triage`，右 `go · dsh 0.2.1-rc.4`（结论 + 实测运行时）；**没有测量** → `not measured`（灰） |
+| tooltip | `<title>` 带包名@版本、结论、`boot→sample`、采样时间、产物文件名——徽章是指向证据的指针，不是结论的摘要 |
+| 确定性 | 纯函数 + 固定字宽表；同一输入同一字节（产物可哈希） |
+| 关闭面 | `--json` 给出 `evidence` 与 `svg_sha256`；`--out <file>` 落盘 |
+
+**为什么不做「分数」**：本项目对「质量」没有证据，只有「在这台机器/这版 dsh 上到了什么结论」。分数会变成不可证伪的背书（铁律 1、严禁行为 2）。
+
+**产物**：`data/results/badge-2026-10-29T02-30-00.000Z.json`（两例：`dsh-status-rotator` = `go`；不存在的包 = `not measured`），单测 `tests/unit/badge.test.ts`（8 条）。
+
+### 7.2 格式 1 索引源（T-403，R34 只做取证，未实现）
+
+**取证方式**：实读上游校验器 `@deepseek-ai/dsh-plugin-market-index@0.2.1-rc.4`（`lib/index.js`），不按 Agent Note 转载复述。
+
+| 规则 | 事实（校验器行为） |
+|---|---|
+| 顶层 | `format` 必须 `=== 1`；`title` 必填（字符串或 `{en:…, zh:…}`，**对象必须含 `en`**）；`description` 可选；`plugins` 必须是数组且**名字不重复** |
+| 插件 | `name` 必须是合法 npm 名；`title`/`description` 可本地化；`icon` 必须是 `https:` URL、与索引同源的相对引用，或 ≤32 KiB 的 base64 `data:`；`author`/`homepage`/`repository` 可选 |
+| 版本 | `versions` 非空、版本号**不重复**、必须是精确 SemVer；`publishTimestamp` 必填 = **整数 Unix 秒** `[0, 10^11)`；`source` 必填：npm（可选 `registry`）或 git（40 位小写 commit + 可选 `path`）；`engines.dsh` 若是字符串必须是合法 SemVer range 且**不得是 `workspace:`** |
+| metadata | `categories` / `labels` / `sortKeys` 先声明才能被引用；`plugins[].metadata` 里未声明的 id 直接失败；`keywords` 是字符串数组 |
+| 解析副作用 | 未定义成员**被丢弃**；`versions` 按 SemVer **降序**重排；相对 `icon` 解析成绝对 URL |
+
+**由此确定的两条实现约束**（写在这里，避免下一轮重新踩）：
+
+1. **`publishTimestamp` 必须逐版本**，而本仓现有 `registry-*.json` 只有 `newest_published_at`（整包一条）——生成器要么联网取 packument 的 `time` 字段（`scripts/record_registry.mjs` 已有取数路径），要么只收录「有逐版本时间戳」的条目；**不许**拿 `newest_published_at` 冒充某个具体版本的时间。
+2. **索引格式里没有「结论」字段**，任何把 verdict 塞进 metadata 的做法在校验器里会被**静默丢弃**。所以索引源的差异化只能是**筛选**（只列出实测 `go` 且 `engines.dsh` 覆盖当前运行时的版本），不是「给插件打分」。
