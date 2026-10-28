@@ -5052,6 +5052,29 @@
         "sha256": "44f9c84ef95dda1bdd35cdf67d3169179bcdc0e427e28d8043a58607379d5954",
         "outcome": "ALL GREEN · 9 gates（350 测试；206 步 / 189 产物全部被引用）"
       }
+    },
+    {
+      "id": "R38-S17",
+      "batch": "R38",
+      "step": "归档历史批次行：把 `docs/HANDOFF.md` §2 里 R14–R28 的 17 行批次叙述**逐行原文**搬到 `_archive/2026-10-29_HANDOFF-batch-rows-R14-R28.md`，入口文档留指针 + 最近十轮 + 常设行 + 证据指针，并按「只进不出」登记 ARCHIVE_MANIFEST",
+      "changed": [
+        "docs/HANDOFF.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "_archive/2026-10-29_HANDOFF-batch-rows-R14-R28.md"
+      ],
+      "review": {
+        "correctness": "PASS：搬移是逐行切片（脚本按锚点行取范围），归档文件里的 17 行与原文逐字相同；入口文档仍保留 §1 五分钟检查、§3 第一件事、§4 坑表、§5 冻结区、§8 未解除项——`governance` 的 `handoff-sections`/`handoff-command` 仍绿",
+        "reproducibility": "PASS：一条命令按锚点行重放；`doc-stand` 要求的三份入口文档 stands 一致（R38），`step-review` 189→190 产物全部被引用",
+        "licence": "PASS：只在仓内移动文档，不涉及第三方内容；归档登记在 `_archive/ARCHIVE_MANIFEST.md`（规则 7「只进不出」）",
+        "ssot": "PASS：证据指针（`证据（R15–R29）`、`审核报告`）**没有搬**——它们指向的 `data/results/*.json` 一份未动；归档文件头部写明「逐行原文、未改一字」与搬移理由，可被审计",
+        "adversary": "反例一：顺手把老行的数字「更新成现在」——那是篡改历史（老行记录的是当时的真值，例如 R27 的 22.5s 就是旧口径的真实见证）；反例二：连证据指针一起搬走——查产物的人会多一跳；反例三：直接删掉老行——「只进不出」禁止，所以是 `git mv` 语义的搬移 + 登记"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T21:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T21-30-00.000Z.json",
+        "sha256": "9bf1be6cf1571707279ce3d1fa3c6a28650cb015d090ec292ac058c5c8c462ed",
+        "outcome": "ALL GREEN · 9 gates（350 测试；208 步 / 191 产物全部被引用）"
+      }
     }
   ]
 }
