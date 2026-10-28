@@ -158,7 +158,12 @@ await withPanel(
     check(
       'audit-enabled',
       response.status === 200 && payload?.command === 'audit' && Array.isArray(verdicts),
-      `GET /api/audit → ${response.status}, ${verdicts.length} row + ${inventoryVerdicts.length} inventory verdict(s)`,
+      `GET /api/audit → ${response.status}, ${verdicts.length} row + ${inventoryVerdicts.length} inventory verdict(s), ${response.headers.get('x-triage-audit-ms') ?? '?'}ms`,
+    )
+    check(
+      'audit-timed',
+      /^\d+$/.test(response.headers.get('x-triage-audit-ms') ?? ''),
+      `x-triage-audit-ms=${response.headers.get('x-triage-audit-ms') ?? 'missing'} (a scan that costs real time must say so)`,
     )
     check(
       'audit-redacted',

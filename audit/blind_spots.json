@@ -209,6 +209,14 @@
       "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`），夹具耗时照旧单列在 `timing.fixtures_over_budget`；真实候选仍是 100% 必需（没有放宽到 90%）。**仍未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺——要改默认值属于阈值变更，需 ADR + HUMAN 签（T-311）",
       "owner": "scripts/d2_report.mjs + packages/probe/src/host.ts",
       "status": "partially mitigated (R19)"
+    },
+    {
+      "id": "BS-29",
+      "area": "probe/credentials",
+      "cannot_see": "R20 只堵住了一条凭据继承路径（npm 的 user config = `~/.npmrc`）。pnpm 还可能读 `~/.pnpmrc`、`PNPM_HOME`、系统级 npmrc（`%ProgramData%\\npm\\etc\\npmrc`）、`corepack` 配置与环境里的代理凭证。**本轮没有逐一验证**，所以不能说「沙盒里绝不会有凭据」",
+      "mitigation": "对外口径只能是「user config 不继承（R20 实测 2/2）；其余来源未审计」。补全路径：T-313 逐个来源做黑盒对照（造一条会打印 auth 的失败安装，逐一关闭来源，看 `registry_auth_used` 何时变 false）",
+      "owner": "packages/probe/src/host.ts + docs/adr/0004",
+      "status": "open (R20)"
     }
   ]
 }

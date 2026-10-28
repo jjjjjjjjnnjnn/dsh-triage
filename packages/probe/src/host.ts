@@ -381,6 +381,39 @@ export interface InstallResult {
   readonly endpoints?: readonly string[]
   /** The package manager's own reason, when it said one (T-310). */
   readonly diagnosis: InstallDiagnosis
+  /**
+   * Did pnpm report sending an authorization header? (R20)
+   *
+   * WHY THIS IS A FIELD AND NOT A COMMENT: the sandbox inherits `$HOME`, so pnpm reads the
+   * operator's `~/.npmrc` and — measured 2/2 with a 404 — sends their token to the registry.
+   * {@link sandboxNpmEnv} redirects the user config into the sandbox, and this flag makes the
+   * fix visible in every artifact instead of being a claim in a doc.
+   */
+  readonly authUsed: boolean
+}
+
+/**
+ * Environment for a child that may run pnpm, with the operator's npm user config redirected.
+ *
+ * WHY: `scrubbedEnv` drops secret-looking env vars, but credentials also live in `~/.npmrc`,
+ * which pnpm reads on its own. Measured in R20: a failing install printed
+ * `An authorization header was used: Bearer npm_[hidden]` until `npm_config_userconfig`
+ * pointed at an empty file inside the sandbox. We do not read that file (铁律 4) — we simply
+ * stop inheriting it.
+ *
+ * The PROFILE's own `.npmrc` is untouched, so T-305b (a profile-level registry that must be
+ * unreachable) still works: pnpm reads project config separately from user config.
+ */
+export function sandboxNpmEnv(env: NodeJS.ProcessEnv, dshHome: string): NodeJS.ProcessEnv {
+  const userconfig = join(dshHome, 'probe-user-npmrc')
+  try {
+    if (!existsSync(userconfig)) writeFileSync(userconfig, '', 'utf8')
+  } catch {
+    // If the sandbox cannot take the file, the env still points at a path that will not
+    // resolve — pnpm then behaves as "no user config", which is the safe side of this.
+  }
+  // Both spellings on purpose: pnpm reads the lower-case one, npm-compatible tools the upper.
+  return { ...env, npm_config_userconfig: userconfig, NPM_CONFIG_USERCONFIG: userconfig }
 }
 
 /**
@@ -527,7 +560,8 @@ export function runInstall(input: {
 }): InstallResult {
   const argv = [input.dshMain, 'plugin', '--profile', input.profile, 'add', input.candidate]
   const run = spawnSync(process.execPath, argv, {
-    env: input.env,
+    // R20: the operator's `~/.npmrc` must not travel into the sandbox (see `sandboxNpmEnv`).
+    env: sandboxNpmEnv(input.env, input.dshHome),
     encoding: 'utf8',
     timeout: input.timeoutMs,
     killSignal: 'SIGKILL',
@@ -543,6 +577,7 @@ export function runInstall(input: {
     // make a healthy run look like a failed one.
     diagnosis:
       run.status === 0 ? { code: null, key_line: null, source: 'none' } : installDiagnosis(text),
+    authUsed: /authorization header was used/i.test(text),
   }
 }
 

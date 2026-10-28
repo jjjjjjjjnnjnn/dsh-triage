@@ -261,3 +261,14 @@
 - 实测：236 测试 / 9 门全绿 / --mutate 9/9；矩阵 20 次运行（两版重采，旧版提交前删除）；serve 冒烟 13/13
 - 过程中的真实缺陷（本轮自己抓到，均在提交前修）：诊断日志只有 67 字节（假设错误，改为 launcher 优先）；key_line 只取码行（改找解释行）；把 dsh: 行当原因（加过滤）；成功安装也留「诊断」（exit 0 归零）
 - 未做：T-303 / T-202a（需 ADR + HUMAN 签）、T-304（profile 副本，下一轮）、T-401（R20 契约 spike）、默认 --unsettled-timeout 的调整（T-311）
+
+### 2026-10-28 R20｜沙盒凭据不继承 + 面板耗时可见 + ADR-0006（proposed）+ T-304 前置取证
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未派 subagent；四轴与对抗性由同一会话自查，audit/step_reviews.json R20-S1…S3）
+- 范围：`packages/probe/src/{host,exec,index}.ts`、`packages/plugin/src/serve.ts`、`scripts/{record_probe.mjs,record_serve_smoke.mjs}`、`tests/unit/{probe-exec,serve}.test.ts`、`docs/{adr/0004-external-candidate-boundary.md,adr/0006-probe-budget-promise.md（新）,specs/M3-probe.md,specs/M4-surface.md,HANDOFF.md,BACKLOG.md}`、`INDEX.md`、`AGENTS.md`、`audit/{blind_spots.json（BS-29）,AUDIT_2026-10-28_R20.md（新）,step_reviews.json}`、`data/results/{serve-smoke-2026-10-28T14-10-00.000Z.json,probe-no-credential-leak-2026-10-28T14-30-00.000Z.json,gates-2026-10-28T15-00-00.000Z.json}`
+- 起因：HUMAN 指令「处理发现的问题，继续」——处理 R19 审核报告留下的两项（面板 audit 路由未计时、预算口径），并在取证中发现更严重的凭据继承
+- 结果：① **安全**：pnpm 自己读 `~/.npmrc`，探针沙盒把操作者 token 发给 registry（黑盒对照 2/2：默认 `authHeaderUsed=true`，空 userconfig `false`）；`sandboxNpmEnv()` 把 `npm_config_userconfig` 指向沙盒内空文件，产物新增 `install.registry_auth_used=false`。② **可观测**：`/api/audit` 响应头 `x-triage-audit-ms`（真机 376–690ms、夹具 18ms）。③ **ADR-0006（proposed，未实现）**：20s 的真实约束是 hook 的 15s settle 上限，不是 readiness 窗口；四选项待 HUMAN 勾选。④ **T-304 取证 F38–F40**：复制声明即可启动 / 带依赖需先 `plugin install` / `link:` 目标不存在也 exit 0（假成功）。
+- 实测：239 测试 / 9 门全绿 / `--mutate` 9/9；serve 冒烟 14/14；真机 1 次无凭据安装
+- 过程中的真实缺陷（本轮自己抓到）：把「清了环境变量」当成「没有凭据」；INDEX 里写路由又让 `index-references` 红（第三次踩同一坑，已写进坑表）
+- 未做：T-304 实现（只取证）、ADR-0006 的任何阈值改动（proposed）、`BS-29` 的其余凭据来源（T-313）、T-401

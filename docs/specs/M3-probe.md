@@ -79,6 +79,7 @@
 | F34 | **诊断日志比 launcher 的 stderr 更没用**：`dsh: plugin command failed; diagnostics: <profile>/.plugin-manager/logs/operation-*/pnpm.log` 指向的那个文件**只有 67 字节**——`Command failed with exit code 1: pnpm add "@aiwayds/dsh-cron@0.6.1"`，**没有** `ERR_*` 码。真正的 `Error: ERR_PNPM_IGNORED_BUILDS` ＋ `Ignored build scripts: …` 只打在 launcher 的 **stderr**。`failureEndpoints` 原来只读日志是对的（端点在那儿），但**归因**必须两边都读且以 launcher 优先 | R19 spike：同一候选，launcher stdout/stderr 全文 + 日志全文对比（日志 67 B，stderr 有码） |
 | F35 | **D2 里唯一「装不上」的候选其实装上了，死在构建审批**：pnpm 11 默认不执行依赖的 build scripts，输出 `ERR_PNPM_IGNORED_BUILDS` + `help: Run "pnpm approve-builds"`；stdout 同时打印 `+ @aiwayds/dsh-cron 0.6.1`。所以这是**包管理器策略**，不是插件写坏——`blocked` 仍成立（「在这里跑不起来」），但用户下一步动作与 404 完全不同 | 同上 spike（`+ @aiwayds/dsh-cron 0.6.1` 与 `ERR_PNPM_IGNORED_BUILDS` 同一次运行）；`data/results/probe-real-dsh-cron-*.json` |
 | F36 | **20s 预算与 20s 未稳定窗口结构重叠**：`fixture-slow-overrun`（顶层 await 20s）实测 boot→sample **21.3s**——`boot(≈5s) + settle 上限 15s`。把它的 `--unsettled-timeout` 从 20s 降到 8s 只省下 ~2.5s（另一次实测 19.6s），因为主导项是 settle 上限而不是那个窗口。R18 的 19.1s 是**运气**，不是性质；因此 D2 的预算判定从 R19 起只对真实候选（`BS-28`）。顺带：`ERR_PNPM_*` 行常与解释分行（`Error: ERR_PNPM_X` 之后才是原因），只取码行等于没归因 | `data/results/probe-matrix-2026-10-28T11-40-00.000Z.json`（21.3s，单列在 `timing.fixtures_over_budget`）· `data/results/d2-2026-10-28T12-10-00.000Z.json` |
+| F37 | **沙盒会继承操作者的 npm 凭据**：探针只清了环境变量里的 key/token，但 pnpm 自己读 `~/.npmrc`——同一条装不上的候选，默认环境打出 `An authorization header was used: Bearer npm_[hidden]`（2/2 复现），把操作者的 token 发给了 registry。把 `npm_config_userconfig` 指向沙盒内空文件后，该行消失且安装成功路径不变。**profile 级 `.npmrc` 不受影响**（T-305b 私有源仍成立），因为 pnpm 把 project config 与 user config 分开读 | R20 黑盒对照（不读凭据文件）：`default` 2/2 `authHeaderUsed=true` vs `sandbox-userconfig` 2/2 `false`；产物字段 `install.registry_auth_used` |
 
 **F3 是产品级发现**：`packages/plugin/cordis.patch.yml` 原本正是这个形状——装上去这一行会被**静默丢弃**。R14 已修，并在门 `namespace` 增加 `rows-are-inserted`（双向自测：改回非 insert 即红）。
 
@@ -182,7 +183,7 @@ runtime → install → boot → http → render → inventory → cleanup
   "boot": { "url_printed": true, "first_line": "dsh web: http://127.0.0.1:53052/?token=<redacted>", "error_tail": null, "startup_failed": false, "bind_failed_ports": [] },
   "sandbox": { "home": "<temp>/…", "profile": "probe", "port_origin": "allocated", "port": 53052, "overlap_check": "disjoint", "env_scrubbed": true },
   "render": { "status": "rendered", "detail": "mount root with 1 child(ren), 289 visible chars", "ms": 1785, "signals": { "ready_state": "complete", "root_children": 1, "text_length": 289, "html_bytes": 540955 } },
-  "install": { "lockfile": { "present": true, "bytes": 1717, "sha256": "…" }, "exit_code": 1, "endpoints": ["http://127.0.0.1:1/dsh-cost-meter"], "diagnosis": { "code": "ERR_PNPM_IGNORED_BUILDS", "key_line": "Ignored build scripts: @aiwayds/dsh-cron@0.6.1", "source": "launcher" } },
+  "install": { "lockfile": { "present": true, "bytes": 1717, "sha256": "…" }, "exit_code": 1, "endpoints": ["http://127.0.0.1:1/dsh-cost-meter"], "diagnosis": { "code": "ERR_PNPM_IGNORED_BUILDS", "key_line": "Ignored build scripts: @aiwayds/dsh-cron@0.6.1", "source": "launcher" }, "registry_auth_used": false },
   "assertions": [{ "id": "boot-sampled", "status": "passed", "detail": null }, { "id": "client-rendered", "status": "passed", "detail": "rendered: mount root with 1 child(ren), 289 visible chars" }],
   "inventory": { "transport": "in-process-projection", "entries": 98, "settled": true, "error_code": null, "attempts": 1, "applies": 1, "candidate_rows": [{ "entryId": "include:triage-probe-ok", "phase": "active" }], "excluded": ["include:triage-probe-ok"?] },
   "verdict": { "conclusion": "go", "reasons": [], "evidence": [], "missingEvidence": [] },
@@ -244,6 +245,27 @@ runtime → install → boot → http → render → inventory → cleanup
 | N28 | 安装失败但两边都没有码 | `blocked` + `probe.install-failed`（旧文案），**不得**伪造一个码或空 `detail` |
 | N29 | 包管理器 URL 带凭据 / 查询串 | `key_line` 里不出现 userinfo、`?token=`、`#frag`（与端点同一套纪律） |
 | N30 | `ERR_PNPM_IGNORED_BUILDS` | `blocked` + `probe.install-build-refused` + `remediation.install-build-refused`（**不是**「插件写坏了」） |
+| N31 | 操作者机器上有 `~/.npmrc`（含 token） | 沙盒安装**不得**发送凭据：`install.registry_auth_used=false`；把 `npm_config_userconfig` 指回真实路径时该标志变 `true`（R20 黑盒对照 2/2） |
+
+---
+
+## 8.5 T-304 前置取证（R20 spike，机制已验、**未实现**）
+
+> 目的：probe 现在只能回答「加到**模板** profile 会不会挂」，T-304 要回答「加到**我的**组合会不会挂」。本轮只取证，不改 probe 行为。
+
+| # | 实测事实 | 怎么测的 |
+|---|---|---|
+| F38 | **复制声明就够启动**：把真实 profile 的 `package.json` / `cordis.yml` / `cordis.patch.yml` / `pnpm-workspace.yaml` 四个文件复制进沙盒 `profiles/<name>`（**不复制** `node_modules`、不复制 `.plugin-manager/logs`、不复制任何凭据），Host 仍能起：打印 URL、HTTP 401。说明 bundles 由运行时 install 提供，声明层足够 | R20 spike（复制真实 `~/.dsh/profiles/web` → 沙盒，`--port 0 --no-open`，20s 内出现 `?token=` URL） |
+| F39 | **带第三方依赖的副本要先装一次**：`dsh plugin <args>` 直接把参数转发给 pnpm，所以 `dsh plugin --profile <p> install` 会按复制来的 `package.json` 装依赖（实测 0.5s，store 命中；`node_modules` 出现），随后 Host 起得来（401）。`dsh` **不会**在 boot 时自动装 profile 依赖（R12 的老坑） | R20 spike：复制 + 注入 `dsh-unlag@1.12.5` → `plugin install` → boot |
+| F40 | **`link:` 依赖会「假成功」**：`{"local-thing":"link:./not-here"}` 的 `plugin install` **exit 0** 并打印 `+ local-thing <- not-here`（真实路径不存在），`node_modules` 也建了。也就是说「装成功」不代表组合可用，T-304 必须**逐个检查 `link:`/`file:` 目标是否在沙盒里存在**，否则会把悬空链接当证据 | R20 spike 三组对照：不存在包 → `ERR_PNPM_FETCH_404`（exit 1）；`link:` → exit 0 但目标不存在；`file:./nope.tgz` → exit 1（原文「as it does not exist」） |
+
+**T-304 的退出条件（下一轮实现）**：
+
+1. 新增 `probe --copy-profile <name>`：只按白名单复制声明文件（`package.json` / `cordis.yml` / `cordis.patch.yml` / `pnpm-workspace.yaml`），产物记 `sandbox.profile_origin = "copy:<name>"` 与复制清单；
+2. 复制后跑一次 `plugin install`；**它失败时只能 `unknown`**（新原因 `probe.profile-copy-unusable`）+ `missing.probe`，绝不把「用户的依赖装不上」算到候选头上；
+3. 对 `link:`/`file:` 依赖逐个 stat，悬空即 `unknown`（F40）；
+4. 源 profile 与沙盒重叠时拒绝执行（复用 `validateProbePlan` 的判据）；
+5. 真跑一次「复制我的组合 + 候选」并在产物里同时给出 `profile_origin` 与 `profile_copy` 三形状（成功 / 装不上 / 悬空链接）。
 
 ---
 

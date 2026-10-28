@@ -17,6 +17,7 @@ import {
   modulePackageName,
   probeAssertions,
   readSample,
+  sandboxNpmEnv,
   sanitizeLogLine,
 } from '@dsh-triage/probe'
 
@@ -461,6 +462,31 @@ test('an install that failed with nothing to read keeps the old message', async 
   const judgement = judgeProbe({ run, at: '2026-10-27T00:00:00.000Z' })
   assert.ok(judgement.reasons.some((item) => item.messageId === 'probe.install-failed'))
   assert.ok(!judgement.evidence.some((item) => item.id === 'probe-install-diagnosis'), 'nothing to cite when nothing was said')
+})
+
+/* ------------------- credential hygiene in the sandbox (R20) ----------------- */
+
+test('the sandbox never inherits the operator npm user config', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'triage-npmenv-'))
+  try {
+    const env = sandboxNpmEnv({ PATH: 'x', DSH_HOME: dir, npm_config_userconfig: 'C:/Users/someone/.npmrc' }, dir)
+    const userconfig = env['npm_config_userconfig'] ?? ''
+    assert.ok(userconfig.startsWith(dir), 'the user config must live inside the sandbox')
+    assert.equal(env['NPM_CONFIG_USERCONFIG'], userconfig, 'both spellings, because pnpm and npm disagree')
+    assert.equal(readFileSync(userconfig, 'utf8'), '', 'an empty config means "no credentials", not "your credentials"')
+    assert.equal(env['PATH'], 'x', 'everything else is untouched')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('an install that reports sending an authorization header says so in the run', async () => {
+  const { run } = await runWith({
+    deps: {
+      install: async () => ({ exitCode: 1, detail: 'exit 1', authUsed: true }),
+    },
+  })
+  assert.equal(run.installAuthUsed, true, 'the flag exists so a regression is visible in the artifact')
 })
 
 /* --------------------------- client render (T-302) ------------------------- */

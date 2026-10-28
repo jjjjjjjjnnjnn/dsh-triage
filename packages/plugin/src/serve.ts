@@ -302,14 +302,20 @@ async function handle(request: IncomingMessage, response: ServerResponse, contex
       sendJson(response, 501, { error: 'audit is not enabled; restart the panel with `dsh-triage serve --audit`' })
       return
     }
+    // Measured 2026-10-28 on a 156-row real profile: 376–690ms, synchronously (the scan is
+    // fs-bound and runs on the server's event loop, so one request blocks the panel for its
+    // duration). Publishing the number on the response is the difference between "the panel
+    // felt slow" and "this request took 412ms" (R20 follow-up to T-406).
+    const started = Date.now()
     const snapshot = await context.audit()
+    const ms = Date.now() - started
     if (!snapshot.ok) {
       // Same sentence the CLI would print on stderr, and a status that is not 200: a profile
       // that cannot be read must never render as "no findings".
-      sendJson(response, 409, { error: snapshot.message })
+      sendJson(response, 409, { error: snapshot.message }, { 'x-triage-audit-ms': String(ms) })
       return
     }
-    sendJson(response, 200, snapshot.payload)
+    sendJson(response, 200, snapshot.payload, { 'x-triage-audit-ms': String(ms) })
     return
   }
 
@@ -335,12 +341,13 @@ function readCookie(header: string | undefined, name: string): string | null {
   return null
 }
 
-function sendJson(response: ServerResponse, status: number, body: unknown): void {
+function sendJson(response: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
   const text = `${JSON.stringify(body, null, 2)}\n`
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
+    ...headers,
   })
   response.end(text)
 }

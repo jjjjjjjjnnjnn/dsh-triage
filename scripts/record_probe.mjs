@@ -336,6 +336,9 @@ const artifact = {
             key_line: run.installDiagnosis.key_line,
             source: run.installDiagnosis.source,
           },
+    // R20: pnpm's own statement that it sent a credential. The sandbox redirects the user
+    // npmrc, so this must be `false`; `true` means the redirect stopped working.
+    registry_auth_used: run.installAuthUsed,
   },
   cleanup: {
     removed: run.cleanup.removed,

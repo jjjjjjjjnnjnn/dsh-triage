@@ -23,6 +23,7 @@ export {
   readRuntimeVersion,
   removeSandbox,
   runInstall,
+  sandboxNpmEnv,
   sanitizeDiagnosisLine,
   sanitizeLogLine,
   scrubbedEnv,

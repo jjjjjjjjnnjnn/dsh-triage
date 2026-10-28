@@ -166,11 +166,33 @@ test('/api/audit returns the payload it was given, not a re-derivation', async (
     const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), payload, 'byte-for-byte what the loader produced')
+    // R20: the cost of the scan is published, so "the panel felt slow" has a number.
+    assert.match(response.headers.get('x-triage-audit-ms') ?? '', /^\d+$/)
 
     const crossOrigin = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`, {
       headers: { origin: 'http://evil.example' },
     })
     assert.equal(crossOrigin.status, 403)
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a slow audit is measured, not silently absorbed', async () => {
+  const dir = fixtureDir()
+  const panel = await startPanel({
+    resultsDir: dir,
+    audit: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 120))
+      return { ok: false, message: 'cannot read the profile: profile-not-found — nope' }
+    },
+  })
+  try {
+    const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
+    assert.equal(response.status, 409)
+    const ms = Number(response.headers.get('x-triage-audit-ms'))
+    assert.ok(ms >= 100, `the failure path carries its own duration too (got ${String(ms)}ms)`)
   } finally {
     await new Promise<void>((resolve) => panel.server.close(() => resolve()))
     rmSync(dir, { recursive: true, force: true })

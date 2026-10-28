@@ -1,6 +1,7 @@
 # HANDOFF · 交接入口
+| T-313 凭据来源审计（BS-29） | verifier | 逐个来源（~/.pnpmrc / PNPM_HOME / 系统级 npmrc / corepack / 代理变量）做黑盒对照，只有全部关闭后才敢说「沙盒无凭据」；口径同步 docs/adr/0004 |
 
-> **Stand**: R19 (2026-10-28)｜当前批次：**R19 · T-310 安装失败归因 + T-406 面板 v1（`serve --audit`）+ D2 分母 10→13 与预算口径收窄（HUMAN 签）**（236 测试；9 门 9-9）
+> **Stand**: R20 (2026-10-28)｜当前批次：**R20 · 安全（沙盒不再继承 npm 凭据）+ 可观测（`/api/audit` 自带耗时）+ `ADR-0006` 预算口径（proposed）+ T-304 前置取证**（239 测试；9 门 9-9）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -27,9 +28,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15 白屏/就绪 + R16 跨平台 + R17 慢≠坏/端口）** · **D2 通过（R18 首判 / R19 复算，真实 13）** · **M4 形态 A ✅（`serve` v1：只读面板 + `--audit` 当前组合，R19）**；`namespace-diff`（T-303）仍缺（需 T-202a） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **236 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **95 份 SSOT 产物** · **109 步台账** · **13 个真实插件候选（12 go / 1 装不上）** |
-| 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R19 起 **109 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
-| 本轮交付（R19） | **① T-310 安装失败归因**：`installDiagnosis`（launcher 优先 / 诊断日志兜底 / `dsh:` 行不算原因 / URL 去凭据与查询串）→ 产物 `install.diagnosis{code,key_line,source}`；新增 `probe.install-failed-code` 与 `probe.install-build-refused`（后者带专用 remediation）。**真机**：`@aiwayds/dsh-cron@0.6.1` = `ERR_PNPM_IGNORED_BUILDS` + `Ignored build scripts: …`——它是**装上了但 pnpm 11 拒绝跑构建脚本**，不是插件写坏（F34/F35）。**② T-406 面板 v1**：`packages/plugin/src/audit-data.ts` 抽出 `loadAuditData()`/`auditJsonPayload()`，`serve --audit` 暴露只读路由（默认 **501**、读不到 profile **409**）+ 页面「当前组合」。**逐字节负对照**：抽取前后 `audit --json` sha256 相同（夹具 `EE1D3AC5…` / 真实 `BEC85449…`）。**③ D2 分母 10→13**：+skills-manager / unlag（只声明 `engines.dsh`）/ qqbot（`dsh.compatibility`），真实 **12 go / 1 blocked**（0.923，Wilson 0.667–0.986），可靠性 20/20、形状 6。**④ 预算口径（HUMAN 签）**：`boot-budget` 只判真实候选——永不 settle 的夹具结构上 ≈21s（R18 的 19.1s 是运气），夹具耗时单列 `timing.fixtures_over_budget`；新开 `BS-28` / `T-311` |
+| 规模 | **239 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **98 份 SSOT 产物** · **112 步台账** · **13 个真实插件候选（12 go / 1 装不上）** |
+| 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R20 起 **112 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
+| 本轮交付（R20） | **① 安全：沙盒不再继承 npm 凭据**。`scrubbedEnv` 只清环境变量，挡不住 pnpm 读 `~/.npmrc`——实测同一条装不上的候选，默认环境 2/2 打印 `An authorization header was used: Bearer npm_[hidden]`，把操作者 token 发给 registry；现由 `sandboxNpmEnv()` 把 `npm_config_userconfig` 指向沙盒内空文件，2/2 消失，产物新增 `install.registry_auth_used`（真机 `false`）。**② 可观测**：`/api/audit` 响应头 `x-triage-audit-ms` 自带耗时（本机真实 profile 376–690ms，同步扫描期间阻塞面板）。**③ `ADR-0006`（proposed）**：20s 预算的口径——实测主导项是 hook 的 15s settle 上限，不是 readiness 窗口；建议保留测量口径、把「不可判 ≈25s」写进 spec/`limits[]`，两阶段取样单列 T-312。**④ T-304 前置取证 F38–F40**：声明文件复制即可启动 / 带依赖需先 `plugin install` / **`link:` 依赖假成功**（exit 0 但目标不存在）。**阈值一律未动** |
+| 上一轮交付（R19） | **① T-310 安装失败归因**：`installDiagnosis`（launcher 优先 / 诊断日志兜底 / `dsh:` 行不算原因 / URL 去凭据与查询串）→ 产物 `install.diagnosis{code,key_line,source}`；新增 `probe.install-failed-code` 与 `probe.install-build-refused`。真机：`@aiwayds/dsh-cron@0.6.1` = `ERR_PNPM_IGNORED_BUILDS` + `Ignored build scripts: …`。**② T-406 面板 v1**：`audit-data.ts` 抽出 `loadAuditData()`，`serve --audit` 只读路由（默认 501、读不到 409）；抽取前后 `audit --json` 逐字节一致。**③ D2 分母 10→13**：真实 12 `go` / 1 `blocked`（0.923，Wilson 0.667–0.986），可靠性 20/20、形状 6。**④ 预算口径（HUMAN 签）**：`boot-budget` 只判真实候选，夹具 21.3s 单列；`BS-28` / `T-311` 新开 |
 | 上一轮交付（R18） | **① D2 判定**：`scripts/d2_report.mjs` 把矩阵产物算成可重算报告（可靠性 / 真实通过率 + Wilson 95% / 失败形状 / 计时 / 清理），**分母不足时拒绝判定**；`data/results/d2-2026-10-27T21-00-00.000Z.json` = **通过**（可靠性 17/17、真实启动 10、失败形状 5、boot 6.2–19.1s、清理 17/17；真实通过率 9/10，Wilson 0.596–0.982）。**② 10 个真实 pin 候选**（status / theme×2 / tool / scheduler / notify / workspace / mcp / remote / git）：9 个 `go`，`@aiwayds/dsh-cron@0.6.1` **装不上**（→ `T-310`）。**③ `BS-26` 真机补测**：`slow-overrun-plugin`（顶层 await 20s）→ `unknown` + `missing.inventory`。**④ R17 纠错**：R17 的「慢」夹具把延迟写在 `apply` 里，实测**不会**让行停在 `loading` → 改成顶层 await 并重采。**⑤ 新夹具** `no-row-plugin`（第 5 种失败形状：装上但零行） |
 | 上一轮交付（R17） | **① 端口自伤缺陷**：`buildProbePlan` 的哈希端口 **53506** 落在本机 Windows 排除段（`netsh`：TCP 53461–53560，且**会话中会变**），沙盒 `webserver` 行 `listen EACCES` → 整棵树 `startup failed`，**正常候选被写成 `blocked`**。改为每次 `findFreePort()` 向 OS 申请，产物记 `sandbox.port_origin`。**② 判定分离**：`valid/unsettled/unreadable` —— 只有 `valid` 能出 `blocked`；候选行 `pending/loading` 不再当死行；`probe.tree-not-settled`。**③ 就绪**：URL 与端口同轮询，`readiness` 记 `outcome/waited_ms/window_ms/url_seen`；settled 树 **5s 阈值未改**，unsettled 树 20s 窗口**只能出 unknown**。**④ hook**：`settled/attempts/applies` + 代际保护（旧 task 不许覆盖新样本）。**⑤ 归因**：`startup failed` 照抄 launcher 原文（`probe.startup-failed`）并提前收敛（126s → ~6s）。**⑥ 新夹具**：`tests/fixtures/probe/slow-plugin`（延迟 6s）真机 `go`。**⑦ D2 分母重测**：矩阵 n=7，`real_starts=2`（两次都 `go`），清理 7/7 |
 | 上一轮交付（R16） | **① 口径纠正**：R14/R15 写的「Linux CI 没浏览器」是错的（ubuntu runner 自带 Chrome 155 / Chromium / Edge + xvfb）→ `ADR-0005`。**② CI `render-control`**：先断言 runner 真有浏览器（缺了明确失败），再跑 blank/rendered/error 三份对照，产物写 `$RUNNER_TEMP`。**③ `dsh-triage serve` v0**：零依赖只读证据面板（`packages/plugin/src/serve.ts`），只绑 127.0.0.1、一次性 token + HttpOnly cookie、跨源 403、artifact 名字白名单、`POST` 默认 403（`--allow-execute` 也只回 501）。**④ T-305b**：`--npmrc-registry` 用 profile 级 `.npmrc` 让源真不可达，产物 `install.endpoints` **点名源**（去凭据/查询串）。**⑤ D2 分母工具**：`scripts/record_probe_matrix.mjs` + `tests/fixtures/probe/matrix-r16.json`，首跑 n=6。**⑥ 新盲区**：`BS-25`/`T-308`（慢候选与坏候选同形） |
@@ -58,10 +60,10 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**按优先级**（前两条不需要新许可）：
 
-1. **T-304 probe 对「你自己的组合」取样（先做）**：现在 probe 只能回答「加到**模板** profile 会不会挂」，用户真正问的是「加到**我的**组合会不会挂」。退出条件：用 profile 副本 + 依赖安装跑一次真 probe，产物自曝 `sandbox.profile_origin=copy`，且「副本 vs 模板」的结论差异可复算。
-2. **T-401 DSH 设置面板（M4-a）**：先在沙盒里做**契约 spike**（`dsh.client` + `__ModuleLoader__.load` + slots + row id = settings 命名空间），再写 `client.js`；必须先做「契约不匹配就整块隐藏」的降级。`docs/specs/M4-surface.md` §3 是设计，§1 的 S1–S5 是已取证但不等于本机可加载。
-3. **继续加真实候选（`T-309` 的长期部分）**：每批 +2–3 个 pin 候选，让 `real_runs` 继续长大；**别**为了数字好看挑「已知能装」的（`BS-27`）。
-4. **T-311 / `BS-28`**：20s 预算是产品承诺，但默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s。要么把默认窗口降到 <20s，要么把「20s」拆成「settled 树 20s / unsettled 树另计」。**改阈值需 ADR + HUMAN 签**，不要自己动。
+1. **T-304 实现（先做）**：前置取证已完成（`docs/specs/M3-probe.md` §8.5 的 F38–F40）。退出条件：`probe --copy-profile <name>` 只复制 4 个声明文件、产物记 `sandbox.profile_origin="copy:<name>"`；副本自身装不上 → **只能 `unknown`**（新原因 `probe.profile-copy-unusable` + `missing.probe`）；`link:`/`file:` 目标逐个 stat，悬空即 `unknown`（F40 的「假成功」）；源 profile 与沙盒重叠拒绝执行；真跑一次「复制我的组合 + 候选」。
+2. **签 `ADR-0006`（`docs/adr/0006-probe-budget-promise.md`，proposed）**：20s 到底承诺什么。阈值一律未动，等你勾选；不签就维持「可判 ≤20s / 不可判 ≤25s」的现状说明。
+3. **T-401 DSH 设置面板（M4-a）**：先在沙盒里做**契约 spike**（`dsh.client` + `__ModuleLoader__.load` + slots + row id = settings 命名空间），再写 `client.js`；必须先做「契约不匹配就整块隐藏」的降级。
+4. **继续加真实候选（`T-309` 的长期部分）**：每批 +2–3 个 pin 候选；**别**为了数字好看挑「已知能装」的（`BS-27`）。
 5. **T-303 / T-202a**：仍被铁律 4 挡着（会话作用域需要真实凭据），必须先出 ADR 让 HUMAN 签。**不要**用「进程级工具清单」冒充它。
 
 **R19 提醒**：安装失败**现在有原因**了（`install.diagnosis`），但别把 `ERR_PNPM_IGNORED_BUILDS` 说成「插件坏」——它往往只是 pnpm 的 build-script 审批策略（F35）。`key_line` 的取法有两条硬规则：**launcher 优先于诊断日志**（日志只有 67 字节，没有码），**`dsh:` 开头的行永远不算原因**（那是 launcher 在说它自己）。
@@ -75,7 +77,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
 
-**新会话开箱状态（R19 收尾）**：`git log -1` 就是交接提交，`git status` 干净；**236 测试 / 9 门 / `--mutate` 9-9**；`data/results` 95 产物全部被 109 步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账，R19 的预算口径就是范例）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`）；**许可只认元数据能证明的**（`SEE LICENSE IN LICENSE` 这种直接跳过，R19 真放弃过一个候选）。
+**新会话开箱状态（R20 收尾）**：`git log -1` 就是交接提交，`git status` 干净；**239 测试 / 9 门 / `--mutate` 9-9**；`data/results` 95 产物全部被 109 步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账，R19 的预算口径就是范例）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`）；**许可只认元数据能证明的**（`SEE LICENSE IN LICENSE` 这种直接跳过，R19 真放弃过一个候选）。
 
 > D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付；R8 补副本来源与重复副本；R9 让「没声明」不再静默；R10 让 dist-tag 失步可见；R12 让相位来自真机（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）并补齐 preset 维度。
 > 复核口径十条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp <iso>`、`node scripts/record_live_inventory.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_registry.mjs --stamp <iso>`、`node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label ok --expect go --browser <chrome> --stamp <iso>`（R17 另加 `--readiness-timeout <ms>` / `--unsettled-timeout <ms>`）、`node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp <iso>`（另三种：`rendered` / `error` / `blocked`）、`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r17.json --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --stamp <iso>`、`node scripts/record_serve_smoke.mjs --stamp <iso>`。
@@ -157,6 +159,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 成功安装的产物里出现「诊断」 | `runInstall` 以前对 `exit 0` 也算 `key_line`，于是本地夹具写着 `Already up to date`，看起来像失败 | `exit 0` 时 diagnosis 恒为 `{null,null,'none'}`（R19） |
 | `ERR_PNPM_IGNORED_BUILDS` 被当成「插件坏」 | 它是 pnpm 11 的 build-script 审批策略：包**装上了**，只是构建脚本没跑（stdout 同时有 `+ pkg@ver`） | `probe.install-build-refused` + 专用 remediation；别把包管理器策略说成插件缺陷（R19 F35） |
 | D2 的 `boot-budget` 被一个「永不 settle」的夹具判红 | 20s 预算与 20s 未稳定窗口**结构重叠**：`boot(≈5s)+settle 上限 15s ≈ 21s`，永远进不了 20s（R18 的 19.1s 是运气） | 预算只判 `real:true`；夹具耗时单列 `timing.fixtures_over_budget`（HUMAN 签，R19）；改默认窗口需 ADR（T-311） |
+| 沙盒「清了环境变量」就以为没有凭据了 | pnpm 自己会读 `~/.npmrc`：装不上的候选会打印 `An authorization header was used: Bearer npm_[hidden]`，把**操作者的 token** 发给 registry（R20 实测 2/2） | `runInstall` 走 `sandboxNpmEnv()`，把 `npm_config_userconfig` 指向沙盒内空文件；产物 `install.registry_auth_used` 必须为 `false`。**别去读那个 npmrc**（铁律 4），只停止继承 |
+| 以为「组合装成功了 = 组合可用」 | `{"x":"link:./not-here"}` 的 `plugin install` **exit 0** 并打印 `+ x <- not-here`，目标根本不存在（R20 F40） | T-304 实现时必须逐个 stat `link:`/`file:` 目标；悬空 → `unknown`，不是 `go` |
+| 面板「感觉有点慢」却说不出哪里慢 | `/api/audit` 是同步扫描：本机 156 行 profile 实测 **376–690ms**，期间阻塞事件循环 | 响应头 `x-triage-audit-ms` 自带耗时（R20）；别把它做成轮询接口 |
 | INDEX 里写一个新路由/裸文件名，`governance` 报 `index-references` 红 | 门把表格行里**任何**含 `/` 或以 `.json` 结尾的反引号 token 当路径 | 路由别用反引号写成 `/api/x` 形态，产物一律写全 `data/results/xxx.json`（R18 踩过 `go/(go+blocked)`，R19 又踩两次） |
 | 失败形状数看起来很好（9 种） | 把 info 级原因（`probe.render-ok`、`probe.served`）也算成了形状 | 只数 `block` / `warn`（R18 已修在脚本里） |
 
@@ -197,7 +202,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 路线与决策门 | `docs/ROADMAP.md` |
 | 环境事实 | `docs/07-environment.md` |
 | 本轮审核结论 | `audit/AUDIT_2026-10-28_R14.md`（本轮，含 §6 对抗性小节）· `AUDIT_2026-10-27_R13.md` · `AUDIT_2026-10-27_R12.md` · `AUDIT_2026-10-27_R8.md`（含 §7 独立复核与修正）· `R7` · `R6` · `R5` · `R4` · `R3` |
-| 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256；R19 起 109 步） |
+| 每步审核台账 | `audit/step_reviews.json`（门 `step-review` 校验；四轴 + 对抗性 + 产物 sha256；R20 起 112 步） |
 | 授权/签署台账 | `audit/SIGNOFF.md`（谁授权、谁执行、HUMAN 没逐条看的部分，三者分列） |
 
 ---

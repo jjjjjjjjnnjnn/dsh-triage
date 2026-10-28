@@ -2699,6 +2699,86 @@
         "sha256": "c90e12e9638a3ad7607c9690c632cb41523b68dd65bdc4e61d39c777d87eb547",
         "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 232）"
       }
+    },
+    {
+      "id": "R20-S1",
+      "batch": "R20",
+      "step": "面板可观测：`/api/audit` 自带耗时（成功与 409 两条路径），把「面板慢」变成一个数字",
+      "changed": [
+        "packages/plugin/src/serve.ts",
+        "tests/unit/serve.test.ts",
+        "scripts/record_serve_smoke.mjs",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：响应头 `x-triage-audit-ms` 在 200 与 409 两条路径都出现（单测断言 `/^\\d+$/` 与「慢请求 ≥100ms」）；本机真实 profile 实测 376–690ms（3 次），夹具 18ms；冒烟 14/14，其中 `audit-timed` 专门盯这个头",
+        "reproducibility": "PASS：`node scripts/record_serve_smoke.mjs --stamp <iso>` 重放；头里的数值随机器变化，但「有没有这个头」是确定的；产物不记录端口与 token",
+        "licence": "PASS：只加一个响应头与两个单测，零新依赖；无远程资源",
+        "ssot": "PASS：`M4-surface.md` §2 写明「同步扫描、期间阻塞事件循环」与本机实测区间；`HANDOFF` 坑表同步一行；旧产物（v0/v1 冒烟）保留不动",
+        "adversary": "反例一：只在成功路径加头、409 路径仍是黑箱 → 单测专门跑一条慢的失败路径。反例二：把耗时写进 `payload` 会破坏「面板 payload 与 CLI 逐字节一致」，所以只用 header。反例三：以为加了头就等于不阻塞——spec 明确写「不做成轮询接口」，并留 T-312 的续采讨论"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-28T14:10:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-28T14-10-00.000Z.json",
+        "sha256": "dac9db3f4c3c9410be4728d26571bd2fb3b6a8189a9c8a7763a3797d1326e886",
+        "outcome": "14/14：既有 13 项 + audit-timed（x-triage-audit-ms=18）"
+      }
+    },
+    {
+      "id": "R20-S2",
+      "batch": "R20",
+      "step": "安全：沙盒不再继承操作者的 npm 凭据（`sandboxNpmEnv`），产物自曝 `registry_auth_used`",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-exec.test.ts",
+        "docs/specs/M3-probe.md",
+        "docs/adr/0004-external-candidate-boundary.md"
+      ],
+      "review": {
+        "correctness": "PASS：黑盒对照 2/2——默认环境 pnpm 打印 `An authorization header was used: Bearer npm_[hidden]`，把 `npm_config_userconfig` 指向沙盒内空文件后该行消失，安装结论与失败码不变（`ERR_PNPM_FETCH_404`）；真机产物 `probe-no-credential-leak-2026-10-28T14-30-00.000Z.json` 的 `install.registry_auth_used=false`",
+        "reproducibility": "PASS：对照是「同一台机器、同一条候选、两种 env」，各 2 次；单测把规则钉成纯函数级断言（userconfig 必须在沙盒内、内容为空、其他变量不动、两个拼写都设）；真机产物可用 `record_probe.mjs --candidate dsh-does-not-exist-xyzzy@1.0.0 --expect blocked` 重放",
+        "licence": "PASS：修的是**我们自己**的行为；没有读、复制或记录 `~/.npmrc`（黑盒对照只看 pnpm 自己的日志行）；没有新增外部候选或 vendor 条目",
+        "ssot": "PASS：`M3-probe.md` 新增 F37 / N31 与产物字段；`ADR-0004` §3 加「R20 修订」段写明代价（不继承镜像）；`HANDOFF` 坑表一行；产物 `.sha256` 齐",
+        "adversary": "反例一：只设小写 `npm_config_userconfig` → 单测要求两个拼写都设。反例二：以为「清了环境变量就没凭据」→ 这正是修复前的 bug，单测断言 userconfig 被重定向。反例三：把「user config 关了」说成「沙盒绝无凭据」→ 审核报告与 `BS-29` 明确写还有 `~/.pnpmrc` / `PNPM_HOME` / 系统级 npmrc 未审计，并开 T-313。反例四：为了关凭据把 profile 级 `.npmrc` 也堵掉 → 那会弄坏 T-305b，已确认 pnpm 分开读 project/user config 并用 R16 产物作旁证"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-does-not-exist-xyzzy@1.0.0 --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label no-credential-leak --expect blocked --stamp 2026-10-28T14:30:00.000Z",
+        "artifact": "data/results/probe-no-credential-leak-2026-10-28T14-30-00.000Z.json",
+        "sha256": "a955faad659f3163ab5fb492c8ce817336b98d249f9b36d055eafe77242bc48d",
+        "outcome": "blocked · install.registry_auth_used=false · diagnosis.code=ERR_PNPM_RESOLVING_NPM_RESOLVER_NETWORK_ERROR（未发凭据，失败码照旧可读）"
+      }
+    },
+    {
+      "id": "R20-S3",
+      "batch": "R20",
+      "step": "ADR-0006（20s 到底承诺什么，proposed）+ T-304 前置取证写进 spec + 台账/文档/签署同步，全链录一次绿",
+      "changed": [
+        "docs/adr/0006-probe-budget-promise.md",
+        "docs/specs/M3-probe.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-28_R20.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 239 测试 / 9 门全绿；`--mutate` 9/9；ADR-0006 状态是 **proposed**，签字区为空，spec §4 的 20s / 15s / 20000 三个数字与改动前逐字相同（`git diff` 可查）；T-304 的 F38–F40 都是本轮真跑出来的，不是推断",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T15:00:00.000Z` 可重放；ADR 的三种 spike 都写了最小可重放步骤；HANDOFF §3 首条仍是单条可执行命令",
+        "licence": "PASS：本轮无新外部候选，`quarantine/vendor-manifest.json` 未改；`BS-29` 与 T-313 明确写出「还有别的凭据来源未审计」，没有把一次修复说成全域结论",
+        "ssot": "PASS：98 个产物全部被 112 步台账引用；`ADR-0004` 的 R20 修订段与 `M3-probe.md` F37/N31 同口径；`INDEX`/`AGENTS` 的 ADR 清单同步；`audit/SIGNOFF.md` 本轮**未改**（没有阈值变更，也没有新候选授权——凭据修复是收紧既有铁律，不是放宽）",
+        "adversary": "反例一：写一份 ADR 然后顺手把默认值改了——本轮没改，ADR 状态与签字区共同证明这一点。反例二：把「user config 关了」写成「沙盒无凭据」——`BS-29`/T-313 与审核报告 §6 都写明其余来源未测。反例三：把 T-304 的取证当成实现——BACKLOG 仍是 🟨 且只列退出条件。反例四：为了绿门删掉不合规产物——本轮只新增产物，未删任何东西；INDEX 的路由写法第三次踩 `index-references`，已改成不含斜杠的表述并写进坑表"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T15:00:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-28T15-00-00.000Z.json",
+        "sha256": "645d86a667c2afa505b1b7d7e75d5f2c5b815f494aaba1598c008d832bf9608d",
+        "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 239）"
+      }
     }
   ]
 }

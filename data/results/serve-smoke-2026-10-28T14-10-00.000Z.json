@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_serve_smoke.mjs",
+  "generated_at": "2026-10-28T14:10:00.000Z",
+  "panel": {
+    "results_dir": "<repo>\\data\\results",
+    "port": null,
+    "read_only": true,
+    "url_shape": "http://127.0.0.1:<port>/?token=<token>"
+  },
+  "audit": {
+    "home": "<repo>\\tests\\fixtures\\env\\home",
+    "profile": "desktop",
+    "snapshot": "<repo>\\data\\fixtures\\inventory\\desktop-web-2026-10-26.json",
+    "row_verdicts": 0,
+    "inventory_verdicts": 8,
+    "by_conclusion": {
+      "risky": 5,
+      "blocked": 2,
+      "unknown": 1
+    },
+    "parity": "identical to `audit --json` on the same profile and snapshot"
+  },
+  "checks": [
+    {
+      "id": "token-required",
+      "ok": true,
+      "detail": "GET / without token → 401"
+    },
+    {
+      "id": "page-renders",
+      "ok": true,
+      "detail": "GET / → 200, 5173 bytes"
+    },
+    {
+      "id": "health",
+      "ok": true,
+      "detail": "ok=true readOnly=true audit=false"
+    },
+    {
+      "id": "artifacts-listed",
+      "ok": true,
+      "detail": "96 artifacts · kinds why:14 upstream:2 serve:3 render:5 registry:1 probe:24 ns:2 inventory:3 gates:36 d2:2 d1:2 capabilities:1 audit:1"
+    },
+    {
+      "id": "artifact-detail",
+      "ok": true,
+      "detail": "probe-slow-overrun-2026-10-27T19-20-00.000Z.json → 200, sha256=38d57d46a2c5"
+    },
+    {
+      "id": "traversal-refused",
+      "ok": true,
+      "detail": "../package.json → 400"
+    },
+    {
+      "id": "cross-origin-refused",
+      "ok": true,
+      "detail": "Origin: evil → 403"
+    },
+    {
+      "id": "post-read-only",
+      "ok": true,
+      "detail": "POST /api/probe → 403"
+    },
+    {
+      "id": "audit-off-501",
+      "ok": true,
+      "detail": "GET /api/audit without --audit → 501"
+    },
+    {
+      "id": "audit-enabled",
+      "ok": true,
+      "detail": "GET /api/audit → 200, 0 row + 8 inventory verdict(s), 18ms"
+    },
+    {
+      "id": "audit-timed",
+      "ok": true,
+      "detail": "x-triage-audit-ms=18 (a scan that costs real time must say so)"
+    },
+    {
+      "id": "audit-redacted",
+      "ok": true,
+      "detail": "env.profileDir=~\\profiles\\desktop"
+    },
+    {
+      "id": "audit-parity",
+      "ok": true,
+      "detail": "0 row + 8 inventory verdict(s) identical to `audit --json`"
+    },
+    {
+      "id": "audit-has-evidence",
+      "ok": true,
+      "detail": "the fixture profile + synthetic snapshot must produce at least one judgment, or parity proves nothing"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "this proves the panel answers and refuses the ways it claims to; it is not a UI review",
+    "no browser is involved: the page is inline HTML and the API is plain JSON",
+    "the token and port are not written to this artifact",
+    "the audit half reads a fixture profile (tests/fixtures/env/home), not the operator machine"
+  ]
+}

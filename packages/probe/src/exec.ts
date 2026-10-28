@@ -147,6 +147,8 @@ export interface ProbeRun {
    * branches on `code`, and the artifact publishes `key_line` verbatim.
    */
   readonly installDiagnosis: InstallDiagnosis | null
+  /** Did the package manager report sending an authorization header? (`null` = not reported) */
+  readonly installAuthUsed: boolean | null
   readonly cleanup: ProbeCleanupResult
   readonly abortedAt: ProbeStepId | null
 }
@@ -220,6 +222,8 @@ export interface ProbeExecDeps {
     endpoints?: readonly string[]
     /** T-310: what the package manager said. Absent means "not reported", never "none said". */
     diagnosis?: InstallDiagnosis
+    /** R20: whether pnpm reported sending an authorization header. */
+    authUsed?: boolean
   }>
   /**
    * `http` is the readiness measured *before* the Host was killed. It is optional so a
@@ -289,6 +293,7 @@ interface MutableRun {
   startupFailed: boolean
   bindFailedPorts: readonly number[]
   installDiagnosis: InstallDiagnosis | null
+  installAuthUsed: boolean | null
   cleanup: ProbeCleanupResult
   abortedAt: ProbeStepId | null
 }
@@ -314,6 +319,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     startupFailed: false,
     bindFailedPorts: [],
     installDiagnosis: null,
+    installAuthUsed: null,
     cleanup: { removed: false, portClosed: false, detail: 'cleanup did not run' },
     abortedAt: null,
   }
@@ -376,6 +382,7 @@ async function runSequence(
       // Recorded before the status branch: a *passing* install can still have printed a
       // warning, and a failed one is exactly what the judge needs (T-310).
       run.installDiagnosis = result.diagnosis ?? null
+      run.installAuthUsed = result.authUsed ?? null
       return result.exitCode === 0
         ? { status: 'passed' as const, detail: result.detail, exitCode: result.exitCode }
         : {
@@ -479,6 +486,7 @@ function freeze(run: MutableRun): ProbeRun {
     startupFailed: run.startupFailed,
     bindFailedPorts: run.bindFailedPorts,
     installDiagnosis: run.installDiagnosis,
+    installAuthUsed: run.installAuthUsed,
     cleanup: run.cleanup,
     abortedAt: run.abortedAt,
   }

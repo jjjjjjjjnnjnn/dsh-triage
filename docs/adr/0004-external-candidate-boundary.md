@@ -19,6 +19,7 @@ M3 的执行器在 R14 只测过**本地 fixture**（`tests/fixtures/probe/*`）
 1. **精确钉定**：候选只能是 `name@x.y.z`、tarball + integrity、或本地路径。禁止 `latest`、范围、`*`——否则「跑的是哪个版本」不可复算。
 2. **只进临时沙盒**：安装在独立 `DSH_HOME`（系统临时目录下的 `dsh-triage-probe/<slug>-<digest>`），与真实 `~/.dsh` 不相交（`validateProbePlan` 强制），跑完 `finally` 必删。
 3. **不注入凭据**：子进程环境统一过 `scrubbedEnv()`（丢弃 `*API_KEY*` / `*TOKEN*` / `*SECRET*` / `*PASSWORD*` / `*CREDENTIAL*` / `*_AUTH*`）。需要 key 才能跑的候选，结论只能是 `unknown`/`unmeasured`，不许拿真实 key 换一个绿。
+   > **R20 修订（实测补充，边界不变、实现变严）**：`scrubbedEnv()` 只清环境变量，**挡不住 `~/.npmrc`**——pnpm 自己会读它。R20 黑盒对照：同一条装不上的候选，默认环境 2/2 打印 `An authorization header was used: Bearer npm_[hidden]`，把操作者的 token 发给 registry；把 `npm_config_userconfig` 指向沙盒内空文件后 2/2 消失。因此 `runInstall` 现在经 `sandboxNpmEnv()` 重定向 user config，产物记 `install.registry_auth_used`。**代价（诚实写明）**：沙盒**不继承**操作者的 npm 用户配置（含镜像），需要私有源/镜像的候选会走 profile 级 `.npmrc`（T-305b）或直接失败。
 4. **不 vendor**：候选源码**不落仓**、不进 `packages/`、不进 `quarantine/`。`vendor-manifest.json` 只登记元数据条目（`kind: "probe-candidate"`，`usage: "reference-only, never vendored"`），字段=包名/精确版本/license/`dist.integrity`/取用日期。
 5. **产物只记元数据**：`data/results/probe-*.json` 记 spec、版本、integrity、license、unpackedSize、耗时、断言与结论；不记候选源码、不记文件清单内容。绝对路径与 `?token=` 一律脱敏。
 6. **不给安全背书**：probe 只回答「装得上 / 起得来 / 画面有没有出来」。产物 `limits[]` 必须包含「no security judgement」。
