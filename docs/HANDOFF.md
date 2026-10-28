@@ -1,7 +1,7 @@
 # HANDOFF · 交接入口
 | T-313 凭据来源审计（BS-29） | verifier | 逐个来源（~/.pnpmrc / PNPM_HOME / 系统级 npmrc / corepack / 代理变量）做黑盒对照，只有全部关闭后才敢说「沙盒无凭据」；口径同步 docs/adr/0004 |
 
-> **Stand**: R26 (2026-10-28)｜当前批次：**R26 · `ADR-0008` 方案 E 已实施（`settled:false` 不再等替换窗口）；默认值与判据一字未动**
+> **Stand**: R28 (2026-10-29，交接)｜当前批次：**R28 · T-312 两阶段取样已实施（预算改判「第一份样本」）；`ADR-0009` 结论 A（不破铁律 4）**｜**本轮只交接，不改行为**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -24,11 +24,12 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交接（R28，2026-10-29） | **本轮只交接，不改行为**：`git log -1` 就是本提交、`git status` 干净；**274 测试 / 9 门 / `--mutate` 9-9**；132 份产物全部被 147 步台账引用。**冻结项**：`--unsettled-timeout 20000`、hook `settle 15s`、readiness 5s、`boot→sample ≤20s`（现在判第一份样本）、`isUsableSample()`/`judgeProbe()`。**下一位的第一件事**：按 §3 的「D2 重跑」两条命令，用**新口径**重跑矩阵（R27 的红作废、也还没被替代）。**两条待签**：`ADR-0008` §剩余项（A′ / C 已勾、B 未签）+ `ADR-0009`（结论 A、B 未签） |
 | 产品名 | **dsh-triage**（品牌：分诊台 / Triage） |
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15 白屏/就绪 + R16 跨平台 + R17 慢≠坏/端口）** · **D2 通过（R18 首判 / R19 复算，真实 13）** · **M4 形态 A ✅（`serve` v1：只读面板 + `--audit` 当前组合，R19）** · **M3 真实组合复制 ✅（T-304，R22）** · **M3 不可判等待收敛 ✅（`ADR-0008` E，R26）**；`namespace-diff`（T-303）仍缺（需 T-202a） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **271 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **127 份 SSOT 产物** · **步台账见 `audit/step_reviews.json`** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **3 份 R26 的 E 回归产物** |
+| 规模 | **274 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **132 份 SSOT 产物** · **147 步台账** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R26/R27/R28 的收窄与两阶段回归产物** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R26 起 **135 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
 | 本轮交付（R28） | **T-312 两阶段取样（HUMAN 立项）**：hook 在第一次读到树时先写 `provisional: true`/`settled: false` 的样本，settle 结束后覆盖成最终样本；执行器**用第一份判 20s 预算**、用最终样本判结论（窗口 = 样本自报的 `settle_timeout_ms` + 1s）。真机：`slow-plugin` 第一份 **5.4s** / 最终 10.7s / **仍 `go`**；`slow-overrun` 第一份 9.4s / 最终 24.5s / 仍 `unknown`；真实候选 `dsh-mcp-connector@0.2.83` 第一份 10.1s / 最终 25.2s / `unknown`（今天两次都没在 15s 内稳定）。**代价**：不可判墙钟 ≈28.6s → ≈30.4s——我们没让 probe 更快，而是把「多快拿到答案」与「答案有多细」拆成两个数字。产物新增 `inventory.provisional/upgraded/upgrade_waited_ms` 与 `timings.bootToFinalSampleMs`。**E 与 `{error}` 的语义未变**（各自回归仍过）。**ADR-0009 自评结论 A**：为一个补证断言引入读凭据路径不划算，`T-303`/`T-202a` 收束为「当前不做」，退出条件改成 HUMAN 勾 B。**剩余**：D2 必须按新口径重跑矩阵 |
 | 上一轮交付（R26） | **实施 `ADR-0008` 方案 E（已授权项，不改任何阈值）**：`host.ts` 样本循环只在样本**不可读**（`{error}`）时开替换窗口，`settled:false` 立即收敛；新增纯函数 `isReadableSample()`（`isUsableSample()` **一字未动**）；产物新增 `inventory.replacement_waited / _waited_ms / _observed / _samples / _policy / _stopped_by`；`probe.tree-not-settled` 的 detail 写明「没有再等替换样本（ADR-0008 E）」。**真机三轮**：不可判夹具 `boot` 步 **48.4s（R23）→ 28.6s（R26）**（`replacement_waited=false`、`waited_ms=0`）、慢夹具仍 `go`（`boot` 步 25.4s）、真实候选 `dsh-status-rotator@0.38.0` 仍 `go`（`boot→sample` 11.5s）。**三条回归**：`slow-overrun` 仍 `unknown` + `missing.inventory`；`slow-plugin` 仍 `go`；`{error}` 仍等满窗口且能采用替换样本（`tests/unit/probe-host-sample.test.ts`，4 条，假 launcher 驱动真实循环）。`d2_report` 用现有矩阵复算仍 `gate.passed=true`。**默认值/判据未动**：`--unsettled-timeout 20000` / `settle 15s` / readiness 5s / `boot→sample ≤20s`。新盲区 `BS-32`（墙钟 21.7–28.6s 是区间不是常数）、新任务 `T-316`（真 hook 的 `{error}` 夹具）。**同轮续做**：① **T-316 真机完成** —— 新增诊断开关 `--hook-config`（`record_probe` + `realProbeDeps.hookConfig`，产物记 `sandbox.hook_config`），把 hook 的 `resolveFrom` 指向没有 projection 包的 profile → 真实 hook 写出 `{error}/projection-missing`，执行器 `replacement_waited=true`/`waited_ms=5203`（窗口 5000）→ 与 `settled:false` 的 0ms 形成正反对照；另有 `tests/unit/probe-hook-error.test.ts` 跑**真实 hook 文件**钉死 `inactive-context`/`projection-missing` 两个 code。② **T-315 补测 `nodeLinker`** —— 复制源写 `nodeLinker: hoisted` 真跑 → `go`、行 `active`、`candidate_registered=true`（不打断行识别；但产物不记布局）。③ **T-309 post-E 矩阵重测** + `d2_report` 重算。④ **T-311 剩余写成可签的题**：`ADR-0008` 新增「把不可判压进 20s」三案（A′ settle 15s→10s / A″→8s / C 两阶段），并测出 13 个真实候选的 hook `wait_ms` 最大值 **7686ms**（所以 A′ 在本批不会误伤）。⑤ **T-303/T-202a 出 ADR**：`docs/adr/0009-agent-scope-reads.md`（proposed，三案 + B 案 6 条可机器检查边界）——**等 HUMAN 勾选才开工**。⑥ **T-401 只读契约 spike**：把上游 0.2.1-rc.4 的真实 client 契约钉到行号（`settings.plugins.tab` / `ctx.slots.register` / props 由 `inject` 提供 / `remote.pluginInventory.list()`），**未写 `client.js`** |
@@ -72,7 +73,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**按优先级**（前两条不需要新许可）：
 
-1. **先给 D2 的红项做决定（R27 新增，最需要 HUMAN）**：`d2-2026-10-29T01-30-00.000Z.json` 的 `boot-budget` 红了（11/12，`real-mcp-connector` 22.5s），根因是 20s 预算与 `settle ≤15s` 结构重叠（同候选隔离复测 16.0 / 22.5 / 23.8s）。三条出路都在 `docs/adr/0008` §剩余项：保 15s（D2 会间歇红）/ 压到 10s（`go` → `unknown`）/ T-312 两阶段（唯一两头都要）。**不许**为了让 D2 变绿去放宽预算或删 run。
+1. **用新口径重跑 D2（最该先做，约 18 分钟，不需要新许可）**：R27 的红是「预算判最终样本」的旧口径下测的，R28 已改成判**第一份**样本（T-312）。命令见 §3 末尾「D2 重跑」块：跑完矩阵再跑 `d2_report`，把新的 `d2-*.json` 与矩阵一起入账。**在这之前 D2 状态是「R27 判红 + 口径已改 + 结论待测」**，不许说「已恢复」。
 2. **`T-317`**：`d2_report` 判定失败仍 exit 0 —— 任何自动化都不得用退出码判断 D2；要进 CI 得加 `--strict`。
 3. **补真实候选（T-309 长期）**：每批 +2–3 个 pin 候选；可以再加「复制组合」样本（`--copy-profile`），但对外必须连 `BS-30`/`BS-31` 一起说。**注意**：新批次里出现过的慢候选要单独记 `wait_ms`，它们是预算红项的来源。
 4. **`T-315` 剩余**：`strictPeerDependencies` 与其它可继承 pnpm 设置仍未逐一实测；`nodeLinker: hoisted` 已在 R26 补测（不打断行识别，见 F49），但产物**不记录 `node_modules` 布局**——想主张「真的切到 hoisted」得先把布局写进产物。
@@ -81,6 +82,17 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 7. **T-303 / T-202a**：`docs/adr/0009-agent-scope-reads.md`（proposed）**等 HUMAN 勾选**（A 维持 / B 破例 / C 等上游）。未签前保持 `unmeasured`，**不要**用「进程级工具清单」冒充它。
 
 **ADR-0008 E 提醒（R26）**：替换窗口现在是**`{error}` 专属**。`settled:false` 立即收敛，产物里是 `inventory.replacement_waited=false`——**别**把它读成「探针变快了 20s」就顺手去改 `--unsettled-timeout` 默认值（那仍是 20000，改它需新 ADR）。也**别**把 `isUsableSample()` 一起放宽：它同时被 judge 与断言使用，放宽它等于把「树还在动」判成 `blocked`。**`{error}` 那一侧现在有真机证据了**：`probe-adr0008e-hook-error`（真 hook 写 `projection-missing`，`replacement_waited=true`、`waited_ms=5203`）——但它**不是**一个正常候选样本（`sandbox.hook_config` 非空，用的是诊断开关 `--hook-config`），不许计入通过率。**墙钟是区间不是常数**：R26 三次真跑 `boot` 步 21.7–28.6s（sample 等待本身在 11.5–22.7s 之间波动，`BS-32`），对外只能说区间并指向 `timings.bootSegments`，不要说「一次 probe 30 秒」。
+
+**D2 重跑（R28 交接后的第一件事）**：R27 的红是旧口径（预算判最终样本）下测的；R28 起预算判**第一份**样本（T-312）。重跑两条命令即可给出新结论：
+
+```powershell
+node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp <新 ISO>
+node scripts/d2_report.mjs --matrix data/results/probe-matrix-<新 stamp>.json --stamp <新 ISO>
+```
+
+验收：矩阵 n=20 / 真实 13 / 清理 20-20 / 形状 6；`d2_report` 的输出里 **`boot-budget` 是否 12/12**。**注意**：`d2_report` 判定失败时**仍然 exit 0**（`T-317`），必须读产物里的 `gate.passed`，不能看退出码。跑之前先 `Get-Process pnpm` 清残留（R23 的坑），并且**不要**在跑矩阵时并行跑测试/构建（R27 的 `real-mcp-connector` 22.5s 可能被自己的并发拖慢过，见 `BS-32`）。
+
+**T-312 提醒（R28）**：`provisional: true` 的样本**不可判**（`settled:false`，只能 `unknown`）；预算判第一份（`timings.bootToSampleMs`），最终样本时刻在 `bootToFinalSampleMs`。**升级窗口必须从样本自报的 `settle_timeout_ms` 推**（+1s），改回固定常数会错过恰好卡在 hook 预算上的最终样本（R28 真踩）。
 
 **R19 提醒**：安装失败**现在有原因**了（`install.diagnosis`），但别把 `ERR_PNPM_IGNORED_BUILDS` 说成「插件坏」——它往往只是 pnpm 的 build-script 审批策略（F35）。`key_line` 的取法有两条硬规则：**launcher 优先于诊断日志**（日志只有 67 字节，没有码），**`dsh:` 开头的行永远不算原因**（那是 launcher 在说它自己）。
 
@@ -93,7 +105,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 先按 `.agents/prompts/task-packet.md` 列允许改动的文件，再动手。
 
-**新会话开箱状态（R27 收尾）**：`git log -1` 就是本轮实施提交，`git status` 干净；**271 测试 / 9 门 / `--mutate` 9-9**；`data/results` 的每份产物都被步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账，R19 的预算口径就是范例）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`）；**许可只认元数据能证明的**（`SEE LICENSE IN LICENSE` 这种直接跳过，R19 真放弃过一个候选）。**R22 追加一条**：`--copy-profile` 只搬四个声明文件，**永远不要**顺手复制 `node_modules` / `.plugin-manager` / `.npmrc`（最后一个是凭据）。**R26 追加一条**：改 `packages/probe/src/host.ts` 后**先 `pnpm build`** 再跑 `record_probe`（它 import `dist/`），否则你测的是旧循环。
+**新会话开箱状态（R28 收尾）**：`git log -1` 就是交接提交，`git status` 干净；**274 测试 / 9 门 / `--mutate` 9-9**；`data/results` 的每份产物都被步台账引用；新会话**不许**为了「让门变绿」改阈值或删产物。四条最容易踩的禁令：① 不得读 `~/.dsh/credentials`、不得向沙盒注入真实凭据（铁律 4，T-202a 要先出 ADR）；② 判据/阈值改动必须 spec + HUMAN-SIGN（`audit/SIGNOFF.md` 记账，R19 的预算口径就是范例）；③ 沙盒目录名一律 basename slug —— 别再让绝对路径进产物（F-2 / R16 面板 smoke 又踩过）；④ 外部候选只能 pin 版本 + 临时沙盒执行，不 vendor（`docs/adr/0004`）；**许可只认元数据能证明的**（`SEE LICENSE IN LICENSE` 这种直接跳过，R19 真放弃过一个候选）。**R22 追加一条**：`--copy-profile` 只搬四个声明文件，**永远不要**顺手复制 `node_modules` / `.plugin-manager` / `.npmrc`（最后一个是凭据）。**R26 追加一条**：改 `packages/probe/src/host.ts` 后**先 `pnpm build`** 再跑 `record_probe`（它 import `dist/`），否则你测的是旧循环。
 
 > D1 已于 R6 通过（9/10）；M2-a P2 于 R7 交付；R8 补副本来源与重复副本；R9 让「没声明」不再静默；R10 让 dist-tag 失步可见；R12 让相位来自真机（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`）并补齐 preset 维度。
 > 复核口径十一条命令：`node scripts/d1_report.mjs --stamp <iso>`、`node scripts/render_inventory.mjs --snapshot data/fixtures/inventory/desktop-web-2026-10-26.json --dsh-home tests/fixtures/env/home --profile desktop --stamp <iso>`、`node scripts/record_live_inventory.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_audit.mjs --dsh-home <sandbox> --profile desktop --stamp <iso>`、`node scripts/probe_live_sample.mjs --dsh-home <sandbox>/home --profile upstream --install <sandbox>/install --stamp <iso>`、`node scripts/record_registry.mjs --stamp <iso>`、`node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label ok --expect go --browser <chrome> --stamp <iso>`（R17 另加 `--readiness-timeout <ms>` / `--unsettled-timeout <ms>`；R22 另加 `--copy-profile <name>` + `--dsh-home <home>`；**R26 另加 `--hook-config <json>`（诊断开关：产物记 `sandbox.hook_config`，该产物不得计入通过率）**）、`node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp <iso>`（另三种：`rendered` / `error` / `blocked`）、`node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r17.json --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --stamp <iso>`、`node scripts/record_serve_smoke.mjs --stamp <iso>`、**`node scripts/audit_credential_sources.mjs --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp <iso>`（R23，离线，30 次 launcher 运行）**。
@@ -179,6 +191,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 以为「组合装成功了 = 组合可用」 | `{"x":"link:./not-here"}` 的 `plugin install` **exit 0** 并打印 `+ x <- not-here`，目标根本不存在（R20 F40） | T-304 已实现：`link:`/`file:` 逐个 stat，悬空 → `unknown` + `probe.profile-link-dangling`。**别**改成「看退出码就够了」 |
 | 复制真实组合后 `plugin install` 一直 exit 1，被拒的是 `node-pty`/`koffi` 这类**组合自己的**包 | pnpm 的构建审批策略（R19 F35 同一形状）；模板路径里 pnpm 只报候选，所以以前没见过（R22 F41） | 沙盒 `pnpm-workspace.yaml` 写 `strictDepBuilds: false`（F43）：exit 0 且注册 bundle，但**不批准任何构建**；被跳过的包进 `install.ignored_packages`。`.npmrc` 里同名设置**无效** |
 | 「ADR 已经签了」就顺手把默认值也改掉 | ADR-0008 的方案 E **授权的是做法**（`settled:false` 不再等替换），**不是**「改 `--unsettled-timeout` 的默认值」。两者是两件事 | **R26 已实施做法、默认值仍 20000**；改默认值是另一道签（方案 A），未授权 |
+| 把 `provisional: true` 的样本当成可判样本 | 它是 hook 的**第一份**读数，`settled` 恒为 `false`；`measurementState` 据此判 `unsettled` → 只能 `unknown` | 想让它出 `go`/`blocked` 只有一条路：等最终样本（`inventory.upgraded=true`）。**别**在 `judgeProbe` 里为 provisional 开特例 |
+| 以为「T-312 让 probe 变快了」 | 墙钟反而从 ≈28.6s 升到 ≈30.4s（多等最终样本） | 预算判的是**第一份样本**（`timings.bootToSampleMs`）；最终样本时刻在 `bootToFinalSampleMs`。对外只能说「答案更早」，不能说「更快」 |
+| 升级窗口取固定值，结果恰好错过最终样本 | R28 第一版用固定 15s，`slow-overrun` 的最终样本 15.25s 才写完 → `upgraded` 误记 `false`（结论不变，但产物说谎） | 窗口 = 样本自报的 `settle_timeout_ms` + 1s；hook 版本换了就自动跟着变。**别**改回常数 |
 | 把 `settled:false` 与 `{error}` 当成同一种「不可判」去删等待 | 两者的恢复机制不同（R17：`{error}` 是 dead context 被新 apply 取代；`settled:false` 是 hook 自己读完了但树还在动） | **R26 已按 `ADR-0008` E 落地**：`replacedEnough` 只在样本**不可读**时参与；`settled:false` 立即收敛。**别**顺手把 `isUsableSample()` 也放宽（那会把「树还在动」判成 `blocked`），也**别**把 `--unsettled-timeout` 默认值改掉 |
 | 说「E 让 probe 变快了 20 秒」 | E 只删掉**本来就没买到任何东西**的那一段（29 份产物 `replacements_observed=0`）；同类夹具的 sample 等待本身在 11.5–22.7s 之间波动（`BS-32`），看起来就像「有时没变快」 | 引用时给区间与前后对照：同夹具 `boot` 步 48.4s（R23）→ 28.6s（R26），差额是被删掉的替换窗口；证据看 `timings.bootSegments` 与 `inventory.replacement_waited` |
 | 用 pnpm 的 `An authorization header was used` 判断有没有凭据外发 | **这句话不是总会出现**：R23 实测「合成 token + 真实 userconfig」不打印它，靠日志会把一条活着的凭据来源判成「没问题」 | 用本地假 registry 记请求头（`scripts/audit_credential_sources.mjs`）；而且必须**异步 spawn**，`spawnSync` 会阻塞事件循环让同进程的假 registry 永远答不了（真踩三次 90s） |
@@ -251,9 +266,9 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | `T-305b` 私有源 / 不可达 registry 的真实失败形状 | implementer | ✅ **R16 交付**：`--npmrc-registry` + `install.endpoints` 点名源（`probe-registry-private-2026-10-27T14-33-57.000Z.json`）。剩余：只在 Windows 上跑过这一次 |
 | `T-308` 就绪窗口 / hook 时序（`BS-25`） | implementer | ✅ **R17 交付 + R18 补测**：端口向 OS 申请、判定分离、就绪同轮询、hook 代际保护、`startup failed` 原文归因；`slow-plugin`(6s)=go 与 `slow-overrun`(20s)=unknown 都有真机产物。**剩余**：Linux 等价端口排除段未测（`BS-27` 的跨平台部分） |
 | `T-310` 安装失败归因 | implementer | ✅ **R19 交付**：`install.diagnosis{code,key_line,source}` + `probe.install-failed-code` / `probe.install-build-refused`；真机 3 种码（`IGNORED_BUILDS` / `NO_MATCHING_VERSION` / `RESOLVING_NPM_RESOLVER_NETWORK_ERROR`）可见，URL 去凭据/查询串。剩余：`peer` 冲突类错误未在真机出现（只有单测形状） |
-| `T-311` 20s 预算 vs 20s 未稳定窗口（`BS-28`） | implementer + arbiter | ✅ **R26 收窄**：`ADR-0008` 方案 E 已实施 —— `settled:false` 不再等替换窗口（不可判 `boot` 步 48.4s → 28.6s），`{error}` 仍等满。**未解除**：不可判仍 ≈29s（>20s）；要压进 20s 需改 settle 上限或两阶段取样（T-312），两者都要新 ADR。`--unsettled-timeout` 默认值仍 20000 |
-| `T-316` 真 hook 的 `{error}` 夹具 | implementer | 现在「`{error}` 仍等满窗口」由假 launcher 单测证明（`tests/unit/probe-host-sample.test.ts`）；造一个能让真实 `inventory-hook` 写出 `{error}` 的沙盒形态并真跑一份产物，在此之前不许声称该路径已真机回归 |
-| `T-303` probe 的 `namespace-diff` 断言 | verifier | 依赖 T-202a（作用域）才能列「声明了但未注册」的工具。**R26**：`docs/adr/0009-agent-scope-reads.md`（proposed，三案 + B 案 6 条边界）**等 HUMAN 勾选**；未签前保持 `unmeasured` |
+| `T-311` 20s 预算 vs 未稳定窗口（`BS-28`） | implementer + arbiter | ✅ **R26（E）+ R28（T-312）两步收窄**：`settled:false` 不再等替换窗口；预算改判**第一份**样本（`slow-plugin` 5.4s 仍 `go`）。**未解除**：不可判墙钟 ≈30.4s（比 E 之后的 28.6s 略长，因为要等最终样本），`--unsettled-timeout` 仍 20000、`settle` 仍 15s；`A′`（settle→10s）与 `A″`（→8s）**未签且已实测有代价**（`dsh-mcp-connector` 会 `go`→`unknown`） |
+| `T-316` 真 hook 的 `{error}` 夹具 | implementer | ✅ **R27 完成**：`--hook-config` 把 hook 的 `resolveFrom` 指向没有 projection 包的 profile，真实 hook 写出 `{error}/projection-missing`，执行器 `replacement_waited=true`/`waited_ms=5204`（窗口 5000）。**边界**：`inactive-context` 只有桩级证据（`tests/unit/probe-hook-error.test.ts`），不许说成真机回归 |
+| `T-303` / `T-202a` 会话作用域读数 | verifier + implementer | ⛔ **R28 结论：当前不做（A 案）**。`docs/adr/0009` 已分析三案：B 只换来一个补证断言，代价是产品里永久存在一条读凭据路径，且 6 条边界挡不住下一问「帮我读 `~/.dsh`」。产物继续写 `namespace-diff: unmeasured`；**退出条件**：HUMAN 在 ADR-0009 签字区勾 B |
 | `T-304` probe 只测空模板 profile | implementer | 用 profile 副本 + 依赖安装跑一次，回答「加到**我的**组合里会不会挂」 |
 | `T-306` 非 web 表面的就绪判据 | implementer | ✅ **R15 已交付（web 面）**：`readiness.source=host-url` + 多端口 cleanup。剩余：tui/headless profile 仍靠 `--no-http` 人工出口 |
 | `T-113` attw 式入口可加载性矩阵 | implementer | 先在沙箱实测 loader 解析模式（两种），再实现；否则会造假警告 |

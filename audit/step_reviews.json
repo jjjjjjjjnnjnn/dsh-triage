@@ -3614,6 +3614,31 @@
         "sha256": "2504e86c5572bfd3a070c20c2b93add6c1acb0e507d002767b9d263391f40612",
         "outcome": "ALL GREEN · 9 gates（274 测试；145 步 / 130 产物全部被引用）"
       }
+    },
+    {
+      "id": "R28-S5",
+      "batch": "R28",
+      "step": "交接（R28）：HANDOFF §2/§3/§4/§8 改写（D2 新口径重跑命令、T-312 提醒、三条新坑、T-303/T-202a 收束为 A）、AI_DISCLOSURE_LOG 补 R27+R28 两条、SIGNOFF 与 INDEX 同步，门禁录一次全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：交接文档里的硬数字与产物一致（274 测试 / 9 门 / `--mutate` 9/9 / 130 产物 / 146 步）；「下一位的第一件事」是**两条可直接粘的命令**（矩阵 + d2），并写明验收看 `gate.passed` 而不是退出码；T-312 的三个坑（provisional 不可判、预算判第一份、窗口从 `settle_timeout_ms` 推）写进 §4",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T05:30:00.000Z` 一条命令重放 9 门；`git log -1` 即交接提交、`git status` 干净",
+        "licence": "PASS：本轮交接无代码改动、无新增候选、未动 quarantine；`AI_DISCLOSURE_LOG` 补齐了 R27（此前漏记）与 R28 两条，SessionID 字段均为「主会话，无 subagent」",
+        "ssot": "PASS：D2 状态在 HANDOFF（未通过的门槛 + §3 命令块）、INDEX（D2 行）、BACKLOG（T-309）、ADR-0008（§T-312 未解决段）四处一致：**R27 判红、R28 口径已改、结论待测**。T-303/T-202a 在 BACKLOG 与 HANDOFF §8 都是「当前不做（A）」，退出条件统一为「HUMAN 勾 ADR-0009 的 B」",
+        "adversary": "反例一：把「口径已改」写成「D2 已恢复」——四处都写「待测」。反例二：交接只留结论不留命令——§3 给了两条可粘命令 + 验收判据 + 两个前置（清 pnpm 残留、不要并行跑测试）。反例三：补记 AI 披露时把 R27 说成「本轮」——两条分开写、日期与批次各自独立"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T05:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T05-30-00.000Z.json",
+        "sha256": "a647a8eda50721cc68313bc2bd71e117532da8b4a03e5ac6ba8679fd97946081",
+        "outcome": "ALL GREEN · 9 gates（274 测试；146 步 / 130 产物全部被引用）"
+      }
     }
   ]
 }

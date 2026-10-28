@@ -335,3 +335,25 @@
 - 实测：269 测试 / 9 门全绿 / `--mutate` 9/9；119 份 SSOT 产物 / 135 步台账；墙钟 21.7–28.6s（区间，`BS-32`）
 - 过程中的真实缺陷：① 初版把「≈32s」写进 `limits[]` 与文档，而同一夹具第二次真跑是 28.6s —— 已把产物文案改成不含秒数的结构描述，文档统一给区间；② `gate.mjs --record` 第一次在台账补登前跑，录下一份「step-review FAIL」的门禁产物，已删除并用补齐台账后的第二次 `--record` 重录（全绿）
 - 未做：真 hook 的 `{error}` 夹具（`T-316`，本轮只有假 launcher 单测）、post-E 矩阵重测（`T-309` 后续）、`--unsettled-timeout` 默认值（仍 20000，改它需新签）
+
+### 2026-10-29 R27｜真 hook 的 `{error}`（T-316）+ `nodeLinker` 补测（T-315）+ post-E 矩阵让 D2 第一次判红
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R27-S1…S7）
+- 范围：`packages/probe/src/host.ts`、`packages/plugin/src/probe-run.ts`、`scripts/record_probe.mjs`、`tests/unit/probe-hook-error.test.ts`（新）、`tests/fixtures/probe/profile-copy/node-linker/**`（新）、`docs/{adr/0008,adr/0009,adr/0007,specs/M3-probe,specs/M4-surface,ROADMAP,HANDOFF,BACKLOG}.md`、`audit/{SIGNOFF.md,blind_spots.json,AUDIT_2026-10-29_R27.md,step_reviews.json}`、`INDEX.md`
+- 起因：HUMAN 2026-10-29「进行这些问题处理」（T-316 / T-309 / T-311 剩余 / T-401 / T-303）
+- 结果：① **T-316 真机完成** —— 诊断开关 `--hook-config`；真实 hook 写出 `{error}/projection-missing`，执行器 `replacement_waited=true`、`waited_ms=5204`（窗口 5000），与 `settled:false` 的 0ms 形成正反对照；另加跑真实 hook 文件的单测。② **T-315 补测** `nodeLinker: hoisted` 复制源 → `go`、行 `active`、`candidate_registered=true`（不打断识别；产物不记布局）。③ **T-309 post-E 矩阵**：n=20 / 真实 13（12 go / 1 blocked）/ 清理 20-20 / 形状 6 / `expectation_misses=0`。④ **D2 首次判红**：`boot-budget` 11/12，`real-mcp-connector` 22.5s；隔离复测 16.0 / 22.5 / 23.8s → 根因是 20s 预算与 `settle ≤15s` 结构重叠，**不是** E。⑤ **T-311 剩余**写成三案并更正自己「A′ 不会误伤」的说法。⑥ **ADR-0009**（proposed）与 **T-401 只读契约 spike**（M4-surface §3.1 C1–C6）。⑦ 新开 `T-317`（`d2_report` 判定失败仍 exit 0）
+- 实测：271 测试 / 9 门全绿 / `--mutate` 9/9；142 步 / 127 产物
+- 过程中的真实缺陷：① 把「A′ 不会误伤」写进 ADR 后，同轮实测发现 `dsh-mcp-connector` 的 `wait_ms` 是 16.2/18.0s（不是旧批次的 7.7s）——已按证据改写；② `gate.mjs --record` 又在台账补登前跑了一次，产出的红门禁产物已删除重录
+- 未做：D2 的预算决定（要签）、`dsh-mcp-connector` 的抖动没有收敛、`T-317` / `T-401` / `T-315` 剩余
+
+### 2026-10-29 R28（交接）｜T-312 两阶段取样（预算改判第一份样本）+ ADR-0009 结论 A
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R28-S1…S5）
+- 范围：`packages/probe/hooks/inventory-hook.mjs`、`packages/probe/src/{host,exec,index}.ts`、`packages/plugin/src/probe-run.ts`、`scripts/{record_probe,d2_report}.mjs`、`tests/unit/{probe-host-sample,probe-hook-two-phase}.test.ts`、`docs/{specs/M3-probe,adr/0008,adr/0009,BACKLOG,HANDOFF,ROADMAP}.md`、`audit/{SIGNOFF.md,AUDIT_2026-10-29_R28.md,step_reviews.json}`、`INDEX.md`、`AGENTS.md`
+- 起因：HUMAN 2026-10-29「立项 T-312 两阶段」+「ADR-0009：A/B/C。自己分析」
+- 结果：① **T-312 已实施** —— hook 先写 `provisional:true`/`settled:false` 再覆盖最终样本；执行器**判第一份**为 20s 预算，最终样本时刻记 `bootToFinalSampleMs`，升级窗口 = 样本自报的 `settle_timeout_ms` + 1s。真机：`slow-plugin` 第一份 **5.4s**（改前 14.7s）/ 最终 10.7s / **仍 `go`**；`slow-overrun` 9.4s（改前 22.7s）/ 24.5s / 仍 `unknown`；真实候选 `dsh-mcp-connector@0.2.83` 10.1s（改前 22.5s）/ 25.2s / `unknown`。② 代价如实记录：不可判墙钟 28.6s → 30.4s。③ **ADR-0009 结论 A**：不为一个补证断言引入读凭据路径 → `T-303`/`T-202a` 收束为「当前不做」，**没有**自签铁律 4 例外
+- 实测：274 测试 / 9 门全绿 / `--mutate` 9/9；146 步 / 130 产物
+- 过程中的真实缺陷：① 第一版升级窗口用固定 15s，`slow-overrun` 的最终样本 15.25s 才写完 → `upgraded` 误记 `false`；改为从样本自报 `settle_timeout_ms` 推 +1s 后修正；② 改 `exec.ts` 时漏了 `ProbeSampleView.provisional` 的三个返回分支，typecheck 抓到并补全
+- 未做：**D2 没有按新口径重跑**（下一位的第一件事）、`T-317`、`T-315` 剩余、`T-401` 的 `client.js`
