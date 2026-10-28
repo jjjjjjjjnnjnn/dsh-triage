@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_probe.mjs",
+  "generated_at": "2026-10-29T00:40:00.000Z",
+  "label": "t315-node-linker",
+  "expectation": "go",
+  "expectation_met": true,
+  "candidate": {
+    "spec": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+    "package": "triage-probe-fixture-ok",
+    "kind": "path",
+    "resolved": null
+  },
+  "runtime": {
+    "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install",
+    "version": "0.2.1-rc.4",
+    "dsh_main": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-probe\\ok-plugin-a05cf8d7",
+    "profile": "web",
+    "profile_origin": "copy:web",
+    "profile_source": "<repo>\\tests\\fixtures\\probe\\profile-copy\\node-linker\\profiles\\web",
+    "profile_copy": {
+      "files": [
+        "package.json",
+        "pnpm-workspace.yaml"
+      ],
+      "missing": [
+        "cordis.yml",
+        "cordis.patch.yml"
+      ],
+      "install": {
+        "exit_code": 0,
+        "code": null,
+        "detail": "Done in 13.5s using pnpm v12.15.0"
+      },
+      "build_refused": false,
+      "pnpm_policy": "source",
+      "dangling_links": []
+    },
+    "port_origin": "allocated",
+    "port": 64153,
+    "overlap_check": "disjoint (validateProbePlan)",
+    "env_scrubbed": true,
+    "hook_config": null,
+    "preinit": null
+  },
+  "steps": [
+    {
+      "id": "runtime",
+      "status": "passed",
+      "ms": 172,
+      "detail": "runtime 0.2.1-rc.4",
+      "exitCode": null
+    },
+    {
+      "id": "profile",
+      "status": "passed",
+      "ms": 14329,
+      "detail": "copied package.json, pnpm-workspace.yaml (absent: cordis.yml, cordis.patch.yml) · dependencies installed",
+      "exitCode": 0
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "ms": 2437,
+      "detail": "Done in 1.7s using pnpm v12.15.0 · the refusal is about the copied profile's own dependencies (@deepseek-ai/dsh-subprocess-local, @google/genai, koffi, node-pty, protobufjs), not the candidate · the launcher reported success",
+      "exitCode": 0
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "ms": 19680,
+      "detail": "8.6s to sample",
+      "exitCode": null
+    },
+    {
+      "id": "http",
+      "status": "passed",
+      "ms": 0,
+      "detail": "HTTP 401",
+      "exitCode": null
+    },
+    {
+      "id": "render",
+      "status": "passed",
+      "ms": 0,
+      "detail": "rendered: mount root with 1 child(ren), 289 visible chars (2340ms)",
+      "exitCode": null
+    },
+    {
+      "id": "inventory",
+      "status": "passed",
+      "ms": 0,
+      "detail": "include:triage-probe-ok active",
+      "exitCode": null
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "ms": 17721,
+      "detail": "sandbox removed · port closed",
+      "exitCode": null
+    }
+  ],
+  "timings": {
+    "installMs": 2437,
+    "bootToSampleMs": 8600,
+    "httpMs": 0,
+    "renderMs": 2340,
+    "cleanupMs": 17721,
+    "bootSegments": {
+      "spawnMs": 24,
+      "sampleWaitMs": 8846,
+      "sampleMtimeMs": 8627,
+      "settleMs": 1011,
+      "readinessMs": 68,
+      "renderMs": 5508,
+      "killMs": 3017,
+      "postKillWaitMs": 1202,
+      "scratchCleanupMs": 3,
+      "totalMs": 19656
+    }
+  },
+  "assertions": [
+    {
+      "id": "boot-sampled",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "id": "http-served",
+      "status": "passed",
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "inventory-active",
+      "status": "passed",
+      "detail": "1 candidate row(s)"
+    },
+    {
+      "id": "cleanup-complete",
+      "status": "passed",
+      "detail": "sandbox removed · port closed"
+    },
+    {
+      "id": "client-rendered",
+      "status": "passed",
+      "detail": "rendered: mount root with 1 child(ren), 289 visible chars"
+    },
+    {
+      "id": "namespace-diff",
+      "status": "unmeasured",
+      "detail": "tracked as T-303; tool surface lives in agent scope (BS-21)"
+    }
+  ],
+  "inventory": {
+    "transport": "in-process-projection",
+    "entries": 195,
+    "wait_ms": 4592,
+    "settled": true,
+    "error_code": null,
+    "attempts": 1,
+    "applies": 1,
+    "candidate_rows": [
+      {
+        "entryId": "include:triage-probe-ok",
+        "moduleName": "triage-probe-fixture-ok",
+        "phase": "active"
+      }
+    ],
+    "excluded": [
+      "include:triage-inventory-probe"
+    ],
+    "error": null,
+    "replacement_waited": false,
+    "replacement_waited_ms": 0,
+    "replacement_observed": false,
+    "replacement_samples": 1,
+    "replacement_policy": "error-only",
+    "replacement_stopped_by": "readable-sample"
+  },
+  "http": {
+    "status": 401,
+    "detail": "HTTP 401"
+  },
+  "boot": {
+    "url_printed": true,
+    "first_line": "dsh web: http://127.0.0.1:64153/?token=<redacted>",
+    "error_tail": null,
+    "startup_failed": false,
+    "bind_failed_ports": []
+  },
+  "readiness": {
+    "source": "host-url",
+    "port": 64153,
+    "outcome": "served",
+    "waited_ms": 68,
+    "window_ms": 5000,
+    "url_seen": true
+  },
+  "render": {
+    "status": "rendered",
+    "detail": "mount root with 1 child(ren), 289 visible chars",
+    "ms": 2340,
+    "signals": {
+      "title_length": 16,
+      "ready_state": "complete",
+      "body_children": 4,
+      "root_id": "root",
+      "root_children": 1,
+      "text_length": 289,
+      "html_bytes": 540955
+    }
+  },
+  "install": {
+    "lockfile": {
+      "present": true,
+      "bytes": 616983,
+      "sha256": "8e9ca70410de54f0207e10f3c0b3c0071153c58fc385a97e89b4d35bb2312f5a"
+    },
+    "endpoints": [],
+    "exit_code": 0,
+    "diagnosis": {
+      "code": null,
+      "key_line": null,
+      "source": "none"
+    },
+    "registry_auth_used": false,
+    "ignored_packages": [
+      "@deepseek-ai/dsh-subprocess-local",
+      "@google/genai",
+      "koffi",
+      "node-pty",
+      "protobufjs"
+    ],
+    "build_refused_profile_only": true,
+    "candidate_registered": true
+  },
+  "cleanup": {
+    "removed": true,
+    "port_closed": true,
+    "detail": "sandbox removed · port closed"
+  },
+  "conclusion": "go",
+  "confidence": {
+    "level": "high",
+    "basis": "measured-local"
+  },
+  "reasons": [
+    {
+      "code": "probe-served",
+      "severity": "info",
+      "messageId": "probe.served",
+      "params": {
+        "status": 401,
+        "seconds": 9
+      }
+    },
+    {
+      "code": "probe-profile-build-refused",
+      "severity": "warn",
+      "messageId": "probe.profile-build-refused",
+      "params": {
+        "detail": "the package manager refused to build the copied profile's own dependencies (@deepseek-ai/dsh-subprocess-local, @google/genai, koffi, node-pty, protobufjs) while adding the candidate; the candidate is registered in the composition"
+      }
+    },
+    {
+      "code": "probe-render-ok",
+      "severity": "info",
+      "messageId": "probe.render-ok",
+      "params": {
+        "ms": 2340
+      }
+    },
+    {
+      "code": "probe-row-active",
+      "severity": "info",
+      "messageId": "probe.row-active",
+      "params": {
+        "row": "include:triage-probe-ok"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "probe-runtime",
+      "tier": "measured-local",
+      "source": "<repo>\\sandbox\\upstream\\0.2.1-rc.4\\install\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js",
+      "method": "dsh --version (sandbox)",
+      "at": "2026-10-29T00:40:00.000Z",
+      "detail": "0.2.1-rc.4"
+    },
+    {
+      "id": "probe-profile-copy",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\profile-copy\\node-linker\\profiles\\web",
+      "method": "profile declaration copy + dependency install (sandbox)",
+      "at": "2026-10-29T00:40:00.000Z",
+      "detail": "origin=copy:web copied=package.json,pnpm-workspace.yaml missing=cordis.yml,cordis.patch.yml install_exit=0"
+    },
+    {
+      "id": "probe-install",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+      "method": "dsh plugin --profile <p> add <candidate> (sandbox)",
+      "at": "2026-10-29T00:40:00.000Z"
+    },
+    {
+      "id": "probe-boot",
+      "tier": "measured-local",
+      "source": "<repo>\\tests\\fixtures\\probe\\ok-plugin",
+      "method": "boot + in-process-projection inventory sample",
+      "at": "2026-10-29T00:40:00.000Z",
+      "detail": "entries=195 wait_ms=4592"
+    },
+    {
+      "id": "probe-http",
+      "tier": "measured-local",
+      "source": "http://127.0.0.1:64153",
+      "method": "http readiness (redirect: manual)",
+      "at": "2026-10-29T00:40:00.000Z",
+      "detail": "status=401 waited=68ms window=5000ms url_seen=true"
+    },
+    {
+      "id": "probe-render",
+      "tier": "measured-local",
+      "source": "http://127.0.0.1:64153",
+      "method": "headless Chromium + CDP DOM observation",
+      "at": "2026-10-29T00:40:00.000Z",
+      "detail": "mount root with 1 child(ren), 289 visible chars"
+    },
+    {
+      "id": "probe-cleanup",
+      "tier": "measured-local",
+      "source": "sandbox removed · port closed",
+      "method": "directory + port check",
+      "at": "2026-10-29T00:40:00.000Z"
+    }
+  ],
+  "missing_evidence": [],
+  "limits": [
+    "answers boot + HTTP + candidate row phase + whether the page mounted visible DOM",
+    "does not judge security or maliciousness (COMPLIANCE.md §5)",
+    "does not judge functionality, content correctness, or that tools registered (T-303)",
+    "a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured",
+    "measured on a sandbox runtime, not on the user machine",
+    "a plugin that needs credentials is unverified, not verified-safe",
+    "the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)",
+    "a tree that never settles is returned well past the 20s budget, not at 20s: the hook settle is inside the sample wait and the render/kill tail is inside the step; ADR-0008 E means no replacement window is opened for a settled:false sample (that window alone was ≈20s before)",
+    "the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate",
+    "timings.bootSegments splits the boot step (spawn, sample wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only, and inventory.replacement_waited records whether a replacement window was opened at all"
+  ]
+}

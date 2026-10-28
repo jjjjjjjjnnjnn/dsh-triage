@@ -242,11 +242,21 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
   let child: ChildProcess | null = null
   try {
     copyFileSync(hookSource, hookPath)
+    /**
+     * Merge the caller's hook config over the defaults instead of appending it.
+     *
+     * WHY (T-316): `resolveFrom` / `profile` used to be emitted before `config`, so a caller
+     * could not override them — and an experiment that needs the hook to talk to a different
+     * tree (e.g. one with no projection package, to make the hook write a real `{error}`) had
+     * no way to say so. Duplicate YAML keys were the alternative and they are a parser trap.
+     * `out` is written LAST on purpose: the sample path is the loop's contract, not a knob.
+     */
+    const hookConfig = { resolveFrom: profileDir.replaceAll('\\', '/'), profile, ...config }
     const configLines = [
+      ...Object.entries(hookConfig)
+        .filter(([key]) => key !== 'out')
+        .map(([key, value]) => `        ${key}: ${JSON.stringify(value)}`),
       `        out: '${samplePath.replaceAll('\\', '/')}'`,
-      `        resolveFrom: '${profileDir.replaceAll('\\', '/')}'`,
-      `        profile: '${profile}'`,
-      ...Object.entries(config).map(([key, value]) => `        ${key}: ${JSON.stringify(value)}`),
     ]
     writeFileSync(
       patchPath,

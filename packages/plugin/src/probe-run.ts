@@ -59,6 +59,16 @@ export interface RealProbeDepsOptions {
    * that ends inside this window can only ever be judged `unknown`.
    */
   readonly unsettledReadinessMs?: number
+  /**
+   * Extra config for the inventory hook (T-316).
+   *
+   * WHY THIS EXISTS: the hook's own knobs (`resolveFrom`, `retryMs`, `timeoutMs`) decide
+   * *whether* it can read the tree. The `{error}` recovery path (ADR-0008 E keeps it) could
+   * only be exercised by faking the launcher until a run could point the hook at a tree it
+   * cannot project from. This is a diagnostic knob: it changes what the instrument measures,
+   * never the verdict, so anything produced with it must say so in its artifact.
+   */
+  readonly hookConfig?: Readonly<Record<string, unknown>>
 }
 
 export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps {
@@ -89,6 +99,9 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         scratchRoot,
         timeoutMs,
         env: scrubbedEnv(baseEnv, { DSH_HOME: plan.sandboxHome }),
+        // T-316: diagnostic hook knobs (see `RealProbeDepsOptions.hookConfig`). Absent for a
+        // normal run, so the overlay is byte-identical to what has always been produced.
+        ...(options.hookConfig === undefined ? {} : { config: options.hookConfig }),
         // Measured in R14: `--port` is forwarded to the app, and without `--no-open` a
         // probe would launch the user's browser. Both belong to the probe, not the plugin.
         appArgs: ['--port', String(plan.port), '--no-open'],

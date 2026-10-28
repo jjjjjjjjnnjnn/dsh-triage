@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R26 (2026-10-28)",
+  "stand": "R27 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -3347,6 +3347,170 @@
         "artifact": "data/results/gates-2026-10-28T23-40-00.000Z.json",
         "sha256": "7b3bc998279e203bf71e96c4d7a0c8f61e337f5ac6440d6d3080a5217e333ff4",
         "outcome": "ALL GREEN · 9 gates（269 测试；`--mutate` 同轮另跑一次，见提交说明）"
+      }
+    },
+    {
+      "id": "R27-S1",
+      "batch": "R27",
+      "step": "T-316：让真实 inventory-hook 写出真正的 {error}（新增诊断开关 --hook-config + realProbeDeps.hookConfig；hook 配置改为合并而非追加；真机跑出 projection-missing 并确认执行器仍等满窗口），并新增跑真实 hook 文件的单测",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/plugin/src/probe-run.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-hook-error.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：真机产物 `unknown` + `missing.inventory` + `probe.sample-unreadable`，`inventory.error_code=projection-missing`、`settled:false`、`replacement_waited=true`、`waited_ms=5204`（窗口 5000）、`stoppedBy=unreadable-window`——这正是 E 的反面：`settled:false` 等 0ms，`{error}` 等满窗口。hook 配置从「追加」改为「合并」（`out` 最后写且不可覆盖），否则 patch 里会出现重复 YAML key",
+        "reproducibility": "PASS：命令进 real_test.command（含 JSON 形式的 hook 配置）；同一命令可重放出同样的结论（时间不同，BS-32）。单测 `tests/unit/probe-hook-error.test.ts` 跑**真实 hook 文件** + 会抛错的 projection 桩，钉死 `inactive-context` 与 `projection-missing` 两个 code 与 `settled:false`，2/2 通过（<0.5s）",
+        "licence": "PASS：无新候选（用的是仓内夹具 `ok-plugin`）、不读凭据、不触碰 ~/.dsh；诊断开关不引入任何网络或执行面",
+        "ssot": "PASS：产物自带 `sandbox.hook_config`（已脱敏）与一条 `limits[]`：「这笔运行测的是仪器，不是候选」；同时 `record_probe` 在 stderr 打 WARNING，防止有人把它算进通过率",
+        "adversary": "反例一：用诊断开关伪造一个「正常 go」——产物里 `hook_config` 非空 + limits 明文，且 `d2_report`/矩阵不读这类产物；本轮结果是 `unknown`，不构成任何 go。反例二：把 `projection-missing` 说成 `inactive-context` 已真机回归——**不成立**，`inactive-context` 只有桩级证据（真实 Host 里那条 dead-context 竞态无法按需制造），已在 BACKLOG/SIGNOFF/HANDOFF 三处写明。反例三：让 hook 配置重复 key 静默生效——改为合并后只有一份 `resolveFrom`，且 `out` 由代码最后写死"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label adr0008e-hook-error --expect unknown --unsettled-timeout 5000 --hook-config '{\"resolveFrom\":\"<repo>\\\\sandbox\\\\upstream\\\\0.2.1-rc.4\\\\home\\\\profiles\\\\web\",\"retryMs\":1000,\"timeoutMs\":1000}' --stamp 2026-10-29T00:10:00.000Z",
+        "artifact": "data/results/probe-adr0008e-hook-error-2026-10-29T00-10-00.000Z.json",
+        "sha256": "2dab65baed441fe15175c6a46421f7de9fb2680a5adb5330f8c6f45c8b8ae072",
+        "outcome": "unknown · 真 hook 写 {error}/projection-missing · replacement_waited=true · waited_ms 5204ms（--unsettled-timeout 5000）· missing.inventory · probe.sample-unreadable"
+      }
+    },
+    {
+      "id": "R27-S2",
+      "batch": "R27",
+      "step": "T-315 遗留项：复制源的 pnpm-workspace.yaml 写 nodeLinker: hoisted，真跑一次复制模式探针，量「hoisted 会不会打断候选行识别」，并新增 node-linker 夹具",
+      "changed": [
+        "tests/fixtures/probe/profile-copy/node-linker/profiles/web/package.json",
+        "tests/fixtures/probe/profile-copy/node-linker/profiles/web/pnpm-workspace.yaml",
+        "tests/fixtures/probe/profile-copy/README.md"
+      ],
+      "review": {
+        "correctness": "PASS：结论 `go`；install exit 0；`profile_copy.pnpm_policy=source`（沙盒没覆盖用户文件）；`candidate_registered=true`；候选行 `include:triage-probe-ok` 相位 `active`；渲染通过。即「复制源要求 hoisted」这种形状**不会**让候选行被判丢",
+        "reproducibility": "PASS：夹具在仓内（`tests/fixtures/probe/profile-copy/node-linker`），命令 `--copy-profile web --dsh-home <fixture>`；`pnpm_policy=source` 说明走的是源文件而不是沙盒默认值",
+        "licence": "PASS：夹具只含声明（package.json + workspace yaml），无第三方代码、无凭据；候选仍是仓内 ok-plugin",
+        "ssot": "PASS：结果写进 `docs/specs/M3-probe.md` F49、`docs/adr/0007` 的待办段、BACKLOG T-315；三处都把边界写清：**产物不记录 node_modules 布局**，所以证明的是「不误判」而不是「pnpm 真切了 hoisted」",
+        "adversary": "反例一：把这次 `go` 说成「hoisted 布局已被验证」——不成立，布局没进产物，已在三处显式否定。反例二：用一次 `go` 断言「其它可继承设置都安全」——`strictPeerDependencies` 等仍未测，BACKLOG 与 ADR 都留着"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --copy-profile web --dsh-home tests/fixtures/probe/profile-copy/node-linker --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t315-node-linker --expect go --browser <chrome> --stamp 2026-10-29T00:40:00.000Z",
+        "artifact": "data/results/probe-t315-node-linker-2026-10-29T00-40-00.000Z.json",
+        "sha256": "4cf285996c1e898759ce359d7fc4d15a30b4a564c89d007e7ce245db8cf4a807",
+        "outcome": "go · 复制模式（nodeLinker: hoisted + strictDepBuilds: false）· install exit 0 · candidate_registered=true · 行 active · 渲染 rendered"
+      }
+    },
+    {
+      "id": "R27-S3",
+      "batch": "R27",
+      "step": "T-309 post-E 矩阵重测：用 r19 计划在 E 之后重跑 20 个候选（真实 13 / 夹具 4 / 合成 3），落一份新的矩阵产物",
+      "changed": [
+        "tests/fixtures/probe/matrix-r19.json"
+      ],
+      "review": {
+        "correctness": "PASS：n=20、真实 13（12 go / 1 blocked）、夹具 4、合成 3、`expectation_misses=0`、清理 20/20、失败形状 6；`inventory.replacement_waited` 全为 `false`（E 生效且未误伤正常路径）",
+        "reproducibility": "PASS：一条命令重放（`--plan tests/fixtures/probe/matrix-r19.json --stamp 2026-10-29T01:00:00.000Z`）；每个 run 的产物与 sha256 都嵌在矩阵里，批次自包含",
+        "licence": "PASS：13 个真实包全部是 R18/R19 已登记的 pin 版本（MIT/Apache-2.0），未新增候选、未 vendor；装进临时沙盒、跑完即删",
+        "ssot": "PASS：批次与 R19 用同一份计划，因此可与 R19 直接对比（同 pin、同机器）；差异只在 E 与当轮环境，写在 d2 报告与 `BS-32` 里",
+        "adversary": "反例一：把「batches 相同」说成「结果相同」——R27 有 1 个真实候选顶穿 20s，R19 没有；这正是本轮最有价值的发现。反例二：为了好看重跑直到全绿——本轮**没有**重跑第二次矩阵（只对超时那一条做隔离复测以定位根因）"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --stamp 2026-10-29T01:00:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-29T01-00-00.000Z.json",
+        "sha256": "e6cf6548c3566237c641ec7639f0b584b8aba419066097f9855de8adbf6df08d",
+        "outcome": "n=20 · real_starts=13 · real {go:12, blocked:1} · cleanup 20/20 · shapes 6 · expectation_misses 0 · boot_to_sample 10.0–22.5s（14/16 在 20s 内）"
+      }
+    },
+    {
+      "id": "R27-S4",
+      "batch": "R27",
+      "step": "D2 复算：用 R27 矩阵跑 d2_report，得到第一次「gate NOT PASSED」（boot-budget 11/12）",
+      "changed": [
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（且这是一个**真红**）：`denominator.real_runs=13`、`reliability 19/20=95%`（≥90% 仍 PASS）、`boot-budget` **FAIL**（11/12）、`failure-shapes` 6、`cleanup 20/20`。红项来自 `real-mcp-connector` 的 `boot→sample=22.5s`",
+        "reproducibility": "PASS：`node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-29T01-00-00.000Z.json --stamp 2026-10-29T01:30:00.000Z` 一条命令重算",
+        "licence": "PASS：只读既有产物并重算，无网络、无新执行",
+        "ssot": "PASS：红项同时写进 `docs/ROADMAP.md` §2、`docs/HANDOFF.md` 的「未通过的门槛」、`audit/blind_spots.json` 的 BS-28/BS-32、BACKLOG T-309，以及 `docs/adr/0008` §剩余项；**没有**放宽阈值或删除该 run",
+        "adversary": "反例一：把这次红说成「E 引起的」——不成立：`replacement_waited=false`，E 只影响样本之后的等待，而超时发生在样本**到达之前**（`wait_ms=16201`）。反例二：静默地把矩阵换成更好看的批次——本轮保留原始矩阵与红报告，只对超时那条做隔离复测（S5/S6）以区分「偶发」与「结构」。反例三：靠 exit code 判断 D2 通过——`d2_report` 在判定失败时仍 exit 0（R18 的既有决定），已开 `T-317`"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-29T01-00-00.000Z.json --stamp 2026-10-29T01:30:00.000Z",
+        "artifact": "data/results/d2-2026-10-29T01-30-00.000Z.json",
+        "sha256": "7de5e34cc5afec545303df384607f2b281198785bdb9372376ce83c7d5fbdcc0",
+        "outcome": "gate.passed=false · 唯一红项 boot-budget（11/12，real-mcp-connector 22.5s）· reliability 19/20 · shapes 6 · cleanup 20/20"
+      }
+    },
+    {
+      "id": "R27-S5",
+      "batch": "R27",
+      "step": "定位 D2 红项的根因（第一次隔离复测）：单独跑 dsh-mcp-connector@0.2.83，看它是否稳定超时",
+      "changed": [
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：隔离复测 `go`、`boot→sample=16.0s`（**这次在预算内**）、`wait_ms=10620ms`、`settled=true`、行 `active`。说明超时不是「每次都超」，而是「贴着边界抖动」",
+        "reproducibility": "PASS：同一 pin、同一条命令、同一沙盒；三个观测点（矩阵 22.5s / 本次 16.0s）都留在产物里",
+        "licence": "PASS：候选已在 R18 登记；本轮无新增、无 vendor、无凭据",
+        "ssot": "PASS：三个观测值（22.5 / 16.0 / 23.8）全部写进 `BS-32` 与 `ADR-0008` §剩余项，没有只挑有利的那一个",
+        "adversary": "反例一：只报 16.0s 说「那条是偶发、可以忽略」——另一次隔离复测（S6）是 23.8s，三次里两次超 20s，**不能**忽略。反例二：把 16.0s 当成「预算达标」的证据——它只说明边界抖动，不说明结构性安全"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-mcp-connector@0.2.83 --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t309-mcp-isolated-a --expect go --browser <chrome> --stamp 2026-10-29T02:30:00.000Z",
+        "artifact": "data/results/probe-t309-mcp-isolated-a-2026-10-29T02-30-00.000Z.json",
+        "sha256": "17ec33d76a802efc9dad4092bdd53a33a9eb7277dafca43d061f3f066674d955",
+        "outcome": "go · boot→sample 16.0s · wait_ms 10620ms · settled=true · 行 active（预算内，但与矩阵那次的 22.5s 合成一对抖动证据）"
+      }
+    },
+    {
+      "id": "R27-S6",
+      "batch": "R27",
+      "step": "定位 D2 红项的根因（第二次隔离复测）：同一条候选再跑一次，确认它是否稳定贴着 15s settle 上限",
+      "changed": [
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`go`、`boot→sample=23.8s`（**超预算**）、`wait_ms=18045ms`、`settled=true`、行 `active`。三次观测 16.0 / 22.5 / 23.8s → 结论：这条候选的 tree 需要 10.6–18.0s 才稳定，**间歇性顶穿 20s**",
+        "reproducibility": "PASS：与 S5 完全同一条命令，只有 stamp 不同；差异全部来自环境（`BS-32`）",
+        "licence": "PASS：同上，无新增候选",
+        "ssot": "PASS：这条结果直接改写了 `ADR-0008` §剩余项里我先写的「A′ 不会误伤」——原文已按实测更正为「A′ 会把这条从 go 变 unknown」，并在 ROADMAP/HANDOFF/BACKLOG/blind_spots 四处同步",
+        "adversary": "反例一：把两次超时归咎于「机器忙」——S5/S6 都是在没有并发负载的隔离环境里跑的（前一条跑完才开始下一条），所以只能算边界抖动，不能算外部干扰。反例二：拿 `settled=true` 说「树是稳定的」——稳定发生在 18s，预算只有 20s，剩下的 2s 不够 boot 开销，这正是结构性重叠"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate dsh-mcp-connector@0.2.83 --dsh-main <sandbox>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install <sandbox>/install --label t309-mcp-isolated-b --expect go --browser <chrome> --stamp 2026-10-29T02:40:00.000Z",
+        "artifact": "data/results/probe-t309-mcp-isolated-b-2026-10-29T02-40-00.000Z.json",
+        "sha256": "58fbc1fc427396cc47af606d1961b567e4c4520701b4e19fd0e6223e62de1f73",
+        "outcome": "go · boot→sample 23.8s（超 20s 预算）· wait_ms 18045ms · settled=true · 行 active"
+      }
+    },
+    {
+      "id": "R27-S7",
+      "batch": "R27",
+      "step": "文档与台账同步（R27）：ADR-0008 §剩余项（三案 + 更正 A′ 的误判）、ADR-0009（proposed）、M4-surface §3.1 契约 spike、spec F48/F49、BS-28 升级 / BS-32 扩展、ROADMAP/HANDOFF/BACKLOG/INDEX/SIGNOFF、审核报告；门禁录一次全绿",
+      "changed": [
+        "docs/adr/0008-unsettled-wait.md",
+        "docs/adr/0009-agent-scope-reads.md",
+        "docs/adr/0007-sandbox-build-policy.md",
+        "docs/specs/M3-probe.md",
+        "docs/specs/M4-surface.md",
+        "docs/ROADMAP.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "audit/blind_spots.json",
+        "audit/SIGNOFF.md",
+        "audit/AUDIT_2026-10-29_R27.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：每个数字都能回溯到产物；D2 的红写在五处且口径一致（美观的红不是被抹掉的红）。ADR-0008 §剩余项里我先写的「A′ 不会误伤」被本轮实测推翻，已按证据改写，并据此把推荐项从 A′ 改成 T-312",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T03:00:00.000Z` 一条命令重放 9 门（全绿，141 步 / 126 产物全部被引用）；产物 sha256 由门重算",
+        "licence": "PASS：本轮无新增候选、未动 quarantine；ADR-0009 是 proposed 文本，不含实现、不引入任何凭据路径；SIGNOFF 新增行把「谁授权 / 谁执行 / HUMAN 未逐条复核什么」分开写",
+        "ssot": "PASS：D2 红在 ROADMAP §2、HANDOFF「未通过的门槛」、INDEX 的 D2 行、BS-28/BS-32、BACKLOG T-309 五处一致；`T-317` 把「d2_report 判定失败仍 exit 0」登记为任务而不是悄悄改掉既有决定",
+        "adversary": "反例一：把 D2 的红悄悄改成「仍通过」——五处都写着 `gate.passed=false` 且保留原始产物。反例二：把 A′ 的建议留在文档里不管——已按实测更正，签字区同步改口。反例三：把 ADR-0009 写成「已授权」——状态是 proposed，签字区三项全未勾，BACKLOG 仍标 ⛔。反例四：把 T-401 的 spike 说成「面板已做」——M4-surface 明确写「未写 client.js」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T03:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T03-00-00.000Z.json",
+        "sha256": "141ed8ca9ed995562ca0699aef8bbfd694aaa273c8e64872c80805260280af7c",
+        "outcome": "ALL GREEN · 9 gates（141 步 / 126 产物全部被引用）"
       }
     }
   ]

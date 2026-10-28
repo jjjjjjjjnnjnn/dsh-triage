@@ -53,6 +53,26 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 **验收**：`dsh-triage serve --dry-run` 只打印 URL 与将读的数据源；`serve` 起来的页面在无网络下可用；`POST /api/probe` 在未加 `--allow-execute` 时返回 403（负对照）。
 
+### 3.1 契约 spike（R26，**只读**：读上游 0.2.1-rc.4 的真实文件，未写 `client.js`）
+
+> **为什么只读到这一步**：T-401 的出口是「面板能看到与 CLI 同源的结论」，写 `client.js` 需要先有一份能跑的契约样本，再谈 UI。本轮把「要照哪个文件写」钉到具体行号，避免下一轮从猜开始。
+
+| # | 契约事实（0.2.1-rc.4 实读） | 出处 |
+|---|---|---|
+| C1 | 浏览器半边是一个 **Cordis client plugin**：`exports.inject` 声明要注入的客户端服务名，`exports.apply(ctx)` 里注册 UI；外层必须包在 `window.__ModuleLoader__.load({ id, factory })` 里，`id` = 包名 | `@deepseek-ai/dsh-client-ui-settings-plugin-inventory/lib/client.js` 第 1 行 + 第 719–770 行 |
+| C2 | **插件页签的插槽名是 `settings.plugins.tab`**，注册方式 `ctx.slots.inject("settings.plugins.tab", () => ctx.slots.register({ name, id, order, label, locale, inject }, Component))`；`id` 在同一插槽内唯一（上游用 `"all"`、`order: 10`） | 同上第 757–766 行 |
+| C3 | 组件拿数据是**由 `inject` 回调提供的 props**（不是自己 import host 模块）：上游注入 `{ list, presetName, resolveText, hooks, retryClient }`，其中 `list()` 调 `ctx.remote.pluginInventory.list()` 并返回 `{ok, value|error}` | 同上第 746–756 行 |
+| C4 | 依赖的客户端服务名：`["slots","locale","remote","remote.pluginInventory","modules"]`；**`remote.pluginInventory` 就是本仓已经在用的那条 typert 通道** | 同上第 725–731 行 |
+| C5 | 文案走 `ctx.locale.register(NS, {zh,en})` + `ctx.locale.bind(NS)`，`NS` 是自有命名空间（上游 `settings.pluginInventory`）；副作用一律包 `ctx.effect(...)` 以便卸载 | 同上第 736–745 行 |
+| C6 | 上游自己就有一页**只读插件清单**（`dsh-client-ui-settings-plugin-inventory`）——说明「只读 tab」是上游承认的形态，不与上游抢位置也能挂上 | 同文件第 1 行注释「Read-only Host plugin inventory registered into Web Settings」 |
+
+**给 T-401 的落地形状（下一轮）**：
+
+- 文件 `packages/plugin/client.js`（手写、无打包器），`package.json#dsh.client = { platform: 'web', inject: ['@deepseek-ai/dsh-client-locale','@deepseek-ai/dsh-client-ui-settings','@deepseek-ai/dsh-client-ui-slots','@deepseek-ai/dsh-api-remotes'] }`；
+- 在 `apply` 里 `ctx.slots.inject('settings.plugins.tab', …)` 注册 `{ name:'settings.plugins.tab', id:'compat-triage', order: 90, label, locale }`（**铁律 9：row id 用 `compat-` 前缀**，且它同时是 settings 命名空间 S3）；
+- **降级必须是默认行为**：`apply` 用 `try/catch` 包住整段注册，并先探测 `ctx.slots?.inject` 与 `ctx.locale?.register` 是否存在；契约不匹配就**整块不注册**（页面看不到任何 triage UI，而不是半截报错）。这条要有单测（用假 `ctx` 断言「不匹配 = 零注册」，而不是「抛错冒到页面」）；
+- 数据侧先复用 `serve` 的 `auditJsonPayload()` 同源结论，**不新增判据**；拿不到 Remote 时显示「上次 SSOT 的结论 + 提示跑 CLI」。
+
 ---
 
 ## 3. 形态 B：DSH 设置面板（M4-a / T-401）

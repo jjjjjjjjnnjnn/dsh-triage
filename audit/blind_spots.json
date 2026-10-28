@@ -205,10 +205,10 @@
     {
       "id": "BS-28",
       "area": "d2/boot-budget",
-      "cannot_see": "「20s 预算」与「20s 未稳定窗口」在结构上重叠：一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**必然**超预算。R18 的批次只是恰好落在 19.1s 才通过；R19 真跑 21.3s 就翻了。这意味着任何「真的需要完整未稳定窗口」的候选都会被记成预算突破，而那不是它的错",
-      "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`），夹具耗时照旧单列在 `timing.fixtures_over_budget`；真实候选仍是 100% 必需（没有放宽到 90%）。**R26 已按 `ADR-0008` 方案 E 收窄等待**：`settled:false` 不再等替换窗口（同一夹具 `boot` 步 48.4s → 28.6s，`inventory.replacement_waited=false`），但 `settle 15s` 与 `--unsettled-timeout` 默认 20000 **仍未动**——所以「不可判的一次 probe 也在 20s 内」这句话**仍然不成立**（R26 实测 ≈29s）。要压进 20s 只能改 settle 上限或做两阶段取样（T-312）",
-      "owner": "scripts/d2_report.mjs + packages/probe/src/host.ts",
-      "status": "narrowed (R26): the replacement window is now error-only; the settle budget and the default window are unchanged"
+      "cannot_see": "「20s 预算」与「未稳定窗口 / settle 上限」在结构上重叠。R18/R19 只知道夹具必然超预算；**R27 有了真实见证**：`dsh-mcp-connector@0.2.83` 的 tree 要 10.6–18.0s 才稳定，`boot→sample` 三次真跑是 **16.0 / 22.5 / 23.8s**（`probe-matrix-2026-10-29T01-00-00` 那次 22.5s 直接让 D2 的 `boot-budget` 变红，11/12）。也就是说**任何需要 ≳14s 才稳定的真实候选都会间歇性顶穿 20s**，这与候选质量无关，与 hook 的 settle 上限（15s）加 boot 开销（4–5s）直接相加",
+      "mitigation": "R19 起 `d2_report` 的 `boot-budget` 只对 `real:true` 的 run 判定（HUMAN 已签，见 `audit/SIGNOFF.md`）。**R26 已按 `ADR-0008` 方案 E 收窄等待**：`settled:false` 不再等替换窗口（同一夹具 `boot` 步 48.4s → 28.6s，`inventory.replacement_waited=false`）。**R27 的实测把这个盲区从「夹具问题」升级为「真实候选问题」**：要么保 settle 15s 并接受 `boot→sample` 间歇 >20s（D2 会红），要么压 cap 至 10s 并把慢候选判成 `unknown`（少一次 `go`，`dsh-mcp-connector` 就是样本），要么做 T-312 两阶段。三条都要 HUMAN 签，**不许**为了让 D2 变绿去放宽 `boot-budget` 或删掉那条 run",
+      "owner": "scripts/d2_report.mjs + packages/probe/src/host.ts + hooks/inventory-hook.mjs",
+      "status": "open (R27): a real candidate now has a witness (16.0/22.5/23.8s); the overlap is no longer fixture-only"
     },
     {
       "id": "BS-29",
@@ -237,7 +237,7 @@
     {
       "id": "BS-32",
       "area": "probe/wall-clock-variance",
-      "cannot_see": "「一次 probe 要多久」在同一台机器上**不是常数**：R26 的三次真跑里，`boot→sample` 分别是 11.5s（真实候选）/ 14.7s（`slow-plugin`）/ 22.7s（不可判夹具），`boot` 步 21.7–28.6s；R18 同一个 `slow-plugin` 只有 10.1s。差额来自 Host 组合出行的时刻（hook 开始计时的时间点），探针无法从外部观测它。因此任何「一次 probe ≈X 秒」都只是区间，不是承诺",
+      "cannot_see": "「一次 probe 要多久」在同一台机器上**不是常数**：R26 的三次真跑里，`boot→sample` 分别是 11.5s（真实候选）/ 14.7s（`slow-plugin`）/ 22.7s（不可判夹具），`boot` 步 21.7–28.6s；R27 对**同一条**真实候选（`dsh-mcp-connector@0.2.83`）连跑三次：`wait_ms` 10.6 / 16.2 / 18.0s，`boot→sample` **16.0 / 22.5 / 23.8s**——同 pin、同机器、同运行时，跨过 20s 预算线两次。差额来自 Host 组合出行的时刻（hook 开始计时的时间点），探针无法从外部观测它。因此任何「一次 probe ≈X 秒」和「预算一定达标」都只是概率，不是承诺",
       "mitigation": "对外只说区间（R26 三次真跑 `boot` 步 21.7–28.6s，sample 等待 11.5–22.7s）；预算仍只判 `spawn→sample`（`timings.bootToSampleMs`），墙钟由 `timings.bootSegments` 逐段公开；**不许**把某一次实测的秒数写成产品承诺。要缩小这条缝只能让 hook 自报「我什么时候开始等」（超出 `ADR-0006` 的测量口径，需另开 ADR）",
       "owner": "packages/probe/src/host.ts + docs/specs/M3-probe.md §4",
       "status": "open (R26)"

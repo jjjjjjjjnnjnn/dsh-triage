@@ -21,7 +21,7 @@
 | W2 | **M2-a 运行时台账** | ✅ **P1+P2 已交付**：`pluginInventory` 相位在仓内沙盒真采样（`data/results/inventory-live-2026-10-27T22-00-00.000Z.json`，194 行）+ `audit --snapshot` + 门 `inventory-contract` + preset 维度（T-112）；tools/commands/settings 快照：T-202b 事实+差分 ✅（R13），**agent 作用域读数**归 T-202a（需真实会话/M3） | `audit` 能显示每行相位；与 patch 静态声明交叉校验（真机 `missing=0`，Host↔CLI 逐行一致） | 1 |
 | W3 | **M2-b 归因增强** | 读 stderr / 事故报告，把 import/apply 失败归到行 | 3 类真实故障（import 失败 / apply 抛错 / 服务冲突）都能点名 | 1 |
 | W4 | **M3 probe 执行器** | ✅ **R14 交付执行器（T-301）**；✅ **R15 补判据**：白屏可判（T-302，真浏览器 + CDP）+ 就绪来自 Host 自打印 URL（T-306）+ 真实 registry 分母（T-305：install 5.4s / boot 7.7s）；✅ **R22 补「我的组合」**（T-304：`--copy-profile`，复制声明 → 装依赖 → 装候选 → boot，三形状真机）；`namespace-diff`（T-303）仍未测 | `boot→sample ≤20s`（R14 11.7–19.9s，R15 7.7–8.7s，R22 复制模式 7.4s）；「装了就白屏」两形状稳定复现（phase=failed / null）+ 白屏检测有红/绿对照；失败必清理（目录 + 全部端口） | 2（并行） |
-| W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮 | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |
+| W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮。**R26：只读契约 spike 完成**（`docs/specs/M4-surface.md` §3.1 的 C1–C6：`settings.plugins.tab` 插槽 / `ctx.slots.register` / props 由 `inject` 提供 / `remote.pluginInventory.list()` 形状 / `ctx.effect`+`locale`），**`client.js` 未写** | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |
 | W6 | **M4-b 分发件** | 徽章 SVG + format-1 索引源 + `compat_verdict` Agent 工具 | 索引源可在 Discover 添加；徽章可按 插件×dsh×os 渲染 | 2 |
 | W7 | **M5-a 回流** | opt-in 匿名 outcome + 本地先验 | 上传可关闭、可删除；0 PII；数据可用率 ≥80% | 1 |
 | W8 | **M5-b 升级日** | 升级影响清单生成器（给定目标 dsh 版本） | 新 rc 发布 24h 内可产出全量已装集合的影响清单 | 1 |
@@ -55,6 +55,12 @@
 > - **可靠性 20/20 = 100%**、清理 20/20、失败形状 **6 种**；
 > - **口径修正（`audit/SIGNOFF.md` R19）**：`boot-budget` 只对**真实候选**判定——一棵永不 settle 的树要 `boot(≈5s)+settle 上限 15s≈21s`，结构上不可能进 20s（R18 的 19.1s 是运气）。真实候选仍是 100% 必须达标；夹具的 21.3s 原样单列在 `timing.fixtures_over_budget`。
 > - **R26 收窄（`ADR-0008` E）**：`settled:false` 样本不再等替换窗口 → 不可判的 `boot` 步 48.4s → 28.6s（`probe-adr0008e-overrun-*`）；默认 `--unsettled-timeout 20000` 与 `settle 15s` **仍未动**，所以「不可判的一次探针也 ≤20s」仍不成立（`BS-28` / T-311 部分解除，T-312 未开）。`d2_report` 用现有矩阵复算仍 `gate.passed=true`（`data/results/d2-2026-10-28T23-00-00.000Z.json`），产品数字不变：真实 12/13 `go`，Wilson 0.667–0.986。
+>
+> - **R27 post-E 矩阵重测：D2 `gate.passed=false`（第一次真红）。** 证据 `data/results/d2-2026-10-29T01-30-00.000Z.json`（n=20 / 真实 13 / 清理 20-20 / 失败形状 6 / `expectation_misses=0`）：
+>   - **可靠性 19/20 = 95%**（≥90% 仍 PASS）；**失败形状 6**（PASS）；**清理 20/20**（PASS）；
+>   - **`boot-budget` FAIL：11/12 真实采样 run 在 20s 内** —— 超时的是 `real-mcp-connector`（`boot→sample` **22.5s**，hook `wait_ms` 16.2s）。
+>   - **根因（同一条候选连跑三次的隔离复测）**：`dsh-mcp-connector@0.2.83` 的 `wait_ms` = 10.6 / 16.2 / 18.0s，`boot→sample` = **16.0 / 22.5 / 23.8s** —— 同 pin、同机器、同运行时，两次跨过 20s。**这不是 E 造成的**（`replacement_waited=false`，E 只动样本之后的等待），而是 `boot(≈4–5s) + settle(≤15s)` 的结构与 20s 预算**重叠**（`BS-28` 从「夹具问题」升级为「真实候选问题」，`BS-32` 是它的抖动面）。
+>   - **没有做的事**：没有为了让 D2 变绿去放宽 `boot-budget`、也没有删掉那条 run。三条出路（保 15s / 压到 10s / T-312 两阶段）都要 HUMAN 签，见 `docs/adr/0008` §剩余项。
 >
 > **Kill criteria**：D1 与 D2 同时不达标 → 停止投入，把已有引擎作为 `dsh-doctor` 式小工具维护，不追总榜。
 

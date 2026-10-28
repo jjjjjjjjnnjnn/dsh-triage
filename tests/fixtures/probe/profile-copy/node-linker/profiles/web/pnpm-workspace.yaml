@@ -1,0 +1,12 @@
+# T-315 fixture: a profile whose own workspace file asks pnpm for a DIFFERENT module layout.
+#
+# WHY IT EXISTS: `strictDepBuilds` is not the only pnpm setting a copied profile can impose on
+# the sandbox. `nodeLinker: hoisted` changes where packages land, and the probe identifies the
+# candidate by looking for *one* runtime row for its module name — so "does identification
+# survive a different linker" is a measurement, not an assumption.
+#
+# `strictDepBuilds: false` is here only to keep the F41/F43 build-approval shape out of this
+# experiment: without it the install fails on the copied profile's own native dependencies and
+# the linker question never gets asked.
+nodeLinker: hoisted
+strictDepBuilds: false

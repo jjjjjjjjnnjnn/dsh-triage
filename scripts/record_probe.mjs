@@ -56,7 +56,7 @@ if (stamp === null) {
 
 const rawCandidate = String(argOf('--candidate', ''))
 if (rawCandidate === '') {
-  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--npmrc-registry <url>] [--copy-profile <name>] [--stamp <iso>]\n')
+  process.stderr.write('usage: node scripts/record_probe.mjs --candidate <path|name@x.y.z> --dsh-main <bin.js> [--install <dir>] [--label ok] [--expect go|blocked|unknown] [--browser <path>] [--registry <url>] [--npmrc-registry <url>] [--copy-profile <name>] [--hook-config <json>] [--stamp <iso>]\n')
   process.exit(2)
 }
 const candidate = normalizeCandidateSpec(rawCandidate)
@@ -103,6 +103,31 @@ if (readinessTimeoutMs === null && argv.includes('--readiness-timeout')) {
 if (unsettledReadinessMs === null && argv.includes('--unsettled-timeout')) {
   process.stderr.write('--unsettled-timeout needs an integer between 1000 and 300000 (ms)\n')
   process.exit(2)
+}
+/**
+ * T-316: diagnostic knobs for the inventory hook, as one JSON object.
+ *
+ * WHY A FLAG EXISTS AT ALL: the `{error}` branch of the sample loop (the one ADR-0008 E keeps
+ * alive) could only be reached by faking the launcher, because nothing could point the hook at
+ * a tree it cannot project from. `--hook-config` makes that a real run. It is a **diagnostic**:
+ * it changes what the instrument measures, so any artifact produced with it carries the value
+ * in `hook_config` and may not be counted as a normal candidate measurement.
+ */
+const rawHookConfig = argOf('--hook-config', null)
+let hookConfig = null
+if (rawHookConfig !== null) {
+  try {
+    const parsed = JSON.parse(String(rawHookConfig))
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object')
+    hookConfig = parsed
+    // Loud on purpose: this knob changes what the instrument measures, so a run that used it
+    // must never be mistaken for a normal candidate sample (artifacts also carry
+    // `sandbox.hook_config`, which `d2_report`/matrix summaries do not read).
+    process.stderr.write(`WARNING: --hook-config is a diagnostic knob; this artifact is not a normal candidate measurement\n`)
+  } catch (error) {
+    process.stderr.write(`--hook-config needs a JSON object, got "${String(rawHookConfig)}" (${error instanceof Error ? error.message : String(error)})\n`)
+    process.exit(2)
+  }
 }
 
 const candidatePackage = candidatePackageName(candidate)
@@ -218,6 +243,7 @@ const deps = realProbeDeps({
   ...(readinessTimeoutMs === null ? {} : { readinessTimeoutMs }),
   ...(unsettledReadinessMs === null ? {} : { unsettledReadinessMs }),
   ...(registryOverride === null ? {} : { baseEnv: { ...process.env, NPM_CONFIG_REGISTRY: registryOverride } }),
+  ...(hookConfig === null ? {} : { hookConfig }),
 })
 const baseInstall = deps.install
 const instrumentedDeps = {
@@ -296,6 +322,9 @@ const artifact = {
     port: plan.value.port,
     overlap_check: 'disjoint (validateProbePlan)',
     env_scrubbed: true,
+    // T-316: present only when `--hook-config` was used. A run with this set measured the
+    // instrument, not the candidate, and must not be counted as a normal candidate sample.
+    hook_config: hookConfig === null ? null : redactDeep(hookConfig, redact),
     preinit:
       preinit.npmrc === null && preinit.fixture === null
         ? null
@@ -434,6 +463,10 @@ const artifact = {
     // T-314 + ADR-0008 E: the boot step's segments are published, so "we waited N s" is never a
     // single opaque number, and `inventory.replacement_waited` says whether the window was used.
     'timings.bootSegments splits the boot step (spawn, sample wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only, and inventory.replacement_waited records whether a replacement window was opened at all',
+    // T-316: a diagnostic run must say so in the artifact, not only in the command line.
+    ...(hookConfig === null
+      ? []
+      : ['sandbox.hook_config is set: the inventory hook was pointed at a tree of our choosing, so this run measures the instrument, not the candidate']),
   ],
 }
 

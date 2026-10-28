@@ -40,6 +40,7 @@
 - **代价**：多一个沙盒内的文件（`pnpm-workspace.yaml`），多三个产物字段，多一条 warn 文案（`probe.profile-build-refused`）。
 - **不做的事**：不改 `settle` / `--unsettled-timeout` / `boot→sample` 预算；不改 `probe.install-build-refused` 在模板路径的语义；不把 `unknown` 升成 `go`。
 - **待办**：`T-313` 必须把 `pnpm-workspace.yaml` 与 pnpm 其它可继承设置一并纳入凭据/配置来源审计（本文件是本 ADR 引入的新配置面）。
+- **R26 补测（T-315 遗留项，`nodeLinker`）**：把 `nodeLinker: hoisted` 写进**复制源自己的** `pnpm-workspace.yaml`（`pnpm_policy=source`，沙盒照规矩不覆盖），真跑一次复制模式探针 → install exit 0、`candidate_registered=true`、候选行 `active`、渲染通过、结论 `go`。**结论**：这种形状**不会打断候选行识别**，所以「hoisted 让解析路径变化 → 候选被误判丢失」这个担心在本轮实测里**没有成立**。**边界（必须一起说）**：产物**没有**记录 `node_modules` 布局，因此它证明的是「复制源要求 hoisted 时探针仍能判出候选」，**不是**「pnpm 确实切到了 hoisted」。证据 `data/results/probe-t315-node-linker-2026-10-29T00-40-00.000Z.json`（F49）。`strictPeerDependencies` 与其它可继承设置**仍未逐一实测**。
 
 ## 签字区（HUMAN）
 
