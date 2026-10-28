@@ -472,3 +472,11 @@
 - 过程中的真实缺陷：① `gh api -f q=...` 在 PowerShell 下参数被拆（改用 URL 里的查询串）；② `git clone` 拉 GitHub 超时，但 HTTP 可用 → 改成取 tarball（脚本里也用同一路径，可复现）；③ `record_market_channels` 第一版用 `npm view` 触发 Windows 上的 `shell: true` 弃用告警 → 改为直接问 registry；④ 重跑时留了一份被取代的 `market-channels-18-30`（阻塞文案用词过时）→ 删除；⑤ `INDEX` 新行里的反引号 token（含 `/` 的 `text/plain` 与命令）触发 `governance/index-references` → 改写为纯文本
 - 未做：转 public / npm 发布（**需 HUMAN 决定与凭据**）、`BS-39` 的 ptc 真机、`BS-40` 崩溃率、`BS-41` 可复现夹具、`T-501`（M5-a 本地半边）
 
+
+#### R38 追加：仓库转 public + 两条 PR 已提交（同一会话续做）
+
+- 起因：HUMAN 明确选择「A. 仓库转 public（最快解锁全部渠道）」。
+- **可见性变更（外部副作用，已获授权）**：`gh repo edit jjjjjjjjnnjnn/dsh-triage --visibility public --accept-visibility-change-consequences`。变更前做过只读扫描：密钥形状（npm_ / ghp_ / sk- / AKIA / PEM / Slack）**0 命中**；根 `.npmrc` 无 token；唯一发现是历史里 2 个提交含 `C:\Users\rongj\.dsh\profiles\web`（操作者 Windows 用户名），已在提问时如实告知并获选择。
+- 结果：① raw URL 立即可读（`docs/market/index.json` 2116B，逐字节一致，`index-hosting-2026-10-29T22-00-00.000Z.json`）。② **两条 PR**：`zhu1090093659/dsh-community-plugins#65`（+12/-0）与 `awesome-deepseekharness/awesome-deepseek-harness#193`（+1/-0）；`market-channels-2026-10-29T22-40-00.000Z.json` 记 `live: 2`。③ dsh.so 仍等 npm 发布。
+- 过程中的真实缺陷：`JSON.stringify` 重排导致 diff 混入 4 行无关改动（已重做为文本插入）；`gh api --jq` 输出不是 JSON 导致 fork 轮询空转 20 次（已修）。
+

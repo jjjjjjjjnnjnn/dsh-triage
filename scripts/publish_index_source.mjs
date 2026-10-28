@@ -46,6 +46,7 @@ const validatorDir = pathFor(
   argOf('--validator', 'sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh-plugin-market-index'),
 )
 const wantGist = argv.includes('--gist')
+const verifyUrl = argOf('--verify-url', null)
 if (stamp === null) {
   process.stderr.write('usage: node scripts/publish_index_source.mjs [--artifact <file>] [--gist] [--stamp <iso>]\n')
   process.exit(2)
@@ -104,7 +105,30 @@ if (existsSync(join(validatorDir, 'lib', 'index.js'))) {
 
 /* -------------------------------- the hosting ------------------------------- */
 
-const publish = { storage: 'repo-only', verified: false, gist_url: null, raw_url: null, upload: null, fetch: null }
+const publish = { storage: wantGist ? 'public-gist' : verifyUrl === null ? 'repo-only' : 'repo-raw', verified: false, gist_url: null, raw_url: null, upload: null, fetch: null }
+
+if (wantGist === false && typeof verifyUrl === 'string') {
+  /*
+   * The repository is public, so the canonical URL is a raw file that moves with the branch. Verify
+   * it the same way the gist was verified: fetch what a stranger fetches, compare bytes.
+   */
+  publish.raw_url = verifyUrl
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await fetch(verifyUrl, { redirect: 'follow' })
+    const body = response.status === 200 ? await response.text() : ''
+    publish.fetch = {
+      status: response.status,
+      content_type: response.headers.get('content-type'),
+      bytes: body.length,
+      matches_repo_copy: body === documentText,
+      cors: response.headers.get('access-control-allow-origin'),
+      attempts: attempt + 1,
+    }
+    if (response.status === 200 && publish.fetch.matches_repo_copy === true) break
+    await new Promise((resolveWait) => setTimeout(resolveWait, 1500))
+  }
+  publish.verified = publish.fetch?.status === 200 && publish.fetch?.matches_repo_copy === true
+}
 
 if (wantGist) {
   const login = spawnSync('gh', ['api', 'user', '--jq', '.login'], { encoding: 'utf8', windowsHide: true })
@@ -187,6 +211,7 @@ const payload = {
     'the index lists ONLY versions a recorded probe reached "go" on; a package that is absent was never measured here, which is not a judgement',
     'format 1 has no verdict field, so this index filters and never scores; unknown members are dropped by the validator',
     'a public gist is a real HTTPS URL but not a site: no uptime promise, no custom domain, and re-publishing produces a NEW URL',
+    'a raw.githubusercontent URL follows the branch, so it changes whenever the document is regenerated; that is the intended behaviour for an index',
     'nothing here proves the DSH market UI accepts the URL: adding it in Discover is a separate, human action',
   ],
 }
@@ -210,4 +235,4 @@ process.stdout.write(
 process.stdout.write(`  repo copy ${payload.document.path} · sha ${payload.document.sha256.slice(0, 12)}\n`)
 if (publish.raw_url !== null) process.stdout.write(`  url ${publish.raw_url}\n  fetch ${publish.fetch.status} · ${String(publish.fetch.content_type)} · bytes match ${String(publish.fetch.matches_repo_copy)}\n`)
 process.stdout.write(`  ${displayPath(target).split('/data/results/').pop()}\n`)
-process.exitCode = wantGist && !publish.verified ? 1 : 0
+process.exitCode = (wantGist || typeof verifyUrl === 'string') && !publish.verified ? 1 : 0

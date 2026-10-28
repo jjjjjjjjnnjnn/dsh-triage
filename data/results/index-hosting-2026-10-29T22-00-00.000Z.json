@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/publish_index_source.mjs",
+  "generated_at": "2026-10-29T22:00:00.000Z",
+  "source_artifact": {
+    "path": "data/results/index-source-2026-10-29T18-00-00.000Z.json",
+    "sha256": "86741727eb8766fafb220c6ee11c56c716dd5f1ca14d552d3f885142de0132f3",
+    "validated_by": "0.2.1-rc.4",
+    "generated_at": "2026-10-29T18:00:00.000Z"
+  },
+  "document": {
+    "path": "docs/market/index.json",
+    "sha256": "7a3cc01a883199f5d1d548a06e7d3fa0899832ccf60d18cbf830be11b187a667",
+    "bytes": 2210,
+    "plugins": 5,
+    "versions": 5
+  },
+  "revalidation": {
+    "status": "passed",
+    "detail": "the published bytes parse with the upstream validator",
+    "plugins": 5
+  },
+  "publish": {
+    "storage": "repo-raw",
+    "verified": true,
+    "gist_url": null,
+    "raw_url": "https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json",
+    "upload": null,
+    "fetch": {
+      "status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "bytes": 2116,
+      "matches_repo_copy": true,
+      "cors": "*",
+      "attempts": 1
+    }
+  },
+  "limits": [
+    "the index lists ONLY versions a recorded probe reached \"go\" on; a package that is absent was never measured here, which is not a judgement",
+    "format 1 has no verdict field, so this index filters and never scores; unknown members are dropped by the validator",
+    "a public gist is a real HTTPS URL but not a site: no uptime promise, no custom domain, and re-publishing produces a NEW URL",
+    "a raw.githubusercontent URL follows the branch, so it changes whenever the document is regenerated; that is the intended behaviour for an index",
+    "nothing here proves the DSH market UI accepts the URL: adding it in Discover is a separate, human action"
+  ]
+}

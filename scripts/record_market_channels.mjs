@@ -192,21 +192,60 @@ const others = [
   },
 ]
 
+/*
+ * Submitted PRs (R38): `--pr channel=<pull-url>` records the LIVE state of each one. A submission is
+ * not done because the command exited 0 — an OPEN pull request is, and a closed one is not.
+ */
+const submitted = []
+for (const [index, value] of argv.entries()) {
+  if (value !== '--pr') continue
+  const spec = String(argv[index + 1] ?? '')
+  const match = /^([^=]+)=https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(spec)
+  if (match === null) {
+    submitted.push({ channel: spec.split('=')[0] ?? '?', url: spec, state: 'unparsed' })
+    continue
+  }
+  const [, channel, owner, repo, number] = match
+  const fetched = spawnSync('gh', ['api', `repos/${owner}/${repo}/pulls/${number}`], { encoding: 'utf8', windowsHide: true })
+  let state = 'unreadable'
+  let detail = { title: null, changed_files: null, additions: null, deletions: null, base: null, head: null }
+  if (fetched.status === 0) {
+    try {
+      const pull = JSON.parse(String(fetched.stdout))
+      state = String(pull.state ?? 'unknown').toLowerCase()
+      detail = {
+        title: pull.title ?? null,
+        changed_files: pull.changed_files ?? null,
+        additions: pull.additions ?? null,
+        deletions: pull.deletions ?? null,
+        base: pull.base?.ref ?? null,
+        head: pull.head?.ref ?? null,
+      }
+    } catch (error) {
+      state = `unparsed-response: ${error instanceof Error ? error.message : String(error)}`
+    }
+  } else {
+    state = `gh-failed: ${String(fetched.stderr ?? '').trim().slice(-120)}`
+  }
+  submitted.push({ channel, url: `https://github.com/${owner}/${repo}/pull/${number}`, state, ...detail })
+}
+
 const payload = {
   schema_version: 1,
   produced_by: 'scripts/record_market_channels.mjs',
   generated_at: stamp,
   prerequisites,
   channels: [...channels, ...others],
+  submitted,
   summary: {
     validated_locally: channels.filter((channel) => channel.status === 'validated').length,
     ready_to_submit: [...channels, ...others].filter((channel) => channel.status === 'validated' || channel.status === 'ready').length,
-    live: 0,
+    live: submitted.filter((pull) => pull.state === 'open').length,
     one_blocker: publicSourceMissing,
   },
   limits: [
     'running a channel\'s own validator proves the entry is well-formed, NOT that a maintainer will accept it',
-    'nothing here presses submit: `live` stays 0 until either the repository is public or the package is on npm',
+    'submitting is a pull request, not a merge: `live` counts OPEN pulls, and a maintainer can still decline them',
     'channel requirements were read from each repository on the day of this artifact; they can change',
     'the tarball hash pins what was validated, not what upstream will look like tomorrow',
   ],

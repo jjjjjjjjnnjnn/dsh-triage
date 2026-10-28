@@ -5075,6 +5075,76 @@
         "sha256": "9bf1be6cf1571707279ce3d1fa3c6a28650cb015d090ec292ac058c5c8c462ed",
         "outcome": "ALL GREEN · 9 gates（350 测试；208 步 / 191 产物全部被引用）"
       }
+    },
+    {
+      "id": "R38-S18",
+      "batch": "R38",
+      "step": "仓库转 public 后，把索引源的**仓库内 raw URL** 也验一遍（`publish_index_source.mjs` 新增 `--verify-url`）：raw 跟着分支走、重发布不换地址，比 gist 更适合作为对外入口",
+      "changed": [
+        "scripts/publish_index_source.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：验证的是「陌生人抓到的字节」与 repo 副本的逐字节相等，不是「文件存在」；`--verify-url` 与 `--gist` 两条路径各自独立，失败都 exit 1",
+        "reproducibility": "PASS：一条命令；产物记录 URL、HTTP 状态、content-type、CORS、尝试次数与比对结果",
+        "licence": "PASS：索引内容只有公开 registry 元数据（包名 / 版本 / 时间戳 / 声明范围），无路径与凭据",
+        "ssot": "PASS：repo 副本 `docs/market/index.json` 是唯一真相，两条 URL（raw 与 gist）都指向同一份字节",
+        "adversary": "反例一：转 public 后仍只报 gist——gist 重发布会换 URL，raw 不会，对外入口应当选稳定的那个；反例二：把「URL 200」当「Discover 接受」——产物 limits 仍写明 UI 侧未验证"
+      },
+      "real_test": {
+        "command": "node scripts/publish_index_source.mjs --artifact data/results/index-source-2026-10-29T18-00-00.000Z.json --verify-url https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json --stamp 2026-10-29T22:00:00.000Z",
+        "artifact": "data/results/index-hosting-2026-10-29T22-00-00.000Z.json",
+        "sha256": "2de655baaa604462dc1f9b567ce79928ed00c87c7f7d58fca3564faaef1c21de",
+        "outcome": "published+verified · HTTP 200 · bytes match=true · 5 plugins / 5 versions（raw.githubusercontent，2116B）"
+      }
+    },
+    {
+      "id": "R38-S19",
+      "batch": "R38",
+      "step": "D3 两渠道**真的提交**：HUMAN 决定仓库转 public → 验 raw 可读 → fork 两个上游仓 → 建分支 → 用「他们自己的校验器接受过的那份字节」文本插入（不是 JSON 重排）→ 开 PR → 用 `--pr` 把 PR 的**实时状态**写进产物",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/awesome-lists.md"
+      ],
+      "review": {
+        "correctness": "PASS：两条 PR 都是**纯追加**（`additions 12/1`、`deletions 0`），文件数各 1；`submitted[].state=open` 是抓 GitHub API 得到的，不是我们自己的断言；PR #65 的字节在推送前又跑了一次它们的 `community-index.cjs --check`",
+        "reproducibility": "PASS：`--pr <channel>=<url>` 让产物可随时重算实时状态；提交序列（fork → 分支 → 文本插入 → 校验 → PUT → PR）在 `docs/market/submissions/README.md` 有逐步说明",
+        "licence": "PASS：PR 只包含我们自己的条目与描述；没有 vendor 上游代码，fork 仅作提交载体",
+        "ssot": "PASS：`summary.live=2` 与 `submitted[]` 一致；渠道状态不再靠散文描述，`docs/market/submissions/README.md` 直接引用该产物",
+        "adversary": "反例一：第一版用 `JSON.stringify` 重排，把上游两处旧格式 `}\\n,  {` 规范化，diff 变成 +16/-4（无关改动）——已重做为文本插入，并把「推之前对同一份字节跑校验器」写进流程；反例二：把「PR 已开」写成「已收录」（`live` 统计的是 OPEN pull，且维护者仍可否掉）；反例三：以为 fork 后就等价于有写权限——是通过 fork + cross-repo PR 做的，没有碰上游分支"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T22:40:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseekharness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193",
+        "artifact": "data/results/market-channels-2026-10-29T22-40-00.000Z.json",
+        "sha256": "479a888ba2d1f73ad859db06f031d7fd94310330899c22db49af87a17034a51d",
+        "outcome": "live 2 · PR #65（community.json +12 / -0，149 entries，其 gate 在推送字节上重跑 OK）· PR #193（README.md +1 / -0）"
+      }
+    },
+    {
+      "id": "R38-S20",
+      "batch": "R38",
+      "step": "R38 收口（第二轮）：提交后的文档与台账同步——submissions README 改为 `live 2`、交接 §3 改为「盯 PR / 等 npm / BS-39」、INDEX 与审核报告更新、披露日志记下 `--visibility public` 这个外部副作用，然后录一次门禁全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/awesome-lists.md",
+        "audit/AUDIT_2026-10-29_R38.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：文档状态与产物一致——`summary.live=2`，两条 PR 的 `additions`/`deletions` 都来自 GitHub API；没有再出现「PR 已开 = 已收录」这种话（`merged` 才算）",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record` 一条命令落盘；台账 sha256 每次由门重算，改不动",
+        "licence": "PASS：只改文档与台账，无新增数据源、无第三方内容",
+        "ssot": "PASS：`no-orphan-results` 全绿（被取代的两份中间产物已删）；`doc-stand` 要求的三份入口文档 + 两份台账 stands 一致（R38）",
+        "adversary": "反例一：把「已提交」写成「已收录」——维护者仍可否掉；反例二：忘了披露「仓库转 public」这个外部副作用——那是本轮唯一对账号可见性的动作，必须在披露日志里；反例三：把上游文件名写成裸反引号 token，`governance/index-references` 会红（本次就红过一次，已改成描述性文字）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T23:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T23-00-00.000Z.json",
+        "sha256": "0ac3c4ee56c684eab9e0a1115a4506ebc3b10356d5e23822a8d87e141a4b4568",
+        "outcome": "ALL GREEN · 9 gates（350 测试；211 步 / 192 产物全部被引用）"
+      }
     }
   ]
 }

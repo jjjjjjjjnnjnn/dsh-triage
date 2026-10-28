@@ -1,8 +1,8 @@
 # awesome 列表 + dsh.so · 提交文案
 
-> 三个渠道都要求「有公开可访问的来源」。**现在没有**（仓库 private、npm 未发布，见
-> `data/results/market-channels-2026-10-29T18-40-00.000Z.json` 的 `prerequisites`）。
-> 文案先备好；解锁后复制、提交即可。
+> **已提交**：`awesome-deepseekharness/awesome-deepseek-harness` → PR **#193**（`README.md` +1 / -0），
+> 实时状态见 `data/results/market-channels-2026-10-29T22-40-00.000Z.json` 的 `submitted[]`。
+> **未提交**：`walkinglabs/...`（文案在下面，随时可提）、`dsh.so`（等 npm 发布）。
 
 ## 1. walkinglabs/awesome-deepseek-harness-plugins
 
@@ -39,6 +39,9 @@ credential access, no security claims.
 
 ## 2. awesome-deepseekharness/awesome-deepseek-harness
 
+**已提交**：PR https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193
+（`Tools, Workflows & Presets` 表末行，`README.md` +1 / -0；星标列按该表格式写 `0`）。
+
 同一行条目；如果该列表要求「兼容性单列」，把它写成：
 
 ```markdown
@@ -60,13 +63,19 @@ credential access, no security claims.
 
 **不写的话术**（本项目严禁）：不写「安全 / 无恶意 / 100% 兼容 / 提升速度」，不写没有证据的下载量。
 
-## 4. 已可用的（无需等任何解锁）
+## 4. 索引源（两条 URL，都逐字节校验过）
 
-format-1 索引源已经发布在一个公开 HTTPS URL 上，可直接在任何支持 format-1 索引的地方添加：
+仓库转 public 之后，**仓库内副本的 raw URL 是首选**（跟着分支走，重发布不换地址）：
+
+```
+https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json
+```
+
+备用（public gist，仓库若哪天又转回 private 时仍可用）：
 
 ```
 https://gist.githubusercontent.com/jjjjjjjjnnjnn/3c77dfcb61affb60eb3508f87ca53bea/raw/index.json
 ```
 
-证据与字节校验：`data/results/index-hosting-2026-10-29T18-10-00.000Z.json`（`fetch.status=200`、
-`bytes match=true`、`cors=*`、5 plugins / 5 versions、上游校验器 accepted）。
+证据与字节校验：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`（raw URL：`fetch.status=200`、
+`bytes match=true`、`cors=*`、5 plugins / 5 versions）与 `data/results/index-hosting-2026-10-29T18-10-00.000Z.json`（gist 同款校验）。
