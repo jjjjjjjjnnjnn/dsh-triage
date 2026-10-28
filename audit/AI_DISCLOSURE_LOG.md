@@ -427,3 +427,13 @@
 
 - 范围：`packages/plugin/src/{index-source,cli}.ts`、`scripts/record_index_source.mjs`、`tests/unit/index-source.test.ts`、`docs/{HANDOFF,BACKLOG,specs/M4-surface}.md`、`INDEX.md`
 - 结果：`dsh-triage index [--out]` 只收实测 go 的 registry 版本，`publishTimestamp` 取 registry 逐版本 `time`；**用上游校验器验证**，真机 5 插件 / 5 版本通过；8 条单测。**没做**：把索引托管成公开 URL（需 HUMAN 发布动作）
+
+### 2026-10-29 R35｜交接（只交接，不改行为）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R35-S1）
+- 范围：`docs/HANDOFF.md`（Stand / 当前批次 / §2 交接行 / 计数）、`INDEX.md`、`docs/ROADMAP.md`、`audit/{step_reviews.json,blind_spots.json,AI_DISCLOSURE_LOG.md}`
+- 起因：HUMAN「同意。先进行项目交接，即将切换会话」
+- 结果：**一行代码、一个阈值都没动**。交接把三件事分开写清：R33 的 T-401 是**真的收口**（可见性与同源结论都有真机与负对照）、R34 的 M4-b 是**两件交付 + 一件未托管**（索引生成器与上游校验通过，公开 URL 未做）、以及下一步该做的是 `BS-32` 的有载对照而不是再加功能
+- 实测：330 测试 / 9 门全绿 / `--mutate` 9/9 / 178 步 / 162 产物
+- 过程中的真实缺陷：无新增（本轮只有文档）；上一轮自找的 stamp 覆盖已记在 R34 行与 §4 坑表

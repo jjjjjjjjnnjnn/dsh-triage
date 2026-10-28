@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R34 (2026-10-29)",
+  "stand": "R35 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -4365,6 +4365,32 @@
         "artifact": "data/results/index-source-2026-10-29T04-00-00.000Z.json",
         "sha256": "f0285611ae817f4660a56e6dbac773631b1822fb5f554cfc9355410bc07d4078",
         "outcome": "validation:passed（5 plugins / 5 versions，上游校验器 0.2.1-rc.4 接受）"
+      }
+    },
+    {
+      "id": "R35-S1",
+      "batch": "R35",
+      "step": "交接（R35）：HANDOFF 的 Stand / 当前批次 / §2 交接行 / 计数追到 R34 的产物，把「哪些是真的、哪些还没做」逐条写清，然后录一次门禁全绿并提交",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：交接里的每个数字都能在产物里找到——330 测试 / 9 门 / 178 步 / 162 产物；R33 的 `visible`+`same-source` 与两条负对照、R34 的 `badge` 与 `index-source`（上游校验器 5 插件 / 5 版本）都能指到具体文件。**本轮只改文档，没有改任何代码或阈值**",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T06:00:00.000Z` 一条命令重放 9 门（stamp 选的是没用过的值，避免 R34 那次覆盖事故）；`git log -1` 即交接提交、`git status` 干净",
+        "licence": "PASS：交接不改代码、不加候选、不碰 quarantine；AI 披露追加 R35 一条并写明本轮无实现改动",
+        "ssot": "PASS：HANDOFF / INDEX / ROADMAP / step_reviews / blind_spots 五处 stand 一致（`tests/governance/doc-stand.test.ts` 强制），计数三处一致；「仍未做」五条与 BACKLOG、blind_spots 的状态对齐；冻结项在交接行里逐条点名",
+        "adversary": "反例一：把交接写成「都做完了」——没有，交接行明确列了「索引未托管 / BS-32 无有载对照 / namespace-diff 仍 unmeasured / pnpm 剩余面 / 发布未做」五条。反例二：为了让数字好看删产物——162 份全部保留且被引用（`no-orphan-results` 通过）。反例三：只交接代码不交接「下一步该做什么」——§3 的第一件事已改成 `BS-32` 有载对照，不是再加功能"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T06:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T06-00-00.000Z.json",
+        "sha256": "2507ea7578be220fed022818c912eeaefb3248388f77f23d245c7c882fff3e2c",
+        "outcome": "ALL GREEN · 9 gates（330 测试；178 步 / 162 产物全部被引用）"
       }
     }
   ]

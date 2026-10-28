@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）12 周
 
-> **Stand**: R34 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R35 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 
 ---
