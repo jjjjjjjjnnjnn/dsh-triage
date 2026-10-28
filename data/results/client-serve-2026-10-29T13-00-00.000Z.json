@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_serve.mjs",
+  "generated_at": "2026-10-29T13:00:00.000Z",
+  "label": "client-serve",
+  "outcome": {
+    "served": true,
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=de0017014f80",
+    "tab_visible": "passed"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvs6aqxm\\home",
+    "profile": "web",
+    "bundle": "file:packages/* (workspace rewritten)"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 24.6s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "host printed http://127.0.0.1:62182/"
+    },
+    {
+      "id": "graph",
+      "status": "passed",
+      "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
+      "html_bytes": 38207,
+      "client_module_listed": true,
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=de0017014f80"
+    },
+    {
+      "id": "client",
+      "status": 200,
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2023211B · loader=true · id=true · tab=true",
+      "bytes": 2023211,
+      "sha256": "b0794a1550ec0453184c7b66969ed5d4c5e9206af67ff5479721fb7857a646a3",
+      "has_loader": true,
+      "declares_id": true,
+      "mentions_tab_slot": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "id": "mount",
+      "status": "passed",
+      "detail": "the client runner called apply and the settings slot accepted the tab",
+      "browser": "msedge.exe",
+      "registered": true,
+      "slot": "settings.plugins.tab",
+      "tab_id": "compat-triage",
+      "reason": null
+    },
+    {
+      "id": "visible",
+      "status": "passed",
+      "detail": "the settings page rendered \"分诊台\" and its tab body after opening Settings",
+      "tab_registered": true,
+      "hops": [
+        {
+          "action": "dismiss-intro",
+          "name": "继续",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:更多",
+          "name": "更多",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:账号菜单",
+          "name": "账号菜单",
+          "clicked": true
+        },
+        {
+          "action": "open-settings",
+          "name": "设置Ctrl+Alt+,",
+          "clicked": true
+        },
+        {
+          "action": "open-plugin-settings-section",
+          "name": "内置插件",
+          "clicked": true
+        },
+        {
+          "action": "open-tab",
+          "name": "分诊台",
+          "clicked": true
+        }
+      ],
+      "page_url": "http://127.0.0.1:62182/",
+      "controls_before": [
+        "打开侧边栏",
+        "新建会话",
+        "全局面板",
+        "插件",
+        "自动化任务",
+        "更多",
+        "添加工作区",
+        "搜索会话",
+        "账号菜单",
+        "选择工作区",
+        "选择新任务使用的 Agent 预设",
+        "选择工作区",
+        "添加文件或调用指令",
+        "发送消息",
+        "预览版说明",
+        "继续"
+      ],
+      "text_head": "探索未至之境 预览版 选择工作区 标准模式 选择一个工作区开始 预览版说明 DeepSeek Harness 目前的 0.2 版本仍处于预览阶段，还有许多地方需要持续改进和打磨，希望听取广大开发者和用户的反馈建议。现在，新的桌面端面向广泛用户，开发者相关的进阶功能可在配置中开启使用。预计 DeepSeek Harness 的产品功能以及插件 API 都会继续快速迭代、持续演化，并逐渐趋于稳定。 我",
+      "intro_dismissed": "继续",
+      "settings_entry": "设置Ctrl+Alt+,",
+      "plugin_section": "内置插件",
+      "controls_after": [
+        "打开侧边栏",
+        "新建会话",
+        "全局面板",
+        "插件",
+        "自动化任务",
+        "更多",
+        "添加工作区",
+        "搜索会话",
+        "账号菜单",
+        "打开右侧边栏",
+        "选择工作区",
+        "选择新任务使用的 Agent 预设",
+        "描述你想要构建的内容, / 调用指令, @ 文件或对话",
+        "添加文件或调用指令",
+        "访问模式，当前：工作区内修改",
+        "请选择模型",
+        "发送消息",
+        "新标签页",
+        "分栏",
+        "退出全屏",
+        "收起右侧边栏",
+        "开始使用",
+        "关闭",
+        "添加 API Key",
+        "登录",
+        "浏览更多插件",
+        "创建你的插件",
+        "通用设置",
+        "模型",
+        "内置插件",
+        "Agent 预设",
+        "打开配置文件",
+        "插件视图",
+        "插件列表",
+        "分诊台"
+      ],
+      "tab_body": "passed",
+      "marker_after_tab": {
+        "registered": true,
+        "slot": "settings.plugins.tab",
+        "id": "compat-triage",
+        "data": {
+          "ok": true,
+          "rows": 192,
+          "verdicts": {
+            "go": 0,
+            "blocked": 0,
+            "unknown": 184
+          },
+          "detail": null
+        }
+      },
+      "tab_match": "分诊台"
+    },
+    {
+      "id": "same-source",
+      "status": "passed",
+      "detail": "the tab and the CLI agree on this profile: 192 rows, 0 go / 0 blocked / 184 unknown",
+      "tab_data": {
+        "ok": true,
+        "rows": 192,
+        "verdicts": {
+          "go": 0,
+          "blocked": 0,
+          "unknown": 184
+        },
+        "detail": null
+      },
+      "cli_data": {
+        "rows": 192,
+        "verdicts": {
+          "go": 0,
+          "blocked": 0,
+          "unknown": 184
+        }
+      }
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "host_log": [
+    "dsh-triage: compat_verdict tool registered (profile web)",
+    "dsh-triage: read-only /compat-triage/audit registered (profile web)",
+    "dsh web: http://127.0.0.1:62182/?token=<redacted>"
+  ],
+  "limits": [
+    "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
+    "this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)",
+    "the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine"
+  ]
+}

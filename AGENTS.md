@@ -58,7 +58,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 与 registry 次要通道 / verdict 组装（纯函数、可离线）
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
 │   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：plan 生成 + exec 执行/判定 + host 唯一一份 Host I/O（样本循环：`{error}` 才开替换窗口，ADR-0008 E）+ render 白屏判定（CDP）+ hooks/inventory-hook.mjs
-│   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板 + bin CLI + probe-run.ts + serve.ts（本地面板）+ audit-data.ts（audit 的纯数据层，CLI 与面板共用）
+│   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板（client.js）+ Host 只读路由（host-audit-route.ts）+ Agent 工具 compat_verdict（host-tool.ts + fit.ts，与 check 同一条引擎链；hooks/tool-hook.mjs 只做真机取证）+ bin CLI + probe-run.ts + serve.ts（本地面板）+ audit-data.ts（audit 的纯数据层，CLI 与面板共用）
 ├── scripts/                       # 门禁（gate_*，9 门）+ 真跑落盘（scan_env / record_case / record_audit / record_registry / record_probe / record_render_fixture / record_serve_smoke / render_inventory / d1_report / probe_live_sample / bootstrap_upstream）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）
 ├── AGENTS.md / PROJECT_RULES.md / INDEX.md / COMPLIANCE.md / LICENSE(MIT)

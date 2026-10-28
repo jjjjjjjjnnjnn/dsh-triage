@@ -214,3 +214,34 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 - **校验**：`scripts/record_index_source.mjs` 跑完 CLI 后，用**上游校验器**（沙盒里的 `@deepseek-ai/dsh-plugin-market-index`）验证文档；校验器不在 → `unmeasured`，**不是**「valid」。校验失败 → exit 1。
 - **真机产物**：`data/results/index-source-2026-10-29T04-00-00.000Z.json` —— **5 个插件 / 5 个版本被上游校验器接受**（`dsh-cost-meter@1.9.41`、`dsh-mcp-connector@0.2.83`、`dsh-plugin-model-proxy@0.1.6`、`dsh-status-rotator@0.38.0`、`dsh-whale-widget@0.4.2`）。
 - **边界**：索引是**筛选**不是背书——格式里没有结论字段，未定义成员会被校验器**丢弃**；描述文案明写「没出现的包 = 这里没测过，不是判定」。单测 8 条钉死这些规则。
+
+### 7.3 Agent 工具 `compat_verdict`（T-404，R36 交付）
+
+**一句话**：让 Agent 在「装之前」能问一次判断层——返回与 CLI **同源**的 verdict JSON，失败只降级 `unknown`。
+
+| 项 | 实现 |
+|---|---|
+| 数据源 | 读**一个**已发布的 manifest（npm packument）→ `evaluateAdmission` → `judgeVersionDrift` → `verdictFromAdmission`，与 `check` 同一条引擎链（`packages/plugin/src/fit.ts`） |
+| 参数 | `package`（必填，`name` 或 `name@version`）；`additionalProperties: false`——注册表**不校验**纯对象定义的参数，所以由我们自己拒绝（`readPackageArgument`） |
+| 输出 | JSON 字符串：`conclusion` + `summary`（与 CLI 同一 `renderVerdict` 的逐行文本）+ `verdict`（契约对象，路径已脱敏）+ `admission` + `registry` + `limits` |
+| 失败 | 任何读不到 manifest 的路径 → `unknown` + `missing.admission` + `tool.verdict-unavailable`（`{detail}` 写明真实原因）；**绝不抛**（抛出去模型只会看到栈） |
+| 超时 | `timeoutMs = 20s`，并**真的**把 `exec.signal` 转发进 registry 读（`AbortSignal.any` 合并） |
+| 不做 | 不安装、不执行候选代码、不读凭据、不判安全；`go` 只表示「声明层接受这个运行时」 |
+
+**为什么是纯对象而不是 `defineTool`**（R36 实测 `@deepseek-ai/dsh-tools/lib/index.js#register`）：注册表只校验四件事——`output.render` 是函数、`output.schema` 属于受支持的 JSON Schema 子集（`type/oneOf/properties/required/additionalProperties/items/enum/const` + 注解）、`timeoutMs` 为正、名字不是保留的 `run_code`。**没有 marker**，`defineTool` 只是把作者侧 schema DSL 编译成 JSON Schema 并加参数校验。因此本包不需要引入任何上游依赖（与 `ADR-0010` 对手写 `client.js` 的取舍同源）。
+
+**注入形态（R36 改了这里，必须记住）**：在 R35 之前这个 row 声明 `inject: ['webServer']`，于是**没有 webserver 的 profile 根本不挂载它**——对浏览器 tab 是对的，对 Agent 工具是错的（最需要「装前自查」的恰恰是不带 web 面的 tui/headless profile）。现在两半各自用 Cordis 自己的 `ctx.inject([...], cb)` 门控（上游 `dsh-plugin-market` 的写法）：`webServer` 在则挂路由，`tools` 在则挂工具，各自失败不影响另一半。代价与回归：R33 验过的八步 `client-serve` 在 R36 重跑仍全绿（`data/results/client-serve-2026-10-29T13-00-00.000Z.json`）。
+
+**真机证据**（`scripts/record_agent_tool.mjs` + `packages/plugin/hooks/tool-hook.mjs`）：四个 workspace 包按 `file:` 装进一次性 DSH home → 起 Host → 读 `tools.schemas()` → 调三次工具 → 落产物。`data/results/agent-tool-2026-10-29T12-20-00.000Z.json` 十一项全绿：
+
+- `registered:true`、`model_visible.in_schemas:true`（506 字符描述、参数 `[package]`、该 profile 共 2 个可见工具）；
+- 三次调用都 `via: registry`（走的是 `tools.execute()`，即模型真正的调用管道，不是直接调定义）：`@lolkda/dsh-skills-manager@0.3.1` = **go**、`dsh-cost-meter@1.7.43` = **blocked**、不存在的包 = **unknown**（`tool.verdict-unavailable`）；
+- 同一产物里的负对照：未注册的名字在 `tools.get()` 里**查不到**（所以「可见」不是一个恒真的读数）。
+
+**两条实测教训（写进这里，避免下一轮重踩）**：
+
+1. **工具回答的是「它服务的那个 profile」的运行时**。第一次跑用 `dsh-status-rotator@0.38.0` 期望 `go`，实际 `unknown`——它什么都不声明；第二次用 `dsh-mcp-connector@0.2.83` 期望 `blocked`，实际 `go`——因为 CLI 那次是在操作者的 `~/.dsh`（0.1.0-rc.6）上判的，而 Host 的 profile 是 0.2.1-rc.4。**两个数都对，问的不是同一个问题。**
+2. **期望必须在跑之前用同口径测出来**。现在脚本把期望写进 `CALLS`（并在产物 `sandbox.calls[].expected` 里落账），声明一改就红，而不是被事后重新叙述。
+
+**为什么 hook 目录不进 `files`**：它是仓库里的诊断件（同 `scripts/record_*`），不是用户运行时要加载的东西；与 probe 的 `hooks/`（CLI 装成 npm 包后仍需找到）不同。**边界**：真机只覆盖一个 Windows 机器 + 0.2.1-rc.4 + 一个 `web` profile；它证明「注册了、模型看得见、三问都答得上」，**不**证明模型会主动选这个工具，也不是任何形式的安全背书。
+

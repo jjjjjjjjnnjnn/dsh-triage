@@ -22,11 +22,12 @@
 
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { findBrowser } from '../packages/probe/dist/render.js'
+import { SANDBOX_PNPM_WORKSPACE, buildWorkspaceBundle, sandboxProfileManifest } from './lib/bundle.mjs'
 import { abs, isoStamp } from './lib/kit.mjs'
 import { controlNames, pickControl, tabMatch as matchTab } from './lib/ui-probe.mjs'
 
@@ -47,13 +48,6 @@ if (stamp === null || !existsSync(dshMain)) {
   process.stderr.write('usage: node scripts/record_client_serve.mjs --dsh-main <bin.js> --install <dir> --stamp <iso>\n')
   process.exit(2)
 }
-
-const WORKSPACE_PACKAGES = [
-  ['core', 'packages/core', '@dsh-triage/core'],
-  ['probe', 'packages/probe', '@dsh-triage/probe'],
-  ['signals', 'packages/signals', '@dsh-triage/signals'],
-  ['plugin', 'packages/plugin', 'dsh-triage'],
-]
 
 const root = join(tmpdir(), 'dsh-triage-client', `${label}-${Date.now().toString(36)}`)
 const home = join(root, 'home')
@@ -85,37 +79,7 @@ const sha256 = (text) => createHash('sha256').update(text).digest('hex')
 
 /** Copy the four workspace packages and point the plugin's deps at their local copies. */
 function buildBundle() {
-  mkdirSync(bundleRoot, { recursive: true })
-  const names = []
-  for (const [dirName, source, packageName] of WORKSPACE_PACKAGES) {
-    const target = join(bundleRoot, dirName)
-    cpSync(pathFor(source), target, {
-      recursive: true,
-      filter: (from) => !/[\\/](node_modules|src|lib)[\\/]/.test(from) && !from.endsWith('.ts'),
-    })
-    names.push({ dirName, packageName })
-  }
-  /*
-   * EVERY copy has to lose its `workspace:` protocols, not just the plugin: core/probe/signals
-   * depend on each other the same way, and pnpm refuses with "Cannot resolve package from
-   * workspace" the moment one of them survives (R31 hit exactly that twice).
-   */
-  const rewrittenByPackage = {}
-  for (const { dirName } of names) {
-    const manifestPath = join(bundleRoot, dirName, 'package.json')
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-    const rewritten = {}
-    for (const [key, value] of Object.entries(manifest.dependencies ?? {})) {
-      const match = names.find((entry) => entry.packageName === key)
-      rewritten[key] = match === undefined ? value : `file:../${match.dirName}`
-    }
-    manifest.dependencies = rewritten
-    // Dev dependencies are not part of what a user installs, and they carry workspace protocols.
-    delete manifest.devDependencies
-    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
-    rewrittenByPackage[dirName] = rewritten
-  }
-  return { dir: join(bundleRoot, 'plugin'), dependencies: rewrittenByPackage.plugin ?? {} }
+  return buildWorkspaceBundle({ targetRoot: bundleRoot, pathFor })
 }
 
 function run(command, args, options) {
@@ -157,17 +121,7 @@ async function main() {
   writeFileSync(
     join(profileDir, 'package.json'),
     `${JSON.stringify(
-      {
-        name: 'dsh-profile-client-serve',
-        private: true,
-        dependencies: {
-          '@deepseek-ai/dsh': '0.2.1-rc.4',
-          '@deepseek-ai/dsh-base': '0.2.1-rc.4',
-          '@deepseek-ai/dsh-web-app': '0.2.1-rc.4',
-          'dsh-triage': `file:${bundle.dir.replaceAll('\\', '/')}`,
-        },
-        dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'dsh-triage'] } },
-      },
+      sandboxProfileManifest({ bundleDir: bundle.dir, runtimeVersion: '0.2.1-rc.4', name: 'dsh-profile-client-serve' }),
       null,
       2,
     )}\n`,
@@ -180,11 +134,7 @@ async function main() {
    * genai, koffi, node-pty, protobufjs). `strictDepBuilds: false` only turns that error into a
    * warning — it approves and runs nothing.
    */
-  writeFileSync(
-    join(profileDir, 'pnpm-workspace.yaml'),
-    ['# written by dsh-triage record_client_serve (R31): do not fail the install over unapproved builds.', 'strictDepBuilds: false', ''].join('\n'),
-    'utf8',
-  )
+  writeFileSync(join(profileDir, 'pnpm-workspace.yaml'), SANDBOX_PNPM_WORKSPACE, 'utf8')
   const env = {
     ...process.env,
     DSH_HOME: home,

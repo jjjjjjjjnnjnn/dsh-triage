@@ -6,6 +6,10 @@ export type { BundleLayer, Composition, CompositionEntry } from './load.js'
  * the bare package, because `dsh-client-modules` only discovers a browser half when the loader
  * entry's name is a bare package specifier. Without this re-export the row would mount an empty
  * module and the settings tab would never be composed.
+ *
+ * R36: there is no static `inject` to re-export any more — the route and the agent tool each gate
+ * themselves through `ctx.inject`, so the row mounts in profiles that have only one of the two
+ * services (see `host.ts`).
  */
-export { apply, inject, name } from './host.js'
+export { apply, name } from './host.js'
 export { default } from './host.js'

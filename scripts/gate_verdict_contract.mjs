@@ -15,7 +15,7 @@ const TIERS = new Set(['declared', 'scanned', 'measured-registry', 'measured-loc
 const CONCLUSIONS = new Set(['go', 'risky', 'blocked', 'unknown'])
 const SEVERITIES = new Set(['block', 'warn', 'info'])
 const CONFIDENCE = new Set(['low', 'medium', 'high'])
-const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe)\.[a-z0-9.-]+$/
+const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe|tool)\.[a-z0-9.-]+$/
 
 /**
  * Extract the catalogue keys AND their `{placeholder}` requirements from the single

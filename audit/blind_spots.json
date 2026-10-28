@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R35 (2026-10-29)",
+  "stand": "R36 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -286,6 +286,24 @@
       "owner": "packages/plugin/src/host.ts + packages/plugin/src/host-audit-route.ts + scripts/record_client_serve.mjs",
       "status": "narrowed (R33): diagnosable from the artifact, still empirical",
       "resolved_by": "R33: host.ts logs both skip reasons to stdout, artifact records host_log, and same-source has a recorded negative control (data/results/client-serve-negctl-samesource-2026-10-29T01-10-00.000Z.json)"
+    },
+    {
+      "id": "BS-38",
+      "area": "plugin/agent-tool",
+      "cannot_see": "`compat_verdict` 回答的是**它服务的那个 profile** 的运行时，而取期望的人常常在另一个 home 上跑 `check`（R36 真踩：同一个 `dsh-mcp-connector@0.2.83` 在 Host 的 0.2.1-rc.4 里是 `go`、在操作者 `~/.dsh` 的 0.1.0-rc.6 里是 `blocked`）。两次读数都正确，但并排看就像一个矛盾；产物里只有 `verdict.env.dsh` 与 `sandbox.calls[].expected` 两处能还原真相。**仍看不到的**：一个会话在宿主 profile 与预设 profile 之间切换时，工具用的是哪个（本仓只测过一个 `web` profile）",
+      "mitigation": "R36 起产物 `sandbox.calls[].expected` 与 `steps[].expected/actual` 同时落账，`limits[]` 明写「换一个 `--dsh-home` 的 CLI 结果不一致不是矛盾」；spec `docs/specs/M4-surface.md` §7.3「两条实测教训」第 1 条钉住口径。**退出条件**：出现 `agent/preset` 作用域读数（T-202a）时重开，而不是在工具里猜",
+      "owner": "packages/plugin/src/fit.ts + packages/plugin/src/host-tool.ts + docs/specs/M4-surface.md",
+      "status": "open (R36): documented and recorded, still one profile per run",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-39",
+      "area": "plugin/agent-tool",
+      "cannot_see": "真机只证明了「注册了 + 在 `schemas()` 里 + 三次调用能答」，**没有**证明一个模型会主动选这个工具，也没有在 `ptc` 折叠模式（模型直调只允许 `run_code`）下跑过：那时 `tools.execute()` 会拒，`hooks/tool-hook.mjs` 会回落到直接调定义并把拒绝原因记进 `calls[].registry_refusal`——这条回退路径目前**只有分支代码，没有真机见证**（本次沙盒是 native 模式，2 个可见工具）",
+      "mitigation": "产物把 `calls[].via`（`registry` / `definition`）与 `registry_refusal` 分列，读的人不会把「定义能跑」当成「管道能跑」；`registered`/`model-visible`/`negative-control-absent` 各自独立成步。**退出条件**：再造一个 `mode: ptc` 的沙盒真跑一次，或在同一 profile 里观察一次模型自发调用（后者不属于本仓机器可跑的范围）",
+      "owner": "packages/plugin/hooks/tool-hook.mjs + scripts/record_agent_tool.mjs",
+      "status": "open (R36): the fallback branch has no real-machine witness",
+      "resolved_by": null
     }
   ]
 }

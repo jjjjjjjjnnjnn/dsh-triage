@@ -437,3 +437,14 @@
 - 结果：**一行代码、一个阈值都没动**。交接把三件事分开写清：R33 的 T-401 是**真的收口**（可见性与同源结论都有真机与负对照）、R34 的 M4-b 是**两件交付 + 一件未托管**（索引生成器与上游校验通过，公开 URL 未做）、以及下一步该做的是 `BS-32` 的有载对照而不是再加功能
 - 实测：330 测试 / 9 门全绿 / `--mutate` 9/9 / 178 步 / 162 产物
 - 过程中的真实缺陷：无新增（本轮只有文档）；上一轮自找的 stamp 覆盖已记在 R34 行与 §4 坑表
+### 2026-10-29 R36｜M4-b 收口：compat_verdict Agent 工具（T-404）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；udit/step_reviews.json R36-S1…S4）
+- 范围：packages/plugin/src/{fit,host-tool,host,index}.ts、packages/plugin/hooks/tool-hook.mjs、packages/core/src/messages.ts、scripts/{record_agent_tool,record_client_serve,gate_verdict_contract}.mjs、scripts/lib/bundle.mjs、	ests/unit/host-tool.test.ts、docs/{HANDOFF,BACKLOG,ROADMAP,specs/M4-surface,05-verdict-contract}.md、INDEX.md、AGENTS.md、udit/{AUDIT_2026-10-29_R36.md,blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}
+- 起因：HUMAN「同意，继续，处理所有问题」（R36 计划：先收口 M4-b 的第三件 T-404）
+- 结果：① **T-404 交付**：it.ts（与 check 同一条引擎链）+ host-tool.ts（**纯对象定义**——实测注册表只校验 render/schema/timeoutMs/保留名，无 marker，故**不引上游依赖**）+ row 拆成两半各自 ctx.inject（否则 headless profile 连工具一起不挂）+ 18 条单测；失败一律 unknown + missing.admission + 新命名空间 	ool.*。② **真机**：gent-tool-2026-10-29T12-20-00.000Z.json 十一项全绿——可见性（506 字符描述 / 参数 [package] / 该 profile 2 个可见工具）、三次调用**都走 	ools.execute()**（go / blocked / unknown 三形状）、未注册名负对照、limits[] 四条。③ **回归**：注入形态改造后 R33 八步 client-serve 仍全绿（client-serve-2026-10-29T13-00-00.000Z.json，含 same-source）。④ **新盲区** BS-38（工具回答的是宿主 profile 的运行时；跨 profile 取期望得到假矛盾）、BS-39（ptc 折叠下的回退分支只有代码没有真机见证）。⑤ **旧账点名**：udit/ 里 R32–R35 没有 per-round 报告，INDEX/HANDOFF 改为按事实写，**不补写历史**。
+- 实测：348 测试 / 9 门全绿 / --mutate 9/9 / 183 步 / 167 产物
+- 过程中的真实缺陷：① 第一次真机期望写错（dsh-status-rotator 不声明任何范围）；② 第二次真机**跨 profile 取期望**（Host 0.2.1-rc.4 vs 操作者 ~/.dsh 0.1.0-rc.6），工具答案正确、期望错误——两份红产物保留并各自成步（R36-S1/S2）
+- 未做：BS-32 有载对照（下一轮，独占机器）、BS-39 的 ptc 真机、BS-29/BS-36 剩余面、索引源公开托管（HUMAN）
+

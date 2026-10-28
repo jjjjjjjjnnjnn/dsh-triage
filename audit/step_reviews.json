@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R35 (2026-10-29)",
+  "stand": "R36 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -4391,6 +4391,133 @@
         "artifact": "data/results/gates-2026-10-29T06-00-00.000Z.json",
         "sha256": "2507ea7578be220fed022818c912eeaefb3248388f77f23d245c7c882fff3e2c",
         "outcome": "ALL GREEN · 9 gates（330 测试；178 步 / 162 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R36-S1",
+      "batch": "R36",
+      "step": "M4-b 收口第一步（T-404 主体）：先取证上游工具注册契约（`register` 只校验 render/schema/timeoutMs/保留名，无 marker；`schemas()` 只投影 name/description/parameters），再写 `fit.ts`（与 `check` 同一条引擎链）+ `host-tool.ts`（纯对象定义、失败降级 unknown、参数自校验、signal 转发、输出脱敏）与 18 条单测",
+      "changed": [
+        "packages/plugin/src/fit.ts",
+        "packages/plugin/src/host-tool.ts",
+        "packages/plugin/src/host.ts",
+        "packages/plugin/src/index.ts",
+        "packages/core/src/messages.ts",
+        "scripts/gate_verdict_contract.mjs",
+        "tests/unit/host-tool.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：判定链与 `check` 同源（fetchPackument → evaluateAdmission → judgeVersionDrift → verdictFromAdmission），工具里没有第二条规则；失败一律 `unknown` + `missingEvidence:[missing.admission]` + `tool.verdict-unavailable`，`evidence.tier=inferred`（没读到 manifest 就不借 declared）",
+        "reproducibility": "PASS：`node --test tests/unit/host-tool.test.ts` 18/18（离线；registry 用注入的 fetch 假体，packument 走真实 parser）；时间戳由 `stamp` 注入，同一输入同字节",
+        "licence": "PASS：只读公开 registry 元数据与上游已发布的 MIT 包**行为**（读 `lib/index.js` 取证，不 vendor、不复制源码）；本包未新增任何上游依赖",
+        "ssot": "PASS：定义形状（name/parameters/output/timeoutMs）由单测钉死；新增命名空间 `tool.*` 三处同改（messages 中英 + 门白名单 + `docs/05` §2f）；`gate_verdict_contract` 白名单扩容后仍能 CAUGHT",
+        "adversary": "反例一：以为注册表会校验参数，所以直接信任模型传的 `package`——实测 `register()` 只校验定义形状，`defineTool` 才有参数校验，故我们自己 `readPackageArgument` + 单测覆盖 `{}`/数字/null/字符串/空白。反例二：把失败写成 `blocked`——那会把「读不到」说成「插件坏」，单测钉死 `unknown` + `missing.admission`。反例三：拿 `registry.*` 的文案冒充工具失败（语义不符），因此新开 `tool.*` 而不是借。反例四：以为加 `inject: ['tools']` 就够了——静态 inject 会让没有 webServer 的 profile 连工具一起不挂载，所以改成两半各自 `ctx.inject`"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T12:00:00.000Z",
+        "artifact": "data/results/agent-tool-2026-10-29T12-00-00.000Z.json",
+        "sha256": "a73c58a252facdcde9d18fd71577b65c73b6204caff39079aa2ac28b67569f8d",
+        "outcome": "第一个真机样本：registered / model-visible（506 字符描述，参数 [package]）/ negative-control-absent / call-absent-is-unknown / limits-stated 全 passed；`call-candidate` failed —— 期望写错（`dsh-status-rotator` 什么都不声明，工具答 unknown 是对的），见 R36-S2"
+      }
+    },
+    {
+      "id": "R36-S2",
+      "batch": "R36",
+      "step": "第二次真机暴露一个跨 profile 的口径错误：同一个 `dsh-mcp-connector@0.2.83` 在 Host 里是 `go`、在 CLI 里是 `blocked`。查明原因是**运行时不同**（Host profile = 0.2.1-rc.4，操作者 `~/.dsh` = 0.1.0-rc.6），不是工具缺陷；把「工具回答的是它服务的那个 profile」写进 spec 与产物 limits",
+      "changed": [
+        "docs/specs/M4-surface.md",
+        "scripts/record_agent_tool.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：结论来自两次独立读数（Host 内 `loadEnv` 报 0.2.1-rc.4；CLI `--dsh-home ~/.dsh` 报 0.1.0-rc.6），不是推测；产物里 `calls[].admission` 与 `verdict.env.dsh` 可逐条核对",
+        "reproducibility": "PASS：`--call-go/--call-blocked/--absent` 三个开关让期望可显式传入；产物 `sandbox.calls[].expected` 落账「这次期望是什么」，重跑即可复算",
+        "licence": "PASS：只新增文档与脚本开关，无新数据源、无第三方内容",
+        "ssot": "PASS：教训进 `docs/specs/M4-surface.md` §7.3「两条实测教训」第 1 条；产物 limits 增加一条同义限定，避免读者把两次读数当成矛盾",
+        "adversary": "反例一：把 `failed` 当成「工具算错了」去改 `judgeFit`——真正的错在**期望的取法**（跨 profile 取期望）。反例二：为了变绿把期望改成「whatever the tool says」——那就是自证；现在期望写死在 `CALLS` 并在产物里落账。反例三：删掉这份红产物——那会抹掉这轮唯一一条「同包不同运行时」的真机见证"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T12:10:00.000Z",
+        "artifact": "data/results/agent-tool-2026-10-29T12-10-00.000Z.json",
+        "sha256": "b5759633a5198013ae3fa32e5d79e3a205a91cfafc8697f83ee8d6c0202e1dba",
+        "outcome": "outcome failed（原因：期望取自另一个运行时）：`call-blocked` 实际 go。工具对「Host 的 0.2.1-rc.4」答 go 是对的；CLI 对「0.1.0-rc.6」答 blocked 也是对的"
+      }
+    },
+    {
+      "id": "R36-S3",
+      "batch": "R36",
+      "step": "第三次真机：期望先用同口径（同一 sandbox home 的 `check`）测出来再写死，一次跑出三种结论 —— `go` / `blocked` / `unknown`，全部经 `tools.execute()`（模型真正的调用管道）回答",
+      "changed": [
+        "scripts/record_agent_tool.mjs",
+        "docs/specs/M4-surface.md"
+      ],
+      "review": {
+        "correctness": "PASS：三次调用 `via: registry`（不是直接调定义）；结论 `go`/`blocked`/`unknown` 与同口径 `check` 逐条一致；`blocked` 那条带 remediation，`unknown` 那条带 `tool.verdict-unavailable` + `missing.admission`",
+        "reproducibility": "PASS：一条命令重放（install 25.9s / boot 12.6s / 11 步）；候选全部 pin 到版本，`sandbox.calls[].expected` 与 `steps[].expected/actual` 同时落账",
+        "licence": "PASS：只读 registry 公开元数据；候选按 `docs/adr/0004` 只在临时沙盒执行，不 vendor",
+        "ssot": "PASS：产物的 `verdict` 与 `verdicts[]` 被 `gate_verdict_contract` 直接校验（三种形状同时覆盖 remediation 与 missingEvidence 断言）+ `.sha256`",
+        "adversary": "反例一：「工具在 `schemas()` 里」不足以证明模型能调——所以真的调了，并记录 `via`；若是 ptc 折叠（模型直调被拒），会记 `registry_refusal` 并说明回落到定义调用。反例二：负对照用「不太可能存在的名字」而不是「不可能存在的名字」——已用一个 npm 不可能有的名字。反例三：把 `go` 当安全背书——`limits[]` 每次四条同句限定，单测也钉死"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T12:20:00.000Z",
+        "artifact": "data/results/agent-tool-2026-10-29T12-20-00.000Z.json",
+        "sha256": "99ccffff904dc6631d54526c04ac4798e99014046f403afca2e326da404b3c4e",
+        "outcome": "passed · 11 步全绿：registered / model-visible / negative-control-absent / call-go（@lolkda/dsh-skills-manager@0.3.1）/ call-blocked（dsh-cost-meter@1.7.43）/ call-unknown（不存在的包）/ limits-stated / cleanup"
+      }
+    },
+    {
+      "id": "R36-S4",
+      "batch": "R36",
+      "step": "注入形态改造的回归：把 row 从静态 `inject: ['webServer']` 改成两半各自 `ctx.inject([...], cb)`（否则没有 webServer 的 profile 连 Agent 工具一起不挂载），并用 R33 的八步 `client-serve` 证明浏览器/路由半边没被拆坏；顺带把「copies 四个 workspace 包 + 改写 `workspace:`」抽成 `scripts/lib/bundle.mjs` 供两个真机脚本共用",
+      "changed": [
+        "packages/plugin/src/host.ts",
+        "scripts/lib/bundle.mjs",
+        "scripts/record_client_serve.mjs",
+        "scripts/record_agent_tool.mjs",
+        "packages/plugin/hooks/tool-hook.mjs",
+        "tests/unit/host-tool.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：八步全绿（bundle/install/boot/graph/client/mount/visible/same-source/cleanup），`same-source` 仍与 CLI 逐项一致；单测另钉三条：只有 tools 时挂工具不挂路由、只有 webServer 时挂路由不挂工具、两者都没有时两半都不挂且不报错",
+        "reproducibility": "PASS：一条命令重放；抽出的 `buildWorkspaceBundle` 与 `sandboxProfileManifest` 行为与 R31/R33 版本一致（同一 profile 清单、同一 `strictDepBuilds: false`），回归产物即证明",
+        "licence": "PASS：无新依赖、无 vendor；bundle 只从本仓工作树复制",
+        "ssot": "PASS：回归产物 `client-serve-2026-10-29T13-00-00.000Z.json` + `.sha256`；`docs/specs/M4-surface.md` §7.3 记录注入形态与这次回归",
+        "adversary": "反例一：改注入形态却不重跑八步回归——那会把「路由还在」变成假设；已重跑。反例二：两个半边共用一个 try/catch，导致工具失败把路由也带走——现在各自 mount 且各自 catch。反例三：抽出 bundle 逻辑时顺手改了 profile 清单（例如加 profile 依赖）——回归的 install/boot 两步会红，本次未改"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --stamp 2026-10-29T13:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-29T13-00-00.000Z.json",
+        "sha256": "c3168f2b817d3822df0a46f9e1cc173ad3ecb0d57f884ec4fa1c24ca90ed6a50",
+        "outcome": "served · 八步全绿（含 mount:passed、visible:passed、same-source:passed）· cleanup:passed"
+      }
+    },
+    {
+      "id": "R36-S5",
+      "batch": "R36",
+      "step": "收口：契约文档三处同改（`tool.*` 命名空间）+ M4-surface §7.3（含注入形态与两条实测教训）+ BACKLOG/INDEX/ROADMAP/AGENTS/HANDOFF 同步 + 新盲区 `BS-38`/`BS-39` + 本轮审核报告，然后录一次门禁全绿；顺带把「R32–R35 没有 per-round 报告」这条旧账按事实写清（不补写历史）",
+      "changed": [
+        "docs/05-verdict-contract.md",
+        "docs/specs/M4-surface.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/AUDIT_2026-10-29_R36.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：每个数字都能指到产物——348 测试 / 9 门 / 182 步 / 166 产物；`compat_verdict` 的三形状、八步回归、两条红产物的原因都各自成步（R36-S1…S4）；本轮没有改任何阈值或判据",
+        "reproducibility": "PASS：`pnpm run verify` 全绿 + `node scripts/gate.mjs --mutate` 9/9 → 本产物（`--record` 落盘，含逐门结果与 sha256）；文档里新增的每条复算命令都在本轮真跑过",
+        "licence": "PASS：只新增文档与台账；`tool.*` 文案为中英双语（两处同改），无第三方内容、无数据许可问题",
+        "ssot": "PASS：`gate_verdict_contract` 的命名空间白名单与 `docs/05` §3 同改；`gate_governance` 的 `index-references` 抓到过一次裸文件名 `host.ts`（已改成 `packages/plugin/src/host.ts`）——正是这条规则该干的事",
+        "adversary": "反例一：把「R32–R35 没有 per-round 报告」写成「R32–R35 没有审核」——那是假的，机器台账 178 步齐全；已按事实写「只有台账、没有 per-round 报告」。反例二：为了让 `doc-stand` 绿而顺手把 Stand 改成 R36 却不改内容——`doc-stand.test.ts` 与 `governance` 都在跑，本轮是内容先改、Stand 后改。反例三：把两条红产物（S1/S2）删掉换取「一次全绿」的好看产物——那会抹掉「同包不同运行时」的唯一真机见证，保留并按步记账"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T13:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T13-30-00.000Z.json",
+        "sha256": "b018c724751e898ec0b5e4eb2f211a63f054beb1fb7f02e15d0e322b7a98198b",
+        "outcome": "ALL GREEN · 9 gates（348 测试；182 步 / 166 产物全部被引用）"
       }
     }
   ]

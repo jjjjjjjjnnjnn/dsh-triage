@@ -1,0 +1,1085 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_agent_tool.mjs",
+  "generated_at": "2026-10-29T12:20:00.000Z",
+  "label": "agent-tool",
+  "outcome": "passed",
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-agent-tool\\agent-tool-mvs68uhj\\home",
+    "profile": "web",
+    "runtime_version": "0.2.1-rc.4",
+    "bundle": "file:packages/* (workspace rewritten)",
+    "calls": [
+      {
+        "spec": "@lolkda/dsh-skills-manager@0.3.1",
+        "expected": "go"
+      },
+      {
+        "spec": "dsh-cost-meter@1.7.43",
+        "expected": "blocked"
+      },
+      {
+        "spec": "dsh-triage-no-such-plugin-9f3a2c",
+        "expected": "unknown"
+      }
+    ],
+    "probe": "packages/plugin/hooks/tool-hook.mjs via a one-row --patch overlay"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": " · Done in 25.9s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "Host answered in 12.6s (stopped by readable-sample)",
+      "payload_bytes": 10676
+    },
+    {
+      "id": "registered",
+      "status": "passed",
+      "detail": "registered=true · waited 0ms",
+      "registration_waited_ms": 0,
+      "definition_timeout_ms": 20000
+    },
+    {
+      "id": "model-visible",
+      "status": "passed",
+      "detail": "compat_verdict is in schemas(): 506 description chars, parameters [package] (2 tools visible)",
+      "parameter_keys": [
+        "package"
+      ],
+      "required": [
+        "package"
+      ],
+      "tool_count": 2,
+      "schema_names": [
+        "compat_verdict",
+        "working_directory"
+      ]
+    },
+    {
+      "id": "negative-control-absent",
+      "status": "passed",
+      "detail": "compat_verdict__not_registered is absent from the registry (so \"visible\" is not an always-true reading)"
+    },
+    {
+      "id": "call-go",
+      "status": "passed",
+      "detail": "@lolkda/dsh-skills-manager@0.3.1 → go via registry",
+      "expected": "go",
+      "actual": "go",
+      "via": "registry",
+      "admission": {
+        "status": "admitted",
+        "mode": "peers"
+      },
+      "reason_message_ids": [
+        "admission.admitted",
+        "admission.declared-only",
+        "admission.range-unbounded",
+        "admission.range-unbounded"
+      ]
+    },
+    {
+      "id": "call-blocked",
+      "status": "passed",
+      "detail": "dsh-cost-meter@1.7.43 → blocked via registry",
+      "expected": "blocked",
+      "actual": "blocked",
+      "via": "registry",
+      "admission": {
+        "status": "denied",
+        "mode": "peers"
+      },
+      "reason_message_ids": [
+        "admission.unmet.peer",
+        "admission.unmet.peer"
+      ]
+    },
+    {
+      "id": "call-unknown",
+      "status": "passed",
+      "detail": "dsh-triage-no-such-plugin-9f3a2c → unknown via registry",
+      "expected": "unknown",
+      "actual": "unknown",
+      "via": "registry",
+      "admission": null,
+      "reason_message_ids": [
+        "tool.verdict-unavailable"
+      ]
+    },
+    {
+      "id": "limits-stated",
+      "status": "passed",
+      "detail": "4 limit line(s) in the model-facing payload"
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "verdict": {
+    "schemaVersion": 1,
+    "subject": {
+      "name": "@lolkda/dsh-skills-manager",
+      "version": "0.3.1",
+      "kind": "plugin"
+    },
+    "env": {
+      "dsh": "0.2.1-rc.4",
+      "node": "24.15.0",
+      "platform": "win32",
+      "arch": "x64",
+      "profile": "web",
+      "profileDir": "~\\profiles\\web",
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-triage"
+      ],
+      "installed": [
+        {
+          "name": "@deepseek-ai/dsh",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "@deepseek-ai/dsh-base",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "@deepseek-ai/dsh-web-app",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "dsh-triage",
+          "version": "0.1.0"
+        }
+      ]
+    },
+    "conclusion": "go",
+    "confidence": {
+      "level": "medium",
+      "basis": "declared"
+    },
+    "reasons": [
+      {
+        "code": "admission-admitted",
+        "severity": "info",
+        "messageId": "admission.admitted",
+        "params": {
+          "runtime": "0.2.1-rc.4"
+        }
+      },
+      {
+        "code": "admission-declared-only",
+        "severity": "info",
+        "messageId": "admission.declared-only",
+        "params": {
+          "runtime": "0.2.1-rc.4"
+        }
+      },
+      {
+        "code": "admission-range-unbounded",
+        "severity": "warn",
+        "messageId": "admission.range-unbounded",
+        "params": {
+          "key": "@deepseek-ai/dsh-client-connection",
+          "range": "*"
+        }
+      },
+      {
+        "code": "admission-range-unbounded",
+        "severity": "warn",
+        "messageId": "admission.range-unbounded",
+        "params": {
+          "key": "@deepseek-ai/dsh-skill",
+          "range": "*"
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "id": "admission",
+        "tier": "declared",
+        "source": "@lolkda/dsh-skills-manager@0.3.1",
+        "method": "declared-range",
+        "at": "2026-10-28T13:50:39.165Z",
+        "detail": "peers"
+      },
+      {
+        "id": "runtime",
+        "tier": "measured-local",
+        "source": "~\\profiles\\web",
+        "method": "profile-scan",
+        "at": "2026-10-28T13:50:39.165Z",
+        "detail": "dsh 0.2.1-rc.4"
+      },
+      {
+        "id": "registry-tags",
+        "tier": "measured-registry",
+        "source": "npm:@lolkda/dsh-skills-manager",
+        "method": "registry-metadata",
+        "at": "2026-10-28T13:50:39.165Z",
+        "detail": "\"latest\" points at the newest published build (0.3.1)"
+      }
+    ],
+    "remediation": [],
+    "missingEvidence": [],
+    "generatedAt": "2026-10-28T13:50:39.165Z"
+  },
+  "verdicts": [
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "@lolkda/dsh-skills-manager",
+        "version": "0.3.1",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.4",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app",
+          "dsh-triage"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "dsh-triage",
+            "version": "0.1.0"
+          }
+        ]
+      },
+      "conclusion": "go",
+      "confidence": {
+        "level": "medium",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-admitted",
+          "severity": "info",
+          "messageId": "admission.admitted",
+          "params": {
+            "runtime": "0.2.1-rc.4"
+          }
+        },
+        {
+          "code": "admission-declared-only",
+          "severity": "info",
+          "messageId": "admission.declared-only",
+          "params": {
+            "runtime": "0.2.1-rc.4"
+          }
+        },
+        {
+          "code": "admission-range-unbounded",
+          "severity": "warn",
+          "messageId": "admission.range-unbounded",
+          "params": {
+            "key": "@deepseek-ai/dsh-client-connection",
+            "range": "*"
+          }
+        },
+        {
+          "code": "admission-range-unbounded",
+          "severity": "warn",
+          "messageId": "admission.range-unbounded",
+          "params": {
+            "key": "@deepseek-ai/dsh-skill",
+            "range": "*"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "@lolkda/dsh-skills-manager@0.3.1",
+          "method": "declared-range",
+          "at": "2026-10-28T13:50:39.165Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-28T13:50:39.165Z",
+          "detail": "dsh 0.2.1-rc.4"
+        },
+        {
+          "id": "registry-tags",
+          "tier": "measured-registry",
+          "source": "npm:@lolkda/dsh-skills-manager",
+          "method": "registry-metadata",
+          "at": "2026-10-28T13:50:39.165Z",
+          "detail": "\"latest\" points at the newest published build (0.3.1)"
+        }
+      ],
+      "remediation": [],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-28T13:50:39.165Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "dsh-cost-meter",
+        "version": "1.7.43",
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.4",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app",
+          "dsh-triage"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "dsh-triage",
+            "version": "0.1.0"
+          }
+        ]
+      },
+      "conclusion": "blocked",
+      "confidence": {
+        "level": "high",
+        "basis": "declared"
+      },
+      "reasons": [
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-credentials",
+            "range": "^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0",
+            "runtime": "0.2.1-rc.4"
+          }
+        },
+        {
+          "code": "admission-denied-peer",
+          "severity": "block",
+          "messageId": "admission.unmet.peer",
+          "params": {
+            "key": "@deepseek-ai/dsh-home-paths",
+            "range": "^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0",
+            "runtime": "0.2.1-rc.4"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "admission",
+          "tier": "declared",
+          "source": "dsh-cost-meter@1.7.43",
+          "method": "declared-range",
+          "at": "2026-10-28T13:50:44.309Z",
+          "detail": "peers"
+        },
+        {
+          "id": "runtime",
+          "tier": "measured-local",
+          "source": "~\\profiles\\web",
+          "method": "profile-scan",
+          "at": "2026-10-28T13:50:44.309Z",
+          "detail": "dsh 0.2.1-rc.4"
+        },
+        {
+          "id": "registry-tags",
+          "tier": "measured-registry",
+          "source": "npm:dsh-cost-meter",
+          "method": "registry-metadata",
+          "at": "2026-10-28T13:50:44.309Z",
+          "detail": "\"latest\" points at the newest published build (1.9.44)"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "allow-version",
+          "command": "dsh plugin --profile web allow-version dsh-cost-meter@1.7.43 --dsh-version 0.2.1-rc.4 --accept-risk",
+          "messageId": "remediation.allow-version",
+          "note": "explicit exemption for this exact plugin version and runtime version"
+        },
+        {
+          "kind": "downgrade-dsh",
+          "messageId": "remediation.downgrade-dsh",
+          "params": {
+            "count": 2,
+            "runtime": "0.2.1-rc.4"
+          },
+          "note": "2 requirement(s) exclude 0.2.1-rc.4; either upgrade the plugin or stay on a runtime it declares"
+        },
+        {
+          "kind": "pin-version",
+          "messageId": "remediation.pin-version",
+          "params": {
+            "runtime": "0.2.1-rc.4",
+            "profile": "web"
+          },
+          "note": "install a plugin build whose declarations include 0.2.1-rc.4 (profile: web)"
+        },
+        {
+          "kind": "probe",
+          "messageId": "remediation.probe",
+          "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+        }
+      ],
+      "missingEvidence": [],
+      "generatedAt": "2026-10-28T13:50:44.309Z"
+    },
+    {
+      "schemaVersion": 1,
+      "subject": {
+        "name": "dsh-triage-no-such-plugin-9f3a2c",
+        "version": null,
+        "kind": "plugin"
+      },
+      "env": {
+        "dsh": "0.2.1-rc.4",
+        "node": "24.15.0",
+        "platform": "win32",
+        "arch": "x64",
+        "profile": "web",
+        "profileDir": "~\\profiles\\web",
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app",
+          "dsh-triage"
+        ],
+        "installed": [
+          {
+            "name": "@deepseek-ai/dsh",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-base",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-web-app",
+            "version": "0.2.1-rc.4"
+          },
+          {
+            "name": "dsh-triage",
+            "version": "0.1.0"
+          }
+        ]
+      },
+      "conclusion": "unknown",
+      "confidence": {
+        "level": "low",
+        "basis": "inferred"
+      },
+      "reasons": [
+        {
+          "code": "tool-registry",
+          "severity": "warn",
+          "messageId": "tool.verdict-unavailable",
+          "params": {
+            "detail": "not-found: npm has no package dsh-triage-no-such-plugin-9f3a2c"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "id": "candidate-metadata",
+          "tier": "inferred",
+          "source": "npm registry",
+          "method": "registry (no manifest was read)",
+          "at": "2026-10-28T13:50:45.011Z"
+        }
+      ],
+      "remediation": [
+        {
+          "kind": "report",
+          "messageId": "remediation.report",
+          "note": "no manifest was read, so retry when the registry answers, or name the exact version to judge"
+        }
+      ],
+      "missingEvidence": [
+        "missing.admission"
+      ],
+      "generatedAt": "2026-10-28T13:50:45.011Z"
+    }
+  ],
+  "probe_sample": {
+    "kind": "agent-tool",
+    "settled": true,
+    "sampled_at": "2026-10-28T13:50:45.296Z",
+    "profile": "web",
+    "runtime_version": "0.2.1-rc.4",
+    "wait_ms_wall_clock": 8468,
+    "tool": {
+      "name": "compat_verdict",
+      "registered": true,
+      "registration_waited_ms": 0,
+      "definition_has_execute": true,
+      "definition_timeout_ms": 20000
+    },
+    "model_visible": {
+      "in_schemas": true,
+      "description_chars": 506,
+      "parameter_keys": [
+        "package"
+      ],
+      "required": [
+        "package"
+      ],
+      "tool_count": 2,
+      "schema_names": [
+        "compat_verdict",
+        "working_directory"
+      ],
+      "error": null
+    },
+    "calls": [
+      {
+        "spec": "@lolkda/dsh-skills-manager@0.3.1",
+        "index": 0,
+        "via": "registry",
+        "is_error": false,
+        "ms": 5146,
+        "conclusion": "go",
+        "subject": {
+          "name": "@lolkda/dsh-skills-manager",
+          "version": "0.3.1"
+        },
+        "admission": {
+          "status": "admitted",
+          "mode": "peers"
+        },
+        "reason_message_ids": [
+          "admission.admitted",
+          "admission.declared-only",
+          "admission.range-unbounded",
+          "admission.range-unbounded"
+        ],
+        "missing_evidence": [],
+        "limits": 4,
+        "payload_bytes": 4032,
+        "payload": {
+          "schema_version": 1,
+          "tool": "compat_verdict",
+          "generated_at": "2026-10-28T13:50:39.165Z",
+          "subject": {
+            "name": "@lolkda/dsh-skills-manager",
+            "version": "0.3.1"
+          },
+          "conclusion": "go",
+          "summary": [
+            "[GO] @lolkda/dsh-skills-manager@0.3.1 — 可装",
+            "  env      dsh 0.2.1-rc.4 · win32/x64 · profile web",
+            "  reason   peer @deepseek-ai/dsh-client-connection 的区间 * 没有上界：破坏性大版本会被静默放行",
+            "  reason   peer @deepseek-ai/dsh-skill 的区间 * 没有上界：破坏性大版本会被静默放行",
+            "  reason   声明区间包含当前运行时（0.2.1-rc.4）",
+            "  ...      …还有 1 条原因；加 --json 看完整列表",
+            "  evidence declared:admission, measured-local:runtime, measured-registry:registry-tags"
+          ],
+          "verdict": {
+            "schemaVersion": 1,
+            "subject": {
+              "name": "@lolkda/dsh-skills-manager",
+              "version": "0.3.1",
+              "kind": "plugin"
+            },
+            "env": {
+              "dsh": "0.2.1-rc.4",
+              "node": "24.15.0",
+              "platform": "win32",
+              "arch": "x64",
+              "profile": "web",
+              "profileDir": "~\\profiles\\web",
+              "bundles": [
+                "@deepseek-ai/dsh-base",
+                "@deepseek-ai/dsh-web-app",
+                "dsh-triage"
+              ],
+              "installed": [
+                {
+                  "name": "@deepseek-ai/dsh",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-base",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-web-app",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "dsh-triage",
+                  "version": "0.1.0"
+                }
+              ]
+            },
+            "conclusion": "go",
+            "confidence": {
+              "level": "medium",
+              "basis": "declared"
+            },
+            "reasons": [
+              {
+                "code": "admission-admitted",
+                "severity": "info",
+                "messageId": "admission.admitted",
+                "params": {
+                  "runtime": "0.2.1-rc.4"
+                }
+              },
+              {
+                "code": "admission-declared-only",
+                "severity": "info",
+                "messageId": "admission.declared-only",
+                "params": {
+                  "runtime": "0.2.1-rc.4"
+                }
+              },
+              {
+                "code": "admission-range-unbounded",
+                "severity": "warn",
+                "messageId": "admission.range-unbounded",
+                "params": {
+                  "key": "@deepseek-ai/dsh-client-connection",
+                  "range": "*"
+                }
+              },
+              {
+                "code": "admission-range-unbounded",
+                "severity": "warn",
+                "messageId": "admission.range-unbounded",
+                "params": {
+                  "key": "@deepseek-ai/dsh-skill",
+                  "range": "*"
+                }
+              }
+            ],
+            "evidence": [
+              {
+                "id": "admission",
+                "tier": "declared",
+                "source": "@lolkda/dsh-skills-manager@0.3.1",
+                "method": "declared-range",
+                "at": "2026-10-28T13:50:39.165Z",
+                "detail": "peers"
+              },
+              {
+                "id": "runtime",
+                "tier": "measured-local",
+                "source": "~\\profiles\\web",
+                "method": "profile-scan",
+                "at": "2026-10-28T13:50:39.165Z",
+                "detail": "dsh 0.2.1-rc.4"
+              },
+              {
+                "id": "registry-tags",
+                "tier": "measured-registry",
+                "source": "npm:@lolkda/dsh-skills-manager",
+                "method": "registry-metadata",
+                "at": "2026-10-28T13:50:39.165Z",
+                "detail": "\"latest\" points at the newest published build (0.3.1)"
+              }
+            ],
+            "remediation": [],
+            "missingEvidence": [],
+            "generatedAt": "2026-10-28T13:50:39.165Z"
+          },
+          "admission": {
+            "status": "admitted",
+            "mode": "peers"
+          },
+          "registry": {
+            "latest": "0.3.1",
+            "next": null,
+            "newest": "0.3.1",
+            "newest_stable": "0.3.1",
+            "standing": "none",
+            "detail": "\"latest\" points at the newest published build (0.3.1)"
+          },
+          "error": null,
+          "limits": [
+            "declaration layer only: `go` means the published manifest admits this runtime, not that the plugin runs",
+            "no installation, no candidate code executed, no credentials read",
+            "not a security judgement — this tool never says a plugin is safe",
+            "one runtime (the profile this Host serves) on one machine"
+          ]
+        }
+      },
+      {
+        "spec": "dsh-cost-meter@1.7.43",
+        "index": 1,
+        "via": "registry",
+        "is_error": false,
+        "ms": 703,
+        "conclusion": "blocked",
+        "subject": {
+          "name": "dsh-cost-meter",
+          "version": "1.7.43"
+        },
+        "admission": {
+          "status": "denied",
+          "mode": "peers"
+        },
+        "reason_message_ids": [
+          "admission.unmet.peer",
+          "admission.unmet.peer"
+        ],
+        "missing_evidence": [],
+        "limits": 4,
+        "payload_bytes": 5185,
+        "payload": {
+          "schema_version": 1,
+          "tool": "compat_verdict",
+          "generated_at": "2026-10-28T13:50:44.309Z",
+          "subject": {
+            "name": "dsh-cost-meter",
+            "version": "1.7.43"
+          },
+          "conclusion": "blocked",
+          "summary": [
+            "[BLOCKED] dsh-cost-meter@1.7.43 — 不可用",
+            "  env      dsh 0.2.1-rc.4 · win32/x64 · profile web",
+            "  reason   peer @deepseek-ai/dsh-credentials@^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0 不含 0.2.1-rc.4",
+            "  reason   peer @deepseek-ai/dsh-home-paths@^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0 不含 0.2.1-rc.4",
+            "  fix      [allow-version] 为这个精确版本对记录一次显式豁免 -> dsh plugin --profile web allow-version dsh-cost-meter@1.7.43 --dsh-version 0.2.1-rc.4 --accept-risk",
+            "  fix      [downgrade-dsh] 降级或钉住插件版本：2 条要求排除了 0.2.1-rc.4",
+            "  fix      [pin-version] 改装一个声明含 0.2.1-rc.4 的版本（profile: web）",
+            "  fix      [probe] 豁免只绕过声明；行为仍未实测",
+            "  evidence declared:admission, measured-local:runtime, measured-registry:registry-tags"
+          ],
+          "verdict": {
+            "schemaVersion": 1,
+            "subject": {
+              "name": "dsh-cost-meter",
+              "version": "1.7.43",
+              "kind": "plugin"
+            },
+            "env": {
+              "dsh": "0.2.1-rc.4",
+              "node": "24.15.0",
+              "platform": "win32",
+              "arch": "x64",
+              "profile": "web",
+              "profileDir": "~\\profiles\\web",
+              "bundles": [
+                "@deepseek-ai/dsh-base",
+                "@deepseek-ai/dsh-web-app",
+                "dsh-triage"
+              ],
+              "installed": [
+                {
+                  "name": "@deepseek-ai/dsh",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-base",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-web-app",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "dsh-triage",
+                  "version": "0.1.0"
+                }
+              ]
+            },
+            "conclusion": "blocked",
+            "confidence": {
+              "level": "high",
+              "basis": "declared"
+            },
+            "reasons": [
+              {
+                "code": "admission-denied-peer",
+                "severity": "block",
+                "messageId": "admission.unmet.peer",
+                "params": {
+                  "key": "@deepseek-ai/dsh-credentials",
+                  "range": "^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0",
+                  "runtime": "0.2.1-rc.4"
+                }
+              },
+              {
+                "code": "admission-denied-peer",
+                "severity": "block",
+                "messageId": "admission.unmet.peer",
+                "params": {
+                  "key": "@deepseek-ai/dsh-home-paths",
+                  "range": "^0.1.0-rc.6 || ^0.1.1-0 || ^0.1.2-0 || ^0.1.3-0 || ^0.1.5-0",
+                  "runtime": "0.2.1-rc.4"
+                }
+              }
+            ],
+            "evidence": [
+              {
+                "id": "admission",
+                "tier": "declared",
+                "source": "dsh-cost-meter@1.7.43",
+                "method": "declared-range",
+                "at": "2026-10-28T13:50:44.309Z",
+                "detail": "peers"
+              },
+              {
+                "id": "runtime",
+                "tier": "measured-local",
+                "source": "~\\profiles\\web",
+                "method": "profile-scan",
+                "at": "2026-10-28T13:50:44.309Z",
+                "detail": "dsh 0.2.1-rc.4"
+              },
+              {
+                "id": "registry-tags",
+                "tier": "measured-registry",
+                "source": "npm:dsh-cost-meter",
+                "method": "registry-metadata",
+                "at": "2026-10-28T13:50:44.309Z",
+                "detail": "\"latest\" points at the newest published build (1.9.44)"
+              }
+            ],
+            "remediation": [
+              {
+                "kind": "allow-version",
+                "command": "dsh plugin --profile web allow-version dsh-cost-meter@1.7.43 --dsh-version 0.2.1-rc.4 --accept-risk",
+                "messageId": "remediation.allow-version",
+                "note": "explicit exemption for this exact plugin version and runtime version"
+              },
+              {
+                "kind": "downgrade-dsh",
+                "messageId": "remediation.downgrade-dsh",
+                "params": {
+                  "count": 2,
+                  "runtime": "0.2.1-rc.4"
+                },
+                "note": "2 requirement(s) exclude 0.2.1-rc.4; either upgrade the plugin or stay on a runtime it declares"
+              },
+              {
+                "kind": "pin-version",
+                "messageId": "remediation.pin-version",
+                "params": {
+                  "runtime": "0.2.1-rc.4",
+                  "profile": "web"
+                },
+                "note": "install a plugin build whose declarations include 0.2.1-rc.4 (profile: web)"
+              },
+              {
+                "kind": "probe",
+                "messageId": "remediation.probe",
+                "note": "an exemption bypasses the declaration only; behaviour is still unproven"
+              }
+            ],
+            "missingEvidence": [],
+            "generatedAt": "2026-10-28T13:50:44.309Z"
+          },
+          "admission": {
+            "status": "denied",
+            "mode": "peers"
+          },
+          "registry": {
+            "latest": "1.9.44",
+            "next": null,
+            "newest": "1.9.44",
+            "newest_stable": "1.9.44",
+            "standing": "none",
+            "detail": "\"latest\" points at the newest published build (1.9.44)"
+          },
+          "error": null,
+          "limits": [
+            "declaration layer only: `go` means the published manifest admits this runtime, not that the plugin runs",
+            "no installation, no candidate code executed, no credentials read",
+            "not a security judgement — this tool never says a plugin is safe",
+            "one runtime (the profile this Host serves) on one machine"
+          ]
+        }
+      },
+      {
+        "spec": "dsh-triage-no-such-plugin-9f3a2c",
+        "index": 2,
+        "via": "registry",
+        "is_error": false,
+        "ms": 285,
+        "conclusion": "unknown",
+        "subject": {
+          "name": "dsh-triage-no-such-plugin-9f3a2c",
+          "version": null
+        },
+        "admission": null,
+        "reason_message_ids": [
+          "tool.verdict-unavailable"
+        ],
+        "missing_evidence": [
+          "missing.admission"
+        ],
+        "limits": 4,
+        "payload_bytes": 2929,
+        "payload": {
+          "schema_version": 1,
+          "tool": "compat_verdict",
+          "generated_at": "2026-10-28T13:50:45.011Z",
+          "subject": {
+            "name": "dsh-triage-no-such-plugin-9f3a2c",
+            "version": null
+          },
+          "conclusion": "unknown",
+          "summary": [
+            "[UNKNOWN] dsh-triage-no-such-plugin-9f3a2c — 证据不足",
+            "  env      dsh 0.2.1-rc.4 · win32/x64 · profile web",
+            "  reason   这里无法判定这个候选（not-found: npm has no package dsh-triage-no-such-plugin-9f3a2c）——没有读到任何 manifest，所以这不是对插件的结论",
+            "  fix      [report] 把失配反馈给插件作者",
+            "  missing  插件的 engines.dsh 或 @deepseek-ai/dsh* peer 声明",
+            "  evidence inferred:candidate-metadata"
+          ],
+          "verdict": {
+            "schemaVersion": 1,
+            "subject": {
+              "name": "dsh-triage-no-such-plugin-9f3a2c",
+              "version": null,
+              "kind": "plugin"
+            },
+            "env": {
+              "dsh": "0.2.1-rc.4",
+              "node": "24.15.0",
+              "platform": "win32",
+              "arch": "x64",
+              "profile": "web",
+              "profileDir": "~\\profiles\\web",
+              "bundles": [
+                "@deepseek-ai/dsh-base",
+                "@deepseek-ai/dsh-web-app",
+                "dsh-triage"
+              ],
+              "installed": [
+                {
+                  "name": "@deepseek-ai/dsh",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-base",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-web-app",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "dsh-triage",
+                  "version": "0.1.0"
+                }
+              ]
+            },
+            "conclusion": "unknown",
+            "confidence": {
+              "level": "low",
+              "basis": "inferred"
+            },
+            "reasons": [
+              {
+                "code": "tool-registry",
+                "severity": "warn",
+                "messageId": "tool.verdict-unavailable",
+                "params": {
+                  "detail": "not-found: npm has no package dsh-triage-no-such-plugin-9f3a2c"
+                }
+              }
+            ],
+            "evidence": [
+              {
+                "id": "candidate-metadata",
+                "tier": "inferred",
+                "source": "npm registry",
+                "method": "registry (no manifest was read)",
+                "at": "2026-10-28T13:50:45.011Z"
+              }
+            ],
+            "remediation": [
+              {
+                "kind": "report",
+                "messageId": "remediation.report",
+                "note": "no manifest was read, so retry when the registry answers, or name the exact version to judge"
+              }
+            ],
+            "missingEvidence": [
+              "missing.admission"
+            ],
+            "generatedAt": "2026-10-28T13:50:45.011Z"
+          },
+          "admission": null,
+          "registry": null,
+          "error": {
+            "kind": "registry",
+            "code": "not-found",
+            "detail": "npm has no package dsh-triage-no-such-plugin-9f3a2c"
+          },
+          "limits": [
+            "declaration layer only: `go` means the published manifest admits this runtime, not that the plugin runs",
+            "no installation, no candidate code executed, no credentials read",
+            "not a security judgement — this tool never says a plugin is safe",
+            "one runtime (the profile this Host serves) on one machine"
+          ]
+        }
+      }
+    ],
+    "negative_control": {
+      "name": "compat_verdict__not_registered",
+      "found": false
+    }
+  },
+  "limits": [
+    "the row is installed from local directories with workspace deps rewritten to file: — no registry and no credentials are involved",
+    "the registry read inside the tool is real (npm); every candidate is pinned so two runs are comparable",
+    "the tool answers about the runtime of the profile this Host serves — a `check` run against a different DSH home asks a different question and may legitimately disagree",
+    "the probe calls the tool either through `tools.execute()` or, when the registry refuses (e.g. a ptc deployment), through the registered definition — `calls[].via` says which",
+    "this proves registration, model visibility and three answered calls on one Windows machine and one runtime; it is not proof that a model would choose the tool, nor a security judgement"
+  ]
+}

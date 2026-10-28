@@ -1,0 +1,515 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_agent_tool.mjs",
+  "generated_at": "2026-10-29T12:00:00.000Z",
+  "label": "agent-tool",
+  "outcome": "failed",
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-agent-tool\\agent-tool-mvs61rwe\\home",
+    "profile": "web",
+    "runtime_version": "0.2.1-rc.4",
+    "bundle": "file:packages/* (workspace rewritten)",
+    "candidate": "dsh-status-rotator@0.38.0",
+    "absent_package": "dsh-triage-no-such-plugin-9f3a2c",
+    "probe": "packages/plugin/hooks/tool-hook.mjs via a one-row --patch overlay"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": " · Done in 27.2s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "Host answered in 15.8s (stopped by readable-sample)",
+      "payload_bytes": 6056
+    },
+    {
+      "id": "registered",
+      "status": "passed",
+      "detail": "registered=true · waited 0ms",
+      "registration_waited_ms": 0,
+      "definition_timeout_ms": 20000
+    },
+    {
+      "id": "model-visible",
+      "status": "passed",
+      "detail": "compat_verdict is in schemas(): 506 description chars, parameters [package] (2 tools visible)",
+      "parameter_keys": [
+        "package"
+      ],
+      "required": [
+        "package"
+      ],
+      "tool_count": 2,
+      "schema_names": [
+        "compat_verdict",
+        "working_directory"
+      ]
+    },
+    {
+      "id": "negative-control-absent",
+      "status": "passed",
+      "detail": "compat_verdict__not_registered is absent from the registry (so \"visible\" is not a always-true reading)"
+    },
+    {
+      "id": "call-candidate",
+      "status": "failed",
+      "detail": "dsh-status-rotator@0.38.0 → unknown via registry",
+      "via": "registry",
+      "conclusion": "unknown",
+      "admission": {
+        "status": "unconstrained",
+        "mode": "none"
+      }
+    },
+    {
+      "id": "call-absent-is-unknown",
+      "status": "passed",
+      "detail": "dsh-triage-no-such-plugin-9f3a2c → unknown (tool.verdict-unavailable)",
+      "via": "registry",
+      "conclusion": "unknown",
+      "reason_message_ids": [
+        "tool.verdict-unavailable"
+      ]
+    },
+    {
+      "id": "limits-stated",
+      "status": "passed",
+      "detail": "4 limit line(s) in the model-facing payload"
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "verdict": {
+    "schemaVersion": 1,
+    "subject": {
+      "name": "dsh-status-rotator",
+      "version": "0.38.0",
+      "kind": "plugin"
+    },
+    "env": {
+      "dsh": "0.2.1-rc.4",
+      "node": "24.15.0",
+      "platform": "win32",
+      "arch": "x64",
+      "profile": "web",
+      "profileDir": "~\\profiles\\web",
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-triage"
+      ],
+      "installed": [
+        {
+          "name": "@deepseek-ai/dsh",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "@deepseek-ai/dsh-base",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "@deepseek-ai/dsh-web-app",
+          "version": "0.2.1-rc.4"
+        },
+        {
+          "name": "dsh-triage",
+          "version": "0.1.0"
+        }
+      ]
+    },
+    "conclusion": "unknown",
+    "confidence": {
+      "level": "low",
+      "basis": "declared"
+    },
+    "reasons": [
+      {
+        "code": "admission-unconstrained",
+        "severity": "warn",
+        "messageId": "admission.unconstrained",
+        "params": {
+          "runtime": "0.2.1-rc.4"
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "id": "admission",
+        "tier": "declared",
+        "source": "dsh-status-rotator@0.38.0",
+        "method": "declared-range",
+        "at": "2026-10-28T13:45:18.992Z",
+        "detail": "no declaration"
+      },
+      {
+        "id": "runtime",
+        "tier": "measured-local",
+        "source": "~\\profiles\\web",
+        "method": "profile-scan",
+        "at": "2026-10-28T13:45:18.992Z",
+        "detail": "dsh 0.2.1-rc.4"
+      },
+      {
+        "id": "registry-tags",
+        "tier": "measured-registry",
+        "source": "npm:dsh-status-rotator",
+        "method": "registry-metadata",
+        "at": "2026-10-28T13:45:18.992Z",
+        "detail": "\"latest\" points at the newest published build (0.38.0)"
+      }
+    ],
+    "remediation": [
+      {
+        "kind": "probe",
+        "messageId": "remediation.probe",
+        "note": "declaration is absent; only an isolated probe can resolve behaviour"
+      }
+    ],
+    "missingEvidence": [
+      "missing.admission",
+      "missing.probe"
+    ],
+    "generatedAt": "2026-10-28T13:45:18.992Z"
+  },
+  "probe_sample": {
+    "kind": "agent-tool",
+    "settled": true,
+    "sampled_at": "2026-10-28T13:45:20.305Z",
+    "profile": "web",
+    "runtime_version": "0.2.1-rc.4",
+    "wait_ms_wall_clock": 6302,
+    "tool": {
+      "name": "compat_verdict",
+      "registered": true,
+      "registration_waited_ms": 0,
+      "definition_has_execute": true,
+      "definition_timeout_ms": 20000
+    },
+    "model_visible": {
+      "in_schemas": true,
+      "description_chars": 506,
+      "parameter_keys": [
+        "package"
+      ],
+      "required": [
+        "package"
+      ],
+      "tool_count": 2,
+      "schema_names": [
+        "compat_verdict",
+        "working_directory"
+      ],
+      "error": null
+    },
+    "calls": [
+      {
+        "spec": "dsh-status-rotator@0.38.0",
+        "index": 0,
+        "via": "registry",
+        "is_error": false,
+        "ms": 1019,
+        "conclusion": "unknown",
+        "subject": {
+          "name": "dsh-status-rotator",
+          "version": "0.38.0"
+        },
+        "admission": {
+          "status": "unconstrained",
+          "mode": "none"
+        },
+        "reason_message_ids": [
+          "admission.unconstrained"
+        ],
+        "missing_evidence": [
+          "missing.admission",
+          "missing.probe"
+        ],
+        "limits": 4,
+        "payload_bytes": 3525,
+        "payload": {
+          "schema_version": 1,
+          "tool": "compat_verdict",
+          "generated_at": "2026-10-28T13:45:18.992Z",
+          "subject": {
+            "name": "dsh-status-rotator",
+            "version": "0.38.0"
+          },
+          "conclusion": "unknown",
+          "summary": [
+            "[UNKNOWN] dsh-status-rotator@0.38.0 — 证据不足",
+            "  env      dsh 0.2.1-rc.4 · win32/x64 · profile web",
+            "  reason   没有任何 DSH 版本声明——admission 无法判定",
+            "  fix      [probe] 豁免只绕过声明；行为仍未实测",
+            "  missing  插件的 engines.dsh 或 @deepseek-ai/dsh* peer 声明",
+            "  missing  隔离启动实测（M3）",
+            "  evidence declared:admission, measured-local:runtime, measured-registry:registry-tags"
+          ],
+          "verdict": {
+            "schemaVersion": 1,
+            "subject": {
+              "name": "dsh-status-rotator",
+              "version": "0.38.0",
+              "kind": "plugin"
+            },
+            "env": {
+              "dsh": "0.2.1-rc.4",
+              "node": "24.15.0",
+              "platform": "win32",
+              "arch": "x64",
+              "profile": "web",
+              "profileDir": "~\\profiles\\web",
+              "bundles": [
+                "@deepseek-ai/dsh-base",
+                "@deepseek-ai/dsh-web-app",
+                "dsh-triage"
+              ],
+              "installed": [
+                {
+                  "name": "@deepseek-ai/dsh",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-base",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-web-app",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "dsh-triage",
+                  "version": "0.1.0"
+                }
+              ]
+            },
+            "conclusion": "unknown",
+            "confidence": {
+              "level": "low",
+              "basis": "declared"
+            },
+            "reasons": [
+              {
+                "code": "admission-unconstrained",
+                "severity": "warn",
+                "messageId": "admission.unconstrained",
+                "params": {
+                  "runtime": "0.2.1-rc.4"
+                }
+              }
+            ],
+            "evidence": [
+              {
+                "id": "admission",
+                "tier": "declared",
+                "source": "dsh-status-rotator@0.38.0",
+                "method": "declared-range",
+                "at": "2026-10-28T13:45:18.992Z",
+                "detail": "no declaration"
+              },
+              {
+                "id": "runtime",
+                "tier": "measured-local",
+                "source": "~\\profiles\\web",
+                "method": "profile-scan",
+                "at": "2026-10-28T13:45:18.992Z",
+                "detail": "dsh 0.2.1-rc.4"
+              },
+              {
+                "id": "registry-tags",
+                "tier": "measured-registry",
+                "source": "npm:dsh-status-rotator",
+                "method": "registry-metadata",
+                "at": "2026-10-28T13:45:18.992Z",
+                "detail": "\"latest\" points at the newest published build (0.38.0)"
+              }
+            ],
+            "remediation": [
+              {
+                "kind": "probe",
+                "messageId": "remediation.probe",
+                "note": "declaration is absent; only an isolated probe can resolve behaviour"
+              }
+            ],
+            "missingEvidence": [
+              "missing.admission",
+              "missing.probe"
+            ],
+            "generatedAt": "2026-10-28T13:45:18.992Z"
+          },
+          "admission": {
+            "status": "unconstrained",
+            "mode": "none"
+          },
+          "registry": {
+            "latest": "0.38.0",
+            "next": null,
+            "newest": "0.38.0",
+            "newest_stable": "0.38.0",
+            "standing": "none",
+            "detail": "\"latest\" points at the newest published build (0.38.0)"
+          },
+          "error": null,
+          "limits": [
+            "declaration layer only: `go` means the published manifest admits this runtime, not that the plugin runs",
+            "no installation, no candidate code executed, no credentials read",
+            "not a security judgement — this tool never says a plugin is safe",
+            "one runtime (the profile this Host serves) on one machine"
+          ]
+        }
+      },
+      {
+        "spec": "dsh-triage-no-such-plugin-9f3a2c",
+        "index": 1,
+        "via": "registry",
+        "is_error": false,
+        "ms": 296,
+        "conclusion": "unknown",
+        "subject": {
+          "name": "dsh-triage-no-such-plugin-9f3a2c",
+          "version": null
+        },
+        "admission": null,
+        "reason_message_ids": [
+          "tool.verdict-unavailable"
+        ],
+        "missing_evidence": [
+          "missing.admission"
+        ],
+        "limits": 4,
+        "payload_bytes": 2929,
+        "payload": {
+          "schema_version": 1,
+          "tool": "compat_verdict",
+          "generated_at": "2026-10-28T13:45:20.011Z",
+          "subject": {
+            "name": "dsh-triage-no-such-plugin-9f3a2c",
+            "version": null
+          },
+          "conclusion": "unknown",
+          "summary": [
+            "[UNKNOWN] dsh-triage-no-such-plugin-9f3a2c — 证据不足",
+            "  env      dsh 0.2.1-rc.4 · win32/x64 · profile web",
+            "  reason   这里无法判定这个候选（not-found: npm has no package dsh-triage-no-such-plugin-9f3a2c）——没有读到任何 manifest，所以这不是对插件的结论",
+            "  fix      [report] 把失配反馈给插件作者",
+            "  missing  插件的 engines.dsh 或 @deepseek-ai/dsh* peer 声明",
+            "  evidence inferred:candidate-metadata"
+          ],
+          "verdict": {
+            "schemaVersion": 1,
+            "subject": {
+              "name": "dsh-triage-no-such-plugin-9f3a2c",
+              "version": null,
+              "kind": "plugin"
+            },
+            "env": {
+              "dsh": "0.2.1-rc.4",
+              "node": "24.15.0",
+              "platform": "win32",
+              "arch": "x64",
+              "profile": "web",
+              "profileDir": "~\\profiles\\web",
+              "bundles": [
+                "@deepseek-ai/dsh-base",
+                "@deepseek-ai/dsh-web-app",
+                "dsh-triage"
+              ],
+              "installed": [
+                {
+                  "name": "@deepseek-ai/dsh",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-base",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "@deepseek-ai/dsh-web-app",
+                  "version": "0.2.1-rc.4"
+                },
+                {
+                  "name": "dsh-triage",
+                  "version": "0.1.0"
+                }
+              ]
+            },
+            "conclusion": "unknown",
+            "confidence": {
+              "level": "low",
+              "basis": "inferred"
+            },
+            "reasons": [
+              {
+                "code": "tool-registry",
+                "severity": "warn",
+                "messageId": "tool.verdict-unavailable",
+                "params": {
+                  "detail": "not-found: npm has no package dsh-triage-no-such-plugin-9f3a2c"
+                }
+              }
+            ],
+            "evidence": [
+              {
+                "id": "candidate-metadata",
+                "tier": "inferred",
+                "source": "npm registry",
+                "method": "registry (no manifest was read)",
+                "at": "2026-10-28T13:45:20.011Z"
+              }
+            ],
+            "remediation": [
+              {
+                "kind": "report",
+                "messageId": "remediation.report",
+                "note": "no manifest was read, so retry when the registry answers, or name the exact version to judge"
+              }
+            ],
+            "missingEvidence": [
+              "missing.admission"
+            ],
+            "generatedAt": "2026-10-28T13:45:20.011Z"
+          },
+          "admission": null,
+          "registry": null,
+          "error": {
+            "kind": "registry",
+            "code": "not-found",
+            "detail": "npm has no package dsh-triage-no-such-plugin-9f3a2c"
+          },
+          "limits": [
+            "declaration layer only: `go` means the published manifest admits this runtime, not that the plugin runs",
+            "no installation, no candidate code executed, no credentials read",
+            "not a security judgement — this tool never says a plugin is safe",
+            "one runtime (the profile this Host serves) on one machine"
+          ]
+        }
+      }
+    ],
+    "negative_control": {
+      "name": "compat_verdict__not_registered",
+      "found": false
+    }
+  },
+  "limits": [
+    "the row is installed from local directories with workspace deps rewritten to file: — no registry and no credentials are involved",
+    "the registry read inside the tool is real (npm); the candidate is pinned so two runs are comparable",
+    "the probe calls the tool either through `tools.execute()` or, when the registry refuses (e.g. a ptc deployment), through the registered definition — `calls[].via` says which",
+    "this proves registration, model visibility and one answered call on one Windows machine and one runtime; it is not proof that a model would choose the tool, nor a security judgement"
+  ]
+}

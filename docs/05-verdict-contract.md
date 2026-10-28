@@ -127,7 +127,6 @@
 真机复核（2026-10-27）：`@deepseek-ai/dsh-tools` / `dsh-base` 的 `latest` 停在 `0.0.1-rc.1`，`@deepseek-ai/dsh` 停在 `0.2.1-rc.2`，三者 `next` 都是 `0.2.1-rc.4` —— 证据 `data/results/registry-2026-10-27T19-00-00.000Z.json`。
 
 ## 2e. Probe：隔离实测的结论口径（R14 / T-301，R15 / T-302 扩）
-
 probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的通道，因此它的口径必须比声明层更窄，而不是更宽：
 
 | 规则 | 实现 / 门 |
@@ -148,6 +147,20 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 
 > `probe.profile-*` 三条（R22 / T-304）都属于**组合侧**而非候选侧：前两条只能伴随 `unknown` + `missing.probe`，第三条是 `warn`（可以出现在 `go` 旁边，用来声明「沙盒跳过了组合自身的构建脚本」）。判据表见 `docs/specs/M3-probe.md` §3 与 §8.5。
 
+## 2f. Agent 工具 `compat_verdict`（R36 / T-404）
+
+工具的回答也是 verdict，所以它受同一份契约约束（真机产物 `data/results/agent-tool-2026-10-29T12-20-00.000Z.json` 的 `verdict` / `verdicts[]` 由本门直接校验）：
+
+| 规则 | 实现 / 门 |
+|---|---|
+| 成功路径与 `check` 同源：`evaluateAdmission` → `judgeVersionDrift` → `verdictFromAdmission` | `packages/plugin/src/fit.ts#judgeFit`；工具**不含**第二条判定链 |
+| 读不到 manifest（registry 不可达 / 包不存在 / 版本未发布 / 调用被取消 / profile 读不出来）→ `unknown` + `missingEvidence: ['missing.admission']` + `tool.verdict-unavailable`（`{detail}` 写真实原因） | 绝不抛；`evidence[].tier = inferred`（**没有**任何 manifest 被读到，就不许借 `declared`） |
+| 工具回答的是**它服务的那个 profile** 的运行时 | `loadEnv({ dshHome, profile })` 由 loader 的 `ctx.baseUrl` 推出（R33 同一规则）；换一个 `--dsh-home` 的 CLI 结果与它不一致**不是**矛盾 |
+| `go` 只表示声明层接受这个运行时 | 输出里的 `limits[]` 每次都写明：不安装、不执行候选代码、不读凭据、不判安全 |
+| 参数由工具自己校验（注册表校验的是定义形状，不是调用参数） | `readPackageArgument`：非字符串 / 缺省 / 空白一律走 `empty-spec` → `unknown` |
+
+命名空间成员：`tool.verdict-unavailable`（**新增命名空间**，与 R10 的 `registry.*`、R14 的 `probe.*` 同属「三处同改」：`messages.ts` 中英 + 门 `verdict-contract` 白名单 + 本节）。
+
 ## 3. 强制不变量
 | 不变量 | 门禁检查 |
 |---|---|
@@ -155,7 +168,7 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.* / probe.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间，`probe.*` 是 M3 隔离实测的命名空间（见 §2e） |
+| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.* / probe.* / tool.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间，`probe.*` 是 M3 隔离实测的命名空间（见 §2e），`tool.*` 是 R36 的 Agent 工具命名空间（见 §2f） |
 
 `runtime.*` 的完整成员（R12 起含 preset 维度）：`fiber-failed` / `no-fiber` / `disabled` / `missing-entry` / `ambiguous-entry` / `undeclared-entry` / `preset-unjudged` / `preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-divergence`。新增成员必须三处同改：`messages.ts` 文案（中英）、门 `verdict-contract` 白名单、本节与 `docs/specs/M2-inventory.md` §3。
 
