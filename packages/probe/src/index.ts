@@ -38,6 +38,7 @@ export {
   installDiagnosis,
   isUsableSample,
   killTree,
+  pluginArgv,
   probeHttp,
   readRuntimeVersion,
   removeSandbox,
@@ -52,6 +53,7 @@ export {
 export type {
   BootSampleOptions,
   BootSampleResult,
+  BootSegments,
   ExtraPatchEntry,
   HostObservation,
   HostReadiness,

@@ -117,6 +117,8 @@ export function realProbeDeps(options: RealProbeDepsOptions = {}): ProbeExecDeps
         errorTail: boot.host.error_tail,
         startupFailed: boot.host.startup_failed,
         bindFailedPorts: boot.host.bind_failed_ports,
+        // T-314: the boot step's wall clock, split where it actually went.
+        segments: boot.segments,
       }
     },
     probeHttp: async ({ port, timeoutMs }) => probeHttp(port, timeoutMs),

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R22 (2026-10-28)",
+  "stand": "R23 (2026-10-28)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -213,10 +213,10 @@
     {
       "id": "BS-29",
       "area": "probe/credentials",
-      "cannot_see": "R20 只堵住了一条凭据继承路径（npm 的 user config = `~/.npmrc`）。pnpm 还可能读 `~/.pnpmrc`、`PNPM_HOME`、系统级 npmrc（`%ProgramData%\\npm\\etc\\npmrc`）、`corepack` 配置与环境里的代理凭证。**本轮没有逐一验证**，所以不能说「沙盒里绝不会有凭据」",
-      "mitigation": "对外口径只能是「user config 不继承（R20 实测 2/2）；其余来源未审计」。补全路径：T-313 逐个来源做黑盒对照（造一条会打印 auth 的失败安装，逐一关闭来源，看 `registry_auth_used` 何时变 false）",
+      "cannot_see": "R20 只堵住了一条凭据继承路径（npm 的 user config = `~/.npmrc`）。R23 做了逐源审计（本地假 registry 记录 `authorization` 头，404 与 401 两种应答 × 六类来源 = 10 组），结论是：**本轮审计的六类来源里只有 user config 会被读**（`globalconfig` / `$XDG_CONFIG_HOME/pnpm/rc` / `PNPM_HOME` / `COREPACK_HOME` 的旋钮在 launcher 路径下根本没有被读），而 user config 已被挡在线上。**仍然看不到的**：① 环境旋钮移不到的硬编码配置路径；② 非 Windows 平台、其它 pnpm / launcher 版本；③ 代理凭据（不进 registry，只验了脱敏）；④ 「你机器上是否真的有 token」——本轮量的是读取路径",
+      "mitigation": "`sandboxNpmEnv` 把 `npm_config_userconfig` / `NPM_CONFIG_USERCONFIG` 指向沙盒内空文件；R23 用假 registry 直接确认 404/401 两种模式下 token 都不再上网（`data/results/credential-sources-2026-10-28T19-00-00.000Z.json`）。**对外口径**：可以说「审计过的来源里只有 user config 会被读，且已不外发」，**不可以说**「沙盒里绝无凭据」——其余三条限制仍成立。探测器细节见 spec §8.6：不要回到用 pnpm 日志判断（实测会假阴性），也不要 `spawnSync` 起同进程假 registry（会挂死）",
       "owner": "packages/probe/src/host.ts + docs/adr/0004",
-      "status": "open (R20)"
+      "status": "narrowed (R23): only the user config is live, and it is neutralised on the wire"
     },
     {
       "id": "BS-30",

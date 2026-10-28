@@ -132,6 +132,8 @@ const measured = runs.map((run) => {
       .filter((reason) => reason?.severity === 'block' || reason?.severity === 'warn')
       .filter((reason) => typeof reason?.messageId === 'string')
       .map((reason) => String(reason.messageId)),
+    // T-314: the boot step, split where the time actually went (null on older artifacts).
+    bootSegments: payload?.timings?.bootSegments ?? null,
     phases: reasons
       .filter((reason) => reason?.severity === 'block' || reason?.severity === 'warn')
       .filter((reason) => typeof reason?.params?.phase === 'string')
@@ -185,6 +187,40 @@ const withinBudgetAll = measured.filter((run) => run.bootMs !== null && run.boot
  */
 const wallClocks = measured.map((run) => run.bootStepMs).filter((value) => typeof value === 'number')
 const wallClockMax = wallClocks.length === 0 ? null : Math.max(...wallClocks)
+
+/**
+ * T-314: where the boot wall clock goes, across every run that reported segments.
+ *
+ * WHY MAX PER SEGMENT AND NOT A SUM OF AVERAGES: the point is "what is the worst contributor",
+ * and a caller can compare each maximum with `wall_clock.max_ms` to see whether one phase
+ * dominates. Segments only exist on artifacts produced after R23, so the count is published.
+ */
+const SEGMENT_KEYS = [
+  'spawn',
+  'sampleWait',
+  'settle',
+  'readiness',
+  'render',
+  'kill',
+  'postKillWait',
+  'scratchCleanup',
+]
+const segmentRuns = measured
+  .map((run) => run.bootSegments)
+  .filter((segments) => segments !== null && typeof segments === 'object')
+const segmentMax = {}
+for (const key of SEGMENT_KEYS) {
+  const values = segmentRuns
+    .map((segments) => segments[key])
+    .filter((value) => typeof value === 'number')
+  segmentMax[`${key}_ms`] = values.length === 0 ? null : Math.max(...values)
+}
+const bootBreakdown = {
+  runs_with_segments: segmentRuns.length,
+  max_per_segment: segmentMax,
+  note:
+    'sampleWaitMs includes the replacement window (a sample that cannot be judged is waited on again); render/kill/post-kill happen inside the boot step but are not part of the spawn→sample budget',
+}
 
 /**
  * A run "reliably measured" when it produced an artifact, cleaned up, stayed inside the boot
@@ -315,8 +351,10 @@ const artifact = {
       max_ms: wallClockMax,
       source: 'steps[boot].ms — the whole step, including the settle wait and the kill wait',
       note:
-        'a tree that never settles costs boot + settle(15s): expect ≈25s even though the measurement budget is 20s (ADR-0006)',
+        'measured (T-314): a judged candidate takes ≈16s (render + kill + post-kill dominate); a tree that never settles takes ≈48s because the executor waits a full replacement window after the sample',
     },
+    // T-314: the segmentation behind `wall_clock`. Descriptive only.
+    boot_breakdown: bootBreakdown,
   },
   cleanup: { ok: measured.filter((run) => run.cleanupOk).length, checked: measured.length },
   failure_shapes: failureShapes,

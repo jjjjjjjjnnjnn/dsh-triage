@@ -29,6 +29,7 @@ import type {
 } from '@dsh-triage/core'
 import { parseInventorySnapshot } from '@dsh-triage/core'
 import type { InstallDiagnosis } from './host.js'
+import type { BootSegments } from './host.js'
 import type { ProbePlan } from './plan.js'
 import type { RenderCheck } from './render.js'
 
@@ -86,6 +87,14 @@ export interface ProbeTimings {
   /** Client-render segment (T-302). Never part of the 20s boot→sample budget. */
   readonly renderMs: number | null
   readonly cleanupMs: number | null
+  /**
+   * Where the boot step's wall time went (T-314). `null` when the boot step never ran.
+   *
+   * WHY IT SITS NEXT TO THE BUDGET: `bootToSampleMs` is judged; `boot step wall time` is what a
+   * user actually waits for. R21 published both and could explain neither gap, so the segments
+   * are recorded here where a reader can compare them without opening the host layer.
+   */
+  readonly bootSegments: BootSegments | null
 }
 
 export interface ProbeCleanupResult {
@@ -324,6 +333,8 @@ export interface ProbeExecDeps {
     startupFailed?: boolean
     /** R17: ports the Host could not bind (evidence that the failure is ours, not the plugin's). */
     bindFailedPorts?: readonly number[]
+    /** T-314: where the boot step's wall time went. Absent means "not reported". */
+    segments?: BootSegments
   }>
   probeHttp(input: HttpInput): Promise<{ status: number | null; detail: string }>
   /**
@@ -373,7 +384,7 @@ interface MutableRun {
   port: number
   runtimeVersion: string | null
   steps: ProbeStepRun[]
-  timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null }
+  timings: { installMs: number | null; bootToSampleMs: number | null; httpMs: number | null; renderMs: number | null; cleanupMs: number | null; bootSegments: BootSegments | null }
   sample: ProbeSampleView | null
   http: { status: number | null; detail: string } | null
   readiness: ProbeReadiness | null
@@ -405,7 +416,7 @@ export async function executeProbe(input: ExecuteProbeInput, deps: ProbeExecDeps
     port: input.plan.port,
     runtimeVersion: null,
     steps: [],
-    timings: { installMs: null, bootToSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null },
+    timings: { installMs: null, bootToSampleMs: null, httpMs: null, renderMs: null, cleanupMs: null, bootSegments: null },
     sample: null,
     http: null,
     readiness: null,
@@ -603,6 +614,9 @@ async function runSequence(
     if (boot.errorTail !== undefined) run.errorTail = boot.errorTail
     if (boot.startupFailed !== undefined) run.startupFailed = boot.startupFailed
     if (boot.bindFailedPorts !== undefined) run.bindFailedPorts = [...boot.bindFailedPorts]
+    // T-314: record the segmentation even on a no-sample boot — that is exactly the case whose
+    // 42.7s wall time nobody could explain.
+    if (boot.segments !== undefined) run.timings.bootSegments = boot.segments
     // `seconds` is the recorder's own clock (spawn → sample). `runStep` measures the same
     // interval and overwrites `bootToSampleMs`, so the 20s budget is judged on one number.
     if (boot.sample === null) return { status: 'failed' as const, detail: boot.detail, exitCode: null }

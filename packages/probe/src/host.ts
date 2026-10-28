@@ -136,6 +136,44 @@ export interface BootSampleResult {
   readonly render: RenderCheck | null
   /** Why the render check did not run, in publishable words; `null` when it did run. */
   readonly renderSkipped: string | null
+  /**
+   * Where the boot step's wall time went (T-314).
+   *
+   * WHY THIS EXISTS: R21 measured `boot` steps of 22.1–25.3s while `boot→sample` — the only
+   * number the budget judges — was 9.6–12.2s. A 12s gap with no explanation is not a number
+   * anyone can act on, and guessing ("it must be the settle") was already wrong once. Every
+   * segment below is a clock reading taken around one await, so the sum has to add up.
+   */
+  readonly segments: BootSegments
+}
+
+/**
+ * One clock reading per phase of a boot, all in milliseconds from the same origin.
+ *
+ * `totalMs` is spawn → return, which is what the caller's step timer also sees; if the two
+ * disagree by more than a few ms, one of the boundaries is being measured in the wrong place.
+ */
+export interface BootSegments {
+  /** spawn() returned. */
+  readonly spawnMs: number
+  /** spawn → the sample loop exited (may be after a replacement, or a startup failure). */
+  readonly sampleWaitMs: number
+  /** spawn → the sample file's own mtime: exactly what `boot→sample` judges. */
+  readonly sampleMtimeMs: number | null
+  /** Sample loop exit → settle sleep finished. Includes the settle budget itself. */
+  readonly settleMs: number
+  /** Settle → the readiness window ended. */
+  readonly readinessMs: number
+  /** Readiness → the render observation returned (browser spawn + CDP + teardown). */
+  readonly renderMs: number
+  /** Killing the whole process tree (`taskkill /T /F` on Windows is not instant). */
+  readonly killMs: number
+  /** Fixed wait after the kill, so the OS can release ports. */
+  readonly postKillWaitMs: number
+  /** Removing the scratch directory (sample, overlay, hook, throwaway browser profile). */
+  readonly scratchCleanupMs: number
+  /** spawn → return. */
+  readonly totalMs: number
 }
 
 /**
@@ -200,6 +238,7 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       env: { ...env, DSH_HOME: dshHome },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
+    const spawnedAt = Date.now()
     let stdout = ''
     let stderr = ''
     child.stdout?.on('data', (chunk) => {
@@ -239,6 +278,13 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
     }
     const collected = payload !== null
     const seconds = Math.round(((sampleWrittenAtMs ?? Date.now()) - started) / 100) / 10
+    // T-314 boundaries, all relative to `started` (the same origin as the judged budget). Each
+    // is set to the previous phase's end until that phase actually runs, so a skipped phase
+    // contributes 0 rather than a gap.
+    const loopEndedAt = Date.now()
+    let settleEndedAt = loopEndedAt
+    let readinessEndedAt = loopEndedAt
+    let renderEndedAt = loopEndedAt
     let http: { status: number | null; detail: string } | null = null
     let readiness: HostReadiness | null = null
     let render: RenderCheck | null = null
@@ -248,6 +294,9 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       // Probe while the Host is alive. A server that binds a moment after the tree
       // settles is normal, so this retries instead of sampling one instant.
       await new Promise((resolveWait) => setTimeout(resolveWait, settleMs))
+      settleEndedAt = Date.now()
+      readinessEndedAt = settleEndedAt
+      renderEndedAt = settleEndedAt
       // One window, two sources (R17): the launcher's own token URL and the planned port
       // are polled together, because waiting for the URL first (the R15 order) missed a URL
       // that appeared a moment later and then judged the fallback port.
@@ -276,6 +325,8 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
             url_seen: hostUrl !== null,
           }
         }
+        readinessEndedAt = Date.now()
+        renderEndedAt = readinessEndedAt
       }
       if (options.render !== undefined) {
         if (options.render.browser === null) {
@@ -293,10 +344,18 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
             ...(options.render.timeoutMs === undefined ? {} : { timeoutMs: options.render.timeoutMs }),
           })
         }
+        renderEndedAt = Date.now()
       }
     }
+    // R21 left ~12s of the boot step unexplained. This is where it gets accounted for: the
+    // kill (`taskkill /T /F` walks the tree), the fixed post-kill wait, and the scratch
+    // removal all happen AFTER the sample, and none of them were measured before.
+    const killStarted = Date.now()
     killTree(child)
+    const killMs = Date.now() - killStarted
+    const postKillStarted = Date.now()
     await new Promise((resolveWait) => setTimeout(resolveWait, 1200))
+    const postKillWaitMs = Date.now() - postKillStarted
 
     const stderrLine = stderr.trimEnd().split(/\r?\n/)[0] ?? ''
     const stdoutLine = stdout.trimEnd().split(/\r?\n/)[0] ?? ''
@@ -315,8 +374,29 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
       startup_failed: `${stdout}\n${stderr}`.includes('startup failed'),
       bind_failed_ports: bindFailedPorts(`${stdout}\n${stderr}`),
     }
-    if (!collected) return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped }
-    return { payload, host, error: null, http, readiness, render, renderSkipped }
+    // Measured here rather than in `finally`, because a segment nobody can read is not a
+    // measurement. `finally` keeps the same call as a backstop if this throws.
+    const scratchStarted = Date.now()
+    rmSync(probeDir, { recursive: true, force: true })
+    const scratchCleanupMs = Date.now() - scratchStarted
+    child = null
+
+    const segments: BootSegments = {
+      spawnMs: spawnedAt - started,
+      sampleWaitMs: loopEndedAt - started,
+      sampleMtimeMs: sampleWrittenAtMs === null ? null : Math.round(sampleWrittenAtMs - started),
+      settleMs: collected ? settleEndedAt - loopEndedAt : 0,
+      readinessMs: readinessEndedAt - settleEndedAt,
+      renderMs: renderEndedAt - readinessEndedAt,
+      killMs,
+      postKillWaitMs,
+      scratchCleanupMs,
+      totalMs: Date.now() - started,
+    }
+    if (!collected) {
+      return { payload: null, host, error: 'the hook wrote nothing within the timeout', http, readiness, render, renderSkipped, segments }
+    }
+    return { payload, host, error: null, http, readiness, render, renderSkipped, segments }
   } finally {
     if (child !== null) killTree(child)
     rmSync(probeDir, { recursive: true, force: true })
@@ -588,11 +668,28 @@ export function runInstall(input: {
   env: NodeJS.ProcessEnv
 }): InstallResult {
   return runPluginCommand({
-    argv: [input.dshMain, 'plugin', '--profile', input.profile, 'add', input.candidate],
+    argv: pluginArgv({ dshMain: input.dshMain, profile: input.profile, verb: 'add', spec: input.candidate }),
     dshHome: input.dshHome,
     timeoutMs: input.timeoutMs,
     env: input.env,
   })
+}
+
+/**
+ * The argv of `dsh plugin …`, in one place.
+ *
+ * WHY IT IS EXPORTED: the credential-source audit (T-313) has to run the launcher with an env
+ * it builds itself, so that it can prove a source WOULD leak if it were not closed. Copying the
+ * argv into the audit would make the audit drift away from what the probe really runs.
+ */
+export function pluginArgv(input: {
+  readonly dshMain: string
+  readonly profile: string
+  readonly verb: 'add' | 'install'
+  readonly spec?: string
+}): readonly string[] {
+  const base = [input.dshMain, 'plugin', '--profile', input.profile, input.verb]
+  return input.spec === undefined ? base : [...base, input.spec]
 }
 
 /**
@@ -612,7 +709,7 @@ export function runProfileInstall(input: {
   env: NodeJS.ProcessEnv
 }): InstallResult {
   return runPluginCommand({
-    argv: [input.dshMain, 'plugin', '--profile', input.profile, 'install'],
+    argv: pluginArgv({ dshMain: input.dshMain, profile: input.profile, verb: 'install' }),
     dshHome: input.dshHome,
     timeoutMs: input.timeoutMs,
     env: input.env,

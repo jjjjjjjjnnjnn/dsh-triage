@@ -131,11 +131,24 @@ runtime → (profile) → install → boot → http → render → inventory →
 | 总时长 | 只记录，不设判据 | — | — |
 
 > `timings.bootToSampleMs` 取 `host.seconds`（spawn→样本）；`steps[boot].ms` 是整步墙钟（含 settle、就绪探测与杀树后等待，实测约 20s）。预算只看前者，两者都进产物，避免「用总时长糊」。 
+>
+> **T-314 起 `steps[boot]` 的每一段都有独立读数**（`timings.bootSegments`：`spawnMs` / `sampleWaitMs` / `sampleMtimeMs` / `settleMs` / `readinessMs` / `renderMs` / `killMs` / `postKillWaitMs` / `scratchCleanupMs` / `totalMs`）。三段之和必须与 `steps[boot].ms` 相差 ≤100ms（R23 实测三份：15748 vs 15741、48453 vs 48384、16217 vs 16216）；`d2_report.timing.boot_breakdown` 给出各段最大值。**新增 await 时必须加段**，否则又会回到「差额没人解释」。
 
 `install` 超预算时**不得**把总时长写成结论；产物里 `timings` 分段记账。
 
 > **R19 口径（HUMAN 已签，`audit/SIGNOFF.md`）**：`boot → sample ≤20s` 只对**真实候选**判定。一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**结构上**不可能达标——R19 实测 `fixture-slow-overrun` = 21.3s（R18 只是恰好 19.1s 才过）。真实候选仍是 100% 必须达标，没有放宽成 90%；夹具耗时照旧进产物，并在 `d2_report` 的 `timing.fixtures_over_budget` 与 `boot-budget` 的 detail 里单列。
-> **R21 口径（ADR-0006 第 1–3 条，2026-10-28 采纳 + 同日实测纠正）**：**「20s」是测量预算（`spawn→sample`），不是墙钟承诺。** 实测（`d2_report.timing.wall_clock`）：正常 `go` 候选的 `boot` 步要 **22.1–25.3s**，永不 settle 的夹具 **42.7s**。对外只能说「可判的候选 `boot→sample` ≤20s；一次 probe 的实际等待约 25s；不可判的约 43s」——**不许**说「任何一次 probe 都 ≤20s」。差额的构成（多出的 ~12s / ~21s）**尚未解释**，见 T-314。
+> **R21 口径（ADR-0006 第 1–3 条，2026-10-28 采纳 + 同日实测纠正）**：**「20s」是测量预算（`spawn→sample`），不是墙钟承诺。** 实测（`d2_report.timing.wall_clock`）：正常 `go` 候选的 `boot` 步要 **22.1–25.3s**，永不 settle 的夹具 **42.7s**。对外只能说「可判的候选 `boot→sample` ≤20s；一次 probe 的实际等待约 25s；不可判的约 43s」——**不许**说「任何一次 probe 都 ≤20s」。
+> **R23 口径（T-314 实测，覆盖上面那句的墙钟数字）**：`boot` 步已分段计时（`timings.bootSegments`）。三份真机产物给出结构：
+>
+> | run | `boot` 步 | sample | 替换等待 | settle | readiness | render | 杀树 | 杀后等待 | 删除 |
+> |---|---|---|---|---|---|---|---|---|---|
+> | 模板 + 正常夹具 | 15.7s | 6.3s | 0.24s | 1.01s | 0.04s | **4.73s** | **2.21s** | 1.21s | 0.002s |
+> | 复制组合 + 正常夹具 | 16.2s | 6.3s | 0.19s | 1.01s | 0.04s | **4.72s** | **2.71s** | 1.21s | 0.001s |
+> | 永不 settle | **48.4s** | 19.1s | **20.27s** | 1.01s | 0.04s | 4.50s | 2.20s | 1.22s | 0.001s |
+>
+> - 正常候选的差额 = **render ≈4.7s + 杀树 ≈2.2–2.7s + 杀后固定等待 1.2s + settle 1.0s**（与 settle 上限无关）；
+> - 不可判 = **48.4s**，主导项是**为一份可判样本再等一整个替换窗口（20.3s）**；hook 自己的 settle（15s 上限）**已含在 sample 里**；
+> - 对外口径：**可判 ≈16s；不可判 ≈48s**。旧数字（25s / 43s）作废。
 > **仍未解决**：默认 `--unsettled-timeout 20000` 与 hook 的 `settle 15s` **没有动**（方案 A/C 未授权）。要把「不可判」也压进 20s，只能改 settle 上限（少测）或改两阶段取样（T-312）。
 > **未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺。改默认值属于阈值变更，需要 ADR + HUMAN 签（`BS-28` / T-311）。
 
@@ -291,6 +304,40 @@ runtime → (profile) → install → boot → http → render → inventory →
 - 沙盒**从不批准**任何构建脚本；`strictDepBuilds: false` 只把「错误」降为「提示」，被跳过的包一律进 `install.ignored_packages`；
 - 该设置**只在源 profile 自己没有 `pnpm-workspace.yaml` 时**写入；用户自带的一律不覆盖（`profile_copy.pnpm_policy = "source"`），此时若仍是 `ERR_PNPM_IGNORED_BUILDS`，结果就是 `unknown`；
 - 因此「复制模式 `go`」的准确含义是：**声明层完全一致、依赖装齐、但原生模块未在沙盒里构建**。它是 `BS-30` 说的那条缝，不许说成「在我机器上验证过」。
+
+---
+
+## 8.6 凭据来源审计（T-313 / `BS-29`，R23）
+
+**问题**：R20 只堵住了 `~/.npmrc` 一条路径，其余来源（pnpm 自己的 rc、全局 npmrc、`PNPM_HOME`、corepack、代理凭证）**没有逐一验证**，所以「沙盒里没有凭据」当时仍是一句声明。
+
+**探测器换成了本地假 registry**（`scripts/audit_credential_sources.mjs`）：在 127.0.0.1 起一个服务，记录每个请求的 `authorization` 头。
+为什么不用 pnpm 的日志：R23 实测「合成 token + 真实 userconfig」**不会**打印 `An authorization header was used`——靠日志会把一条活着的来源判成「没问题」，正是最危险的假阴性。同理，**child 必须异步 spawn**：`spawnSync` 会阻塞事件循环，同进程里的假 registry 永远答不了，pnpm 会挂到被杀（R23 真踩了三次 90s）。
+
+**三组对照（每个来源 × 两种 registry 应答）**：
+
+| 组 | 环境 | 回答什么 |
+|---|---|---|
+| `routed` | 去掉 profile 的 `.npmrc`，来源自己带 `registry=` | 这个旋钮**是否被读**（有流量到假 registry 即为被读） |
+| `opened` | profile 指回假 registry，来源只带 token（在 mitigation 之后注入） | 这个来源**是否活着**（token 会不会上网） |
+| `closed` | 同上，但先注入再走我们发布的 env | 今天的沙盒**还漏不漏** |
+
+**为什么需要 401 模式**：凭据可能只在被挑战时才发。`404`（不存在）与 `401`（要求认证）各跑一遍。
+
+**实测（`data/results/credential-sources-2026-10-28T19-00-00.000Z.json`，10 组）**：
+
+| 来源 | knob | 会被读？ | 会带 token？ | 今天的沙盒 |
+|---|---|---|---|---|
+| **user npmrc** | `npm_config_userconfig` | ✅ | ✅（404 与 401 都 2/2） | **不外发**（由 `sandboxNpmEnv` 挡住） |
+| 全局 npmrc | `npm_config_globalconfig` | ❌ | ❌ | 不适用（旋钮未被读） |
+| pnpm 自己的 rc | `XDG_CONFIG_HOME/pnpm/rc` | ❌ | ❌ | 不适用 |
+| pnpm 全局 bin 目录 | `PNPM_HOME` | ❌ | ❌ | 不适用 |
+| corepack | `COREPACK_HOME` | ❌ | ❌ | 不适用 |
+| 代理 | `HTTPS_PROXY` 带 userinfo | — | 不进 registry | 我们的脱敏会去掉 userinfo（`http://u:p@h` → `http://h`） |
+
+- **对照组**：不注入任何凭据 → 假 registry 收到 2 个请求、`authorization` 出现 0 次（证明探测器只在有凭据时响）；
+- 全部 30 次运行的 install **都失败**（候选不存在），所以「没带 token」不是「没发请求」；
+- **`BS-29` 因此收窄而不是关闭**：结论是「本轮审计的六类来源里，只有 user config 会被读，且已被挡在线上（两种应答模式各测一遍）」，仍有限制：① 只覆盖环境旋钮能移到的来源；② 只有 Windows / 一个 pnpm 版本 / 一个 launcher 版本；③ 量的是**读取路径**，不是「你机器上真的有没有 token」。
 
 ---
 

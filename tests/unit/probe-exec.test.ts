@@ -762,6 +762,49 @@ test('bind failures name the port they could not take', () => {
   assert.deepEqual(bindFailedPorts('nothing to see'), [])
 })
 
+test('the boot step segmentation reaches the artifact through the executor (T-314)', async () => {
+  const segments = {
+    spawnMs: 12,
+    sampleWaitMs: 9_600,
+    sampleMtimeMs: 9_580,
+    settleMs: 1_000,
+    readinessMs: 31,
+    renderMs: 2_180,
+    killMs: 1_420,
+    postKillWaitMs: 1_200,
+    scratchCleanupMs: 240,
+    totalMs: 15_683,
+  }
+  const { run } = await runWith({ deps: { bootAndSample: async () => ({
+    sample: activeCandidate,
+    seconds: 9.58,
+    detail: 'sampled',
+    segments,
+  }) } })
+  assert.deepEqual(run.timings.bootSegments, segments)
+})
+
+test('a boot that produced no sample still reports its segments', async () => {
+  const segments = {
+    spawnMs: 9,
+    sampleWaitMs: 120_000,
+    sampleMtimeMs: null,
+    settleMs: 0,
+    readinessMs: 0,
+    renderMs: 0,
+    killMs: 1_100,
+    postKillWaitMs: 1_200,
+    scratchCleanupMs: 180,
+    totalMs: 122_489,
+  }
+  const { run } = await runWith({
+    sample: null,
+    deps: { bootAndSample: async () => ({ sample: null, seconds: 0, detail: 'no sample', segments }) },
+  })
+  assert.equal(run.timings.bootSegments?.sampleMtimeMs, null)
+  assert.equal(run.timings.bootSegments?.sampleWaitMs, 120_000)
+})
+
 test('a usable sample is one that was read on a settled tree', () => {
   assert.equal(isUsableSample({ kind: 'live', settled: true, snapshot: {} }), true)
   assert.equal(isUsableSample({ kind: 'live', settled: false, snapshot: {} }), false)

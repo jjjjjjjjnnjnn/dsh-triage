@@ -417,10 +417,13 @@ const artifact = {
     'a plugin that needs credentials is unverified, not verified-safe',
     // R20: the sandbox stops inheriting the operator's npm credentials; this is the claim.
     'the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)',
-    // ADR-0006 (accepted 2026-10-28): 20s is a measurement budget, not a wall-clock promise.
-    'a tree that never settles is returned by ≈25s (boot + the 15s settle wait), not 20s',
+    // ADR-0006 (accepted 2026-10-28, measured and corrected in R23 / T-314): the judged number
+    // is spawn→sample; the wall clock is segmented in `timings.bootSegments`.
+    'a tree that never settles is returned by ≈48s, not 20s: the hook settle is inside the sample wait, and the executor then waits one more replacement window',
     // T-304: the copy is declarations only, and that boundary has its own honest failure shape.
     'the copied profile carries declarations only (no node_modules, no .plugin-manager, no .npmrc); a copy that cannot be made usable is reported unknown, never blamed on the candidate',
+    // T-314: the boot step's segments are published, so "we waited N s" is never a single opaque number.
+    'timings.bootSegments splits the boot step (spawn, sample wait, replacement wait, settle, readiness, render, kill, scratch); the 20s budget judges spawn→sample only',
   ],
 }
 

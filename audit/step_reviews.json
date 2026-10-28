@@ -2985,6 +2985,152 @@
         "sha256": "059de954bb84b07266744d42e0c1b17eef19e62962c02aff73b9394bebf15ffa",
         "outcome": "unknown · `pnpm_policy=\"source\"` · `candidate_registered=false` · 一条 warn · boot 三项 unmeasured"
       }
+    },
+    {
+      "id": "R23-S1",
+      "batch": "R23",
+      "step": "T-314：`boot` 步分段计时（10 段）+ `d2_report.timing.boot_breakdown`",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "packages/probe/src/exec.ts",
+        "packages/probe/src/index.ts",
+        "packages/plugin/src/probe-run.ts",
+        "scripts/d2_report.mjs",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-exec.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`BootSegments` 10 段（spawn / sampleWait / sampleMtime / settle / readiness / render / kill / postKillWait / scratchCleanup / total）在 `bootAndSampleHost` 里逐段取时钟；跳过阶段的段为 0；`scratchCleanupMs` 在 try 内测量（`finally` 保留同一调用作兜底）。三份真机产物段之和与 `steps[boot].ms` 误差 ≤70ms（15748/15741、48453/48384、16216/16217）；单测覆盖「分段透传到产物」与「无样本 boot 也报分段」",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --candidate tests/fixtures/probe/{ok,slow-overrun}-plugin --stamp <iso>` 逐条重放；`d2_report` 对老矩阵显示 `runs_with_segments=0` 而不是猜数字",
+        "licence": "PASS：只加计时，不碰候选与许可；无新外部产物",
+        "ssot": "PASS：spec §4 写明「新增 await 必须加段」与段之和必须对齐；`record_probe` 的 `limits[]` 直接指向 `timings.bootSegments`；`ADR-0006` 的实测段引用同一批产物",
+        "adversary": "反例一：只加字段不校验总和 —— 「差额有解释」会变空话；本轮核对三份并对齐到 ≤70ms。反例二：把 `scratchCleanupMs` 留在 `finally` 里 —— 返回值已经构造完，那一段永远读不到；已移到 try 内并在 finally 保留兜底。反例三：把 `sampleWaitMs` 当成 `boot→sample` —— 前者含替换等待（不可判树上差 20.3s），两者必须分开"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main <sandbox>/lib/bin.js --label boot-segments-template --expect go --stamp 2026-10-28T17:00:00.000Z",
+        "artifact": "data/results/probe-boot-segments-template-2026-10-28T17-00-00.000Z.json",
+        "sha256": "0be7368158d04d24e2cdeb8acdf3a2fca995ddac6e18b09ba764c34fb2e619bf",
+        "outcome": "go · boot 步 15741ms = sample 6297 + settle 1010 + readiness 36 + render 4727 + kill 2207 + postKill 1209 + scratch 2"
+      }
+    },
+    {
+      "id": "R23-S2",
+      "batch": "R23",
+      "step": "T-314 结论：不可判树的 48.4s 由「替换等待 20.3s」主导（不是 settle），据此改正 ADR-0006 与 spec §4 的墙钟口径",
+      "changed": [
+        "docs/adr/0006-probe-budget-promise.md",
+        "docs/specs/M3-probe.md",
+        "scripts/record_probe.mjs",
+        "scripts/d2_report.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：真机 `slow-overrun` 的分段 = sample 19128 + 替换等待 20276 + settle 1011 + readiness 36 + render 4502 + kill 2203 + postKill 1215；`hook wait_ms` 16131ms **已含在 sample 里**，所以「boot + settle 15s」的结构性解释不成立。口径改为「可判 ≈16s / 不可判 ≈48s」，两处旧数字（25s / 43s）标作废",
+        "reproducibility": "PASS：`probe-boot-segments-overrun-2026-10-28T17-10-00.000Z.json` 一条命令重放；`d2_report` 的 `wall_clock.note` 与 spec §4 同句",
+        "licence": "PASS：只改文案与计时，不改任何判定",
+        "ssot": "PASS：ADR-0006 的「附：T-314 实测结果」段、spec §4 的 R23 段、`record_probe` 的 `limits[]`、`d2_report` 的 note 四处数字一致；`SIGNOFF.md` 有对应追认行",
+        "adversary": "反例一：把 48.4s 归因成 settle —— 分段直接否证（settle 只有 1011ms）。反例二：留着一份文档写 43s —— 已全部替换并在 ADR 里标注旧值作废。反例三：借这次测量去改阈值 —— `settle 15s` / `--unsettled-timeout 20000` 的 diff 为空"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/slow-overrun-plugin --dsh-main <sandbox>/lib/bin.js --label boot-segments-overrun --expect unknown --stamp 2026-10-28T17:10:00.000Z",
+        "artifact": "data/results/probe-boot-segments-overrun-2026-10-28T17-10-00.000Z.json",
+        "sha256": "5a1bf90435cb7d314af82b107e55d8d5cf128513b21cbbcbc5c39ceca28b5fea",
+        "outcome": "unknown · boot 步 48384ms · sample 19128ms · 替换等待 20276ms · render 4502 · kill 2203"
+      }
+    },
+    {
+      "id": "R23-S3",
+      "batch": "R23",
+      "step": "T-313：凭据来源审计脚本（本地假 registry 记 `authorization` 头，六类来源 × 404/401）",
+      "changed": [
+        "scripts/audit_credential_sources.mjs",
+        "packages/probe/src/host.ts",
+        "packages/probe/src/index.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`pluginArgv()` 抽成唯一 argv 来源（审计与 probe 共用，避免第二份 spawn 逻辑）；探测器只看请求头，不看日志。对照组 2 请求 / 0 认证；`user-npmrc` 在 404 与 401 下 token 都上线（各 2/2）而 `closed` 0/2；其余四类来源 `routed` 组都拿不到流量 → 旋钮未被读",
+        "reproducibility": "PASS：`node scripts/audit_credential_sources.mjs --dsh-main <bin.js> --stamp <iso>` 一条命令 30 次运行 + 1 次 seed，全部离线（假 registry 在 127.0.0.1）；退出码 1 = 有泄漏",
+        "licence": "PASS：不读真实凭据文件，token 为脚本写入临时目录的合成串；产物只留布尔与计数（`data/results` 里搜不到 token）",
+        "ssot": "PASS：spec §8.6 记录方法与 10 组结果；`BS-29` 的 status/cannot_see/mitigation 与 `docs/adr/0004` 的 R23 修订段一致；`BACKLOG` T-313 标 ✅ 并写明剩余面",
+        "adversary": "反例一：用 pnpm 日志当探测器 —— 实测合成 token 不打印那行，会放过活着的来源。反例二：`spawnSync` 起同进程假 registry —— 阻塞事件循环导致挂死（真踩三次）。反例三：把「没泄漏」当成「我们挡住了」—— `routed` 组证明四个旋钮根本没被读，产物分列 `knob_honored` 与 `leaks_today`。反例四：只测 404 —— 加 401 模式，避免「被挑战才发」的假阴性"
+      },
+      "real_test": {
+        "command": "node scripts/audit_credential_sources.mjs --dsh-main <sandbox>/lib/bin.js --stamp 2026-10-28T19:00:00.000Z",
+        "artifact": "data/results/credential-sources-2026-10-28T19-00-00.000Z.json",
+        "sha256": "6855ad3ab2d9bb4f4fb233d164240e59a2fef1d41c9e0ee7c4eef72fcec29060",
+        "outcome": "10 组审计 + 对照组 · `live_and_leaking: []` · `live_and_neutralised: [user-npmrc@404, user-npmrc@401]` · `knob_not_honored: 8 组`"
+      }
+    },
+    {
+      "id": "R23-S4",
+      "batch": "R23",
+      "step": "T-315：ADR-0007 沙盒构建审批口径 + `docs/adr/0004` 指向 + `SIGNOFF` 追认",
+      "changed": [
+        "docs/adr/0007-sandbox-build-policy.md",
+        "docs/adr/0004-external-candidate-boundary.md",
+        "audit/SIGNOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：ADR 的 4 条边界与代码一一对应（只在源无 workspace 时写、不批准构建、构建被跳过只出 warn、必须读回 `dsh.profile.bundles`）；6 条拒绝方案各自给了实测理由（F41–F43）",
+        "reproducibility": "PASS：机制由 R22 的 `probe-copy-profile-strict` 与 `-ok` 两份真机产物锁定，可重放",
+        "licence": "PASS：ADR 明确「不批准任何构建脚本」，与 `ADR-0004` 的「不注入凭据 / 不 vendor」同一口径，未扩大执行面",
+        "ssot": "PASS：`profile_copy.pnpm_policy` 三态（`source`/`sandbox`/null）在 ADR、spec §8.5、产物三处一致；`SIGNOFF` 记录「HUMAN 未逐条复核」",
+        "adversary": "反例一：把 `strictDepBuilds: false` 写成「允许构建」—— ADR 与产物都要求 `onlyBuiltDependencies` 为空、`ignored_packages` 公开。反例二：覆盖用户的 workspace 文件 —— ADR 明确禁止，且 `strict` 夹具真机证明该情形只能 `unknown`"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-home tests/fixtures/probe/profile-copy/strict --copy-profile web --label copy-profile-strict --expect unknown --stamp 2026-10-28T15:00:00.000Z",
+        "artifact": "data/results/probe-copy-profile-strict-2026-10-28T15-00-00.000Z.json",
+        "sha256": "059de954bb84b07266744d42e0c1b17eef19e62962c02aff73b9394bebf15ffa",
+        "outcome": "unknown · `pnpm_policy=\"source\"`（未覆盖用户设置）· `candidate_registered=false`"
+      }
+    },
+    {
+      "id": "R23-S5",
+      "batch": "R23",
+      "step": "三件交付的文档/台账收口：spec §4/§8.6、BS-29 改写、BACKLOG/HANDOFF/INDEX、门禁录一次绿",
+      "changed": [
+        "docs/specs/M3-probe.md",
+        "audit/blind_spots.json",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/AUDIT_2026-10-28_R23.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` 全绿、`--mutate` 9/9；spec §4 的分段表与三份产物逐格一致；§8.6 的 10 组结果与产物 `summary` 一致",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp <iso>` 可重放；HANDOFF §3 的首条是单条命令块",
+        "licence": "PASS：本轮无新候选、无 vendor 条目；`quarantine/` 未动",
+        "ssot": "PASS：107 份产物、125 步台账全部可追；`BS-29` 从「open」改为「narrowed」，并在三处（spec / ADR-0004 / blind_spots）用同一句口径",
+        "adversary": "反例一：把 `BS-29` 直接关掉 —— 还有硬编码路径、非 Windows、其它版本三个洞，已写成 narrowed 并列出剩余面。反例二：为了让门绿而删产物或改阈值 —— 本轮所有阈值 diff 为空，产物只增不减"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T20:00:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-28T20-00-00.000Z.json",
+        "sha256": "0504568d8f3e26a572b129a5021f50e365cd1e4d7e203318bdd97babe27496d2",
+        "outcome": "ALL GREEN · 9 gates（同轮 --mutate 9/9；pnpm test = 265）"
+      }
+    },
+    {
+      "id": "R23-S6",
+      "batch": "R23",
+      "step": "T-314 在复制路径上的同一量具：`profile` 步与 `boot` 步并排可见（证明分段不只在模板模式成立）",
+      "changed": [
+        "packages/probe/src/exec.ts",
+        "scripts/record_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：复制模式的 `boot` 步 16217ms = sample 6326 + settle 1005 + readiness 37 + render 4720 + kill 2714 + postKill 1206 + scratch 1；同一份产物里 `profile` 步 15336ms 单列，二者互不吞并。段之和与 `steps[boot].ms` 相差 1ms",
+        "reproducibility": "PASS：`node scripts/record_probe.mjs --copy-profile upstream --label boot-segments-copy --stamp <iso>` 一条命令重放；依赖仓内沙盒的 composed profile（`sandbox/upstream/0.2.1-rc.4/home`）",
+        "licence": "PASS：复制模式仍只搬四个声明文件；本轮产物里 `registry_auth_used=false`，`ignored_packages` 5 个照旧公开",
+        "ssot": "PASS：与 R23-S1/S2 用同一组字段名（`timings.bootSegments`）；spec §4 的分段表同时列出模板与复制两行，读者可对照",
+        "adversary": "反例一：以为分段只对模板模式成立 —— 复制模式多了 `profile` 步，若计时口径不同就会出现「复制比模板慢 15s」的误读。反例二：把 `profile` 的时间算进 `boot` —— 两者在产物里分列，`boot→sample` 仍只量 spawn→样本"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-home <sandbox>/home --copy-profile upstream --label boot-segments-copy --expect go --stamp 2026-10-28T17:20:00.000Z",
+        "artifact": "data/results/probe-boot-segments-copy-2026-10-28T17-20-00.000Z.json",
+        "sha256": "1f4d55261be8efb9a319721c178764e68a7a485846cff89ba6e3efd492696e4f",
+        "outcome": "go · profile 步 15336ms（单列）· boot 步 16217ms（分段见上）· 行 active · 401 · 渲染 4720ms"
+      }
     }
   ]
 }

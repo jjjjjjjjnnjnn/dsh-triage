@@ -294,3 +294,13 @@
 - 实测：**263 测试 / 9 门全绿 / `--mutate` 9/9**；三形状真机产物（go / unknown×2）；`registry_auth_used=false`；`profile` 步 18.5–19.7s（首次 138s 是构建审批失败后的重复解析）
 - 过程中的真实缺陷（本轮自己抓到，均在提交前修）：把「副本装不上」直接当 `blocked`（会让私有源组合变成「插件坏」）；把 `ERR_PNPM_IGNORED_BUILDS` 一律按 R19 归到候选（复制模式下被拒的是组合）；以为被拒名单能从 `key_line` 读（截断丢名字，改整段解析）；`--profile` 默认值 `web` 会覆盖复制源名（已加 `profileExplicit`）
 - 未做：T-314（`boot` 分段计时，仍是首选纯测量项）、T-315 ADR、T-313（其余凭据来源）、T-401 面板契约 spike；阈值（settle 15s / 窗口 20000 / `boot→sample ≤20s`）**一字未动**
+### 2026-10-28 R23｜T-314 墙钟分解（差额已解释、口径改正）+ T-315 ADR-0007 + T-313 凭据来源审计（BS-29 收窄）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未起 subagent；四轴与对抗性由同一会话自查，`audit/step_reviews.json` R23-S1…S6）
+- 范围：`packages/probe/src/{host,exec,index}.ts`、`packages/plugin/src/probe-run.ts`、`scripts/{d2_report.mjs,record_probe.mjs,audit_credential_sources.mjs（新）}`、`tests/unit/probe-exec.test.ts`、`docs/{specs/M3-probe.md,adr/0006-probe-budget-promise.md,adr/0004-external-candidate-boundary.md,adr/0007-sandbox-build-policy.md（新）,BACKLOG.md,HANDOFF.md}`、`INDEX.md`、`audit/{blind_spots.json,step_reviews.json,SIGNOFF.md,AUDIT_2026-10-28_R23.md（新）}`、`data/results/{probe-boot-segments-*（3 份）,credential-sources-*,gates-*}`
+- 起因：HUMAN「同意，继续，处理所有问题」——处理 R22 交接留下的三项（T-314 / T-315 / T-313）
+- 结果：① **T-314**：`boot` 步 10 段计时，**推翻了 R21 自己写的两个数字**——正常候选 15.7–16.2s（render 4.7 + 杀树 2.2–2.7 + 杀后 1.2 主导），不可判 **48.4s**（**替换等待 20.3s** 主导，不是 settle；`wait_ms 16.1s` 已含在 sample 里）。ADR-0006 与 spec §4 改为「可判 ≈16s / 不可判 ≈48s」。② **T-315**：`ADR-0007` 固化沙盒构建审批口径（不批准任何构建、只降错误；源 workspace 不覆盖；必须读回 `dsh.profile.bundles`）。③ **T-313**：探测器从「pnpm 日志」换成「本地假 registry 记 `authorization` 头」，六类来源 × `404`/`401` = 10 组 + 对照组 + 30 次运行全部失败；结论：**只有 user config 会被读**，且两种应答下都不再上网；其余四个旋钮在 launcher 路径下未被读；`BS-29` 由 open 改为 **narrowed**。
+- 实测：**265 测试 / 9 门全绿 / `--mutate` 9/9**；三份分段产物 + 一份 10 组凭据审计产物；111 份 SSOT 产物 / 126 步台账
+- 过程中的真实缺陷（本轮自己抓到，均在提交前修）：用 pnpm 日志当凭据探测器（实测合成 token 不打印那行 → 假阴性）；`spawnSync` 起同进程假 registry（阻塞事件循环，挂死三次 90s）；被 kill 的 `pnpm add` 残留占着 store 锁（清进程才恢复）；把「旋钮未被读」当成「我们挡住了」（已分 `knob_honored` / `leaks_today` 两列）；审计产物带 home 路径（`results-privacy` 打红，已加脱敏）
+- 未做：T-311/T-312（压替换窗口需 ADR + HUMAN 签，阈值一字未动）、`BS-29` 剩余面（硬编码路径/非 Windows/其它版本）、T-315 的 `nodeLinker` / `strictPeerDependencies`、T-401
