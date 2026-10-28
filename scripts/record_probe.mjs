@@ -449,6 +449,8 @@ const artifact = {
             linker: run.nodeLayout.linker,
             declared: run.nodeLayout.declared,
             top_level: run.nodeLayout.topLevel,
+            top_level_symlink: run.nodeLayout.topLevelSymlink,
+            virtual_store_links: run.nodeLayout.virtualStoreLinks,
             pnpm_store: run.nodeLayout.pnpmStore,
           },
   },

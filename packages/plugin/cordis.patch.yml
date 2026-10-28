@@ -11,7 +11,13 @@
 #   while looking installed — the exact failure class this project attributes.
 - insert:
     - id: compat-verdict
-      name: dsh-triage/host
+      # The row name MUST be the bare package name, not a subpath (`dsh-triage/host`).
+      # Measured in R31 against a real Host: `dsh-client-modules` only maps a loader entry to a
+      # client bundle when `exactPackageSpecifier(entry.options.name)` is a bare package
+      # specifier, so a subpath silently drops the browser half — the Host serves no
+      # `/plugins/dsh-triage/...` asset and the settings tab never appears. `dist/index.js`
+      # therefore re-exports the host plugin, which keeps the programmatic barrel working.
+      name: dsh-triage
       config:
         # Reserved for M4: which localized catalogue the Web panel renders.
         locale: auto

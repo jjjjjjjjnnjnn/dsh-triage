@@ -250,6 +250,24 @@
       "owner": "packages/probe/src/host.ts + scripts/record_probe.mjs",
       "status": "resolved (R29)",
       "resolved_by": "R29-S4: host.ts SampleReplacement.reason + waited narrowed to unreadable samples; record_probe.mjs inventory.replacement_reason; exec.ts measurementDetail splits upgrade from replacement; tests/unit/probe-host-sample.test.ts 6/6 (provisional→final must be waited=false + reason=upgrade). Real evidence: data/results/probe-matrix-2026-10-28T09-40-00.000Z.json — 20/20 runs replacement_waited=false, replacement_reason=upgrade, verdicts identical to the pre-fix batch"
+    },
+    {
+      "id": "BS-34",
+      "area": "probe/evidence-labels",
+      "cannot_see": "R30 加的 `install.node_layout` **看起来是观测，其实是猜**：① 它用「`node_modules/.pnpm` 在不在」判断 pnpm 布局，而 R31 实测 **pnpm 12 在 hoisted 布局下也会创建 `.pnpm`**（两种布局都有），于是两种布局都被读成 `isolated`；② `.modules.yaml` 是带引号与尾逗号的 JSON 风格（`  \"nodeLinker\": \"hoisted\",`），R30 的严格 YAML 行正则读不到，`declared` 恒为 `null`；③ 第一版回退逻辑用「第一个顶层条目是不是 symlink」，但探针自己把仓内候选装成 `file:` 链接，那个 symlink 指向存储之外，于是 hoisted 树被读成 isolated。**三条叠在一起时，产物会给出一个自信但错误的方向**",
+      "mitigation": "R31 已修：布局以 pnpm 自己写下的 `nodeLinker` 为准（正则容忍引号/尾逗号），回退时只数**指向 `.pnpm` 的链接**（`virtual_store_links`），并把 `top_level_symlink` 与 `virtual_store_links` 同时写进产物；`.pnpm` 是否存在降级成 `pnpm_store` 的提示位（两种布局都有，不能当判据）。真机两条对照：模板路径 hoisted（`virtual_store_links=0`、`top_level_symlink=true` 是候选链接）、hoisted 复制源 195 平铺包。**仍看不到的**：R30 那两份产物（`probe-ok-…12-10`、`probe-t315-hoisted-…14-00`）用的是错误判法，读它们时布局字段作废；非 pnpm 包管理器不适用",
+      "owner": "packages/probe/src/host.ts + scripts/record_probe.mjs",
+      "status": "resolved (R31)",
+      "resolved_by": "R31: readNodeLayout classifies from pnpm's own nodeLinker with a JSON-tolerant regex, falls back to counting links INTO .pnpm, and publishes top_level_symlink + virtual_store_links + pnpm_store as separate facts. tests/unit/probe-node-layout.test.ts 6/6 including the exact R31 shape (hoisted tree whose first entry is a local file: link). Real evidence: data/results/probe-ok-2026-10-28T14-40-00.000Z.json (hoisted, virtual_store_links=0) and data/results/probe-t315-hoisted-2026-10-28T14-50-00.000Z.json (hoisted, 195 flat packages)"
+    },
+    {
+      "id": "BS-35",
+      "area": "plugin/client-discovery",
+      "cannot_see": "浏览器半边的**发现过程是静默的**：Host 只在三件事同时成立时才把 `dsh.client` 组进启动图——① `package.json#exports[\"./client\"]` 存在；② profile patch 行（loader entry）的 `name` 是**裸包名**，不能是子路径；③ 资产必须按启动文档给出的 `?rev=` 组合 URL 取。任何一条不满足，表现都一样：**没有报错、没有日志、页面里就是没有这个模块**（R31 先后栽在 ①②，R31 的调试又栽在 ③）。上游对 ① 会抛 `declares dsh.client but exports no \"./client\" bundle`，但只走 onError 通道；对 ② 连抛都不抛",
+      "mitigation": "R31 已把三条都写进 `docs/specs/M4-surface.md`（F53）与 `docs/HANDOFF.md` §4 的坑表，并用 `scripts/record_client_serve.mjs` 做**真机回归**：先断言启动图里有 `dsh-triage/client.js`，再取组合 URL，再用 CDP 读 `window.__dshTriage.registered`。`tests/unit/client-tab.test.ts` 还钉住 `exports[\"./client\"]`、行名与 manifest 形状。**仍看不到的**：上游 rc 换掉 resolver 规则、或把组合 URL 规则改掉时，本仓没有自动化能提前知道——只能靠跑一次 record_client_serve；非 web 平台（tui/headless）的浏览器半边未验证",
+      "owner": "packages/plugin/{package.json,cordis.patch.yml,client.js} + scripts/record_client_serve.mjs + docs/specs/M4-surface.md",
+      "status": "narrowed (R31): all three rules are documented and covered by a real-run regression, but discovery stays silent by design",
+      "resolved_by": "R31: packages/plugin/cordis.patch.yml row name dsh-triage (bare package), package.json exports[\"./client\"] = ./client.js, src/index.ts re-exports the host plugin; scripts/record_client_serve.mjs proves graph composition + 200 asset + CDP marker in a real Host. Evidence: data/results/client-serve-2026-10-28T19-20-00.000Z.json (bundle/install/boot/graph/client/mount all passed)"
     }
   ]
 }

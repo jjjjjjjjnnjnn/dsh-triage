@@ -94,6 +94,26 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 >
 > **仍未做的两件（不许当成已做）**：① 沙盒 Host 里真的看到这个 tab（需要起 Host + 设置页断言）；② 「与 CLI 同源结论」——那要求 Host 侧有一条只读 Remote 暴露 `audit --json`，本轮**没有**为了填这个格去自造判据，所以 tab 先只给入口。
 
+### 3.2 真机验证（R31，**F53**）
+
+`scripts/record_client_serve.mjs` 把四个 workspace 包（`file:` 依赖，workspace 协议改写成 `file:`，不碰 registry、不碰凭据）装进一次性 DSH home，起一次真 Host，然后按**启动文档**取资产：
+
+| 步骤 | 真机结果 |
+|---|---|
+| `graph` | 启动文档里的组合 URL 含 **`dsh-triage/client.js`**——Host 组进了启动图 |
+| `client` | 取该组合 URL → **200 / 2,020,463B**，含 `__ModuleLoader__.load`、`id: 'dsh-triage'`、`settings.plugins.tab` |
+| `mount` | headless Chrome + CDP 打开页面 → **`window.__dshTriage = {registered:true, slot:'settings.plugins.tab', id:'compat-triage'}`** |
+
+产物：`data/results/client-serve-2026-10-28T19-20-00.000Z.json`（六步全绿，含 cleanup）。
+
+**三条只有真机才暴露的发现（`BS-35`）**：
+
+1. **`package.json#exports["./client"]` 必需**：`dsh-client-modules` 的 `clientExportOf()` 只认这个键；缺了会抛 `declares dsh.client but exports no "./client" bundle`，而且只走 onError → **模块静默消失**。
+2. **profile patch 行的 `name` 必须是裸包名**（`dsh-triage`）：`exactPackageSpecifier()` 不接受子路径，`dsh-triage/host` 会让 `locatePkgJson()` 返回 `undefined` → 浏览器半边永远不被组进图。R30 的 `cordis.patch.yml` 用的正是子路径（`dsh-triage/host`），所以「装了、host 半边也能 dump 出来，但页面里没有我们」。修法：行名改裸包名，`dist/index.js` 重新导出 host 插件（`apply`/`name`/default），程序化 barrel 不变。
+3. **资产 URL 必须带 `?rev=`**：`/plugins/<pkg>/client.js` 裸请求一律 404（上游自己的 bundle 也一样），要用启动文档给出的组合 URL `/plugins/??<ids>/client.js&rev=…`。
+
+**仍未做**：设置页里**肉眼看到** tab（要点击导航后断言 DOM）；「与 CLI 同源结论」（要 Host 侧只读 Remote）。`mount` 证明的是「client runner 调了 `apply`、slot 接受了注册」，**不**证明用户点开设置就能看到。
+
 ---
 
 ## 4. 形态 C：可双击的 exe（SEA）
@@ -130,5 +150,5 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 | 1 | CI `render-control` 作业（Linux 真浏览器） | 无 | 每轮 CI 有 `blank`/`rendered`/`error` 三份对照 | ✅ R16 |
 | 2 | `dsh-triage serve --dry-run` + 只读页面 | 1 | 页面能显示 audit/probe/SSOT，且不执行任何东西 | ✅ R16（v0）· **R19（v1：`/api/audit` + 当前组合区块）** |
 | 3 | `serve --allow-execute` + `POST /api/probe` | 2 | 负对照：未授权返回 403 | 🟡 门已就位（403 / 501），动作未实现 |
-| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | 🟡 **R30：浏览器半边已交付**（`packages/plugin/client.js` + `dsh.client` + 9 条契约单测，含「不匹配 = 零注册」）；**剩余**：真机挂载 + 同源结论（需要 Host 侧只读 Remote） |
+| 4 | DSH settings section（client bundle） | 2 | 与 CLI 同源；契约不匹配时隐藏 | 🟡 **R30 写 / R31 真机通过注册**：`client.js` + `dsh.client` + 10 条契约单测；真机六步（bundle/install/boot/graph/client/mount）全绿；**剩余**：设置页可见性 + 同源结论（需 Host 侧只读 Remote） |
 | 5 | SEA 构建（可选） | 3 + 真实用户 | 双击可开面板 | ⬜ 设计已就绪，未写脚本 |

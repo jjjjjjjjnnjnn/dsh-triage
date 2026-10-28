@@ -33,7 +33,7 @@ interface Exports {
 function loadBundle(options: { react?: boolean } = {}) {
   const source = readFileSync(SOURCE_PATH, 'utf8')
   const loaded: Array<{ id: string; factory: (require: (id: string) => unknown) => Exports }> = []
-  const sandbox = {
+  const sandbox: { window: Record<string, unknown> } = {
     window: {
       __ModuleLoader__: {
         load: (entry: { id: string; factory: (require: (id: string) => unknown) => Exports }) => {
@@ -41,10 +41,6 @@ function loadBundle(options: { react?: boolean } = {}) {
         },
       },
     },
-    Promise,
-    String,
-    Array,
-    Object,
   }
   vm.runInNewContext(source, sandbox, { filename: SOURCE_PATH })
   assert.equal(loaded.length, 1, 'the bundle must register itself exactly once with the loader')
@@ -62,7 +58,7 @@ function loadBundle(options: { react?: boolean } = {}) {
     if (id === 'react/jsx-runtime') return { jsx: (type: unknown, props: unknown) => ({ type, props }), jsxs: (type: unknown, props: unknown) => ({ type, props }) }
     throw new Error(`unexpected require("${id}")`)
   }
-  return { exports: entry.factory(requireFake), requireFake, source }
+  return { exports: entry.factory(requireFake), requireFake, source, window: sandbox.window as Record<string, unknown> }
 }
 
 interface FakeContext {
@@ -134,7 +130,7 @@ test('the bundle registers with the documented loader id and declares the servic
 test('the tab is registered with the plugins slot when the whole contract is present', () => {
   const { exports } = loadBundle()
   const fake = fakeContext()
-  const registration = exports.apply(fake.ctx)
+  const registered = exports.apply(fake.ctx)
   assert.equal(fake.injectSlot, 'settings.plugins.tab', 'C2: the plugins tab slot, not a private one')
   assert.equal(fake.dictionaryCalls.length, 1, 'C5: one dictionary registration')
   assert.equal(fake.dictionaryCalls[0]!.ns, 'compat-triage')
@@ -148,13 +144,32 @@ test('the tab is registered with the plugins slot when the whole contract is pre
   assert.equal(first.locale, 'compat-triage')
   assert.equal(typeof first.label, 'function')
   assert.equal(typeof first.inject, 'function')
-  assert.equal(registration, null, 'injection is lazy: the Host decides when the tab is mounted')
+  assert.equal(registered, true, 'the Host accepted the registration; it mounts lazily')
+})
+
+test('apply publishes a marker so a real page can be asked whether the tab registered', () => {
+  // R31: "the Host serves the bundle" and "the tab registered" are different claims. The marker
+  // is what lets a CDP check read the second one instead of guessing from the DOM.
+  const { exports, window } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const marker = window.__dshTriage as { registered: boolean; slot: string; id: string }
+  assert.equal(marker.registered, true)
+  assert.equal(marker.slot, 'settings.plugins.tab')
+  assert.equal(marker.id, 'compat-triage')
+
+  const refused = loadBundle()
+  const withoutSlots = fakeContext({ slots: false })
+  refused.exports.apply(withoutSlots.ctx)
+  const refusedMarker = refused.window.__dshTriage as { registered: boolean; reason: string }
+  assert.equal(refusedMarker.registered, false, 'a refusal is published too, with its reason')
+  assert.equal(refusedMarker.reason, 'contract-missing')
 })
 
 test('a missing slots service registers nothing instead of half-rendering a tab', () => {
   const { exports } = loadBundle()
   const fake = fakeContext({ slots: false })
-  assert.equal(exports.apply(fake.ctx), null)
+  assert.equal(exports.apply(fake.ctx), false)
   assert.equal(fake.registrations.length, 0)
   assert.equal(fake.dictionaryCalls.length, 0, 'not even the dictionaries: the whole block is skipped')
 })
@@ -162,20 +177,20 @@ test('a missing slots service registers nothing instead of half-rendering a tab'
 test('a missing locale service registers nothing', () => {
   const { exports } = loadBundle()
   const fake = fakeContext({ locale: false })
-  assert.equal(exports.apply(fake.ctx), null)
+  assert.equal(exports.apply(fake.ctx), false)
   assert.equal(fake.registrations.length, 0)
 })
 
 test('a host that cannot expose react registers nothing (no error page, no tab)', () => {
   const { exports } = loadBundle({ react: false })
   const fake = fakeContext()
-  assert.equal(exports.apply(fake.ctx), null)
+  assert.equal(exports.apply(fake.ctx), false)
   assert.equal(fake.registrations.length, 0)
   assert.equal(fake.dictionaryCalls.length, 0)
 })
 
 test('an unexpected contract shape throws inside apply and is swallowed', () => {
-  const { exports } = loadBundle()
+  const { exports, window } = loadBundle()
   const hostile = new Proxy(
     {},
     {
@@ -184,7 +199,12 @@ test('an unexpected contract shape throws inside apply and is swallowed', () => 
       },
     },
   )
-  assert.equal(exports.apply(hostile), null, 'apply must never propagate a contract error')
+  assert.equal(exports.apply(hostile), false, 'apply must never propagate a contract error')
+  // The marker is created inside the vm realm, so compare fields rather than prototypes.
+  const marker = window.__dshTriage as { registered: boolean; reason: string; id: string }
+  assert.equal(marker.registered, false)
+  assert.equal(marker.reason, 'contract-mismatch')
+  assert.equal(marker.id, 'compat-triage')
 })
 
 test('the injected loader reports failure instead of inventing an inventory count', async () => {
@@ -250,6 +270,7 @@ test('the tab component renders from injected props and never touches host modul
 test('the manifest declares the browser half exactly the way the Host discovers it', () => {
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) as {
     files: string[]
+    exports: Record<string, unknown>
     dsh: { bundle: { patch: string }; client: { platform: string; inject: string[] } }
   }
   assert.equal(manifest.dsh.client.platform, 'web')
@@ -260,5 +281,12 @@ test('the manifest declares the browser half exactly the way the Host discovers 
     '@deepseek-ai/dsh-api-remotes',
   ])
   assert.ok(manifest.files.includes('client.js'), 'the packed tarball must ship the browser half')
+  /*
+   * R31, measured against a real Host: `dsh-client-modules` resolves the bundle through
+   * `package.json#exports["./client"]` and throws `client-modules: <pkg> declares dsh.client but
+   * exports no "./client" bundle` when it is missing — the module is then silently absent from
+   * the page (the HTTP asset 404s). Declaring `dsh.client` without this export is a no-op.
+   */
+  assert.equal(manifest.exports['./client'], './client.js', 'the Host finds the bundle through exports["./client"]')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml', 'the host half is unchanged')
 })

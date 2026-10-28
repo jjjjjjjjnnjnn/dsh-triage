@@ -13,6 +13,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./client": "./client.js",
     "./host": {
       "types": "./dist/host.d.ts",
       "default": "./dist/host.js"

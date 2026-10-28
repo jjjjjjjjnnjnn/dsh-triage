@@ -379,3 +379,14 @@
 - 实测：289 测试 / 9 门全绿 / `--mutate` 9/9；156 步 / 141 产物
 - 过程中的真实缺陷：① `client-tab` 第一版断言把「apply 的返回值」当成 registration，而 `slots.inject` 是**惰性**的（回调由 Host 在挂载时调用），当场红并改成断言假 ctx 的状态；② 「不 require node 内置模块」的断言第一版用 `source.includes('node:')`，被文件注释里的 `node:vm` 命中——改成只匹配 `require('node:…')`
 - 未做：真机挂载 tab、Host 侧只读 Remote、hoisted 复制 run、`strictPeerDependencies`、`BS-29` 剩余面
+
+### 2026-10-28 R31｜稳定性三批分布（T-319）+ T-401 真机注册通过 + T-315 收口（并更正 R30 的读数）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R31-S1…S8）
+- 范围：`scripts/{stability_report,record_client_serve}.mjs`、`scripts/gate_namespace.mjs`、`packages/plugin/{client.js,package.json,cordis.patch.yml,src/index.ts}`、`packages/probe/src/{host,exec}.ts`、`tests/unit/{client-tab,probe-node-layout}.test.ts`、`tests/governance/stability-report.test.ts`、`docs/{HANDOFF,BACKLOG,specs/M4-surface,specs/M3-probe}.md`、`audit/{AUDIT_2026-10-28_R31.md,AUDIT_2026-10-28_R30.md,blind_spots.json,step_reviews.json,AI_DISCLOSURE_LOG.md}`、`INDEX.md`
+- 起因：HUMAN「同意，继续，我不在乎时间和投入」（承接 R30 的三项收尾：稳定性、T-401、T-315）
+- 结果：① **T-319 稳定性**：三批同 plan 矩阵（15:00/15:30/16:00）→ `stability-2026-10-28T17-00-00.000Z.json`：36 次真实观测 `boot→sample` **3.5–9.6s（median 5.4 / p90 8.2）、0/36 超 20s**、13 个真实候选**三批结论完全一致**；新脚本**拒绝单矩阵**、**不设 gate**。② **T-401 真机通过**：`record_client_serve.mjs` 六步全绿（bundle/install/boot/graph/client/mount/cleanup）——启动图里有 `dsh-triage/client.js`、组合 URL 200 / 2,020,463B、CDP 读到 `window.__dshTriage={registered:true}`；期间修掉两处**静默**发现缺陷：`exports["./client"]` 缺失、patch 行名必须是裸包名（原 `dsh-triage/host` 让浏览器半边永远不进图）。③ **T-315 收口**：模板路径与 hoisted 复制源实测都是 hoisted（195 平铺包）；**R30 的 `isolated` 读数作废**（`BS-34`）。**未做**：设置页可见性、同源结论、`strictPeerDependencies`
+- 实测：296 测试 / 9 门全绿 / `--mutate` 9/9；164 步 / 149 产物
+- 过程中的真实缺陷：① 布局读数连错两次（R30 的 `.pnpm` 判据 + R31 第一版的「首个条目是否 symlink」），真机对照才暴露；② `record_client_serve` 前 6 次栽在「裸 URL 一律 404，必须用 `?rev=` 组合 URL」；③ cleanup 连续 EPERM 的真因是**先删后杀**（Host 还持有文件），改成先 `killTree` 再删；④ 用 20:00 做 gate stamp 时**覆盖了 R23-S5 的产物**，用 `git checkout` 恢复后改用不冲突的 stamp；⑤ gate_namespace 的 `row-names-resolve` 旧规则强制子路径（正好是会让浏览器半边静默消失的形状），改为「裸包名 main 或 exports 子路径才算可解析」
+- 未做：设置页肉眼可见断言、Host 侧只读 Remote、`strictPeerDependencies`、有载/空载对照（`BS-32` 的下一半）、`BS-29` 剩余面

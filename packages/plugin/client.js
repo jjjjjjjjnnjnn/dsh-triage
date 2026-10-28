@@ -118,16 +118,36 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * Register the tab. Returns the registration (or null when nothing was registered), so the
-     * unit test can assert "contract mismatch = zero registration" instead of "it threw".
+     * Publish a tiny, read-only marker for diagnostics (R31).
+     *
+     * WHY: "the Host serves the bundle" and "the tab actually registered in the page" are two
+     * different claims. Without a marker the second one is unobservable from outside, and the
+     * honest answer would stay "served, unknown whether mounted". The marker carries no user data
+     * and no behaviour: `{registered, slot, id}` (plus a reason when registration was refused).
+     */
+    function publishMarker(marker) {
+      try {
+        if (typeof window === 'object' && window !== null) window.__dshTriage = marker
+      } catch {
+        // A frozen/blocked window is not our problem: the tab itself was already decided.
+      }
+    }
+
+    /**
+     * Register the tab. Returns `true` when the tab was handed to the slot, `false` when the
+     * contract was not satisfied — never a thrown error, and never a half registration.
+     *
+     * NOTE ON THE RETURN VALUE: `ctx.slots.inject(slot, cb)` is LAZY — the Host calls `cb` when it
+     * mounts the page. So `true` means "this Host accepted our registration request", which is the
+     * most a plugin can observe at apply time.
      */
     function register(ctx, require) {
-      if (ctx === null || typeof ctx !== 'object') return null
+      if (ctx === null || typeof ctx !== 'object') return false
       const slots = ctx.slots
       const locale = ctx.locale
-      if (slots === null || typeof slots !== 'object') return null
-      if (typeof slots.inject !== 'function' || typeof slots.register !== 'function') return null
-      if (locale === null || typeof locale !== 'object' || typeof locale.register !== 'function') return null
+      if (slots === null || typeof slots !== 'object') return false
+      if (typeof slots.inject !== 'function' || typeof slots.register !== 'function') return false
+      if (locale === null || typeof locale !== 'object' || typeof locale.register !== 'function') return false
       let react = null
       let jsxRuntime = null
       try {
@@ -136,10 +156,10 @@ window.__ModuleLoader__.load({
       } catch {
         // The module registry of this Host does not expose React: nothing to render, so nothing
         // is registered. This is the shape a future rc that renames the module would produce.
-        return null
+        return false
       }
       const Tab = makeTab(react, jsxRuntime)
-      if (Tab === null) return null
+      if (Tab === null) return false
       const effect = typeof ctx.effect === 'function' ? ctx.effect : null
       const registerDictionaries = () => locale.register(NS, { zh, en })
       if (effect !== null) effect(registerDictionaries, 'compat-triage:dictionaries')
@@ -180,9 +200,8 @@ window.__ModuleLoader__.load({
           }
         },
       })
-      let registration = null
-      slots.inject('settings.plugins.tab', () => {
-        registration = slots.register(
+      slots.inject('settings.plugins.tab', () =>
+        slots.register(
           {
             name: 'settings.plugins.tab',
             id: NS,
@@ -192,19 +211,25 @@ window.__ModuleLoader__.load({
             inject: injected,
           },
           Tab,
-        )
-        return registration
-      })
-      return registration
+        ),
+      )
+      return true
     }
 
     function apply(ctx) {
       try {
-        return register(ctx, require)
-      } catch {
+        const registered = register(ctx, require)
+        publishMarker(
+          registered
+            ? { registered: true, slot: 'settings.plugins.tab', id: NS }
+            : { registered: false, reason: 'contract-missing', id: NS },
+        )
+        return registered
+      } catch (error) {
+        publishMarker({ registered: false, reason: 'contract-mismatch', id: NS })
         // Never let a tab break the settings page: an unexpected contract shape means the user
         // simply does not see triage in DSH (the CLI is still there).
-        return null
+        return false
       }
     }
 

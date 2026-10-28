@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_serve.mjs",
+  "generated_at": "2026-10-28T19:20:00.000Z",
+  "label": "client-serve",
+  "outcome": {
+    "served": true,
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,dsh-triage/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=e768711cb296"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvrz3byi\\home",
+    "profile": "web",
+    "bundle": "file:packages/* (workspace rewritten)"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 20.4s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "host printed http://127.0.0.1:64539/"
+    },
+    {
+      "id": "graph",
+      "status": "passed",
+      "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,dsh-triag…",
+      "html_bytes": 38207,
+      "client_module_listed": true,
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,dsh-triage/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=e768711cb296"
+    },
+    {
+      "id": "client",
+      "status": 200,
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2020463B · loader=true · id=true · tab=true",
+      "bytes": 2020463,
+      "sha256": "97a1cf518ab4e264288ced0b5672bcef801737e3eb61630f4a70179307b9fa3a",
+      "has_loader": true,
+      "declares_id": true,
+      "mentions_tab_slot": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "id": "mount",
+      "status": "passed",
+      "detail": "the client runner called apply and the settings slot accepted the tab",
+      "browser": "msedge.exe",
+      "registered": true,
+      "slot": "settings.plugins.tab",
+      "tab_id": "compat-triage",
+      "reason": null
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "limits": [
+    "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
+    "this proves the Host serves /plugins/dsh-triage/client.js; it does not prove the tab is visible or that its content matches the CLI (that needs a UI assertion and a host-side read-only Remote)",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine"
+  ]
+}

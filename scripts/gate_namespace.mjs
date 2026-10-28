@@ -84,8 +84,30 @@ await runGate('namespace', async ({ checks, mutate }) => {
   checks.add('no-reserved-ids', reserved.length === 0, reserved.length > 0 ? `reserved upstream ids: ${reserved.join(', ')}` : 'ok')
 
   const plugin = readJson('packages/plugin/package.json')
-  const resolvable = names.filter((name) => name.startsWith(`${plugin.name}/`) || name.startsWith('.'))
-  checks.add('row-names-resolve', resolvable.length === names.length, names.join(', '))
+  /*
+   * R31 correction, with a real-Host measurement behind it: `dsh-client-modules` only maps a
+   * loader entry to a browser bundle when `exactPackageSpecifier(entry.options.name)` is a BARE
+   * package name, so `dsh-triage/host` silently drops the client half. The old rule demanded a
+   * `<pkg>/…` subpath, i.e. it enforced the shape that breaks discovery.
+   *
+   * The rule now checks RESOLVABILITY instead of a prefix: the bare package name must resolve to
+   * `main`, and a subpath must be declared in `exports` (a subpath that is not exported does not
+   * resolve at runtime either).
+   */
+  const exportsField = plugin.exports ?? {}
+  const resolves = (name) => {
+    if (name === plugin.name) return typeof plugin.main === 'string' && plugin.main !== ''
+    if (name.startsWith('.')) return true
+    if (!name.startsWith(`${plugin.name}/`)) return false
+    const subpath = `./${name.slice(plugin.name.length + 1)}`
+    return Object.hasOwn(exportsField, subpath)
+  }
+  const resolvable = names.filter((name) => resolves(name))
+  checks.add(
+    'row-names-resolve',
+    resolvable.length === names.length,
+    names.length === 0 ? 'no row names' : names.map((name) => `${name}:${resolves(name) ? 'ok' : 'unresolvable'}`).join(', '),
+  )
 
   checks.add(
     'bundle-declared',

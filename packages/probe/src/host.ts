@@ -13,9 +13,9 @@
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { extractHostUrl, renderUrl, type HostUrl, type RenderCheck } from './render.js'
 
 /* -------------------------------- overlay --------------------------------- */
@@ -187,13 +187,33 @@ export interface BootSampleResult {
  * why `declared` and the observed layout are separate fields instead of one boolean.
  */
 export interface NodeLayout {
-  /** What `node_modules` looks like: `.pnpm` present = isolated, only flat dirs = hoisted. */
+  /** What the sandbox's `node_modules` really is (see {@link readNodeLayout} for how it is read). */
   readonly linker: 'isolated' | 'hoisted' | 'absent'
-  /** `nodeLinker:` from `node_modules/.modules.yaml`, verbatim; `null` = not stated. */
+  /**
+   * `nodeLinker` as pnpm itself wrote it into `node_modules/.modules.yaml` — which is the
+   * EFFECTIVE value, not the config we copied. `null` = pnpm did not state it.
+   */
   readonly declared: string | null
-  /** Non-dot entries directly in `node_modules` (hoisted layouts put the packages here). */
+  /** Non-dot entries directly in `node_modules`. */
   readonly topLevel: number
-  /** Does `node_modules/.pnpm` exist (pnpm's per-package link store)? */
+  /**
+   * Whether a top-level package entry is a symlink into the virtual store.
+   *
+   * THIS is the observation that separates the two layouts... except for packages installed as
+   * local links (`file:`/`link:`), which are symlinks pointing OUTSIDE the store. R31 hit exactly
+   * that: the probe fixture is installed as a link, so "is the first entry a symlink" answered
+   * "isolated" for a hoisted tree. The count below only follows links that land inside
+   * `.pnpm`, which is what the isolated layout actually does.
+   */
+  readonly topLevelSymlink: boolean | null
+  /**
+   * How many top-level entries are symlinks INTO `node_modules/.pnpm` (isolated shape).
+   *
+   * Local `file:`/`link:` dependencies are symlinks too, so they are counted separately by
+   * construction: if this is 0 the layout is not isolated, whatever the first entry looks like.
+   */
+  readonly virtualStoreLinks: number
+  /** Does `node_modules/.pnpm` exist? Present in both layouts on pnpm 12 — informational only. */
   readonly pnpmStore: boolean
 }
 
@@ -201,16 +221,56 @@ export interface NodeLayout {
 export function readNodeLayout(dir: string): NodeLayout | null {
   try {
     const nodeModules = join(dir, 'node_modules')
-    if (!existsSync(nodeModules)) return { linker: 'absent', declared: null, topLevel: 0, pnpmStore: false }
+    if (!existsSync(nodeModules)) {
+      return { linker: 'absent', declared: null, topLevel: 0, topLevelSymlink: null, virtualStoreLinks: 0, pnpmStore: false }
+    }
     const modulesYaml = join(nodeModules, '.modules.yaml')
     let declared: string | null = null
     if (existsSync(modulesYaml)) {
-      const match = /^\s*nodeLinker:\s*['"]?([A-Za-z0-9_-]+)['"]?\s*$/m.exec(readFileSync(modulesYaml, 'utf8'))
+      // pnpm writes this file with quoted keys and trailing commas (`  "nodeLinker": "hoisted",`),
+      // so a strict YAML line match misses it — R31 read `null` for a file that said exactly this.
+      const match = /["']?nodeLinker["']?\s*:\s*["']?([A-Za-z0-9_-]+)/.exec(readFileSync(modulesYaml, 'utf8'))
       if (match !== null) declared = match[1] ?? null
     }
-    const pnpmStore = existsSync(join(nodeModules, '.pnpm'))
-    const topLevel = readdirSync(nodeModules).filter((entry) => !entry.startsWith('.')).length
-    return { linker: pnpmStore ? 'isolated' : 'hoisted', declared, topLevel, pnpmStore }
+    const entries = readdirSync(nodeModules).filter((entry) => !entry.startsWith('.'))
+    const store = join(nodeModules, '.pnpm')
+    let topLevelSymlink: boolean | null = null
+    let virtualStoreLinks = 0
+    for (const entry of entries) {
+      const full = join(nodeModules, entry)
+      let isLink = false
+      try {
+        isLink = lstatSync(full).isSymbolicLink()
+      } catch {
+        continue
+      }
+      if (topLevelSymlink === null) topLevelSymlink = isLink
+      if (isLink) {
+        try {
+          const target = readlinkSync(full)
+          const resolved = isAbsolute(target) ? target : join(nodeModules, target)
+          if (resolved.startsWith(store)) virtualStoreLinks += 1
+        } catch {
+          // An unreadable link is not evidence either way.
+        }
+      }
+    }
+    const linker =
+      declared === 'isolated' || declared === 'hoisted'
+        ? declared
+        : entries.length === 0
+          ? 'absent'
+          : virtualStoreLinks > 0
+            ? 'isolated'
+            : 'hoisted'
+    return {
+      linker,
+      declared,
+      topLevel: entries.length,
+      topLevelSymlink,
+      virtualStoreLinks,
+      pnpmStore: existsSync(store),
+    }
   } catch {
     return null
   }

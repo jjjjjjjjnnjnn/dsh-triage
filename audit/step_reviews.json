@@ -3870,6 +3870,195 @@
         "sha256": "d73608570abf3018fc09a2704798e87c2a46ee5bfb93d22ff9fae258dc81ab14",
         "outcome": "ALL GREEN · 9 gates（289 测试；156 步 / 140 产物全部被引用）"
       }
+    },
+    {
+      "id": "R31-S1",
+      "batch": "R31",
+      "step": "BS-34：修 R30 的布局读数（.pnpm 不能当判据 / .modules.yaml 是带引号 JSON / file: 候选链接会骗过首个条目判断），并真跑模板路径一次",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "scripts/record_probe.mjs",
+        "tests/unit/probe-node-layout.test.ts",
+        "data/results/probe-ok-2026-10-28T14-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：真机模板 run → go，boot→sample 5.3s，install.node_layout = hoisted / declared=hoisted / top_level=1 / top_level_symlink=true / virtual_store_links=0；那个 symlink 是 file: 候选本身，不是存储链接（R30 正是被它骗成 isolated）。单测 6/6，含「hoisted 树首个条目是本地链接」这一真实形状",
+        "reproducibility": "PASS：先 pnpm build 再真跑；布局读取是纯文件系统读，单测用临时目录（junction 建链接，Windows 不需要管理员）",
+        "licence": "PASS：无新依赖、无外部候选；只读沙盒 profile 目录",
+        "ssot": "PASS：R30 的错误读数在 AUDIT_2026-10-28_R30 顶部、HANDOFF §4 坑表、INDEX 的布局行、BACKLOG 的 T-315 行都标为「R31 更正」；BS-34 记 resolved",
+        "adversary": "反例一：只改文档不改代码——不行，字段会继续给出错误方向，所以改的是判法。反例二：把 R30 那两份产物留着当证据——它们用错判法，已删除并在报告里写明原因；保留的是修后的两条读数"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label ok --expect go --stamp 2026-10-28T14:40:00.000Z",
+        "artifact": "data/results/probe-ok-2026-10-28T14-40-00.000Z.json",
+        "sha256": "58005b14ff3d965488a8f5d467609774ef9929e1d2c3e1707fbc5fe829698b2a",
+        "outcome": "go · boot→sample 5300ms · node_layout{linker:hoisted, declared:hoisted, top_level:1, virtual_store_links:0}"
+      }
+    },
+    {
+      "id": "R31-S2",
+      "batch": "R31",
+      "step": "T-315 收口：用 nodeLinker: hoisted 的复制源真跑一次，证明「真的切到 hoisted 时识别仍然成功」",
+      "changed": [
+        "data/results/probe-t315-hoisted-2026-10-28T14-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：copy:web（pnpm_policy=source）→ go，boot→sample 4.2s，node_layout = hoisted / top_level=195 / virtual_store_links=0；这次是真正的平铺树（195 个包），不是 1 个 file: 链接",
+        "reproducibility": "PASS：fixture 固定在 tests/fixtures/probe/profile-copy/node-linker，命令与 R26 同形，只换了 stamp；install 依赖来自缓存/registry（fixture 自带 rc 版本）",
+        "licence": "PASS：fixture 里只有 @deepseek-ai 的公开 rc 包；沙盒临时目录，跑完即删",
+        "ssot": "PASS：T-315 的 BACKLOG 行改成「布局读数已收口，剩 strictPeerDependencies」；spec F52 把两条真机读数并列写清",
+        "adversary": "反例：拿模板路径那次（top_level=1）当「hoisted 已证明」——不行，那只是一条 file: 链接，所以另跑复制源这次 195 平铺包"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe.mjs --candidate tests/fixtures/probe/ok-plugin --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --copy-profile web --dsh-home tests/fixtures/probe/profile-copy/node-linker --label t315-hoisted --stamp 2026-10-28T14:50:00.000Z",
+        "artifact": "data/results/probe-t315-hoisted-2026-10-28T14-50-00.000Z.json",
+        "sha256": "2a3e1cd9b3c1cb67c2539250f19b2c6b2345deb8947cddd96d613088262a4590",
+        "outcome": "go · boot→sample 4200ms · node_layout{linker:hoisted, top_level:195, virtual_store_links:0} · pnpm_policy=source"
+      }
+    },
+    {
+      "id": "R31-S3",
+      "batch": "R31",
+      "step": "T-319 稳定性第一批：同 plan 矩阵（第 1/3 批），为「一次几秒」拿到第一份分布样本",
+      "changed": [
+        "data/results/probe-matrix-2026-10-28T15-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：n=20 / 真实 13 / 12 go + 1 blocked + 1 夹具 unknown / 清理 20-20 / 形状 6 / expectation_misses=0；boot→sample 3.7–9.6s（16/16 在预算内）",
+        "reproducibility": "PASS：跑矩阵期间没有并行跑测试或构建（R27 的坑）；跑前无 pnpm 残留",
+        "licence": "PASS：沿用 R19 的 13 个 pin 候选；沙盒即删",
+        "ssot": "PASS：批次一只是三批之一，结论不单独引用；聚合读数是 R31-S6 的 stability 产物",
+        "adversary": "反例：拿单批当「稳定」——不行，本批只作为分布的一个样本，且 stability_report 明确拒绝单矩阵"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T15:00:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T15-00-00.000Z.json",
+        "sha256": "a3a3c92cce2b9a80771e64ff4c7a4e747fc694d54ce42cf8879820c78c0e3604",
+        "outcome": "n=20 · real 13 · go 12 / blocked 1 · cleanup 20/20 · boot→sample 3.7–9.6s"
+      }
+    },
+    {
+      "id": "R31-S4",
+      "batch": "R31",
+      "step": "T-319 稳定性第二批：同 plan 矩阵（第 2/3 批），不加任何代码改动，只重复观测",
+      "changed": [
+        "data/results/probe-matrix-2026-10-28T15-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：n=20 / 真实 13 / 结论与第一批逐条相同 / 清理 20-20 / boot→sample 3.7–7.0s",
+        "reproducibility": "PASS：与第一批同一命令、同一运行时，仅 stamp 不同；这是「重复观测」而不是「换参数」",
+        "licence": "PASS：无新增候选、无网络凭据",
+        "ssot": "PASS：与第一/第三批并列进 stability 输入清单（R31-S6 产物里逐份列 path + sha256）",
+        "adversary": "反例：把「三批一样」说成「生态稳定」——不行，只有一条候选集、一台机"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T15:30:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T15-30-00.000Z.json",
+        "sha256": "161e95412231d106c5a6a8556a05f2c393a9b770997b0cdd9da9329a62789a9c",
+        "outcome": "n=20 · real 13 · go 12 / blocked 1 · cleanup 20/20 · boot→sample 3.7–7.0s"
+      }
+    },
+    {
+      "id": "R31-S5",
+      "batch": "R31",
+      "step": "T-319 稳定性第三批：同 plan 矩阵（第 3/3 批），补齐 36 次真实观测",
+      "changed": [
+        "data/results/probe-matrix-2026-10-28T16-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：n=20 / 真实 13 / 结论仍逐条相同 / 清理 20-20 / boot→sample 3.5–8.4s",
+        "reproducibility": "PASS：三批同一命令；三份产物的 plan / 运行时 / 候选集完全一致",
+        "licence": "PASS：无新增候选、无凭据",
+        "ssot": "PASS：三批一起构成 stability 的输入（`inputs[]` 带 path + sha256）",
+        "adversary": "反例：只挑最快的一批公布——三批全列，min/median/p90/max 都来自全部 36 次观测"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T16:00:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-28T16-00-00.000Z.json",
+        "sha256": "bbcd4b7e718a734f9d497ae9939bf13c437ea1b009572d65443e410cc0a49e81",
+        "outcome": "n=20 · real 13 · go 12 / blocked 1 · cleanup 20/20 · boot→sample 3.5–8.4s"
+      }
+    },
+    {
+      "id": "R31-S6",
+      "batch": "R31",
+      "step": "T-319 聚合：新增 stability_report 脚本（拒绝单矩阵、不设 gate）+ 4 条契约测试，并用三批矩阵产出分布报告",
+      "changed": [
+        "scripts/stability_report.mjs",
+        "tests/governance/stability-report.test.ts",
+        "data/results/stability-2026-10-28T17-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：36 次真实观测 boot→sample 3.5–9.6s、median 5.4s、p90 8.2s、0/36 超 20s；13 个真实候选三批结论完全一致（verdict_unstable=[]）；夹具超预算不进真实聚合但逐条公布",
+        "reproducibility": "PASS：脚本只吃产物、零网络；同一输入可重算（sha256 落盘）；单矩阵 exit 2 有测试钉住",
+        "licence": "PASS：只读本地矩阵产物",
+        "ssot": "PASS：报告里 inputs[] 逐份列 path/sha256/plan/runs；limits[] 写明便利样本、单机、以及「低 p90 不承诺下一次」",
+        "adversary": "反例一：把 p90 写成「probe 8 秒」——报告里 limits 明写不承诺。反例二：让 stability 也当 gate——明确不设 gate，预算判定仍在 d2_report。反例三：一份矩阵也算分布——脚本 exit 2"
+      },
+      "real_test": {
+        "command": "node scripts/stability_report.mjs --matrix data/results/probe-matrix-2026-10-28T15-00-00.000Z.json --matrix data/results/probe-matrix-2026-10-28T15-30-00.000Z.json --matrix data/results/probe-matrix-2026-10-28T16-00-00.000Z.json --stamp 2026-10-28T17:00:00.000Z",
+        "artifact": "data/results/stability-2026-10-28T17-00-00.000Z.json",
+        "sha256": "92df37c67ab9e5f33cacf4759211deac227cf714407d58aa22c3c4328c392055",
+        "outcome": "3 matrices · 13 real candidates · 36 real observations · 3.5–9.6s (median 5.4, p90 8.2) · 0/36 over 20s · verdicts stable"
+      }
+    },
+    {
+      "id": "R31-S7",
+      "batch": "R31",
+      "step": "T-401 真机：新增 record_client_serve 脚本（file: 安装 → 起 Host → 读启动图 → 取组合 URL → CDP 读注册标记），并修两个静默发现缺陷（exports[\"./client\"]、patch 行名裸包名）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "packages/plugin/package.json",
+        "packages/plugin/cordis.patch.yml",
+        "packages/plugin/src/index.ts",
+        "packages/plugin/client.js",
+        "scripts/gate_namespace.mjs",
+        "tests/unit/client-tab.test.ts",
+        "data/results/client-serve-2026-10-28T19-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：六步全绿——graph 里出现 dsh-triage 的 client 模块、组合 URL 200 / 2,020,463B / 含 loader 与 id、CDP 读到 window.__dshTriage={registered:true, slot:settings.plugins.tab}、cleanup 通过。两处缺陷都在真机上才暴露：缺 exports[\"./client\"] → 模块静默丢弃；patch 行名用子路径 dsh-triage/host → locatePkgJson 返回 undefined，client 模块永远不进图",
+        "reproducibility": "PASS：脚本自建一次性 DSH home（四个包以 file: 安装，workspace 协议就地改写），不依赖 registry 与凭据；先杀 Host 再删沙盒（前 6 次 EPERM 的原因）；命令与步骤都进产物",
+        "licence": "PASS：只装本仓包，无外部候选、无凭据（npm_config_userconfig 指向空文件）；沙盒跑完即删",
+        "ssot": "PASS：T-401 的四处状态（BACKLOG / M4-surface / INDEX / HANDOFF）都改成「真机注册通过，可见性与同源结论未做」；三条静默规则进 M4 spec F53 与 HANDOFF §4；gate_namespace 的 row-names-resolve 改成「可解析」（裸包名 main 或 exports 子路径）并写明理由与证据",
+        "adversary": "反例一：把「服务 200」说成「面板可见」——没有，产物里另立 mount 步骤并只声称注册被接受。反例二：改 gate_namespace 是为了让门变绿——不是，旧规则强制 <pkg>/… 子路径，等于强制了会静默丢浏览器半边的形状；新规则更严（要知道 exports 里有没有该子路径）。反例三：留着 11 份调试失败产物充数——已删，失败原因写进 AUDIT §2 与 BS-35"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-28T19:20:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-28T19-20-00.000Z.json",
+        "sha256": "c5d0eee30f5bd4d639bb714456d4bafee5192aa052267b4cbadaf829a19c5da8",
+        "outcome": "served · bundle/install/boot/graph/client/mount/cleanup 全通过 · 200 2,020,463B · registered:true"
+      }
+    },
+    {
+      "id": "R31-S8",
+      "batch": "R31",
+      "step": "收口：文档同步（HANDOFF / INDEX / BACKLOG / M4-surface / blind_spots BS-34+BS-35 / 审核报告 / AI 披露）后录一次门禁全绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/specs/M4-surface.md",
+        "docs/specs/M3-probe.md",
+        "audit/AUDIT_2026-10-28_R31.md",
+        "audit/AUDIT_2026-10-28_R30.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：门禁 --record 输出 ALL GREEN · 9 gates（296 测试）；--mutate 需 PASSED 9/9（同轮验证）；no-orphan-results 绿（149 份产物全部被引用）",
+        "reproducibility": "PASS：node scripts/gate.mjs --record --stamp … 一条命令重放；三批矩阵与 stability 都可重算",
+        "licence": "PASS：无外部产物入库、未动 quarantine 与金标；AI 披露写明代签与清理中间产物的理由",
+        "ssot": "PASS：稳定性、T-401、T-315 三个结论在 spec / HANDOFF / INDEX / BACKLOG / AUDIT 五处一致；BS-34 resolved、BS-35 narrowed 的边界都写明",
+        "adversary": "反例一：INDEX 里写裸文件名被 governance 抓到（本轮又踩一次）——已改成 data/results 全路径。反例二：把「R30 布局读数」悄悄改掉——R30 报告顶部有更正块，R31 报告 §3 复述"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T21:45:00.000Z",
+        "artifact": "data/results/gates-2026-10-28T21-45-00.000Z.json",
+        "sha256": "4f04f897e475b42c11f793135e87176d7447c4cfecb3ca161eb7218a19f0664f",
+        "outcome": "ALL GREEN · 9 gates（296 测试；164 步 / 149 产物全部被引用）"
+      }
     }
   ]
 }
