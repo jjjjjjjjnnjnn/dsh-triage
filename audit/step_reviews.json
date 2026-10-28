@@ -3196,6 +3196,34 @@
         "sha256": "1e4deea639e2baef51bb556df99a7a500b04c0e8d687e117ef42606218cde674",
         "outcome": "unknown · boot 26247ms · 替换等待 1184ms · `url_seen=false`（render 被跳过，已如实记录）"
       }
+    },
+    {
+      "id": "R25-S1",
+      "batch": "R25",
+      "step": "交接：记录 ADR-0008 方案 E 的授权（未实施），同步 HANDOFF/BACKLOG/INDEX/SIGNOFF 与审核报告，门禁录一次绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/adr/0008-unsettled-wait.md",
+        "audit/SIGNOFF.md",
+        "audit/AUDIT_2026-10-28_R24.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` = 265 测试 / 9 门全绿；`--mutate` 9/9。**本轮没有任何行为变更**：`packages/` 与 `tests/` 的 diff 为空，`--unsettled-timeout 20000` / `settle 15s` / readiness 5s / `boot→sample ≤20s` 一字未动。ADR-0008 的状态是「已授权、未实施」，签字区 E 已勾并注明「未实施」",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-28T22:30:00.000Z` 可重放；`HANDOFF` §3 第一条是可直接照做的实施清单（含「改哪里」「不要改什么」「三条回归」与「先造 `{error}` 夹具」）",
+        "licence": "PASS：本轮无新候选、无 vendor 条目、无新执行面；`quarantine/` 未动。授权记录里写明「签字授权的是做法，不是默认值」",
+        "ssot": "PASS：`SIGNOFF.md` 的 R24 行、`ADR-0008` 的状态段与签字区、`BACKLOG` T-311、`HANDOFF` §2 四处对同一件事的描述一致（已授权 / 未实施 / 默认值未改）；114 份产物 / 129 步台账全部可追",
+        "adversary": "反例一：把「已签」写成「已改」—— 下一位 agent 会以为等待时间变短，而产物仍是 48.4s；已在 ADR、SIGNOFF、HANDOFF、审核报告四处显式写「未实施」。反例二：交接收拾时顺手把默认值改掉—— 本轮 `packages/` 零 diff。反例三：把 `{error}` 回归写成「跑一下老的夹具就行」—— 当前**没有**能强制写 `{error}` 的夹具，已在实施清单里点名要先造"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-28T22:30:00.000Z && node scripts/gate.mjs --mutate",
+        "artifact": "data/results/gates-2026-10-28T22-30-00.000Z.json",
+        "sha256": "c44011c0e55aca8c8e98a7154de87923ece882811e4e31ddedd32b7322594a59",
+        "outcome": "ALL GREEN · 9 gates（同轮 `--mutate` 9/9；`pnpm test` = 265；代码零变更）"
+      }
     }
   ]
 }

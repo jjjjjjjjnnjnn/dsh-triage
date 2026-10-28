@@ -1,7 +1,7 @@
 # ADR 0008 · 不可判的树要等多久（`BS-25` / `BS-28` / T-311 / T-312）
 
-> **状态**：**提议（proposed）—— 未授权，默认值未动**。`--unsettled-timeout` 仍是 **20000**，`settle 15s` 仍是 15s，`boot→sample ≤20s` 仍是判据。
-> **由 R23 的实测逼出来**：`boot` 步分段后，「不可判」的 48.4s 里 **20.3s 是替换等待**（不是 settle）。这笔等待从未在 27 份已记录产物里产生过更好的样本。
+> **状态**：**已授权方案 E（2026-10-28 交接时，HUMAN 原话「同意。先进行项目交接，即将切换会话」）——尚未实施。** 默认值仍为 `--unsettled-timeout 20000`、`settle 15s`、readiness 5s，`boot→sample ≤20s` 仍是判据；实施由下一轮按 §实施清单 完成。
+> **由 R23 的实测逼出来**：`boot` 步分段后，「不可判」的 48.4s 里 **20.3s 是替换等待**（不是 settle）。这笔等待从未在 29 份已记录产物里产生过更好的样本。
 
 ## 背景（全部实测）
 
@@ -44,14 +44,28 @@
 - 若选 C：单独立项 T-312，本轮不动。
 - **测试要求（任一方案）**：`slow-overrun` 必须仍是 `unknown`；`slow-plugin`（6s）必须仍是 `go`；R17 的 `inactive-context` 负对照必须仍能等到替换样本（用一个能强制写出 `{error}` 的夹具）。
 
+## 实施清单（方案 E，下一轮做）
+
+1. `packages/probe/src/host.ts` 的样本循环：`replacedEnough` 只在样本**不可读**（`{error}`，尤其 `errorCode === 'inactive-context'`）时参与判定；`settled === false` 的样本一旦写出就**立即收敛**（仍照常 `settle` + readiness + render + 杀树）。
+   - 关键：`isUsableSample()` 的语义**不要改**（它同时被 judge 与断言使用）；改的是「要不要继续等」。
+2. 产物：`timings.bootSegments` 已经能反映缩短后的替换等待；另在 `inventory` 段加一个显式布尔（例如 `replacement_waited: false`），让读者不必从时间差推断。
+3. 文案：`probe.tree-not-settled` 的 detail 里写明「没有再等替换样本（ADR-0008 E）」；`docs/05` 与 spec §4 的墙钟表同步（不可判 ≈26–31s）。
+4. **三条必须仍成立的回归**（缺一即回滚）：
+   - `slow-overrun-plugin`（顶层 await 20s）→ 仍是 `unknown`，`missing.inventory` 仍在；
+   - `slow-plugin`（导入 6s）→ 仍是 `go`；
+   - `{error}` + `inactive-context` 负对照 → **仍等满窗口**，且能等到替换样本（需要能强制写 `{error}` 的夹具；可先复用 hook 的单测注入）。
+5. 重跑 `d2_report`（用现有矩阵）确认 `boot-budget` 与 `reliability` 不因此变红。
+
 ## 签字区（HUMAN）
 
 ```
 [ ] A. `--unsettled-timeout` 默认 20000 → 5000
-[ ] E. 只对 `{error}` 保留替换等待，`settled:false` 立即返回（推荐）
+[x] E. 只对 `{error}` 保留替换等待，`settled:false` 立即返回（推荐）  ← 2026-10-28 交接时「同意」
 [ ] C. 立项 T-312 两阶段（另开一轮，不改默认值）
 [ ] B. 维持现状（保持 48s / 写进文案）
 ```
+
+> **E 已授权，但尚未实施**：签字只授权了做法，实现与三条回归由下一轮完成（`docs/HANDOFF.md` §3 第一条）。在实现落地之前，默认值与前一轮**完全一致**——不要因为「已经签了」就声称等待时间已经变短。
 
 > 未勾选之前，`--unsettled-timeout`、`settle 15s`、readiness 5s 与 `boot→sample ≤20s` **一律不动**（铁律 4：阈值变更需 spec + HUMAN-SIGN）。
 >

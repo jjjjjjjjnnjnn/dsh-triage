@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/gate.mjs",
+  "generated_at": "2026-10-28T22:30:00.000Z",
+  "mode": "normal",
+  "fast": false,
+  "ok": true,
+  "gates": [
+    {
+      "id": "admission-parity",
+      "script": "scripts/gate_admission_parity.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "verdict-contract",
+      "script": "scripts/gate_verdict_contract.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "ssot",
+      "script": "scripts/gate_ssot.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "governance",
+      "script": "scripts/gate_governance.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "namespace",
+      "script": "scripts/gate_namespace.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "release",
+      "script": "scripts/gate_release.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "release-pack",
+      "script": "scripts/gate_release_pack.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "inventory-contract",
+      "script": "scripts/gate_inventory_contract.mjs",
+      "exitCode": 0,
+      "ok": true
+    },
+    {
+      "id": "step-review",
+      "script": "scripts/gate_step_review.mjs",
+      "exitCode": 0,
+      "ok": true
+    }
+  ]
+}

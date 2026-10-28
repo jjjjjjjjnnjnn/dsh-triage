@@ -314,3 +314,13 @@
 - 实测：265 测试 / 9 门全绿 / `--mutate` 9/9；114 份 SSOT 产物 / 129 步台账
 - 过程中的真实缺陷（本轮自己抓到）：第一版临时统计把旧产物的 `undefined` 当成「不可判」，报出 13 次（真实是 4 次）——正式脚本归一为 `null` 并把旧产物单列；1s 那一轮 `url_seen=false` 导致 render 被跳过，若不注明就会把 22s 全算成窗口收益
 - 未做：ADR-0008 的签字（HUMAN）、T-312 两阶段、T-315 的 `nodeLinker`/`strictPeerDependencies`、T-401
+### 2026-10-28 R25（交接）｜记录 ADR-0008 方案 E 的授权（未实施），代码零变更
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本次为交接轮，未起 subagent；`audit/step_reviews.json` R25-S1）
+- 范围：`docs/HANDOFF.md`、`docs/BACKLOG.md`（T-311）、`docs/adr/0008-unsettled-wait.md`、`audit/{SIGNOFF.md,AUDIT_2026-10-28_R24.md,step_reviews.json}`、`INDEX.md`、`data/results/gates-*`
+- 起因：HUMAN「同意。先进行项目交接，即将切换会话」——在切换前授权 `ADR-0008` 方案 E，并要求先交接
+- 结果：① 授权记入 `SIGNOFF.md`（原话照录）；② `ADR-0008` 状态改为**已授权、未实施**，新增 `实施清单`（改哪里 / 不要改什么 / 三条缺一即回滚的回归 / 先造 `{error}` 夹具）；③ `HANDOFF` §2/§3/§4、`BACKLOG` T-311、`INDEX`、审核报告 §8 同步。**`packages/` 与 `tests/` 零 diff**，`--unsettled-timeout 20000` / `settle 15s` / readiness 5s 原样
+- 实测：265 测试 / 9 门全绿 / `--mutate` 9/9；114 份 SSOT 产物 / 130 步台账
+- 过程中的真实缺陷：无（本轮无实现）；交接时特意在四处写明「授权≠已实施」，避免下一位把签字读成「等待已经变短」
+- 未做：方案 E 的实现本身、`{error}` 夹具、`nodeLinker` 设置审计、T-401

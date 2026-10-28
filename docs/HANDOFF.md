@@ -1,7 +1,7 @@
 # HANDOFF · 交接入口
 | T-313 凭据来源审计（BS-29） | verifier | 逐个来源（~/.pnpmrc / PNPM_HOME / 系统级 npmrc / corepack / 代理变量）做黑盒对照，只有全部关闭后才敢说「沙盒无凭据」；口径同步 docs/adr/0004 |
 
-> **Stand**: R24 (2026-10-28)｜当前批次：**R24 · `ADR-0008`（不可判要等多久）材料齐备待签：替换窗口 20.3s 的成本量化 + `replacements_observed=0` + 四案对照**
+> **Stand**: R25 (交接, 2026-10-28)｜当前批次：**R25 · `ADR-0008` 方案 E 已签、未实施；本轮只做交接，默认值与前一轮完全一致**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -28,9 +28,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15 白屏/就绪 + R16 跨平台 + R17 慢≠坏/端口）** · **D2 通过（R18 首判 / R19 复算，真实 13）** · **M4 形态 A ✅（`serve` v1：只读面板 + `--audit` 当前组合，R19）** · **M3 真实组合复制 ✅（T-304，R22）**；`namespace-diff`（T-303）仍缺（需 T-202a） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**private**，`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **265 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **114 份 SSOT 产物** · **129 步台账** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** |
+| 规模 | **265 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **114 份 SSOT 产物** · **130 步台账** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R23 起 **126 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md` |
-| 本轮交付（R24） | **把「不可判 ≈48s」变成一道可签字的题**（`ADR-0008`，proposed，**默认值未动**）：`boot` 分段显示主导项是**替换等待 20.3s**；`scripts/report_replacement_window.mjs` 扫 29 份有相位块的产物，**4 次不可判样本的 `attempts`/`applies` 全为 1 → 替换从未出现过**；同一夹具把窗口从 20s 降到 5s / 1s 真跑，结论**仍是 `unknown`**，`boot` 步 48.4s → 33.9s → 26.2s（`measured_saving_ms = 19092`）。`ADR-0008` 给出 A（降默认窗口）/B（维持）/C（两阶段 T-312）/E（只对 `{error}` 保留等待，**推荐**）四案；`spec §4` 与 `BACKLOG` T-311/T-312 同步，签字前一律不动 |
+| 本轮交付（R25 交接） | **只交接，不改行为**：HUMAN 已授权 `ADR-0008` 方案 **E**（原话「同意。先进行项目交接，即将切换会话」）→ 记入 `audit/SIGNOFF.md`；ADR 状态改为**已授权、未实施**，并写下 `实施清单`（5 条）与 **3 条缺一即回滚的回归**。**代码一行未写、默认值一行未改**：`--unsettled-timeout 20000` / `settle 15s` / readiness 5s / `boot→sample ≤20s` 全部原样。**下一个会话的第一件事就是实施 E**（见 §3） |
+| 上一轮交付（R24） | **把「不可判 ≈48s」变成一道可签字的题**（`ADR-0008`，当时 proposed）：`boot` 分段显示主导项是**替换等待 20.3s**；`scripts/report_replacement_window.mjs` 扫 29 份有相位块的产物，**4 次不可判样本的 `attempts`/`applies` 全为 1 → 替换从未出现过**；同一夹具把窗口从 20s 降到 5s / 1s 真跑，结论**仍是 `unknown`**，`boot` 步 48.4s → 33.9s → 26.2s（`measured_saving_ms = 19092`）。A（降默认窗口）/B（维持）/C（两阶段 T-312）/E（只对 `{error}` 保留等待）四案并列，最终 HUMAN 选 E |
 | 上一轮交付（R23） | **① T-314 `boot` 步分段计时**（`timings.bootSegments` 10 段）：**R21 的两个墙钟数字都错了**。正常候选 15.7–16.2s = sample 6.3 + settle 1.0 + readiness 0.04 + **render 4.7** + **杀树 2.2–2.7** + 杀后 1.2；不可判 **48.4s** = sample 19.1 + **替换等待 20.3** + settle 1.0 + render 4.5 + 杀树 2.2 + 杀后 1.2 —— 主导项是「为一份可判样本再等一整个替换窗口」，**不是** settle（`wait_ms 16.1s` 已含在 sample 里）。对外口径改为**可判 ≈16s / 不可判 ≈48s**，ADR-0006 与 spec §4 已同步；`d2_report.timing.boot_breakdown` 给各段最大值。**② T-315 `ADR-0007`**：沙盒构建审批口径（只把错误降为提示、不批准任何构建、源 workspace 不覆盖、install 必须读回 `dsh.profile.bundles`），`docs/adr/0004` 与 `SIGNOFF` 同步。**③ T-313 凭据来源审计**：探测器换成**本地假 registry 记 `authorization` 头**（pnpm 日志会假阴性——合成 token 不打印那行），六类来源 × `404`/`401` = 10 组 + 对照组，全部离线。结论：**只有 user config 会被读**，且它在两种应答下都不再上网（0/2）；`globalconfig` / `$XDG_CONFIG_HOME/pnpm/rc` / `PNPM_HOME` / `COREPACK_HOME` 的旋钮在 launcher 路径下**未被读**。`BS-29` 由 open 改为 **narrowed**。**阈值一律未动** |
 | 上一轮交付（R22） | **T-304 `--copy-profile` 落地**：复制四个声明文件（不搬 `node_modules` / `.plugin-manager` / `.npmrc`）→ 装副本依赖 → 装候选 → boot。**三形状真机产物**：`copy:upstream`+夹具 = **go**（boot→sample 7.4s / 401 / 渲染 2182ms / 行 `active` / `candidate_registered=true`）· 副本装不上 = **unknown**（`ERR_PNPM_FETCH_404` + `probe.profile-copy-unusable`，只有 runtime/profile/cleanup 三步）· 悬空 `link:` = **unknown**（install **exit 0** 也抓到，`probe.profile-link-dangling`）。**两个新事实**：F41 复制真实组合时 `plugin install` 因 pnpm **构建审批**退出 1（被拒的是组合自己的 5 个原生包，不是候选）；F42 `plugin add` 在 pnpm 非 0 退出时**只写 dependencies、不写 `dsh.profile.bundles`** → 「继续 boot」会得到 `row-missing`（把包管理器策略算成插件缺陷）。**解法（F43）**：沙盒 `pnpm-workspace.yaml` 写 `strictDepBuilds: false` → 同一操作 exit 0 且**真正注册 bundle**，而**不批准任何构建**（`.npmrc` 同名设置无效，已对照）。新文案 `probe.profile-copy-unusable` / `probe.profile-link-dangling` / `probe.profile-build-refused`；新盲区 `BS-30`（沙盒不构建原生模块）/ `BS-31`（只搬声明：链接与私有源只能 unknown）；新任务 `T-315`（该口径要 ADR）。**阈值与既有判据一字未动** |
 | 上一轮交付（R21） | **① `ADR-0006` 按第 1–3 条采纳**（HUMAN「同意，继续」）：「20s」= **测量预算**（`spawn→sample`），不是墙钟承诺；`d2_report` 新增 `timing.wall_clock`（只记录、不设判据），`record_probe` 的 `limits[]` 写明「不可判的树 ≈ 25s」——**② 同日实测把 ② 证伪了**：`wall_clock.max_ms = 42701`，正常 `go` 候选的 `boot` 步 **22.1–25.3s**、永不 settle **42.7s**（而 `boot→sample` 只有 9.6–12.2s）。差额构成**未解释** → 新开 T-314；`settle 15s` / 窗口 `20000` / 所有判据**一字未动**（方案 A/C 未授权） |
@@ -67,10 +68,14 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 满足即环境可信，接着**按优先级**（前两条不需要新许可）：
 
-1. **`ADR-0008` 等签字（先做，零工程）**：`docs/adr/0008-unsettled-wait.md` 的签字区四项（A/B/C/E）。材料全在手：替换等待 20.3s 主导 48.4s、29 份产物里 `replacements_observed=0`、20s→5s→1s 三组真跑结论都是 `unknown`、节省 19092ms。**推荐 E**（只对 `{error}` 保留等待）。**没签之前不许改 `--unsettled-timeout` 默认值、`settle 15s` 或 readiness 5s。**
-2. **补真实候选（T-309 长期）**：每批 +2–3 个 pin 候选；R23 起可以再加「复制组合」样本（`--copy-profile`），但对外必须连 `BS-30`/`BS-31` 一起说。
+1. **实施 `ADR-0008` 方案 E（先做，已授权）**：`settled:false` 的样本不再等替换窗口（立即收敛），`{error}`（含 `inactive-context`）仍等满 `--unsettled-timeout`。**默认值不改**（仍 20000）。
+   - 改哪里：`packages/probe/src/host.ts` 的样本循环（`replacedEnough` 只在样本**不可读**时参与）；**不要**改 `isUsableSample()` 的语义（judge 与断言共用它）。
+   - 产物：`inventory` 段加显式布尔（如 `replacement_waited: false`），别让读者从时间差推断；文案 `probe.tree-not-settled` 写明「没有再等替换样本（ADR-0008 E）」。
+   - **三条回归（缺一即回滚）**：`slow-overrun-plugin` → 仍 `unknown` + `missing.inventory`；`slow-plugin`（导入 6s）→ 仍 `go`；`{error}`/`inactive-context` → **仍等满窗口**并能等到替换样本（当前**没有**能强制写 `{error}` 的夹具，需先造一个）。
+   - 落地后：`docs/adr/0008` 状态改「已实施」、spec §4 墙钟表改「不可判 ≈26–31s」、`SIGNOFF` 补实施记录。
+2. **补真实候选（T-309 长期）**：每批 +2–3 个 pin 候选；可以再加「复制组合」样本（`--copy-profile`），但对外必须连 `BS-30`/`BS-31` 一起说。
 3. **T-401 DSH 设置面板（M4-a）**：先在沙盒里做**契约 spike**（`dsh.client` + `__ModuleLoader__.load` + slots + row id = settings 命名空间），再写 `client.js`；必须先做「契约不匹配就整块隐藏」的降级。
-4. **T-315 剩余**：`nodeLinker` / `strictPeerDependencies` 等其它可继承 pnpm 设置**未逐一实测**——`nodeLinker=hoisted` 会改变模块解析路径，可能影响候选行的识别，值得先测这一条。
+4. **T-315 剩余**：`nodeLinker` / `strictPeerDependencies` 等其它可继承 pnpm 设置**未逐一实测**——`nodeLinker=hoisted` 会改变模块解析路径，可能影响候选行的识别，先测这一条。
 5. **`BS-29` 剩余面**：硬编码配置路径、非 Windows、其它 pnpm/launcher 版本。**不要**把「审计过的来源里只有 user config 会被读」说成「沙盒里绝无凭据」。
 6. **T-303 / T-202a**：仍被铁律 4 挡着（会话作用域需要真实凭据），必须先出 ADR 让 HUMAN 签。**不要**用「进程级工具清单」冒充它。
 
@@ -170,6 +175,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 | 沙盒「清了环境变量」就以为没有凭据了 | pnpm 自己会读 `~/.npmrc`：装不上的候选会打印 `An authorization header was used: Bearer npm_[hidden]`，把**操作者的 token** 发给 registry（R20 实测 2/2） | `runInstall` 走 `sandboxNpmEnv()`，把 `npm_config_userconfig` 指向沙盒内空文件；产物 `install.registry_auth_used` 必须为 `false`。**别去读那个 npmrc**（铁律 4），只停止继承 |
 | 以为「组合装成功了 = 组合可用」 | `{"x":"link:./not-here"}` 的 `plugin install` **exit 0** 并打印 `+ x <- not-here`，目标根本不存在（R20 F40） | T-304 已实现：`link:`/`file:` 逐个 stat，悬空 → `unknown` + `probe.profile-link-dangling`。**别**改成「看退出码就够了」 |
 | 复制真实组合后 `plugin install` 一直 exit 1，被拒的是 `node-pty`/`koffi` 这类**组合自己的**包 | pnpm 的构建审批策略（R19 F35 同一形状）；模板路径里 pnpm 只报候选，所以以前没见过（R22 F41） | 沙盒 `pnpm-workspace.yaml` 写 `strictDepBuilds: false`（F43）：exit 0 且注册 bundle，但**不批准任何构建**；被跳过的包进 `install.ignored_packages`。`.npmrc` 里同名设置**无效** |
+| 「ADR 已经签了」就顺手把默认值也改掉 | ADR-0008 的方案 E **授权的是做法**（`settled:false` 不再等替换），**不是**「改 `--unsettled-timeout` 的默认值」。两者是两件事 | 默认值仍 20000；E 的实施由下一轮按 §3 完成，落地前不许声称「等待已经变短」 |
+| 把 `settled:false` 与 `{error}` 当成同一种「不可判」去删等待 | 两者的恢复机制不同（R17：`{error}` 是 dead context 被新 apply 取代；`settled:false` 是 hook 自己读完了但树还在动） | E 只对 `settled:false` 生效；`{error}` 必须仍等满窗口，且要造一个能强制写 `{error}` 的夹具来做回归 |
 | 用 pnpm 的 `An authorization header was used` 判断有没有凭据外发 | **这句话不是总会出现**：R23 实测「合成 token + 真实 userconfig」不打印它，靠日志会把一条活着的凭据来源判成「没问题」 | 用本地假 registry 记请求头（`scripts/audit_credential_sources.mjs`）；而且必须**异步 spawn**，`spawnSync` 会阻塞事件循环让同进程的假 registry 永远答不了（真踩三次 90s） |
 | 跑完一次审计后下一轮 install 全挂 / 挂 90s | 上一轮被 kill 的 `pnpm add` 还活着，占着 store 锁（R23 实际遇到 `pnpm.exe` 残留进程） | 先 `Get-Process pnpm` 清残留再重跑；审计脚本自身用 `SIGKILL` + 超时兜底 |
 | 以为「某来源没泄漏 = 是我们挡住了」 | 可能是那个旋钮**根本没被读**（R23：`globalconfig` / `XDG_CONFIG_HOME/pnpm/rc` / `PNPM_HOME` / `COREPACK_HOME` 都没被读） | 审计要分 `knob_honored`（源自己带 `registry=` 时有没有流量）与 `leaks_today` 两列，别把两件事混成一件 |
