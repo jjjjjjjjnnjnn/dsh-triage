@@ -132,6 +132,8 @@ runtime → install → boot → http → render → inventory → cleanup
 `install` 超预算时**不得**把总时长写成结论；产物里 `timings` 分段记账。
 
 > **R19 口径（HUMAN 已签，`audit/SIGNOFF.md`）**：`boot → sample ≤20s` 只对**真实候选**判定。一棵永不 settle 的树要 `boot(≈5s) + settle 上限 15s ≈ 21s`，**结构上**不可能达标——R19 实测 `fixture-slow-overrun` = 21.3s（R18 只是恰好 19.1s 才过）。真实候选仍是 100% 必须达标，没有放宽成 90%；夹具耗时照旧进产物，并在 `d2_report` 的 `timing.fixtures_over_budget` 与 `boot-budget` 的 detail 里单列。
+> **R21 口径（ADR-0006 第 1–3 条，2026-10-28 采纳 + 同日实测纠正）**：**「20s」是测量预算（`spawn→sample`），不是墙钟承诺。** 实测（`d2_report.timing.wall_clock`）：正常 `go` 候选的 `boot` 步要 **22.1–25.3s**，永不 settle 的夹具 **42.7s**。对外只能说「可判的候选 `boot→sample` ≤20s；一次 probe 的实际等待约 25s；不可判的约 43s」——**不许**说「任何一次 probe 都 ≤20s」。差额的构成（多出的 ~12s / ~21s）**尚未解释**，见 T-314。
+> **仍未解决**：默认 `--unsettled-timeout 20000` 与 hook 的 `settle 15s` **没有动**（方案 A/C 未授权）。要把「不可判」也压进 20s，只能改 settle 上限（少测）或改两阶段取样（T-312）。
 > **未解决**：默认 `--unsettled-timeout 20000` 本身就可能让一次真实探针超过 20s 的产品承诺。改默认值属于阈值变更，需要 ADR + HUMAN 签（`BS-28` / T-311）。
 
 ---

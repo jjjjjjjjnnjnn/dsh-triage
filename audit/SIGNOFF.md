@@ -26,6 +26,8 @@
 | 2026-10-28 | **R19 D2 预算口径（判据改动）**：`scripts/d2_report.mjs` 的 `boot-budget` 只对 `real:true` 的 run 判定；夹具耗时单列 `timing.fixtures_over_budget`；`probe_reliability` 的预算项同样只作用于真实候选 | 会话内原话（选项）：「签字：预算只算真实候选（推荐）」 | DeepSeek V4.1 Flash：**没有**放宽真实候选的门槛（仍是 100% 在 20s 内，不是 90%）；只把「永不 settle 的夹具」从判定分母里摘出，并把它的 21.3s 原样写进产物与 `check.detail`。负对照：真实 run 超预算仍红（`tests/governance/d2-report.test.ts`） | 「20s 预算」这个产品承诺本身是否该随 `--unsettled-timeout` 调整（`BS-28` / T-311）；HUMAN 未逐条复核 spec §4 的措辞 | `data/results/d2-2026-10-28T12-10-00.000Z.json` · `docs/specs/M3-probe.md` §4 · `audit/blind_spots.json` BS-28 |
 | 2026-10-28 | **R19 外部候选（+3）**：`@lolkda/dsh-skills-manager@0.3.1` · `dsh-unlag@1.12.5` · `@tencent-connect/dsh-qqbot@0.5.3` | 会话内原话（选项）：「保留（推荐）」 | DeepSeek V4.1 Flash：三个包全部 MIT、无 install/postinstall 脚本、pin 精确版本；装进系统临时目录的独立 `DSH_HOME`，跑完即删；源码不进仓、不进 `quarantine/`，只登记元数据（`quarantine/vendor-manifest.json`） | 候选清单与新声明形态（`engines.dsh`-only / `dsh.compatibility`）的取舍；仍不判安全性 | `data/results/probe-matrix-2026-10-28T11-40-00.000Z.json` · `tests/fixtures/probe/matrix-r19.json` |
 
+| 2026-10-28 | **R21 采纳 ADR-0006 第 1–3 条**（「20s」= 测量预算，不是墙钟承诺；新增 `timing.wall_clock` 与 `limits[]` 自曝；**不动任何阈值**） | 会话内原话：「同意，继续」 | DeepSeek V4.1 Flash：落地文案 + `d2_report.timing.wall_clock` + `record_probe` 的 `limits[]`；同日实测**纠正**了自己写的「不可判 ≈25s」→ 正常候选 `boot` 步 22.1–25.3s、不可判 42.7s，差额归 T-314；`settle 15s` / `--unsettled-timeout 20000` 一字未动 | 差额的工程解释（T-314）；方案 A（settle→10s）与 C（两阶段）未授权，HUMAN 未逐条复核 spec §4 措辞 | `data/results/d2-2026-10-28T16-00-00.000Z.json` · `docs/adr/0006-probe-budget-promise.md` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

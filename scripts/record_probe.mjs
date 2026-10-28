@@ -361,6 +361,10 @@ const artifact = {
     'a blank page is caught only when a Chromium-family browser is available; otherwise client-rendered is unmeasured',
     'measured on a sandbox runtime, not on the user machine',
     'a plugin that needs credentials is unverified, not verified-safe',
+    // R20: the sandbox stops inheriting the operator's npm credentials; this is the claim.
+    'the sandbox uses no registry credentials (npm user config is an empty file inside the sandbox)',
+    // ADR-0006 (accepted 2026-10-28): 20s is a measurement budget, not a wall-clock promise.
+    'a tree that never settles is returned by ≈25s (boot + the 15s settle wait), not 20s',
   ],
 }
 

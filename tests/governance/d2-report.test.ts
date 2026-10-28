@@ -82,6 +82,9 @@ test('the published D2 numbers are recomputable from the recorded matrix', () =>
     assert.equal(report.failure_shapes.length, 5, 'install / row-failed / row-missing-fiber / no-row / not-settled')
     assert.equal(report.gate.passed, true)
     assert.equal(report.timing.within_budget, report.timing.sampled)
+    // ADR-0006: the wall clock is published next to the budget, and never gates.
+    assert.equal(typeof report.timing.wall_clock.max_ms, 'number')
+    assert.match(report.timing.wall_clock.source, /steps\[boot\]\.ms/)
   })
 })
 

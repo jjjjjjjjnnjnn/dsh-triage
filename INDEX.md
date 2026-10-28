@@ -27,7 +27,7 @@
 | **Agent 框架** | `.agents/README.md` | 三入口 + 6 张角色卡 + 4 个模板 + 5 条硬性校验 |
 | **开工指令** | `.agents/prompts/kickoff.md` | 新会话整块粘入即可开工（含三步命令与期望输出） |
 | **审核报告** | `audit/AUDIT_2026-10-28_R20.md`（最新：凭据不继承 / 面板耗时 / ADR-0006 / T-304 取证）· `audit/AUDIT_2026-10-28_R19.md` · `audit/AUDIT_2026-10-27_R18.md` · `audit/AUDIT_2026-10-27_R17.md` · `audit/AUDIT_2026-10-27_R16.md` · `audit/AUDIT_2026-10-28_R14.md` · `R13` · `R12` · `R10` · `R9` · `R8` · `R7` · `R6` · `R5` · `R4` · `R3` | 四轴 + 对抗性；R20：沙盒不再继承 npm 凭据（`registry_auth_used`）+ 面板 audit 路由自带耗时 + ADR-0006（proposed）+ T-304 取证（`link:` 假成功）；R19：安装失败能点名 `ERR_PNPM_*` + `serve --audit` 与 CLI 同源（逐字节负对照）+ D2 分母 13、预算口径收窄（HUMAN 签）；R18：D2 判定工具 + 慢夹具纠错；R14：M3 probe 执行器（一绿两红真机）+ bundle patch 的 `insert:` 缺陷 + 金标 21→27 + roadmap 合并；R13：能力层取证（三条硬边界）+ T-105 两命令同源；R12：真机相位采样（P1 进程内投影）+ T-112 preset 维度 + 两个真 bug（bundle patch 数组、loader id 前缀）；R10：dist-tag 失步 + 区间形状（`registry.*`）；R9：不静默一轮（T-116/T-107/T-108）；R8：副本来源 + 重复副本 |
-| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R20 起 **112 步 / 99 产物**） |
+| **每步审核台账** | `audit/step_reviews.json` | 每一步的四轴结论 + 对抗性反例 + real_test 产物 sha256（门 `step-review` 校验；R20 起 **114 步 / 101 产物**） |
 | **授权/签署台账** | `audit/SIGNOFF.md` | 谁授权 / 谁执行出结论 / HUMAN 未逐条复核的部分，三者分列；冻结区改动必须有对应条目 |
 | 接手清单 | `docs/AI_HANDOVER.md` | 真相源、冻结区、防幻觉、5 分钟检查 |
 | 工程铁律 | `PROJECT_RULES.md` | 10 条铁律 + 严禁行为 + M0–M5 路线与出口门禁 |

@@ -110,6 +110,10 @@ const measured = runs.map((run) => {
   const real = run?.real === true
   const conclusion = typeof payload?.conclusion === 'string' ? payload.conclusion : null
   const bootMs = typeof payload?.timings?.bootToSampleMs === 'number' ? payload.timings.bootToSampleMs : null
+  // The whole boot step (spawn → settle → readiness → kill wait). This is the number a user
+  // actually waits for, which is not the same as boot→sample (ADR-0006).
+  const bootStep = Array.isArray(payload?.steps) ? payload.steps.find((step) => step?.id === 'boot') : null
+  const bootStepMs = typeof bootStep?.ms === 'number' ? bootStep.ms : null
   const cleanupOk = payload?.cleanup?.removed === true && payload?.cleanup?.port_closed === true
   const reasons = Array.isArray(payload?.reasons) ? payload.reasons : []
   return {
@@ -118,6 +122,7 @@ const measured = runs.map((run) => {
     shape: String(run?.shape ?? 'unspecified'),
     conclusion,
     bootMs,
+    bootStepMs,
     cleanupOk,
     hasArtifact: payload !== null,
     // Only reasons that actually accuse or withhold judgement. Info reasons (`probe.served`,
@@ -174,6 +179,12 @@ const fixturesOverBudget = measured.filter((run) => !run.real && run.bootMs !== 
 const sampled = measured.filter((run) => run.bootMs !== null).length
 /** Descriptive only: every sampled run inside the budget, real or not (the gate ignores this). */
 const withinBudgetAll = measured.filter((run) => run.bootMs !== null && run.bootMs <= bootBudgetMs).length
+/**
+ * ADR-0006 (accepted 2026-10-28): the wall clock a user waits for is the whole `boot` step,
+ * which includes the 15s settle wait when the tree never settles. Published, never gated.
+ */
+const wallClocks = measured.map((run) => run.bootStepMs).filter((value) => typeof value === 'number')
+const wallClockMax = wallClocks.length === 0 ? null : Math.max(...wallClocks)
 
 /**
  * A run "reliably measured" when it produced an artifact, cleaned up, stayed inside the boot
@@ -299,6 +310,13 @@ const artifact = {
     min: boots[0] ?? null,
     median: boots.length === 0 ? null : boots[Math.floor(boots.length / 2)],
     max: boots.at(-1) ?? null,
+    // ADR-0006: what a human actually waits for. Recorded, not judged.
+    wall_clock: {
+      max_ms: wallClockMax,
+      source: 'steps[boot].ms — the whole step, including the settle wait and the kill wait',
+      note:
+        'a tree that never settles costs boot + settle(15s): expect ≈25s even though the measurement budget is 20s (ADR-0006)',
+    },
   },
   cleanup: { ok: measured.filter((run) => run.cleanupOk).length, checked: measured.length },
   failure_shapes: failureShapes,

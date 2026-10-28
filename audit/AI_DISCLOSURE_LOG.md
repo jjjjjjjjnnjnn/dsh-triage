@@ -272,3 +272,14 @@
 - 实测：239 测试 / 9 门全绿 / `--mutate` 9/9；serve 冒烟 14/14；真机 1 次无凭据安装
 - 过程中的真实缺陷（本轮自己抓到）：把「清了环境变量」当成「没有凭据」；INDEX 里写路由又让 `index-references` 红（第三次踩同一坑，已写进坑表）
 - 未做：T-304 实现（只取证）、ADR-0006 的任何阈值改动（proposed）、`BS-29` 的其余凭据来源（T-313）、T-401
+
+### 2026-10-28 R21｜采纳 ADR-0006（第 1–3 条）并用实测纠正自己的墙钟口径 + T-314 立项
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）
+- SessionID：主会话（本批未派 subagent；四轴与对抗性由同一会话自查，audit/step_reviews.json R21-S1…S2）
+- 范围：`docs/adr/0006-probe-budget-promise.md`、`docs/specs/M3-probe.md`、`scripts/{d2_report.mjs,record_probe.mjs}`、`tests/governance/d2-report.test.ts`、`docs/{HANDOFF,BACKLOG}.md`、`audit/{SIGNOFF.md,step_reviews.json}`、`data/results/{d2-2026-10-28T16-00-00.000Z.json,gates-2026-10-28T16-30-00.000Z.json}`
+- 起因：HUMAN「同意，继续 然后交接项目，即将切换会话」——批准 ADR-0006 第 1–3 条，并要求交接
+- 结果：① `d2_report` 新增 `timing.wall_clock`（来自 `steps[boot].ms`，只记录不判定）；`record_probe` 的 `limits[]` 增两条（沙盒无凭据 / 不可判的墙钟）。② **同一次计算就证伪了我自己写的「不可判 ≈25s」**：`wall_clock.max_ms=42701`，正常 `go` 候选的 `boot` 步 22.1–25.3s，而 `boot→sample` 只有 9.6–12.2s。③ 因此新增 T-314（墙钟分段分解），并把 ADR/spec/HANDOFF 的口径统一改成实测值 + 「差额未解释」。④ 阈值与判定**一字未动**（settle 15s / 窗口 20000 / 所有门）。
+- 实测：239 测试 / 9 门全绿 / `--mutate` 9/9；D2 复算 `gate.passed=true`（真实 12/12 在预算内）
+- 过程中的真实缺陷（本轮自己抓到）：把「boot + settle ≈25s」当成解释写进 ADR，被自己的量具否掉
+- 未做：T-304 实现（只完成 §8.5 的前置取证）、T-314 的分段计时、T-312 两阶段、T-401

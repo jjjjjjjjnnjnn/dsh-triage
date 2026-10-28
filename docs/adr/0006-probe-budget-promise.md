@@ -1,7 +1,7 @@
 # ADR 0006 · probe 的「20s」到底承诺什么（`BS-28` / T-311）
 
-> **状态**：**提议（proposed）· 待 HUMAN 签**。本文**没有**实现任何阈值改动；默认 `settle 15s` / `--unsettled-timeout 20000` 保持原样。
-> **影响面（若批准）**：`docs/specs/M3-probe.md` §4、`scripts/d2_report.mjs` 的口径文字、`packages/probe/src/host.ts` 的默认窗口、`docs/ROADMAP.md` §2 D2 判据。
+> **状态**：**已采纳（2026-10-28，第 1–3 条）**。HUMAN 会话内原话：「同意，继续」。**方案 A / C 未授权**，因此默认 `settle 15s` / `--unsettled-timeout 20000` 保持原样，未动任何判定。
+> **影响面（已落地部分）**：`docs/specs/M3-probe.md` §4、`scripts/d2_report.mjs` 的 `timing.wall_clock`、`scripts/record_probe.mjs` 的 `limits[]`。**未落地**：默认窗口、D2 判据（均需方案 A/C 授权）。
 
 ## 背景（全部实测）
 
@@ -13,9 +13,7 @@
 
 ## 决定（提议）
 
-**「20s」是「测量预算」，不是「墙钟承诺」。** 具体三条：
-
-1. **保留测量口径**：settled 树 `boot→sample ≤ 20s`（不变），unsettled 树仍走 15s settle + 可配窗口，结论仍是 `unknown`（不变）。
+**「20s」是「测量预算」，不是「墙钟承诺」。** 具体三条：1. **保留测量口径**：settled 树 `boot→sample ≤ 20s`（不变），unsettled 树仍走 15s settle + 可配窗口，结论仍是 `unknown`（不变）。
 2. **把墙钟写进 spec 并**在产物里自曝**：`limits[]` 增加一条「an unsettled tree is returned by ≈25s (boot + settle 15s), not 20s」；`d2_report` 的 `timing` 段同时给 `real_within_budget` 与 `fixtures_over_budget`（R19 已做），并新增 `wall_clock_max_ms`（不设判据，只记录）。
 3. **产品文案改口径**：对外只说「可判的候选 20s 内出结论；需要更长稳定期的候选会以 `unknown` 返回，通常在 25s 内」。不许写「任何一次 probe 都 ≤20s」。
 
@@ -36,10 +34,17 @@
 ## 签字区（HUMAN）
 
 ```
-[ ] 批准第 1–3 条（文案 + wall clock 自曝，不动阈值）
-[ ] 同时授权方案 A（把 settle 15s → 10s）
-[ ] 改为授权方案 C（T-312 两阶段，另开一轮）
-[ ] 不批准，维持现状
+[x] 批准第 1–3 条（文案 + wall clock 自曝，不动阈值）  ← 2026-10-28 会话内「同意，继续」
+[ ] 同时授权方案 A（把 settle 15s → 10s）  ← 未授权
+[ ] 改为授权方案 C（T-312 两阶段，另开一轮）  ← 未授权
+[ ] 不批准，维持现状  ← 不适用
 ```
 
 > 未勾选之前，默认值与判据一律不动（铁律 4：阈值变更需 spec + HUMAN-SIGN）。
+>
+> **2026-10-28 执行记录**：第 1–3 条已落地——`M3-probe.md` §4 写明「可判 ≤20s / 不可判 ≈25s」；`d2_report` 新增 `timing.wall_clock`（只记录、不设判据）；`record_probe` 的 `limits[]` 与 `HANDOFF` 口径同步。方案 A（settle → 10s）与 C（两阶段）**未授权**，`settle 15s` / `--unsettled-timeout 20000` 原样保留。
+>
+> **同日晚些时候的实测纠正（本条优先于上面那句「≈25s」）**：`d2_report.timing.wall_clock` 第一次真算出来是 **42701ms**。逐 run 看：正常 `go` 候选的 `boot` 步 = **22.1–25.3s**（而 `boot→sample` 只有 9.6–12.2s），永不 settle 的夹具 = **42.7s**。也就是说：
+> 1. 「20s」连**正常候选的等待时间**都没覆盖——预算量的是 `spawn→sample`，不是用户等的墙钟；
+> 2. 我原先写的「不可判 ≈25s」是**错的**（实际 ≈43s），已按实测改正；
+> 3. 差额（正常候选多出的 ~12s、夹具多出的 ~21s）**还没解释**——别猜成「settle 15s」就完事。已开 **T-314**：给 `boot` 步加分段计时（spawn / hook 写样本 / settle / readiness / 杀树 / 删除），再决定文案与是否需要优化。
