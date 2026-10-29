@@ -12,14 +12,16 @@
  * Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
  */
 
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { homedir, tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import {
   catalogFor,
   compareInventory,
+  DIST_TAG_PACKAGE,
+  distTagTargetOf,
   evaluateAdmission,
   extractEntryClaims,
   extractPresetDeclarations,
@@ -40,6 +42,7 @@ import {
   renderUpgradeImpact,
   renderUpgradeCard,
   renderVerdict,
+  resolveDistTagTarget,
   rowTargets,
   upgradeTargetProblem,
   verdictFromAdmission,
@@ -48,6 +51,7 @@ import {
   verdictsFromInventory,
   verdictsFromRowAdmission,
   type Conclusion,
+  type DistTagTarget,
   type EntryClaim,
   type EnvFingerprint,
   type InventorySnapshot,
@@ -182,6 +186,7 @@ Usage
   dsh-triage index                   format-1 market index of versions measured "go" here
   dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge
   dsh-triage upgrade --to <version>  which rows/bundles the target dsh would deny, and how to fix
+  dsh-triage upgrade --to next|latest  same judgement, with the target resolved from npm dist-tags
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -203,7 +208,7 @@ Flags
   --copy-profile <name> (probe) measure inside a copy of this profile's declarations (T-304)
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
   --results <dir>       (serve, badge) directory of evidence to read (default: ./data/results)
-  --out <file>          (badge) write the SVG here instead of stdout
+  --out <file>          (badge) write the SVG here; (upgrade --card) write the card here, print the path
   --allow-execute       (serve) enable actions; without it the panel is read-only
   --audit               (serve) expose GET /api/audit (current composition, same engine as the CLI)
   --outcomes <mode>     (check, probe) record this verdict locally: off | local (per-run, not saved)
@@ -211,7 +216,7 @@ Flags
   --disable             (outcomes) opt out again; existing records are kept until --purge
   --purge               (outcomes) delete every record this tool stored, then the directory
   --status              (outcomes) how many records exist (default when no verb is given)
-  --to <version>        (upgrade) target dsh version, exact semver (e.g. 0.3.0)
+  --to <version>        (upgrade) target dsh: exact semver (e.g. 0.3.0), or next / latest (resolved from npm)
   --registry            (upgrade) annotate with published builds that declare the target (offline by default)
   --card                (upgrade) paste-ready markdown for the release discussion (four buckets + boundary)
   --help                this text
@@ -525,25 +530,34 @@ async function commandWhy(flags: Flags): Promise<number> {
  * Nothing here re-implements a range, and nothing here claims a boot was measured.
  *
  * NOT DONE ON PURPOSE: no profile edit, no automatic pin, no probe run, and no network unless
- * `--registry` is passed (registry facts are annotations that cannot move a unit).
+ * `--registry` is passed or the target is one of the two dist-tag keywords (`next` / `latest`,
+ * M6 C9). Registry facts are annotations that cannot move a unit; a dist-tag only decides which
+ * exact version gets judged, and then the same engine judges it.
  */
 async function commandUpgrade(flags: Flags): Promise<number> {
-  if (flags.to === null) {
-    process.stderr.write(
-      'usage: dsh-triage upgrade --to <version> [--profile <name>] [--dsh-home <path>] [--snapshot <file>] [--registry] [--card] [--strict] [--json]\n',
-    )
-    return EXIT_USAGE
-  }
+  // No target, no judgement (M6 C8): the guidance reports what could be read and never invents
+  // a target, a bucket or a verdict.
+  if (flags.to === null) return commandUpgradeGuidance(flags)
+  const stamp = stampOf(flags)
   // Validate BEFORE reading anything: a bad target must be a usage error whether or not the
   // profile exists, and must never reach `satisfies()` (which returns false for garbage and
   // would turn "bad flag" into "everything will break").
-  const problem = upgradeTargetProblem(flags.to)
+  let target = flags.to.trim()
+  let distTag: UpgradeDistTagUse | null = null
+  const requestedTag = distTagTargetOf(target)
+  if (requestedTag !== null) {
+    const resolved = await resolveUpgradeTag(requestedTag, stamp)
+    if (resolved === null) return EXIT_UNAVAILABLE
+    target = resolved.version
+    distTag = resolved
+    // stdout stays the report — the card gets pasted in public, so the resolution goes to stderr.
+    process.stderr.write(`target   ${distTag.tag} → ${distTag.version} (npm ${DIST_TAG_PACKAGE})\n`)
+  }
+  const problem = upgradeTargetProblem(target)
   if (problem !== null) {
     process.stderr.write(`${problem}\n`)
     return EXIT_USAGE
   }
-  const target = flags.to.trim()
-  const stamp = stampOf(flags)
   const warnings: string[] = []
 
   let env: EnvFingerprint
@@ -621,20 +635,160 @@ async function commandUpgrade(flags: Flags): Promise<number> {
   const impact = judged.impact
 
   if (flags.json) {
-    // One output per run (M6 N7): `--json` wins, and the ignored `--card` is said out loud rather than dropped.
+    // One output per run (M6 N7): `--json` wins, and the ignored `--card` / `--out` are said out loud
+    // rather than dropped silently.
     if (flags.card) process.stderr.write('card: ignored because --json was given (one output per run)\n')
-    writeJson(upgradeJsonPayload(impact))
+    if (flags.out !== null) process.stderr.write('out: ignored because --json was given (one output per run)\n')
+    writeJson(upgradeJsonPayload(impact, distTag))
   } else if (flags.card) {
+    const card = renderUpgradeCard(impact, {
+      locale: flags.locale,
+      redactRoots: [homedir(), flags.dshHome ?? resolveDshHome(flags)],
+    })
+    if (flags.out === null) {
+      process.stdout.write(card)
+    } else {
+      // M6 C10: the file gets the same bytes a bare `--card` prints, written atomically. Nothing
+      // half-written is left behind, and stdout carries only the path a user can copy.
+      const written = writeCardFile(flags.out, card)
+      if (!written.ok) {
+        process.stderr.write(`${written.detail}\n`)
+        return written.reason === 'exists' ? EXIT_USAGE : EXIT_UNAVAILABLE
+      }
+      process.stdout.write(`${written.display}\n`)
+    }
     // The card is pasted in public, so warnings go to stderr: a `warn` line inside the markdown would be copied too.
-    process.stdout.write(
-      renderUpgradeCard(impact, { locale: flags.locale, redactRoots: [homedir(), flags.dshHome ?? resolveDshHome(flags)] }),
-    )
     for (const warning of warnings) process.stderr.write(`warn  ${warning}\n`)
   } else {
     process.stdout.write(renderUpgradeImpact(impact, flags.locale))
     for (const warning of warnings) process.stdout.write(`warn  ${warning}\n`)
   }
   return flags.strict && hasNewDenials(impact) ? EXIT_FINDINGS : EXIT_OK
+}
+
+/** What a dist-tag target resolved to, kept so the JSON payload can say where the target came from. */
+interface UpgradeDistTagUse {
+  readonly tag: DistTagTarget | string
+  readonly version: string
+}
+
+/**
+ * Turn `next` / `latest` into the exact version the registry publishes (`T-806`, M6 C9).
+ *
+ * Two refusals, both exit 3 and both producing **no bucket**: npm did not answer, or the tag exists
+ * but does not name an exact version. Neither is a finding about the user's composition, so neither
+ * may be reported as one.
+ */
+async function resolveUpgradeTag(tag: DistTagTarget, stamp: string): Promise<UpgradeDistTagUse | null> {
+  const packument = await fetchPackument(DIST_TAG_PACKAGE, { at: stamp })
+  if (!packument.ok) {
+    process.stderr.write(
+      `cannot resolve --to ${tag}: npm did not answer for ${DIST_TAG_PACKAGE} (${packument.error.code}) — ${packument.error.detail}\n`,
+    )
+    process.stderr.write('hint: pass the exact version instead — that path never touches the network\n')
+    return null
+  }
+  const resolved = resolveDistTagTarget({ requested: tag, distTags: packument.value.distTags })
+  if (!resolved.ok) {
+    process.stderr.write(`${resolved.detail}\n`)
+    process.stderr.write('hint: pass the exact version instead — that path never touches the network\n')
+    return null
+  }
+  return { tag: resolved.tag, version: resolved.version }
+}
+
+/**
+ * `upgrade` with no `--to` (`T-807`, M6 C8): say what could be read, and refuse to judge.
+ *
+ * WHY IT STILL EXITS 2: without a target there is nothing to judge, and an empty report would read
+ * as "nothing will break". The guidance is on stderr for the same reason every other usage path is:
+ * a non-zero exit must never put a report-shaped thing on stdout.
+ *
+ * WHY IT READS THE REGISTRY ONCE: "your options are next=X / latest=Z" is the whole point of the
+ * guidance (a stranger should not have to guess a version string). That single read is bounded and
+ * read-only; when it fails the line says `unknown` and no value is invented.
+ */
+async function commandUpgradeGuidance(flags: Flags): Promise<number> {
+  const catalog = catalogFor(flags.locale)
+  const line = (id: string, params?: Readonly<Record<string, string | number>>): string => {
+    const template = catalog.messages[id]
+    return template === undefined ? id : format(template, params)
+  }
+  const out: string[] = [line('upgrade.guidance.headline')]
+
+  const dshHome = resolve(resolveDshHome(flags))
+  const envReading = await loadEnv({ dshHome, profile: flags.profile })
+  if (!envReading.ok) {
+    out.push(line('upgrade.guidance.current-unknown', { detail: `${envReading.error.code} — ${envReading.error.detail}` }))
+  } else {
+    const runtime = envReading.value.dsh === null ? null : envReading.value.dsh.trim()
+    out.push(
+      runtime === null || runtime === ''
+        ? line('upgrade.guidance.current-unknown', { detail: 'this profile declares no dsh version' })
+        : line('upgrade.guidance.current', { version: runtime, profile: envReading.value.profile }),
+    )
+  }
+
+  const packument = await fetchPackument(DIST_TAG_PACKAGE, { at: stampOf(flags) })
+  if (!packument.ok) {
+    out.push(line('upgrade.guidance.targets-unknown', { detail: `npm ${packument.error.code}` }))
+  } else {
+    const next = packument.value.distTags['next']
+    const latest = packument.value.distTags['latest']
+    out.push(
+      next === undefined && latest === undefined
+        ? line('upgrade.guidance.targets-unknown', { detail: `${DIST_TAG_PACKAGE} publishes no next/latest dist-tag` })
+        : line('upgrade.guidance.targets', { next: next ?? '—', latest: latest ?? '—', package: DIST_TAG_PACKAGE }),
+    )
+  }
+
+  out.push(line('upgrade.guidance.next-step'))
+  process.stderr.write(`${out.join('\n')}\n`)
+  return EXIT_USAGE
+}
+
+/**
+ * Write the card atomically (`T-808`, M6 C10).
+ *
+ * Refuses to overwrite (a card is evidence a user may be about to paste; silently replacing it is
+ * how two different readings end up in one file), and never leaves a partial file: the text lands
+ * in a sibling temp file first and is renamed into place.
+ *
+ * The printed path is relative when the file is under the current directory: the card's stdout is
+ * the thing users copy into a public issue, and `C:\\Users\\<name>` must never ride along.
+ */
+function writeCardFile(
+  rawPath: string,
+  text: string,
+):
+  | { readonly ok: true; readonly display: string }
+  | { readonly ok: false; readonly reason: 'exists' | 'unwritable'; readonly detail: string } {
+  const target = resolve(rawPath)
+  if (existsSync(target)) {
+    // A usage error, not an outage: the user picked a path that already holds something.
+    return {
+      ok: false,
+      reason: 'exists',
+      detail: `refusing to overwrite existing file: ${rawPath} (move it or pick another path)`,
+    }
+  }
+  const temp = `${target}.tmp-${process.pid}`
+  try {
+    mkdirSync(dirname(target), { recursive: true })
+    writeFileSync(temp, text, 'utf8')
+    renameSync(temp, target)
+  } catch (error) {
+    // Best effort: a leftover temp file is still a partial artifact on disk.
+    try {
+      if (existsSync(temp)) unlinkSync(temp)
+    } catch {
+      /* the original error is the one worth reporting */
+    }
+    return { ok: false, reason: 'unwritable', detail: `cannot write ${rawPath}: ${error instanceof Error ? error.message : String(error)}` }
+  }
+  const fromCwd = relative(process.cwd(), target)
+  const display = fromCwd !== '' && !fromCwd.startsWith('..') && !isAbsolute(fromCwd) ? fromCwd : target
+  return { ok: true, display }
 }
 
 /** At most this many registry lookups per run (spec §6 rule 6): a 95-row profile must not fan out. */
@@ -690,7 +844,7 @@ async function registryLookupFor(
  * are copied out of it here, so the payload still says which tier the judgement rests on —
  * and no `Verdict` object means no `profileDir` in a file that is meant to be shareable.
  */
-function upgradeJsonPayload(impact: UpgradeImpact): Record<string, unknown> {
+function upgradeJsonPayload(impact: UpgradeImpact, distTag: UpgradeDistTagUse | null): Record<string, unknown> {
   return {
     schema_version: 1,
     command: 'upgrade',
@@ -699,6 +853,11 @@ function upgradeJsonPayload(impact: UpgradeImpact): Record<string, unknown> {
     current: impact.current,
     current_valid: impact.current_valid,
     target: impact.target,
+    // Where the target came from (M6 C9): an exact version is judged offline; a dist-tag says which
+    // word was resolved and against which package, so a reader can re-check the registry themselves.
+    target_source: distTag === null ? 'explicit' : 'dist-tag',
+    dist_tag:
+      distTag === null ? null : { tag: distTag.tag, version: distTag.version, package: DIST_TAG_PACKAGE },
     target_relation: impact.target_relation,
     buckets: impact.buckets,
     counts: impact.counts,

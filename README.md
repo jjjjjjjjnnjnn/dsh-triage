@@ -9,9 +9,38 @@ DeepSeek Harness (DSH) already tells you whether a plugin *installs*. Nothing te
 
 `dsh-triage` answers the question users actually ask: **"why did my plugin disappear?"** — and, before you install, whether a candidate survives your exact environment. Conclusions are computed locally, derived from named evidence, and printed with the source of every claim. When there is no evidence, the answer is `unknown` instead of a score.
 
-`dsh-triage@0.2.0` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
+`dsh-triage@0.3.0` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
 
 ---
+
+## Upgrade day
+
+Every dsh rc asks the same question: **what does *my installed set* lose if I move to it?**
+
+<!-- upgrade-card: data/results/upgrade-card-2026-10-29T13-00-00.000Z.json -->
+```console
+$ dsh-triage upgrade --to next
+# Upgrade day · 0.3.0
+
+**upstream: 192 unit(s) (2 bundle + 190 row) against 0.3.0 — 119 would be denied · 73 cannot tell · 0 would improve · 0 look fine**
+
+> profile `upstream` (live) · current 0.2.1-rc.4 · target is newer than current
+> This judges the **declaration layer**: declared ranges against the target runtime, not runtime behaviour.
+
+| bucket | count | meaning |
+|---|---|---|
+| `would-be-denied` | 119 | would be dropped — the target build denies this row/package |
+| `cannot-tell` | 73 | cannot tell — not enough declaration evidence |
+| `improved` | 0 | denied today, admitted at target — broken now, the target admits it |
+| `likely-fine` | 0 | no declared conflict — not a promise that it runs after the upgrade |
+```
+<!-- /upgrade-card -->
+
+**Where those numbers come from**: the in-repo sandbox profile (`sandbox/upstream/0.2.1-rc.4`, target `0.3.0`) — **not your machine**, and not a claim about your set. Your composition is the input that makes this worth running; the shape is what is reproducible here. Recompute with `node scripts/record_upgrade_card.mjs --stamp <ISO>`.
+
+- `--to next` / `--to latest` resolve the target from npm `dist-tags` (one read, then the same judgement); `--to <exact version>` never touches the network.
+- `--card --out card.md` writes exactly the bytes printed above to a file and prints the path, so the sample can travel to an issue.
+- The card never says "the upgrade will fix it": an `improved` unit says **"the target admits it"**, because a declaration being admitted is not a measurement (`BS-42`).
 
 ## Why it exists
 
@@ -124,7 +153,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 Two more commands you will see in `--help`:
 
-- **`dsh-triage upgrade --to <version>`** — before you move your dsh build, ask which loader rows and bundles the *target* runtime would deny, in four buckets (`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`), with the same remediation text `why` uses. Offline by default; registry lookups are annotations that cannot move a row between buckets. It says "would be denied", never "will work".
+- **`dsh-triage upgrade --to <version|next|latest>`** — before you move your dsh build, ask which loader rows and bundles the *target* runtime would deny, in four buckets (`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`), with the same remediation text `why` uses. An exact version is judged fully offline; only the keywords `next` / `latest` read npm `dist-tags`, and registry lookups are annotations that cannot move a row between buckets. `--card` prints the paste-ready summary, `--card --out <file>` lands the same bytes on disk. It says "would be denied", never "will work".
 - **`dsh-triage outcomes`** — the local outcome store for the reflow layer. **Off by default**: while it is off, no directory and no file is created. When you turn it on (`--enable`), it stores only a fixed field whitelist (no paths, no hostnames, no logs, no free text), and `--purge` leaves nothing behind. Nothing is uploaded anywhere; there is no network code on that path.
 
 ## How it decides
@@ -161,7 +190,7 @@ Nothing in this README is asserted without a producer in the repo.
 
 | Claim | Reproduce it |
 |---|---|
-| build, typecheck, 440 tests, 9 gates | `pnpm run verify` |
+| build, typecheck, 452 tests, 9 gates | `pnpm run verify` |
 | the gates can actually fail | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission semantics match upstream | `data/gold/admission-cases.json` — 27 signed goldens, enforced by the `admission-parity` gate |
 | `why` finds the root cause in real failures | `node scripts/d1_report.mjs --stamp <iso>` → 10 real cases, 9 hits, 1 explicit `unknown` (`data/results/d1-*.json`) |
@@ -183,7 +212,7 @@ CI runs `verify` on Node 22 and 24, a Windows job, a real-browser render-control
 
 ## Status and channels
 
-- **npm** — `dsh-triage@0.2.0` published 2026-10-29, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
+- **npm** — `dsh-triage@0.3.0` published 2026-10-29, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
 - **Pull requests are open, not merged** — [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65) (merge state `BLOCKED`, awaiting review) and [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193) (`APPROVED`, not merged). Submitted is not listed.
 - **dsh.so** — submission package is ready; it has not been submitted.
 - **No other channel has accepted this project** as of the snapshot above. If a directory claims otherwise, it is ahead of the evidence.

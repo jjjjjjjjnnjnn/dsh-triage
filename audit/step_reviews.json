@@ -6405,6 +6405,198 @@
         "sha256": "a557b218c150aaba9d6ff9ebcb5339b3d7abb6482c9bcec60a8da6e219da6224",
         "outcome": "ALL GREEN · 9 gates（440 测试；BACKLOG 257→90 行；两份归档路径存在）"
       }
+    },
+    {
+      "id": "R48-S2",
+      "batch": "R48",
+      "step": "T-806/T-807/T-808 代码落地（第一版）：`resolveDistTagTarget` 纯函数 + CLI 的 `--to next|latest` 解析、无参数引导、`--card --out` 原子写；新增 `scripts/record_upgrade_entry.mjs` 并**首次真跑**。这一跑红了 3 条断言，红的原因是**记录器自己的断言写错了**（按英文标签匹配，而记录器把 `DSH_TRIAGE_LOCALE` 设成 zh），不是产品行为有问题——红产物保留作见证",
+      "changed": [
+        "packages/core/src/upgrade-target.ts",
+        "packages/core/src/index.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/upgrade.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_upgrade_entry.mjs",
+        "tests/unit/upgrade-target.test.ts",
+        "tests/e2e/upgrade-cli.test.ts",
+        "data/results/upgrade-entry-2026-10-29T15-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（产品侧）+ FAIL（记录器侧）：真机行为全部正确——引导三行（当前 0.2.1-rc.4 / next 0.2.1-rc.4 / latest 0.2.1-rc.2）exit 2 且 stdout 空；`--to next` 解析成 0.2.1-rc.4；断网 exit 3 零桶；`canary` exit 2；`--card --out` 与 stdout 同 sha256。红的是三条断言：`guidance-current-equals-profile` / `guidance-no-network-does-not-guess` / `guidance-no-profile-says-unknown` 都按 `current`/`targets` 这类**英文标签**匹配，而记录器自己设了 zh locale。修法是让断言认语言无关的**值**（版本号 + `profile` 名）与 zh/en 双写的「未知/读不到」，不是放宽断言",
+        "reproducibility": "PASS：产物由脚本真跑产出并带 `.sha256`（`da7184ad9a45…`），`runs[]` 里逐条记了命令、退出码、stdout 字节数与 stderr 摘要（已脱敏为 `<dsh-home>` / `<tmp>` / `<home>`）；任何人重跑 `node scripts/record_upgrade_entry.mjs --stamp <ISO>` 都能得到同样的 26 条检查",
+        "licence": "PASS：只读 npm registry 的公开元数据与仓内沙盒 profile，无第三方正文、无新增数据源；registry 的回答原样缓存在 `data/fixtures/upgrade-entry/`，不含作者私有信息",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `schema_version:1` 与 `limits[]`（含「tag 拒绝分支只有单测证据」「Windows 只读目录用替代构造」两条边界）；本条在台账里是**红产物**，与下一条绿产物成对保留，不互相替代",
+        "adversary": "反例一：让记录器只检查「退出码是 2」就收工——被拒，本条的失败恰恰证明断言真的在读输出内容；反例二：为了让 3 条变绿去改记录器的 locale——被拒，改成语言无关的值匹配（换 locale 仍然成立）；反例三：把这次红产物删掉只提交绿的那份——被拒，红产物保留，本条台账点名它是**记录器断言缺陷**的唯一见证"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_entry.mjs --stamp 2026-10-29T15:40:00.000Z",
+        "artifact": "data/results/upgrade-entry-2026-10-29T15-40-00.000Z.json",
+        "sha256": "da7184ad9a45ef2fbdda16b7030fba3c8d2730b060a5abdf56afc293c98e270d",
+        "outcome": "23/26 · passed=false（三条断言按英文标签匹配 zh 输出；产品行为正确，修的是断言）"
+      }
+    },
+    {
+      "id": "R48-S3",
+      "batch": "R48",
+      "step": "T-806/T-807/T-808 收口：断言改成语言无关后复跑，**26/26 全绿**；同时钉死「dist-tag 只决定判哪个版本、不决定怎么判」——同一组合用解析出的精确版本重判，四桶与计数逐条相同",
+      "changed": [
+        "scripts/record_upgrade_entry.mjs",
+        "data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：26/26。关键几条：`tag-next-resolved-verbatim`（`0.2.1-rc.4` 与 registry `dist-tags.next` 逐字相同）、`tag-latest-resolved-verbatim`、`tag-next-does-not-move-a-bucket`（显式版本 vs 关键字，`counts` 序列化后完全相同）、`tag-no-network-exit-3` + `tag-no-network-no-bucket`（stdout 为 0 字节）、`tag-unknown-keyword-is-usage-not-lookup`（`canary` → exit 2）、`card-out-matches-stdout`（sha256 相等）、`card-out-refuses-overwrite`（exit 2 且字节未变）、`card-out-unwritable-exit-3` + `card-out-unwritable-leaves-nothing`（无 `.tmp-*`）、`card-out-prints-a-relative-path`",
+        "reproducibility": "PASS：`--stamp` 固定、卡片无时钟（同一 impact 两次渲染同字节）、registry 回答缓存进 `data/fixtures/upgrade-entry/2026-10-29T15-50-00.000Z/dsh-dist-tags.json`；网络快照的不可复现性写在 `limits[]` 里，并由下一条 `--fixtures` 复算兜住",
+        "licence": "PASS：只读公开 registry 元数据；沙盒 profile 是仓内产物；产物内所有路径已脱敏（`results-privacy` 门绿）",
+        "ssot": "PASS：`registry.dist_tags` / `runs[].dist_tag_version` / `inputs.card_sha256` 三处互相印证；README 首屏引用的卡片产物与本条不是同一份（卡片由 `record_upgrade_card.mjs` 产出），两条各自指向自己的 SSOT",
+        "adversary": "反例一：`--to next` 解析后**重新拼一个字符串**再判定——被拒，`tag-next-does-not-move-a-bucket` 用精确版本重判，任何改写都会让桶变化；反例二：断网时仍打印四桶（全 0 看起来无害）——被拒，`tag-no-network-no-bucket` 要求 stdout 0 字节；反例三：`--card --out` 写成 `\r\n` 换行——被拒，字节 sha256 必须相同"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_entry.mjs --stamp 2026-10-29T15:50:00.000Z",
+        "artifact": "data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json",
+        "sha256": "8d0ca280e8c5a7d43179af396be4d630867846c23e288aae98f4175969eaf5f2",
+        "outcome": "26/26 PASS · registry next 0.2.1-rc.4 / latest 0.2.1-rc.2 · profile upstream"
+      }
+    },
+    {
+      "id": "R48-S4",
+      "batch": "R48",
+      "step": "离线复算：新增 `--fixtures <dir>` 模式，只重算依赖网络的两条断言（解析值来自 registry、解析值逐字等于缓存），并顺带校验产物与它的 `.sha256` 一致",
+      "changed": [
+        "scripts/record_upgrade_entry.mjs",
+        "data/results/upgrade-entry-recompute-2026-10-29T16-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：3/3。`recompute-artifact-sha256`（产物仍匹配它的 sha256）、`recompute-resolved-equals-cache`（`next`/`latest` 与缓存逐字相同）、`recompute-tag-version-equals-cache`（产物判的就是 `dist-tags.next` 那个值）",
+        "reproducibility": "PASS：本条**完全离线**——读 `data/fixtures/upgrade-entry/<stamp>/dsh-dist-tags.json` 与已落盘产物，不发起任何请求；`offline_recompute: true` 写在产物里，读者不会误以为 CLI 被重跑过",
+        "licence": "PASS：只读自家缓存与自家产物。",
+        "ssot": "PASS：`limits[]` 明写「只重算依赖网络的部分；CLI 那半边的确定性由 `tests/e2e/upgrade-cli.test.ts` 覆盖」——不把复算说成「全量重演」",
+        "adversary": "反例一：让复算模式也偷偷联网（看起来更「完整」）——被拒，离线模式的输入只有缓存与产物；反例二：缓存值与产物不一致时仍判绿——被拒，`recompute-resolved-equals-cache` 直接比字符串；反例三：产物被事后改写——被拒，`recompute-artifact-sha256` 打红"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_entry.mjs --stamp 2026-10-29T16:00:00.000Z --fixtures data/fixtures/upgrade-entry/2026-10-29T15-50-00.000Z --artifact data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json",
+        "artifact": "data/results/upgrade-entry-recompute-2026-10-29T16-00-00.000Z.json",
+        "sha256": "c4fb0fa2daf0bb6c591fc9fb1f620d8a0f068a98cb4636761b161f647b359acb",
+        "outcome": "3/3 PASS（离线；cached next=0.2.1-rc.4 latest=0.2.1-rc.2）"
+      }
+    },
+    {
+      "id": "R48-S5",
+      "batch": "R48",
+      "step": "T-809 第一半：两份 README 各加一块 `<!-- upgrade-card -->` 真机卡片（四桶表 + 边界句 + sandbox 标注 + 复算命令 + 产物指针）；`check_listing.mjs` 新增第 8 条断言 `readme-shows-real-card`，数字从被引用的产物里读回逐项比对",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs",
+        "data/results/listing-2026-10-29T16-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：11/11。新断言的做法是「从 README 引用的 `upgrade-card-*.json` 读 `inputs.counts`，逐桶要求 `| \\`bucket\\` | <count> |` 出现在块里；结论行必须写出总数与目标版本；sandbox 标注必须同时出现「沙盒/sandbox」与「不是你的机器/not your machine」；块里必须有 `upgrade --to`，文末必须有 `record_upgrade_card.mjs` 复算命令」",
+        "reproducibility": "PASS：断言是离线的、纯文本 + 产物解析，没有网络也没有时钟；`--tests 440` 取自同一次 `pnpm run verify`",
+        "licence": "PASS：只改自家文档与检查器。",
+        "ssot": "PASS：README 的数字不再是「抄一遍」——它们由被引用产物决定，产物变了而文案没变就会红；这一步还没有改版本号，`version-matches-manifest` 仍按 0.2.0 校验并通过",
+        "adversary": "反例一：把卡片写成「示意」并手填一个漂亮数字——被拒，断言只认产物里的数；反例二：只给英文 README 加卡片——被拒，两份都在扫描列表里；反例三：把 sandbox 标注写进 HTML 注释里骗过阅读者——被拒，断言只查可见文本所在的行……（这一条留到 S7 的真红验证）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T16:20:00.000Z --tests 440",
+        "artifact": "data/results/listing-2026-10-29T16-20-00.000Z.json",
+        "sha256": "cfec5607a518a995d4c7a34922a8211b3c5782d4fb70e1444666159d94e01463",
+        "outcome": "11/11 PASS（含新增的 readme-shows-real-card）"
+      }
+    },
+    {
+      "id": "R48-S6",
+      "batch": "R48",
+      "step": "新断言的负对照①：把 README.md 卡片里 `would-be-denied` 的 119 改成 120，其余不动，跑同一命令 → **必须红**。红产物保留",
+      "changed": [
+        "data/results/listing-2026-10-29T16-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照成立）：`readme-shows-real-card` FAIL，文案 `README.md: the would-be-denied row does not say 119`，退出码 1；其余 10 条断言仍绿，说明是**这一条**抓到的",
+        "reproducibility": "PASS：产物带 `.sha256`（`ee34fdd2398a…`）且 `passed=false`；改动随后原样回滚（`git diff` 里不再有 120）",
+        "licence": "PASS：本条只构造一次文档改动并回滚，产物是自家检查器的输出，不引入任何第三方内容或数据；npm registry 在本步没有被读。",
+        "ssot": "PASS：红产物与绿产物并存，谁都不替代谁；台账点名这次红是**构造的**负对照，不是漂移事故",
+        "adversary": "反例一：改数字的同时把产物也改掉（让检查器读到 120）——被拒，产物带 sha256 且由脚本产出，改产物会同时打红 `evidence-paths-exist` 之外的东西并留下可检测的 sha 不符；反例二：只在 `--json` 输出里改数——被拒，检查器读的是 README 正文；反例三：把数字换成 \"about 120\"——被拒，断言要求精确的表格单元"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T16:30:00.000Z --tests 440",
+        "artifact": "data/results/listing-2026-10-29T16-30-00.000Z.json",
+        "sha256": "ee34fdd2398a30c104727808834d4c8728cd8f1f3c0af38072b9ea69487dd16f",
+        "outcome": "FAIL readme-shows-real-card（README.md: the would-be-denied row does not say 119）· exit 1 · 其余 10 条 PASS"
+      }
+    },
+    {
+      "id": "R48-S7",
+      "batch": "R48",
+      "step": "新断言的负对照②：删掉 README.zh-CN.md 里「**不是你的机器**」这句 sandbox 标注，其余不动 → **必须红**。红产物保留",
+      "changed": [
+        "data/results/listing-2026-10-29T16-35-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照成立）：`readme-shows-real-card` FAIL，文案 `README.zh-CN.md: the sandbox annotation does not say it is not the reader's machine`，退出码 1",
+        "reproducibility": "PASS：产物带 `.sha256`（`3dbb6df7bc0c…`）、`passed=false`；改动静默回滚",
+        "licence": "PASS：同上——负对照只删自家 README 的一句标注，随即回滚；没有引入外部数据，也没有把别人的许可内容写进产物。",
+        "ssot": "PASS：与 S6 的红产物各自指向一条独立断言，台账不合并成一条",
+        "adversary": "反例一：保留「沙盒」但删掉「不是你的机器」——**恰好被这一条抓住**，证明断言不是只数关键词；反例二：把标注写进图片 alt 或折叠块——被拒，检查器读的是纯文本，可见性由评审兜底（这正是脚本边界）；反例三：两份 README 只改一份——被拒，两份都扫"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T16:35:00.000Z --tests 440",
+        "artifact": "data/results/listing-2026-10-29T16-35-00.000Z.json",
+        "sha256": "3dbb6df7bc0ce138866093b8b2d327af97bbfcdf6e82a084e4069b323906f7bb",
+        "outcome": "FAIL readme-shows-real-card（README.zh-CN.md: the sandbox annotation does not say it is not the reader's machine）· exit 1"
+      }
+    },
+    {
+      "id": "R48-S8",
+      "batch": "R48",
+      "step": "收口：四包同升 **0.3.0**、两份 README 与两份上架文案/提交包/CHANGELOG 的版本与测试数（440 → 452）全部对齐后复跑检查器，**11/11 全绿**",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "README.md",
+        "README.zh-CN.md",
+        "CHANGELOG.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/dsh-so-note.md",
+        "data/results/listing-2026-10-29T17-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：11/11，`version-matches-manifest` 报「every named version is 0.3.0」、`test-count-matches` 报 452（同一次 `pnpm run verify` 实测 `tests 452 / pass 452`），`readme-shows-real-card` 仍绿",
+        "reproducibility": "PASS：`--tests 452` 来自本轮真跑；四包版本变更不需要 lockfile 改动（workspace 链接），`pnpm install --lockfile-only` 无 diff",
+        "licence": "PASS：无外部数据；CHANGELOG 只写用户可感知的变化。",
+        "ssot": "PASS：版本号在 manifest / 两份 README / 两份上架文案 / 提交包 / CHANGELOG 六处一致；**发布前的窗口期**（README 已写 0.3.0、registry 还是 0.2.0）由 `record_publish.mjs` 关闭，HANDOFF 写明这一步是 HUMAN 动作",
+        "adversary": "反例一：只升插件、不升三个内部包——被拒（R42 的教训：core 新增导出会让旧 core 在启动时 `SyntaxError`），四包同升且 `record_publish` 会按根 manifest 校验；反例二：升版本但不改 README 的数字——被拒，`version-matches-manifest` / `test-count-matches` 同时打红；反例三：为让检查器变绿去放宽断言——被拒，两条红产物（S6/S7）证明断言仍是紧的"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T17:00:00.000Z --tests 452",
+        "artifact": "data/results/listing-2026-10-29T17-00-00.000Z.json",
+        "sha256": "4737036f1b418580e4c88c185943456f4d354e4f1210f8ba051a244bfc523e74",
+        "outcome": "11/11 PASS · version 0.3.0 · tests 452"
+      }
+    },
+    {
+      "id": "R48-S9",
+      "batch": "R48",
+      "step": "收口门禁：文档/台账/版本全部同步后跑完整套件并落盘（452 测试 / 9 门 ALL GREEN），随后 `--mutate` 9/9 证明 9 道门仍然各自能红",
+      "changed": [
+        "data/results/gates-2026-10-29T18-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` 实测 **452 测试 / 0 fail**、9 门 ALL GREEN；`node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 9/9`。这一轮新增的两条断言都在 9 门之内被覆盖（`check_listing` 由 `release` 之外的评审执行、`step-review` 校验新台账），`governance/index-references` 还在这一轮抓到我写的一个裸文件名（见 §4 反思）",
+        "reproducibility": "PASS：产物 `generated_at` 固定、不含耗时（`gate.mjs` 有意剔除 durations），9 条 `gates[]` 只记 exitCode 与 ok；`.sha256` 与文件同批写入，`step-review` 会重算",
+        "licence": "PASS：门禁结果只含本仓门脚本的 id 与退出码，无第三方数据。",
+        "ssot": "PASS：规模数字（452 测试 / 270 步 / 250 产物 / 45 盲区）在 HANDOFF、INDEX、AGENTS 与本台账四处一致；本条是本轮第 9 步，与 S2–S8 的 8 份产物一起让 `no-orphan-results` 归零",
+        "adversary": "反例一：只跑 `--fast`（跳过需要构建的门）就宣布全绿——被拒，本轮判据是完整套件的结果，`fast:false` 写在产物里；反例二：让 `--mutate` 里某道门「因为缺依赖」而失败，看起来像 CAUGHT——被拒，`gate_ledger.json` 的负对照列表与 `--mutate` 的 caught 语义由 CI 的 `gates can fail` 作业独立盯着；反例三：手工编辑产物把 ok 改成 true——被拒，`step-review` 重算 sha256"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T18:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T18-40-00.000Z.json",
+        "sha256": "d3011dd852bf92762f6e2500968b39de8957933a078df2dad4d7203612f8a356",
+        "outcome": "ALL GREEN · 9 gates（452 测试；scale 行同步为 270 步 / 250 产物 / 45 盲区）"
+      }
     }
   ]
 }

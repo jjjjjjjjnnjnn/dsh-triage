@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R48 (2026-10-29，**交接轮**：记录 R48 计划 + 归档 + 更新入口；零代码、零判据)｜**上一轮 R47**：定位重定向（正门 = 升级日）+ 市场基线采证 + 流程分级 + 升级日卡片（见 §2）｜**状态一句话**：构建侧 **440 测试 / 9 门 / `--mutate` 9-9**；产品侧已定 **R48 = 陌生人 60 秒**（`--to next` / 无参数引导 / 卡片落盘 / README 首屏），**分发动作一律等 R48 绿了再发**（T-810）｜**下一位的第一件事**：见 §3
+> **Stand**: R48 (2026-10-29，**交付轮**：`T-806`…`T-809` 四项全绿 + 四包升 `0.3.0`；判据/阈值一字未动)｜**上一轮 R47**：定位重定向（正门 = 升级日）+ 市场基线采证 + 流程分级 + 升级日卡片（见 §2）｜**状态一句话**：构建侧 **452 测试 / 9 门 / `--mutate` 9-9**；产品侧「升级日」现在**从 shell 一步可达**（`--to next` / 无参数引导 / `--card --out` / README 首屏）；**唯一未做的是 HUMAN 的 `npm publish 0.3.0` 与 `T-810` 分发草稿**（D5 的出口）｜**下一位的第一件事**：见 §3
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交付（R48 续，2026-10-29） | **「陌生人 60 秒」四项落地；判据/阈值一字未动（交付轮）**。① **`T-806 --to next|latest`**：新增 `packages/core/src/upgrade-target.ts`（纯函数 `resolveDistTagTarget`，只有两个关键字会联网、解析值必须**逐字**等于 `dist-tags[tag]` 且是精确 semver——`v0.3.0` 被拒而不是被归一化）+ CLI 前置解析；断网/tag 缺失/值不精确 → **exit 3 零桶**，`canary` → exit 2 **不联网**，精确 semver（含 `9.9.9`）**全程离线**（HUMAN 2026-10-29 定）。② **`T-807` 无参数引导**：没有 `--to` 时不再只打 usage，而是 stderr 报「当前运行时 + next/latest + 下一步命令」并**仍 exit 2**；断网写 `未知` **不猜**；M6 的 C8/N8 按此改写。③ **`T-808 --card --out`**：临时文件 + `rename` 原子写、已存在 **exit 2**、写不进去 **exit 3 且无 `.tmp-*` 残留**、stdout 只打路径（cwd 之下打相对路径，避免把 `C:\Users\…` 粘进公开 issue）。**诚实降级**：Windows 上目录只读拦不住属主写入，「目录只读」负对照改成「父路径是普通文件」，M6 C10/N18 与 BACKLOG 都写明是**替代构造**。④ **`T-809` README 首屏**：两份 README 各加一块 `<!-- upgrade-card -->` 标记的**真机卡片**（四桶表 + 边界句「目标版本会放行它」+ **sandbox 标注** + 复算命令 + 产物指针）；`check_listing.mjs` 新增第 8 条断言 `readme-shows-real-card`，**从被引用的产物里读回 `inputs.counts` 逐项比对**——改一个数或删掉「不是你的机器」即红（两条红产物各自保留：`listing-…T16-30-00` / `listing-…T16-35-00`）。⑤ **真机**：`data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json`（**26/26**）+ 离线复算 `…-recompute-…T16-00-00`（3/3）+ `listing-…T17-00-00`（11/11）；**第一次跑红的 3 条是记录器自己的断言写错**（按英文标签匹配 zh 输出），红产物 `upgrade-entry-…T15-40-00` 保留作见证。⑥ **四包同升 `0.3.0`**（core/signals/probe/plugin，R42 的教训：只升插件会让用户装到旧 core 并在启动时 `SyntaxError`）+ CHANGELOG / 两份 README / 两份上架文案 / 提交包的版本与测试数（440 → **452**）同轮对齐。⑦ **新盲区 `BS-45`**：`tag-missing` / `tag-not-exact` **只有单测证据**（真实 registry 两个 tag 都存在且精确），且「逐字相同」是**时点断言**。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 / 十铁律 |
 | 交接（R48，2026-10-29） | **本轮只交接 + 记录计划 + 归档，不改行为**。① **记录 R48 计划**：`docs/BACKLOG.md` 新增 `T-806`–`T-810`（`--to next` / 无参数引导 / 卡片落盘 / README 首屏 / 分发草稿），判据与负对照逐条写死，出口仍是 **D5**（`docs/ROADMAP.md` §2）。② **两份历史文件归档**（逐行原文）：`docs/BACKLOG.md` 的「R3–R16 已交付」11 节约 170 行 → `_archive/2026-10-29_BACKLOG-delivered-R3-R16.md`（BACKLOG 257 → 90 行，只剩可领取清单）；§2 的 R37–R38 两行 → `_archive/2026-10-29_HANDOFF-batch-rows-R37-R38.md`（入口只留 **R39–R48** 十轮）。③ **`docs/AI_HANDOVER.md` §5 的「下一步」作废**：它还写着 M1 收口 / M2 台账 / M3 probe——三项全在 R14–R37 完成了，现在只说「下一步见 HANDOFF §3」。④ **HUMAN 两条口径**（记入 `audit/SIGNOFF.md` R48 行）：**产品优先**（先做 R48 四项再谈分发）+ **只公开项目、不公开个人身份**（这直接决定渠道选择：GitHub / X / Reddit 用项目口吻，公众号 / 小红书这类「人」的平台降级）。⑤ **新增口径判断**：playbook（GitHub Trending → 中文部署教程 → 39–99 元）**不作为收入线**——它需要流量池，而我们**从未推广过**（下载记录为空）。它在本项目里的位置是**渠道**（T-810），不是产品。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 / 十铁律 |
 | 交付（R47，2026-10-29） | **定位重定向 + 流程分级 + 修数 + 归档；零判据、零阈值改动**。① **先取证再转向**：新增 `scripts/record_market_baseline.mjs`（采证轮：npm 下载 + 上游 Discussions 痛点聚类，原始快照进 `data/fixtures/`，可 `--fixtures` 离线复算）→ `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`：诊断类目 **1,988** / 市场类 **380,240** / 装饰类 **411,844** / 能力类 **304,666** / harness 本体 540,139；`dsh-triage` **无下载记录**（404 → `no-record`，不写成 0）；最近 **842** 条讨论里 **414 条故障（49.2%）**，其中 **278 条（67.2%）零回复**。② **HUMAN 选 B=升级日当正门**（四条候选：进别人安装路径 / 升级日 / 作者侧 CI / 承认不是产品）。落地为 `docs/ROADMAP.md` 的 **D5** + §7.1 阶梯重写 + `PROJECT_RULES.md` **新增第 4 问**（「如果有人不装我们，他会怎么办？」）。③ **流程分级**（`AGENTS.md` / `.agents/README.md` / `execution-playbook.md`）：判据轮重、交付轮轻、采证轮只认可复算，**证据要求不降**。④ **修数**：三份对外文档的 `1584` 全部改成「npm 关键词命中」口径（catalog 自称 7,557 条，未核实）；`listing` 里 dsh.so 状态从「尚未提交」改为「**已提交未收录**」（旧文案是漂移）。⑤ **新断言** `check_listing` 的 `listing-1584-is-qualified`——第一次跑就抓到 `docs/posts/README.md` 一处 census 说法。⑥ **归档**：§2 的 R29–R36 八行逐行原文 → `_archive/2026-10-29_HANDOFF-batch-rows-R29-R36.md`。⑦ **新盲区** `BS-43`（生态规模不可知：keyword 1,584 vs catalog 7,557）、`BS-44`（「需求不存在」还是「形态错」，只有 D5 能区分）。⑧ **M6 正门第一步已交付（同轮）**：`packages/core/src/upgrade-card.ts`（首行结论 + 四桶表 + 每单元原因/修复 + 边界句 + 复算命令；纯函数、无时钟、`redactRoots` 脱敏）+ CLI `upgrade --card` + 10 条单测 + `scripts/record_upgrade_card.mjs`；真机 **14/14**、192 单元 / 119 拒 / 73 判不了 / 0 改善（`data/results/upgrade-card-2026-10-29T13-00-00.000Z.json`）→ 测试数 **430 → 440**，两份 README 与检查器同步。**冻结项一字未动**：四桶判据 / `improved` 五条门槛 / `admission.ts` 规则顺序 / `data/gold/` / 20s 预算 / settle 15s / readiness 5s / 9 门 / 铁律 |
 | 交接（R46，2026-10-29） | **本轮只交接，不改行为**。`git log -1` = `a06422c`、`git status` 干净；**430 测试 / 9 门 / `--mutate` 9-9 / 255 步 / 235 产物全部被引用**；`pnpm install --frozen-lockfile` 无变更。**最近三轮连起来读**：R44 把 `improved` 点着（先扫 1584 包（**npm 关键词命中口径**，不是全量，见 `BS-43`）→ 前向 0，再按真实声明策展 6 个包，四桶非空、3 个改善），并补 registry 成功分支，顺带修掉三个记录器缺陷（恒假的 `control-has-no-new-denials`、离线视角进产物、写死的 `composition`）→ 新盲区 `BS-42`；R45 交付三篇案例帖（**草稿未发布**）+ 上架文案 zh/en + 第三条渠道 `walkinglabs` **PR #140** + 文案检查器 `check_listing.mjs`（第一次跑抓到 `dsh-triage@0.1.0` 残留在三份对外文档里）→ 随后的 follow-up 修了 dsh.so 检查的两个反馈（根清单缺 `license` 导致 SPDX 识别失败；安全扫描因 150 文件预算只扫到 0 个文件），并把 **dsh.so 提交**做成机器可复核：`--site dsh.so=human` + 三个 per-plugin JSON 端点探针，**提交后仍 404 → `submitted` 而不是 `listed`**。**真正仍未做**：① **1.0 被外部合并卡着**（`merged 0` / `listed 0`，三条 PR 全开）；② **M5-a 上传/聚合未开工**（要 `ADR-0012` + HUMAN 签字，A/B/C 三案未选）；③ 三篇案例帖仍是**草稿**；④ `BS-42`（前向 `improved` 0/1584）、`BS-40`（有载 1/100 无产物）、`BS-38`（跨 profile 机器可读拒绝）；⑤ 索引源只做到"托管成 URL"，Discover 里人工添加仍是一次 HUMAN 动作。**两条环境事实**：仓库 public（进仓即公开）、`git push` 要走系统代理（§4 坑表）。**冻结项一字未动**：`--unsettled-timeout 20000`、hook `settle 15s`、readiness 5s、`boot→sample ≤20s`、`isUsableSample()`/`judgeProbe()`、`data/gold/`、`PROJECT_RULES.md` 铁律、9 门 |
@@ -41,7 +42,8 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15/R16/R17）** · **D2 ✅（R18 首判 / R19 复算 / R29 新口径两批 12/12）** · **M3 稳定性分布 ✅（R31，36 次观测）** · **M4 形态 A ✅（`serve` v1）** · **M3 真实组合复制 ✅（T-304，R22）** · **M3 不可判等待收敛 ✅（`ADR-0008` E，R26）** · **M3 两阶段取样 ✅（T-312，R28）** · **M4-a ✅ 收口（R31 真机注册 / R33 可见性 + 同源结论）**；`namespace-diff`（T-303）仍缺（需 T-202a，`ADR-0009` 已签 A） · **M4-b ✅ 三件齐（R34 徽章 + 索引源；R36 `compat_verdict`）+ 索引源已托管（R38）** · **M5-a 本地半边 ✅（R41）**，上传/聚合待 `ADR-0012` · **M5-b ✅ 双边（R42 `upgrade --to`；R44 `improved` 真机 + registry 成功分支）**，`improved` 只有降级几何（`BS-42`） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**public**（R38 由 HUMAN 决定），`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **440 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **242 份 SSOT 产物** · **262 步台账** · **44 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（10 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 计划 T-806…T-810 + 两份历史归档** |
+| 规模 | **452 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **250 份 SSOT 产物** · **270 步台账** · **45 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（11 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** |
+| 证据（R48） | `data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json`（**26/26**：引导三态 / `next`·`latest` 与 registry 逐字比对 / 关键字版与精确版本版**四桶计数相同** / 断网 exit 3 零桶 / `canary` exit 2 / `--out` 五种行为）· `upgrade-entry-2026-10-29T15-40-00.000Z.json`（**保留的红产物**：记录器断言按英文标签匹配 zh 输出，产品行为正确）· `upgrade-entry-recompute-2026-10-29T16-00-00.000Z.json`（3/3 离线复算）· `listing-2026-10-29T16-20-00.000Z.json`（11/11）· `listing-2026-10-29T16-30-00.000Z.json`（红：把 119 改成 120）· `listing-2026-10-29T16-35-00.000Z.json`（红：删掉「不是你的机器」）· `listing-2026-10-29T17-00-00.000Z.json`（0.3.0 · 452 测试 · 11/11） |
 | 证据（R45） | `data/results/listing-2026-10-29T08-40-00.000Z.json`（8/8：版本 / 区间 / 测试数 / 12 条证据路径 / 禁用话术 / 文章登记 / 两条边界）· `data/results/listing-2026-10-29T08-00-00.000Z.json`（**保留的红产物**：第一次跑抓到 `dsh-triage@0.1.0` 三处旧漂移）· `data/results/market-channels-2026-10-29T10-00-00.000Z.json`（`live 3` + **dsh.so 已提交未收录**：三个端点 404） |
 | 证据（R44） | `data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json`（关键词命中 1584 扫描 / 202 今天被拒 / **前向 0** / 降级 113 / 都不放行 89）· `data/results/upgrade-mixed-2026-10-29T07-10-00.000Z.json`（四桶非空，30 项自检全过，`why` 交叉校验非空）· `data/results/upgrade-registry-live-2026-10-29T07-15-00.000Z.json`（成功分支 `facts = 2`，桶与计数不变）· `data/results/upgrade-mixed-2026-10-29T06-25-00.000Z.json`（**保留的红产物**：`control-has-no-new-denials` 旧定义恒假的唯一见证）· `data/results/market-channels-2026-10-29T07-20-00.000Z.json`（`merged = 0`） |
 | 硬规则 | **每一步做完必须四轴审核 + 真跑落产物**，写入 `audit/step_reviews.json`（R48 起 **262 步**），由门 `step-review` 重算 sha256；授权/签署单独记在 `audit/SIGNOFF.md`。**R47 起分轮型**：判据轮每步一条，交付/分发轮轮末一条汇总（见 `.agents/README.md` §6） |
@@ -73,25 +75,29 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
-满足即环境可信。**R48 的顺序由 HUMAN 定死：产品优先，四项做完再谈分发。**
+满足即环境可信。**R48 四项已完成；现在只剩「发出去」与「判 D5」。**
 
-1. **R48-1 `--to next` / `--to latest`**（`T-806`）：只在这两个关键字下联网读 `dist-tags`，解析成精确版本后走**同一条** `judgeUpgradeImpact`。判据：解析值**逐字等于** registry 的值；**断网 → exit 3 +「请显式给版本」，不产出任何桶**；`--to 9.9.9` → exit 2 且不联网。
-2. **R48-2 无参数引导**（`T-807`）：没有 `--to` 时不说「usage」，而是报「你当前是 X；可选目标 next=Y / latest=Z」，**仍 exit 2**（没有目标就不判定）。判据：三条真机路径有产物（有 profile / 无 profile / 无网络）；无网络**不许**假装知道 `next`。
-3. **R48-3 卡片落盘**（`T-808`）：`--card --out <file>` 写文件并打印路径（Windows 复制友好）。判据：文件内容与 stdout 版 sha256 相同；已有文件**拒绝覆盖** exit 2；目录只读 → exit 3 且不留半截文件。
-4. **R48-4 README 首屏真机输出**（`T-809`）：四桶片段 + 「声明层」+ **sandbox 标注** + 复算命令；`check_listing` 新增 `readme-shows-real-card`（删标注或改数字即红）。
-5. **R48 全绿之后**才做 `T-810`（分发草稿：agent 起草 / HUMAN 发布，**只用项目口吻，不暴露个人身份**），出口是 **D5**（`docs/ROADMAP.md` §2）：2 周内 reactions ≥10 · 外部引用 ≥1 · **npm 周下载从 `no-record` 变成 ≥1**。不达标 → 执行 **D**，禁止「再加一个功能试试」。
-6. **`M5-a` 上传/聚合仍未开工**：要另开 `ADR-0012`，HUMAN 签字前不许写任何上传代码。
-7. **口径不变的三条**：`BS-42`（`improved` 只有降级几何，不许说「升级会修好」）· `BS-43`（`1584` 是 npm 关键词口径，**不许**说全量）· `BS-44`（「需求不存在 vs 形态错」只有 D5 能区分）。
-8. **分发侧依旧不在我们手里**：三条 PR 全开（#65 / #193 / #140）、`merged 0`；dsh.so **已提交未收录**。`submitted` / `APPROVED` 都不是收录。
-9. **复算命令（不是待办）**：
+1. **HUMAN 动作：`npm publish` 0.3.0（四包）** —— 版本已在 manifest 与全部文案里对齐，但 registry 上仍是 0.2.0。
    ```powershell
-   node scripts/record_market_baseline.mjs --stamp <新 ISO>
+   pnpm -r publish        # 需要 OTP，HUMAN 手里；四包按依赖顺序
+   node scripts/record_publish.mjs --version 0.3.0 --stamp <新 ISO>
+   ```
+   验收：`record_publish` 全绿（registry 字节 = 本地 tarball、空 userconfig 匿名安装、CLI 命令数、`import()` 导出）。**在这之前 README 说「0.3.0 on npm」是领先于 registry 的**——这是唯一一处已知窗口，必须本轮关掉。
+2. **`T-810` 分发草稿（agent 起草 / HUMAN 发布）**：上游 rc Discussion 回复 ×3、GitHub 真实故障帖诊断 ×3、X 英文 ×1、中文长文 ×1、B站脚本 ×1。每篇只用真机产物（`data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json`、README 首屏那张卡片）与真实案例；**只用项目口吻，不暴露个人身份**。
+3. **D5 出口**（`docs/ROADMAP.md` §2）：2 周内 reactions ≥10 · 外部引用 ≥1 · **npm 周下载从 `no-record` 变成 ≥1**。不达标 → 执行 **D**，禁止「再加一个功能试试」。
+4. **`M5-a` 上传/聚合仍未开工**：要另开 `ADR-0012`，HUMAN 签字前不许写任何上传代码。
+5. **口径不变的三条**：`BS-42`（`improved` 只有降级几何，不许说「升级会修好」）· `BS-43`（`1584` 是 npm 关键词口径，**不许**说全量）· `BS-45`（dist-tag 的拒绝分支只有单测证据；「逐字相同」是时点断言）。
+6. **分发侧依旧不在我们手里**：三条 PR 全开（#65 / #193 / #140）、`merged 0`；dsh.so **已提交未收录**。`submitted` / `APPROVED` 都不是收录。
+7. **复算命令（不是待办）**：
+   ```powershell
+   node scripts/record_upgrade_entry.mjs --stamp <新 ISO>
+   node scripts/record_upgrade_entry.mjs --stamp <新 ISO> --fixtures data/fixtures/upgrade-entry/<来源 stamp> --artifact data/results/upgrade-entry-<来源 stamp>.json
    node scripts/record_upgrade_card.mjs --stamp <新 ISO>
    node scripts/check_listing.mjs --stamp <新 ISO> --tests <实测测试数>
    ```
-   验收：第一条离线复算 `claims[]` 逐条相同；第二条 **14/14**；第三条全过（含 `listing-1584-is-qualified`）。
+   验收：第一条 **26/26**；第二条 **3/3**（离线）；第三条 **14/14**；第四条 **11/11**（含 `readme-shows-real-card`）。
 
-**R48 交接要点（三句话）**：① **这一轮没写代码**，只把 R48 的计划写死、把两份历史归档、把入口的过期陈述改对；② **产品优先是 HUMAN 的明确口径**：先做「陌生人 60 秒」四项，**分发一律等绿了再发**；③ **只公开项目、不公开个人**——渠道因此是 GitHub / X / Reddit 优先，公众号 / 小红书降级。
+**R48 交接要点（三句话）**：① **四项已交付**：`--to next|latest`（解析值逐字等于 registry，断网零桶）、无参数引导（stderr、exit 2、不猜）、`--card --out`（原子写、拒覆盖、无残留）、README 首屏（真机卡片 + sandbox 标注 + 由产物驱动的数字断言）；② **判据一字未动**，四桶 / `improved` 五门槛 / `admission.ts` / 20s 全部原样；③ **剩下的全是 HUMAN 动作**：`npm publish 0.3.0` + `record_publish`，然后才是 `T-810` 与 D5。
 **R45 提醒（文案侧）**：检查器只查机器可查的（版本 / DSH 区间 / 测试数 / 证据路径 / 禁用话术 / 文章登记 / 两条边界）。**语气与"这句话有没有证据支撑"仍是评审工作**。它第一次跑就抓到 `dsh-triage@0.1.0` 残留在三份对外文档里——**发版时要扫文案**，别只改 CHANGELOG。
 **R44 提醒（`improved` 口径）**：`--expect-improved` 只断言「四桶非空 + 每个改善单元带两侧证据」，**不**断言方向；`target_relation = older`，产物 `source.composition` 明写这是**策展组合**（6 个真实包，声明原样未改，选谁是我们决定的）。**别**把 `improved` 读成「升级会修好」——那是 `BS-42`。
 **R40 提醒（分发侧）**：渠道状态现在 `validated 1 · ready 4 · live 2 · merged 0`（`market-channels-2026-10-29T02-10-00.000Z.json`），dsh.so 的 `blocker` 已清空；**`ready` 不等于提交过**。`@dsh-triage/probe` 这类新 scoped 包发布后会有一段时间 registry 仍回 404（staging + 扫描），`npm publish` 重发会得到「cannot publish over the previously published versions」——那不是失败，是它已经在里面了。

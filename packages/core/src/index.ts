@@ -156,5 +156,13 @@ export {
   upgradeTargetProblem,
 } from './upgrade.js'
 export { MAX_UNITS_PER_BUCKET, renderUpgradeCard, scrubCardText, type UpgradeCardOptions } from './upgrade-card.js'
+export {
+  DIST_TAG_PACKAGE,
+  DIST_TAG_TARGETS,
+  distTagTargetOf,
+  resolveDistTagTarget,
+  type DistTagResolution,
+  type DistTagTarget,
+} from './upgrade-target.js'
 
 export { redactEnv, redactPath, redactVerdict } from './redact.js'

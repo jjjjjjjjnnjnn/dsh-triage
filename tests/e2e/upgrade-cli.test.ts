@@ -13,7 +13,8 @@
 
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,6 +23,7 @@ import { test } from 'node:test'
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url))
 const CLI = join(repoRoot, 'packages', 'plugin', 'dist', 'cli.js')
 const STAMP = '2026-01-01T00:00:00.000Z'
+const sha256 = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex')
 
 interface Fixture {
   readonly root: string
@@ -79,13 +81,28 @@ function buildFixture(options: { readonly bundles: readonly string[]; readonly e
   return { root, home, dshHome }
 }
 
-function runCli(args: readonly string[], fixture: Fixture) {
+function runCli(
+  args: readonly string[],
+  fixture: Fixture,
+  extraEnv: Readonly<Record<string, string>> = {},
+  cwd: string = repoRoot,
+) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
-    cwd: repoRoot,
+    cwd,
     encoding: 'utf8',
-    env: { ...process.env, DSH_TRIAGE_LOCALE: 'en', HOME: fixture.home, USERPROFILE: fixture.home },
+    env: { ...process.env, DSH_TRIAGE_LOCALE: 'en', HOME: fixture.home, USERPROFILE: fixture.home, ...extraEnv },
   })
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' }
+}
+
+/**
+ * Point the child's `fetch` at a port that refuses connections (`record_upgrade_impact.mjs` uses the
+ * same trick). `NODE_USE_ENV_PROXY=1` is required for Node's global `fetch` to honour the proxy.
+ */
+const NO_NETWORK: Readonly<Record<string, string>> = {
+  NODE_USE_ENV_PROXY: '1',
+  HTTP_PROXY: 'http://127.0.0.1:9',
+  HTTPS_PROXY: 'http://127.0.0.1:9',
 }
 
 function withFixture(options: Parameters<typeof buildFixture>[0], body: (fixture: Fixture) => void): void {
@@ -99,22 +116,132 @@ function withFixture(options: Parameters<typeof buildFixture>[0], body: (fixture
 
 /* --------------------------------- N4 / N5 --------------------------------- */
 
-test('N4/N5: a missing, ranged, partial, tagged or empty --to is a usage error before anything is read', () => {
+test('N4/N5: a missing, ranged, partial, unknown-tag or empty --to is a usage error before anything is read', () => {
   withFixture({ bundles: ['fake-bundle'] }, (fixture) => {
     // The profile does not exist either: the target must still win, so the user fixes the flag
     // and not their installation.
     const missingProfile = ['--profile', 'does-not-exist', '--dsh-home', fixture.dshHome, '--json']
-    const usage = runCli(['upgrade', ...missingProfile], fixture)
+    const usage = runCli(['upgrade', ...missingProfile], fixture, NO_NETWORK)
     assert.equal(usage.status, 2)
-    assert.match(usage.stderr, /usage: dsh-triage upgrade --to/)
+    // M6 C8: no target means no judgement, but the message is guidance, not a bare usage line.
+    assert.match(usage.stderr, /nothing was judged/)
     assert.equal(usage.stdout.trim(), '', 'a usage error must not print a report')
 
-    for (const value of ['0.3', '^0.3.0', 'latest', '', '   ']) {
-      const result = runCli(['upgrade', '--to', value, ...missingProfile], fixture)
+    // `latest` is no longer in this list: it is a dist-tag keyword now (M6 C9), and its own
+    // negative control is "registry unreachable -> exit 3 with no bucket" below.
+    for (const value of ['0.3', '^0.3.0', 'canary', '', '   ']) {
+      const result = runCli(['upgrade', '--to', value, ...missingProfile], fixture, NO_NETWORK)
       assert.equal(result.status, 2, `--to "${value}": ${result.stderr}`)
       assert.match(result.stderr, /exact semver version/)
       assert.equal(result.stdout.trim(), '', 'a usage error must not print a report')
     }
+  })
+})
+
+/* ------------------------------ M6 C8 / C9 -------------------------------- */
+
+test('M6 C8: with no --to the guidance reports what it read and still refuses to judge', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    const result = runCli(['upgrade', '--dsh-home', fixture.dshHome, '--profile', 'web'], fixture, NO_NETWORK)
+    assert.equal(result.status, 2, 'no target is a usage error, even when everything else is readable')
+    assert.equal(result.stdout.trim(), '', 'guidance is not a report: stdout stays empty')
+    assert.match(result.stderr, /nothing was judged/)
+    assert.match(result.stderr, /current\s+0\.2\.1-rc\.2/, 'the running runtime is read from the profile')
+    // N8: unreachable registry -> `unknown`, never an invented tag value.
+    assert.match(result.stderr, /targets\s+unknown/)
+    assert.match(result.stderr, /no guess is made/)
+    assert.equal(/next \d+\.\d+\.\d+/.test(result.stderr), false, 'a failed lookup must not name a version')
+  })
+})
+
+test('M6 C8: an unreadable profile is reported as unknown, not as a version', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    const result = runCli(['upgrade', '--dsh-home', fixture.dshHome, '--profile', 'nope'], fixture, NO_NETWORK)
+    assert.equal(result.status, 2)
+    assert.equal(result.stdout.trim(), '')
+    assert.match(result.stderr, /current\s+unknown/)
+    assert.match(result.stderr, /profile-not-found/)
+  })
+})
+
+test('M6 C9: --to next with an unreachable registry exits 3 and produces no bucket', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    const result = runCli(['upgrade', '--to', 'next', '--dsh-home', fixture.dshHome, '--profile', 'web', '--json'], fixture, NO_NETWORK)
+    assert.equal(result.status, 3, result.stderr)
+    assert.equal(result.stdout.trim(), '', 'a failed resolution must not print a report')
+    assert.match(result.stderr, /cannot resolve --to next/)
+    assert.match(result.stderr, /never touches the network/, 'the hint names the offline path')
+  })
+})
+
+test('M6 C9: --to latest is resolved before any profile read, so a bad target never becomes a finding', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    const result = runCli(['upgrade', '--to', 'LATEST', '--dsh-home', fixture.dshHome, '--profile', 'nope'], fixture, NO_NETWORK)
+    assert.equal(result.status, 3, 'the keyword is recognised, and the lookup is what failed')
+    assert.match(result.stderr, /cannot resolve --to latest/)
+    assert.doesNotMatch(result.stderr, /exact semver version/, 'a keyword is never a usage error')
+  })
+})
+
+/* -------------------------------- M6 C10 ---------------------------------- */
+
+test('M6 C10: --card --out writes the same bytes a bare --card prints, and refuses to overwrite', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    const base = ['upgrade', '--to', '0.3.0', '--dsh-home', fixture.dshHome, '--profile', 'web', '--stamp', STAMP]
+    const plain = runCli([...base, '--card'], fixture, NO_NETWORK)
+    assert.equal(plain.status, 0, plain.stderr)
+
+    const target = join(fixture.root, 'nested', 'card.md')
+    const written = runCli([...base, '--card', '--out', target], fixture, NO_NETWORK, fixture.root)
+    assert.equal(written.status, 0, written.stderr)
+    assert.equal(written.stdout.trim(), join('nested', 'card.md'), 'under the cwd the printed path is relative')
+    const onDisk = readFileSync(target, 'utf8')
+    assert.equal(sha256(onDisk), sha256(plain.stdout), 'the file must be byte-identical to stdout')
+
+    const again = runCli([...base, '--card', '--out', target], fixture, NO_NETWORK, fixture.root)
+    assert.equal(again.status, 2, 'an existing file is a usage error, not an overwrite')
+    assert.match(again.stderr, /refusing to overwrite/)
+    assert.equal(sha256(readFileSync(target, 'utf8')), sha256(plain.stdout), 'the refusal must not touch the file')
+
+    // One output per run (M6 N7): `--json` wins over `--out` too, and says so instead of writing.
+    const unwritten = join(fixture.root, 'never-written.md')
+    const both = runCli([...base, '--json', '--out', unwritten], fixture, NO_NETWORK)
+    assert.equal(both.status, 0, both.stderr)
+    assert.doesNotThrow(() => JSON.parse(both.stdout), 'stdout must be JSON only')
+    assert.match(both.stderr, /out: ignored because --json was given/)
+    assert.equal(existsSync(unwritten), false, 'a refused output flag must not leave a file behind')
+  })
+})
+
+test('M6 C10: an unwritable target exits 3 and leaves no partial file', () => {
+  withFixture({ bundles: ['ok-bundle'] }, (fixture) => {
+    // Windows does not enforce a read-only *directory* for its owner, so the honest equivalent is a
+    // parent path that cannot be a directory (it is a file). No half-written card may appear.
+    const blocker = join(fixture.root, 'blocker')
+    writeFileSync(blocker, 'not a directory\n')
+    const result = runCli(
+      [
+        'upgrade',
+        '--to',
+        '0.3.0',
+        '--dsh-home',
+        fixture.dshHome,
+        '--profile',
+        'web',
+        '--stamp',
+        STAMP,
+        '--card',
+        '--out',
+        join(blocker, 'card.md'),
+      ],
+      fixture,
+      NO_NETWORK,
+    )
+    assert.equal(result.status, 3, result.stderr)
+    assert.match(result.stderr, /cannot write/)
+    const leftovers = readdirSync(fixture.root).filter((name) => name.includes('.tmp-'))
+    assert.deepEqual(leftovers, [], 'no temp file may survive a failed write')
+    assert.equal(existsSync(join(blocker, 'card.md')), false)
   })
 })
 

@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_entry.mjs",
+  "generated_at": "2026-10-29T15:50:00.000Z",
+  "inputs": {
+    "profile": "upstream",
+    "dsh_home": "<dsh-home>",
+    "current_runtime": "0.2.1-rc.4",
+    "locale": "zh",
+    "fixtures": "data\\fixtures\\upgrade-entry\\2026-10-29T15-50-00.000Z",
+    "card_target": "0.2.1-rc.4",
+    "card_sha256": "7690a6959e475aade50e1b4889066bf363250ef4c7061b4d429850fdfa86b616",
+    "card_bytes": 3133
+  },
+  "registry": {
+    "package": "@deepseek-ai/dsh",
+    "url": "https://registry.npmjs.org/@deepseek-ai%2Fdsh",
+    "status": 200,
+    "fetched_at": "2026-10-29T15:50:00.000Z",
+    "dist_tags": {
+      "alpha": "0.2.2-alpha.2",
+      "latest": "0.2.1-rc.2",
+      "next": "0.2.1-rc.4"
+    }
+  },
+  "runs": [
+    {
+      "id": "guidance-live",
+      "command": "dsh-triage upgrade --dsh-home <dsh-home> --profile upstream",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "stderr_head": "不判定：upgrade 需要目标版本才会产出任何桶（exit 2）\n当前    0.2.1-rc.4 · profile upstream\n可选目标  next 0.2.1-rc.4 · latest 0.2.1-rc.2 · 来源 npm @deepseek-ai/dsh\n下一步  dsh-triage upgrade --to next    （或 --to latest，或 --to <精确版本>；精确版本全程离线）"
+    },
+    {
+      "id": "guidance-no-network",
+      "command": "dsh-triage upgrade --dsh-home <dsh-home> --profile upstream",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "stderr_head": "不判定：upgrade 需要目标版本才会产出任何桶（exit 2）\n当前    0.2.1-rc.4 · profile upstream\n可选目标  未知 · npm network-error（这里不猜）\n下一步  dsh-triage upgrade --to next    （或 --to latest，或 --to <精确版本>；精确版本全程离线）"
+    },
+    {
+      "id": "guidance-no-profile",
+      "command": "dsh-triage upgrade --dsh-home <dsh-home> --profile does-not-exist",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "stderr_head": "不判定：upgrade 需要目标版本才会产出任何桶（exit 2）\n当前    读不到 · profile-not-found — no profile manifest under <dsh-home>\\profiles\\does-not-exist\n可选目标  未知 · npm network-error（这里不猜）\n下一步  dsh-triage upgrade --to next    （或 --to latest，或 --to <精确版本>；精确版本全程离线）"
+    },
+    {
+      "id": "tag-next",
+      "command": "dsh-triage upgrade --to next --dsh-home <dsh-home> --profile upstream --json",
+      "exit": 0,
+      "stdout_bytes": 291749,
+      "stderr_head": "target   next → 0.2.1-rc.4 (npm @deepseek-ai/dsh)\n",
+      "dist_tag_version": "0.2.1-rc.4"
+    },
+    {
+      "id": "tag-next-as-explicit-version",
+      "command": "dsh-triage upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile upstream --json",
+      "exit": 0,
+      "stdout_bytes": 291666,
+      "stderr_head": ""
+    },
+    {
+      "id": "tag-latest",
+      "command": "dsh-triage upgrade --to latest --dsh-home <dsh-home> --profile upstream --json",
+      "exit": 0,
+      "stdout_bytes": 838938,
+      "stderr_head": "target   latest → 0.2.1-rc.2 (npm @deepseek-ai/dsh)\n"
+    },
+    {
+      "id": "tag-no-network",
+      "command": "dsh-triage upgrade --to next --dsh-home <dsh-home> --profile upstream --json",
+      "exit": 3,
+      "stdout_bytes": 0,
+      "stderr_head": "cannot resolve --to next: npm did not answer for @deepseek-ai/dsh (network-error) — fetch failed\nhint: pass the exact version instead — that path never touches the network\n"
+    },
+    {
+      "id": "tag-unknown-keyword",
+      "command": "dsh-triage upgrade --to canary --dsh-home <dsh-home> --profile upstream --json",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "stderr_head": "target must be an exact semver version (got \"canary\"); only the keywords next and latest are resolved from npm, everything else must be exact\n"
+    },
+    {
+      "id": "card-stdout",
+      "command": "dsh-triage upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile upstream --stamp 2026-10-29T15:50:00.000Z --card",
+      "exit": 0,
+      "stdout_bytes": 3133,
+      "stderr_head": ""
+    },
+    {
+      "id": "card-out",
+      "command": "dsh-triage upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile upstream --stamp 2026-10-29T15:50:00.000Z --card --out <tmp>\\dsh-triage-card-69668\\nested\\card.md",
+      "exit": 0,
+      "stdout_bytes": 15,
+      "stderr_head": ""
+    },
+    {
+      "id": "card-out-overwrite",
+      "command": "dsh-triage upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile upstream --stamp 2026-10-29T15:50:00.000Z --card --out <tmp>/nested/card.md",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "stderr_head": "refusing to overwrite existing file: <tmp>\\dsh-triage-card-69668\\nested\\card.md (move it or pick another path)\n"
+    },
+    {
+      "id": "card-out-unwritable",
+      "command": "dsh-triage upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile upstream --stamp 2026-10-29T15:50:00.000Z --card --out <tmp>/blocker/card.md",
+      "exit": 3,
+      "stdout_bytes": 0,
+      "stderr_head": "cannot write <tmp>\\dsh-triage-card-69668\\blocker\\card.md: EEXIST: file already exists, mkdir '<tmp>\\dsh-triage-card-69668\\blocker'\n"
+    }
+  ],
+  "checks": [
+    {
+      "id": "registry-answers",
+      "ok": true,
+      "detail": "status 200 · next 0.2.1-rc.4 · latest 0.2.1-rc.2"
+    },
+    {
+      "id": "profile-is-readable",
+      "ok": true,
+      "detail": "dsh 0.2.1-rc.4"
+    },
+    {
+      "id": "guidance-exit-2",
+      "ok": true,
+      "detail": "exit 2 (no target is a usage error)"
+    },
+    {
+      "id": "guidance-stdout-empty",
+      "ok": true,
+      "detail": "stdout stays empty: guidance is not a report"
+    },
+    {
+      "id": "guidance-current-equals-profile",
+      "ok": true,
+      "detail": "expected the running runtime 0.2.1-rc.4 next to profile upstream"
+    },
+    {
+      "id": "guidance-targets-equal-registry",
+      "ok": true,
+      "detail": "expected next 0.2.1-rc.4 · latest 0.2.1-rc.2"
+    },
+    {
+      "id": "guidance-no-network-exit-2",
+      "ok": true,
+      "detail": "exit 2"
+    },
+    {
+      "id": "guidance-no-network-does-not-guess",
+      "ok": true,
+      "detail": "an unreachable registry says \"unknown\" and names no version (M6 N8)"
+    },
+    {
+      "id": "guidance-no-profile-exit-2",
+      "ok": true,
+      "detail": "exit 2"
+    },
+    {
+      "id": "guidance-no-profile-says-unknown",
+      "ok": true,
+      "detail": "an unreadable profile is never reported as a version"
+    },
+    {
+      "id": "tag-next-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "tag-next-resolved-verbatim",
+      "ok": true,
+      "detail": "judged 0.2.1-rc.4 · registry said 0.2.1-rc.4"
+    },
+    {
+      "id": "tag-next-declares-its-source",
+      "ok": true,
+      "detail": "target_source dist-tag"
+    },
+    {
+      "id": "tag-next-does-not-move-a-bucket",
+      "ok": true,
+      "detail": "a dist-tag decides which version is judged, never how it is bucketed"
+    },
+    {
+      "id": "tag-latest-resolved-verbatim",
+      "ok": true,
+      "detail": "judged 0.2.1-rc.2 · registry said 0.2.1-rc.2"
+    },
+    {
+      "id": "tag-no-network-exit-3",
+      "ok": true,
+      "detail": "exit 3"
+    },
+    {
+      "id": "tag-no-network-no-bucket",
+      "ok": true,
+      "detail": "a failed resolution produces no report at all"
+    },
+    {
+      "id": "tag-unknown-keyword-is-usage-not-lookup",
+      "ok": true,
+      "detail": "exit 2: an unknown word never becomes a registry read"
+    },
+    {
+      "id": "card-plain-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "card-out-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "card-out-prints-a-relative-path",
+      "ok": true,
+      "detail": "stdout was \"nested\\card.md\""
+    },
+    {
+      "id": "card-out-matches-stdout",
+      "ok": true,
+      "detail": "sha256 7690a6959e47…"
+    },
+    {
+      "id": "card-out-refuses-overwrite",
+      "ok": true,
+      "detail": "exit 2"
+    },
+    {
+      "id": "card-out-overwrite-keeps-bytes",
+      "ok": true,
+      "detail": "the refusal must not touch the existing file"
+    },
+    {
+      "id": "card-out-unwritable-exit-3",
+      "ok": true,
+      "detail": "exit 3"
+    },
+    {
+      "id": "card-out-unwritable-leaves-nothing",
+      "ok": true,
+      "detail": "no temp file, no partial card"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the registry answer is a snapshot: `--fixtures` re-derives only the claims that depend on it",
+    "tag-missing and tag-not-exact are covered by tests/unit/upgrade-target.test.ts: the live registry publishes both tags, so a real-run witness for those refusals does not exist yet",
+    "the profile is the in-repo sandbox (0.2.1-rc.4), not a user machine",
+    "`improved` is still only witnessed in the downgrade geometry (BS-42); nothing here changes that",
+    "an unwritable *directory* cannot be simulated on Windows for its owner, so the negative control uses a parent path that is a regular file (ENOTDIR/EEXIST) instead"
+  ]
+}

@@ -566,3 +566,15 @@
 - 结果：**零代码、零判据改动**。① **把 R48 的计划写死而不是记在脑子里**：四项各自有判据 + 负对照 + 产物要求，且明确「四项全绿之前不发任何内容」；② **两份历史归档（逐行原文）**：BACKLOG 257 → 90 行（「R3–R16 已交付」11 节、约 170 行搬走），HANDOFF §2 只留最近十轮 **R39–R48**；③ **修掉一处会误导接手人的过期陈述**：`AI_HANDOVER.md` §5 还写着「M1 收口 / M2 台账 / M3 probe / 分发起草」四个入口——它们全在 R14–R37 做完了；④ 把「playbook 只作渠道、不作收入线」这条判断连同理由（需要流量池，而我们从未推广）记进 SIGNOFF，避免下一轮又被重新讨论一遍。
 - 实测：**440 测试 / 9 门全绿 / `--mutate` 9/9**；新产物 `data/results/gates-2026-10-29T14-00-00.000Z.json`（262 步 / 242 产物全部被引用）
 - 反思：这一轮没有产出任何功能，但它修掉的是**最贵的两类债**——「清单里混着历史」和「文档写着已经完成的事」。接手的人只会读三份文件，其中任何一份撒谎，整轮都会白跑；而这两类债恰好不会让任何门变红（`archive-manifest` 只查路径存在），只能靠人主动去读一遍。
+### 2026-10-29 R48 交付｜升级日入口四项（`--to next|latest` / 无参数引导 / `--card --out` / README 首屏）+ 四包 0.3.0
+
+- 生成者：DeepSeek V4.1 Flash（opencode 主会话，兼 implementer / verifier / adversary）
+- 范围：`packages/core/src/{upgrade-target,messages,upgrade,index}.ts` · `packages/plugin/src/cli.ts` · `scripts/record_upgrade_entry.mjs`（新）· `scripts/check_listing.mjs` · `tests/unit/upgrade-target.test.ts`（新）· `tests/e2e/upgrade-cli.test.ts` · `README.md` / `README.zh-CN.md` · `docs/specs/M6-upgrade-day.md`（C8/N8 改写 + 新增 C9/C10 + N14–N18）· `docs/{HANDOFF,BACKLOG}.md` · `INDEX.md` · `AGENTS.md` · `CHANGELOG.md` · `docs/market/{listing_zh,listing_en}.md` · `docs/market/submissions/*` · `packages/*/package.json`（四包 0.3.0）· `audit/{step_reviews,blind_spots,SIGNOFF}.json|md` · `audit/AUDIT_2026-10-29_R48.md`（新）
+- 人工决策：HUMAN 三问三答（Plan 模式）——① 无参数引导**允许读一次 dist-tags**；② 「精确 semver 一律离线判定」（含 `9.9.9`），只有 `next`/`latest` 联网；③ 本轮做到「四项绿 + 四包升 0.3.0」，`npm publish` 仍是 HUMAN 动作（`audit/SIGNOFF.md` R48 执行口径行）
+- 结果：四项全部落地，**判据一字未动**（四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门原样）。① `resolveDistTagTarget` 只认两个关键字，解析值必须**逐字**等于 `dist-tags[tag]` 且是精确 semver（`v0.3.0` 被拒而不是被归一化）；断网/tag 缺失/值不精确 → exit 3 **零桶**。② 无 `--to` 时 stderr 报「当前 + next/latest + 下一步」并**仍 exit 2**，断网写 `未知` 不猜。③ `--card --out` 原子写、拒覆盖 exit 2、写失败 exit 3 无残留、stdout 只打路径。④ 两份 README 首屏放真机卡片，`check_listing` 新增 `readme-shows-real-card`，**数字从被引用的产物读回**逐项比对。
+- 实测：`pnpm run verify` **452 测试 / 0 fail / 9 门全绿**；`gate --mutate` **9/9**；`record_upgrade_entry` **26/26**（`data/results/upgrade-entry-2026-10-29T15-50-00.000Z.json`）；离线复算 **3/3**；`check_listing` **11/11**（`listing-2026-10-29T17-00-00.000Z.json`，0.3.0 / 452）
+- 过程中自己抓住的三个缺陷：① `record_upgrade_entry` 第一次跑红的 3 条是**断言自己写错**（按英文标签匹配 zh 输出）——红产物 `upgrade-entry-2026-10-29T15-40-00.000Z.json` 保留；② 覆盖拒绝原本返回 exit 3，与「目标已存在 → exit 2」的判据不符，改成分原因映射；③ 用 PowerShell `Get-Content|Set-Content` 造负对照时把中文 README 写坏（ANSIC 往返），那次红产物**作废并删除**，改用专门的编辑工具重做两条负对照
+- 新盲区：`BS-45`——`tag-missing`/`tag-not-exact` 只有单测证据（真实 registry 两个 tag 都存在且精确），且「逐字相同」是时点断言，只能靠产物里的快照与离线复算兜住
+- SessionID：待 HUMAN 回填（opencode 主会话）
+- 备注：`npm publish 0.3.0` 与 `record_publish` 尚未执行，所以 README 里「0.3.0 on npm」在这一刻**领先于 registry**——这是本轮唯一未关闭的窗口，写在 HANDOFF §3 第 1 条
+

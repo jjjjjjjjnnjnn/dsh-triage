@@ -186,7 +186,7 @@ export function upgradeTargetProblem(target: string): string | null {
   const trimmed = target.trim()
   if (trimmed === '') return 'target must be an exact semver version; got an empty string'
   if (valid(trimmed) === null) {
-    return `target must be an exact semver version (got "${target}"); ranges and dist-tags are not accepted`
+    return `target must be an exact semver version (got "${target}"); only the keywords next and latest are resolved from npm, everything else must be exact`
   }
   return null
 }

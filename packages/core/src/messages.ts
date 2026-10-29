@@ -137,6 +137,14 @@ const EN: MessageCatalog = {
     'upgrade.more-fixes': '… {count} more fix(es); pass --json for the full list',
     'upgrade.nothing-sampled':
       'nothing was sampled: profile "{profile}" has no bundle layer and no loader row, so there is no impact to report (this is not a clean bill of health)',
+    'upgrade.guidance.headline':
+      'nothing was judged: upgrade needs a target before it can produce any bucket (exit 2)',
+    'upgrade.guidance.current': 'current  {version} · profile {profile}',
+    'upgrade.guidance.current-unknown': 'current  unknown · {detail}',
+    'upgrade.guidance.targets': 'targets  next {next} · latest {latest} · read from npm {package}',
+    'upgrade.guidance.targets-unknown': 'targets  unknown · {detail} (no guess is made here)',
+    'upgrade.guidance.next-step':
+      'next     dsh-triage upgrade --to next    (or --to latest, or --to <exact version>, which stays fully offline)',
   },
 }
 
@@ -257,6 +265,13 @@ const ZH: MessageCatalog = {
     'upgrade.more-units': '…这个桶里还有 {count} 个单元；加 --json 看完整列表',
     'upgrade.more-fixes': '…还有 {count} 条修复建议；加 --json 看完整列表',
     'upgrade.nothing-sampled': '什么都没采到：profile「{profile}」既没有 bundle 层也没有 loader row，因此没有影响可报（这不是「一切正常」）',
+    'upgrade.guidance.headline': '不判定：upgrade 需要目标版本才会产出任何桶（exit 2）',
+    'upgrade.guidance.current': '当前    {version} · profile {profile}',
+    'upgrade.guidance.current-unknown': '当前    读不到 · {detail}',
+    'upgrade.guidance.targets': '可选目标  next {next} · latest {latest} · 来源 npm {package}',
+    'upgrade.guidance.targets-unknown': '可选目标  未知 · {detail}（这里不猜）',
+    'upgrade.guidance.next-step':
+      '下一步  dsh-triage upgrade --to next    （或 --to latest，或 --to <精确版本>；精确版本全程离线）',
   },
 }
 

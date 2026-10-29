@@ -33,7 +33,7 @@
 
 原因是仓库形态而不是源码不可扫：本仓 **827 个 tracked 文件**里 **309 个 `.json` + 232 个 `.sha256` + 112 个 `.md`**（`data/results/` 就是 460 个证据文件，这是产品的一部分：每份产物都带 sha256，由门禁重算），按路径顺序 `data/` 与 `docs/` 先把 150 的预算吃完了，`packages/` 与 `scripts/` 里的 85 个 `.ts` 没轮到。
 
-如果需要一个**真正扫过源码**的结果，请改为扫描 npm tarball：`dsh-triage@0.2.0` 的 `files` 只有 `dist/`、`client.js`、`cordis.patch.yml`、`README.md`（`dist/*.js` 是编译产物，AST 可分析），与仓库源码一一对应（`scripts/record_publish.mjs` 会逐字节比对 registry 与本地 tarball）。
+如果需要一个**真正扫过源码**的结果，请改为扫描 npm tarball：`dsh-triage@0.3.0` 的 `files` 只有 `dist/`、`client.js`、`cordis.patch.yml`、`README.md`（`dist/*.js` 是编译产物，AST 可分析），与仓库源码一一对应（`scripts/record_publish.mjs` 会逐字节比对 registry 与本地 tarball）。
 
 ## 5. 可以核对的入口
 

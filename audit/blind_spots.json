@@ -349,6 +349,15 @@
       "owner": "docs/ROADMAP.md D5 + scripts/record_market_baseline.mjs",
       "status": "open (R47): only D5 can separate \"no demand\" from \"wrong delivery form\"",
       "resolved_by": null
+    },
+    {
+      "id": "BS-45",
+      "area": "upgrade/target-resolution",
+      "cannot_see": "`--to next` / `--to latest` 的**拒绝分支**（tag 不存在 / tag 值不是精确 semver）没有真机见证：`@deepseek-ai/dsh` 这两个 tag 都存在且值都精确，所以 `tag-missing` / `tag-not-exact` 只有单测证据（`tests/unit/upgrade-target.test.ts`），没有「真实 registry 回一句怪话」的产物。另外「解析值与 registry 逐字相同」是一条**时点断言**：产物里锁的是 R48 那一刻的 `0.2.1-rc.4` / `0.2.1-rc.2`，上游改 tag 后旧产物不会自己变红",
+      "mitigation": "① 拒绝分支由单测钉死（三条拒绝码 + 不回退 latest + 不改写 `v` 前缀），并在 `data/results/upgrade-entry-*.json` 的 `limits[]` 里写明「没有真机见证」；② 时点断言由 `--fixtures` 离线复算保住「当时那两条值来自 registry」，同时 `check_listing` 的 `readme-shows-real-card` 会在卡片数字漂移时打红；③ 真正要新证据时：等上游发布一次只有 `latest` 的包或让 tag 临时指向范围值，再跑 `record_upgrade_entry.mjs`",
+      "owner": "scripts/record_upgrade_entry.mjs + tests/unit/upgrade-target.test.ts",
+      "status": "open (R48): refusal branches are unit-tested only; the verbatim claim is a point-in-time snapshot",
+      "resolved_by": null
     }
   ]
 }

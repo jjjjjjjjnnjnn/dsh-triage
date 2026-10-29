@@ -9,9 +9,38 @@ DeepSeek Harness（DSH）已经能告诉你插件**装不装得上**。没有人
 
 `dsh-triage` 回答用户真正在问的那句话：**「我的插件为什么不见了？」**；以及装之前那个问题：这个候选在你这套环境里活不活得下来。结论在本地算出，每条都带着它来自哪份证据；**没有证据就出 `unknown`**，不会编一个看起来专业的分数。
 
-npm 上 `dsh-triage@0.2.0` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
+npm 上 `dsh-triage@0.3.0` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
 
 ---
+
+## 升级日
+
+每个 dsh rc 发布时，真正的问题是：**我这套已装集合升上去会坏什么？**
+
+<!-- upgrade-card: data/results/upgrade-card-2026-10-29T13-00-00.000Z.json -->
+```console
+$ dsh-triage upgrade --to next
+# 升级日 · 0.3.0
+
+**upstream：192 个单元（2 bundle + 190 行）升到 0.3.0 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
+
+> profile `upstream`（live）· 当前 0.2.1-rc.4 · 目标比当前新
+> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。
+
+| 桶 | 数量 | 意思 |
+|---|---|---|
+| `would-be-denied` | 119 | 升上去会被摘掉 —— 目标版本的 admission 会拒绝这一行/包 |
+| `cannot-tell` | 73 | 判不了 —— 声明不足或目标还没发布，证据不够 |
+| `improved` | 0 | 今天被拒、目标放行 —— 今天是坏的，目标版本会放行它 |
+| `likely-fine` | 0 | 声明上不冲突 —— 不等于升级后能跑，只表示没有声明冲突 |
+```
+<!-- /upgrade-card -->
+
+**这些数字的出处**：仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标 `0.3.0`）—— **不是你的机器**，也不构成对你那套集合的结论。真正让它有意义的是**你的组合**；这里能复现的是形状。复算命令：`node scripts/record_upgrade_card.mjs --stamp <ISO>`。
+
+- `--to next` / `--to latest` 从 npm `dist-tags` 解析目标（读一次，然后走**同一条**判定）；`--to <精确版本>` 全程不联网。
+- `--card --out card.md` 把上面这些字节原样写到文件并打印路径，方便把样本带到 issue / Discussion 里。
+- 卡片永远不会说「升级会修好」：`improved` 那一栏写的是**「目标版本会放行它」**，因为声明被放行不是一次实测（`BS-42`）。
 
 ## 为什么需要它
 
@@ -124,7 +153,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 `--help` 里还有两条：
 
-- **`dsh-triage upgrade --to <版本>`** —— 升级 dsh 之前先问：**目标运行时**会拒掉哪些 loader 行与 bundle，四桶（`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`），修复文案与 `why` 同源。默认离线；registry 查询只是注解，**不能**把行从一个桶挪到另一个桶。它只说「会被拒」，不说「会不会坏」。
+- **`dsh-triage upgrade --to <版本|next|latest>`** —— 升级 dsh 之前先问：**目标运行时**会拒掉哪些 loader 行与 bundle，四桶（`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`），修复文案与 `why` 同源。精确版本全程离线；只有 `next` / `latest` 两个关键字会读 npm `dist-tags`，registry 查询只是注解，**不能**把行从一个桶挪到另一个桶。`--card` 打印可直接粘贴的摘要，`--card --out <file>` 把同样的字节落到文件。它只说「会被拒」，不说「会不会坏」。
 - **`dsh-triage outcomes`** —— 回流层的本地记录。**默认关闭**：关着的时候不建目录、不建文件。开启后（`--enable`）只存固定的字段白名单（无路径、无主机名、无日志、无自由文本），`--purge` 什么都不剩。**没有任何上传**，这条路径上没有联网代码。
 
 ## 它怎么判定
@@ -161,7 +190,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 | 主张 | 怎么复现 |
 |---|---|
-| 构建、类型检查、440 个测试、9 道门 | `pnpm run verify` |
+| 构建、类型检查、452 个测试、9 道门 | `pnpm run verify` |
 | 这些门真的会红 | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission 语义与上游逐条对等 | `data/gold/admission-cases.json` —— 27 条人工签署金标，由 `admission-parity` 门锁死 |
 | `why` 在真实故障上点中根因 | `node scripts/d1_report.mjs --stamp <iso>` → 10 个真实案例、9 命中、1 条显式 `unknown`（`data/results/d1-*.json`） |
@@ -183,7 +212,7 @@ CI 跑 Node 22 与 24 的 `verify`、一个 Windows 作业、一个 ubuntu 上�
 
 ## 当前状态与渠道
 
-- **npm** —— `dsh-triage@0.2.0` 已于 2026-10-29 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
+- **npm** —— `dsh-triage@0.3.0` 已于 2026-10-29 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
 - **PR 开着，但没有合并** —— [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65)（合并状态 `BLOCKED`，等审）与 [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193)（`APPROVED`，未合并）。提交过 ≠ 被收录。
 - **dsh.so** —— 提交包已就绪，尚未提交。
 - **除上面这些之外，没有别的渠道已收录本项目**（以上面那份快照为准）。如果某个目录说得更乐观，那是它比证据跑得快。

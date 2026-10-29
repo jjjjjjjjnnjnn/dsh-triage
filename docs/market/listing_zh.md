@@ -1,6 +1,6 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R47 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.2.0`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> **Stand**: R48 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.0`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
 > 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话
@@ -12,10 +12,11 @@
 每次 DSH 发新 rc，问题都很具体：**我这 20 多个插件，升上去还有几个能用？**
 
 ```sh
+dsh-triage upgrade --to next      # 目标从 npm dist-tags 解析（读一次），然后走同一条判定
 dsh-triage upgrade --to 0.2.1-rc.4
 ```
 
-输出是一张**按你的已装集合**算出来的表，四桶分区：`would-be-denied`（升上去会被摘掉）、`cannot-tell`（声明不足，判不了）、`improved`（今天被拒、目标版本放行）、`likely-fine`。每个会被摘掉的行都带**原因和修复命令**，附一句能直接粘到 issue/Discussion 的摘要。
+输出是一张**按你的已装集合**算出来的表，四桶分区：`would-be-denied`（升上去会被摘掉）、`cannot-tell`（声明不足，判不了）、`improved`（今天被拒、目标版本放行）、`likely-fine`。每个会被摘掉的行都带**原因和修复命令**，附一句能直接粘到 issue/Discussion 的摘要；`--card --out card.md` 把同一份摘要原样落到文件并打印路径。不带 `--to` 时它不判定，只告诉你**当前版本**与**可选目标**。
 
 **它答的是别人答不了的那一问**：市场告诉你「这个包能不能装」，注册表告诉你「它在干净沙盒里跑不跑得起来」，只有本机能告诉你「**你这一套装法**升上去会坏哪几个」。
 
@@ -41,7 +42,7 @@ dsh-triage why                     # 归因：被拒的行 + 影响 + 可直接�
 dsh-triage check <包>              # 装前判断：go / blocked / unknown + 原因 + 修复
 dsh-triage audit                   # 当前组合：行级 admission 结论 + 副本来源 + 相位
 dsh-triage probe <包> --execute --dsh-main <...>   # 隔离实测：boot / http / 渲染 / 台账，跑完必清理
-dsh-triage upgrade --to <版本>     # 升级影响：目标运行时会把哪一行摘掉（四桶，默认离线）
+dsh-triage upgrade --to <版本|next|latest>   # 升级影响：目标运行时会把哪一行摘掉（四桶；精确版本全程离线）
 dsh-triage badge <包>              # 把「已经记录过的那次运行」渲染成 shields 风格 SVG
 dsh-triage index --out <文件>      # format-1 索引源：只收实测 go 的版本，用上游校验器验证
 dsh-triage serve                   # 本地面板：只读、只绑 127.0.0.1、token + HttpOnly cookie
@@ -73,7 +74,7 @@ dsh-triage env                     # 环境指纹
 
 ## 当前状态（提交前看一眼）
 
-`0.2.0` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升）。M0–M6 的**构建侧**已完成；**分发侧**：三条 PR 待审（#65 等审 / #193 已 approved 未合并 / walkinglabs #140 新开），`merged 0`；dsh.so **已由人工提交，但三个 per-plugin JSON 端点仍 404 → 状态是 `submitted`，不是 `listed`**。详见 `docs/market/submissions/README.md`。
+`0.3.0` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升）。M0–M6 的**构建侧**已完成；**分发侧**：三条 PR 待审（#65 等审 / #193 已 approved 未合并 / walkinglabs #140 新开），`merged 0`；dsh.so **已由人工提交，但三个 per-plugin JSON 端点仍 404 → 状态是 `submitted`，不是 `listed`**。详见 `docs/market/submissions/README.md`。
 
 - format-1 索引源（公开 URL，已逐字节校验）：`https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

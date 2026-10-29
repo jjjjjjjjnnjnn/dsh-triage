@@ -1,7 +1,7 @@
 # Listing copy (English, ready to paste)
 
-> **Stand**: R47 (2026-10-29). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
-> against the repo (version, DSH range, evidence paths). Chinese counterpart: `docs/market/listing_zh.md`.
+> **Stand**: R48 (2026-10-29). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
+> against the repo (version, DSH range, evidence paths, and the README upgrade card). Chinese counterpart: `docs/market/listing_zh.md`.
 > Channel status lives in `docs/market/submissions/README.md`; long-form posts in `docs/posts/`.
 
 ## One line
@@ -13,12 +13,14 @@
 Every DSH release asks one concrete question: **I have two dozen plugins installed — how many still work after the bump?**
 
 ```sh
-dsh-triage upgrade --to 0.2.1-rc.4
+dsh-triage upgrade --to next
 ```
 
 The answer is a table computed against **your installed set**, partitioned four ways: `would-be-denied`, `cannot-tell`,
 `improved`, `likely-fine`. Every row that would be dropped comes with the reason and the fix command, plus a summary
-you can paste straight into the issue thread.
+you can paste straight into the issue thread (`--card --out card.md` lands the same bytes on disk). `next` / `latest`
+are resolved from npm `dist-tags` with one read; an exact version never touches the network. With no `--to` it judges
+nothing and tells you your current version plus the targets that exist.
 
 **That is the question nobody else can answer.** A marketplace says whether a package installs; a registry says whether
 it runs in a clean sandbox; only your machine says which of *your* rows breaks on the way up.
@@ -45,7 +47,7 @@ dsh-triage why                     # who got dropped, why, and the exact fix
 dsh-triage check <pkg[@version]>   # go / blocked / unknown before you install
 dsh-triage audit                   # row-level verdicts for the installed set, plus copy provenance
 dsh-triage probe <pkg> --execute --dsh-main <...>   # isolated boot / http / render / inventory, always cleaned up
-dsh-triage upgrade --to <version>  # which rows a target DSH build would deny (four buckets, offline by default)
+dsh-triage upgrade --to <version|next|latest>  # which rows a target DSH build would deny (exact versions stay offline)
 dsh-triage badge <pkg>             # shields-style SVG rendered from recorded evidence
 dsh-triage index --out <file>      # format-1 market index of versions measured "go", validated by the upstream validator
 dsh-triage serve                   # read-only local evidence panel, 127.0.0.1 only, token + HttpOnly cookie
@@ -82,7 +84,7 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 
 ## Current status
 
-`0.2.0` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
+`0.3.0` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
 requests are open (#65 awaiting review, #193 approved but unmerged, walkinglabs #140 just opened), `merged: 0`, and
 the dsh.so form was **submitted by a human** — but its three per-plugin JSON endpoints still return 404, so the status
 is `submitted`, **not** `listed`.

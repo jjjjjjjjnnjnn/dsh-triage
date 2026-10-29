@@ -1,6 +1,6 @@
 {
   "name": "@dsh-triage/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Judgment engine for DeepSeek Harness plugins: admission parity, environment fingerprint, capability ledger, verdict assembly. Pure, offline, deterministic.",
   "type": "module",
   "main": "./dist/index.js",

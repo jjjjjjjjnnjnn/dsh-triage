@@ -14,7 +14,9 @@
  *   5. no placeholder or forbidden claim (placeholders, "100% compatible", "no malware", "faster");
  *   6. every post in `docs/posts/` is listed in its README;
  *   7. the honest boundaries are still present (Wilson interval in the listings, the forward-`improved`
- *      finding in the upgrade post) — deleting a limitation must fail the check, not pass silently.
+ *      finding in the upgrade post) — deleting a limitation must fail the check, not pass silently;
+ *   8. both READMEs quote an upgrade card whose four bucket numbers match the artifact they point at,
+ *      with the sandbox annotation and the recompute command still in place (`T-809`).
  *
  * WHAT IT DOES NOT DO: it does not judge prose, does not verify numbers inside `data/results` payloads
  * (those artifacts are the source of truth) and does not publish anything.
@@ -196,6 +198,54 @@ check(
   'listing-1584-is-qualified',
   censusHits.length === 0,
   censusHits.slice(0, 4).join(', ') || 'every mention of 1584 says it is a keyword-search result, not a census',
+)
+
+/* 8. The upgrade card on the first screen (R48 / T-809).
+ * A stranger should meet the product's answer before the architecture. The numbers are never
+ * re-typed by hand: they are read out of the artifact the README points at, so a card that moved
+ * under the copy turns this red instead of quietly ageing (`BS-42` all over again). */
+const cardProblems = []
+for (const file of ['README.md', 'README.zh-CN.md']) {
+  const text = texts.get(file) ?? ''
+  const block = text.match(/<!--\s*upgrade-card:\s*(\S+?)\s*-->([\s\S]*?)<!--\s*\/upgrade-card\s*-->/)
+  if (block === null) {
+    cardProblems.push(`${file}: no upgrade-card block`)
+    continue
+  }
+  const [, pointer, body] = block
+  if (!existsSync(abs(pointer))) {
+    cardProblems.push(`${file}: points at a missing artifact ${pointer}`)
+    continue
+  }
+  const artifact = JSON.parse(readFileSync(abs(pointer), 'utf8'))
+  const counts = artifact?.inputs?.counts
+  if (counts === undefined) {
+    cardProblems.push(`${file}: ${pointer} has no inputs.counts`)
+    continue
+  }
+  for (const [bucket, count] of [
+    ['would-be-denied', counts.would_be_denied],
+    ['cannot-tell', counts.cannot_tell],
+    ['improved', counts.improved],
+    ['likely-fine', counts.likely_fine],
+  ]) {
+    if (!body.includes(`| \`${bucket}\` | ${count} |`)) {
+      cardProblems.push(`${file}: the ${bucket} row does not say ${count}`)
+    }
+  }
+  const conclusion = body.split('\n').find((line) => line.trim().startsWith('**') && line.trim().endsWith('**')) ?? ''
+  if (!conclusion.includes(String(counts.total))) cardProblems.push(`${file}: the conclusion does not state ${counts.total} units`)
+  if (!conclusion.includes(String(artifact?.inputs?.target))) cardProblems.push(`${file}: the conclusion does not name the target`)
+  if (!body.includes('upgrade --to')) cardProblems.push(`${file}: the block does not show the command`)
+  // The sandbox annotation is not decoration: without it the numbers read as "your machine".
+  if (!/沙盒|sandbox/i.test(text)) cardProblems.push(`${file}: no sandbox annotation`)
+  if (!/不是你的机器|not your machine/i.test(text)) cardProblems.push(`${file}: the sandbox annotation does not say it is not the reader's machine`)
+  if (!/record_upgrade_card\.mjs/.test(text)) cardProblems.push(`${file}: no recompute command`)
+}
+check(
+  'readme-shows-real-card',
+  cardProblems.length === 0,
+  cardProblems.slice(0, 4).join('; ') || 'both READMEs quote the artifact the card was recorded from',
 )
 
 const passed = checks.every((entry) => entry.ok)

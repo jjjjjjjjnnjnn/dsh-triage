@@ -6,6 +6,31 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.0] — 2026-10-29
+
+> The "stranger in 60 seconds" release: the upgrade-day card becomes reachable from a shell without
+> knowing a version string. **No judgement changed**: the four buckets, the `improved` evidence
+> thresholds, every admission rule and every threshold are byte-for-byte what 0.2.0 shipped. All four
+> packages move together again (a plugin that imports something a newer core exports fails at load).
+
+- **`dsh-triage upgrade --to next` / `--to latest`** — the target is resolved from npm `dist-tags`
+  (one read of `@deepseek-ai/dsh`), then judged by the *same* engine with the *same* exact version.
+  The resolved version is the registry's own string, verbatim: `v0.3.0` is refused rather than
+  rewritten to `0.3.0`, because a card that disagrees with the registry is a lie about evidence.
+  Unreachable registry or a missing tag → exit 3 with no bucket at all. An exact version stays
+  **fully offline**, including `--to 9.9.9`.
+- **`upgrade` with no `--to`** — no longer a bare usage line. It reports your current runtime, the
+  targets that exist (`next` / `latest`), and still exits 2: without a target there is nothing to
+  judge, and an empty report would read as "nothing will break". If the registry cannot be reached,
+  the line says `unknown` instead of inventing a version.
+- **`upgrade --card --out <file>`** — writes exactly the bytes a bare `--card` prints, atomically
+  (temp file + rename), prints the path (relative when it is under the working directory, so a pasted
+  log carries no home directory), refuses to overwrite an existing file (exit 2), and leaves nothing
+  half-written when the target cannot be written (exit 3).
+- **Both READMEs now open with the real card** and the command that produced it; a check
+  (`readme-shows-real-card` in `scripts/check_listing.mjs`) re-reads the cited artifact and fails the
+  copy if a bucket count, the sandbox annotation or the recompute command drifts.
+
 ## [0.2.0] — 2026-10-30
 
 > Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).

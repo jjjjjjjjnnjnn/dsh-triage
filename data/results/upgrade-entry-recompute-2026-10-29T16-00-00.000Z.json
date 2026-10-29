@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_entry.mjs",
+  "generated_at": "2026-10-29T16:00:00.000Z",
+  "offline_recompute": true,
+  "inputs": {
+    "fixture": "data\\fixtures\\upgrade-entry\\2026-10-29T16-00-00.000Z\\dsh-dist-tags.json",
+    "artifact": "<repo>\\data\\results\\upgrade-entry-2026-10-29T15-50-00.000Z.json"
+  },
+  "checks": [
+    {
+      "id": "recompute-artifact-sha256",
+      "ok": true,
+      "detail": "the artifact still matches its recorded sha256"
+    },
+    {
+      "id": "recompute-resolved-equals-cache",
+      "ok": true,
+      "detail": "cached next=0.2.1-rc.4 latest=0.2.1-rc.2"
+    },
+    {
+      "id": "recompute-tag-version-equals-cache",
+      "ok": true,
+      "detail": "artifact judged 0.2.1-rc.4 for \"next\""
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "only the network-derived claims are re-derived here (the resolved value is verbatim what npm said); the CLI runs are not re-executed offline",
+    "the guidance and card checks are deterministic given a profile and a version, and are covered by tests/e2e/upgrade-cli.test.ts"
+  ]
+}

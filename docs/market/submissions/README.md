@@ -2,7 +2,7 @@
 
 > **状态（R45，2026-10-29 实测）**：`validated 1 · ready 3 · live 3 · site 1（dsh.so 已提交、未收录）· merged 0`。
 > 证据：`data/results/market-channels-2026-10-29T10-00-00.000Z.json`（`submitted[]` 是三条 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。
-> **npm 已发布**：`dsh-triage@0.2.0`（四包同版本），匿名安装验证见 `data/results/publish-2026-10-30T05-00-00.000Z.json`。
+> **npm 已发布**：`dsh-triage@0.3.0`（四包同版本），匿名安装验证见 `data/results/publish-2026-10-30T05-00-00.000Z.json`。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
 ## 已提交的三条（`live: 3`）
@@ -52,7 +52,7 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 
 ## 还需要 HUMAN 的两件（都不阻塞别人）
 
-1. **dsh.so 提交表单**：包已经在 registry 上（`dsh-triage@0.2.0`），按 `awesome-lists.md` 的文案填一次即可。
+1. **dsh.so 提交表单**：包已经在 registry 上（`dsh-triage@0.3.0`），按 `awesome-lists.md` 的文案填一次即可。
 2. **等维护者**：#65 待审、#193 已 `APPROVED` 待合并；`state=merged` 之后才算收录（那一步不需要我们做）。
 
 （历史：R40 之前的唯一卡点是 npm 未发布；发布链的四条命令、`workspace:*` 与 org/OTP 的坑已写进 `docs/HANDOFF.md` §3/§4，别再按旧命令发。）
