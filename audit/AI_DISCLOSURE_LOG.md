@@ -533,6 +533,16 @@
 - 实测：430 测试 / 9 门全绿 / `--mutate` 9/9；新增 3 份产物（含 1 份保留的红产物）全部带 sha256 并被台账引用
 - 反思：这一轮最值钱的不是文章，是**检查器抓到的那处旧漂移**——R42 发版时同步了 CHANGELOG 和 HANDOFF，唯独没扫对外文案，于是 npm 页面上写着旧版本号。人工 review 连续两轮没看见它，一条 8 行的断言第一次就看见了。另外两个坑（PS 管道把中文变 `??`、Windows clone 把一行改动变成 597 行）都是**会在别人仓里留下痕迹**的错误，已写进 HANDOFF §4
 
+### 2026-10-29 R46｜交接（只交接，不改行为）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，单会话完成；未开 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R46-S1）
+- 范围：`docs/HANDOFF.md`（Stand / 当前批次 / §3 / §8）、`INDEX.md`、`docs/ROADMAP.md`、`AGENTS.md`、`audit/blind_spots.json`（stands）、`audit/step_reviews.json`（R46-S1）
+- 人工决策：HUMAN「同意。先进行项目交接，即将切换会话」
+- 结果：**零代码、零判据改动**。交接把最近三轮讲清：R44 点亮 `improved`（扫 1584 包 → 前向 0 → 真实声明策展 6 个包 → 四桶非空）并补 registry 成功分支；R45 三篇案例帖（草稿）+ 上架文案 zh/en + PR #140 + 文案检查器（抓到 `dsh-triage@0.1.0` 旧漂移）；随后的 follow-up 修了 dsh.so 检查的两个反馈，并把 dsh.so 提交做成"人工提交 + 端点探针（404 → `submitted`，不是 `listed`）"
+- 实测：430 测试 / 9 门全绿 / `--mutate` 9/9 / 255 步 / 235 产物；`git status` 干净
+- 反思：**分发侧已经不在我们手里**（三条 PR + 一条站点提交，`merged 0` / `listed 0`）。交接里最容易犯的错是为了显得有进展，把 `submitted`/`APPROVED` 说成"收录"——这一轮在 HANDOFF §3、§8、INDEX、提交说明与产物 `limits[]` 五处都写成同一句话，就是为了让下一位没有解释空间
+
 ### 2026-10-30 R43（补记）
 
 - 备注：R43 的 stand 标的是 2026-10-30，而本机时钟与提交时间都是 2026-10-29（`0210872` `+0800`）。R44 按真实时钟写 stand，并在 HANDOFF 顶部注明这处更正；不追改 R43 的历史文本

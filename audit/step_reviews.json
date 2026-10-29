@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R45 (2026-10-29)",
+  "stand": "R46 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6190,6 +6190,34 @@
         "artifact": "data/results/gates-2026-10-29T10-20-00.000Z.json",
         "sha256": "435644947c986d9611011fc54596d328d212e953141c8e408e851928d3a2d4a2",
         "outcome": "ALL GREEN · 9 gates（430 测试；254 步 / 234 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R46-S1",
+      "batch": "R46",
+      "step": "交接（R46）：Stand / 当前批次 / §3 第一件事 / §8 退出条件 / 计数全部对齐真实状态，新增 R46 交接行并把 M5-a 的三案（A/B/C）写明；本轮不改行为",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/gates-2026-10-29T10-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：交接里每个数字都能指到产物（430 测试 / 9 门 / 255 步 / 235 产物 / `merged 0` / `listed 0`）；§8 的六条未解除项都带 owner 与退出条件；M5-a 的三案与代价写成可选的题而不是待办。**本轮没改任何代码与判据**",
+        "reproducibility": "PASS：`pnpm install --frozen-lockfile` 无变更；`pnpm run verify` 430 测试 / `ALL GREEN · 9 gates`；`gate --mutate` 9/9；§3 第一件事仍是三条可复制命令",
+        "licence": "PASS：只改文档与台账；交接文字不含第三方正文；渠道状态引用的是我们自己产物的字段（`submitted[].state` / `site_submissions[].indexed`）",
+        "ssot": "PASS：`doc-stand` 三份入口（HANDOFF / INDEX / ROADMAP）+ 两份台账（step_reviews / blind_spots）同为 R46；`no-orphan-results` 235 份全部被引用；AGENTS.md 的 stand 与里程碑与 HANDOFF 一致",
+        "adversary": "反例一：把「dsh.so 已提交」写成「已收录」——被拒，产物里 `indexed: false`、三个端点 404；反例二：把 1.0 写成「就绪」——被拒，`merged 0`；反例三：把三篇草稿写成「已发布」——被拒，HANDOFF §2/§8 与 `docs/posts/README.md` 三处都标了未发布；反例四：为了让 stand 一致而把 R46 的改动说成 R45 的——被拒，改的是 Stand 与当前批次两处，历史行不动"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T10:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T10-40-00.000Z.json",
+        "sha256": "368a43114751c3ec5c65a70311301edea6c47e773fca66b3aac3cba975ec7456",
+        "outcome": "ALL GREEN · 9 gates（430 测试；255 步 / 235 产物全部被引用）"
       }
     }
   ]
