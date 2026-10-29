@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R42 (2026-10-30)",
+  "stand": "R43 (2026-10-30)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5805,6 +5805,36 @@
         "artifact": "data/results/gates-2026-10-30T05-20-00.000Z.json",
         "sha256": "85906a936cd75e2007c5b8cf9a308aae784cbf11a55ea34f721028b72ca177b3",
         "outcome": "ALL GREEN · 9 gates（427 测试；238 步 / 219 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R43-S1",
+      "batch": "R43",
+      "step": "交接（R43）：Stand / 当前批次 / §3 第一件事 / §8 退出条件 / 计数全部对齐真实状态，并补一份覆盖 R41–R42 的轮次报告（R36 之后唯一缺报告的两轮）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "audit/blind_spots.json",
+        "audit/AUDIT_2026-10-30_R41-R42.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "data/results/gates-2026-10-30T06-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：交接里每个数字都能指到产物（427 测试 / 9 门 / 239 步 / 219 产物 / npm 0.2.0 / 四包 latest）；§8 的四条新缺口都带 owner 与退出条件；本轮**没改任何代码与判据**",
+        "reproducibility": "PASS：`pnpm install --frozen-lockfile` 无变更；`pnpm run verify` 全绿、`gate --mutate` 9/9；§3 的第一件事是可复制命令块",
+        "licence": "PASS：只改文档与台账；轮次报告不含第三方内容",
+        "ssot": "PASS：`doc-stand` 三份入口文档 + 两份台账同为 R43；`no-orphan-results` 全绿；`R41–R42` 报告已建并登记 INDEX；`AI_DISCLOSURE_LOG` 含 SessionID 字段",
+        "adversary": "反例一：把「0.2.0 已发布」写成「dsh.so 已提交/已收录」；反例二：把 `improved` 桶的空洞藏起来（§8 单列了它，并写明对外只能说「四桶里三桶有真机证据」）；反例三：把 `BS-40` 的 1/100 写成 0；反例四：交接里重述 R32–R35 那种「只交接不补报告」的缺口——这次补了 R41–R42 的报告"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-30T06:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-30T06-00-00.000Z.json",
+        "sha256": "11e5c3f8ceff6c9aa26fa845aef26ac68cb3c14047d2cd7f680f7706e5651ef8",
+        "outcome": "ALL GREEN · 9 gates（427 测试；240 步 / 220 产物全部被引用）"
       }
     }
   ]

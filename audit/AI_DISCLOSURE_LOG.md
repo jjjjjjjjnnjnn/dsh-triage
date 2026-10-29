@@ -502,3 +502,13 @@
 - 结果：① **四个包发布**（`@dsh-triage/core|signals|probe` + `dsh-triage@0.1.0`），发布后验证是**匿名安装**（空 `npm_config_userconfig`）+ CLI 真跑 + registry 字节与本地 tarball 逐字节相同；② **dsh.so 由 `blocked` 变 `ready`**；③ **`BS-39` 收口**：ptc 真机三次调用全部被 registry 拒绝并回落到定义，native 对照 3/3 走 `tools.execute()`；④ 三个真发现：npm 不重写 `workspace:*`、ptc 下 `schemas()` 仍列出插件工具、hook 把对象拒因写成 `[object Object]`（外加一个布尔状态静默成 `--`）
 - 实测：352 测试（+2）/ 9 门 / `--mutate` 9/9；产物 `publish-2026-10-29T01-40-00.000Z.json`（20 项）、`market-channels-2026-10-29T02-00-00`/`02-10-00`、`agent-tool-ptc-2026-10-29T02-30-00`（首次失败，保留）/ `02-50-00` / `03-05-00`、`agent-tool-native-2026-10-29T03-20-00`
 - 未做：npm 发布动作本身由 HUMAN 执行（OTP 不在 agent 手里）；`BS-40`/`BS-41`/`BS-38`/`T-501` 仍未开工
+
+### 2026-10-30 R43｜交接（只交接，不改行为）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；本轮开了 5 个 subagent，见下）
+- SessionID：主会话（subagent 会话：`ses_e7aa6757effeSVhSDdXvTZZFkl` README · `ses_e7aa6757bffeb6Qe4timPw4FSE` ADR-0011/M5 spec · `ses_e7aa67579fferGNdbv4z9dsGrN` BS-41 夹具 · `ses_e7a549dd8ffeBnRD20aAhcDX1V` T-501 · `ses_e7a255766ffehyBxZypoN8igyv` T-502；`audit/step_reviews.json` R43-S1）
+- 范围：`docs/HANDOFF.md`（Stand / 当前批次 / §3 / §8）、`INDEX.md`、`docs/ROADMAP.md`（Stand）、`AGENTS.md`（Stand / 版本 / 测试数）、`audit/blind_spots.json`（stand）、`audit/AUDIT_2026-10-30_R41-R42.md`（新）、`audit/*` 台账
+- 起因：HUMAN「同意。先进行项目交接，即将切换会话」
+- 结果：**零代码、零判据改动**。交接把最近三轮讲清：R40 发 npm + `BS-39`/`BS-41` 收口；R41 `T-501` 本地半边 + `ADR-0011` A；R42 `T-502` 升级影响清单 + 0.2.0 四包发布。**真空洞**写进 §8：`improved` 桶无真机见证、`--registry` 成功分支无证据、dsh.so 未提交、M5-a 上传未开工、`BS-40` 1/100 未归因
+- 实测：427 测试 / 9 门全绿 / `--mutate` 9/9 / 240 步 / 220 产物；`git status` 干净
+- 反思：5 个 subagent 并行确实快，但每个都必须自己跑真机或测试、把边界写回报告；两次真实事故（home 路径进产物、stamp 撞车）都留在轮次报告里，没有抹掉

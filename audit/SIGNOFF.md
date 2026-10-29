@@ -44,6 +44,8 @@
 
 | 2026-10-29 | **R41 `ADR-0011` 代签（A 案）+ D4 判据口径变更（判据相邻，非阈值）**：先验只做 `check --explain` 注解/排序，永不进 `conclusion`；D4 从「命中率差 ≥10pp」改为「先验与后测的一致率（`pairs ≥ 30` 且 Wilson 下界 ≥ 0.80）」 | 会话内原话：「ADR-0011 签字区：A / B / C …… 你自己分析研究进行，我全部同意」 | DeepSeek V4.1 Flash：按 A 案落 ADR 状态与签字区，改写 `docs/ROADMAP.md` §2 的 D4 行并加一段口径说明；**没有**新增证据 tier、**没有**让先验进入 `conclusion`、**没有**改任何阈值 | HUMAN 未逐条复核：一致率统计量的选法（`pairs ≥ 30` / Wilson 下界 0.80）与「为什么不是 10pp」的论证；B 案 B1–B10 边界未审 | `docs/adr/0011-reflow-evidence-tier.md` §签字区 · `docs/ROADMAP.md` §2 · `docs/specs/M5-reflow.md` |
 
+| 2026-10-30 | **R42 0.2.0 四包发布（new version, new surface）**：`@dsh-triage/core|signals|probe` + `dsh-triage` 一起升到 `0.2.0`（新增 `outcomes` 与 `upgrade` 两个命令） | 会话内：HUMAN 在交互终端执行四条 `npm publish`（OTP 在 HUMAN 手里）；对「四包一起升」的方案明确同意 | DeepSeek V4.1 Flash：**没有替 HUMAN 发布**；负责发布前预检（干净目录装四个 tarball 真跑，抓到「只升插件会装到旧 core 并 SyntaxError」）、发布后**匿名安装**复验（20 项）、以及文档/台账同步 | HUMAN 未逐条复核：四个包的 registry 完整性比对、匿名安装的具体命令、以及「core 新增导出必须先发 core」这条发布顺序 | `data/results/publish-2026-10-30T05-00-00.000Z.json` · `data/results/gates-2026-10-30T06-00-00.000Z.json` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |
