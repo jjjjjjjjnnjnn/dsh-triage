@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { abs, isoStamp, readJson, repoRoot, sha256 } from './lib/kit.mjs'
 
@@ -103,6 +103,21 @@ if (record) {
   const text = `${JSON.stringify(payload, null, 2)}\n`
   mkdirSync(abs('data/results'), { recursive: true })
   const name = `gates-${mutate ? 'mutate-' : ''}${stamp.replaceAll(':', '-')}.json`
+  /*
+   * REFUSE TO OVERWRITE (R40): a `--stamp` names an artifact, and two different rounds can
+   * pick the same wall-clock minute. Twice this round a recording silently overwrote an
+   * artifact a committed step already cited, and the only symptom was a sha256 mismatch in
+   * `step-review` — after the original bytes were already gone. Artifacts are evidence;
+   * evidence does not get rewritten in place.
+   */
+  if (existsSync(abs(join('data/results', name)))) {
+    process.stderr.write(
+      `refusing to overwrite existing evidence: data/results/${name}\n` +
+        '  a stamp identifies an artifact; pick a stamp this round has not used yet\n',
+    )
+    process.exitCode = 2
+    process.exit(2)
+  }
   writeFileSync(abs(join('data/results', name)), text, 'utf8')
   writeFileSync(abs(join('data/results', `${name}.sha256`)), sha256(text), 'utf8')
   process.stdout.write(`ssot data/results/${name} sha256=${sha256(text).slice(0, 12)}…\n`)

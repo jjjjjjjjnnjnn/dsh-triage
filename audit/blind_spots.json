@@ -317,11 +317,11 @@
     {
       "id": "BS-41",
       "area": "probe/cleanup",
-      "cannot_see": "「探针自己的临时目录在 Windows 上被占用」能发生，但**只在 40 次 idle 跑里发生过 1 次**（R37：`rmSync` → `EPERM`，该候选被记成 `blocked`）。修法（scratch 失败只记录、不抛）让这条路径可诊断了，但**没有人能按需复现它**，所以「修好了」的证据是单测 + 一次真机历史产物，而不是一次受控复现",
-      "mitigation": "`bootAndSampleHost` 把准备/清理失败都写成 `setupError` / `scratchCleanupError` 并落进产物 `boot.setup_error`；判据新增 `probe.measurement-unavailable` → `unknown` + `missing.probe`（`docs/specs/M3-probe.md` N24 / N24b）。**退出条件**：能造出一个可复现的句柄占用（例如让一个子进程持有 sample 文件），把它变成第 38 条负对照",
-      "owner": "packages/probe/src/host.ts + packages/probe/src/exec.ts",
-      "status": "narrowed (R37): diagnosable and correctly judged, not reproducible on demand",
-      "resolved_by": null
+      "cannot_see": "R37 那次「探针自己的临时目录被占用」（`rmSync` → `EPERM`，候选被记成 `blocked`）**已在 R40 变成可按需复现**：一个子进程以该 scratch 目录为 CWD，`rmSync(dir, {recursive:true, force:true})` 就抛 `EPERM, Permission denied: …\\triage-live-…`——与历史产物同一个错误码与同一种消息形状（`tests/unit/probe-scratch-lock.test.ts`，Windows 上必跑）。仍然看不见的是：① 野外那次**是谁**持有的句柄（AV/扫描器这类外部持有者无法由本机制构造，所以「会不会再发生」仍是未知）；② Node 无法申请 `FILE_SHARE_READ|WRITE|DELETE` 之外的打开模式，所以夹具用的是**目录 CWD 锁**，不是「对 sample.json 的文件句柄锁」（实测 `fs.openSync` / `fs.opendirSync` 都不阻止删除：libuv 一律共享删除）；③ POSIX 上 rmdir 不理会 CWD，这条夹具在非 Windows 上被 skip，不能当作跨平台证据",
+      "mitigation": "`bootAndSampleHost` 把准备/清理失败都写成 `setupError` / `scratchCleanupError` 并落进产物 `boot.setup_error`；判据新增 `probe.measurement-unavailable` → `unknown` + `missing.probe`（`docs/specs/M3-probe.md` N24 / N24b）。**R40 起有真机机制夹具**：`tests/unit/probe-scratch-lock.test.ts` 用真 `bootAndSampleHost` 跑两种真失败——清理被 CWD 锁拒绝（样本保留、泄漏上报、判据仍 `go`）、scratch 根父级是文件（`ENOTDIR` → `unknown` + `missing.probe`，不进 `probe.boot-timeout`）；反向验证过：把 `removeScratch` 改回抛异常或删掉 `boot.setupError` 的落账，这两条立刻红",
+      "owner": "packages/probe/src/host.ts + packages/probe/src/exec.ts + tests/unit/probe-scratch-lock.test.ts",
+      "status": "closed (R40): reproducible on demand (CWD lock → real EPERM); the wild holder's identity and file-level share denial are still unseen",
+      "resolved_by": "tests/unit/probe-scratch-lock.test.ts"
     }
   ]
 }

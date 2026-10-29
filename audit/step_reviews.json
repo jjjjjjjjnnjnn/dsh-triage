@@ -5376,6 +5376,97 @@
         "sha256": "14088bcf5430303a29dac5524a936468c944c3d07edf9353f352033641845862",
         "outcome": "ALL GREEN · 9 gates（350 测试；220 步 / 203 产物全部被引用）"
       }
+    },
+    {
+      "id": "R40-S11",
+      "batch": "R40",
+      "step": "对外包装：两份 README 按公开项目重写（旧稿停在 R16 / 200 测试 / 七道门 / 一段复现不出来的 why 输出），每条主张都换回当期可复算事实",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：8 条命令逐个对照 `dsh-triage --help`；352 测试 / 9 门 / 27 金标 / D1 9-10 / npm 0.1.0 全部有产物指针；示例输出是当日真跑（`env` / `why` / `check` / `audit` / `probe` dry-run），三条 `check` 退出码实测（registry 读不到 → exit 3）",
+        "reproducibility": "PASS：`pnpm run verify` 覆盖 README 声称的每一项（构建/类型/测试/9 门）；`dsh-triage --help`、`node scripts/gate.mjs --mutate` 两条命令可当场复现；路径样本注明是手工缩写、`--json` 默认脱敏",
+        "licence": "PASS：无新增第三方内容；shields.io 徽章只用 npm 版本与 MIT 两个可由 registry/仓库自证的字段；未引用 dsh.so 数据集，故无需 CC BY 署名（许可段仍写明将来的署名义务）",
+        "ssot": "PASS：`governance` 的三条 README 断言（中文「不提供安全背书」/ 英文 `do **not** provide security assurances` / 文档口径）全过；`doc-stand` 三份入口文档同为 R40；INDEX 160 个引用全部存在",
+        "adversary": "反例一：旧稿的 `why` 示例是编的（英文表头 + 中文正文、版本号在 registry 不存在），新稿改为真跑并对绝对路径做手工裁剪说明；反例二：把 `dsh plugin install` 写成命令——实测只支持转发 `add/remove/why`，因此写 `dsh plugin --profile web add dsh-triage`；反例三：把 `approved` 写成「已收录」，新稿逐条写「提交过 ≠ 被收录」；反例四：20s 说成墙钟，新稿写等待预算 + 不可判仍要 ~29–30s"
+      },
+      "real_test": {
+        "command": "pnpm run verify（含 tests/governance 的 README 断言 + doc-stand）",
+        "artifact": "data/results/gates-2026-10-29T06-30-00.000Z.json",
+        "sha256": "b20d15e706eff2dc95f0a586fd636a2f0297d32c6a5367c8d9ed20cf7d98df80",
+        "outcome": "ALL GREEN · 9 gates；355 测试（含 README 双语断言）；两份 README 口径逐条一致"
+      }
+    },
+    {
+      "id": "R40-S12",
+      "batch": "R40",
+      "step": "M5-a 判据先行：`ADR-0011`（proposed）把 D4 的「命中率差 ≥10pp」与「次要证据不得改结论」的结构冲突写成 A/B/C 三案；`docs/specs/M5-reflow.md` 给出本地半边的字段白名单、0 PII、删除路径与 14 条负对照",
+      "changed": [
+        "docs/adr/0011-reflow-evidence-tier.md",
+        "docs/specs/M5-reflow.md",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS（作为设计文档）：三案互斥且各自写出「能说什么 / 不能说什么」；推荐 A（先验只做注解、D4 改写为一致率）并列出改推 B 的三个前置读数（F1/F2/F3，今天全部 `unmeasured`）；spec 的每条边界都配了负对照编号（N1–N14）",
+        "reproducibility": "PASS：D4 新口径写成可计算统计量（`pairs ≥ 30` 且 Wilson 下界 ≥ 0.80，不足即 `insufficient-pairs`），并指定由哪个脚本产出；未签之前不写任何读先验的代码",
+        "licence": "PASS：纯设计文档，无第三方内容；没有引入新依赖或新数据源",
+        "ssot": "PASS：ADR 状态是 `proposed`，签字区留 HUMAN；INDEX 两行都已登记且引用存在；两文件都明确写「未测」的地方（键密度、D4 数值、非 Windows 路径、ACL 隔离）",
+        "adversary": "反例一：把 ADR 写成 accepted（只有 HUMAN 能签）；反例二：让先验把 `blocked` 抬成 `go`——B 案 B1–B10 明确禁止，A 案则根本不进 verdict；反例三：默认开启采集（spec 要求关闭时连目录都不建）；反例四：把 outcome 存进 `~/.dsh`（铁律 3 禁止，spec 指定 `%LOCALAPPDATA%` / `$XDG_DATA_HOME`）"
+      },
+      "real_test": {
+        "command": "pnpm run verify（doc-stand + governance 的 INDEX 引用检查覆盖两个新文件）",
+        "artifact": "data/results/gates-2026-10-29T06-30-00.000Z.json",
+        "sha256": "b20d15e706eff2dc95f0a586fd636a2f0297d32c6a5367c8d9ed20cf7d98df80",
+        "outcome": "ALL GREEN · 9 gates；INDEX 160 个引用全部存在（含 ADR-0011 与 M5-reflow）；两份新文档状态为 proposed"
+      }
+    },
+    {
+      "id": "R40-S13",
+      "batch": "R40",
+      "step": "`BS-41` 关闭：用**真 OS 锁**（两跳孤儿 + CWD 持有者）让探针的 `rmSync` 抛 `EPERM`，三条负对照走真 `bootAndSampleHost` 证明「清理失败不毁样本、准备失败只出 `unknown`」",
+      "changed": [
+        "tests/unit/probe-scratch-lock.test.ts",
+        "audit/blind_spots.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS：`host.ts` 未改（`git diff packages/` 为空），夹具用真实机制而非注入；N38（清理被拒 → 样本保留 + `scratchCleanupError` 有值 + 判据仍 `go`）、N38b（走生产映射 → `go` 且 `missingEvidence=[]`）、N38c（`ENOTDIR` 准备失败 → `unknown` + `missing.probe`，不进 `probe.boot-timeout`）",
+        "reproducibility": "PASS：三条测试连跑 3 次全绿（12.3–12.9s/次），无残留临时目录与孤儿进程；非 Windows 自动 skip（POSIX `rmdir` 不看 CWD）；反向验证：把 `removeScratch` 改回抛异常、或删掉 `boot.setupError` 落账，两条立刻红",
+        "licence": "PASS：只用 Node 内置模块；夹具不依赖任何第三方包，也不触碰外部候选",
+        "ssot": "PASS：`BS-41` 改为 `closed (R40)` 并写清「仍未看见」三件事（野外持有者身份、Node 无法做文件级 share 拒绝、非 Windows skip）；`stand` 为 R40",
+        "adversary": "反例一：以为 `fs.openSync` / `opendirSync` 能挡住删除——libuv 带 `FILE_SHARE_DELETE`，实测删得掉；反例二：以为「launcher 直接挂一个子进程」就行——`taskkill /T /F` 会顺着 PPID 一起杀，第一版夹具因此什么都没证明（锁在清理前 1.2s 就死了）；反例三：把夹具写成「模拟注入」，那就只测了桩，不是真实机制"
+      },
+      "real_test": {
+        "command": "node --test tests/unit/probe-scratch-lock.test.ts（连跑 3 次）",
+        "artifact": "data/results/gates-2026-10-29T06-30-00.000Z.json",
+        "sha256": "b20d15e706eff2dc95f0a586fd636a2f0297d32c6a5367c8d9ed20cf7d98df80",
+        "outcome": "3/3 通过 ×3 次；全套 355 测试 / 9 门全绿；反向验证在报告里（改回旧代码即红）"
+      }
+    },
+    {
+      "id": "R40-S14",
+      "batch": "R40",
+      "step": "维护性修复：`gate.mjs --record` 拒绝覆盖已存在的产物（本轮两次撞 stamp 把已引用的证据覆盖掉，症状只在事后以 sha256 不匹配出现）",
+      "changed": [
+        "scripts/gate.mjs",
+        "tests/e2e/gate-record-collision.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：写入前检查目标文件，存在则打印 `refusing to overwrite existing evidence` 并 exit 2；退出码沿用「用法错误」的 2，不污染 0/1 语义",
+        "reproducibility": "PASS：新 e2e 测试用真实 CLI 复现（取一份已存在的 `gates-*` 产物 → 用它的 stamp 重录 → 断言 exit 2 + 文件字节未变），6.8s 通过",
+        "licence": "PASS：只改本仓脚本；无新依赖",
+        "ssot": "PASS：这条规则保护的是「产物是证据身份」——被引用的字节不得原地重写；测试本身断言原文件内容不变",
+        "adversary": "反例一：只打印警告然后继续写（等于没修）；反例二：只检查 `.json` 不检查 `.sha256`（已同时被 `existsSync` 覆盖）；反例三：把 exit 2 当成正常失败混进 CI（CI 用的是不带 `--record` 的调用，不受影响）"
+      },
+      "real_test": {
+        "command": "node --test tests/e2e/gate-record-collision.test.ts",
+        "artifact": "data/results/gates-2026-10-29T06-30-00.000Z.json",
+        "sha256": "b20d15e706eff2dc95f0a586fd636a2f0297d32c6a5367c8d9ed20cf7d98df80",
+        "outcome": "测试通过：重录已存在的 stamp → exit 2 + `refusing to overwrite`，原产物字节未变；全套 356 测试 / 9 门全绿"
+      }
     }
   ]
 }
