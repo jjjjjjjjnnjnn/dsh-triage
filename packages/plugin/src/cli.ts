@@ -38,6 +38,7 @@ import {
   redactVerdict,
   registryFactFor,
   renderUpgradeImpact,
+  renderUpgradeCard,
   renderVerdict,
   rowTargets,
   upgradeTargetProblem,
@@ -158,6 +159,8 @@ interface Flags {
   readonly to: string | null
   /** `upgrade --registry`: look up "is there a published build that declares the target?" (off by default). */
   readonly registry: boolean
+  /** `upgrade --card`: paste-ready markdown for the release discussion (`docs/specs/M6-upgrade-day.md`). */
+  readonly card: boolean
 }
 
 interface Parsed {
@@ -210,6 +213,7 @@ Flags
   --status              (outcomes) how many records exist (default when no verb is given)
   --to <version>        (upgrade) target dsh version, exact semver (e.g. 0.3.0)
   --registry            (upgrade) annotate with published builds that declare the target (offline by default)
+  --card                (upgrade) paste-ready markdown for the release discussion (four buckets + boundary)
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -526,7 +530,7 @@ async function commandWhy(flags: Flags): Promise<number> {
 async function commandUpgrade(flags: Flags): Promise<number> {
   if (flags.to === null) {
     process.stderr.write(
-      'usage: dsh-triage upgrade --to <version> [--profile <name>] [--dsh-home <path>] [--snapshot <file>] [--registry] [--strict] [--json]\n',
+      'usage: dsh-triage upgrade --to <version> [--profile <name>] [--dsh-home <path>] [--snapshot <file>] [--registry] [--card] [--strict] [--json]\n',
     )
     return EXIT_USAGE
   }
@@ -617,7 +621,15 @@ async function commandUpgrade(flags: Flags): Promise<number> {
   const impact = judged.impact
 
   if (flags.json) {
+    // One output per run (M6 N7): `--json` wins, and the ignored `--card` is said out loud rather than dropped.
+    if (flags.card) process.stderr.write('card: ignored because --json was given (one output per run)\n')
     writeJson(upgradeJsonPayload(impact))
+  } else if (flags.card) {
+    // The card is pasted in public, so warnings go to stderr: a `warn` line inside the markdown would be copied too.
+    process.stdout.write(
+      renderUpgradeCard(impact, { locale: flags.locale, redactRoots: [homedir(), flags.dshHome ?? resolveDshHome(flags)] }),
+    )
+    for (const warning of warnings) process.stderr.write(`warn  ${warning}\n`)
   } else {
     process.stdout.write(renderUpgradeImpact(impact, flags.locale))
     for (const warning of warnings) process.stdout.write(`warn  ${warning}\n`)
@@ -1550,6 +1562,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let status = false
   let to: string | null = null
   let registry = false
+  let card = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -1704,6 +1717,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--registry':
         registry = true
         break
+      case '--card':
+        card = true
+        break
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -1715,7 +1731,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

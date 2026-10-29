@@ -6322,6 +6322,55 @@
         "sha256": "4507bf7e7eaf14a28df5c2154d8be2673d71adb23d1633515a1777a769ee7a7e",
         "outcome": "ALL GREEN · 9 gates（430 测试；258 步 / 全部产物被引用）"
       }
+    },
+    {
+      "id": "R47-S5",
+      "batch": "R47",
+      "step": "M6 正门第一步：升级日卡片落地（首行结论 + 四桶表 + 每单元原因/修复 + 边界句 + 复算命令），10 条单测 + 真机 14 项自检",
+      "changed": [
+        "packages/core/src/upgrade-card.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/upgrade-card.test.ts",
+        "scripts/record_upgrade_card.mjs",
+        "docs/specs/M6-upgrade-day.md"
+      ],
+      "review": {
+        "correctness": "PASS：卡片的每一个数都来自 `impact.counts`（N2：把 `counts.would_be_denied` 改大 7，卡片跟着变），单元列表只是投影；四桶分区自检 `denied+cannot+improved+fine = total` 在真机上也过（192 = 119+73+0+0）；原因/修复文案复用同一套 catalogue，与 CLI 逐字同源，没有第二套规则",
+        "reproducibility": "PASS：卡片不含时钟（`generated_at` 只进产物、不进文本），同一 impact 两次渲染 sha256 相同（单测 + 真机各一条）；产物带 `card_sha256` / `card_bytes` / `card_lines`，`.sha256` 为纯 hash；真机命令与参数写进 `inputs`，`dsh_home` 记为 `<dsh-home>`",
+        "licence": "PASS：只跑本仓 CLI 与仓内沙盒 profile，无第三方产物、无网络；卡片文本里只有包名与 row id",
+        "ssot": "PASS：`docs/specs/M6-upgrade-day.md` 的 C1–C8 与 N1/N4/N6/N7/N11/N12 都有对应断言；HANDOFF / INDEX / BACKLOG / DESIGN-MAP 的 `upgrade` 描述同步为「卡片是正门」；四桶判据与 `admission.ts` 一字未动",
+        "adversary": "反例一：让卡片自己数桶（重新分类）——被拒，N2 断言 counts 驱动；反例二：把边界句删掉、「目标版本会放行它」换成「升级会修好」——被拒，单测 + 真机都查禁用话术；反例三：把 profile 绝对路径写进卡片——被拒，`redactRoots` + 形状兜底，真机 14 项里 `card-carries-no-home-path` 为真；反例四：`--card --json` 两个都打印——被拒，JSON 独占 stdout 并在 stderr 说明 card 被忽略"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --stamp 2026-10-29T13:00:00.000Z",
+        "artifact": "data/results/upgrade-card-2026-10-29T13-00-00.000Z.json",
+        "sha256": "c96457596edf23155768d354add2e0cb0640a2a27326cb36071118ae9379ea5a",
+        "outcome": "14/14 全过；192 单元（2 bundle + 190 行）/ 119 会被拒 / 73 判不了 / 0 改善 / 0 像没事；两次渲染同 sha256；无 home 路径"
+      }
+    },
+    {
+      "id": "R47-S6",
+      "batch": "R47",
+      "step": "收口：新增 10 条卡片单测后测试数 430 → 440，两份 README 与文案检查器同步（10/10 全过）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-10-29T13-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` 实测 **440 tests / 0 fail**，两份 README 的测试数改为 440 后 `check_listing --tests 440` 10/10 全过；没有为了对齐数字去删断言或改阈值",
+        "reproducibility": "PASS：产物由脚本真跑产出（`--tests 440` 取自同一次 `pnpm run verify`），带 13 条证据路径与 `.sha256`；README 的改动同一提交内完成，不存在「文档先绿、代码后补」",
+        "licence": "PASS：只改自家文档的计数与新增一节卡片说明，无外部数据",
+        "ssot": "PASS：HANDOFF / INDEX 的规模行（440 测试 / 260→261 步 / 240→241 产物）与 step_reviews 同步；`listing-keeps-wilson-interval`、`listing-keeps-forward-improved-boundary`、`listing-1584-is-qualified` 三条边界断言全部在位",
+        "adversary": "反例一：把 README 的 430 改成「约 400」以逃避检查器——被拒，断言按精确数字比对；反例二：只改英文 README——被拒，两份 README 都在扫描列表里；反例三：改数字但不重跑产物——被拒，产物里的 `inputs.tests` 与文档必须一致才绿"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T13:20:00.000Z --tests 440",
+        "artifact": "data/results/listing-2026-10-29T13-20-00.000Z.json",
+        "sha256": "0553c40075a69b8337157fcb28bc0a441789b57d34c5bbb502fb7575396fe8e7",
+        "outcome": "10/10 PASS（含 listing-1584-is-qualified）；测试数 440 与 README 一致"
+      }
     }
   ]
 }

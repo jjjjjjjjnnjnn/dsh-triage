@@ -46,7 +46,7 @@ ProbeRun ────────┘        │
 
 | 外壳 | 用户价值 | 状态 |
 |---|---|---|
-| **升级日卡片（`upgrade --card`）** | **正门（R47）**：每次 rc 发布前回答「你这套会坏什么」，可粘贴进 Discussion | **M6（判据已定，渲染待做：`docs/specs/M6-upgrade-day.md`）** |
+| **升级日卡片（`upgrade --card`）** | **正门（R47）**：每次 rc 发布前回答「你这套会坏什么」，可粘贴进 Discussion | **M6 ✅ 渲染已交付（`packages/core/src/upgrade-card.ts` + `scripts/record_upgrade_card.mjs`，真机 14/14）**；投放（D5）未做 |
 | `dsh-triage why/check/audit` | CLI，零网络 | M0 已有（`why`/`audit` 基础版） |
 | Web 面板（`settings.plugins.tab`） | 在 DSH 内直接看到判断 | M4 |
 | 作者徽章（SVG） | README 曝光 → 自然获客 | M4 |

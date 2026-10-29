@@ -155,5 +155,6 @@ export {
   renderUpgradeImpact,
   upgradeTargetProblem,
 } from './upgrade.js'
+export { MAX_UNITS_PER_BUCKET, renderUpgradeCard, scrubCardText, type UpgradeCardOptions } from './upgrade-card.js'
 
 export { redactEnv, redactPath, redactVerdict } from './redact.js'

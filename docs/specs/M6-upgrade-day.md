@@ -1,6 +1,6 @@
 # M6 · 升级日（正门）· 判据先行
 
-> **Stand**: R47 (2026-10-29)｜**状态**：判据已定，**卡片渲染未实现**（`packages/core/src/upgrade-card.ts` 待写）
+> **Stand**: R47 (2026-10-29)｜**状态**：判据已定，**渲染已实现（T-801 ✅）**：`packages/core/src/upgrade-card.ts` + CLI `upgrade --card` + 10 条单测 + 真机 `data/results/upgrade-card-2026-10-29T13-00-00.000Z.json`（14/14 自检）
 > **上一层的判据不动**：四桶、`improved` 五条门槛、`admission.ts` 规则顺序全部沿用 `docs/specs/M5-upgrade.md`；本文**只规定渲染与交付形态**，不新增任何判断。
 
 ---
@@ -61,7 +61,11 @@
 
 ## 6. 验收（D5 之前）
 
-1. `packages/core/src/upgrade-card.ts` 纯函数 + 上述 13 条负对照（真跑，不是 mock）；
-2. `scripts/record_upgrade_card.mjs` 在沙盒 `upstream` 上真跑一次 → `data/results/upgrade-card-*.json` + `.sha256`；
-3. 卡片样本能在对应 rc 的 Discussion 里**原样粘贴**（含复算命令）；
-4. 门禁全绿，四桶判据一字未动。
+**已达成（R47）**：
+
+1. ✅ `packages/core/src/upgrade-card.ts` 纯函数 + 10 条单测（`tests/unit/upgrade-card.test.ts`，覆盖 C1–C6 与 N1/N2/N4/N6/N11/N12），全部真跑；
+2. ✅ `scripts/record_upgrade_card.mjs` 在沙盒 `upstream` 上真跑：**14/14 自检**，产物 `data/results/upgrade-card-2026-10-29T13-00-00.000Z.json`（192 单元 / 119 拒 / 73 判不了 / 0 改善 / 0 像没事；两次渲染同 sha256；无 home 路径）；
+3. ⬜ 卡片样本在对应 rc 的 Discussion 里原样粘贴（**D5 的动作，尚未执行**）；
+4. ✅ 门禁全绿，四桶判据一字未动。
+
+**真机读数（沙盒 `upstream` → 0.3.0）**：`119 会被拒 / 73 判不了 / 0 改善 / 0 像没事` —— 这正是 `BS-42` 的现场：全仓模板 profile 的行都精确钉 `0.2.1-rc.4`，所以「升到更新的版本」在今天没有任何改善样本，卡片只能如实写「目标版本会放行它」而不能说「升级会修好」。

@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.2.0`（R42 发布）｜**Stand**: R47 (2026-10-29)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；`upgrade` 四桶引擎早已建好，本轮到它当首页 | M0 ✅（9 门 / 9-9 · **430 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日正门 🚧（R47 起：市场基线落盘 + 卡片正门 + 4 周可证伪实验）**（细节以 `docs/HANDOFF.md` §2 为准）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.2.0`（R42 发布）｜**Stand**: R47 (2026-10-29)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；`upgrade` 四桶引擎早已建好，本轮到它当首页 | M0 ✅（9 门 / 9-9 · **440 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日正门 🚧（R47 起：市场基线落盘 + 卡片正门 + 4 周可证伪实验）**（细节以 `docs/HANDOFF.md` §2 为准）
 > **Mission**: 在 DSH 生态里做「升级日」的判断层——每次 rc 发布，回答「**你这套已装集合**升上去会坏什么、怎么修」，再把同一份结果做成市场 / 索引源 / CI 能直接消费的数据 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
