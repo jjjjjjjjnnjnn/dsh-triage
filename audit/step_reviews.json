@@ -5467,6 +5467,119 @@
         "sha256": "b20d15e706eff2dc95f0a586fd636a2f0297d32c6a5367c8d9ed20cf7d98df80",
         "outcome": "测试通过：重录已存在的 stamp → exit 2 + `refusing to overwrite`，原产物字节未变；全套 356 测试 / 9 门全绿"
       }
+    },
+    {
+      "id": "R40-S15",
+      "batch": "R40",
+      "step": "`BS-40` 第一批量测：`--load 8` 跑满整批（20 次运行 / 真实 13），记录实际占用与 `boot→sample` 分布",
+      "changed": [
+        "data/results/probe-matrix-2026-10-29T07-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：20 次运行 exit 全 0、结论 12 go / 1 blocked / 1 unknown（unknown 是永不 settle 的夹具）、`expectation_misses=0`、清理 20/20；`load.observed_busy_percent=77.1`（8 workers / 24 核）",
+        "reproducibility": "PASS：命令与 R37 相同，只换 stamp；产物带 `load{workers,cores,observed_busy_percent}` 与逐 run 结论，可复算",
+        "licence": "PASS：候选是既有 pin 版本，沙盒 file:/registry 安装，不注入凭据；无新数据源",
+        "ssot": "PASS：`produced_by`/`generated_at`/`.sha256` 齐全；`runs_without_artifact` 为空（本批 0 崩溃）",
+        "adversary": "反例一：只看「全绿」就说有载没问题——本批 median 12.9s 已经比 R37 的 7.4s 高一截，必须连着占用率一起读；反例二：把 fixture 的 `unknown` 当成崩溃（它是设计内的永不 settle）"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json --install … --load 8 --stamp 2026-10-29T07:00:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-29T07-00-00.000Z.json",
+        "sha256": "cf052e3e1152d2d42f362c855b741c0f4f580b690bb9a5afeb29b08cfcf2b7db",
+        "outcome": "n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown / 清理 20-20 / `boot→sample` 7.2–15.3s（median 12.9s） / 占用 77.1%"
+      }
+    },
+    {
+      "id": "R40-S16",
+      "batch": "R40",
+      "step": "`BS-40` 第二批量测：同条件再跑一批，占用率升到 94.3%，`boot→sample` 中位数被推到 15.5s",
+      "changed": [
+        "data/results/probe-matrix-2026-10-29T07-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：20 次 exit 全 0、12 go / 1 blocked / 1 unknown、清理 20/20、`expectation_misses=0`；占用 94.3%，`boot→sample` 11.8–18.8s（median 15.5s），仍在 20s 内",
+        "reproducibility": "PASS：与上一批只差 stamp 与机器状态；产物把占用率写进 `load`，读者能看出两批不是同一条件",
+        "licence": "PASS：同上，无新增依赖或数据源",
+        "ssot": "PASS：SSOT 字段齐全；本批 0 崩溃",
+        "adversary": "反例一：把「这批没超预算」写成「有载安全」——本批最慢 18.8s，只剩 1.2s；反例二：拿 15.5s 与 R37 的 7.4s 直接相减当「有载代价」，两批占用率不同（58–62% vs 94%）"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs … --load 8 --stamp 2026-10-29T07:40:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-29T07-40-00.000Z.json",
+        "sha256": "756fac79bdb1bcee78f617a1e1057b4d81ceecac675fe1ecbb027b91e550cfb7",
+        "outcome": "n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown / 清理 20-20 / `boot→sample` 11.8–18.8s（median 15.5s） / 占用 94.3%"
+      }
+    },
+    {
+      "id": "R40-S17",
+      "batch": "R40",
+      "step": "`BS-40` 第三批量测：占用 89.8%，最慢一次 19.8s——预算没被击穿，但余量只剩 0.2s",
+      "changed": [
+        "data/results/probe-matrix-2026-10-29T08-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：20 次 exit 全 0、12 go / 1 blocked / 1 unknown、清理 20/20、`expectation_misses=0`；`boot→sample` 12.6–19.8s（median 14.3s），16/16 在预算内",
+        "reproducibility": "PASS：同命令同 plan；三批合起来才构成分布，单批不用于结论",
+        "licence": "PASS：无新增依赖或数据源",
+        "ssot": "PASS：SSOT 字段齐全；本批 0 崩溃",
+        "adversary": "反例一：19.8s 的 run 是真实候选而不是夹具——差 0.2s 就会让 `d2_report` 的 `boot-budget` 判红，所以「有载不影响结论」只能说到 ~60% 占用；反例二：把三批合并时丢掉 `conditions[]`，就会把 12.3s 中位数误当成空载数字"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs … --load 8 --stamp 2026-10-29T08:20:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-29T08-20-00.000Z.json",
+        "sha256": "95d1afaa8a17bebd185fda1c0e09390de59dc11656239e2edca73d7cb43ace75",
+        "outcome": "n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown / 清理 20-20 / `boot→sample` 12.6–19.8s（median 14.3s） / 占用 89.8%"
+      }
+    },
+    {
+      "id": "R40-S18",
+      "batch": "R40",
+      "step": "把 8 份矩阵合成一个分布（3 批空载 + 5 批有载），`BS-40` 因此从「一个观测」变成「1/100，Wilson 0.18%–5.45%」",
+      "changed": [
+        "data/results/stability-2026-10-29T08-50-00.000Z.json",
+        "audit/blind_spots.json",
+        "INDEX.md",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS：有载 5 批 / 真实 n=60 / median 12.3s / p90 16.0s / 0-60 超 20s / `runs_without_artifact` 1-100；空载 3 批 / 真实 n=35 / median 4.9s / p90 6.5s / 0-35 超预算；13 个真实候选里 12 个结论稳定（`real-unlag` 混了 R37 那次 `T-321` 的 blocked，产物原样保留）",
+        "reproducibility": "PASS：`stability_report` 拒绝单矩阵，8 份 `--matrix` 显式列出；同 stamp 重放逐字节一致",
+        "licence": "PASS：只汇总本仓自己的产物",
+        "ssot": "PASS：`produced_by`/`generated_at`/`.sha256` 齐全；`conditions[]` 分组写进产物，README 的中位数改成按条件说（95 有载观测 12.3s / 35 空载 4.9s），不再用 R37 的 24 次观测冒充当前数字",
+        "adversary": "反例一：把 1/100 写成 0（本轮三批确实 0，但合并后是 1）；反例二：把 12.3s 当空载数字；反例三：用点估计说「崩溃率 1%」不给区间——Wilson 0.18%–5.45% 的上界 5.45% 才是能承诺的部分；反例四：把 `real-unlag` 的 blocked 当成「有载让结论变了」（那是已修的探针自伤，历史产物不改）"
+      },
+      "real_test": {
+        "command": "node scripts/stability_report.mjs --stamp 2026-10-29T08:50:00.000Z --matrix …（8 份）",
+        "artifact": "data/results/stability-2026-10-29T08-50-00.000Z.json",
+        "sha256": "94b51fd903a65b350d7a69cf87781251f329748181e91a8ccd1ad128ee5c967c",
+        "outcome": "8 份矩阵 / 20 候选（真实 13）：有载 median 12.3s · p90 16.0s · 0/60 超预算 · 1/100 无产物；空载 median 4.9s · 0/35 超预算"
+      }
+    },
+    {
+      "id": "R40-S19",
+      "batch": "R40",
+      "step": "全量复核（356 测试 / 9 门 / `--mutate` 9/9）并把本轮新增的对外文档（CHANGELOG、listing 状态）与台账对齐",
+      "changed": [
+        "CHANGELOG.md",
+        "docs/market/listing_zh.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/gates-2026-10-29T09-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：本轮只改文档与测量产物，判据/阈值/`judgeProbe`/`isUsableSample`/`data/gold` 一字未动；测量结论以产物为准（S15–S18）",
+        "reproducibility": "PASS：`pnpm run verify` 与 `node scripts/gate.mjs --mutate` 可直接复现；gates 产物不含耗时，同 stamp 重放逐字节一致",
+        "licence": "PASS：`CHANGELOG.md` 只记本仓行为；无第三方内容",
+        "ssot": "PASS：新增产物全部被台账引用（`no-orphan-results` 全绿）；INDEX 引用 163 个全部存在；`doc-stand` 三份入口文档同为 R40",
+        "adversary": "反例一：`CHANGELOG` 写成营销文案——只写可验证的行为与边界；反例二：把 0.1.1 的「纯文档」说成修了 bug（它确实只换 README）；反例三：把 listing 里 dsh.so 的 `ready` 写成「已提交」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T09:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T09-20-00.000Z.json",
+        "sha256": "6a11c867e2f871ceeb3bb9c71bceff48e27076ee788afcfe2d374e1436add5b3",
+        "outcome": "ALL GREEN · 9 gates（356 测试；229 步 / 210 产物全部被引用）"
+      }
     }
   ]
 }

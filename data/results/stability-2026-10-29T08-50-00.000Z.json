@@ -1,0 +1,1026 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/stability_report.mjs",
+  "generated_at": "2026-10-29T08:50:00.000Z",
+  "inputs": [
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-00-00.000Z.json",
+      "sha256": "457512e8c452a4efec7ca56f80ae90ac57273e90a50eb7d499de8aaca02b3acc",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:00:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "idle",
+        "workers": 0,
+        "busy": null
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T15-30-00.000Z.json",
+      "sha256": "5db714772413346698e2dd815cd61aca0a30d5dcb5f8adf07ad567c03ec192e4",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T15:30:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "idle",
+        "workers": 0,
+        "busy": null
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T16-10-00.000Z.json",
+      "sha256": "82946e41c029b2379558da016d4d880e6211caf55561a2a418ab4690f5fb0be6",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T16:10:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "idle",
+        "workers": 0,
+        "busy": null
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-30-00.000Z.json",
+      "sha256": "ef8a0d1b6afb77b2fbc78f5a177c7c35f3c909d0c1e69d9d08682e69d5fd379a",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:30:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 58.4
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T14-50-00.000Z.json",
+      "sha256": "2306cceef60be759dc442cb408ce4bb8d0470bf7886aa30f202cba01be3ae56c",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T14:50:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 61.6
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T07-00-00.000Z.json",
+      "sha256": "cf052e3e1152d2d42f362c855b741c0f4f580b690bb9a5afeb29b08cfcf2b7db",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T07:00:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 77.1
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T07-40-00.000Z.json",
+      "sha256": "756fac79bdb1bcee78f617a1e1057b4d81ceecac675fe1ecbb027b91e550cfb7",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T07:40:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 94.3
+      }
+    },
+    {
+      "path": "data/results/probe-matrix-2026-10-29T08-20-00.000Z.json",
+      "sha256": "95d1afaa8a17bebd185fda1c0e09390de59dc11656239e2edca73d7cb43ace75",
+      "plan": "<repo>\\tests\\fixtures\\probe\\matrix-r19.json",
+      "generated_at": "2026-10-29T08:20:00.000Z",
+      "runs": 20,
+      "load": {
+        "key": "cpu-load×8",
+        "workers": 8,
+        "busy": 89.8
+      }
+    }
+  ],
+  "summary": {
+    "matrices": 8,
+    "candidates": 20,
+    "real_candidates": 13,
+    "real_observations": 95,
+    "real_boot_to_sample_ms": {
+      "n": 95,
+      "min": 3700,
+      "median": 7600,
+      "p90": 15200,
+      "max": 19800
+    },
+    "real_runs_over_budget": 0,
+    "budget_ms": 20000,
+    "verdict_unstable": [
+      "real-unlag",
+      "synthetic-private-registry"
+    ],
+    "min_runs_per_candidate": 8,
+    "conditions": [
+      "cpu-load×8",
+      "idle"
+    ],
+    "condition_comparison": [
+      {
+        "condition": "cpu-load×8",
+        "workers": 8,
+        "observed_busy_percent": [
+          58.4,
+          61.6,
+          77.1,
+          94.3,
+          89.8
+        ],
+        "matrices": 5,
+        "runs": 100,
+        "runs_without_artifact": 1,
+        "real_boot_to_sample_ms": {
+          "n": 60,
+          "min": 5800,
+          "median": 12300,
+          "p90": 16000,
+          "max": 19800
+        },
+        "over_budget": 0
+      },
+      {
+        "condition": "idle",
+        "workers": 0,
+        "observed_busy_percent": null,
+        "matrices": 3,
+        "runs": 60,
+        "runs_without_artifact": 0,
+        "real_boot_to_sample_ms": {
+          "n": 35,
+          "min": 3700,
+          "median": 4900,
+          "p90": 6500,
+          "max": 11800
+        },
+        "over_budget": 0
+      }
+    ]
+  },
+  "conditions": [
+    {
+      "condition": "cpu-load×8",
+      "workers": 8,
+      "observed_busy_percent": [
+        58.4,
+        61.6,
+        77.1,
+        94.3,
+        89.8
+      ],
+      "matrices": 5,
+      "runs": 100,
+      "runs_without_artifact": 1,
+      "real_boot_to_sample_ms": {
+        "n": 60,
+        "min": 5800,
+        "median": 12300,
+        "p90": 16000,
+        "max": 19800
+      },
+      "over_budget": 0
+    },
+    {
+      "condition": "idle",
+      "workers": 0,
+      "observed_busy_percent": null,
+      "matrices": 3,
+      "runs": 60,
+      "runs_without_artifact": 0,
+      "real_boot_to_sample_ms": {
+        "n": 35,
+        "min": 3700,
+        "median": 4900,
+        "p90": 6500,
+        "max": 11800
+      },
+      "over_budget": 0
+    }
+  ],
+  "candidates": [
+    {
+      "label": "real-archive-manager",
+      "real": true,
+      "shape": "real-workspace",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4800,
+        "median": 7450,
+        "p90": 18800,
+        "max": 18800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 3865,
+        "median": 7521,
+        "p90": 19969,
+        "max": 19969
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7600,
+        "median": 13400,
+        "p90": 32400,
+        "max": 32400
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1777,
+        "median": 2939,
+        "p90": 4067,
+        "max": 4067
+      }
+    },
+    {
+      "label": "real-claude-style",
+      "real": true,
+      "shape": "real-ui-theme",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 3900,
+        "median": 6950,
+        "p90": 16500,
+        "max": 16500,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 3629,
+        "median": 7316,
+        "p90": 14930,
+        "max": 14930
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 6500,
+        "median": 12450,
+        "p90": 27800,
+        "max": 27800
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1742,
+        "median": 3211,
+        "p90": 8120,
+        "max": 8120
+      }
+    },
+    {
+      "label": "real-dream-skin",
+      "real": true,
+      "shape": "real-ui-theme",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 3900,
+        "median": 8300,
+        "p90": 16000,
+        "max": 16000,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4166,
+        "median": 7197,
+        "p90": 15101,
+        "max": 15101
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7100,
+        "median": 13450,
+        "p90": 27600,
+        "max": 27600
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1767,
+        "median": 2558,
+        "p90": 4025,
+        "max": 4025
+      }
+    },
+    {
+      "label": "real-dsh-cron",
+      "real": true,
+      "shape": "real-scheduler",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1755,
+        "median": 2660,
+        "p90": 3601,
+        "max": 3601
+      }
+    },
+    {
+      "label": "real-free-search",
+      "real": true,
+      "shape": "real-tool-provider",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4200,
+        "median": 7550,
+        "p90": 17400,
+        "max": 17400,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4384,
+        "median": 7876,
+        "p90": 14671,
+        "max": 14671
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7300,
+        "median": 13450,
+        "p90": 28500,
+        "max": 28500
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1790,
+        "median": 3004,
+        "p90": 4599,
+        "max": 4599
+      }
+    },
+    {
+      "label": "real-git-worktree",
+      "real": true,
+      "shape": "real-git",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4700,
+        "median": 6900,
+        "p90": 14100,
+        "max": 14100,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4727,
+        "median": 6783,
+        "p90": 12287,
+        "max": 12287
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 8200,
+        "median": 11800,
+        "p90": 23100,
+        "max": 23100
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2222,
+        "median": 2918,
+        "p90": 15070,
+        "max": 15070
+      }
+    },
+    {
+      "label": "real-mcp-connector",
+      "real": true,
+      "shape": "real-mcp",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4900,
+        "median": 7500,
+        "p90": 16300,
+        "max": 16300,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 6157,
+        "median": 10468,
+        "p90": 17475,
+        "max": 17475
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 9800,
+        "median": 15550,
+        "p90": 28800,
+        "max": 28800
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2238,
+        "median": 3262,
+        "p90": 6947,
+        "max": 6947
+      }
+    },
+    {
+      "label": "real-plugin-notify",
+      "real": true,
+      "shape": "real-notification",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 3700,
+        "median": 7450,
+        "p90": 17400,
+        "max": 17400,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4208,
+        "median": 7559,
+        "p90": 17288,
+        "max": 17288
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7000,
+        "median": 13100,
+        "p90": 29700,
+        "max": 29700
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2076,
+        "median": 3238,
+        "p90": 8048,
+        "max": 8048
+      }
+    },
+    {
+      "label": "real-qqbot",
+      "real": true,
+      "shape": "real-im-channel-compat",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4400,
+        "median": 9350,
+        "p90": 14300,
+        "max": 14300,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4251,
+        "median": 7446,
+        "p90": 13720,
+        "max": 13720
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7600,
+        "median": 14550,
+        "p90": 24600,
+        "max": 24600
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2018,
+        "median": 3110,
+        "p90": 12769,
+        "max": 12769
+      }
+    },
+    {
+      "label": "real-remote",
+      "real": true,
+      "shape": "real-remote",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4200,
+        "median": 6650,
+        "p90": 14300,
+        "max": 14300,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4024,
+        "median": 6598,
+        "p90": 13643,
+        "max": 13643
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7200,
+        "median": 11300,
+        "p90": 24500,
+        "max": 24500
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1885,
+        "median": 3105,
+        "p90": 6302,
+        "max": 6302
+      }
+    },
+    {
+      "label": "real-skills-manager",
+      "real": true,
+      "shape": "real-settings-only",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4700,
+        "median": 7400,
+        "p90": 13800,
+        "max": 13800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4519,
+        "median": 7648,
+        "p90": 14194,
+        "max": 14194
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 8000,
+        "median": 13050,
+        "p90": 24600,
+        "max": 24600
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1468,
+        "median": 2166,
+        "p90": 7397,
+        "max": 7397
+      }
+    },
+    {
+      "label": "real-status-rotator",
+      "real": true,
+      "shape": "real-ui-status",
+      "runs": 8,
+      "verdicts": {
+        "go": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 5600,
+        "median": 8300,
+        "p90": 19800,
+        "max": 19800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4555,
+        "median": 8141,
+        "p90": 14005,
+        "max": 14005
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 8900,
+        "median": 14250,
+        "p90": 29600,
+        "max": 29600
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1700,
+        "median": 2852,
+        "p90": 9035,
+        "max": 9035
+      }
+    },
+    {
+      "label": "real-unlag",
+      "real": true,
+      "shape": "real-desktop-refresh-engines-only",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 1,
+        "go": 7
+      },
+      "verdict_stable": false,
+      "boot_to_sample_ms": {
+        "n": 7,
+        "min": 5100,
+        "median": 7400,
+        "p90": 13800,
+        "max": 13800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 7,
+        "min": 4871,
+        "median": 7469,
+        "p90": 11959,
+        "max": 11959
+      },
+      "boot_to_final_sample_ms": {
+        "n": 7,
+        "min": 8600,
+        "median": 12900,
+        "p90": 22500,
+        "max": 22500
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 1717,
+        "median": 2654,
+        "p90": 3282,
+        "max": 3282
+      }
+    },
+    {
+      "label": "fixture-apply-fail",
+      "real": false,
+      "shape": "fixture-row-failed",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4100,
+        "median": 6600,
+        "p90": 14800,
+        "max": 14800,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 3829,
+        "median": 6474,
+        "p90": 12647,
+        "max": 12647
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 6900,
+        "median": 11050,
+        "p90": 24000,
+        "max": 24000
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 409,
+        "median": 531,
+        "p90": 1027,
+        "max": 1027
+      }
+    },
+    {
+      "label": "fixture-import-fail",
+      "real": false,
+      "shape": "fixture-import-error",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4000,
+        "median": 6750,
+        "p90": 18400,
+        "max": 18400,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4432,
+        "median": 6579,
+        "p90": 17970,
+        "max": 17970
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 7400,
+        "median": 11500,
+        "p90": 31500,
+        "max": 31500
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 378,
+        "median": 534,
+        "p90": 1618,
+        "max": 1618
+      }
+    },
+    {
+      "label": "fixture-no-row",
+      "real": false,
+      "shape": "fixture-no-observable-row",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4700,
+        "median": 6550,
+        "p90": 16500,
+        "max": 16500,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 4490,
+        "median": 6235,
+        "p90": 17011,
+        "max": 17011
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 8100,
+        "median": 11050,
+        "p90": 28900,
+        "max": 28900
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 424,
+        "median": 584,
+        "p90": 1249,
+        "max": 1249
+      }
+    },
+    {
+      "label": "fixture-slow-overrun",
+      "real": false,
+      "shape": "fixture-tree-not-settled",
+      "runs": 8,
+      "verdicts": {
+        "unknown": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 8,
+        "min": 4200,
+        "median": 6600,
+        "p90": 15500,
+        "max": 15500,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 8,
+        "min": 16526,
+        "median": 16923,
+        "p90": 19552,
+        "max": 19552
+      },
+      "boot_to_final_sample_ms": {
+        "n": 8,
+        "min": 19500,
+        "median": 21750,
+        "p90": 30900,
+        "max": 30900
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 375,
+        "median": 555,
+        "p90": 1046,
+        "max": 1046
+      }
+    },
+    {
+      "label": "synthetic-bogus-version",
+      "real": false,
+      "shape": "synthetic-bogus-version",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2850,
+        "median": 4393,
+        "p90": 5643,
+        "max": 5643
+      }
+    },
+    {
+      "label": "synthetic-missing",
+      "real": false,
+      "shape": "synthetic-missing-package",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 8
+      },
+      "verdict_stable": true,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 8,
+        "min": 2215,
+        "median": 4098,
+        "p90": 5986,
+        "max": 5986
+      }
+    },
+    {
+      "label": "synthetic-private-registry",
+      "real": false,
+      "shape": "synthetic-unreachable-registry",
+      "runs": 8,
+      "verdicts": {
+        "blocked": 7,
+        "no-artifact": 1
+      },
+      "verdict_stable": false,
+      "boot_to_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null,
+        "exceeded_budget": 0,
+        "budget_ms": 20000
+      },
+      "hook_wait_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "boot_to_final_sample_ms": {
+        "n": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "install_ms": {
+        "n": 7,
+        "min": 78724,
+        "median": 78859,
+        "p90": 79438,
+        "max": 79438
+      }
+    }
+  ],
+  "definitions": {
+    "verdict_stable": "every run of this pinned candidate produced the SAME conclusion; `unknown` is a real answer, so go→unknown counts as unstable",
+    "boot_to_sample_ms": "the judged budget: spawn → the FIRST sample. T-312 made this the provisional sample, so it no longer includes the final settle",
+    "hook_wait_ms": "the hook's own settle wait, published in the inventory block (`wait_ms`)",
+    "exceeded_budget": "runs whose boot_to_sample_ms > 20000ms (published per candidate, never hidden)",
+    "real_runs_over_budget": "aggregate over real candidates only; fixtures are kept in the per-candidate rows"
+  },
+  "limits": [
+    "same machine, same sandbox runtime, same plan: this describes one Windows box, not the ecosystem",
+    "the spread is what it is; a low p90 does not promise anything about the next run (`BS-32`)",
+    "real candidates are a hand-picked convenience sample (`BS-27`)",
+    "no gate here on purpose: the budget gate lives in `d2_report` (T-317 --strict for automation)",
+    "the load is CPU-busy loops in this user account: it says nothing about memory/disk pressure or about several probes running at once",
+    "each condition covers a different number of batches; a condition with one batch is a slice, not a distribution"
+  ]
+}
