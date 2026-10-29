@@ -198,7 +198,7 @@
 - **`profile-not-found` 必须是"诚实的失败"**：stderr 点名 `profile`，**不产出空清单**。空清单会被读成"全都好"，那是最坏的一种假绿。
 - **不改变任何既有命令的输出与退出码**：`why` / `check` / `audit` / `probe` / `badge` / `index` / `serve` / `outcomes` 一字不动（`upgrade` 只是新增分支）。
 
-## 9. 负对照（14 条，每条都是可执行断言）
+## 9. 负对照（14 条，每条都是可执行断言。**R44 追加 N20–N23**，见下表末四行）
 
 | # | 场景 | 期望 | 钉住的不变量 |
 |---|---|---|---|
@@ -216,6 +216,10 @@
 | N12 | 快照只给 bundle 列表（`rows: []`） | `counts.rows = 0`；仍能给出 bundle 的 `would-be-denied`；文本里出现 `rows 0` | 显式 bundle 模式可用 |
 | N13 | 同一批单元，把 `rows` / `bundles` 打乱顺序跑两次 | 两次 `units` 序列化结果**逐字节相同** | 排序键是全序，且与输入顺序无关 |
 | N14 | `env.dsh = null`（当前运行时读不到）但 target 合法 | `improved` 恒为 `0`；admitted 的单元落 `likely-fine` 且 `current.status === null`；`target_relation === "unknown"` | 不知道现在，就不许说"变好了" |
+| **N20** | `--expect-improved` 且 profile 里**没有**改善单元（模板 profile） | 记录器判红（`improved-non-empty`）；**不许**因为"其余都绿"就当作通过 | 「四桶里三桶」不能冒充四桶 |
+| **N21** | 改善单元的 `current.unmet` 里**全部**是 `failure !== null`（声明缺陷，不是区间不合） | 该单元不得落 `improved`（落 `would-be-denied` / `unusable-declaration`）；记录器 `improved-names-both-sides` 抓不到它也会被 N8 抓住 | 「今天拒」必须是**区间**拒，不是"声明写坏了" |
+| **N22** | 给改善单元挂一个 `admitsTarget: true` 的 registry 注解 | `improved` 单元的 `suggestions` **必须为空**（注解只挂 `would-be-denied` / `cannot-tell`）；`improved-carries-no-registry-annotation` 判红 | 改善不许由"registry 上有个更宽松的版本"推出 |
+| **N23** | 策展组合（`scripts/prepare_upgrade_mixed_profile.mjs`）跑出的产物 | `source.composition` 必须写"curated"、`source.declared_dependencies` 必须是 `name@version` 列表、`limits[]` 必须写"选哪些包是我们的选择"且"目标方向"；缺一即视为把抽样说成普查 | 样本的来源必须自报 |
 
 另加两条**形状**断言（不是负对照）：
 

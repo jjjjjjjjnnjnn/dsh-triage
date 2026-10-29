@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）12 周
 
-> **Stand**: R43 (2026-10-30) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2 | 品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R44 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2（npm `latest`；`next` = 0.2.1-rc.4，即仓内沙盒）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 
 ---
@@ -24,7 +24,7 @@
 | W5 | **M4-a 面板** | `settings.plugins.tab` 面板：结论卡 + 证据 + 修复按钮。**R26：只读契约 spike 完成**（`docs/specs/M4-surface.md` §3.1 的 C1–C6：`settings.plugins.tab` 插槽 / `ctx.slots.register` / props 由 `inject` 提供 / `remote.pluginInventory.list()` 形状 / `ctx.effect`+`locale`），**`client.js` 未写** | 面板能看到与 CLI 同源的结论（复用 messageId） | 2 |
 | W6 | **M4-b 分发件** | ✅ **三件交付：徽章 SVG（T-402 · R34）+ format-1 索引源（T-403 · R34，用上游校验器验证）+ `compat_verdict` Agent 工具（T-404 · R36，真机三形状 + 八步回归；R40 补 ptc 折叠真机）**。索引源已于 R38 托管到公开 URL（repo raw 为首选、gist 备份，逐字节校验）；**仍剩人工动作**：在 Discover UI 里真的添加一次 | 索引源可在 Discover 添加（**要求一次发布动作**）；徽章可按 插件×dsh×os 渲染 | 2 |
 | W7 | **M5-a 回流** | opt-in 匿名 outcome + 本地先验 | 上传可关闭、可删除；0 PII；数据可用率 ≥80% | 1 |
-| W8 | **M5-b 升级日** | 升级影响清单生成器（给定目标 dsh 版本） | 新 rc 发布 24h 内可产出全量已装集合的影响清单 | 1 |
+| W8 | **M5-b 升级日** | 升级影响清单生成器（给定目标 dsh 版本）。**R42 交付**四桶分区；**R44 补齐最后两块**：`improved` 有真机见证（策展混合组合，四桶非空）与 registry 成功分支 | 新 rc 发布 24h 内可产出全量已装集合的影响清单 | 1 |
 | W9 | **1.0 候选** | 文档 / 上架文案 / 兼容矩阵公开页 | `gate_release --publish` 绿 + 2 渠道收录 | 2 |
 | W10–W12 | **增长冲刺** | 案例帖 ×5、作者徽章推广、渠道提交、Discord/微信群答疑 | 周下载 ≥3,000（类目第一）；索引源 ≥300 | 2 |
 

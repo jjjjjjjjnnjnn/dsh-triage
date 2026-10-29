@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R43 (2026-10-30)",
+  "stand": "R44 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5835,6 +5835,154 @@
         "artifact": "data/results/gates-2026-10-30T06-00-00.000Z.json",
         "sha256": "11e5c3f8ceff6c9aa26fa845aef26ac68cb3c14047d2cd7f680f7706e5651ef8",
         "outcome": "ALL GREEN · 9 gates（427 测试；240 步 / 220 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R44-S1",
+      "batch": "R44",
+      "step": "T-503 取证先行：扫描 registry 的真实声明，用仓库自己的 evaluateAdmission 在「当前运行时」与「候选目标」两侧求值，回答「有没有一个已发布包的声明会拒绝 0.2.1-rc.4 却被某个更晚的版本放行」",
+      "changed": [
+        "scripts/scan_upgrade_declarations.mjs",
+        "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+        "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS?1584 ??? / **202** ?? 0.2.1-rc.4 ??? / **?? 0** / ?? 113 / ???? 89??????0+113+89=202?????????????????`evaluateAdmission` ??????????import ?????????????????????????????**???? 40 ???????? 201/114/87**?????????? `limits[]` ???????????????????",
+        "reproducibility": "PASS：需要 `pnpm build`（直接 import dist）；`--stamp` + `--pages` 可重跑，产物带 sha256；`limits[]` 明写这是**网络快照**、只读 `<name>/latest`、候选来自关键词搜索而不是全生态普查",
+        "licence": "PASS：只读 registry 元数据（名字/版本/声明），不下载 tarball、不 vendor、不写 `~/.dsh`；产物只有包名与版本",
+        "ssot": "PASS：产物 `produced_by` 指向真实脚本，已登记 INDEX；被引用为 R44-S2 的取样依据；没有孤儿产物",
+        "adversary": "反例一：把「没找到前向样本」写成「不存在」（被拒——只写 this batch 里没有，`limits[]` 单列）；反例二：用 `latest` 一个版本代表整个包（被拒——`limits[]` 写明不是版本普查）；反例三：靠推理说 prerelease 语义（不采纳——单测直接跑 `evaluateAdmission` 钉住 `>=0.2.0-rc.1 <0.3.0-0` 放行 rc.4、`^0.2.1` 不放行）"
+      },
+      "real_test": {
+        "command": "node scripts/scan_upgrade_declarations.mjs --stamp 2026-10-29T08:15:00.000Z --pages 3",
+        "artifact": "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+        "sha256": "a5e501de662ae74e2786f062a5198fcd148167a44102f08a9783fbbe8c3cd6cb",
+        "outcome": "5/5 ?????scanned 1584 ? denied 202 ? forward 0 ? downgrade-only 113 ? stuck 89"
+      }
+    },
+    {
+      "id": "R44-S2",
+      "batch": "R44",
+      "step": "T-503 造「混合声明」的真机组合：按 S1 的取样结论策展 6 个真实发布包（声明原样未改、`--ignore-scripts`、空 userconfig），跑 `upgrade --to 0.2.1-rc.3`。**这一步的产物是红的**，它抓出了记录器里一条恒假的检查",
+      "changed": [
+        "scripts/prepare_upgrade_mixed_profile.mjs",
+        "data/results/upgrade-mixed-2026-10-29T06-25-00.000Z.json",
+        "data/results/upgrade-mixed-2026-10-29T06-25-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "**FAIL（保留作见证）**：`control-has-no-new-denials` 判红——`--to <当前运行时>` 报了 1 个 `would-be-denied`。根因不是数据错，而是**这条检查的定义错**：`dsh-plugin-gate` 今天就被拒（peer 钉 `^0.1.0-rc.6`），任何目标（含当前）都会把它列进 `would-be-denied`。真恒等式是「没有单元**新**变坏」（每个 `would-be-denied` 必须 `already_denied_at_current: true`）。R42 的模板 profile 里 0 拒，所以旧定义一直是**真空通过**",
+        "reproducibility": "PASS：`prepare_upgrade_mixed_profile.mjs` 可重跑（pin 在盘上时秒级复用安装；实测首次 530s，复跑 0s）；profile 在 `sandbox/`（git 忽略）；产物带 sha256",
+        "licence": "PASS：6 个包都是 MIT/Apache 公开包；`npm install --ignore-scripts` 不跑任何三方安装钩子；`sandboxNpmEnv` 把 `npm_config_userconfig` 指向沙盒内空文件（R20 规则），操作者 token 不出门",
+        "ssot": "PASS：红产物被本步引用，不删不改（同 `probe-matrix-2026-10-29T15-30-00` 的处理方式）；本轮后续 4 份中间产物已移出仓库并在 R44 报告里说明",
+        "adversary": "反例一：为了让检查变绿把 `dsh-plugin-gate` 从组合里删掉——被拒（那会把「今天已有坏账」这个真实形状藏起来）；反例二：改判据让 `already_denied_at_current` 的单元不进 `would-be-denied`——被拒（四桶是分区，改它等于改 spec）；反例三：把这条红产物删掉换取「一次全绿」——被拒，它是旧定义恒假的唯一见证"
+      },
+      "real_test": {
+        "command": "node scripts/prepare_upgrade_mixed_profile.mjs && node scripts/record_upgrade_impact.mjs --stamp 2026-10-29T06:25:00.000Z --to 0.2.1-rc.3 --dsh-home sandbox/upgrade-mixed/home --profile mixed --expect-improved",
+        "artifact": "data/results/upgrade-mixed-2026-10-29T06-25-00.000Z.json",
+        "sha256": "babe402a491ec363c02f7df8493ed8cf30000657b460580385d118b69ef0efa3",
+        "outcome": "1 项 FAIL（control-has-no-new-denials，定义错）· 29 项 PASS —— 红产物保留，修复见 R44-S3"
+      }
+    },
+    {
+      "id": "R44-S3",
+      "batch": "R44",
+      "step": "修 R44-S2 抓出的三处记录器缺陷（恒假的「无新拒」定义、产物写离线视角、`composition` 写死成模板 + 一个 `value` 拼写错误），并给「两种真实几何」补 3 条单测",
+      "changed": [
+        "scripts/record_upgrade_impact.mjs",
+        "tests/unit/upgrade.test.ts",
+        "data/results/upgrade-mixed-2026-10-29T07-10-00.000Z.json",
+        "data/results/upgrade-mixed-2026-10-29T07-10-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：`control-has-no-new-denials` 改为「每个 `would-be-denied` 必须 `already_denied_at_current`」；`target-change-moves-the-list` 改为「拒或改善任一方向动了」；产物改为描述**这次真正跑出来的视图**并把离线计数单列 `offline_counts`；`composition`/`declared_dependencies` 从 profile 自己的清单推导。结果：**30 项全过**，四桶非空（1 拒 / 1 不可判 / 3 改善 / 1 像没事），`why` 交叉校验**非空**（4 个模块两侧一致）",
+        "reproducibility": "PASS：`deterministic-payload` 两次跑 sha 相同（`2cd3c849…`）；profile 复用安装，重跑秒级；单测用纯函数 `judgeUpgradeImpact`，不碰网络",
+        "licence": "PASS：只改了记录器断言与测试；没有引入依赖；没有读取任何凭据",
+        "ssot": "PASS：最终产物 `07-35` 取代 `06-25`（后者作为红见证保留）；同轮被取代的 3 份中间产物移出仓库；INDEX/HANDOFF 已指向最终产物",
+        "adversary": "反例一：把 `control-has-no-new-denials` 直接删掉换绿——被拒（它正是 R42 那条真空检查的唯一守卫）；反例二：只删 `06-25` 不修定义——被拒（下一轮同样会红）；反例三：让 `improved` 也能挂 registry 注解——被拒（新增 `improved-carries-no-registry-annotation` 直接断言）；反例四：用「目标版本不等于当前」当改善条件——被拒（`dsh-noname-kit` 在 `--to 0.3.0` 上落 `would-be-denied`，单测钉住）"
+      },
+      "real_test": {
+        "command": "node --test tests/unit/upgrade.test.ts && node scripts/record_upgrade_impact.mjs --stamp 2026-10-29T07:35:00.000Z --to 0.2.1-rc.3 --dsh-home sandbox/upgrade-mixed/home --profile mixed --expect-improved",
+        "artifact": "data/results/upgrade-mixed-2026-10-29T07-10-00.000Z.json",
+        "sha256": "20abe5d417da53b37e5468e5c5d2fb7db1a4943304d1fcb0116dddd542da2273",
+        "outcome": "单测 19/19；产物 30/30 检查通过 · counts = 1 拒 + 1 不可判 + 3 改善 + 1 像没事"
+      }
+    },
+    {
+      "id": "R44-S4",
+      "batch": "R44",
+      "step": "T-504：把 `upgrade --registry` 的**成功分支**也跑成证据——真联网查到注解，而每个单元的桶与计数一字未变",
+      "changed": [
+        "scripts/record_upgrade_impact.mjs",
+        "data/results/upgrade-registry-live-2026-10-29T07-15-00.000Z.json",
+        "data/results/upgrade-registry-live-2026-10-29T07-15-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：真联网 `facts = 2` / `failures = 0`；两个注解（`dsh-plugin-gate@1.3.2` 与 `@xmanrui/dsh-im@5.7.0`）都是 `admits_target: false`，挂在 `would-be-denied` / `cannot-tell` 上；`registry-cannot-move-a-unit` 与 `-count` 逐条相等 → 成功分支同样不搬桶。新增两条断言（`registry-live-found-facts` / `-attached-something`）区分「真查到」与「指向死端口」",
+        "reproducibility": "PASS（带边界）：`limits[]` 明写网络是**快照**、重跑可得到不同注解；稳定的是「没有单元改桶/改计数」。默认（不带 `--registry-live`）仍是死代理分支，R42 的失败分支证据不受影响",
+        "licence": "PASS：只读 packument，不下载 tarball；注解是作者自己写的声明，不改写、不推断",
+        "ssot": "PASS：文件前缀 `upgrade-registry-live-` 与混合/模板三类分开，不会被误读成同一件事；已在 INDEX 与 HANDOFF 登记",
+        "adversary": "反例一：把失败分支的产物重命名成「成功分支」——被拒（`source.registry_live` 与 `self_check.registry.live` 落账，且 `registry-live-found-facts` 要求 `facts > 0`）；反例二：让注解改桶（那正是要证伪的）——`units[].bucket` 与离线逐条比对；反例三：拿网络超时说成「作者不支持目标版本」——被拒，失败只进 `registry.failures[]`，不产出注释"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_impact.mjs --stamp 2026-10-29T07:45:00.000Z --to 0.2.1-rc.3 --dsh-home sandbox/upgrade-mixed/home --profile mixed --registry-live",
+        "artifact": "data/results/upgrade-registry-live-2026-10-29T07-15-00.000Z.json",
+        "sha256": "2ead0d442b64b4a5ca63824d580a9c362dc1cda6486c1b91b8c4ab741eb71250",
+        "outcome": "32/32 检查通过 · facts 2 / failures 0 · 计数与离线跑逐条相同"
+      }
+    },
+    {
+      "id": "R44-S5",
+      "batch": "R44",
+      "step": "T-505：刷新两条渠道的实时状态（只读，不提交新 PR）",
+      "changed": [
+        "data/results/market-channels-2026-10-29T07-20-00.000Z.json",
+        "data/results/market-channels-2026-10-29T07-20-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：#65 `open` / `mergeable_state=blocked` / `review_decision: null`；#193 `open` / `clean` / `APPROVED`；`merged = 0`。**只有 merged 才算收录**这条口径没被写成「已收录」",
+        "reproducibility": "PASS：脚本重跑即可刷新；产物带 stamp 与 sha256；gh 调用的返回值落进 `submitted[]`",
+        "licence": "PASS：只读 GitHub 元数据",
+        "ssot": "PASS：`live` 只统计 OPEN PR；`ready` 不等于提交过的口径在 HANDOFF §3 提醒里保留",
+        "adversary": "反例一：把 `APPROVED` 写成「已收录」——被拒（`merged_at` 为 null）；反例二：为了让 `ready` 变多而自己宣布 dsh.so 已提交——被拒（表单是 HUMAN 动作，本轮没提交，产物如实记 `ready`）"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T08:40:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseekharness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193",
+        "artifact": "data/results/market-channels-2026-10-29T07-20-00.000Z.json",
+        "sha256": "2b3ddeae0db4e1b3a8118f602c23d5a7b99c3ffe8a116dc67a654b8ba1f44cd5",
+        "outcome": "validated 1 · ready 4 · live 2 · merged 0（#65 open/blocked、#193 open/APPROVED）"
+      }
+    },
+    {
+      "id": "R44-S6",
+      "batch": "R44",
+      "step": "?????HANDOFF / INDEX / ROADMAP / AGENTS / BACKLOG / blind_spots / M5-upgrade spec ?? R44??? R44 ??? `BS-42`????????????8 ????5 ??????2 ??? stand ???",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "docs/BACKLOG.md",
+        "docs/specs/M5-upgrade.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/AUDIT_2026-10-29_R44.md",
+        "audit/step_reviews.json",
+        "data/results/gates-2026-10-29T07-30-00.000Z.json",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS????????????430 ?? / 9 ? / 246 ? / 226 ?? / 202 ???? / ?? 0 / 3 ?? / facts 2 / merged 0??`improved` ???????????????? `improved` ??????????? `BS-42` ????????HANDOFF ???? R43 ? stand ?????????? 10-29?",
+        "reproducibility": "PASS?`pnpm install --frozen-lockfile` ????`pnpm run verify` 430 ?? / `ALL GREEN ? 9 gates`?`gate --mutate` 9/9??????? HANDOFF ?3 ? 7 ???????????? 4 ????????????????",
+        "licence": "PASS???????????????????????????????????????????????",
+        "ssot": "PASS?`doc-stand` ?????HANDOFF / INDEX / ROADMAP?+ ?????step_reviews / blind_spots??? R44?`no-orphan-results` 226 ???????`M5-upgrade.md` ?? N20?N23 ? INDEX ???",
+        "adversary": "?????????????????????????????????? ?7 ?????? + ? profile + ??????????????? `202/113/89` ? `201/114/87` ???????????????????? 40 ??????????????????????? stand ??????? 10-30?????????????? HANDOFF ??? AI ?????????????? `BS-42` ??????????????????????exit ????????????? build ????"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T07:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T07-30-00.000Z.json",
+        "sha256": "168e51a4400b610cf813a5294f600d9c0c9e0802d6d8b4e8e5017fdeff4c9478",
+        "outcome": "ALL GREEN ? 9 gates?430 ???246 ? / 226 ????????"
       }
     }
   ]

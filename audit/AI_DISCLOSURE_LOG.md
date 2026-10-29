@@ -512,3 +512,17 @@
 - 结果：**零代码、零判据改动**。交接把最近三轮讲清：R40 发 npm + `BS-39`/`BS-41` 收口；R41 `T-501` 本地半边 + `ADR-0011` A；R42 `T-502` 升级影响清单 + 0.2.0 四包发布。**真空洞**写进 §8：`improved` 桶无真机见证、`--registry` 成功分支无证据、dsh.so 未提交、M5-a 上传未开工、`BS-40` 1/100 未归因
 - 实测：427 测试 / 9 门全绿 / `--mutate` 9/9 / 240 步 / 220 产物；`git status` 干净
 - 反思：5 个 subagent 并行确实快，但每个都必须自己跑真机或测试、把边界写回报告；两次真实事故（home 路径进产物、stamp 撞车）都留在轮次报告里，没有抹掉
+
+### 2026-10-29 R44｜T-503 点亮 `improved` + T-504 registry 成功分支 + T-505 渠道刷新
+
+- 生成者：DeepSeek V4.1 Flash（主会话，单会话完成；未开 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R44-S1…S5）
+- 范围：`scripts/scan_upgrade_declarations.mjs`（新）、`scripts/prepare_upgrade_mixed_profile.mjs`（新）、`scripts/record_upgrade_impact.mjs`（`--expect-improved` / `--registry-live` + 三处缺陷修复）、`tests/unit/upgrade.test.ts`（+3）、`docs/specs/M5-upgrade.md`（N20–N23）、`docs/HANDOFF.md`、`docs/BACKLOG.md`（T-501…T-505）、`INDEX.md`、`docs/ROADMAP.md`、`AGENTS.md`、`audit/blind_spots.json`（BS-42）、`audit/AUDIT_2026-10-29_R44.md`（新）、`audit/step_reviews.json`、`data/results/*`
+- 人工决策：HUMAN「同意，继续，处理所有问题」+ 前一轮三选（R44 = A+B+C、R45 = 1.0 + 增长、先跑基线）
+- 结果：**判据/阈值一字未动**。① 先扫 registry 取证（1584 包 / 201 今天被拒 / **前向 0** / 降级 114 / 都不放行 87），再用**真实发布的声明**策展 6 个包，真机跑出四桶非空（3 改善）；② registry 成功分支真联网 `facts = 2` 而桶不变；③ 渠道仍 `merged 0`
+- 实测：430 测试 / 9 门全绿 / `--mutate` 9/9；新产物 5 份全部带 sha256 并被台账引用
+- 反思：**计划里假设的「前向 improved」在真实生态是 0/1584**——如果按原计划直接造一份 `>=0.2.1-rc.6` 的声明，就会用我自己写的区间去证明我自己的分支。先取证再动手，让这一轮从「造一个能让代码变绿的样本」变成「测出生态真实的形状」，代价是多花了一轮扫描。三处记录器缺陷（恒假的检查、离线视角进产物、写死的 composition）没有一处是测试抓到的，都是真跑时看产物发现的——**产物要自己读一遍**，这句话又一次成立
+
+### 2026-10-30 R43（补记）
+
+- 备注：R43 的 stand 标的是 2026-10-30，而本机时钟与提交时间都是 2026-10-29（`0210872` `+0800`）。R44 按真实时钟写 stand，并在 HANDOFF 顶部注明这处更正；不追改 R43 的历史文本

@@ -376,6 +376,65 @@ test('improved requires a known current runtime, a real range mismatch today, an
   assert.equal(defectUnit.bucket, 'would-be-denied')
 })
 
+/* ---- improved · the two real geometries (R44, T-503) ---- */
+
+/**
+ * WHY THESE EXIST: `improved` is reachable only through a declaration that denies the running
+ * runtime and admits the target, and the two ways that happens in the wild look nothing alike.
+ * The measured ecosystem (scripts/scan_upgrade_declarations.mjs, 1584 packages) contains only the
+ * second one today, so both are pinned here rather than left to a doc paragraph.
+ */
+test('R44: prerelease admission decides which "wide" ranges even reach the improved branch', () => {
+  // includePrerelease: true — so a range with an rc floor admits later prereleases of the same
+  // line. This is why `>=0.2.0-rc.1 <0.3.0-0` does NOT deny 0.2.1-rc.4 (measured on
+  // @michengai/dsh-skills-manager, dsh-pet and dsh-cost-meter).
+  const wide = evaluateAdmission({ name: 'w', peerDependencies: { '@deepseek-ai/dsh-tools': '>=0.2.0-rc.1 <0.3.0-0' } }, CURRENT)
+  assert.equal(wide.status, 'admitted', 'a prerelease floor admits later prereleases of the same line')
+
+  // …while a range written for the *stable* next patch does not: `0.2.1-rc.4 < 0.2.1`.
+  const stableNext = evaluateAdmission({ name: 's', peerDependencies: { '@deepseek-ai/dsh-tools': '^0.2.1' } }, CURRENT)
+  assert.equal(stableNext.status, 'denied')
+  assert.equal(stableNext.unmet[0]?.failure, null, 'a real range miss, not a declaration defect')
+})
+
+test('R44: forward geometry — a range written for the next stable denies today and admits the target', () => {
+  const impact = judge({
+    target: '0.2.1',
+    rows: [
+      rowOf({
+        rowId: 'forward',
+        module: 'forward-mod',
+        version: '1.2.3',
+        manifest: { name: 'forward-mod', version: '1.2.3', peerDependencies: { '@deepseek-ai/dsh-tools': '^0.2.1' } },
+      }),
+    ],
+  })
+  const unit = unitOf(impact, 'row:forward')
+  assert.equal(impact.target_relation, 'newer')
+  assert.equal(unit.bucket, 'improved')
+  assert.equal(unit.current.status, 'denied')
+  assert.equal(unit.target.status, 'admitted')
+  assert.equal(unit.version, '1.2.3', 'both sides judged on one installed version')
+})
+
+test('R44: real geometry — a plugin pinned to the previous rc improves only when the target goes back', () => {
+  const declared = {
+    name: 'pinned-to-rc3',
+    version: '1.10.8',
+    engines: { dsh: '0.2.1-rc.3 || 0.2.1-rc.2 || 0.2.1-rc.1' },
+  }
+  const back = judge({ target: '0.2.1-rc.3', rows: [rowOf({ rowId: 'back', module: 'pinned-to-rc3', manifest: declared })] })
+  const backUnit = unitOf(back, 'row:back')
+  assert.equal(back.target_relation, 'older')
+  assert.equal(backUnit.bucket, 'improved')
+  assert.equal(backUnit.already_denied_at_current, true)
+
+  // The same unit at a target that is neither older nor wider stays denied: `improved` is not
+  // "anything that is not denied today".
+  const forward = judge({ target: '0.3.0', rows: [rowOf({ rowId: 'back', module: 'pinned-to-rc3', manifest: declared })] })
+  assert.equal(unitOf(forward, 'row:back').bucket, 'would-be-denied')
+})
+
 /* ------------------------- same engine, no second rule set ------------------------- */
 
 test('every unit verdict is the verdict the same engine produces (no second rule set)', () => {

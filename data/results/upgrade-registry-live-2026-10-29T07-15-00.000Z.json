@@ -1,0 +1,626 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_impact.mjs",
+  "generated_at": "2026-10-29T07:15:00.000Z",
+  "source": {
+    "runtime": "0.2.1-rc.4",
+    "profile": "mixed",
+    "profile_source": "live",
+    "runtime_provenance": "in-repo sandbox (sandbox/upstream/<version>/home), git-ignored",
+    "declared_dependencies": [
+      "@kirkchinese/dsh-citeciter@0.9.0-beta.6",
+      "@xmanrui/dsh-im@5.7.0",
+      "dsh-cost-meter@1.9.45",
+      "dsh-motion-ui@0.8.8",
+      "dsh-noname-kit@1.10.8",
+      "dsh-plugin-gate@1.3.2"
+    ],
+    "composition": "curated: real published packages installed at pinned versions via scripts/prepare_upgrade_mixed_profile.mjs; no package manifest was edited",
+    "registry_consulted": true,
+    "registry_live": true,
+    "target_verified_to_exist": false
+  },
+  "impact": {
+    "profile": "mixed",
+    "current": "0.2.1-rc.4",
+    "current_valid": true,
+    "target": "0.2.1-rc.3",
+    "target_relation": "older",
+    "bucket_order": [
+      "would-be-denied",
+      "cannot-tell",
+      "improved",
+      "likely-fine"
+    ],
+    "counts": {
+      "bundles": 0,
+      "rows": 6,
+      "would_be_denied": 1,
+      "cannot_tell": 1,
+      "improved": 3,
+      "likely_fine": 1,
+      "total": 6
+    },
+    "offline_counts": {
+      "bundles": 0,
+      "rows": 6,
+      "would_be_denied": 1,
+      "cannot_tell": 1,
+      "improved": 3,
+      "likely_fine": 1,
+      "total": 6
+    },
+    "registry": {
+      "consulted": true,
+      "facts": 2,
+      "failures": []
+    }
+  },
+  "units": [
+    {
+      "id": "row:compat-mixed-dsh-plugin-gate",
+      "kind": "row",
+      "name": "dsh-plugin-gate",
+      "version": "1.3.2",
+      "row_ids": [
+        "compat-mixed-dsh-plugin-gate"
+      ],
+      "source": "patch:profile",
+      "bucket": "would-be-denied",
+      "cause": "target-denied",
+      "already_denied_at_current": true,
+      "conclusion": "blocked",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "denied",
+        "unmet_at_current": [
+          {
+            "key": "@deepseek-ai/dsh-fs",
+            "range": "^0.1.0-rc.6"
+          },
+          {
+            "key": "@deepseek-ai/dsh-system-prompt",
+            "range": "^0.1.0-rc.6"
+          },
+          {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "^0.1.0-rc.6"
+          }
+        ]
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "denied"
+      },
+      "unmet": [
+        {
+          "key": "@deepseek-ai/dsh-fs",
+          "range": "^0.1.0-rc.6"
+        },
+        {
+          "key": "@deepseek-ai/dsh-system-prompt",
+          "range": "^0.1.0-rc.6"
+        },
+        {
+          "key": "@deepseek-ai/dsh-tools",
+          "range": "^0.1.0-rc.6"
+        }
+      ],
+      "missing_evidence": [],
+      "reason_ids": [
+        "admission.row-declared-by",
+        "admission.row-scope",
+        "admission.unmet.peer"
+      ],
+      "fix_kinds": [
+        "allow-version",
+        "disable-entry",
+        "downgrade-dsh",
+        "pin-version",
+        "probe",
+        "remove-plugin"
+      ],
+      "suggestion_versions": [
+        "1.3.2:false"
+      ]
+    },
+    {
+      "id": "row:compat-mixed-xmanrui-dsh-im",
+      "kind": "row",
+      "name": "@xmanrui/dsh-im",
+      "version": "5.7.0",
+      "row_ids": [
+        "compat-mixed-xmanrui-dsh-im"
+      ],
+      "source": "patch:profile",
+      "bucket": "cannot-tell",
+      "cause": "no-declaration",
+      "already_denied_at_current": false,
+      "conclusion": "unknown",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "unconstrained"
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "unconstrained"
+      },
+      "unmet": [],
+      "missing_evidence": [
+        "missing.peer-declaration"
+      ],
+      "reason_ids": [
+        "admission.compat-channel-mismatch",
+        "admission.row-scope",
+        "admission.row-unconstrained"
+      ],
+      "fix_kinds": [
+        "report"
+      ],
+      "suggestion_versions": [
+        "5.7.0:false"
+      ]
+    },
+    {
+      "id": "row:compat-mixed-kirkchinese-dsh-citeciter",
+      "kind": "row",
+      "name": "@kirkchinese/dsh-citeciter",
+      "version": "0.9.0-beta.6",
+      "row_ids": [
+        "compat-mixed-kirkchinese-dsh-citeciter"
+      ],
+      "source": "patch:profile",
+      "bucket": "improved",
+      "cause": "denied-now-admitted-then",
+      "already_denied_at_current": true,
+      "conclusion": "go",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "denied",
+        "unmet_at_current": [
+          {
+            "key": "@deepseek-ai/dsh-agent",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-agent-loop",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-attachment",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-home-paths",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-llm",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-sandbox-policy",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-scope",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-session",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-session-persistence-jsonl",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-session-query",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-session-title",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-settings",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-typert-protocol",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-user-questions",
+            "range": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2 || 0.2.1-alpha.3 || 0.2.1-alpha.4 || 0.2.1-alpha.5 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          }
+        ]
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "admitted"
+      },
+      "unmet": [],
+      "missing_evidence": [],
+      "reason_ids": [
+        "admission.admitted",
+        "admission.declared-only"
+      ],
+      "fix_kinds": [],
+      "suggestion_versions": []
+    },
+    {
+      "id": "row:compat-mixed-dsh-motion-ui",
+      "kind": "row",
+      "name": "dsh-motion-ui",
+      "version": "0.8.8",
+      "row_ids": [
+        "compat-mixed-dsh-motion-ui"
+      ],
+      "source": "patch:profile",
+      "bucket": "improved",
+      "cause": "denied-now-admitted-then",
+      "already_denied_at_current": true,
+      "conclusion": "go",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "denied",
+        "unmet_at_current": [
+          {
+            "key": "@deepseek-ai/dsh-home-paths",
+            "range": "0.2.0-rc.2 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          },
+          {
+            "key": "@deepseek-ai/dsh-tools",
+            "range": "0.2.0-rc.2 || 0.2.1-rc.1 || 0.2.1-rc.2 || 0.2.1-rc.3"
+          }
+        ]
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "admitted"
+      },
+      "unmet": [],
+      "missing_evidence": [],
+      "reason_ids": [
+        "admission.admitted",
+        "admission.declared-only"
+      ],
+      "fix_kinds": [],
+      "suggestion_versions": []
+    },
+    {
+      "id": "row:compat-mixed-dsh-noname-kit",
+      "kind": "row",
+      "name": "dsh-noname-kit",
+      "version": "1.10.8",
+      "row_ids": [
+        "compat-mixed-dsh-noname-kit"
+      ],
+      "source": "patch:profile",
+      "bucket": "improved",
+      "cause": "denied-now-admitted-then",
+      "already_denied_at_current": true,
+      "conclusion": "go",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "denied",
+        "unmet_at_current": [
+          {
+            "key": "dsh",
+            "range": "0.2.1-rc.3 || 0.2.1-rc.2 || 0.2.1-rc.1 || 0.2.0-rc.2 || 0.1.7-rc.1 || 0.1.5-rc.2 || 0.1.5-rc.1 || 0.1.5-alpha.2 || 0.1.5-alpha.1 || 0.1.3-alpha.2 || 0.1.2-rc.1 || 0.1.2-alpha.5 || 0.1.2-alpha.4 || 0.1.2-alpha.3 || 0.1.2-alpha.2"
+          }
+        ]
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "admitted"
+      },
+      "unmet": [],
+      "missing_evidence": [],
+      "reason_ids": [
+        "admission.admitted",
+        "admission.declared-only"
+      ],
+      "fix_kinds": [],
+      "suggestion_versions": []
+    },
+    {
+      "id": "row:compat-mixed-dsh-cost-meter",
+      "kind": "row",
+      "name": "dsh-cost-meter",
+      "version": "1.9.45",
+      "row_ids": [
+        "compat-mixed-dsh-cost-meter"
+      ],
+      "source": "patch:profile",
+      "bucket": "likely-fine",
+      "cause": "admitted-at-target",
+      "already_denied_at_current": false,
+      "conclusion": "go",
+      "current": {
+        "runtime": "0.2.1-rc.4",
+        "status": "admitted"
+      },
+      "target": {
+        "runtime": "0.2.1-rc.3",
+        "status": "admitted"
+      },
+      "unmet": [],
+      "missing_evidence": [],
+      "reason_ids": [
+        "admission.admitted",
+        "admission.declared-only"
+      ],
+      "fix_kinds": [],
+      "suggestion_versions": []
+    }
+  ],
+  "self_check": {
+    "control_target": "0.2.1-rc.4",
+    "control_counts": {
+      "bundles": 0,
+      "rows": 6,
+      "would_be_denied": 4,
+      "cannot_tell": 1,
+      "improved": 0,
+      "likely_fine": 1,
+      "total": 6
+    },
+    "why_scanned": {
+      "bundles": 0,
+      "entries": 6
+    },
+    "why_entry_verdicts": 5,
+    "why_denied_modules": 4,
+    "why_unknown_modules": 1,
+    "control_denied_modules": 4,
+    "control_unknown_modules": 1,
+    "denied_sets_equal": true,
+    "unknown_sets_equal": true,
+    "denied_comparison_vacuous": false,
+    "target_change_moves_the_list": true,
+    "improved_units": [
+      "@kirkchinese/dsh-citeciter@0.9.0-beta.6",
+      "dsh-motion-ui@0.8.8",
+      "dsh-noname-kit@1.10.8"
+    ],
+    "buckets_non_empty": [
+      "would-be-denied",
+      "cannot-tell",
+      "improved",
+      "likely-fine"
+    ],
+    "expect_improved": false,
+    "registry": {
+      "consulted": true,
+      "live": true,
+      "facts": 2,
+      "failures": 0,
+      "network_blocked_on_purpose": false,
+      "buckets_identical_to_offline_run": true,
+      "counts_identical_to_offline_run": true
+    },
+    "note": "the control run (target == running runtime) must deny nothing new and must name the same modules as `why`; a vacuous comparison is reported as vacuous"
+  },
+  "runs": [
+    {
+      "id": "impact",
+      "command": "upgrade --to 0.2.1-rc.3 --dsh-home <dsh-home> --profile mixed",
+      "exit": 0,
+      "ms": 471,
+      "stdout_bytes": 18613,
+      "stderr_lines": 0,
+      "parsed": true,
+      "payload_sha256": "af68a789a41029bb81cb0ec0511b07df2aa3afc582af2eb10315d4b9a53e3e4e",
+      "parse_error": null
+    },
+    {
+      "id": "impact-repeat",
+      "command": "upgrade --to 0.2.1-rc.3 --dsh-home <dsh-home> --profile mixed",
+      "exit": 0,
+      "ms": 396,
+      "stdout_bytes": 18613,
+      "stderr_lines": 0,
+      "parsed": true,
+      "payload_sha256": "af68a789a41029bb81cb0ec0511b07df2aa3afc582af2eb10315d4b9a53e3e4e",
+      "parse_error": null
+    },
+    {
+      "id": "control",
+      "command": "upgrade --to 0.2.1-rc.4 --dsh-home <dsh-home> --profile mixed",
+      "exit": 0,
+      "ms": 482,
+      "stdout_bytes": 38631,
+      "stderr_lines": 0,
+      "parsed": true,
+      "payload_sha256": "f7fd034fe044f7e3a03096c1a425e3ba13fc4982f932f1a7ff87b0cd77eafd55",
+      "parse_error": null
+    },
+    {
+      "id": "why",
+      "command": "why --dsh-home <dsh-home> --profile mixed --all",
+      "exit": 0,
+      "ms": 611,
+      "stdout_bytes": 68071,
+      "stderr_lines": 0,
+      "parsed": true,
+      "payload_sha256": "ff891799aa5afd8157d78b0768e6c80ad2f7d2c71902b4537c5ac91644751841",
+      "parse_error": null
+    },
+    {
+      "id": "registry-live",
+      "command": "upgrade --to 0.2.1-rc.3 --dsh-home <dsh-home> --profile mixed --registry",
+      "exit": 0,
+      "ms": 3706,
+      "stdout_bytes": 19423,
+      "stderr_lines": 0,
+      "parsed": true,
+      "payload_sha256": "bc04451ad300c203d3afbe56ed6b1582071a10a739c84eccc2ff09c074448fb4",
+      "parse_error": null
+    }
+  ],
+  "checks": [
+    {
+      "id": "impact-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "impact-parses",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "impact-names-the-profile",
+      "ok": true,
+      "detail": "mixed"
+    },
+    {
+      "id": "impact-names-the-target",
+      "ok": true,
+      "detail": "0.2.1-rc.3"
+    },
+    {
+      "id": "impact-sampled-something",
+      "ok": true,
+      "detail": "6 unit(s)"
+    },
+    {
+      "id": "counts-are-a-partition",
+      "ok": true,
+      "detail": "{\"bundles\":0,\"rows\":6,\"would_be_denied\":1,\"cannot_tell\":1,\"improved\":3,\"likely_fine\":1,\"total\":6}"
+    },
+    {
+      "id": "units-are-uniquely-identified",
+      "ok": true,
+      "detail": "6 unit(s)"
+    },
+    {
+      "id": "every-unit-has-a-known-bucket",
+      "ok": true,
+      "detail": "[\"would-be-denied\",\"cannot-tell\",\"improved\",\"likely-fine\"]"
+    },
+    {
+      "id": "denials-carry-a-fix",
+      "ok": true,
+      "detail": "every would-be-denied unit has at least one remediation"
+    },
+    {
+      "id": "cannot-tell-says-what-is-missing",
+      "ok": true,
+      "detail": "every cannot-tell unit says which evidence would resolve it"
+    },
+    {
+      "id": "denials-name-the-row",
+      "ok": true,
+      "detail": "row-scope carries the row id the user must disable"
+    },
+    {
+      "id": "deterministic-payload",
+      "ok": true,
+      "detail": "af68a789a410… vs af68a789a410…"
+    },
+    {
+      "id": "control-ran",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "control-improved-empty",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "id": "control-relation-same",
+      "ok": true,
+      "detail": "same"
+    },
+    {
+      "id": "control-has-no-new-denials",
+      "ok": true,
+      "detail": "0 newly denied at target==current (4 denied in total, all already denied today)"
+    },
+    {
+      "id": "why-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "why-denied-matches-upgrade-control",
+      "ok": true,
+      "detail": "4 module(s)"
+    },
+    {
+      "id": "why-unknown-matches-upgrade-control",
+      "ok": true,
+      "detail": "1 module(s)"
+    },
+    {
+      "id": "target-change-moves-the-list",
+      "ok": true,
+      "detail": "1 denied + 3 improved at 0.2.1-rc.3 vs 4 + 0 at 0.2.1-rc.4"
+    },
+    {
+      "id": "no-home-path-in-payload",
+      "ok": true,
+      "detail": "no home-shaped path in the impact payload"
+    },
+    {
+      "id": "registry-exit-0",
+      "ok": true,
+      "detail": "exit 0 (a failed lookup is not a failed run)"
+    },
+    {
+      "id": "registry-cannot-move-a-unit",
+      "ok": true,
+      "detail": "every unit keeps its bucket/cause with the registry path on"
+    },
+    {
+      "id": "registry-cannot-move-a-count",
+      "ok": true,
+      "detail": "{\"bundles\":0,\"rows\":6,\"would_be_denied\":1,\"cannot_tell\":1,\"improved\":3,\"likely_fine\":1,\"total\":6}"
+    },
+    {
+      "id": "registry-notes-are-annotations",
+      "ok": true,
+      "detail": "every suggestion is annotation_only + measured-registry"
+    },
+    {
+      "id": "registry-path-actually-ran",
+      "ok": true,
+      "detail": "2 fact(s), 0 failure(s)"
+    },
+    {
+      "id": "registry-live-found-facts",
+      "ok": true,
+      "detail": "2 published build(s) answered \"does your declaration admit 0.2.1-rc.3?\"; 0 lookup(s) failed"
+    },
+    {
+      "id": "registry-live-attached-something",
+      "ok": true,
+      "detail": "at least one denied/cannot-tell unit carries the annotation"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "this is a DECLARATION-layer judgement: nothing here booted 0.2.1-rc.3, so it says which rows would be denied, not whether the plugins work",
+    "the target version was not verified to exist: the run is offline by construction (no --registry), so a hypothetical target is legitimate input and an unverified one",
+    "one profile (mixed) on one machine: the answer does not transfer to another profile, another dsh home, or another os/arch (BS-38)",
+    "only units that are installed here were judged; a plugin that is not in this profile has no row and no answer",
+    "remediation prose and reason prose are not copied into this artifact; per-unit message ids (`reason_ids`) and fix kinds (`fix_kinds`) are, and `dsh-triage upgrade --json` carries the full lists",
+    "the `why` cross-check compared non-empty denied-module sets",
+    "`unmet` lists the declared requirements that failed, capped by nothing: a plugin with 29 pinned peers contributes 29 rows here",
+    "the composition is CURATED (6 pinned package(s)); see `declared_dependencies` — the manifests are published, the selection is ours",
+    "the target is older relative to the running runtime: 0.2.1-rc.4 → 0.2.1-rc.3. Today no published plugin declares a range that denies 0.2.1-rc.4 and is admitted by a NEWER build (scripts/scan_upgrade_declarations.mjs scanned the registry and found none), so the real shape of \"improved\" is \"move back to the build your plugins pin\"",
+    "the `--registry` run reached the registry: the facts in it are a snapshot of the moment it ran, so re-running can legitimately attach different annotations; what is stable is that no unit changed bucket or count"
+  ]
+}

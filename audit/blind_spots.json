@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R43 (2026-10-30)",
+  "stand": "R44 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -322,6 +322,15 @@
       "owner": "packages/probe/src/host.ts + packages/probe/src/exec.ts + tests/unit/probe-scratch-lock.test.ts",
       "status": "closed (R40): reproducible on demand (CWD lock → real EPERM); the wild holder's identity and file-level share denial are still unseen",
       "resolved_by": "tests/unit/probe-scratch-lock.test.ts"
+    },
+    {
+      "id": "BS-42",
+      "area": "upgrade/evidence",
+      "cannot_see": "`improved` 的**前向几何**（今天被拒、更新的目标放行）在真实生态里没有见证。R44 扫了 registry 上 1584 个 dsh 插件，201 个在 `0.2.1-rc.4` 上被拒，其中**能升到更新的版本变好的 0 个**；114 个只在更旧的目标上放行、87 个任何目标都不放行（`data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json`）。所以 R44 的真机见证只有**降级几何**：`dsh-noname-kit` / `dsh-motion-ui` / `@kirkchinese/dsh-citeciter` 在 rc.4 被拒、rc.3 放行",
+      "mitigation": "产物把 `target_relation: older` 与「目标未验证存在」写进 `source` / `limits[]`；记录器新增 `--expect-improved` 只断言「四桶非空 + 每个改善单元带两侧证据」，**不**断言方向；`^0.2.1` 这种前向声明由单测钉住（`tests/unit/upgrade.test.ts` R44 三条）。**对外口径**：四桶都有真机证据，但 `improved` 只有降级几何；不许把「目标放行」说成「升级会修好」",
+      "owner": "scripts/scan_upgrade_declarations.mjs + scripts/record_upgrade_impact.mjs",
+      "status": "open (R44): forward geometry has 0/1584 real samples; downgrade geometry witnessed on three real packages",
+      "resolved_by": null
     }
   ]
 }

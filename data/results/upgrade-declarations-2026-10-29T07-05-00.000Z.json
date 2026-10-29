@@ -1,0 +1,1321 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/scan_upgrade_declarations.mjs",
+  "generated_at": "2026-10-29T07:05:00.000Z",
+  "method": {
+    "registry": "https://registry.npmjs.org",
+    "queries": [
+      "keywords:dsh-plugin",
+      "keywords:deepseek-harness",
+      "dsh plugin"
+    ],
+    "pages_per_query": 3,
+    "manifest_read": "<name>/latest",
+    "admission": "packages/core/dist/admission.js#evaluateAdmission (the same engine the CLI uses)",
+    "current": "0.2.1-rc.4",
+    "newer_targets": [
+      "0.2.1",
+      "0.2.2-alpha.2",
+      "0.3.0"
+    ],
+    "older_targets": [
+      "0.2.1-rc.3",
+      "0.2.1-rc.1",
+      "0.2.0",
+      "0.1.0-rc.6"
+    ]
+  },
+  "totals": {
+    "candidates": 1584,
+    "readable_manifests": 1584,
+    "denied_at_current": 202,
+    "forward_improved": 0,
+    "downgrade_only": 113,
+    "stuck": 89
+  },
+  "forward": [],
+  "downgrade_only": [
+    {
+      "name": "@ag-dsh/dsh-gen-commit-msg-zh",
+      "version": "1.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@anionex/dsh-turn-rewind",
+      "version": "0.3.11",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@anionex/dsh-vision-toolkit",
+      "version": "0.1.48",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@benz-ai-x/dsh-24pa",
+      "version": "0.2.1-rc.3.2",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "@ash-qw/dsh-theme-prts",
+      "version": "2.5.4",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@abruzz1/dsh-plugin-test",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@deepseek-harness-tui/dsh-tui",
+      "version": "0.17.0",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@dsh-electron/dsh-plugin-git",
+      "version": "0.2.8",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "@dsh-suite/plugin-team-board",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@dsh-suite/plugin-notify",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@huiliyi37/dsh-office",
+      "version": "0.2.4",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@huangzhaoyu/zhaoyu-restart",
+      "version": "1.0.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@kelearns/dsh-navigation-bar",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@kirkchinese/dsh-citeciter",
+      "version": "0.9.0-beta.6",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "@ljwei-stak/dsh-mv-cli",
+      "version": "0.12.2",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@memtensor/memos-cloud-dsh-plugin",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@memtensor/memos-local-plugin",
+      "version": "2.0.20",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@mindmemos/deepseek-harness-plugin",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@memorylake/dsh-plugin",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@mutocenew/dsh-plugin-catalog",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@nanmicoder/dsh-agent-teams",
+      "version": "0.1.27",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "@nanmicoder/dsh-plugin-market",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@omicverse/dsh-omicos",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@opendsh/dsh-plugin-setting-mcp",
+      "version": "0.1.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@quill507/dsh-orchestrator-preset",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@rvaim/dsh-plugin-bridge",
+      "version": "0.10.2",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@sparkelf/dsh-quant",
+      "version": "0.91.0-sparkelf.13",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@steven-wu/dsh-cost-meter",
+      "version": "0.1.0-rc.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@tomowang/dsh-tui",
+      "version": "0.10.2",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "@steven-wu/dsh-linked-folders",
+      "version": "0.1.0-rc.6",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@zoytown/dsh-billing",
+      "version": "0.1.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "agents-gitflow-guard",
+      "version": "0.1.8",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "@zoytown/dsh-token",
+      "version": "0.1.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-agent-relay",
+      "version": "0.5.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-ai-wallet",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-auto-mode",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-audit",
+      "version": "0.5.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-auto-exit",
+      "version": "0.0.4",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-cad-viewer",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-case",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-browser-fs",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-client-ui-aqua",
+      "version": "1.3.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-clipboard",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-code-index",
+      "version": "0.11.1",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-codex-workflow",
+      "version": "1.1.15",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-codex-connect",
+      "version": "0.2.0-alpha.10",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "dsh-deeppilot",
+      "version": "0.9.11",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-dead-links",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-cost",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-damage-pulse",
+      "version": "4.3.0",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1",
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-find-plugin",
+      "version": "0.4.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-feishu-connect",
+      "version": "1.7.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-fmt",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-gap-feed",
+      "version": "0.1.9",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-git-ui",
+      "version": "0.2.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-http",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-jwt",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-lark-agent",
+      "version": "0.6.0",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-memory",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-motion-ui",
+      "version": "0.8.8",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "dsh-need-finder",
+      "version": "0.3.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-noname-kit",
+      "version": "1.10.8",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.2.1-rc.1"
+      ]
+    },
+    {
+      "name": "dsh-my-go",
+      "version": "0.4.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-novel",
+      "version": "0.1.3",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-password",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-pkg-info",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-autoevo",
+      "version": "1.4.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-academic-writing",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-clinic",
+      "version": "0.1.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-console",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-browser-use",
+      "version": "0.3.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-collapsible-steps",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-deepseek-vision",
+      "version": "0.4.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-education",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-focus",
+      "version": "1.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-genui",
+      "version": "0.15.2",
+      "admitted_at": [
+        "0.2.1-rc.3",
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-gate",
+      "version": "1.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-finance-data",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-installer",
+      "version": "2.0.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-local-life",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-manager",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-proxy",
+      "version": "0.2.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-recommend",
+      "version": "1.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-recommender",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-quote-reply",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-sandbox-escalation-fix",
+      "version": "0.1.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-scorecard",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-smart-config",
+      "version": "1.1.1",
+      "admitted_at": [
+        "0.2.0"
+      ]
+    },
+    {
+      "name": "dsh-plugin-streamnest",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-plugin-store-optimized",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-observatory",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-translation",
+      "version": "0.3.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-uisfx",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-verify",
+      "version": "1.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-plugin-weaknet-adaptor",
+      "version": "1.0.5",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-qwen-token-plan-cn-responses",
+      "version": "0.1.9",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-session-cost",
+      "version": "0.1.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-sidenote",
+      "version": "0.7.6",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-skill-evolve",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-token-budget",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-tool-describe-image",
+      "version": "0.5.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-tool-backtest",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-tool-app-verify",
+      "version": "0.1.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-url-tools",
+      "version": "0.1.1",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-vertex-argon",
+      "version": "1.6.3",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "dsh-video-gen",
+      "version": "0.2.4",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-weather-plugin",
+      "version": "1.0.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "dsh-win32",
+      "version": "0.17.15",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "openharness-rule-for-dsh-plugin",
+      "version": "0.1.2",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "pi2dsh",
+      "version": "0.27.1",
+      "admitted_at": [
+        "0.2.1-rc.3"
+      ]
+    },
+    {
+      "name": "spec-wave",
+      "version": "3.5.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "task-complete-notify-for-dsh",
+      "version": "0.2.0",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    },
+    {
+      "name": "picturereader",
+      "version": "3.3.3",
+      "admitted_at": [
+        "0.1.0-rc.6"
+      ]
+    }
+  ],
+  "stuck": [
+    {
+      "name": "@ai-workbench/remote-agent",
+      "version": "0.8.29"
+    },
+    {
+      "name": "@ai-workbench/connect",
+      "version": "0.7.37"
+    },
+    {
+      "name": "@arcaneorion/dsh-model-channel-manager",
+      "version": "0.4.0"
+    },
+    {
+      "name": "@argszero/cordis-plugin-sandbox-grant-advisor",
+      "version": "0.27.0"
+    },
+    {
+      "name": "@awiki/dsh-plugin",
+      "version": "0.3.21"
+    },
+    {
+      "name": "@benz-ai-x/dsh-research-graph",
+      "version": "0.1.5-rc.1"
+    },
+    {
+      "name": "@borgee/dsh-plugin",
+      "version": "0.1.33"
+    },
+    {
+      "name": "@chatcode/cco-tui",
+      "version": "0.10.0-rc.23"
+    },
+    {
+      "name": "@deepseek-ai/dsh-fs-observation-policy",
+      "version": "0.0.1-rc.3"
+    },
+    {
+      "name": "@deepseek-ai/dsh-plugin-manager",
+      "version": "0.1.6-alpha.2"
+    },
+    {
+      "name": "@deepseek-ai/dsh-plugin-market",
+      "version": "0.2.1-alpha.4"
+    },
+    {
+      "name": "@deepseek-ai/dsh-skill-badge",
+      "version": "0.0.1-rc.1"
+    },
+    {
+      "name": "@deepseek-ai/dsh-session-checkpoint-policy",
+      "version": "0.0.1-rc.1"
+    },
+    {
+      "name": "@deepseek-ai/dsh-tool-cordis",
+      "version": "0.0.1-rc.1"
+    },
+    {
+      "name": "@deepseek-ai/dsh-tool-call-timeout-policy",
+      "version": "0.0.1-rc.3"
+    },
+    {
+      "name": "@deepseek-ai/dsh-plugin-package-inventory-deepseek",
+      "version": "0.1.2-alpha.2"
+    },
+    {
+      "name": "@fegnze/dsh-plugin-manager",
+      "version": "0.1.2"
+    },
+    {
+      "name": "@feng0531/dsh-vcs",
+      "version": "0.4.10"
+    },
+    {
+      "name": "@dshline/dshline",
+      "version": "0.26.1"
+    },
+    {
+      "name": "@hanbd/dsh-plugin-hhix-uiux",
+      "version": "0.3.4"
+    },
+    {
+      "name": "@hqzhao95/dscode",
+      "version": "0.0.12"
+    },
+    {
+      "name": "@huanlin/dsh-plugin-better-locale",
+      "version": "0.4.3"
+    },
+    {
+      "name": "@jw-king/dsh-plugin-parallel",
+      "version": "0.2.6"
+    },
+    {
+      "name": "@klarkxy/dsh-blueprint",
+      "version": "0.1.0-alpha.2"
+    },
+    {
+      "name": "@liuhange/dsh-gov-data-inspector",
+      "version": "3.8.2"
+    },
+    {
+      "name": "@liuhange/dsh-data-asset-shared",
+      "version": "3.3.2"
+    },
+    {
+      "name": "@linziyanleo/dsh-custom-provider",
+      "version": "0.1.4"
+    },
+    {
+      "name": "@mokuyoaxis/dsh-iris",
+      "version": "0.2.7"
+    },
+    {
+      "name": "@mkaliezz/dsh-task-board",
+      "version": "0.3.0"
+    },
+    {
+      "name": "@neptune810/dsh-model-router",
+      "version": "1.0.0"
+    },
+    {
+      "name": "@pinkbanana/dsh-balance",
+      "version": "0.11.0"
+    },
+    {
+      "name": "@sparkelf/dsh-plugin-mcp-credentials",
+      "version": "0.2.1-rc.2.5"
+    },
+    {
+      "name": "@sparkelf/dsh-plugin-subagent-settings",
+      "version": "0.2.1-rc.2.4"
+    },
+    {
+      "name": "@sparkelf/dsh-plugin-dataops",
+      "version": "0.2.1-alpha.29"
+    },
+    {
+      "name": "@wingsky-1/dsh-verify-isolated",
+      "version": "0.2.10"
+    },
+    {
+      "name": "@wingsky-1/dsh-notifier",
+      "version": "0.2.10"
+    },
+    {
+      "name": "@vinelink-lab/dsh-vera",
+      "version": "0.1.2"
+    },
+    {
+      "name": "@wingsky-1/dsh-mcp-manager",
+      "version": "0.2.10"
+    },
+    {
+      "name": "@ycp424c/dsh-browser-bridge",
+      "version": "0.1.0"
+    },
+    {
+      "name": "@yiln-dsh/dsh-plugin-web-daemon",
+      "version": "0.8.2"
+    },
+    {
+      "name": "bailian-kb-dsh",
+      "version": "2.7.0"
+    },
+    {
+      "name": "billion-context-dsh",
+      "version": "0.2.27"
+    },
+    {
+      "name": "dsh-agy-safe",
+      "version": "0.1.8"
+    },
+    {
+      "name": "dsh-archived-chats",
+      "version": "1.6.0"
+    },
+    {
+      "name": "dsh-augmentor",
+      "version": "0.2.13"
+    },
+    {
+      "name": "dsh-bash-terminal",
+      "version": "0.3.15"
+    },
+    {
+      "name": "dsh-chat-thinking-editor",
+      "version": "0.1.2"
+    },
+    {
+      "name": "dsh-cloud-handoff",
+      "version": "0.6.0"
+    },
+    {
+      "name": "dsh-context-compaction-optimizer",
+      "version": "0.1.0"
+    },
+    {
+      "name": "dsh-dev-progress-memory",
+      "version": "0.1.1"
+    },
+    {
+      "name": "dsh-electro-lab",
+      "version": "0.13.0"
+    },
+    {
+      "name": "dsh-github-copilot",
+      "version": "0.4.1"
+    },
+    {
+      "name": "dsh-git-worktree",
+      "version": "0.11.0"
+    },
+    {
+      "name": "dsh-lfaa",
+      "version": "0.1.2"
+    },
+    {
+      "name": "dsh-local-link",
+      "version": "1.2.4"
+    },
+    {
+      "name": "dsh-mcp-tunnel",
+      "version": "0.1.0"
+    },
+    {
+      "name": "dsh-motor-ai",
+      "version": "1.1.0"
+    },
+    {
+      "name": "dsh-multi-model-orchestrator",
+      "version": "0.2.2"
+    },
+    {
+      "name": "dsh-nexttavern",
+      "version": "0.2.9-rc.4"
+    },
+    {
+      "name": "dsh-opencode-free",
+      "version": "0.3.7"
+    },
+    {
+      "name": "dsh-opencode-go-models",
+      "version": "0.1.5"
+    },
+    {
+      "name": "dsh-openai-codex-auth",
+      "version": "0.6.3"
+    },
+    {
+      "name": "dsh-plugin-archived-conversations",
+      "version": "0.1.4"
+    },
+    {
+      "name": "dsh-plugin-execution-graph",
+      "version": "0.1.4"
+    },
+    {
+      "name": "dsh-plugin-langfuse",
+      "version": "0.9.0"
+    },
+    {
+      "name": "dsh-plugin-manager-companion",
+      "version": "0.1.4"
+    },
+    {
+      "name": "dsh-plugin-manager-pro",
+      "version": "0.9.1"
+    },
+    {
+      "name": "dsh-plugin-model-capability",
+      "version": "1.4.0"
+    },
+    {
+      "name": "dsh-plugin-redact",
+      "version": "0.1.1"
+    },
+    {
+      "name": "dsh-plugin-security-review",
+      "version": "1.8.1"
+    },
+    {
+      "name": "dsh-plugin-superself",
+      "version": "0.1.0"
+    },
+    {
+      "name": "dsh-plugin-terminal",
+      "version": "0.2.0"
+    },
+    {
+      "name": "dsh-plugin-veriscope",
+      "version": "0.6.0"
+    },
+    {
+      "name": "dsh-qwen38-ninfer-compaction-fix",
+      "version": "1.1.0"
+    },
+    {
+      "name": "dsh-realtime-agent",
+      "version": "0.2.14"
+    },
+    {
+      "name": "dsh-quota-panel",
+      "version": "0.1.7-rc.1-v0.1"
+    },
+    {
+      "name": "dsh-reckoner",
+      "version": "0.1.1"
+    },
+    {
+      "name": "dsh-run2skill",
+      "version": "0.5.0-alpha.4"
+    },
+    {
+      "name": "dsh-session-fork",
+      "version": "0.4.0"
+    },
+    {
+      "name": "dsh-siyuan",
+      "version": "0.2.0"
+    },
+    {
+      "name": "dsh-skills-manager",
+      "version": "0.2.0"
+    },
+    {
+      "name": "dsh-xmemo",
+      "version": "0.1.0"
+    },
+    {
+      "name": "dsh-wsl-tray",
+      "version": "0.1.7"
+    },
+    {
+      "name": "muche-dsh-plugin",
+      "version": "0.8.2"
+    },
+    {
+      "name": "noogenesis-dsh",
+      "version": "0.3.0"
+    },
+    {
+      "name": "plane-dsh-plugin",
+      "version": "0.1.0"
+    },
+    {
+      "name": "relay-dsh-plugin-codex",
+      "version": "0.2.4"
+    },
+    {
+      "name": "relay-dsh-plugin-skill-creator",
+      "version": "0.1.2"
+    },
+    {
+      "name": "relay-dsh-plugin-claude",
+      "version": "0.2.4"
+    }
+  ],
+  "examples": {
+    "downgrade_only": [
+      {
+        "name": "@ag-dsh/dsh-gen-commit-msg-zh",
+        "version": "1.1.1",
+        "declared": {
+          "engines": null,
+          "peers": [
+            "@deepseek-ai/dsh-agent ^0.1.0-rc.6",
+            "@deepseek-ai/dsh-commands ^0.1.0-rc.6",
+            "@deepseek-ai/dsh-llm ^0.1.0-rc.6",
+            "@deepseek-ai/dsh-skill ^0.1.0-rc.6",
+            "@deepseek-ai/dsh-user-questions ^0.1.0-rc.6"
+          ]
+        },
+        "unmet": [
+          "@deepseek-ai/dsh-agent ^0.1.0-rc.6",
+          "@deepseek-ai/dsh-commands ^0.1.0-rc.6",
+          "@deepseek-ai/dsh-llm ^0.1.0-rc.6",
+          "@deepseek-ai/dsh-skill ^0.1.0-rc.6",
+          "@deepseek-ai/dsh-user-questions ^0.1.0-rc.6"
+        ],
+        "admitted_at": [
+          "0.1.0-rc.6"
+        ]
+      },
+      {
+        "name": "@anionex/dsh-turn-rewind",
+        "version": "0.3.11",
+        "declared": {
+          "engines": null,
+          "peers": [
+            "@deepseek-ai/dsh-settings 0.2.1-rc.3 || >=0.1.0-rc.8 <0.2.0 || ^0.1.1-rc.1 || ^0.1.2-alpha.1 || ^0.1.5-rc.1 || 0.2.0-rc.2 || 0.2.1-rc.2"
+          ]
+        },
+        "unmet": [
+          "@deepseek-ai/dsh-settings 0.2.1-rc.3 || >=0.1.0-rc.8 <0.2.0 || ^0.1.1-rc.1 || ^0.1.2-alpha.1 || ^0.1.5-rc.1 || 0.2.0-rc.2 || 0.2.1-rc.2"
+        ],
+        "admitted_at": [
+          "0.2.1-rc.3"
+        ]
+      }
+    ],
+    "stuck": [
+      {
+        "name": "@ai-workbench/remote-agent",
+        "version": "0.8.29",
+        "declared": {
+          "engines": null,
+          "peers": [
+            "@deepseek-ai/dsh-agent 0.2.0-rc.2",
+            "@deepseek-ai/dsh-attachment 0.2.0-rc.2",
+            "@deepseek-ai/dsh-llm 0.2.0-rc.2",
+            "@deepseek-ai/dsh-sandbox-policy 0.2.0-rc.2",
+            "@deepseek-ai/dsh-session 0.2.0-rc.2",
+            "@deepseek-ai/dsh-storage-domain 0.2.0-rc.2",
+            "@deepseek-ai/dsh-typert-protocol 0.2.0-rc.2",
+            "@deepseek-ai/dsh-user-approval 0.2.0-rc.2"
+          ]
+        },
+        "unmet": [
+          "@deepseek-ai/dsh-agent 0.2.0-rc.2",
+          "@deepseek-ai/dsh-attachment 0.2.0-rc.2",
+          "@deepseek-ai/dsh-llm 0.2.0-rc.2",
+          "@deepseek-ai/dsh-sandbox-policy 0.2.0-rc.2",
+          "@deepseek-ai/dsh-session 0.2.0-rc.2",
+          "@deepseek-ai/dsh-storage-domain 0.2.0-rc.2",
+          "@deepseek-ai/dsh-typert-protocol 0.2.0-rc.2",
+          "@deepseek-ai/dsh-user-approval 0.2.0-rc.2"
+        ],
+        "admitted_at": []
+      },
+      {
+        "name": "@ai-workbench/connect",
+        "version": "0.7.37",
+        "declared": {
+          "engines": null,
+          "peers": [
+            "@deepseek-ai/dsh-host-directory-picker-native 0.2.0-rc.2"
+          ]
+        },
+        "unmet": [
+          "@deepseek-ai/dsh-host-directory-picker-native 0.2.0-rc.2"
+        ],
+        "admitted_at": []
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "scanned-something",
+      "ok": true,
+      "detail": "1584 package(s) with a readable latest manifest"
+    },
+    {
+      "id": "found-denied-declarations",
+      "ok": true,
+      "detail": "202 denied at 0.2.1-rc.4"
+    },
+    {
+      "id": "classification-is-a-partition",
+      "ok": true,
+      "detail": "0 forward + 113 downgrade-only + 89 stuck = 202"
+    },
+    {
+      "id": "every-denial-names-an-unmet-range",
+      "ok": true,
+      "detail": "each denied package carries the rule that failed (no blame without a range)"
+    },
+    {
+      "id": "no-fixture-in-the-sample",
+      "ok": true,
+      "detail": "every sampled package is a published registry name"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "a `<name>/latest` scan is not a version census: an older version of a package can deny the current runtime while its latest does not, and vice versa",
+    "the candidate list comes from keyword search, not from a registry dump: the denominators here are not the ecosystem, only \"what the search returned\"",
+    "declarations only: nothing was installed or booted, so this says which ranges would deny, not which plugins work",
+    "network snapshot: re-running later can legitimately find a different set (including a forward hit, the day a plugin declares a range that admits an unpublished-but-newer build)",
+    "`evaluateAdmission` uses `{ includePrerelease: true }`; a range like `>=0.2.0-rc.1 <0.3.0-0` therefore ADMITS `0.2.1-rc.4` (pinned by tests/unit/upgrade.test.ts), while `^0.2.1` does not"
+  ]
+}
