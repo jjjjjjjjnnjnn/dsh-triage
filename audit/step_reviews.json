@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R44 (2026-10-29)",
+  "stand": "R45 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5525,7 +5525,7 @@
         "adversary": "反例一：19.8s 的 run 是真实候选而不是夹具——差 0.2s 就会让 `d2_report` 的 `boot-budget` 判红，所以「有载不影响结论」只能说到 ~60% 占用；反例二：把三批合并时丢掉 `conditions[]`，就会把 12.3s 中位数误当成空载数字"
       },
       "real_test": {
-        "command": "node scripts/record_probe_matrix.mjs … --load 8 --stamp 2026-10-29T08:20:00.000Z",
+        "command": "node scripts/record_probe_matrix.mjs … --load 8 --stamp 2026-10-29T08:40:00.000Z",
         "artifact": "data/results/probe-matrix-2026-10-29T08-20-00.000Z.json",
         "sha256": "95d1afaa8a17bebd185fda1c0e09390de59dc11656239e2edca73d7cb43ace75",
         "outcome": "n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown / 清理 20-20 / `boot→sample` 12.6–19.8s（median 14.3s） / 占用 89.8%"
@@ -5983,6 +5983,113 @@
         "artifact": "data/results/gates-2026-10-29T07-30-00.000Z.json",
         "sha256": "168e51a4400b610cf813a5294f600d9c0c9e0802d6d8b4e8e5017fdeff4c9478",
         "outcome": "ALL GREEN ? 9 gates?430 ???246 ? / 226 ????????"
+      }
+    },
+    {
+      "id": "R45-S1",
+      "batch": "R45",
+      "step": "T-602 三篇案例帖：消失的工具（行级 admission）· 白屏（按 DOM 判）· 升级前先问一句（四桶 + 生态前向 0）。每篇带可复算命令、SSOT 指针与独立的「诚实边界」段落",
+      "changed": [
+        "docs/posts/README.md",
+        "docs/posts/01-tool-disappeared.md",
+        "docs/posts/02-white-screen.md",
+        "docs/posts/03-before-you-upgrade.md",
+        "data/results/listing-2026-10-29T08-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：三篇里出现的每个数字都能指到产物（CASE-11080 的 blocked 行与 9 条未满足 peer；render 红/绿两份对照；1584/202/前向 0、3 个 improved 单元、facts 2）。第 3 篇把 prerelease 语义写成表格并指向单测，不靠推理。**三篇均标注「未发布」**",
+        "reproducibility": "PASS：每篇末尾都给复算命令（record_case / record_render_fixture / prepare_upgrade_mixed_profile + record_upgrade_impact / scan_upgrade_declarations）；`check_listing.mjs` 会检查文中所有 data/results 路径存在且带 .sha256（本轮 12 条全部通过）",
+        "licence": "PASS：案例素材来自公开 GitHub Discussion 的现象描述，正文为我们自己的复现与产物；未复制第三方文章正文；无凭据、无路径、无个人信息",
+        "ssot": "PASS：`docs/posts/` 已登记 INDEX；三篇都被 `docs/posts/README.md` 索引（检查器 `posts-are-indexed`）；引用产物 12 条全部存在",
+        "adversary": "反例一：把「12/13 = 92%」写成「稳定可用」——被拒，三篇都保留了 Wilson 0.667–0.986 与「便利样本」；反例二：删掉第 3 篇的「前向 0/1584」让文章更好看——被拒，检查器 `listing-keeps-forward-improved-boundary` 直接判红；反例三：把白屏文章写成「我们能修白屏」——被拒，文中只承诺「判出 blank 并给证据」，修复不在本产品范围"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T08:40:00.000Z --tests 430",
+        "artifact": "data/results/listing-2026-10-29T08-40-00.000Z.json",
+        "sha256": "0523cb93c62f334f20a2bba710d713c3b05e7fd1eae0a8f84bc163314d558105",
+        "outcome": "8/8 检查通过：10 份文档 · 12 条证据路径全部存在 · 三篇文章都被索引 · 两条边界段落在位"
+      }
+    },
+    {
+      "id": "R45-S2",
+      "batch": "R45",
+      "step": "T-601 上架文案刷新（zh）+ 英文版新增 + 新检查器 `scripts/check_listing.mjs`。**这一步的第一份产物是红的**：检查器第一次跑就抓到三份对外文档残留 `dsh-triage@0.1.0`",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/submissions/README.md",
+        "scripts/check_listing.mjs",
+        "data/results/listing-2026-10-29T08-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "**FAIL（保留作见证）**：首跑 3 项红——① `version-matches-manifest`：`README.md` / `README.zh-CN.md` / `submissions/README.md` 里仍是 `dsh-triage@0.1.0`（R42 发版只改了 CHANGELOG 与 HANDOFF，没扫文案）；② `engines-range-matches-manifest`：把文章里**引用别人的区间**当成我们的兼容区间（检查器假阳性）；③ `no-placeholders-or-claims`：把「严禁写 100% 兼容」这类**禁令原句**当成违规（检查器假阳性）。②③ 收窄判定范围（区间只查 listing+README 四份；禁用话术按行跳过含「严禁/不写/禁止/不出现」的行），①改 0.2.0 并补正确产物指针 → 复跑 8/8 全绿",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp <ISO> --tests <n>` 一条命令；版本读 `packages/plugin/package.json`、区间读 `engines.dsh`、测试数由调用方传入，三者都不在文案里\"自证\"",
+        "licence": "PASS：只改文案与检查器；新增英文文案为本仓自己的描述，无第三方内容",
+        "ssot": "PASS：红产物 `08-00` 与绿产物 `08-20` 都被步台账引用；`listing_en.md` 已登记 INDEX；`doc-stand` 五处同为 R45",
+        "adversary": "反例一：把测试数写成更好看的数字——`test-count-matches` 判红（数字必须等于调用方传入的真实值）；反例二：删掉 Wilson 区间只写「92%」——`listing-keeps-wilson-interval` 判红；反例三：为了让首跑变绿直接删掉那两条边界断言——被拒，它们是本轮唯一防止「文案美化」的机器守卫；反例四：把假阳性当噪音放过——被拒，两处都改成了带注释的收窄规则"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T08:00:00.000Z --tests 430",
+        "artifact": "data/results/listing-2026-10-29T08-00-00.000Z.json",
+        "sha256": "60ff88952e110d00efabe8f7f62edc004df05d6cee34de78829b430b97351c77",
+        "outcome": "首跑 5 PASS / 3 FAIL（两处真漂移 + 一处误报；NORTH: 修后复跑 08-20 全绿）"
+      }
+    },
+    {
+      "id": "R45-S3",
+      "batch": "R45",
+      "step": "第三条渠道真的提上去：`walkinglabs/awesome-deepseek-harness-plugins` PR #140（`README.md` +1/-0，字母序插入），并给本仓补 `dsh-plugin` 等 topics；随后刷新渠道状态",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/awesome-lists.md",
+        "data/results/market-channels-2026-10-29T07-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：PR 用的是**文本插入**（不是重排），`git diff --stat` 恰好 `README.md | 1 +`；插入位置按它 CONTRIBUTING 的字母序要求（`dsh-tool-approval` → `dsh-triage` → `dsh-verify`）；条目格式按 `- [Project](url) - What it provides and its DSH compatibility.`，兼容区间写 `>=0.2.0-rc.1 <0.3.0-0`（与 `engines.dsh` 一致）。产物 `live 3`，`merged 0`",
+        "reproducibility": "PASS：`gh api` 可复核 PR 的 diff/状态；`record_market_channels.mjs --pr …` 把实时状态写进产物；本仓 topics 由 `gh api repos/.../topics` 可读回",
+        "licence": "PASS：该列表 CC0；我们只追加一行中性描述，不复制它的正文；提交正文里不写安全背书（blocked by 项目口径）",
+        "ssot": "PASS：`submissions/README.md` 与 `awesome-lists.md` 的 `live` 计数、diff、状态与产物逐项一致；`#140` 已登记 INDEX",
+        "adversary": "反例一：第一次 fork 克隆在 Windows 上把整仓 CRLF 化，`git diff --stat` 变成 597 行——被当场发现并用 `git -c core.autocrlf=false clone` 重做（已写进 HANDOFF §4 坑表）；反例二：把 `APPROVED`（#193）写成「已收录」——被拒，产物 `merged_at: null`；反例三：为让 `ready` 变多而口头宣布 dsh.so 已提交——被拒，dsh.so 仍是 `ready`（人工动作未做）"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T07:40:00.000Z --pr dsh-community-plugins=<#65> --pr awesome-deepseekharness=<#193> --pr walkinglabs/awesome-deepseek-harness-plugins=<#140>",
+        "artifact": "data/results/market-channels-2026-10-29T07-40-00.000Z.json",
+        "sha256": "e7ed61b934637bf29ad7b5ef9d0b3c2e872ed6e0ce2da6856c984d57f03b05d2",
+        "outcome": "validated 1 · ready 4 · live 3 · merged 0（#65 open/BLOCKED · #193 open/APPROVED · #140 open）"
+      }
+    },
+    {
+      "id": "R45-S4",
+      "batch": "R45",
+      "step": "轮次收口：HANDOFF / INDEX / ROADMAP / AGENTS / BACKLOG / blind_spots 同步 R45，新增 R45 报告与两条坑（PowerShell 管道吞中文、Windows clone 的 CRLF 整仓 diff），并登记三篇草稿与两份上架文案",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "docs/BACKLOG.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/awesome-lists.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/AUDIT_2026-10-29_R45.md",
+        "audit/step_reviews.json",
+        "data/results/gates-2026-10-29T08-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：每个数字都能指到产物（430 测试 / 9 门 / 250 步 / 230 产物 / live 3 / merged 0 / 8 条文案断言）；1.0 的口径改写成「`gate_release` 已绿，但 `merged 0`，收录取决于维护者」——**没有**把 APPROVED 或 submitted 写成收录；三篇草稿在四处文档里都标了「未发布」",
+        "reproducibility": "PASS：`pnpm install --frozen-lockfile` 无变更；`pnpm run verify` 430 测试 / `ALL GREEN · 9 gates`；`gate --mutate` 9/9；复算命令写进 HANDOFF §3 第 9 条；被取代的中间产物移出仓库",
+        "licence": "PASS：只改文档与台账；三篇文章素材来自公开 Discussion 的现象 + 我们自己的产物，未复制第三方正文；PR 只追加一行中性描述",
+        "ssot": "PASS：`doc-stand` 三份入口（HANDOFF / INDEX / ROADMAP）+ 两份台账（step_reviews / blind_spots）同为 R45；`no-orphan-results` 230 份全部被引用；`docs/posts/`、`listing_en.md`、`check_listing.mjs` 都已登记 INDEX",
+        "adversary": "反例一：把 1.0 写成「就绪」——被拒，`merged 0` 是产物里的事实；反例二：为了 INDEX 门变绿把文章名从 INDEX 删掉——被拒，改成全路径（`docs/posts/…`）而不是删信息；反例三：把「三篇都未发布」在交接里省掉——被拒，HANDOFF §8 单列一条「已完成但产物是草稿」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T08:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T08-30-00.000Z.json",
+        "sha256": "284e7ffb82efab5911034631e013526ba6d5b72ed18a9afd0e3d0d6246472578",
+        "outcome": "ALL GREEN · 9 gates（430 测试；250 步 / 230 产物全部被引用）"
       }
     }
   ]

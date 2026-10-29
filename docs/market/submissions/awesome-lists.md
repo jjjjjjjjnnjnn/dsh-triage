@@ -1,10 +1,16 @@
 # awesome 列表 + dsh.so · 提交文案
 
-> **已提交**：`awesome-deepseekharness/awesome-deepseek-harness` → PR **#193**（`README.md` +1 / -0），
-> 实时状态见 `data/results/market-channels-2026-10-29T22-40-00.000Z.json` 的 `submitted[]`。
-> **未提交**：`walkinglabs/...`（文案在下面，随时可提）、`dsh.so`（等 npm 发布）。
+> **已提交（三条，`live: 3`）**：
+> `awesome-deepseekharness/awesome-deepseek-harness` → PR **#193**（`README.md` +1 / -0，已 APPROVED 未合并）
+> `walkinglabs/awesome-deepseek-harness-plugins` → PR **#140**（`README.md` +1 / -0，R45 新提）
+> `dsh-community-plugins` → PR **#65**（`community.json` +12 / -0，待审）
+> 实时状态见 `data/results/market-channels-2026-10-29T07-40-00.000Z.json` 的 `submitted[]`。
+> **未提交**：`dsh.so`（站点表单，人工动作；npm 已发布 0.2.0，不再是卡点）。
 
 ## 1. walkinglabs/awesome-deepseek-harness-plugins
+
+**已提交（R45）**：PR https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140
+（`README.md` +1 / -0，插在 Developer Tooling 段 `dsh-tool-approval` 与 `dsh-verify` 之间，按它的 CONTRIBUTING 要求保持字母序）。
 
 它自己的 CONTRIBUTING 规定格式：
 

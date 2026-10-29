@@ -9,7 +9,7 @@ DeepSeek Harness（DSH）已经能告诉你插件**装不装得上**。没有人
 
 `dsh-triage` 回答用户真正在问的那句话：**「我的插件为什么不见了？」**；以及装之前那个问题：这个候选在你这套环境里活不活得下来。结论在本地算出，每条都带着它来自哪份证据；**没有证据就出 `unknown`**，不会编一个看起来专业的分数。
 
-npm 上 `dsh-triage@0.1.0` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
+npm 上 `dsh-triage@0.2.0` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
 
 ---
 
@@ -183,7 +183,7 @@ CI 跑 Node 22 与 24 的 `verify`、一个 Windows 作业、一个 ubuntu 上�
 
 ## 当前状态与渠道
 
-- **npm** —— `dsh-triage@0.1.0` 已于 2026-10-29 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
+- **npm** —— `dsh-triage@0.2.0` 已于 2026-10-29 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
 - **PR 开着，但没有合并** —— [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65)（合并状态 `BLOCKED`，等审）与 [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193)（`APPROVED`，未合并）。提交过 ≠ 被收录。
 - **dsh.so** —— 提交包已就绪，尚未提交。
 - **除上面这些之外，没有别的渠道已收录本项目**（以上面那份快照为准）。如果某个目录说得更乐观，那是它比证据跑得快。

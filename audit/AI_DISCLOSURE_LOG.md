@@ -523,6 +523,16 @@
 - 实测：430 测试 / 9 门全绿 / `--mutate` 9/9；新产物 5 份全部带 sha256 并被台账引用
 - 反思：**计划里假设的「前向 improved」在真实生态是 0/1584**——如果按原计划直接造一份 `>=0.2.1-rc.6` 的声明，就会用我自己写的区间去证明我自己的分支。先取证再动手，让这一轮从「造一个能让代码变绿的样本」变成「测出生态真实的形状」，代价是多花了一轮扫描。三处记录器缺陷（恒假的检查、离线视角进产物、写死的 composition）没有一处是测试抓到的，都是真跑时看产物发现的——**产物要自己读一遍**，这句话又一次成立
 
+### 2026-10-29 R45｜上架文案 + 第三条渠道 + 三篇案例帖 + 文案检查器
+
+- 生成者：DeepSeek V4.1 Flash（主会话，单会话完成；未开 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R45-S1…S4）
+- 范围：`docs/posts/`（4 个新文件）· `docs/market/listing_zh.md`（重写）· `docs/market/listing_en.md`（新）· `docs/market/submissions/README.md` / `awesome-lists.md` · `scripts/check_listing.mjs`（新）· `README.md` / `README.zh-CN.md`（版本漂移修复）· `docs/HANDOFF.md` · `INDEX.md` · `docs/ROADMAP.md` · `AGENTS.md` · `docs/BACKLOG.md`（T-601/T-602/T-603）· `audit/blind_spots.json` · `audit/AUDIT_2026-10-29_R45.md`（新）· 仓库设置（topics）
+- 人工决策：HUMAN「同意，继续」（指 R45 = 1.0 + 增长）
+- 结果：三条 PR 全部在案（新增 `walkinglabs` **#140**），渠道 `live 3 / merged 0`；三篇案例帖（**草稿未发布**）；文案检查器 8 条断言，**第一次跑就抓到三份对外文档残留 `dsh-triage@0.1.0`**
+- 实测：430 测试 / 9 门全绿 / `--mutate` 9/9；新增 3 份产物（含 1 份保留的红产物）全部带 sha256 并被台账引用
+- 反思：这一轮最值钱的不是文章，是**检查器抓到的那处旧漂移**——R42 发版时同步了 CHANGELOG 和 HANDOFF，唯独没扫对外文案，于是 npm 页面上写着旧版本号。人工 review 连续两轮没看见它，一条 8 行的断言第一次就看见了。另外两个坑（PS 管道把中文变 `??`、Windows clone 把一行改动变成 597 行）都是**会在别人仓里留下痕迹**的错误，已写进 HANDOFF §4
+
 ### 2026-10-30 R43（补记）
 
 - 备注：R43 的 stand 标的是 2026-10-30，而本机时钟与提交时间都是 2026-10-29（`0210872` `+0800`）。R44 按真实时钟写 stand，并在 HANDOFF 顶部注明这处更正；不追改 R43 的历史文本

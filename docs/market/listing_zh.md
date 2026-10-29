@@ -1,7 +1,7 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R38 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布）——其余数字都是本轮实测。
-> 英文对应版见 `README.md`；索引源与提交包见 `docs/market/submissions/README.md`。
+> **Stand**: R45 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.2.0`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话
 
@@ -9,7 +9,7 @@
 
 ## 简介（≤120 字）
 
-DSH 插件分诊台：一条命令查出「工具为什么静默消失」——哪一行在 admission 阶段被拒、缺了哪些能力、该敲哪条命令修；装新插件前先在**隔离的 DSH_HOME** 里真装真启动，把证据落盘。
+DSH 插件分诊台：一条命令查出「工具为什么静默消失」——哪一行在 admission 阶段被拒、缺了哪些能力、该敲哪条命令修；装新插件前先在**隔离的 DSH_HOME** 里真装真启动，把证据落盘；升级前先算一遍目标版本会摘掉谁。
 
 ## 正文
 
@@ -25,13 +25,16 @@ DSH 插件分诊台：一条命令查出「工具为什么静默消失」——�
 ### 它能做什么（全部已交付，不是路线图）
 
 ```sh
-dsh-triage why                 # 归因：被拒的行 + 影响 + 可直接复制的修复命令
-dsh-triage check <包>          # 装前判断：go / blocked / unknown + 原因 + 修复
-dsh-triage audit               # 当前组合：行级 admission 结论 + 副本来源 + 相位
+dsh-triage why                     # 归因：被拒的行 + 影响 + 可直接复制的修复命令
+dsh-triage check <包>              # 装前判断：go / blocked / unknown + 原因 + 修复
+dsh-triage audit                   # 当前组合：行级 admission 结论 + 副本来源 + 相位
 dsh-triage probe <包> --execute --dsh-main <...>   # 隔离实测：boot / http / 渲染 / 台账，跑完必清理
-dsh-triage badge <包>          # 把「已经记录过的那次运行」渲染成 shields 风格 SVG
-dsh-triage index --out <文件>  # format-1 索引源：只收实测 go 的版本，用上游校验器验证
-dsh-triage serve               # 本地面板：只读、只绑 127.0.0.1、token + HttpOnly cookie
+dsh-triage upgrade --to <版本>     # 升级影响：目标运行时会把哪一行摘掉（四桶，默认离线）
+dsh-triage badge <包>              # 把「已经记录过的那次运行」渲染成 shields 风格 SVG
+dsh-triage index --out <文件>      # format-1 索引源：只收实测 go 的版本，用上游校验器验证
+dsh-triage serve                   # 本地面板：只读、只绑 127.0.0.1、token + HttpOnly cookie
+dsh-triage outcomes                # 本地回流（默认关；开着也零网络，--purge 删干净）
+dsh-triage env                     # 环境指纹
 ```
 
 装进 profile 之后还有两件：
@@ -48,15 +51,19 @@ dsh-triage serve               # 本地面板：只读、只绑 127.0.0.1、toke
 ### 为什么可信
 
 每条结论都带证据等级：`declared` / `scanned` / `measured-registry` / `measured-local` / `inferred`。
-判断规则与上游 `@deepseek-ai/dsh-app-boot` 的 admission 语义**逐条对等**，由 **27 条金标**锁死（含 npm 真实声明快照）；`probe` 的每条断言都有负对照（**39 条**），失败即清理。
+判断规则与上游 `@deepseek-ai/dsh-app-boot` 的 admission 语义**逐条对等**，由 **27 条金标**锁死（含 npm 真实声明快照）；`probe` 的每条断言都有负对照，失败即清理。
 
-**诚实的边界**：真实候选的通过率是 **12/13 = 0.923**（Wilson 95% **0.667–0.986**，手挑的便利样本，单机单运行时）；`boot→sample` 在有载机上中位数 **7.4s**、空载 **4.9s**，两侧都没越过 20s 预算。对外只说这个区间，不说「92% 稳了」。
+**诚实的边界（请一起读）**：
+
+- 真实候选的通过率是 **12/13 = 0.923**（Wilson 95% **0.667–0.986**，手挑的便利样本，单机单运行时）；
+- `boot→sample` 空载中位数 **4.9s**、有载 **12.3s**（p90 16.0s），两侧都没越过 20s 预算——但预算只承诺「等到第一份可判样本」，不是「一次探针 20 秒」；
+- 升级影响清单里 `improved`（今天拒、目标放行）**只有"回到插件钉的那个版本"这一种真机形状**：扫 1584 个插件的 202 个「今天被拒」里，能被**更晚**版本放行的是 **0** 个。所以我们只说「目标版本会放行它」，不说「升级会修好」。
 
 ## 当前状态（提交前看一眼）
 
-`0.1.0` 已于 2026-10-29 发布到 npm（`0.1.1` 是纯文档更新，行为相同，用于把新版 README 带上 npm 页面）。M0–M4 的**构建侧**已完成：CLI 全套 + 隔离实测执行器 + 设置页标签 + 徽章 + format-1 索引源 + `compat_verdict` Agent 工具。**分发侧**：两条 PR 待前端合并（#65 等审 / #193 已 approved 未合并），dsh.so 只是 `ready`、**尚未提交**。详见 `docs/market/submissions/README.md`。
+`0.2.0` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升）。M0–M5-b 的**构建侧**已完成；**分发侧**：三条 PR 待审（#65 等审 / #193 已 approved 未合并 / walkinglabs #140 新开），`merged 0`，dsh.so 只是 `ready`、**尚未提交**。详见 `docs/market/submissions/README.md`。
 
-- format-1 索引源（公开 URL，已校验）：`https://gist.githubusercontent.com/jjjjjjjjnnjnn/3c77dfcb61affb60eb3508f87ca53bea/raw/index.json`
+- format-1 索引源（公开 URL，已逐字节校验）：`https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）
 
 ## 关键词

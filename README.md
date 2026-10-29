@@ -9,7 +9,7 @@ DeepSeek Harness (DSH) already tells you whether a plugin *installs*. Nothing te
 
 `dsh-triage` answers the question users actually ask: **"why did my plugin disappear?"** — and, before you install, whether a candidate survives your exact environment. Conclusions are computed locally, derived from named evidence, and printed with the source of every claim. When there is no evidence, the answer is `unknown` instead of a score.
 
-`dsh-triage@0.1.0` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
+`dsh-triage@0.2.0` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
 
 ---
 
@@ -183,7 +183,7 @@ CI runs `verify` on Node 22 and 24, a Windows job, a real-browser render-control
 
 ## Status and channels
 
-- **npm** — `dsh-triage@0.1.0` published 2026-10-29, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
+- **npm** — `dsh-triage@0.2.0` published 2026-10-29, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
 - **Pull requests are open, not merged** — [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65) (merge state `BLOCKED`, awaiting review) and [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193) (`APPROVED`, not merged). Submitted is not listed.
 - **dsh.so** — submission package is ready; it has not been submitted.
 - **No other channel has accepted this project** as of the snapshot above. If a directory claims otherwise, it is ahead of the evidence.
