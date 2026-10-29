@@ -54,7 +54,7 @@ dsh-triage serve               # 本地面板：只读、只绑 127.0.0.1、toke
 
 ## 当前状态（提交前看一眼）
 
-`0.1.0` 已于 2026-10-29 发布到 npm（`0.1.1` 是纯文档更新，行为相同）。M0–M4 的**构建侧**已完成：CLI 全套 + 隔离实测执行器 + 设置页标签 + 徽章 + format-1 索引源 + `compat_verdict` Agent 工具。**分发侧**：两条 PR 待前端合并（#65 等审 / #193 已 approved 未合并），dsh.so 只是 `ready`、**尚未提交**。详见 `docs/market/submissions/README.md`。
+`0.1.0` 已于 2026-10-29 发布到 npm（`0.1.1` 是纯文档更新，行为相同，用于把新版 README 带上 npm 页面）。M0–M4 的**构建侧**已完成：CLI 全套 + 隔离实测执行器 + 设置页标签 + 徽章 + format-1 索引源 + `compat_verdict` Agent 工具。**分发侧**：两条 PR 待前端合并（#65 等审 / #193 已 approved 未合并），dsh.so 只是 `ready`、**尚未提交**。详见 `docs/market/submissions/README.md`。
 
 - format-1 索引源（公开 URL，已校验）：`https://gist.githubusercontent.com/jjjjjjjjnnjnn/3c77dfcb61affb60eb3508f87ca53bea/raw/index.json`
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

@@ -113,6 +113,8 @@ const EN: MessageCatalog = {
     'probe.profile-link-dangling': '{count} local dependency/dependencies of the copied profile point at nothing ({links}) — the package manager reports this install as successful, which is why it is checked separately',
     'probe.profile-build-refused': "the copied profile's dependencies installed but the package manager refused to run their build scripts ({detail}) — the sandbox is not the same composition you run",
     'ui.more-reasons': '…{count} more reason(s); pass --json for the full list',
+    'prior.annotation-only':
+      'this machine judged this exact key before; the prior is an annotation only and does not change the conclusion',
   },
 }
 
@@ -215,6 +217,7 @@ const ZH: MessageCatalog = {
     'probe.profile-link-dangling': '复制的组合里有 {count} 个本地依赖指向不存在的位置（{links}）——包管理器会把这种安装报告成成功，所以要单独检查',
     'probe.profile-build-refused': '复制组合的依赖装上了，但包管理器拒绝运行它们的构建脚本（{detail}）——这里的组合不等于你实际跑的那一份',
     'ui.more-reasons': '…还有 {count} 条原因；加 --json 看完整列表',
+    'prior.annotation-only': '这台机器过去对这个精确键判过；此处只作注解，不改变结论',
   },
 }
 

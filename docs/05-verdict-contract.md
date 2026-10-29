@@ -168,7 +168,7 @@ probe 是唯一能出 `measured-local` 级「装得上、起得来」结论的�
 | `evidence` 非空，每项含 `tier/source/method/at` | 字段完整性 |
 | `tier ∈ {inferred, declared, scanned, measured-registry, measured-local}` | 枚举 |
 | `confidence.level ∈ {low, medium, high}` 且 `basis` 是 tier | 枚举 |
-| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.* / probe.* / tool.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间，`probe.*` 是 M3 隔离实测的命名空间（见 §2e），`tool.*` 是 R36 的 Agent 工具命名空间（见 §2f） |
+| `reasons[].messageId` 形如 `admission.* / collision.* / registry.* / runtime.* / remediation.* / missing.* / probe.* / tool.* / prior.*` | 正则（禁内联散文）；`runtime.*` 是 M2-a 相位层的命名空间（见 `docs/specs/M2-inventory.md` §3 与 §3.1），`registry.*` 是 R10 引入的 registry 事实命名空间，`probe.*` 是 M3 隔离实测的命名空间（见 §2e），`tool.*` 是 R36 的 Agent 工具命名空间（见 §2f），`prior.*` 是 M5-a（`ADR-0011` A 案）的先验注解命名空间：**只出现在 `check --explain` 的 `prior.note_id`，永不进 `conclusion` / `confidence` / `evidence[]` / `reasons[]`**，先验不改变 `conclusion` |
 
 `runtime.*` 的完整成员（R12 起含 preset 维度）：`fiber-failed` / `no-fiber` / `disabled` / `missing-entry` / `ambiguous-entry` / `undeclared-entry` / `preset-unjudged` / `preset-conditional` / `preset-fiber-failed` / `preset-no-fiber` / `preset-divergence`。新增成员必须三处同改：`messages.ts` 文案（中英）、门 `verdict-contract` 白名单、本节与 `docs/specs/M2-inventory.md` §3。
 

@@ -15,7 +15,13 @@ const TIERS = new Set(['declared', 'scanned', 'measured-registry', 'measured-loc
 const CONCLUSIONS = new Set(['go', 'risky', 'blocked', 'unknown'])
 const SEVERITIES = new Set(['block', 'warn', 'info'])
 const CONFIDENCE = new Set(['low', 'medium', 'high'])
-const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe|tool)\.[a-z0-9.-]+$/
+/**
+ * Catalogue-id namespaces. `prior.*` was added in M5-a (`ADR-0011` option A): a local prior is an
+ * annotation that may only appear as the `note_id` of the `check --explain` `prior` block, never in
+ * a verdict - but the id is still a catalogue id, so it belongs in the same whitelist as the rest
+ * (`docs/05-verdict-contract.md` §3).
+ */
+const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe|tool|prior)\.[a-z0-9.-]+$/
 
 /**
  * Extract the catalogue keys AND their `{placeholder}` requirements from the single

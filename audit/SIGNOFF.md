@@ -42,6 +42,8 @@
 
 | 2026-10-29 | **R40 对外发布动作（new surface）**：在 npm 建免费公开组织 `@dsh-triage` 并发布 4 个公共包（`@dsh-triage/core|signals|probe@0.1.0` + `dsh-triage@0.1.0`） | 会话内：HUMAN 亲自完成 `npm login`、建 org、在 PowerShell 里执行 `npm publish`（含 OTP）；对「建 org + 发 4 个包」的方案明确选定 | DeepSeek V4.1 Flash：**没有替 HUMAN 发布**（OTP 不在 agent 手里），负责的是发布前预检（tarball 安装验证、`release:check`、`workspace:*` 重写核对）、发布后验证（`scripts/record_publish.mjs`：registry 字节比对 + 空 userconfig 匿名安装 + CLI 真跑）与文档/台账 | HUMAN 未逐条复核：四个包的 registry 完整性比对读数、`npm install` 匿名验证的具体命令、以及「`@dsh-triage/*` 作为实现细节公开」这一取舍 | `data/results/publish-2026-10-29T01-40-00.000Z.json` · `data/results/market-channels-2026-10-29T02-10-00.000Z.json` |
 
+| 2026-10-29 | **R41 `ADR-0011` 代签（A 案）+ D4 判据口径变更（判据相邻，非阈值）**：先验只做 `check --explain` 注解/排序，永不进 `conclusion`；D4 从「命中率差 ≥10pp」改为「先验与后测的一致率（`pairs ≥ 30` 且 Wilson 下界 ≥ 0.80）」 | 会话内原话：「ADR-0011 签字区：A / B / C …… 你自己分析研究进行，我全部同意」 | DeepSeek V4.1 Flash：按 A 案落 ADR 状态与签字区，改写 `docs/ROADMAP.md` §2 的 D4 行并加一段口径说明；**没有**新增证据 tier、**没有**让先验进入 `conclusion`、**没有**改任何阈值 | HUMAN 未逐条复核：一致率统计量的选法（`pairs ≥ 30` / Wilson 下界 0.80）与「为什么不是 10pp」的论证；B 案 B1–B10 边界未审 | `docs/adr/0011-reflow-evidence-tier.md` §签字区 · `docs/ROADMAP.md` §2 · `docs/specs/M5-reflow.md` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

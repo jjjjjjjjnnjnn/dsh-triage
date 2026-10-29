@@ -8,12 +8,9 @@ when they do, the change is written here with the reason, not just the diff.
 
 ## [0.1.1] — 2026-10-29
 
-> Status: packed, installed and verified locally; **awaiting `npm publish`** (the tarball is not on
-> the registry yet — see `docs/HANDOFF.md` §3). Until it is, `npm i -g dsh-triage` still resolves
-> to `0.1.0`.
-
 Documentation release. **No behaviour change** — the CLI, the verdict contract, the gates and
-every threshold are identical to `0.1.0`.
+every threshold are identical to `0.1.0`. Published to npm on 2026-10-29; anonymous install
+verified (`data/results/publish-2026-10-29T10-10-00.000Z.json`).
 
 - Rewrote `README.md` / `README.zh-CN.md` around verifiable claims: every command shown exists
   in `--help`, every number points at a producer in the repository, and every sample output

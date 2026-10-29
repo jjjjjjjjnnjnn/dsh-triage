@@ -9,7 +9,7 @@
  * Negative control: `--mutate` registers a phantom path in the reference list.
  */
 
-import { Checks, exists, listDir, readJson, readText, runGate } from './lib/kit.mjs'
+import { Checks, exists, fileUrl, listDir, readJson, readText, runGate } from './lib/kit.mjs'
 
 // Files that legitimately contain credential-shaped prose (documentation of the rule itself).
 const SECRET_SCAN_SKIP = new Set(['COMPLIANCE.md', 'audit/AI_DISCLOSURE_LOG.md', 'scripts/gate_governance.mjs'])
@@ -135,6 +135,103 @@ await runGate('governance', async ({ checks, mutate }) => {
   }
   if (mutate) leaked.push('data/results/injected.json:leak-simulation')
   checks.add('results-privacy', leaked.length === 0, leaked.slice(0, 3).join(', ') || 'no home paths in SSOT')
+
+  /*
+   * 6c. M5-a outcome privacy (`docs/specs/M5-reflow.md` §6 / §12, controls N12).
+   *
+   * THREE statements are checked, because "0 PII" is three separate claims:
+   *   (a) the local store's whitelist is the only thing that can reach disk, and the committed
+   *       fixtures prove it - each line is validated with the SAME `sanitizeOutcome` the store
+   *       writes with, imported from `dist/` (a copy in this file could drift silently);
+   *   (b) the fixture set is not empty and covers all four conclusions and both sources, or
+   *       (a) is green on the empty set and proves nothing (§14);
+   *   (c) the local half of the milestone imports no network client at all (§12);
+   *   (d) no 32-hex `id` from a local library reached `data/results/**`, which is published.
+   *
+   * WHY A CHECK AND NOT A TENTH GATE: `audit/gate_ledger.json` is frozen and its
+   * `negative_control` list is HUMAN-signed, while the registry parity check compares gate
+   * *files*. A named check keeps the 9-gate / 9-9 ledger exactly where it is.
+   */
+  const NETWORK_SYMBOLS = [
+    { id: 'node:http(s)', pattern: /(?:from|import|require)\s*\(?\s*['"]node:https?\b/ },
+    { id: 'node:net', pattern: /(?:from|import|require)\s*\(?\s*['"]node:(?:net|dgram|tls)\b/ },
+    { id: 'third-party-client', pattern: /(?:from|import|require)\s*\(?\s*['"](?:undici|axios|node-fetch|got)\b/ },
+    { id: 'fetch', pattern: /\bfetch\s*\(/ },
+    { id: 'XMLHttpRequest', pattern: /\bXMLHttpRequest\b/ },
+  ]
+  const outcomeSources = [
+    'packages/core/src/outcome.ts',
+    ...listDir('packages/plugin/src/outcomes')
+      .filter((entry) => entry.isFile && entry.name.endsWith('.ts'))
+      .map((entry) => `packages/plugin/src/outcomes/${entry.name}`),
+  ]
+  const networkHits = []
+  for (const file of outcomeSources) {
+    const text = readText(file)
+    for (const symbol of NETWORK_SYMBOLS) {
+      if (symbol.pattern.test(text)) networkHits.push(`${file}:${symbol.id}`)
+    }
+  }
+  // Same shape as the `results-privacy` injection: pretend a network call appeared in the
+  // sanitizer, and the check MUST go red (N12).
+  if (mutate) networkHits.push('packages/core/src/outcome.ts:fetch(')
+  checks.add(
+    'outcome-privacy-network',
+    networkHits.length === 0,
+    networkHits.slice(0, 3).join(', ') || `${outcomeSources.length} outcome file(s) import no network client`,
+  )
+
+  const idLeaks = []
+  for (const entry of listDir('data/results').filter((item) => item.isFile && item.name.endsWith('.json'))) {
+    if (/"id"\s*:\s*"[0-9a-f]{32}"/.test(readText(`data/results/${entry.name}`))) {
+      idLeaks.push(`data/results/${entry.name}`)
+    }
+  }
+  checks.add(
+    'outcome-privacy-ssot-ids',
+    idLeaks.length === 0,
+    idLeaks.slice(0, 3).join(', ') || 'no local outcome id in SSOT',
+  )
+
+  const fixtureFiles = listDir('tests/fixtures/outcomes')
+    .filter((entry) => entry.isFile && entry.name.endsWith('.jsonl'))
+    .map((entry) => `tests/fixtures/outcomes/${entry.name}`)
+  const sanitizerPath = 'packages/core/dist/outcome.js'
+  if (!exists(sanitizerPath)) {
+    // No silent fallback: a weaker local copy of the rules would be green and wrong.
+    checks.add('outcome-fixtures-valid', false, `missing ${sanitizerPath}: run \`pnpm build\` first`)
+    checks.add('outcome-fixtures-shape', false, 'cannot be judged without the runtime sanitizer')
+  } else {
+    const core = await import(fileUrl(sanitizerPath))
+    const badLines = []
+    const conclusions = new Set()
+    const sources = new Set()
+    let lineCount = 0
+    for (const file of fixtureFiles) {
+      const lines = readText(file).split(/\r?\n/)
+      for (const [index, line] of lines.entries()) {
+        if (line.trim() === '') continue
+        lineCount += 1
+        const parsed = core.assertOutcomeLine(line)
+        if (!parsed.ok) {
+          badLines.push(`${file}:${index + 1}:${parsed.reason}${parsed.field === null ? '' : `(${parsed.field})`}`)
+          continue
+        }
+        conclusions.add(parsed.record.conclusion)
+        sources.add(parsed.record.source)
+      }
+    }
+    checks.add(
+      'outcome-fixtures-valid',
+      badLines.length === 0,
+      badLines.slice(0, 3).join(', ') || `${lineCount} fixture line(s) pass the runtime sanitizer`,
+    )
+    checks.add(
+      'outcome-fixtures-shape',
+      lineCount > 0 && conclusions.size === 4 && sources.size === 2,
+      `${conclusions.size}/4 conclusion(s), ${sources.size}/2 source(s), ${lineCount} line(s)`,
+    )
+  }
 
   // 7. Agent framework completeness (.agents/README.md §4).
   const roleFiles = listDir('.agents/roles')

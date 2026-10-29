@@ -378,3 +378,25 @@ export function sanitizeOutcome(input: unknown): { ok: true; record: OutcomeReco
 6. `gate_governance.mjs` 新增 check `outcome-privacy` + `--mutate` 注入；先跑一次看冻结台账是否要同步（§6 的提醒）。
 7. `messages.ts` 新增 `prior.annotation-only`（中英）+ 门 `verdict-contract` 的 `prior.*` 白名单 + `docs/05` §3 一行（三处同改）。
 8. 真跑一次（True run）：`scripts/record_outcomes.mjs --stamp <ISO>` 驱动 `check` 两次 + `probe --execute` 一次 + `outcomes --purge`，把**计数与形状**（不是记录）写成 `data/results/outcomes-<stamp>.json` + `.sha256`（`produced_by` / `generated_at` / `schema_version` 齐全，铁律 5），并写进 `audit/step_reviews.json` 的四轴。
+
+## 18. 实现偏差记录（`T-501`，agent 代记，R41；**只选更严的那一读**）
+
+> 本节由实现者在自己这一轮追加，遵循「spec 有歧义 → 取更严的一读 → 写在这里」的约定（`AGENTS.md` §how-we-work）。**判据没有放宽，只有收紧或细化**；任何一处都不是「先把门变绿」的改动。
+
+| # | spec 位置 | 歧义 / 空白 | 实现取的更严一读 | 位置 |
+|---|---|---|---|---|
+| 1 | §10.1 步骤 3「`majority` = 严格多数（并列 → null）」 | 「严格多数」可读成「唯一众数」，也可读成「> 一半」 | 取 **`counts[m] * 2 > n`**（真·过半）。于是 `{go:2,blocked:1,risky:1}`（n=4）判为**无众数**、`agreement: null`；并列在数学上已不可能过半，故「并列 → null」自动成立。代价是注解更常显示「—」，收益是绝不把 50% 说成主要结论 | `core/outcome.ts#computeLocalPrior`；`tests/unit/outcome-prior.test.ts`「a plurality below half…」 |
+| 2 | §3 字段表「数组去重、升序」 | 由 sanitizer 排序，还是由调用方排序 | sanitizer **只接受严格升序**（= 排好序且无重复），否则 `value-shape`。排序是契约的一部分，替调用方排序等于把「我说它是这个形状」变成「我帮你把它变成这个形状」 | `core/outcome.ts#readSortedStrings` |
+| 3 | §5 规则 2 / 5 的拒绝原因归属 | 数组超长 / 字段超长算哪一类 | 字段与数组上限 → `value-shape`；**只有**整行 1024 字节 → `too-long`（N9 因此有两条可走的路，各自断言精确原因） | `tests/unit/outcome-sanitize.test.ts` |
+| 4 | §3 表 `probe` 子对象 | `total_ms_bucket` 的「总」是什么 | probe 各 step 的毫秒之和（`steps[].ms`），`boot_ms_bucket` = `bootToSampleMs`；非 `web` 面 `boot_ms_bucket` 恒为 `null` | `cli.ts#commandProbe` + `outcomes/store.ts#timingBucketOf` |
+| 5 | §10.2 未写先验与「本次记录」的先后 | 计算先验时是否包含本次刚写下的记录 | **先算先验、再写记录**：先验是「这台机器过去说过什么」，把本次算进去会让 `n ≥ 1` 恒成立、并使 `n = 0 → 无 prior` 对开启记录的用户永远不可达 | `cli.ts#commandCheck` |
+| 6 | §11「删完做什么」 | `directory_removed` 对「本来就不存在」的库取什么值 | 语义定为「目录现在不在了」，`noop` 区分「我们删的 / 本来就没有」。三者（`remaining: []` + `directory_removed: true` + `store_root_exists: false`）因此在 no-op 上也自洽 | `outcomes/purge.ts#purgeOutcomes` |
+| 7 | §11「实现时用目录列举而不是硬编码文件名」 | 「我们的文件」怎么判定 | 目录**列举** + 显式所有权清单 `STORE_OWNED_FILES`（写者与清理者共用一份）；清单外的条目**永不删**，只列进 `remaining[]`。宁可为用户留下的文件夹保留一个 `remaining`，也不猜「这个大概是我们的」 | `outcomes/config.ts#STORE_OWNED_FILES` |
+| 8 | §11 文本输出示例 `store kept (1 file not ours: notes.txt)` | 文本里要不要列出文件名 | 文本只报**计数**，`--json` 的 `remaining[]` 才给 basename。purge 的输出最容易被贴进 issue，少给一个用户自定义的名字就少一条泄漏面 | `outcomes/purge.ts#renderPurge` |
+| 9 | §7「`--enable` 幂等」 | 幂等是不是允许重写同内容 | 已经是目标内容时**不重写**（mtime 不动），`--json` 里 `changed: false` 如实报告 | `outcomes/config.ts#writeOutcomeMode` |
+| 10 | §9 表格「`probe --execute` 写 1 条」 | candidate 未 pin 精确版本（本地路径 / `@next`）时怎么办 | **跳过该条**并在 stderr 说明「没有精确版本、键不完整」，绝不用 `latest` 补一个版本号 | `cli.ts#exactVersionOfSpec` + `outcomes/store.ts` |
+| 11 | §9 「subject 数 > 200 → 整批不写」 | 本 CLI 的 `check` 只接受一个 subject（没有 `--all`） | 上限实现**在记录器里**（任何命令、任何主体数都适用），而不是在 `check` 的参数解析里；`probe` 天然 1 条 | `outcomes/store.ts#MAX_RECORDS_PER_RUN` |
+| 12 | §13「`ties`」 | 与 §10.1 的 `majority` 是否同一判据 | 同一份 `computeLocalPrior`：D4 的 `ties` = 先验窗**无严格多数**的配对（含并列与「唯一最高但未过半」），从分子分母同时剔除 | `scripts/d4_report.mjs` |
+| 13 | §6 ①「用与运行期同一份 `sanitizeOutcome`，经 `dist/`」 | 门因此需要构建产物 | 无 dist 时该 check **直接 FAIL**（`missing packages/core/dist/outcome.js`），**不**退回本文件内的一份规则副本；`gate_governance` 因此在 `audit/gate_ledger.json` 的 `requires_build: false` 之外多了一条隐含前提（台账未改，见交接包） | `scripts/gate_governance.mjs` |
+| 14 | §17 清单未列夹具 | §6 ① 与 §14 的形状断言需要一个已提交的 JSONL 集合 | 新增 `tests/fixtures/outcomes/{shape,d4-basic}.jsonl`（6 + 19 行，四态 × 两 source，全部经运行期 sanitizer 校验）；否则门是在空集上通过 | `scripts/gate_governance.mjs#outcome-fixtures-*` |
+

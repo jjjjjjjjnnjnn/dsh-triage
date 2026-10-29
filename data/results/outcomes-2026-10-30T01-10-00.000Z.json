@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_outcomes.mjs",
+  "generated_at": "2026-10-30T01:10:00.000Z",
+  "isolation": {
+    "mode": "temp-local-data-directory",
+    "directory_removed_at_end": true,
+    "store_root_exists_after_run": false
+  },
+  "runs": [
+    {
+      "id": "enable",
+      "command": "outcomes --enable --json",
+      "exit": 0,
+      "ms": 218,
+      "payload_sha256": "b04e38803adbd7af1e045a6b472d3e7d5e1e5921fed26ffccd6ab013a651c5d7",
+      "conclusion": null,
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "check-a",
+      "command": "check --json",
+      "exit": 0,
+      "ms": 1755,
+      "payload_sha256": "7b0948cf786f940319bf73301b848576c79c54602a157e33e6c67f5f0a830096",
+      "conclusion": "unknown",
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "check-b",
+      "command": "check --json",
+      "exit": 0,
+      "ms": 3700,
+      "payload_sha256": "7b0948cf786f940319bf73301b848576c79c54602a157e33e6c67f5f0a830096",
+      "conclusion": "unknown",
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "check-explain",
+      "command": "check --explain --json",
+      "exit": 0,
+      "ms": 2125,
+      "payload_sha256": "86dfe85ad1472fcd7920aec02e1b3caf635ce56b96b92e524f422bed0d6fd316",
+      "conclusion": "unknown",
+      "prior_present": true,
+      "prior_records": 2,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "probe",
+      "command": "probe --execute --json",
+      "exit": 0,
+      "ms": 27793,
+      "payload_sha256": "c0f941c33eb58cc066f3d4a7120c8f875de52337dfb901cc8eb2c1032cc96e09",
+      "conclusion": "go",
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "status",
+      "command": "outcomes --status --json",
+      "exit": 0,
+      "ms": 297,
+      "payload_sha256": "d8d5a19a03c1994f96e4cdad8ab058270d6644a36ef5a3a6fbd1ec9e18a2fd84",
+      "conclusion": null,
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "purge",
+      "command": "outcomes --purge --json",
+      "exit": 0,
+      "ms": 226,
+      "payload_sha256": "6d6d7db6f588a20788340e07c7c70a571ceaf3d4dfaf86b847f33bbeac04edad",
+      "conclusion": null,
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "purge-again",
+      "command": "outcomes --purge",
+      "exit": 0,
+      "ms": 204,
+      "payload_sha256": null,
+      "conclusion": null,
+      "prior_present": null,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "check-after-purge",
+      "command": "check --json",
+      "exit": 0,
+      "ms": 2154,
+      "payload_sha256": "7b0948cf786f940319bf73301b848576c79c54602a157e33e6c67f5f0a830096",
+      "conclusion": "unknown",
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    },
+    {
+      "id": "status-after-purge",
+      "command": "outcomes --status --json",
+      "exit": 0,
+      "ms": 230,
+      "payload_sha256": "e2e4f998e09a91f10c31a1713d580dbdc89e50f07f293bbe665240e89567a169",
+      "conclusion": null,
+      "prior_present": false,
+      "prior_records": null,
+      "stdout_empty": false,
+      "stderr_lines": 0
+    }
+  ],
+  "n3": {
+    "plain_runs": [
+      "check-a",
+      "check-b"
+    ],
+    "byte_identical": true,
+    "payload_sha256": "7b0948cf786f940319bf73301b848576c79c54602a157e33e6c67f5f0a830096",
+    "explain_run": "check-explain",
+    "explain_prior_present": true,
+    "explain_prior_n": 2,
+    "explain_verdict_matches_plain": true,
+    "note": "a prior is an annotation (ADR-0011 option A): the verdict is identical with and without one, and only `--explain` shows it"
+  },
+  "store_shapes": {
+    "records": 4,
+    "rejected_lines": 0,
+    "lines": 4,
+    "by_source": {
+      "check": 3,
+      "probe": 1
+    },
+    "by_conclusion": {
+      "go": 1,
+      "unknown": 3
+    },
+    "by_profile_kind": {
+      "web": 4
+    },
+    "evidence_tiers": {
+      "declared": 3,
+      "measured-local": 4,
+      "measured-registry": 3
+    },
+    "probe_total_ms_bucket": {
+      "20to60s": 1
+    },
+    "probe_boot_ms_bucket": {
+      "5to20s": 1
+    },
+    "distinct_keys": 2,
+    "records_with_complete_key": 4,
+    "record_bytes": {
+      "min": 401,
+      "max": 442,
+      "cap": 1024
+    }
+  },
+  "purge": {
+    "noop": false,
+    "deleted_records": 4,
+    "deleted_files": [
+      "config.json",
+      "outcomes.jsonl"
+    ],
+    "rejected_lines_dropped": 0,
+    "directory_removed": true,
+    "remaining": [],
+    "store_root_exists": false
+  },
+  "after_purge": {
+    "check_exit": 0,
+    "status_records": 0,
+    "status_mode": "off",
+    "store_root_exists": false
+  },
+  "checks": [
+    {
+      "id": "store-enabled",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "check-a-produces-a-verdict",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "check-a-has-no-prior",
+      "ok": true,
+      "detail": "a plain `check --json` never carries a prior block"
+    },
+    {
+      "id": "n3-check-json-byte-identical",
+      "ok": true,
+      "detail": "7b0948cf786f vs 7b0948cf786f"
+    },
+    {
+      "id": "prior-annotation-appears-in-explain",
+      "ok": true,
+      "detail": "prior present: true"
+    },
+    {
+      "id": "prior-is-annotation-only",
+      "ok": true,
+      "detail": "annotation_only must be the literal true"
+    },
+    {
+      "id": "prior-note-id",
+      "ok": true,
+      "detail": "prior.annotation-only"
+    },
+    {
+      "id": "prior-counts-earlier-measurements",
+      "ok": true,
+      "detail": "n=2"
+    },
+    {
+      "id": "n3-explained-verdict-unchanged",
+      "ok": true,
+      "detail": "the verdict with a prior equals the verdict without one"
+    },
+    {
+      "id": "probe-produces-a-verdict",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "status-agrees-with-the-library",
+      "ok": true,
+      "detail": "4 vs 4"
+    },
+    {
+      "id": "store-has-both-sources",
+      "ok": true,
+      "detail": "{\"check\":3,\"probe\":1}"
+    },
+    {
+      "id": "every-record-has-a-complete-key",
+      "ok": true,
+      "detail": "4/4"
+    },
+    {
+      "id": "no-record-exceeds-the-byte-cap",
+      "ok": true,
+      "detail": "max 442 bytes"
+    },
+    {
+      "id": "purge-deletes-what-was-recorded",
+      "ok": true,
+      "detail": "4 vs 4"
+    },
+    {
+      "id": "purge-removes-the-directory",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "id": "purge-leaves-nothing",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "id": "purge-store-absent",
+      "ok": true,
+      "detail": "false"
+    },
+    {
+      "id": "purge-is-idempotent",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "purge-output-has-no-data",
+      "ok": true,
+      "detail": "no quote, no separator, no package name in the human output"
+    },
+    {
+      "id": "check-still-works-after-purge",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "check-after-purge-writes-nothing",
+      "ok": true,
+      "detail": "records 0, dir exists false"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "this run proves the local half only: nothing was uploaded, aggregated or compared across users (that is a different milestone and a different ADR)",
+    "one machine, one runtime, one pinned candidate: the store shapes are not a claim about install or usage volume",
+    "the store lived in a temp data directory, so the platform-specific real path was exercised but the directory-permission behaviour of the operator machine was not",
+    "D4 is measured by scripts/d4_report.mjs on a library that has existed for a while; this run cannot produce 30 paired keys",
+    "a prior is an annotation only (ADR-0011 option A): no conclusion, confidence or evidence tier was changed by this milestone"
+  ]
+}

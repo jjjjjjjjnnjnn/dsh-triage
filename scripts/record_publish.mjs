@@ -108,8 +108,25 @@ async function main() {
   const gitHead = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true })
   const gitStatus = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8', windowsHide: true })
 
+  /*
+   * THE ROOT PACKAGE'S VERSION IS NOT EVERY PACKAGE'S VERSION (R41). The first 0.1.1 run
+   * failed its own dependency checks because the three internal packages stayed at 0.1.0
+   * while only `dsh-triage` moved: a documentation release does not need to republish
+   * `@dsh-triage/core`. The expected version of a dependency is the one the root manifest
+   * declares -- not a global `--version` applied to everything.
+   */
+  const rootEncoded = rootPackage.replace('/', '%2f')
+  const rootPackument = await fetchJson(`${registry}/${rootEncoded}`)
+  const rootManifest = rootPackument.ok ? (rootPackument.value.versions?.[version] ?? null) : null
+  if (rootManifest === null) {
+    check('root-manifest', false, `${rootPackage}@${version} is not on the registry`)
+  }
+  const declaredDependencies = rootManifest?.dependencies ?? {}
+  const expectedVersionOf = (name) => (name === rootPackage ? version : (declaredDependencies[name] ?? version))
+
   const published = []
   for (const name of packages) {
+    const expected = expectedVersionOf(name)
     const encoded = name.replace('/', '%2f')
     const packument = await fetchJson(`${registry}/${encoded}`)
     if (!packument.ok) {
@@ -118,11 +135,11 @@ async function main() {
       continue
     }
     const all = packument.value.versions ?? {}
-    const manifest = all[version]
+    const manifest = all[expected]
     const latest = packument.value['dist-tags']?.latest ?? null
     if (manifest === undefined) {
-      published.push({ name, ok: false, status: 200, detail: `version ${version} is not published`, latest })
-      check(`version:${name}`, false, `${version} absent (latest=${String(latest)})`)
+      published.push({ name, ok: false, status: 200, detail: `version ${expected} is not published`, latest })
+      check(`version:${name}`, false, `${expected} absent (latest=${String(latest)})`)
       continue
     }
 
@@ -133,14 +150,14 @@ async function main() {
       workspaceLeft.length === 0,
       workspaceLeft.length === 0 ? 'no workspace: protocol on the registry' : workspaceLeft.map(([key]) => key).join(', '),
     )
-    check(`latest:${name}`, latest === version, `latest=${String(latest)}`)
+    check(`latest:${name}`, latest === expected, `latest=${String(latest)}`)
 
     const entry = {
       name,
       ok: true,
-      version,
+      version: expected,
       latest,
-      published_at: packument.value.time?.[version] ?? null,
+      published_at: packument.value.time?.[expected] ?? null,
       integrity: manifest.dist?.integrity ?? null,
       shasum: manifest.dist?.shasum ?? null,
       file_count: manifest.dist?.fileCount ?? null,
@@ -152,7 +169,7 @@ async function main() {
     }
 
     if (tarballDir !== null) {
-      const expectedFile = `${name.replace('@', '').replace('/', '-')}-${version}.tgz`
+      const expectedFile = `${name.replace('@', '').replace('/', '-')}-${expected}.tgz`
       const candidate = join(tarballDir, expectedFile)
       if (existsSync(candidate)) {
         const buffer = readFileSync(candidate)
@@ -221,8 +238,12 @@ async function main() {
         installedVersion = null
       }
     }
-    dependencyTrees.push({ name, present, version: installedVersion })
-    check(`dependency:${name}`, present && installedVersion === version, `${name}@${String(installedVersion)}`)
+    dependencyTrees.push({ name, present, version: installedVersion, expected: expectedVersionOf(name) })
+    check(
+      `dependency:${name}`,
+      present && installedVersion === expectedVersionOf(name),
+      `${name}@${String(installedVersion)} (declared ${String(expectedVersionOf(name))})`,
+    )
   }
 
   let cli = { code: null, stdout: '', stderr: '' }

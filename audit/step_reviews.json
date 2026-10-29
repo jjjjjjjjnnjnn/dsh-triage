@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R40 (2026-10-29)",
+  "stand": "R41 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5579,6 +5579,88 @@
         "artifact": "data/results/gates-2026-10-29T09-20-00.000Z.json",
         "sha256": "6a11c867e2f871ceeb3bb9c71bceff48e27076ee788afcfe2d374e1436add5b3",
         "outcome": "ALL GREEN · 9 gates（356 测试；229 步 / 210 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R41-S1",
+      "batch": "R41",
+      "step": "0.1.1 发布验证：README 重写版真的到了 registry，且仍是**匿名**可装可跑；同时修掉 `record_publish` 自己的一个错误假设（内部包不随根包升版本）",
+      "changed": [
+        "scripts/record_publish.mjs",
+        "data/results/publish-2026-10-29T10-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`dsh-triage@0.1.1` 的 tarball 与本地 `pnpm pack` 逐字节相同（sha512 `877d148b…`），三个内部包仍 `0.1.0` 且 registry 字节未变；空 `npm_config_userconfig` 下 `npm install dsh-triage@0.1.1` 装回 6 个包、CLI 9 条命令、`import()` 导出可解析",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --version 0.1.1 --stamp <iso> --tarball-dir <dir>` 一条命令重放；产物记录 `git_head` 与每个包的 `dist.integrity`",
+        "licence": "PASS：只发本仓 MIT 包；验证不读操作者 token（userconfig 指向空文件）",
+        "ssot": "PASS：19 项 check 全绿、`produced_by`/`generated_at`/`schema_version` + `.sha256` 齐全；依赖版本对照的是**根包声明的版本**而不是全局 `--version`",
+        "adversary": "反例一：把 `--version` 当成所有包的版本——第一版就这样，自己把自己判红（`dependency:@dsh-triage/core@0.1.0` vs 期望 0.1.1），修法是按根 manifest 的 `dependencies` 取期望；反例二：以为「发布成功」就等于 npm 页面更新了（README 是随版本走的，必须发新版本）；反例三：0.1.1 只改文档，却让内部包跟着升版本——那会平白多三个版本号"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 0.1.1 --stamp 2026-10-29T10:10:00.000Z --tarball-dir <pnpm pack 目录>",
+        "artifact": "data/results/publish-2026-10-29T10-10-00.000Z.json",
+        "sha256": "47012e755773f9722d6f6d48a0d3bdb41170f4ca107b336902961413f7536603",
+        "outcome": "PASS ×19：`latest=0.1.1`、四个包 registry 字节与本地 tarball 相同、匿名安装 6 包、CLI 9 命令、`import()` 可解析"
+      }
+    },
+    {
+      "id": "R41-S2",
+      "batch": "R41",
+      "step": "`T-501`（M5-a 本地半边）落地：outcome 记录 / 0 PII 白名单 / 默认关闭 / 删除路径 / D4 一致率工具，全部按已签的 `ADR-0011` A 案（先验只做注解，永不进 `conclusion`）",
+      "changed": [
+        "packages/core/src/outcome.ts",
+        "packages/core/src/messages.ts",
+        "packages/plugin/src/outcomes/config.ts",
+        "packages/plugin/src/outcomes/store.ts",
+        "packages/plugin/src/outcomes/purge.ts",
+        "packages/plugin/src/outcomes/prior.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/d4_report.mjs",
+        "scripts/record_outcomes.mjs",
+        "scripts/gate_governance.mjs",
+        "scripts/gate_verdict_contract.mjs",
+        "docs/05-verdict-contract.md",
+        "data/results/outcomes-2026-10-30T01-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`sanitizeOutcome()` 是白名单投影（多一个键整条拒绝，不修复）+ 值域 + 路径/令牌形状扫描 + 1024B 上限；`computeLocalPrior` 纯函数（`n=0 → null`、严格多数、七元组全等）；默认关闭时**目录/文件/mtime 都不动**（N1/N4 用 sha256 与 mtime 双证）；`outcomes --purge` 只删自己拥有的文件，删完 `remaining=[]`、`directory_removed=true`",
+        "reproducibility": "PASS：`scripts/record_outcomes.mjs --stamp <iso>` 在隔离的本地数据目录内 enable → check×3 + probe×1 → status → purge → 复查，24/24 检查；产物只写计数与形状（记录本身不入 SSOT），同 stamp 重放逐字节一致",
+        "licence": "PASS：无新依赖；本地半边**零网络**（门 `outcome-privacy-network` 按源码检查，`--mutate` 与真实注入各验一次）；不写 `~/.dsh`、不读凭据",
+        "ssot": "PASS：产物 `produced_by`/`generated_at`/`schema_version` + `.sha256`；`prior` 只作为 `check --explain` 的**兄弟键**，`check --json` 在有/无先验下逐字节相同（N3 两个 payload 哈希 `7b0948cf…`）；`prior.*` 三处同改（messages / 门白名单 / `docs/05`）",
+        "adversary": "反例一：让先验进 `conclusion`——A 案明令禁止，`prior.annotation-only` 文案与 N3 一起挡；反例二：默认开启采集（spec 要求关闭时连目录都不建）；反例三：把「多数派」实现成相对多数（`{go:2,blocked:1,risky:1}` 会被读成 go）——已按严格多数实现并写进 spec §18；反例四：purge 时用 `rm -r` 删整个目录（会误删用户自己放进去的文件）——改成枚举 + 所有权清单；反例五：把 outcome 写进 `~/.dsh`（铁律 3）"
+      },
+      "real_test": {
+        "command": "node scripts/record_outcomes.mjs --stamp 2026-10-30T01:10:00.000Z",
+        "artifact": "data/results/outcomes-2026-10-30T01-10-00.000Z.json",
+        "sha256": "d721c45503dcdfa07489e5aac8e9bea10a71312875dafda5f0ac616b03e3472e",
+        "outcome": "24/24：4 条记录（check 3 / probe 1）→ purge 删 4 条、目录移除、`remaining=[]`；记录 401–442B（上限 1024）；N3 两次 check payload 逐字节相同；375 行新测试（总数 403）全绿"
+      }
+    },
+    {
+      "id": "R41-S3",
+      "batch": "R41",
+      "step": "`ADR-0011` 按 HUMAN 委托代签 A（先验只做注解、D4 改写为一致率）+ 全量复核（403 测试 / 9 门 / `--mutate` 9/9）",
+      "changed": [
+        "docs/adr/0011-reflow-evidence-tier.md",
+        "docs/ROADMAP.md",
+        "audit/SIGNOFF.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "CHANGELOG.md",
+        "data/results/gates-2026-10-29T11-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：ADR 状态改 `accepted（A，代签）`、签字区勾 A 并写明原话与可撤销；`docs/ROADMAP.md` §2 的 D4 由「命中率差 ≥10pp」改为「先验与后测的一致率（`pairs ≥ 30` 且 Wilson 下界 ≥ 0.80）」，并加一段口径变更说明；**没有**新增 tier、**没有**改任何阈值、**没有**让先验进 `conclusion`",
+        "reproducibility": "PASS：代签依据是会话内原话「你自己分析研究进行，我全部同意」，同时记进 `audit/SIGNOFF.md` 与 ADR 正文；`pnpm run verify`、`gate --mutate` 可复现",
+        "licence": "PASS：只改文档与台账；ADR 与 spec 仍标注哪些数字是 `unmeasured`",
+        "ssot": "PASS：`doc-stand` 三份入口文档同为 R40/R41 口径一致；`step-review` 243 步 / 212 产物全部被引用；D4 的新判据由 `scripts/d4_report.mjs` 可计算（今天必然 `insufficient-pairs`，**不写成通过**）",
+        "adversary": "反例一：把代签写成「HUMAN 逐条复核」——SIGNOFF 明写未逐条；反例二：代签同时把 B 案的 tier 也偷偷加上（A 明确禁止）；反例三：把 D4 改成一致率后立刻宣称「D4 通过」——今天配对不足 30，只能是 `insufficient-pairs`；反例四：把签 ADR 当成允许对外说「回流能提升判断」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T11:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T11-00-00.000Z.json",
+        "sha256": "d5b8d3c7c223538dfe431cbbe184742e54ace63735cb8e77b19474f7171136d8",
+        "outcome": "ALL GREEN · 9 gates（403 测试；232 步 / 212 产物全部被引用）"
       }
     }
   ]

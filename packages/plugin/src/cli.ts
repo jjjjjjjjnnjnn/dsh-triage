@@ -64,6 +64,10 @@ import {
 import { renderBadge, summarizeEvidence, type ProbeRecord } from './badge.js'
 import { buildMarketIndex, entriesFromEvidence, type MeasuredCandidate } from './index-source.js'
 import { findDuplicateCopies, loadComposition, resolveRows } from './load.js'
+import { readOutcomeConfig, writeOutcomeMode, type OutcomeMode } from './outcomes/config.js'
+import { localPriorFor, renderPrior } from './outcomes/prior.js'
+import { outcomeStatus, purgeOutcomes, renderPurge, renderStatus } from './outcomes/purge.js'
+import { recordOutcomes } from './outcomes/store.js'
 import {
   candidatePackageName,
   normalizeCandidateSpec,
@@ -127,6 +131,18 @@ interface Flags {
   readonly copyProfile: string | null
   /** Whether `--profile` was passed (the `web` default is not an explicit choice). */
   readonly profileExplicit: boolean
+  /**
+   * `check|probe --outcomes off|local` (M5-a): a per-invocation override of the local outcome
+   * switch. Never persisted; `null` means "ask `config.json`, default off" (spec §7).
+   */
+  readonly outcomes: OutcomeMode | null
+  /** `outcomes --enable` / `--disable`: write the switch. */
+  readonly enable: boolean
+  readonly disable: boolean
+  /** `outcomes --purge`: delete the local store (works whether or not recording is on). */
+  readonly purge: boolean
+  /** `outcomes --status`: how many records exist (the default when no verb is given). */
+  readonly status: boolean
 }
 
 interface Parsed {
@@ -146,6 +162,7 @@ Usage
   dsh-triage serve                   open a read-only local evidence panel (127.0.0.1)
   dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence
   dsh-triage index                   format-1 market index of versions measured "go" here
+  dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -169,6 +186,11 @@ Flags
   --out <file>          (badge) write the SVG here instead of stdout
   --allow-execute       (serve) enable actions; without it the panel is read-only
   --audit               (serve) expose GET /api/audit (current composition, same engine as the CLI)
+  --outcomes <mode>     (check, probe) record this verdict locally: off | local (per-run, not saved)
+  --enable              (outcomes) opt in to the local outcome store
+  --disable             (outcomes) opt out again; existing records are kept until --purge
+  --purge               (outcomes) delete every record this tool stored, then the directory
+  --status              (outcomes) how many records exist (default when no verb is given)
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -202,6 +224,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandIndex(flags)
     case 'serve':
       return commandServe(flags)
+    case 'outcomes':
+      return commandOutcomes(flags)
     default:
       process.stderr.write(`unknown command "${command}"; see --help\n`)
       return EXIT_USAGE
@@ -517,8 +541,29 @@ async function commandCheck(flags: Flags, spec: string | undefined): Promise<num
     rangeAdvice: true,
   })
 
+  /*
+   * M5-a (spec §7/§9): the verdict exists, so it may be recorded - BEFORE anything is printed
+   * and without touching the verdict, the output or the exit code. `recordOutcomes` is a
+   * no-op unless the user opted in and never throws (control N14).
+   *
+   * The prior is read BEFORE the record is appended, so the annotation says "this machine said
+   * X before this run" and cannot include the run it is annotating (§10.2: a prior is history,
+   * not a self-reference). The prior is only read for `--explain` (control N3: without it the
+   * output is byte-identical whether or not a prior exists).
+   */
+  const prior = flags.explain ? localPriorFor({ env, packageName: name, version: targetVersion }) : null
+
+  recordOutcomes({
+    source: 'check',
+    subjects: [{ verdict, version: targetVersion }],
+    at: stamp,
+    probe: null,
+    flag: flags.outcomes,
+    stderr: (line) => process.stderr.write(line),
+  })
+
   if (flags.json) {
-    writeJson({
+    const payload: Record<string, unknown> = {
       schema_version: 1,
       command: 'check',
       verdict: safeVerdicts(flags, [verdict])[0],
@@ -535,12 +580,18 @@ async function commandCheck(flags: Flags, spec: string | undefined): Promise<num
           detail: drift.detail,
         },
       },
-    })
+    }
+    // A sibling key, never a field of `verdict` (ADR-0011 §4.1).
+    if (prior !== null) payload['prior'] = prior
+    writeJson(payload)
     return exitFor(flags, [verdict])
   }
   process.stdout.write(`${renderVerdict(verdict, flags.locale)}\n`)
   if (flags.explain) {
     process.stdout.write(`${renderRegistryExplain(drift, flags.locale)}\n`)
+  }
+  if (prior !== null) {
+    process.stdout.write(renderPrior(prior, flags.locale))
   }
   if (admission.status === 'admitted') {
     process.stdout.write('note  declaration passes; runtime behaviour is still unproven (probe lands in M3).\n')
@@ -856,6 +907,24 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
   const verdict = probeVerdict({ run, judgement, env, at: stamp })
   const roots = [homedir(), dshHome, probeScratchRoot()]
 
+  /*
+   * M5-a (spec §9): a `probe --execute` records exactly one outcome. The candidate's EXACT
+   * version is the key, so a spec that does not name one (a local path, a tag) is skipped
+   * rather than guessed. Sum of step durations is the only "total" the run actually measures.
+   */
+  recordOutcomes({
+    source: 'probe',
+    subjects: [{ verdict, version: exactVersionOfSpec(spec) }],
+    at: stamp,
+    probe: {
+      totalMs: run.steps.reduce((sum, step) => sum + (Number.isFinite(step.ms) ? step.ms : 0), 0),
+      bootMs: run.timings.bootToSampleMs,
+      profile: plan.value.profile,
+    },
+    flag: flags.outcomes,
+    stderr: (line) => process.stderr.write(line),
+  })
+
   if (flags.json) {
     writeJson({
       schema_version: 1,
@@ -973,6 +1042,71 @@ async function commandServe(flags: Flags): Promise<number> {
 }
 
 /* -------------------------------- helpers -------------------------------- */
+
+/**
+ * `outcomes` — the local store's three verbs (M5-a, spec §7 / §11).
+ *
+ * `--purge` deliberately needs no opt-in: deleting must always be possible, and it must never
+ * be the thing that creates the directory (control N5). Text output carries counts only - no
+ * record, no package name, no path (control N13).
+ */
+async function commandOutcomes(flags: Flags): Promise<number> {
+  const at = stampOf(flags)
+  const verbs = [flags.enable, flags.disable, flags.purge].filter(Boolean).length
+  if (verbs > 1) {
+    process.stderr.write('usage: dsh-triage outcomes [--status | --enable | --disable | --purge]\n')
+    return EXIT_USAGE
+  }
+
+  if (flags.purge) {
+    const result = purgeOutcomes({ at })
+    if (!result.ok) {
+      process.stderr.write(`cannot purge the outcome store (${result.detail}); nothing was reported as deleted\n`)
+      return EXIT_FINDINGS
+    }
+    if (flags.json) writeJson(result.report)
+    else process.stdout.write(renderPurge(result.report))
+    return EXIT_OK
+  }
+
+  if (flags.enable || flags.disable) {
+    const mode: OutcomeMode = flags.enable ? 'local' : 'off'
+    const written = writeOutcomeMode(mode)
+    if (!written.ok) {
+      process.stderr.write(`cannot write the outcome config (${written.detail})\n`)
+      return EXIT_FINDINGS
+    }
+    if (flags.json) {
+      writeJson({ schema_version: 1, mode, changed: written.changed })
+    } else {
+      process.stdout.write(`outcomes ${mode}${written.changed ? '' : ' (already set)'}\n`)
+    }
+    return EXIT_OK
+  }
+
+  // `--status` is the default verb: "how much is actually stored right now".
+  const reading = readOutcomeConfig()
+  for (const problem of reading.problems) process.stderr.write(`outcomes: off (${problem})\n`)
+  const report = outcomeStatus({})
+  if (flags.json) writeJson(report)
+  else process.stdout.write(renderStatus(report))
+  return EXIT_OK
+}
+
+/**
+ * The exact version a probe candidate pins, or `null`.
+ *
+ * WHY NOT ASK THE REGISTRY: a record's key must be the version that was actually installed, and
+ * a spec without a version cannot state it. Guessing `latest` would file the measurement under
+ * a build that may already be replaced, so the caller skips the record instead.
+ */
+function exactVersionOfSpec(spec: string): string | null {
+  const trimmed = spec.trim()
+  const at = trimmed.lastIndexOf('@')
+  if (at <= 0) return null
+  const version = trimmed.slice(at + 1)
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version) ? version : null
+}
 
 async function requireEnv(flags: Flags): Promise<EnvFingerprint | null> {
   const result = await loadEnv({ dshHome: resolveDshHome(flags), profile: flags.profile })
@@ -1098,6 +1232,11 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let readinessTimeoutMs: number | null = null
   let unsettledReadinessMs: number | null = null
   let copyProfile: string | null = null
+  let outcomes: OutcomeMode | null = null
+  let enable = false
+  let disable = false
+  let purge = false
+  let status = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -1225,6 +1364,24 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         copyProfile = value
         break
       }
+      case '--outcomes': {
+        const value = takeValue()
+        if (value !== 'off' && value !== 'local') return null
+        outcomes = value
+        break
+      }
+      case '--enable':
+        enable = true
+        break
+      case '--disable':
+        disable = true
+        break
+      case '--purge':
+        purge = true
+        break
+      case '--status':
+        status = true
+        break
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -1236,7 +1393,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

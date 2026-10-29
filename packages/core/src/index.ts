@@ -96,6 +96,37 @@ export {
 export type { Locale, MessageCatalog } from './messages.js'
 export { catalogFor, format } from './messages.js'
 
+export type {
+  LocalPrior,
+  OutcomeArch,
+  OutcomeKey,
+  OutcomeLineRejection,
+  OutcomeLineResult,
+  OutcomeOs,
+  OutcomeProbe,
+  OutcomeProfileKind,
+  OutcomeRecord,
+  OutcomeRejection,
+  OutcomeSanitizeResult,
+  OutcomeSource,
+  TimingBucket,
+} from './outcome.js'
+export {
+  EVIDENCE_TIER_VALUES,
+  MAX_OUTCOME_BYTES,
+  OUTCOME_ARCH_VALUES,
+  OUTCOME_OS_VALUES,
+  OUTCOME_PROFILE_KIND_VALUES,
+  OUTCOME_SOURCE_VALUES,
+  TIMING_BUCKET_VALUES,
+  assertOutcomeLine,
+  computeLocalPrior,
+  isCompleteOutcomeKey,
+  outcomeKeyOf,
+  sameOutcomeKey,
+  sanitizeOutcome,
+} from './outcome.js'
+
 export type { CapabilityDiff, CapabilityMeta, CapabilitySnapshot, CapabilityTool } from './capabilities.js'
 export { diffCapabilities, parseCapabilitySnapshot } from './capabilities.js'
 
