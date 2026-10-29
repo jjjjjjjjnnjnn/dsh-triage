@@ -6091,6 +6091,56 @@
         "sha256": "284e7ffb82efab5911034631e013526ba6d5b72ed18a9afd0e3d0d6246472578",
         "outcome": "ALL GREEN · 9 gates（430 测试；250 步 / 230 产物全部被引用）"
       }
+    },
+    {
+      "id": "R45-S5",
+      "batch": "R45",
+      "step": "dsh.so 提交检查复盘：修掉「许可证无法确定 SPDX」的根因（仓库根 `package.json` 缺 `license` 字段），补一份给审核者的说明（`dsh-so-note.md`），并把实测结果与「扫描 0 文件」的成因写进渠道记录",
+      "changed": [
+        "package.json",
+        "docs/market/submissions/dsh-so-note.md",
+        "docs/market/submissions/README.md",
+        "data/results/listing-2026-10-29T09-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：SPDX 的根因是根清单没有 `license` 字段（只有 `packages/*` 有 MIT），而 dsh.so 读仓库根清单——不是 LICENSE 文本问题（`LICENSE` 是标准 MIT，1082B，无 BOM）。加 `\"license\": \"MIT\"` 后 `JSON.parse` 与 `pnpm install --frozen-lockfile` 均无变化。**扫描 0 文件**的成因也写清了：827 个 tracked 文件里 309 `.json` + 232 `.sha256` + 112 `.md`，150 文件预算在 `data/`（460 个）与 `docs/` 就用完，`packages/`/`scripts/` 的 85 个 `.ts` 没轮到",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-10-29T09:00:00.000Z --tests 430` 8/8 全过（改完文案后版本/区间/测试数/证据路径仍一致）；`pnpm install --frozen-lockfile` 无变更",
+        "licence": "PASS：`license: MIT` 与 `LICENSE`、四个发布包的 `license` 一致；根仍 `private: true`（不发 npm），不改变任何许可承诺；审核说明不含第三方内容",
+        "ssot": "PASS：渠道记录里写明「已过格式检查、待重跑后提交」，没有写成已提交；`dsh-so-note.md` 与 `submissions/README.md` 互相指向；`listing-09-00` 已被本步引用",
+        "adversary": "反例一：为了让 SPDX 变绿去改 LICENSE 文本（其实文本没问题）——被拒，改的是机器可读字段；反例二：把「安全扫描通过」写成「已通过安全审查」——被拒，说明里写明\"0 文件被扫，是预算限制\"，并给出 npm tarball 这条能真扫源码的路；反例三：把「0 Critical」当成质量背书——被拒，产品本身不提供安全背书，这条在 note §3 写了三遍"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T09:00:00.000Z --tests 430",
+        "artifact": "data/results/listing-2026-10-29T09-00-00.000Z.json",
+        "sha256": "68ad6586bd9b3452cd9a8c56d0450a9307229e24e2736c49fd7512ac2ff29340",
+        "outcome": "8/8 检查通过（改完 3 份文档 + 根清单后，版本 / DSH 区间 / 测试数 / 证据路径 / 两条边界仍一致）"
+      }
+    },
+    {
+      "id": "R45-S6",
+      "batch": "R45",
+      "step": "dsh.so 检查复盘收口：门禁重跑并落盘，HANDOFF/INDEX 记下「仓库根缺 license → SPDX 识别失败」与「827 文件把 150 文件扫描预算吃光」两条真实反馈",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/dsh-so-note.md",
+        "audit/step_reviews.json",
+        "data/results/gates-2026-10-29T09-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：门禁 9/9 全绿、430 测试、step-review 认定 252 步 / 232 产物的引用完整；台账里三条反馈（SPDX 根因、扫描预算、审核者说明位置）都能指到文件",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T09:30:00.000Z` 一条命令重跑；`pnpm install --frozen-lockfile` 无变更（根清单加 `license` 不改依赖解析）；第一次 `--stamp 09:20` 被拒是因为该 stamp 早已被历史产物占用——按「不覆盖既有证据」规则改 stamp，没有删旧产物",
+        "licence": "PASS：根清单 `license: MIT` 与 `LICENSE`、四个发布包一致；根仍 `private: true`，不发 npm",
+        "ssot": "PASS：`doc-stand` 五处同为 R45；`no-orphan-results` 232 份全部被引用（`listing-09-00` 由 R45-S5 认领）；红 gates 产物（09-10，只记录了一份临时的 orphan 记账）当场删除，不留假红",
+        "adversary": "反例一：把 stamp 撞车当成「产物可以覆盖」——被拒，脚本拒绝写入并按规则换 stamp；反例二：把 09-10 那份红 gates 产物留着\"作为见证\"——被拒，它红的原因是我们自己漏记一步（记账问题），不是产品发现，留着只会让下一任把它当运行期真相；反例三：把「已过格式检查」写成「已收录」——被拒，渠道记录写的是「待重跑后提交」，`merged 0`"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T09:30:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T09-30-00.000Z.json",
+        "sha256": "40ce8b8dc568ce9573725dab762f0d139afd9bc7532facf25a2beea26fe3028c",
+        "outcome": "ALL GREEN · 9 gates（430 测试；252 步 / 232 产物全部被引用）"
+      }
     }
   ]
 }

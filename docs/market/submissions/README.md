@@ -21,7 +21,26 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 | 渠道 | 入口 | 状态 | 说明 |
 |---|---|---|---|
 | **dsh-market（Workshop 商店）** | 由 community-plugins 生成 | `ready-after-channel-1` | 第一条 PR 合并后自动出现在商店 |
-| **dsh.so** | 站点表单（无 API） | `ready`（未提交；npm 已发布，现 0.2.0） | 文案见 `awesome-lists.md`，提交本身是一次人工表单动作 |
+| **dsh.so** | 站点表单（无 API） | 🟨 **已过格式检查（R45 实测），待重跑后提交** | 见下方 §dsh.so 实测记录；审核者说明见 `docs/market/submissions/dsh-so-note.md` |
+
+## dsh.so 实测记录（R45，2026-10-29）
+
+用仓库 URL 跑了一次它的 Submit 检查，结果：
+
+```
+✓ 仓库公开且活跃      ✓ 已找到 README
+! 找到许可证文件，但无法确定 SPDX 标识     ← 已修
+✓ 找到 DSH cordis 清单  ✓ 名称可生成合法 id
+安全扫描：通过 · 0 Critical / 0 Warning / 0 Info
+       已扫描文件 0 · 达到扫描预算（150 个文件），未检查全部文件
+```
+
+**两处处置**：
+
+1. **SPDX**：根 `package.json` 原先没有 `license` 字段（只有 `packages/*` 有 MIT），而它读的是仓库根清单。已加 `"license": "MIT"`（根仍是 `private: true`，`LICENSE` 与所有发布包都是 MIT）。
+2. **扫描 0 文件**：不是源码不可扫——本仓 827 个 tracked 文件里 309 `.json` + 232 `.sha256` + 112 `.md`（`data/results/` 460 个是带 sha256 的证据产物），150 文件预算在 `data/` 与 `docs/` 就用完了，`packages/`/`scripts/` 的 85 个 `.ts` 没轮到。**若要真扫源码，改走 npm tarball**（`files` 只有 `dist/` + `client.js` + `cordis.patch.yml` + `README.md`）。
+
+**下一步（HUMAN 动作）**：重跑检查 → 5 项全 ✓ 后点 **Submit to dsh.so**；若扫描仍报 0 文件且需要真扫，改用 npm 包 `dsh-triage` 提交（同一插件不要提两条，避免重复条目）。
 
 ## 提交是怎么做的（可复核）
 
