@@ -266,6 +266,63 @@ for (const [index, value] of argv.entries()) {
   submitted.push({ channel, url, state, ...detail, ...review })
 }
 
+/*
+ * Site submissions (R45): dsh.so has no API for "did my submission arrive?". The honest way to
+ * record one is:
+ *
+ *   - the submission itself is a HUMAN action and is recorded as such (`submitted_by`), because a
+ *     form POST here cannot be verified by us;
+ *   - what CAN be verified is whether the registry already lists the plugin, via its public
+ *     per-plugin JSON (`/plugin/@author/<name>.json`). A 404 means "not listed right now" — it is
+ *     neither a rejection nor a promise, so the channel status becomes `submitted`, never `listed`
+ *     until the probe answers 200.
+ */
+const siteSubmissions = []
+const pluginManifest = JSON.parse(readFileSync(abs('packages/plugin/package.json'), 'utf8'))
+for (const [index, value] of argv.entries()) {
+  if (value !== '--site') continue
+  const spec = String(argv[index + 1] ?? '')
+  const [siteChannel, ...who] = spec.split('=')
+  if (siteChannel !== 'dsh.so') {
+    process.stderr.write(`unsupported site channel "${String(siteChannel)}": only dsh.so has a form without an API\n`)
+    process.exit(2)
+  }
+  const owner = /github\.com[/:]([^/]+)\//.exec(String(pluginManifest.repository?.url ?? ''))?.[1] ?? null
+  const pluginName = String(pluginManifest.name ?? '')
+  const endpoints = [
+    `https://www.dsh.so/plugin/@${String(owner)}/${pluginName}.json`,
+    `https://www.dsh.so/artifact/@${String(owner)}/${pluginName}.json`,
+    `https://www.dsh.so/data/install/@${String(owner)}/${pluginName}.json`,
+  ]
+  const probes = []
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { headers: { accept: 'application/json' } })
+      probes.push({ endpoint, http_status: response.status, content_type: response.headers.get('content-type') })
+      // Drain the body so the connection can be reused; the payload itself is not evidence we keep.
+      await response.arrayBuffer()
+    } catch (error) {
+      probes.push({ endpoint, http_status: null, error: error instanceof Error ? error.message : String(error) })
+    }
+  }
+  const indexed = probes.some((probe) => probe.http_status === 200)
+  siteSubmissions.push({
+    channel: 'dsh.so',
+    submitted_by: who.join('=') || 'human',
+    submitted_at: stamp,
+    // The reachable entry point, not a receipt: dsh.so files submissions in its own backend.
+    entry_point: 'https://dsh.so/submit/',
+    indexed,
+    index_probe: { checked_at: stamp, endpoints: probes },
+  })
+  const target = others.find((channel) => channel.channel === 'dsh.so')
+  if (target !== undefined) {
+    target.status = indexed ? 'listed' : 'submitted'
+    target.blocker = null
+    target.submission = siteSubmissions.at(-1)
+  }
+}
+
 const payload = {
   schema_version: 1,
   produced_by: 'scripts/record_market_channels.mjs',
@@ -273,15 +330,19 @@ const payload = {
   prerequisites,
   channels: [...channels, ...others],
   submitted,
+  site_submissions: siteSubmissions,
   summary: {
     validated_locally: channels.filter((channel) => channel.status === 'validated').length,
     ready_to_submit: [...channels, ...others].filter((channel) => channel.status === 'validated' || channel.status === 'ready').length,
     live: submitted.filter((pull) => pull.state === 'open').length,
+    site_submitted: siteSubmissions.length,
+    listed: siteSubmissions.filter((entry) => entry.indexed === true).length,
     one_blocker: publicSourceMissing,
   },
   limits: [
     'running a channel\'s own validator proves the entry is well-formed, NOT that a maintainer will accept it',
     'submitting is a pull request, not a merge: `live` counts OPEN pulls, and a maintainer can still decline them',
+    'a site submission (dsh.so) has **no machine-verifiable receipt**: what is recorded is the human report plus a live probe of the registry\'s per-plugin JSON. `indexed: false` means "not listed right now", not "rejected"',
     'channel requirements were read from each repository on the day of this artifact; they can change',
     'the tarball hash pins what was validated, not what upstream will look like tomorrow',
   ],

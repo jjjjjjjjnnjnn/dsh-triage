@@ -6141,6 +6141,56 @@
         "sha256": "40ce8b8dc568ce9573725dab762f0d139afd9bc7532facf25a2beea26fe3028c",
         "outcome": "ALL GREEN · 9 gates（430 测试；252 步 / 232 产物全部被引用）"
       }
+    },
+    {
+      "id": "R45-S7",
+      "batch": "R45",
+      "step": "dsh.so 提交后的状态记录：给它加一条 `--site` 通道（HUMAN 提交 + 三个 per-plugin JSON 端点的收录探针），把「已提交但未收录」变成机器可复核的事实，而不是一句自述",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "docs/market/submissions/README.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "data/results/market-channels-2026-10-29T10-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`site_submissions[0]` = `submitted_by: human` / `submitted_at` / `entry_point: https://dsh.so/submit/` / `indexed: false` / 三个端点全部 `http_status: 404`（`/plugin/@author/<name>.json`、`/artifact/…`、`/data/install/…`）。渠道状态因此是 `submitted`，**不是** `listed`；`summary.site_submitted = 1` / `listed = 0`。四条 PR 状态未变（`live 3`、`merged 0`）",
+        "reproducibility": "PASS：`node scripts/record_market_channels.mjs --stamp <ISO> --site dsh.so=human` 一条命令重跑；探针结果与时间戳都在产物里；`--site` 只接受 `dsh.so`（其它站点没有 API，硬编码支持等于假装能验）",
+        "licence": "PASS：只读它公开的 JSON 端点（CC BY 4.0，未落盘它的内容，只记 HTTP 状态）；产物不含路径与凭据",
+        "ssot": "PASS：`submissions/README.md` 顶部摘要、§dsh.so 实测记录、HANDOFF §3/§8、INDEX 上架行四处口径一致（统一 `submitted` / `indexed: false`）；产物 `market-channels-10-00` 已被本步引用",
+        "adversary": "反例一：把「表单提交了」写成「已收录」——被拒，探针 404 就是反证，产物只有 `submitted`；反例二：探针 404 时把 status 写成 `blocked`——被拒，404 只说明\"还没收录\"，与\"被拒绝\"是两件事，`limits[]` 明确写了；反例三：把探针失败（网络异常）当成 404——被拒，异常记 `http_status: null` + `error`，`indexed` 保持 false 但不会被误读成\"对方说没有\""
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T10:00:00.000Z --pr dsh-community-plugins=<#65> --pr awesome-deepseekharness=<#193> --pr walkinglabs/awesome-deepseek-harness-plugins=<#140> --site dsh.so=human",
+        "artifact": "data/results/market-channels-2026-10-29T10-00-00.000Z.json",
+        "sha256": "f35a09c284e382d9e4bddaa464dba5234ca1fad91ec8d1ee0c2ece5fd054c747",
+        "outcome": "validated 1 · ready 3 · live 3 · site_submitted 1 · listed 0 · merged 0（dsh.so 三端点 404）"
+      }
+    },
+    {
+      "id": "R45-S8",
+      "batch": "R45",
+      "step": "轮次收口（dsh.so 提交后）：门禁重跑并落盘，HANDOFF/INDEX 的计数与渠道口径同步到「3 条 PR + 1 条站点提交、0 收录」",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/market/submissions/README.md",
+        "audit/step_reviews.json",
+        "data/results/gates-2026-10-29T10-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：9/9 门全绿、430 测试、step-review 认定 254 步 / 234 产物引用完整；口径统一为 `validated 1 · ready 3 · live 3 · site 1 · merged 0`，没有把 `submitted` 写成 `listed`",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-10-29T10:20:00.000Z` 一条命令；`pnpm install --frozen-lockfile` 未变；渠道状态由 `--site` 探针重算，不靠手写",
+        "licence": "PASS：只改文档与台账；探针不落盘第三方内容",
+        "ssot": "PASS：`doc-stand` 五处同为 R45；`no-orphan-results` 234 份全部被引用",
+        "adversary": "反例一：为了让「已提交」好看而删掉 `limits[]` 里那条「站点提交没有机器回执」——被拒，那是本轮唯一防止自述变事实的条款；反例二：把站点提交记成 `live`（那是 PR 专用的口径）——被拒，新增 `site_submitted` 计数而不是复用 `live`"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T10:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T10-20-00.000Z.json",
+        "sha256": "435644947c986d9611011fc54596d328d212e953141c8e408e851928d3a2d4a2",
+        "outcome": "ALL GREEN · 9 gates（430 测试；254 步 / 234 产物全部被引用）"
+      }
     }
   ]
 }

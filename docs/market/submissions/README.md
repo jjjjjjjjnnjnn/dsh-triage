@@ -1,7 +1,7 @@
 # 分发渠道 · 提交包（submissions）
 
-> **状态（R45，2026-10-29 实测）**：`validated 1 · ready 4 · live 3 · merged 0`。
-> 证据：`data/results/market-channels-2026-10-29T07-40-00.000Z.json`（`submitted[]` 里是三条 PR 的**实时**状态、diff 规模与 `review_decision`）。
+> **状态（R45，2026-10-29 实测）**：`validated 1 · ready 3 · live 3 · site 1（dsh.so 已提交、未收录）· merged 0`。
+> 证据：`data/results/market-channels-2026-10-29T10-00-00.000Z.json`（`submitted[]` 是三条 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。
 > **npm 已发布**：`dsh-triage@0.2.0`（四包同版本），匿名安装验证见 `data/results/publish-2026-10-30T05-00-00.000Z.json`。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
@@ -21,11 +21,11 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 | 渠道 | 入口 | 状态 | 说明 |
 |---|---|---|---|
 | **dsh-market（Workshop 商店）** | 由 community-plugins 生成 | `ready-after-channel-1` | 第一条 PR 合并后自动出现在商店 |
-| **dsh.so** | 站点表单（无 API） | 🟨 **已过格式检查（R45 实测），待重跑后提交** | 见下方 §dsh.so 实测记录；审核者说明见 `docs/market/submissions/dsh-so-note.md` |
+| **dsh.so** | 站点表单（无 API） | ✅ **已提交（HUMAN，2026-10-29）· 未收录** | 提交动作在它自己的后台开 issue，我们没有回执；**可机器复核的部分已经落盘**：三个 per-plugin JSON 端点（`/plugin/@author/<name>.json` 等）在提交后探测仍是 **404** → `indexed: false → status: submitted`。变成 `listed` 的唯一条件是那个端点回 200。审核者说明见 `docs/market/submissions/dsh-so-note.md` |
 
 ## dsh.so 实测记录（R45，2026-10-29）
 
-用仓库 URL 跑了一次它的 Submit 检查，结果：
+**提交前的检查**（仓库 URL）：
 
 ```
 ✓ 仓库公开且活跃      ✓ 已找到 README
@@ -38,9 +38,9 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 **两处处置**：
 
 1. **SPDX**：根 `package.json` 原先没有 `license` 字段（只有 `packages/*` 有 MIT），而它读的是仓库根清单。已加 `"license": "MIT"`（根仍是 `private: true`，`LICENSE` 与所有发布包都是 MIT）。
-2. **扫描 0 文件**：不是源码不可扫——本仓 827 个 tracked 文件里 309 `.json` + 232 `.sha256` + 112 `.md`（`data/results/` 460 个是带 sha256 的证据产物），150 文件预算在 `data/` 与 `docs/` 就用完了，`packages/`/`scripts/` 的 85 个 `.ts` 没轮到。**若要真扫源码，改走 npm tarball**（`files` 只有 `dist/` + `client.js` + `cordis.patch.yml` + `README.md`）。
+2. **扫描 0 文件**：不是源码不可扫——本仓 827 个 tracked 文件里 309 `.json` + 232 `.sha256` + 112 `.md`（`data/results` 460 个是带 sha256 的证据产物），150 文件预算在 `data/` 与 `docs/` 就用完了，`packages/`/`scripts/` 的 85 个 `.ts` 没轮到。**若要真扫源码，改走 npm tarball**（`files` 只有 `dist/` + `client.js` + `cordis.patch.yml` + `README.md`）。
 
-**下一步（HUMAN 动作）**：重跑检查 → 5 项全 ✓ 后点 **Submit to dsh.so**；若扫描仍报 0 文件且需要真扫，改用 npm 包 `dsh-triage` 提交（同一插件不要提两条，避免重复条目）。
+**提交后**：HUMAN 于 2026-10-29 通过站点表单提交（`--site dsh.so=human`）。产物里 `site_submissions[0].indexed = false`，三个端点全部 `http_status: 404`——**这是"还没收录"，不是"被拒"**。等它收录（或维护者回话）后重跑一次，`status` 会自动从 `submitted` 变 `listed`。
 
 ## 提交是怎么做的（可复核）
 
