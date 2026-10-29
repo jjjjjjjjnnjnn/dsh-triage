@@ -1,6 +1,6 @@
 {
   "name": "dsh-triage",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The judgment layer for DeepSeek Harness plugins: attribute why a plugin silently disappeared, judge a candidate against your exact environment, and keep a capability ledger. Offline, read-only, evidence-first.",
   "type": "module",
   "bin": {

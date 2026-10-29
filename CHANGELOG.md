@@ -6,6 +6,32 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.2.0] — 2026-10-30
+
+> Status: packed, installed and verified locally; **awaiting `npm publish`** (not on the registry
+> yet — see `docs/HANDOFF.md` §3). `npm i -g dsh-triage` still resolves to `0.1.1` until it ships.
+> **All four packages move to 0.2.0 together**: `@dsh-triage/core` gained the outcome module, and a
+> plugin that imports `assertOutcomeLine` from a 0.1.0 core fails at import time. Publishing only
+> `dsh-triage` would produce a package that cannot start; the anonymous-install check in
+> `scripts/record_publish.mjs` is what catches that, and it is why the release is four publishes.
+
+Two new commands. Existing commands, the verdict contract, the gates and every threshold are
+unchanged.
+
+- **`dsh-triage upgrade --to <version>`** — before moving your dsh build, ask which loader rows and
+  bundles the *target* runtime would deny. Four buckets that partition the profile
+  (`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`), the same remediation text `why`
+  prints, and the same admission engine with the runtime swapped — there is no second set of range
+  rules. Offline by default. Registry lookups are annotations and cannot move a row between
+  buckets. It says "would be admitted/denied", never "will work".
+- **`dsh-triage outcomes`** — the local outcome store behind the reflow layer. **Off by default**:
+  while off, no directory and no file is created. When on, it stores a fixed field whitelist (no
+  paths, hostnames, logs or free text) and `--purge` leaves nothing behind. Nothing is uploaded;
+  there is no network code on that path.
+
+Also: `check --explain` can now show a local prior as an **annotation** (`prior` block) that never
+changes the verdict — `check --json` is byte-identical with or without one.
+
 ## [0.1.1] — 2026-10-29
 
 Documentation release. **No behaviour change** — the CLI, the verdict contract, the gates and
