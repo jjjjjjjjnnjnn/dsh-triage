@@ -6588,14 +6588,35 @@
         "correctness": "PASS：`pnpm run verify` 实测 **452 测试 / 0 fail**、9 门 ALL GREEN；`node scripts/gate.mjs --mutate` 输出 `NEGATIVE CONTROL PASSED · 9/9`。这一轮新增的两条断言都在 9 门之内被覆盖（`check_listing` 由 `release` 之外的评审执行、`step-review` 校验新台账），`governance/index-references` 还在这一轮抓到我写的一个裸文件名（见 §4 反思）",
         "reproducibility": "PASS：产物 `generated_at` 固定、不含耗时（`gate.mjs` 有意剔除 durations），9 条 `gates[]` 只记 exitCode 与 ok；`.sha256` 与文件同批写入，`step-review` 会重算",
         "licence": "PASS：门禁结果只含本仓门脚本的 id 与退出码，无第三方数据。",
-        "ssot": "PASS：规模数字（452 测试 / 270 步 / 250 产物 / 45 盲区）在 HANDOFF、INDEX、AGENTS 与本台账四处一致；本条是本轮第 9 步，与 S2–S8 的 8 份产物一起让 `no-orphan-results` 归零",
+        "ssot": "PASS：规模数字（452 测试 / 271 步 / 251 产物 / 45 盲区）在 HANDOFF、INDEX、AGENTS 与本台账四处一致；本条是本轮第 9 步，与 S2–S8 的 8 份产物一起让 `no-orphan-results` 归零",
         "adversary": "反例一：只跑 `--fast`（跳过需要构建的门）就宣布全绿——被拒，本轮判据是完整套件的结果，`fast:false` 写在产物里；反例二：让 `--mutate` 里某道门「因为缺依赖」而失败，看起来像 CAUGHT——被拒，`gate_ledger.json` 的负对照列表与 `--mutate` 的 caught 语义由 CI 的 `gates can fail` 作业独立盯着；反例三：手工编辑产物把 ok 改成 true——被拒，`step-review` 重算 sha256"
       },
       "real_test": {
         "command": "node scripts/gate.mjs --record --stamp 2026-10-29T18:40:00.000Z",
         "artifact": "data/results/gates-2026-10-29T18-40-00.000Z.json",
         "sha256": "d3011dd852bf92762f6e2500968b39de8957933a078df2dad4d7203612f8a356",
-        "outcome": "ALL GREEN · 9 gates（452 测试；scale 行同步为 270 步 / 250 产物 / 45 盲区）"
+        "outcome": "ALL GREEN · 9 gates（452 测试；scale 行同步为 271 步 / 251 产物 / 45 盲区）"
+      }
+    },
+    {
+      "id": "R48-S10",
+      "batch": "R48",
+      "step": "复算在这一轮的最后一次真机验证里撞上一件真事：上游在**本轮之内**发布了新的 rc（`dist-tags.next` 从 `0.2.1-rc.4` 变成 `0.2.1-rc.5`）。于是用同一条命令重跑记录器，**26/26 仍然全绿**——同一条命令、新的 rc、零改动",
+      "changed": [
+        "data/results/upgrade-entry-2026-10-29T20-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：26/26。这一跑的价值不在「又绿了一次」，而在它证明了记录器与 CLI **不依赖我们记忆里的那个版本号**：`next` 变成 `0.2.1-rc.5` 之后，解析、逐字比对、以及「关键字版 vs 精确版本版四桶计数相同」三条都自动跟着新值走；`tag-latest` 仍是 `0.2.1-rc.2`（上游只动了 `next`）",
+        "reproducibility": "PASS：新产物自带 `registry.fetched_at` 与 `dist_tags`，缓存进 `data/fixtures/upgrade-entry/2026-10-29T20-10-00.000Z/`；上一份（15:50，`next=rc.4`）**不删不改**——两份快照并存本身就是「这是时点断言」的证据（`BS-45`）",
+        "licence": "PASS：只读 npm registry 公开元数据与仓内沙盒 profile。",
+        "ssot": "PASS：两份 upgrade-entry 产物各自指向自己的 registry 快照；HANDOFF / INDEX / AUDIT 同时列出两者，并把「rc.4 → rc.5」写成一次**真实观测**而不是把旧产物改写成新值",
+        "adversary": "反例一：为了「保持数字一致」把 15:50 那份产物改成 rc.5——被拒，产物是证据，sha256 会打红，而且那样就毁掉了「上游真的动过」的见证；反例二：只在本地把 `next` 硬编码成 rc.5 让检查过——被拒，记录器读的是 registry 自己给的 `dist-tags`；反例三：把这次当成「产品又需要一次发布」——被拒，代码零改动，版本号与判据都没动"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_entry.mjs --stamp 2026-10-29T20:10:00.000Z",
+        "artifact": "data/results/upgrade-entry-2026-10-29T20-10-00.000Z.json",
+        "sha256": "da2fa2ae4ab778f080ae9a572cf9307857387cf23b0b5f23387b7f2bf87ef0df",
+        "outcome": "26/26 PASS · registry next 0.2.1-rc.5（上游在本轮内发布）/ latest 0.2.1-rc.2 · profile upstream"
       }
     }
   ]

@@ -1,0 +1,12 @@
+{
+  "url": "https://registry.npmjs.org/@deepseek-ai%2Fdsh",
+  "status": 200,
+  "fetched_at": "2026-10-29T20:10:00.000Z",
+  "body": {
+    "dist-tags": {
+      "latest": "0.2.1-rc.2",
+      "next": "0.2.1-rc.5",
+      "alpha": "0.2.2-alpha.2"
+    }
+  }
+}
