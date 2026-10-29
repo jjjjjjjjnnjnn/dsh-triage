@@ -5662,6 +5662,72 @@
         "sha256": "d5b8d3c7c223538dfe431cbbe184742e54ace63735cb8e77b19474f7171136d8",
         "outcome": "ALL GREEN · 9 gates（403 测试；232 步 / 212 产物全部被引用）"
       }
+    },
+    {
+      "id": "R41-S4",
+      "batch": "R41",
+      "step": "回归：`check` / `probe` 的线被 `T-501` 动过（多一次 `recordOutcomes`），用同一份 D2 plan 空载重跑一遍矩阵，证明探针行为没有漂",
+      "changed": [
+        "data/results/probe-matrix-2026-10-29T12-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown（与 R29 两批同形状）/ 清理 20-20 / `expectation_misses=0` / `boot→sample` 3.5–10.0s，16/16 在预算内",
+        "reproducibility": "PASS：同 plan、同沙盒、同 stamp 可重放；运行期没有并行 build/test（矩阵数字可比）",
+        "licence": "PASS：既有 pin 候选，沙盒内安装，不注入凭据",
+        "ssot": "PASS：`produced_by`/`generated_at`/`.sha256` 齐全；默认关闭下**没有**产生任何 outcome 文件（`%LOCALAPPDATA%\\dsh-triage` 不存在）",
+        "adversary": "反例一：以为「测试全绿 = 行为没变」——测试不跑真 Host，所以必须重跑矩阵；反例二：在有载条件下跑回归（数字会与 R29 不可比）；反例三：默认关闭却写了文件（这条由 N1 单测 + 本次人工检查双证）"
+      },
+      "real_test": {
+        "command": "node scripts/record_probe_matrix.mjs --plan tests/fixtures/probe/matrix-r19.json … --stamp 2026-10-29T12:30:00.000Z",
+        "artifact": "data/results/probe-matrix-2026-10-29T12-30-00.000Z.json",
+        "sha256": "f26980aea9d35bee60ed5a5bbe35c1896192ecaf8a8fc349aa93104ca69a2bad",
+        "outcome": "n=20 / 真实 13 / 12 go + 1 blocked + 1 unknown / 清理 20-20 / `boot→sample` 3.5–10.0s（16/16 在预算内）"
+      }
+    },
+    {
+      "id": "R41-S5",
+      "batch": "R41",
+      "step": "D2 判定复算（`--strict`）：确认 `T-501` 之后 `gate.passed` 仍为 true，且预算/可靠性/失败形状三项都过",
+      "changed": [
+        "data/results/d2-2026-10-29T12-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：真实 13 次（≥10）、清理 20/20、`boot-budget` 12/12、可靠性 100%（≥90%）、失败形状 6（≥5）；`gate.passed=true`、`--strict` exit 0",
+        "reproducibility": "PASS：`node scripts/d2_report.mjs --matrix … --stamp … --strict` 一条命令重放；产物先落盘再决定退出码（T-317 语义）",
+        "licence": "PASS：只读本仓矩阵产物",
+        "ssot": "PASS：`produced_by`/`generated_at`/`.sha256` 齐全；产品数字仍是 12/13（Wilson 0.667–0.986），没有因为回归而重述",
+        "adversary": "反例一：把「D2 通过」写成「产品 92% 可用」（便利样本 + 区间）；反例二：不带 `--strict` 时判失败也 exit 0，自动化只看退出码会漏；反例三：把本次判成 R29 的重跑（不同 stamp、不同代码，只是同 plan）"
+      },
+      "real_test": {
+        "command": "node scripts/d2_report.mjs --matrix data/results/probe-matrix-2026-10-29T12-30-00.000Z.json --stamp 2026-10-29T12:50:00.000Z --strict",
+        "artifact": "data/results/d2-2026-10-29T12-50-00.000Z.json",
+        "sha256": "1d5c1a261ddf202960b7e92c9bc489a1b386d59377dde357d3ff7ee19cd66f9b",
+        "outcome": "gate PASSED：可靠性 20/20、预算 12/12、形状 6、真实 13；exit 0（--strict）"
+      }
+    },
+    {
+      "id": "R41-S6",
+      "batch": "R41",
+      "step": "R41 收口：回归产物入台账，全量门禁复算，并把「T-501 之后行为未漂」写成可重算的一步",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "data/results/gates-2026-10-29T13-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：403 测试 / 9 门全绿；矩阵与 D2 结论与 R29 同形状（12 go / 1 blocked、预算 12/12、清理 20/20、形状 6），说明 `recordOutcomes` 的加入没有改变任何判定或读数",
+        "reproducibility": "PASS：`pnpm run verify` + `node scripts/gate.mjs --mutate` 可复现；`gate --record` 现在会拒绝覆盖已有产物（R40 的守卫），本轮两次录制都先查过 stamp",
+        "licence": "PASS：无新增依赖；回归用的是既有 pin 候选",
+        "ssot": "PASS：`no-orphan-results` 全绿（236 步 / 214 产物）；`doc-stand` 三份入口文档同为 R41；README 的测试数同步为 403",
+        "adversary": "反例一：把回归当成「D2 重新通过了一次」就对外更新产品数字——产品数字没变（12/13，Wilson 0.667–0.986），本次只是证明没有漂；反例二：为了让 `--strict` 绿而放宽阈值（未动）；反例三：把 `T-501` 的默认关闭说成「默认匿名上传」（没有上传，本地零网络）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T13:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T13-00-00.000Z.json",
+        "sha256": "b1a9c3632870d4827f31fc5cbf18f17889f7a4819a6fddb93fc7b34a8917bd39",
+        "outcome": "ALL GREEN · 9 gates（403 测试；236 步 / 214 产物全部被引用）"
+      }
     }
   ]
 }
