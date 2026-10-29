@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）
 
-> **Stand**: R47 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2（npm `latest`；`next` = 0.2.1-rc.4，即仓内沙盒）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R48 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2（npm `latest`；`next` = 0.2.1-rc.4，即仓内沙盒）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 > **R47 重定向**：正门从「通用检查器」改为「**升级日**」。依据是外部取证（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）：诊断类目周下载天花板 **1,988**（市场类 380,240 / 装饰类 411,844）；同时上游最近 842 条 Discussions 里故障帖 **49.2%**、其中 **67.2% 零回复**。痛点真、形态错 → 换触发时刻，不换判据。
 
@@ -28,7 +28,7 @@
 | W8 | **M5-b 升级日** | 升级影响清单生成器（给定目标 dsh 版本）。**R42 交付**四桶分区；**R44 补齐最后两块**：`improved` 有真机见证（策展混合组合，四桶非空）与 registry 成功分支 | 新 rc 发布 24h 内可产出全量已装集合的影响清单 | 1 |
 | W9 | **1.0 候选** | 文档 / 上架文案 / 兼容矩阵公开页 | `gate_release --publish` 绿 + 2 渠道收录 | ✅ 交付（`gate_release --publish` 绿）；**收录 0**——三条 PR 全开、dsh.so `submitted` 未 `listed`，卡在外部 |
 | W10 | **R47 市场取证 + 重定向** | `data/results/market-baseline-*.json` · 定位重写（`00-vision` / `AGENTS.md` / 本文件）· 流程分级 | 转向**有证据**而非直觉；`PROJECT_RULES` 新增第 4 问落地 | ✅ 本轮完成 |
-| W11 | **升级日正门** | `upgrade` 卡片（首行结论 + 可粘贴 markdown + 边界句 + 复算命令）+ 一次真实公开样本 | **D5**（2 周内 reactions ≥10 / 外部引用 ≥1 / 周下载 ≥20） | 🚧 进行中 |
+| W11 | **升级日正门** | `upgrade` 卡片（R47 已交付，真机 14/14）+ **R48 收口「陌生人 60 秒」**：`--to next` / 无参数引导 / `--card --out` / README 首屏真机输出 | **D5**（2 周内 reactions ≥10 / 外部引用 ≥1 / 周下载 ≥20） | 🚧 R47 卡片已交付；R48 四项 = `T-806`…`T-809`，**全绿才发内容**（`T-810`） |
 | W12 | **按 D5 分叉（不硬推）** | 达标 → 进别人安装路径（A：交给 `dshmarket`/`catalog`）或作者侧 CI（C）；不达标 → 承认它不是产品（D：作品集 + 上游 PR） | D5 已判 + HUMAN 选支 | 待定 |
 
 ---

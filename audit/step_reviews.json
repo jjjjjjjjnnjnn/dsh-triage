@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R47 (2026-10-29)",
+  "stand": "R48 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6370,6 +6370,40 @@
         "artifact": "data/results/listing-2026-10-29T13-20-00.000Z.json",
         "sha256": "0553c40075a69b8337157fcb28bc0a441789b57d34c5bbb502fb7575396fe8e7",
         "outcome": "10/10 PASS（含 listing-1584-is-qualified）；测试数 440 与 README 一致"
+      }
+    },
+    {
+      "id": "R48-S1",
+      "batch": "R48",
+      "step": "交接轮：记录 R48 计划（T-806…T-810，判据与负对照写死）、归档两份历史文件（BACKLOG 的 R3–R16 交付记录 / §2 的 R37–R38 批次行）、修掉 AI_HANDOVER §5 的过期入口、同步全部入口文档的 Stand；零代码、零判据",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/AI_HANDOVER.md",
+        "docs/ROADMAP.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "PROJECT_RULES.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "_archive/2026-10-29_BACKLOG-delivered-R3-R16.md",
+        "_archive/2026-10-29_HANDOFF-batch-rows-R37-R38.md"
+      ],
+      "review": {
+        "correctness": "PASS：R48 四项（T-806…T-809）逐条写死判据与负对照，且都指到可复算的行为（`--to next` 解析值逐字等于 dist-tags；断网 exit 3 且不产桶；`--card --out` 与 stdout 同 sha256；README 首屏必须带 sandbox 标注）。R48 之前的既有口径（D5 三个数、BS-42/43/44）逐条保留，没有被改写成\"已完成\"",
+        "reproducibility": "PASS：本轮 9 门全绿并把门禁结果写成 SSOT（`gates-2026-10-29T14-00-00.000Z.json` + 纯 hash `.sha256`）；两份归档是**逐行原文**（脚本按行前缀切片搬移，未改一字），`archive-manifest` 门按路径存在性校验通过；HANDOFF §3 给的是三条可复制命令",
+        "licence": "PASS：只改本仓文档与台账；两份归档内容全部是自家历史；未引入任何第三方正文，未新增数据源",
+        "ssot": "PASS：Stand 在 HANDOFF / INDEX / ROADMAP / AGENTS / PROJECT_RULES / AI_HANDOVER / step_reviews / blind_spots 八处同为 R48；BACKLOG 从 257 行降到 90 行且任务行一条不少（只搬历史叙述）；`index-references` 与 `archive-manifest` 全绿",
+        "adversary": "反例一：为让交接看着\"更完整\"把 D5 写成\"已达标\"——被拒，§3 与 §8 都写明四项未做、分发等绿；反例二：归档时顺手\"精简\"历史行——被拒，脚本只做行切片，`ARCHIVE_MANIFEST` 三行都注明「逐行原文，未改一字」；反例三：把 BACKLOG 的 T-8xx 一起搬进归档让清单更短——被拒，归档只含 R3–R16 的交付叙述，任务行全部留在清单里"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T14:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T14-00-00.000Z.json",
+        "sha256": "a557b218c150aaba9d6ff9ebcb5339b3d7abb6482c9bcec60a8da6e219da6224",
+        "outcome": "ALL GREEN · 9 gates（440 测试；BACKLOG 257→90 行；两份归档路径存在）"
       }
     }
   ]

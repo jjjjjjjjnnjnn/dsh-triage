@@ -1,7 +1,8 @@
 # DSH-Addition PROJECT_RULES.md（工程铁律）
 
-> **Stand**: R47 (2026-10-29) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
+> **Stand**: R48 (2026-10-29) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
 > **R47 变更范围**：只改 Stand、路线表状态与决策检查（新增第 4 问）；**10 条铁律一字未动**（冻结）。
+> **R48 变更范围**：只改 Stand 与 M6 的状态行（把 R48 的四项收口写进路线表）；**铁律仍然一字未动**。
 
 ---
 
@@ -42,7 +43,7 @@
 | **M3** | 隔离实测 | `probe`：独立 `DSH_HOME` 装候选 → boot/http/render/inventory | 单次 ≤20s；失败自动清理；默认 dry-run | ✅（`namespace-diff` 仍 `unmeasured`，`ADR-0009` A） |
 | **M4** | 分发件 | 面板 / 徽章 / 索引源 / `compat_verdict` / `serve` | 上架渠道收录 | ✅ 交付；**渠道全在别人手里**（`merged 0` / `listed 0`） |
 | **M5** | 回流 + 升级清单 | `outcomes`（本地半边）+ `upgrade --to` 四桶 | 数据可用率 ≥80%；无 PII | ✅ 本地半边 + 四桶；上传/聚合待 `ADR-0012` |
-| **M6** | **升级日正门（R47 起）** | 市场基线落盘 · `upgrade` 卡片（首行结论 + 可粘贴 markdown + 边界句）· 每次 rc 的公开样本 | **D5**：2 周内 reactions ≥10 且外部引用 ≥1 且周下载 ≥20；不达标 → 走「承认它不是产品」 | 🚧 进行中（`docs/ROADMAP.md` §2 D5） |
+| **M6** | **升级日正门（R47 起）** | 市场基线落盘 · `upgrade` 卡片（首行结论 + 可粘贴 markdown + 边界句）· **R48：`--to next` / 无参数引导 / 卡片落盘 / README 首屏** | **D5**：2 周内 reactions ≥10 且外部引用 ≥1 且周下载 ≥20；不达标 → 走「承认它不是产品」 | 🚧 R47 交付卡片（真机 14/14）；**R48 待做 T-806…T-809**（`docs/BACKLOG.md`） |
 
 **回滚**：任一污染 → 以 tag + `backup/snapshots/` 恢复，新提交覆盖，禁改历史。
 

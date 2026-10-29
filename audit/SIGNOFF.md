@@ -48,6 +48,8 @@
 
 | 2026-10-29 | **R47 定位重定向（改的是产品形态，不是判据）**：正门从「通用检查器」改为「**升级日**」；四条候选（A 进别人安装路径 / **B 升级日** / C 作者侧 CI / D 承认不是产品）由 HUMAN 选 **B**；同时批准**流程分级**（判据轮重 / 交付轮轻 / 采证轮只认可复算） | 会话内三问三答：「定位走哪条？」→ **B：把「升级日」当正门（推荐）**；「流程要不要分级？」→ **分级：判据轮重、分发轮轻（推荐）**；「我们自己的 1584 全量是错的，要先修吗？」→ **先修数再动产品（推荐）** | DeepSeek V4.1 Flash：先取证（`scripts/record_market_baseline.mjs` → `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`），再改 `AGENTS.md` / `docs/ROADMAP.md`（新增 **D5**）/ `docs/00-vision.md` / `PROJECT_RULES.md`（新增决策第 4 问 + M6）/ `.agents` 三份 / `docs/HANDOFF.md` / `INDEX.md`；**没有**改任何判据与阈值（四桶、`improved` 五门槛、`admission.ts`、`data/gold/`、20s 预算、settle/readiness、9 门全部原样） | HUMAN 未逐条复核：品类成员的手工归类（diagnostics / marketplace / decorative / capability）、D5 的三个门槛值（≥10 / ≥1 / ≥20）与 2 周窗口、以及「1584 是 npm 关键词口径」这处修正的具体措辞 | `data/results/market-baseline-2026-10-29T12-20-00.000Z.json` · `data/results/listing-2026-10-29T12-30-00.000Z.json` · `audit/AUDIT_2026-10-29_R47.md` |
 
+| 2026-10-29 | **R48 三条产品口径（改的是路线与渠道，不是判据）**：① **产品优先**——先做「陌生人 60 秒」四项（`T-806`…`T-809`），分发一律等四项全绿；② **只公开项目、不公开个人身份**（渠道因此 GitHub / X / Reddit 优先，公众号 / 小红书这类「人」的平台降级）；③ 记录一条判断：GitHub Trending → 中文部署教程 → 39–99 元这条路**不作为收入线**，只作为渠道（`T-810`）——它需要流量池，而我们**从未推广过**（npm 下载记录为空） | 会话内原话：「我全都可以同步进行，但是我希望首先要先做好产品为首位」「只公开项目，不公开个人」「同意，记录，更新项目内容，归档过期和历史信息文件。先进行项目交接，即将切换会话」 | DeepSeek V4.1 Flash：把口径写成 `docs/BACKLOG.md` 的 `T-806`…`T-810` 与 `docs/HANDOFF.md` §3/§8；归档两份历史文件；修掉 `docs/AI_HANDOVER.md` §5 的过期入口；**没有**改任何判据与阈值，**没有**执行任何分发动作（发布仍在 HUMAN 手里） | HUMAN 未逐条复核：四项的判据细节（断网 exit 3 / 拒绝覆盖 / sandbox 标注断言）、以及「playbook 只作渠道」这个结论 | `docs/BACKLOG.md`（T-806…T-810）· `docs/HANDOFF.md` §3 · `data/results/gates-2026-10-29T14-00-00.000Z.json` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

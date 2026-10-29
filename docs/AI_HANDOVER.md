@@ -1,6 +1,6 @@
 # AI_HANDOVER · 接手清单
 
-> **Stand**: R38 (2026-10-29)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
+> **Stand**: R48 (2026-10-29)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
 
 ## 1. 五分钟检查（禁跳过）
 
@@ -42,14 +42,17 @@ node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
 | `packages/core/src/admission.ts` 的规则顺序 | 与上游对等性由金标锁死 |
 | `PROJECT_RULES.md` 的铁律 | 工程宪法 |
 
-## 5. 下一步（选一个就能开工）
+## 5. 下一步
 
-| 任务 | 入口 | 验收 |
-|---|---|---|
-| M1 收口 | `docs/specs/M1-why.md` | 27 条金标全绿（R14 由 21 扩）+ `scan_env` SSOT 落盘 |
-| M2 运行时台账 | `docs/02-signal-sources.md` §4 待验证清单 | `pluginInventory` 字段核实 + `audit` 显示相位 |
-| M3 probe 执行器 | `packages/probe/src/{plan,exec,host}.ts` | 见 `docs/ROADMAP.md` W4 与 `docs/specs/M3-probe.md` |
-| 分发起草 | `docs/ROADMAP.md` §7.2 | catalog/hub/dsh.so 三份提交文案 |
+**这里不再列任务**（R48 删掉了 4 条已完成的过期入口：M1 收口 / M2 台账 / M3 probe / 分发起草——它们全在 R14–R37 做完了，留着只会让接手的人去领已经完成的任务）。
+
+唯一入口：
+
+| 想知道什么 | 去哪 |
+|---|---|
+| 下一件要做的事（含判据） | `docs/HANDOFF.md` §3 |
+| 可领取的任务清单 | `docs/BACKLOG.md`（表内 T-1xx…T-8xx；历史交付记录已归档到 `_archive/`） |
+| 为什么是这个方向 | `docs/ROADMAP.md` §2 的 **D5** + `docs/adr/0013-upgrade-day-front-door.md` |
 
 ## 6. 常见错误（会浪费一整轮）
 
