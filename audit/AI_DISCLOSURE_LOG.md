@@ -480,3 +480,15 @@
 - 结果：① raw URL 立即可读（`docs/market/index.json` 2116B，逐字节一致，`index-hosting-2026-10-29T22-00-00.000Z.json`）。② **两条 PR**：`zhu1090093659/dsh-community-plugins#65`（+12/-0）与 `awesome-deepseekharness/awesome-deepseek-harness#193`（+1/-0）；`market-channels-2026-10-29T22-40-00.000Z.json` 记 `live: 2`。③ dsh.so 仍等 npm 发布。
 - 过程中的真实缺陷：`JSON.stringify` 重排导致 diff 混入 4 行无关改动（已重做为文本插入）；`gh api --jq` 输出不是 JSON 导致 fork 轮询空转 20 次（已修）。
 
+
+### 2026-10-29 R39｜交接（只交接，不改行为）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R39-S1）
+- 范围：`docs/HANDOFF.md`（Stand / 当前批次 / §2 交接行 / §3 第一件事 / §8 未解除项）、`INDEX.md`、`docs/ROADMAP.md`（Stand）、`audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 起因：HUMAN「同意。先进行项目交接，即将切换会话」
+- 结果：**一行代码、一个阈值都没动**。交接把三件事分开写清：① R36/R37/R38 各自**证明了什么**（工具真机能被调、有载把中位数抬高但没超预算、索引源 URL 可用且两条 PR 已提交）；② **什么是真的没做**（PR 只是 open、npm 未发布 → dsh.so 仍 blocked、`BS-39/40/41`、`T-303`、`T-501` 未开工）；③ **两条新的环境事实**：仓库已 public（进仓即公开，脱敏不能松）、`git push` 在本机要走系统代理。同时修掉一处旧漂移：Stand 行写 R38 而当前批次仍是 R36 的第一件事。
+- 实测：350 测试 / 9 门全绿 / `--mutate` 9/9 / 213 步 / 196 产物；`git status` 干净；两条 PR 仍 `open`（`gh api` 实查）
+- 过程中的真实缺陷：无代码缺陷（本轮只有文档）；发现并修正了 Stand/当前批次/第一件事三者不一致的历史漂移
+- 未做：npm 发布（HUMAN 凭据）、两条 PR 的后续（维护者决定）、`BS-39`/`BS-40`/`BS-41`、`T-501`
+
