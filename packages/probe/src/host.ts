@@ -24,6 +24,16 @@ export interface ExtraPatchEntry {
   readonly id: string
   readonly name?: string
   readonly disabled?: boolean
+  /**
+   * Config override for the targeted row (R40, `BS-39`: an experiment needs to flip
+   * `tools.mode` to `ptc`).
+   *
+   * PATCH SEMANTICS ARE SHALLOW, NOT A MERGE: `@deepseek-ai/dsh-app-boot`'s
+   * `applyEntryPatches` does `target[key] = value` for every override key, so this
+   * REPLACES the row's whole `config` object. Callers must record the effective
+   * config in their artifact instead of assuming the rest survived.
+   */
+  readonly config?: Readonly<Record<string, unknown>>
 }
 
 export interface BootSampleOptions {
@@ -449,6 +459,12 @@ export async function bootAndSampleHost(options: BootSampleOptions): Promise<Boo
             `- id: ${entry.id}`,
             ...(entry.name === undefined ? [] : [`  name: '${entry.name}'`]),
             ...(entry.disabled === undefined ? [] : [`  disabled: ${entry.disabled}`]),
+            ...(entry.config === undefined
+              ? []
+              : [
+                  '  config:',
+                  ...Object.entries(entry.config).map(([key, value]) => `    ${key}: ${JSON.stringify(value)}`),
+                ]),
           ]),
           '',
         ].join('\n'),

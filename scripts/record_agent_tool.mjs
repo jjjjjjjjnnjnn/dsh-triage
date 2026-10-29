@@ -46,6 +46,20 @@ const outDir = pathFor(argOf('--out', 'data/results'))
 const label = String(argOf('--label', 'agent-tool')).replace(/[^a-zA-Z0-9._-]+/g, '-')
 const bootTimeoutMs = Number(argOf('--boot-timeout-ms', '180000'))
 const runtimeVersion = String(argOf('--dsh-version', '0.2.1-rc.4'))
+/**
+ * `native` (default) is the deployment the R36 artifact measured: the model calls the
+ * tool directly and `tools.execute()` answers.
+ *
+ * `ptc` puts the `tools` row in `mode: ptc`, where the model only gets `run_code` and a
+ * model-direct call is refused by policy. That refusal is the branch `BS-39` says had
+ * never been seen on a real Host — the hook falls back to the registered definition and
+ * records `registry_refusal` (packages/plugin/hooks/tool-hook.mjs).
+ */
+const toolsMode = String(argOf('--tools-mode', 'native'))
+if (!['native', 'ptc'].includes(toolsMode)) {
+  process.stderr.write(`invalid --tools-mode "${toolsMode}": expected native or ptc\n`)
+  process.exit(2)
+}
 /** A name npm cannot have. The negative control has to be impossible, not merely unlikely. */
 const absentPackage = String(argOf('--absent', 'dsh-triage-no-such-plugin-9f3a2c'))
 /*
@@ -96,6 +110,14 @@ const clean = (value) => {
 }
 const sha256 = (text) => createHash('sha256').update(text).digest('hex')
 const record = (id, status, detail, extra = {}) => {
+  /*
+   * R40: a boolean passed where a status string belonged produced a step with status `true`,
+   * which the reporter printed as `--` and the outcome calculation ignored — a silently
+   * unreviewed step inside a "passed" artifact. Refuse anything that is not a real verdict.
+   */
+  if (status !== 'passed' && status !== 'failed') {
+    throw new Error(`record(${id}) got status ${JSON.stringify(status)}: only 'passed' or 'failed' are verdicts`)
+  }
   steps.push({ id, status, detail: clean(detail), ...extra })
   if (verbose) process.stderr.write(`  ${id}: ${status}\n`)
 }
@@ -173,6 +195,7 @@ async function main() {
     timeoutMs: bootTimeoutMs,
     env,
     appArgs: ['--port', '0', '--no-open'],
+    extraPatch: toolsMode === 'ptc' ? [{ id: 'tools', config: { mode: 'ptc' } }] : [],
     config: {
       profile: 'web',
       runtimeVersion,
@@ -198,6 +221,9 @@ async function main() {
   const tool = payload.tool ?? {}
   const visible = payload.model_visible ?? {}
   const calls = Array.isArray(payload.calls) ? payload.calls : []
+  const ptc = toolsMode === 'ptc'
+
+  record('tools-mode', 'passed', `the probe asked the Host for mode=${toolsMode}`, { tools_mode: toolsMode })
 
   record('registered', tool.registered === true ? 'passed' : 'failed', `registered=${String(tool.registered)} · waited ${tool.registration_waited_ms}ms`, {
     registration_waited_ms: tool.registration_waited_ms ?? null,
@@ -206,18 +232,55 @@ async function main() {
   /*
    * The model-facing projection is the claim that matters: a tool the registry holds but does not
    * publish to the model is a tool nobody can call.
+   *
+   * R40 MEASURED SOMETHING DIFFERENT FROM WHAT WE EXPECTED, so the assertion follows the
+   * measurement: under `mode: ptc` this Host's `schemas()` STILL lists the plugin tools
+   * (`compat_verdict`, `working_directory`) and ADDS `run_code`. What changes is the call path,
+   * not the projection. Requiring our tool to vanish would have failed a correct deployment.
    */
+  const schemaNames = Array.isArray(visible.schema_names) ? visible.schema_names : []
+  record(
+    'tools-mode-observed',
+    (ptc ? schemaNames.includes('run_code') : !schemaNames.includes('run_code')) ? 'passed' : 'failed',
+    ptc
+      ? `ptc is really active: schemas() = [${schemaNames.join(', ')}]`
+      : `native is really active: schemas() = [${schemaNames.join(', ')}] (no run_code)`,
+    { schema_names: schemaNames },
+  )
   record(
     'model-visible',
     visible.in_schemas === true ? 'passed' : 'failed',
     visible.in_schemas === true
-      ? `${payload.tool?.name} is in schemas(): ${String(visible.description_chars)} description chars, parameters [${visible.parameter_keys.join(', ')}] (${visible.tool_count} tools visible)`
+      ? `${payload.tool?.name} is in schemas(): ${String(visible.description_chars)} description chars, parameters [${visible.parameter_keys.join(', ')}] (${visible.tool_count} tools visible${ptc ? ', ptc adds run_code' : ''})`
       : `not in tools.schemas(): ${String(visible.error ?? 'absent')}`,
     {
       parameter_keys: visible.parameter_keys ?? [],
       required: visible.required ?? [],
       tool_count: visible.tool_count ?? null,
-      schema_names: visible.schema_names ?? [],
+      schema_names: schemaNames,
+    },
+  )
+
+  /*
+   * BS-39: WHICH PATH ANSWERED. In `native` the call must go through `tools.execute()`
+   * (pre-execute policy, guards, timeout wrappers — the pipeline a model really uses). In
+   * `ptc` the registry refuses model-direct calls, so the hook must fall back to the
+   * definition WITH a recorded refusal reason. Either way the branch is named in the
+   * artifact instead of being inferred from the conclusion.
+   */
+  const expectedVia = ptc ? 'definition' : 'registry'
+  const viaMismatch = calls.filter((call) => call?.via !== expectedVia)
+  const missingRefusal = ptc ? calls.filter((call) => typeof call?.registry_refusal !== 'string' || call.registry_refusal.length === 0) : []
+  record(
+    `fallback-witness-${toolsMode}`,
+    calls.length === CALLS.length && viaMismatch.length === 0 && missingRefusal.length === 0 ? 'passed' : 'failed',
+    ptc
+      ? `${calls.filter((call) => call?.via === 'definition').length}/${calls.length} call(s) answered by the registered definition after the registry refused: ${calls.map((call) => String(call?.registry_refusal ?? '')).find((text) => text.length > 0)?.slice(0, 100) ?? 'no refusal recorded'}`
+      : `${calls.filter((call) => call?.via === 'registry').length}/${calls.length} call(s) went through tools.execute()`,
+    {
+      expected_via: expectedVia,
+      actual_via: calls.map((call) => call?.via ?? null),
+      registry_refusals: calls.map((call) => call?.registry_refusal ?? null),
     },
   )
   record(
@@ -281,6 +344,7 @@ async function finish(payload, outcome) {
       home: clean(home),
       profile: 'web',
       runtime_version: runtimeVersion,
+      tools_mode: toolsMode,
       bundle: 'file:packages/* (workspace rewritten)',
       calls: CALLS.map((call) => ({ spec: call.spec, expected: call.expect })),
       probe: 'packages/plugin/hooks/tool-hook.mjs via a one-row --patch overlay',
@@ -295,6 +359,8 @@ async function finish(payload, outcome) {
       'the registry read inside the tool is real (npm); every candidate is pinned so two runs are comparable',
       'the tool answers about the runtime of the profile this Host serves — a `check` run against a different DSH home asks a different question and may legitimately disagree',
       'the probe calls the tool either through `tools.execute()` or, when the registry refuses (e.g. a ptc deployment), through the registered definition — `calls[].via` says which',
+      'under `--tools-mode ptc` the probe patches the `tools` row to `mode: ptc`; the patch replaces that row config wholesale (dsh-app-boot applies a shallow override), and the artifact records the mode instead of assuming the rest survived',
+      'in ptc mode the model-facing projection is `run_code` only, so "the tool is not in schemas()" is the expected shape, not a defect — callability from a `run_code` program is NOT tested here',
       'this proves registration, model visibility and three answered calls on one Windows machine and one runtime; it is not proof that a model would choose the tool, nor a security judgement',
     ],
   }

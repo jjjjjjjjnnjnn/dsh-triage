@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R39 (2026-10-29)",
+  "stand": "R40 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -299,11 +299,11 @@
     {
       "id": "BS-39",
       "area": "plugin/agent-tool",
-      "cannot_see": "真机只证明了「注册了 + 在 `schemas()` 里 + 三次调用能答」，**没有**证明一个模型会主动选这个工具，也没有在 `ptc` 折叠模式（模型直调只允许 `run_code`）下跑过：那时 `tools.execute()` 会拒，`hooks/tool-hook.mjs` 会回落到直接调定义并把拒绝原因记进 `calls[].registry_refusal`——这条回退路径目前**只有分支代码，没有真机见证**（本次沙盒是 native 模式，2 个可见工具）",
-      "mitigation": "产物把 `calls[].via`（`registry` / `definition`）与 `registry_refusal` 分列，读的人不会把「定义能跑」当成「管道能跑」；`registered`/`model-visible`/`negative-control-absent` 各自独立成步。**退出条件**：再造一个 `mode: ptc` 的沙盒真跑一次，或在同一 profile 里观察一次模型自发调用（后者不属于本仓机器可跑的范围）",
+      "cannot_see": "R40 已在真机走通 `ptc` 折叠（`--tools-mode ptc` → `tools` 行 `config.mode: ptc`）：`schemas()` 里多出 `run_code`，`tools.execute()` 对三次调用**全部拒绝**（原文 `unknown tool \"compat_verdict\": only run_code is callable directly`），hook 回落到定义并答出 go/blocked/unknown（`data/results/agent-tool-ptc-2026-10-29T03-05-00.000Z.json`）。仍然**没有**证明：① 一个模型会主动选这个工具；② 在 `run_code` 程序内部调它能不能通（本轮只探了模型直调这一条被拒的路径）；③ 别的 ptc 部署（例如 ptc runtime 未装）是否同样拒绝",
+      "mitigation": "产物把 `calls[].via`（`registry` / `definition`）与 `registry_refusal` 分列，并有 native 对照（`agent-tool-native-2026-10-29T03-20-00.000Z.json`：3/3 走 `tools.execute()`）；`tools-mode-observed` 用 `schemas()` 里有没有 `run_code` 证明模式**真的生效**，而不是只信我们自己传的旗标。**剩余退出条件**：在 `run_code` 里调一次该工具（需一次真实会话/程序执行），或观察模型自发调用（不属于本仓机器可跑的范围）",
       "owner": "packages/plugin/hooks/tool-hook.mjs + scripts/record_agent_tool.mjs",
-      "status": "open (R36): the fallback branch has no real-machine witness",
-      "resolved_by": null
+      "status": "closed (R40): ptc refusal and definition fallback witnessed on a real Host; callability from inside run_code still untested",
+      "resolved_by": "data/results/agent-tool-ptc-2026-10-29T03-05-00.000Z.json + data/results/agent-tool-native-2026-10-29T03-20-00.000Z.json"
     },
     {
       "id": "BS-40",

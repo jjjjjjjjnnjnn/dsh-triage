@@ -1,7 +1,8 @@
 # 分发渠道 · 提交包（submissions）
 
-> **状态（R38 第二轮，2026-10-29 实测）**：`validated 1 · ready 3 · live 2`。
-> 证据：`data/results/market-channels-2026-10-29T22-40-00.000Z.json`（`submitted[]` 里是两条 PR 的**实时**状态与 diff 规模）。
+> **状态（R40，2026-10-29 实测）**：`validated 1 · ready 4 · live 2 · merged 0`。
+> 证据：`data/results/market-channels-2026-10-29T02-10-00.000Z.json`（`submitted[]` 里是两条 PR 的**实时**状态、diff 规模与 `review_decision`）。
+> **npm 已发布（R40）**：`dsh-triage@0.1.0`，匿名安装验证见 `data/results/publish-2026-10-29T01-40-00.000Z.json`。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
 ## 已提交的两条（`live: 2`）
@@ -20,7 +21,7 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 |---|---|---|---|
 | **dsh-market（Workshop 商店）** | 由 community-plugins 生成 | `ready-after-channel-1` | 第一条 PR 合并后自动出现在商店 |
 | **walkinglabs/awesome-deepseek-harness-plugins** | PR 加一行 | `ready`（未提交） | 它的 CONTRIBUTING 要求「publicly accessible」——现在满足了；文案见 `awesome-lists.md` |
-| **dsh.so** | 站点表单（无 API） | `blocked` | 需要**已发布**的 npm 包（registry 对 `dsh-triage` 仍是 404）；文案已备好 |
+| **dsh.so** | 站点表单（无 API） | `ready`（R40：npm 已发布 0.1.0，不再阻塞） | 需要**已发布**的 npm 包——已满足；文案见 `awesome-lists.md`，提交本身是一次人工表单动作 |
 
 ## 提交是怎么做的（可复核）
 
@@ -30,10 +31,12 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 4. 开 PR（正文见 `community-plugins-pr.md`）；
 5. `record_market_channels.mjs --pr <channel>=<url>` 把 PR 的实时状态写进产物——**不是**「命令退出 0 就算收录」。
 
-## 还需要 HUMAN 的一件
+## 还需要 HUMAN 的两件（都不阻塞别人）
 
-`npm login` 之后发布 `dsh-triage`（`pnpm run release:check && npm publish -w dsh-triage --access public`），
-解锁 **dsh.so** 这条渠道。其余渠道不再需要任何动作，等维护者审 PR 即可。
+1. **dsh.so 提交表单**：包已经在 registry 上（`dsh-triage@0.1.0`），按 `awesome-lists.md` 的文案填一次即可。
+2. **等维护者**：#65 待审、#193 已 `APPROVED` 待合并；`state=merged` 之后才算收录（那一步不需要我们做）。
+
+（历史：R40 之前的唯一卡点是 npm 未发布；发布链的四条命令、`workspace:*` 与 org/OTP 的坑已写进 `docs/HANDOFF.md` §3/§4，别再按旧命令发。）
 
 ## 相关文件
 

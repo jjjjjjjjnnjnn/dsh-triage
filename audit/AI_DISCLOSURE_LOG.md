@@ -492,3 +492,13 @@
 - 过程中的真实缺陷：无代码缺陷（本轮只有文档）；发现并修正了 Stand/当前批次/第一件事三者不一致的历史漂移
 - 未做：npm 发布（HUMAN 凭据）、两条 PR 的后续（维护者决定）、`BS-39`/`BS-40`/`BS-41`、`T-501`
 
+
+### 2026-10-29 R40｜npm 发布落地 + `BS-39` ptc 真机收口
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R40-S2…S10）
+- 范围：`scripts/record_publish.mjs`（新）、`scripts/record_agent_tool.mjs`（`--tools-mode`、模式观察、状态硬断言）、`scripts/record_market_channels.mjs`（PR `review_decision`/`merged_at`）、`packages/probe/src/host.ts`（`ExtraPatchEntry.config`）、`packages/plugin/hooks/tool-hook.mjs`（`describe()`）、`tests/unit/probe-host-sample.test.ts`（+2）、文档与台账
+- 起因：HUMAN「继续」+ 已自行完成 `npm login`；此前的计划是 R40 取证收口
+- 结果：① **四个包发布**（`@dsh-triage/core|signals|probe` + `dsh-triage@0.1.0`），发布后验证是**匿名安装**（空 `npm_config_userconfig`）+ CLI 真跑 + registry 字节与本地 tarball 逐字节相同；② **dsh.so 由 `blocked` 变 `ready`**；③ **`BS-39` 收口**：ptc 真机三次调用全部被 registry 拒绝并回落到定义，native 对照 3/3 走 `tools.execute()`；④ 三个真发现：npm 不重写 `workspace:*`、ptc 下 `schemas()` 仍列出插件工具、hook 把对象拒因写成 `[object Object]`（外加一个布尔状态静默成 `--`）
+- 实测：352 测试（+2）/ 9 门 / `--mutate` 9/9；产物 `publish-2026-10-29T01-40-00.000Z.json`（20 项）、`market-channels-2026-10-29T02-00-00`/`02-10-00`、`agent-tool-ptc-2026-10-29T02-30-00`（首次失败，保留）/ `02-50-00` / `03-05-00`、`agent-tool-native-2026-10-29T03-20-00`
+- 未做：npm 发布动作本身由 HUMAN 执行（OTP 不在 agent 手里）；`BS-40`/`BS-41`/`BS-38`/`T-501` 仍未开工

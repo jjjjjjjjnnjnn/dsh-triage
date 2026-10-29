@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R39 (2026-10-29)",
+  "stand": "R40 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5192,6 +5192,189 @@
         "artifact": "data/results/gates-2026-10-30T00-10-00.000Z.json",
         "sha256": "01be189c6c1c2ddbb0c035a6b2a25360ec227ed049ceaadeb447b268f3b568b5",
         "outcome": "ALL GREEN · 9 gates（350 测试；213 步 / 196 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R40-S2",
+      "batch": "R40",
+      "step": "npm 发布落地：四个包按依赖顺序上架后用**匿名**安装证明「陌生人能装能跑」，并把「发出去的字节 = 验证过的字节」写成可复算的产物",
+      "changed": [
+        "scripts/record_publish.mjs",
+        "data/results/publish-2026-10-29T01-40-00.000Z.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：产物逐包比对 registry 的 `dist.integrity` 与本地 tarball 的 sha512（四个包全部相同），并检查 registry 上的 `dependencies` 里没有 `workspace:` 残留；发布动作本身由 HUMAN 执行，agent 只做预检与验证",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --stamp <iso> --tarball-dir <pnpm pack 目录>` 一条命令重放；registry 是移动靶，产物里的 `limits[]` 明写「不同地区可能拿到不同字节，比对只对本次抓取成立」",
+        "licence": "PASS：只发本仓四个 MIT 包（`packages/core|signals|probe|plugin`），无第三方代码；安装验证把 `npm_config_userconfig` 指向空文件，所以操作者的 npm token 不参与，也没有任何凭据被读",
+        "ssot": "PASS：`produced_by`/`generated_at`/`schema_version` 齐全，`.sha256` 同目录；产物把 `/tmp` 与 repo 绝对路径脱敏成 `<tmp>`；20 项 check 全绿（`anonymous-install` / 3 个 `dependency:` / `cli-runs` / `module-resolves`）",
+        "adversary": "反例一：HANDOFF 原来那条 `npm publish -w dsh-triage` 会发 `workspace:*`，装不上——真打 tarball 解出 `package/package.json` 验过，已改写；反例二：只看 `npm publish` 退出 0 会漏掉「包已上架但依赖还 404」那一分钟（`npm i dsh-triage@0.1.0` 当时真报了 `404 @dsh-triage/probe`）；反例三：用操作者 token 装成功不等于陌生人能装，所以 userconfig 必须为空"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --stamp 2026-10-29T01:40:00.000Z --tarball-dir <pnpm pack 目录>",
+        "artifact": "data/results/publish-2026-10-29T01-40-00.000Z.json",
+        "sha256": "6b087f8e0edfeabd8089eb4a8403950d71f834d3e955082547d440fd2b777e7f",
+        "outcome": "PASS ×20：四个包 registry 字节与本地 tarball 相同；空 userconfig 下 `npm install dsh-triage@0.1.0` 装回 6 个包，CLI 9 条命令，`import()` 导出可解析"
+      }
+    },
+    {
+      "id": "R40-S3",
+      "batch": "R40",
+      "step": "把 npm 发布这一格变成渠道读数：`record_market_channels` 重跑后 dsh.so 从 `blocked` 变 `ready`",
+      "changed": [
+        "data/results/market-channels-2026-10-29T02-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`prerequisites.npm` 从 `published=false / 404` 变成 `published=true / 200 / version=0.1.0`，dsh.so 的 `blocker` 从「没有已发布包」变成 `null`；这不改任何判据，只是把 registry 的事实读出来",
+        "reproducibility": "PASS：`node scripts/record_market_channels.mjs --stamp <iso> --pr …` 可重放；产物记录上游 tarball 的 sha256 与包版本，不假装长期有效",
+        "licence": "PASS：只读上游仓库与 registry 元数据，不 vendor 任何内容；CC BY 署名规则未涉及（未使用 dsh.so 数据集）",
+        "ssot": "PASS：`produced_by`/`generated_at`/`schema_version` + `.sha256` 齐全；`summary.live` 仍只数 OPEN pull（2），没有因为多了一个 ready 而虚增",
+        "adversary": "反例一：把 `ready` 读成「已提交/已收录」——产物里 `ready` 的语义只有「前置条件满足」；反例二：`one_blocker=null` 容易被读成「没有阻塞」，实际上只是「没有单一阻塞点」，提交动作仍要人做"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T02:00:00.000Z --pr dsh-community-plugins=<url> --pr awesome-deepseekharness=<url>",
+        "artifact": "data/results/market-channels-2026-10-29T02-00-00.000Z.json",
+        "sha256": "39d0e6fb952416685bb5141888b8c678edad07eb52dfe0aebcdadb52b8703589",
+        "outcome": "validated 1 · ready 4 · live 2；`npm.published=true`、registry 200、dsh.so `blocker=null`"
+      }
+    },
+    {
+      "id": "R40-S4",
+      "batch": "R40",
+      "step": "PR 状态字段补全：`--pr` 除了 `state`，还要记 `review_decision` / `merge_state_status` / `merged_at`，否则「审过了」与「合并了」在产物里长得一样",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "data/results/market-channels-2026-10-29T02-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`gh pr view <url> --json reviewDecision,mergeStateStatus,isDraft` 与 `pulls/N` 的 `merged_at` 合并进同一条记录；读不到时写 `null` 而不是猜",
+        "reproducibility": "PASS：同一条命令重放；PR 状态本来就会变，产物带 stamp，旧产物不被覆盖（本轮 02:00 与 02:10 并存，分别被两步引用）",
+        "licence": "PASS：只读 GitHub API，无新增数据源",
+        "ssot": "PASS：新字段进产物且不影响 `summary.live` 的定义（仍只数 `state=open`）",
+        "adversary": "反例一：`state=open` + `review_decision=APPROVED`（#193 现状）被写成「已收录」；反例二：`merge_state_status=BLOCKED`（#65 现状）被读成「被拒绝」——它只是还缺审，不是 close"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-10-29T02:10:00.000Z --pr …",
+        "artifact": "data/results/market-channels-2026-10-29T02-10-00.000Z.json",
+        "sha256": "81350e6c541dcfcc27d435da0b1d0c33e7f5d3145e70880c0eb68d3c5f851e78",
+        "outcome": "#193 `state=open` / `review_decision=APPROVED` / `merge_state_status=CLEAN`；#65 `state=open` / `BLOCKED`；两者 `merged_at=null`"
+      }
+    },
+    {
+      "id": "R40-S5",
+      "batch": "R40",
+      "step": "`BS-39` 第一次 ptc 真机：证明「模型直调被拒 → 回落到定义」这条路真的存在，同时被真机打脸两次（投影形状假设、`[object Object]` 拒因）",
+      "changed": [
+        "scripts/record_agent_tool.mjs",
+        "data/results/agent-tool-ptc-2026-10-29T02-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "FAIL→修正的证据：产物 `outcome=failed`，两条错都在里面——① 我假设 ptc 下插件工具会从 `schemas()` 消失，真机是 `[compat_verdict, working_directory, run_code]`（插件工具仍在）；② 三次调用的 `registry_refusal` 全是 `[object Object]`，`describe()` 把对象拒因丢了",
+        "reproducibility": "PASS：失败本身可重放（同 stamp 同 tarball 同 Host）；产物原样保留，作为这两个缺陷的唯一真机见证",
+        "licence": "PASS：沙盒 `file:` 安装 + 空 npmrc，无 registry 凭据；候选包与 R36 相同的三个 pin",
+        "ssot": "PASS：产物带 produced_by/generated_at/.sha256；`fallback-witness-ptc` 已经 passed（3/3 `via=definition`），说明**功能对、断言错**",
+        "adversary": "反例一：为了让产物变绿而把 `model-visible` 放宽成「ptc 下允许工具消失」——那会把部署事实改掉（真机就是没消失）；反例二：把 `[object Object]` 当成 Host 的锅，其实是探针自己的 `String(error)`"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main <sandbox>/lib/bin.js --tools-mode ptc --label agent-tool-ptc --stamp 2026-10-29T02:30:00.000Z",
+        "artifact": "data/results/agent-tool-ptc-2026-10-29T02-30-00.000Z.json",
+        "sha256": "635cb2924834bc153c4a4100bb2304a60f0f81f6d428bda014e30805bfbe693b",
+        "outcome": "outcome=failed：`fallback-witness-ptc` passed（3/3 definition），`model-visible` 因错误假设 failed，三次 `registry_refusal` 都是 `[object Object]`"
+      }
+    },
+    {
+      "id": "R40-S6",
+      "batch": "R40",
+      "step": "修 `describe()` 后第二次 ptc：功能全绿，但读到 `tools-mode-observed` 的状态是 `--` —— 布尔被当成状态字符串，一个未审步骤藏在 `passed` 产物里",
+      "changed": [
+        "packages/plugin/hooks/tool-hook.mjs",
+        "data/results/agent-tool-ptc-2026-10-29T02-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "FAIL→修正的证据：`outcome=passed`，但 `tools-mode-observed` 的 `status` 是布尔 `true`，报表打印 `--`，`outcome` 计算也不数它；同一份产物里三次调用的拒因已变成完整句 `unknown tool \"compat_verdict\": only run_code is callable directly…`",
+        "reproducibility": "PASS：同命令可重放；该产物被保留（不是被 03:05 覆盖）",
+        "licence": "PASS：无新增依赖；hook 仍零上游依赖",
+        "ssot": "PASS：produced_by/generated_at/.sha256 齐全；缺陷在**读的人**这一侧——状态字段不合法时没人报警",
+        "adversary": "反例一：把 `--` 当成「跳过」的合法状态；反例二：只检查 `outcome=passed` 就收工，等于让任何布尔状态都能溜过去。修法是把 `record()` 变成硬断言（非 `passed`/`failed` 直接抛）"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main <sandbox>/lib/bin.js --tools-mode ptc --label agent-tool-ptc --stamp 2026-10-29T02:50:00.000Z",
+        "artifact": "data/results/agent-tool-ptc-2026-10-29T02-50-00.000Z.json",
+        "sha256": "89ac26c03cb6412beb5c9f973a76257ac8bec1401ee4ac9f48e90a5cfddfe91e",
+        "outcome": "outcome=passed，但 `tools-mode-observed.status` 是布尔值（报表显示 `--`）；拒因文本已完整"
+      }
+    },
+    {
+      "id": "R40-S7",
+      "batch": "R40",
+      "step": "`BS-39` 收口：ptc 真机终跑（三次调用都被 registry 拒绝并由定义作答），并给 overlay 的 `config` 块补两条单测钉住 YAML 形状",
+      "changed": [
+        "packages/probe/src/host.ts",
+        "tests/unit/probe-host-sample.test.ts",
+        "data/results/agent-tool-ptc-2026-10-29T03-05-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`tools-mode-observed` 以 `schemas()` 里出现 `run_code` 证明 ptc **真的生效**（不是只信我们传的旗标）；`fallback-witness-ptc` 3/3 `via=definition` 且拒因非空；三次结论仍是 go/blocked/unknown",
+        "reproducibility": "PASS：`--tools-mode ptc` 一条命令重放；单测 `R40: an extra patch entry carries a row config block…` 钉住 `- id: tools` / `config:` / `mode: \"ptc\"` 与「探针行在前」，另一条钉住「没有 config 就不写 config 块」",
+        "licence": "PASS：只改本仓代码；上游 `dsh-app-boot` 的浅覆盖语义写进注释，没有复制其代码",
+        "ssot": "PASS：`ExtraPatchEntry.config` 的浅覆盖语义写进 `host.ts` 注释与产物 `limits[]`；产物在 `sandbox.tools_mode` 记录模式",
+        "adversary": "反例一：只证明「模型直调被拒」就宣称 ptc 全通——`run_code` 程序内部能不能调它仍未测（写进 `limits[]` 与 `BS-39`）；反例二：以为 patch 会深合并 config，实际 `target[key]=value` 会整块替换，所以产物必须记生效值"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main <sandbox>/lib/bin.js --tools-mode ptc --label agent-tool-ptc --stamp 2026-10-29T03:05:00.000Z",
+        "artifact": "data/results/agent-tool-ptc-2026-10-29T03-05-00.000Z.json",
+        "sha256": "16337cffae268a1bdbf74b1bf23eec71c2aef56300671d6460def8cf03a15297",
+        "outcome": "全绿：`schemas()=[compat_verdict, working_directory, run_code]`；`tools.execute()` 三次拒绝（`only run_code is callable directly`）；三次调用经定义答出 go/blocked/unknown"
+      }
+    },
+    {
+      "id": "R40-S8",
+      "batch": "R40",
+      "step": "ptc 的对照：同一沙盒、同一候选、`--tools-mode native` 跑一遍，证明三次调用走 `tools.execute()`，否则「回落到定义」无法与「探针坏了」区分",
+      "changed": [
+        "data/results/agent-tool-native-2026-10-29T03-20-00.000Z.json",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：native 下 `schemas()=[compat_verdict, working_directory]`（无 `run_code`）、`fallback-witness-native` 3/3 `via=registry`；与 ptc 产物形成唯一变量对照（只差 `tools.mode`）",
+        "reproducibility": "PASS：`--tools-mode native` 是默认值，一条命令重放；两次运行相隔 15 分钟，宿主都是 0.2.1-rc.4 沙盒",
+        "licence": "PASS：无新增数据源；`BS-39` 的 `resolved_by` 只指向本仓产物",
+        "ssot": "PASS：`blind_spots.json` 的 `BS-39` 改为 closed 并写明**仍未证**的三件事（模型自发选择、`run_code` 内部调用、别的 ptc 部署），没有把「一条路径通了」写成「全通」",
+        "adversary": "反例一：若两组都走 `definition`，就无法区分「部署是 ptc」与「我们的探针坏了」——所以两边都断言 `tools-mode-observed`；反例二：把这次 native 当成 R36 的重跑（不同 stamp、不同批次），但结论一致，可交叉读数"
+      },
+      "real_test": {
+        "command": "node scripts/record_agent_tool.mjs --dsh-main <sandbox>/lib/bin.js --tools-mode native --label agent-tool-native --stamp 2026-10-29T03:20:00.000Z",
+        "artifact": "data/results/agent-tool-native-2026-10-29T03-20-00.000Z.json",
+        "sha256": "c0a36c11429c18f60e716e00e85823b205cb7ec710b09b57c47e3b48e9f8535e",
+        "outcome": "全绿：`schemas()` 无 `run_code`；`fallback-witness-native` 3/3 走 `tools.execute()`；三次结论 go/blocked/unknown"
+      }
+    },
+    {
+      "id": "R40-S10",
+      "batch": "R40",
+      "step": "全量门禁复算（接管基线 + 本轮全部改动）：350 测试 / 9 门全绿；同时把「第一次录制因 INDEX 引用门判红」与「stamp 撞上 R34 的 03:40 产物」两件事写进审计报告，不靠删除历史掩盖",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/AUDIT_2026-10-29_R40.md",
+        "audit/blind_spots.json",
+        "audit/SIGNOFF.md",
+        "data/results/gates-2026-10-29T04-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`pnpm run verify` 350 测试全过（+2 条 overlay 单测）、9 门 PASS；`node scripts/gate.mjs --mutate` 9/9 CAUGHT。本轮改的是脚本/探针/文档，没有任何判据或阈值改动",
+        "reproducibility": "PASS：`gate --record` 的产物不含耗时，同 stamp 重放逐字节一致；§7 的复算命令齐全（发布验证 / 渠道 / ptc 与 native 对照 / 全量）",
+        "licence": "PASS：无第三方代码进入本仓；新增依赖为零（`record_publish.mjs` 只用 Node 内置）；发布验证不读操作者凭据",
+        "ssot": "PASS：`203 artifacts all cited`；新产物全部带 `produced_by`/`generated_at`/`schema_version` 与 `.sha256`；`audit/AUDIT_2026-10-29_R40.md` 已建，INDEX 的 157 个引用全部存在",
+        "adversary": "反例一：为了让门变绿而删掉红产物——本轮恰恰相反：03:40 那次是**撞了 R34 已有的产物**（`git checkout` 恢复原文件，sha fc97d1d8…），审计报告写明这次撞车与「红产物无法保留」的原因，不装作没发生；反例二：把 `approved` 写进 ROADMAP 当成「收录」；反例三：把「四包发布」写成「一条命令完成」——坑表已列五条前置"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T04:00:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T04-00-00.000Z.json",
+        "sha256": "14088bcf5430303a29dac5524a936468c944c3d07edf9353f352033641845862",
+        "outcome": "ALL GREEN · 9 gates（350 测试；220 步 / 203 产物全部被引用）"
       }
     }
   ]

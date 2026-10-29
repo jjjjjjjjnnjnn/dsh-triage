@@ -57,6 +57,9 @@ if (mode === 'unsettled') {
   setTimeout(() => write(SETTLED), 700)
 } else if (mode === 'provisional-only') {
   setTimeout(() => write(PROVISIONAL), 50)
+} else if (mode === 'echo-overlay') {
+  // R40: report the overlay the probe actually wrote, so the test can read the YAML.
+  setTimeout(() => write({ kind: 'overlay', overlay: readFileSync(patchPath, 'utf8') }), 50)
 }
 // Stay alive like a Host would: the probe kill is part of what this loop is measured with.
 setInterval(() => {}, 1000)
@@ -186,4 +189,51 @@ test('T-312: a provisional sample with no upgrade ends unknown rather than waiti
   assert.ok(result.replacement.upgradeWaitedMs >= 500, `expected a real upgrade wait, got ${result.replacement.upgradeWaitedMs}ms`)
   // The budget still judges the EARLY sample.
   assert.ok(result.seconds < 2, `judged number must be the provisional sample (got ${result.seconds}s)`)
+})
+
+/* ---------------- experiment overlays (R40 / T-404 `BS-39`) --------------- */
+
+/*
+ * WHY THIS IS A UNIT TEST AND NOT ONLY A REAL RUN: the real run proves ptc on one
+ * machine today; this pins the YAML shape that made it possible. A regression here
+ * would silently send the Host a patch with no `mode: ptc`, and the real run would
+ * then look "native" while still being labelled a ptc witness.
+ */
+async function overlayFor(extraPatch: Parameters<typeof bootAndSampleHost>[0]['extraPatch']) {
+  const each = harness()
+  const result = await bootAndSampleHost({
+    dshMain: each.dshMain,
+    dshHome: each.dshHome,
+    profile: 'web',
+    profileDir: each.profileDir,
+    hookSource: each.hookSource,
+    scratchRoot: each.scratchRoot,
+    env: { ...process.env, FAKE_SAMPLE_MODE: 'echo-overlay' },
+    settleMs: 0,
+    timeoutMs: 30_000,
+    sampleReplaceWindowMs: 5_000,
+    extraPatch,
+  })
+  return String((result.payload as Record<string, unknown>)?.overlay ?? '')
+}
+
+test('R40: an extra patch entry carries a row config block, and the probe row stays first', async () => {
+  const overlay = await overlayFor([{ id: 'tools', config: { mode: 'ptc' } }])
+  assert.match(overlay, /^- id: tools$/m)
+  assert.match(overlay, /^  config:$/m)
+  assert.match(overlay, /^    mode: "ptc"$/m)
+  assert.ok(
+    overlay.indexOf('triage-inventory-probe') < overlay.indexOf('- id: tools'),
+    'the probe row must be inserted before the experiment patches the tree',
+  )
+})
+
+test('R40: an entry without config writes no config block (no empty shallow override)', async () => {
+  // The patch semantics are `target[key] = value` (dsh-app-boot#applyEntryPatches), so an
+  // accidental `config: {}` would WIPE the row's config. Absence has to stay absence.
+  const overlay = await overlayFor([{ id: 'tools', disabled: true }])
+  const configLines = overlay.split('\n').filter((line) => line === '  config:')
+  assert.equal(configLines.length, 0, `expected no experiment config block, got:\n${overlay}`)
+  assert.match(overlay, /^- id: tools$/m)
+  assert.match(overlay, /^  disabled: true$/m)
 })

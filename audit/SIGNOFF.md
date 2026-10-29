@@ -40,11 +40,13 @@
 
 | 2026-10-29 | **R33 新增一条只读 HTTP 端点（判据未动，新增面）**：`packages/plugin/src/host-audit-route.ts` 提供 GET /compat-triage/audit，数据由 `loadAuditData()` + `auditJsonPayload()`（与 `dsh-triage audit --json` 同一函数）生成；只 GET/HEAD、要同源证据、读不到 profile 回 409、`no-store`；可用行 config 关掉 | 会话内原话：「同意，继续，处理所有问题」+「先时限 spike 再定」（R33 计划两问的答复） | DeepSeek V4.1 Flash：**没有改任何阈值或判据**（`--unsettled-timeout 20000` / `settle 15s` / readiness 5s / `boot→sample ≤20s` / `isUsableSample()` / `judgeProbe()` 全部原样）；新增的是「把 CLI 已有的 payload 递给浏览器」这一条只读通道，tab 只计数不自算结论；Typert Remote 路线**没有实现**并写进 `docs/adr/0010-same-source-in-tab.md` | HUMAN 未逐条复核：同源判定规则（Origin/Host 或 `Sec-Fetch-Site`）、两条负对照的读数（192 vs 190 行、标签不存在 → failed）、以及 `ctx.baseUrl`/`ctx.webServer` 两条真机坑的处置 | `docs/adr/0010-same-source-in-tab.md` · `data/results/client-serve-2026-10-29T01-20-00.000Z.json` · `data/results/client-serve-negctl-2026-10-29T01-30-00.000Z.json` · `data/results/client-serve-negctl-samesource-2026-10-29T01-10-00.000Z.json` |
 
+| 2026-10-29 | **R40 对外发布动作（new surface）**：在 npm 建免费公开组织 `@dsh-triage` 并发布 4 个公共包（`@dsh-triage/core|signals|probe@0.1.0` + `dsh-triage@0.1.0`） | 会话内：HUMAN 亲自完成 `npm login`、建 org、在 PowerShell 里执行 `npm publish`（含 OTP）；对「建 org + 发 4 个包」的方案明确选定 | DeepSeek V4.1 Flash：**没有替 HUMAN 发布**（OTP 不在 agent 手里），负责的是发布前预检（tarball 安装验证、`release:check`、`workspace:*` 重写核对）、发布后验证（`scripts/record_publish.mjs`：registry 字节比对 + 空 userconfig 匿名安装 + CLI 真跑）与文档/台账 | HUMAN 未逐条复核：四个包的 registry 完整性比对读数、`npm install` 匿名验证的具体命令、以及「`@dsh-triage/*` 作为实现细节公开」这一取舍 | `data/results/publish-2026-10-29T01-40-00.000Z.json` · `data/results/market-channels-2026-10-29T02-10-00.000Z.json` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |
 |---|---|---|
-| `npm login` + 发布 `dsh-triage@0.0.1` | HUMAN 亲自操作 | 需要你的 npm 凭据；agent 不得读 `~/.npmrc` 或 token |
+| ~~`npm login` + 发布 `dsh-triage`~~ **已执行（R40）** | HUMAN 亲自操作（已完成） | 凭据与 OTP 始终在 HUMAN 手里，agent 未读、未存；agent 只做了发布前预检与发布后验证 |
 | 仓库转 public | HUMAN | 不可逆的对外动作（git 历史永久可见） |
 | T-202a 真实会话（读 agent 作用域） | HUMAN 先签 ADR | 与铁律 4（不得读凭据 / 不得向沙盒注入真实凭据）冲突，改宪法必须有明文 ADR |
 | 门禁阈值变更（若有） | HUMAN | 铁律 4：阈值变更需 spec + HUMAN-SIGN |

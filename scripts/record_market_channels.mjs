@@ -206,9 +206,19 @@ for (const [index, value] of argv.entries()) {
     continue
   }
   const [, channel, owner, repo, number] = match
+  const url = `https://github.com/${owner}/${repo}/pull/${number}`
   const fetched = spawnSync('gh', ['api', `repos/${owner}/${repo}/pulls/${number}`], { encoding: 'utf8', windowsHide: true })
   let state = 'unreadable'
-  let detail = { title: null, changed_files: null, additions: null, deletions: null, base: null, head: null }
+  let detail = {
+    title: null,
+    changed_files: null,
+    additions: null,
+    deletions: null,
+    base: null,
+    head: null,
+    merged_at: null,
+    mergeable_state: null,
+  }
   if (fetched.status === 0) {
     try {
       const pull = JSON.parse(String(fetched.stdout))
@@ -220,6 +230,8 @@ for (const [index, value] of argv.entries()) {
         deletions: pull.deletions ?? null,
         base: pull.base?.ref ?? null,
         head: pull.head?.ref ?? null,
+        merged_at: pull.merged_at ?? null,
+        mergeable_state: pull.mergeable_state ?? null,
       }
     } catch (error) {
       state = `unparsed-response: ${error instanceof Error ? error.message : String(error)}`
@@ -227,7 +239,31 @@ for (const [index, value] of argv.entries()) {
   } else {
     state = `gh-failed: ${String(fetched.stderr ?? '').trim().slice(-120)}`
   }
-  submitted.push({ channel, url: `https://github.com/${owner}/${repo}/pull/${number}`, state, ...detail })
+  /*
+   * REVIEW DECISION IS A SEPARATE FACT FROM STATE (R40). `state: open` plus
+   * `review_decision: APPROVED` is a different situation from `state: open` with no
+   * review — and "approved" is still not "merged", which is the only word that means
+   * "listed". The pulls API does not carry it, so ask `gh pr view` for it and record
+   * `null` when the question cannot be answered rather than guessing.
+   */
+  const reviewed = spawnSync('gh', ['pr', 'view', url, '--json', 'reviewDecision,mergeStateStatus,isDraft'], {
+    encoding: 'utf8',
+    windowsHide: true,
+  })
+  let review = { review_decision: null, merge_state_status: null, is_draft: null }
+  if (reviewed.status === 0) {
+    try {
+      const fields = JSON.parse(String(reviewed.stdout))
+      review = {
+        review_decision: fields.reviewDecision === '' ? null : (fields.reviewDecision ?? null),
+        merge_state_status: fields.mergeStateStatus ?? null,
+        is_draft: typeof fields.isDraft === 'boolean' ? fields.isDraft : null,
+      }
+    } catch {
+      review = { review_decision: null, merge_state_status: null, is_draft: null }
+    }
+  }
+  submitted.push({ channel, url, state, ...detail, ...review })
 }
 
 const payload = {

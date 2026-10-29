@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_market_channels.mjs",
+  "generated_at": "2026-10-29T02:10:00.000Z",
+  "prerequisites": {
+    "repo": {
+      "name": "jjjjjjjjnnjnn/dsh-triage",
+      "private": false,
+      "detail": null
+    },
+    "npm": {
+      "name": "dsh-triage",
+      "published": true,
+      "version": "0.1.0",
+      "registry_status": 200,
+      "detail": null
+    }
+  },
+  "channels": [
+    {
+      "channel": "dsh-community-plugins",
+      "entry_point": "https://github.com/zhu1090093659/dsh-community-plugins",
+      "how": "append one object to community.json (single source of the Workshop store list and the dsh-market.com manifest)",
+      "source": {
+        "tarball": "https://codeload.github.com/zhu1090093659/dsh-community-plugins/tar.gz/refs/heads/main",
+        "tarball_sha256": "afc5d0afb28bcbf4dd2db782d9641c00bd050172af0374afa2e08ec93e60c450",
+        "package_version": "0.4.12"
+      },
+      "entry": {
+        "id": "dsh-triage",
+        "name": "分诊台",
+        "nameEn": "Triage",
+        "author": "jjjjjjjjnnjnn",
+        "description": "装前判断与装后归因：一条命令说明插件为什么从你的组合里消失（被 admission 拒绝的行 / 模块导入失败 / 声明了但没注册上的能力），在隔离的 DSH_HOME 里真装真启动并落证据，只读展示当前组合。不安装、不卸载、不判安全。",
+        "descriptionEn": "Pre-install judgement and post-mortem attribution: one command says why a plugin disappeared from your profile (rows denied by admission, modules that failed to import, capabilities declared but never registered), measures a candidate inside an isolated DSH_HOME with recorded evidence, and shows the current composition read-only. It never installs, never removes, and never claims a plugin is safe.",
+        "repo": "https://github.com/jjjjjjjjnnjnn/dsh-triage",
+        "npm": "dsh-triage",
+        "category": "tools",
+        "subcategory": "dev"
+      },
+      "validator": {
+        "command": "node scripts/community-index.cjs --check",
+        "exit": 0,
+        "stdout": "community-index: OK (149 entries)",
+        "stderr": "",
+        "entries_after": 149,
+        "tests": {
+          "exit": 0,
+          "summary": null
+        }
+      },
+      "status": "validated",
+      "blocker": null
+    },
+    {
+      "channel": "dsh-market (Workshop store)",
+      "entry_point": "https://github.com/zhu1090093659/dsh-web → community-plugins (channel above)",
+      "how": "the store list is generated from community.json, so this channel is closed once channel 1 lands",
+      "requirement": "plugin authors register through dsh-community-plugins; direct PRs to dsh-web are restricted to content contributions",
+      "status": "ready-after-channel-1",
+      "blocker": null
+    },
+    {
+      "channel": "awesome-deepseekharness/awesome-deepseek-harness",
+      "entry_point": "https://github.com/awesome-deepseekharness/awesome-deepseek-harness",
+      "how": "add one line in the plugin section (alphabetical) via PR",
+      "requirement": "entry must link a source repository or primary-source page and state DSH compatibility",
+      "status": "ready",
+      "blocker": null
+    },
+    {
+      "channel": "walkinglabs/awesome-deepseek-harness-plugins",
+      "entry_point": "https://github.com/walkinglabs/awesome-deepseek-harness-plugins",
+      "how": "add one line `- [Project](url) - what it provides and its DSH compatibility.`",
+      "requirement": "quoted from its CONTRIBUTING.md: entries must be \"publicly accessible and reasonably maintained\"",
+      "status": "ready",
+      "blocker": null
+    },
+    {
+      "channel": "dsh.so",
+      "entry_point": "https://dsh.so",
+      "how": "submission form on the site (no API): needs a published npm package to point at",
+      "requirement": "a published package; the site indexes npm metadata",
+      "status": "ready",
+      "blocker": null
+    }
+  ],
+  "submitted": [
+    {
+      "channel": "dsh-community-plugins",
+      "url": "https://github.com/zhu1090093659/dsh-community-plugins/pull/65",
+      "state": "open",
+      "title": "feat(community-plugins): add dsh-triage",
+      "changed_files": 1,
+      "additions": 12,
+      "deletions": 0,
+      "base": "main",
+      "head": "feat/community-plugins-dsh-triage",
+      "merged_at": null,
+      "mergeable_state": "blocked",
+      "review_decision": null,
+      "merge_state_status": "BLOCKED",
+      "is_draft": false
+    },
+    {
+      "channel": "awesome-deepseekharness",
+      "url": "https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193",
+      "state": "open",
+      "title": "docs: add dsh-triage (pre-install judgement + post-mortem attribution)",
+      "changed_files": 1,
+      "additions": 1,
+      "deletions": 0,
+      "base": "main",
+      "head": "docs/add-dsh-triage",
+      "merged_at": null,
+      "mergeable_state": "clean",
+      "review_decision": "APPROVED",
+      "merge_state_status": "CLEAN",
+      "is_draft": false
+    }
+  ],
+  "summary": {
+    "validated_locally": 1,
+    "ready_to_submit": 4,
+    "live": 2,
+    "one_blocker": null
+  },
+  "limits": [
+    "running a channel's own validator proves the entry is well-formed, NOT that a maintainer will accept it",
+    "submitting is a pull request, not a merge: `live` counts OPEN pulls, and a maintainer can still decline them",
+    "channel requirements were read from each repository on the day of this artifact; they can change",
+    "the tarball hash pins what was validated, not what upstream will look like tomorrow"
+  ]
+}

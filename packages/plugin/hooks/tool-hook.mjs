@@ -196,5 +196,26 @@ function sleep(ms) {
 }
 
 function describe(error) {
-  return error instanceof Error ? error.message : String(error)
+  /*
+   * R40: `String(value)` on a non-Error object gives `[object Object]`, and that is what the
+   * first ptc run recorded as every registry refusal — a reason field that explains nothing.
+   * Harness errors are not always `Error` instances (Cordis rejects with plain objects), so
+   * read the usual fields, then fall back to a shallow JSON dump, then to the tag.
+   */
+  if (typeof error === 'string') return error
+  if (error instanceof Error) return `${error.name}: ${error.message}`
+  if (error !== null && typeof error === 'object') {
+    const code = typeof error.code === 'string' ? error.code : null
+    const message = typeof error.message === 'string' ? error.message : null
+    const name = typeof error.name === 'string' ? error.name : null
+    if (code !== null || message !== null) return [code, name, message].filter((part) => part !== null && part !== '').join(': ')
+    try {
+      const text = JSON.stringify(error)
+      if (typeof text === 'string' && text !== '{}') return text
+    } catch {
+      // circular or otherwise unserialisable — fall through to the tag
+    }
+    return Object.prototype.toString.call(error)
+  }
+  return String(error)
 }
