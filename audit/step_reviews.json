@@ -5759,6 +5759,53 @@
         "sha256": "ce800146a1b1f8513f375a6b4c6c1fbc35dfb17a034dcde809419f43153a9d9d",
         "outcome": "26/26 自检：192 单元（2 bundle + 190 row）· 119 `would-be-denied`（1 bundle + 118 row）· 73 `cannot-tell` · 0 `improved` · 0 `likely-fine`；对照组 `--to 0.2.1-rc.4` 0 拒；`why` 的 unknown 集合 72=72（拒集合两侧皆空，产物自报 `denied_comparison_vacuous: true`）；registry 不可达 12 次失败而清单不变"
       }
+    },
+    {
+      "id": "R42-S2",
+      "batch": "R42",
+      "step": "0.2.0 四个包一起发到 npm，并用**匿名安装**复验「新导出真的在装回来的 core 里」——这一步正是拦住「只发插件 = 发一个起不来的包」的检查",
+      "changed": [
+        "data/results/publish-2026-10-30T05-00-00.000Z.json",
+        "CHANGELOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：四个包 `latest=0.2.0`；`dsh-triage@0.2.0` 的 tarball 与本地 `pnpm pack` 逐字节相同（sha512 `0df3ddf8…`）；空 userconfig 安装后 `@dsh-triage/{core,signals,probe}` 都是 **0.2.0**（与根 manifest 声明一致），CLI 打印 11 条命令、`import()` 导出可解析",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --version 0.2.0 --stamp <iso> --tarball-dir <dir>` 可重放；产物记 `git_head` 与每包 `dist.integrity`",
+        "licence": "PASS：只发本仓 MIT 包；验证全程无操作者 token（userconfig 指向空文件）",
+        "ssot": "PASS：20 项 check 全绿、`produced_by`/`generated_at`/`schema_version` + `.sha256`；CHANGELOG 的 0.2.0 状态改为已发布并指向本产物",
+        "adversary": "反例一：只升插件版本（0.1.1 的做法）——本轮 core 新增了 `assertOutcomeLine`，那样装回来的 core@0.1.0 会让 CLI 一启动就 `SyntaxError`（我在干净目录真装过一次，报错原文保留在报告里）；反例二：以为 registry 立刻可见——scoped 包有 staged publishing 延迟，第一次查全是 0.1.0，约 1 分钟后才出现 0.2.0；反例三：把「匿名安装成功」说成「DSH 能加载这个 bundle」（还需要 probe / record_client_serve）"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 0.2.0 --stamp 2026-10-30T05:00:00.000Z --tarball-dir <四个 0.2.0 tarball>",
+        "artifact": "data/results/publish-2026-10-30T05-00-00.000Z.json",
+        "sha256": "94d5946bf63fedc4a43db631dae1dd189ef99dbbf1905443b7957f36884ea5dd",
+        "outcome": "PASS ×20：四包 `latest=0.2.0`、字节逐一致、匿名安装装回 6 包且三个依赖均为 0.2.0、CLI 11 命令、`import()` 可解析"
+      }
+    },
+    {
+      "id": "R42-S3",
+      "batch": "R42",
+      "step": "R42 收口：0.2.0 发布产物入台账，全量门禁复算，并把 npm 版本同步进对外文档",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "data/results/gates-2026-10-30T05-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：427 测试 / 9 门全绿；`upgrade` 与 `outcomes` 都在 `--help` 里（11 条命令）；发布验证 20/20",
+        "reproducibility": "PASS：`pnpm run verify` + `gate --mutate` 可复现；本次两次录制都先查过 stamp（守卫会拒绝覆盖）",
+        "licence": "PASS：无新增依赖、无第三方内容",
+        "ssot": "PASS：`no-orphan-results` 全绿（238 步 / 219 产物）；`doc-stand` 三份入口文档同为 R42；AGENTS 与 INDEX 的 npm 版本均为 0.2.0",
+        "adversary": "反例一：把 0.2.0 写成「修了 0.1.1 的 bug」（0.1.1 是文档版，0.2.0 是两个新命令）；反例二：只更新 INDEX 不更新 AGENTS（两处都写了版本，必须一起）；反例三：把四包同版本当成常态（0.1.1 证明过文档版只发一个包是安全的——这次只因 core 新增导出才必须四包齐动）"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-30T05:20:00.000Z",
+        "artifact": "data/results/gates-2026-10-30T05-20-00.000Z.json",
+        "sha256": "85906a936cd75e2007c5b8cf9a308aae784cbf11a55ea34f721028b72ca177b3",
+        "outcome": "ALL GREEN · 9 gates（427 测试；238 步 / 219 产物全部被引用）"
+      }
     }
   ]
 }

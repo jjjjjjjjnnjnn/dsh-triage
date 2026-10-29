@@ -8,9 +8,8 @@ when they do, the change is written here with the reason, not just the diff.
 
 ## [0.2.0] — 2026-10-30
 
-> Status: packed, installed and verified locally; **awaiting `npm publish`** (not on the registry
-> yet — see `docs/HANDOFF.md` §3). `npm i -g dsh-triage` still resolves to `0.1.1` until it ships.
-> **All four packages move to 0.2.0 together**: `@dsh-triage/core` gained the outcome module, and a
+> Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).
+> **All four packages moved to 0.2.0 together**: `@dsh-triage/core` gained the outcome module, and a
 > plugin that imports `assertOutcomeLine` from a 0.1.0 core fails at import time. Publishing only
 > `dsh-triage` would produce a package that cannot start; the anonymous-install check in
 > `scripts/record_publish.mjs` is what catches that, and it is why the release is four publishes.
