@@ -115,6 +115,28 @@ const EN: MessageCatalog = {
     'ui.more-reasons': '…{count} more reason(s); pass --json for the full list',
     'prior.annotation-only':
       'this machine judged this exact key before; the prior is an annotation only and does not change the conclusion',
+    'upgrade.header': 'target dsh {target} · {units} unit(s) read ({bundles} bundle(s), {rows} row(s))',
+    'upgrade.relation.same': 'the target is the runtime this profile already runs ({target})',
+    'upgrade.relation.newer': '{target} is newer than the running {current}',
+    'upgrade.relation.older': '{target} is older than the running {current}',
+    'upgrade.relation.unknown': 'the running runtime could not be read, so the direction of the move is unknown',
+    'upgrade.profile-scope':
+      'this answer is about profile "{profile}" only (source: {source}); it says nothing about any other profile',
+    'upgrade.admitted-only':
+      'admitted ≠ works: this list compares declared ranges against {target}; nothing here booted {target}',
+    'upgrade.bucket.would-be-denied': 'would-be-denied · {count} unit(s) declare a range that excludes {target}',
+    'upgrade.bucket.cannot-tell': 'cannot-tell · {count} unit(s) cannot be judged from declarations',
+    'upgrade.bucket.improved': 'improved · {count} unit(s) are denied today and admitted by {target}',
+    'upgrade.bucket.likely-fine': 'likely-fine · {count} unit(s) declare a range that includes {target}',
+    'upgrade.already-denied': 'already denied by the running {current}: the upgrade did not cause this',
+    'upgrade.unusable-declaration':
+      'the declaration can never be satisfied (empty / not semver / workspace:), so no runtime admits it — not even {target}',
+    'upgrade.registry-annotation':
+      'secondary evidence only: {package}@{version} declares {range}, which {verdict} {target} — this does not move the unit',
+    'upgrade.more-units': '… {count} more unit(s) in this bucket; pass --json for the full list',
+    'upgrade.more-fixes': '… {count} more fix(es); pass --json for the full list',
+    'upgrade.nothing-sampled':
+      'nothing was sampled: profile "{profile}" has no bundle layer and no loader row, so there is no impact to report (this is not a clean bill of health)',
   },
 }
 
@@ -218,6 +240,23 @@ const ZH: MessageCatalog = {
     'probe.profile-build-refused': '复制组合的依赖装上了，但包管理器拒绝运行它们的构建脚本（{detail}）——这里的组合不等于你实际跑的那一份',
     'ui.more-reasons': '…还有 {count} 条原因；加 --json 看完整列表',
     'prior.annotation-only': '这台机器过去对这个精确键判过；此处只作注解，不改变结论',
+    'upgrade.header': '目标 dsh {target} · 读到 {units} 个单元（{bundles} 个 bundle，{rows} 条 row）',
+    'upgrade.relation.same': '目标就是这个 profile 正在跑的运行时（{target}）',
+    'upgrade.relation.newer': '{target} 比正在跑的 {current} 新',
+    'upgrade.relation.older': '{target} 比正在跑的 {current} 旧',
+    'upgrade.relation.unknown': '读不到正在跑的运行时，所以这次移动的方向未知',
+    'upgrade.profile-scope': '本结论只关于 profile「{profile}」（来源：{source}），对其它 profile 不成立',
+    'upgrade.admitted-only': '放行 ≠ 能用：这份清单只比对声明区间与 {target}，没有任何一次 {target} 上的真实启动',
+    'upgrade.bucket.would-be-denied': 'would-be-denied · {count} 个单元的声明区间不含 {target}',
+    'upgrade.bucket.cannot-tell': 'cannot-tell · {count} 个单元无法从声明判断',
+    'upgrade.bucket.improved': 'improved · {count} 个单元现在被拒、{target} 会放行',
+    'upgrade.bucket.likely-fine': 'likely-fine · {count} 个单元的声明区间含 {target}',
+    'upgrade.already-denied': '现在跑着的 {current} 就已经拒了它：这次升级不是原因',
+    'upgrade.unusable-declaration': '声明永远不可能被满足（空 / 不是 semver / workspace:），任何运行时都不放行——包括 {target}',
+    'upgrade.registry-annotation': '仅次要证据：{package}@{version} 声明了 {range}，在 {target} 上{verdict}——它不会改变这个单元的分桶',
+    'upgrade.more-units': '…这个桶里还有 {count} 个单元；加 --json 看完整列表',
+    'upgrade.more-fixes': '…还有 {count} 条修复建议；加 --json 看完整列表',
+    'upgrade.nothing-sampled': '什么都没采到：profile「{profile}」既没有 bundle 层也没有 loader row，因此没有影响可报（这不是「一切正常」）',
   },
 }
 

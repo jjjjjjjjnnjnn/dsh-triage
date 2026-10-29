@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R41 (2026-10-29)",
+  "stand": "R42 (2026-10-30)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -5727,6 +5727,37 @@
         "artifact": "data/results/gates-2026-10-29T13-00-00.000Z.json",
         "sha256": "b1a9c3632870d4827f31fc5cbf18f17889f7a4819a6fddb93fc7b34a8917bd39",
         "outcome": "ALL GREEN · 9 gates（403 测试；236 步 / 214 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R42-S1",
+      "batch": "R42",
+      "step": "`T-502`（M5-b 升级影响清单）交付：`dsh-triage upgrade --to <version>` 把 **同一个** `evaluateAdmission` 换到目标运行时求值，产出四桶有序清单；registry 只是注解，默认离线",
+      "changed": [
+        "docs/specs/M5-upgrade.md",
+        "packages/core/src/upgrade.ts",
+        "packages/core/src/index.ts",
+        "packages/core/src/messages.ts",
+        "packages/plugin/src/cli.ts",
+        "scripts/record_upgrade_impact.mjs",
+        "scripts/gate_verdict_contract.mjs",
+        "docs/05-verdict-contract.md",
+        "tests/unit/upgrade.test.ts",
+        "tests/e2e/upgrade-cli.test.ts",
+        "data/results/upgrade-2026-10-30T03-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：四桶是**分区**（`total = bundles + rows`，每单元恰好一个桶）；row 单元的 verdict 与 `verdictsFromRowAdmission([row], target)` 深度相等、bundle 与 `verdictFromAdmission` 深度相等——没有第二套区间规则。我另外手跑两条否定路径：`--to 0.2.1-rc.4` 在沙盒 profile 上 `would_be_denied=0`（对照成立），`--to 0.3` 直接 exit 2 且不读 profile",
+        "reproducibility": "PASS：同 stamp 重跑 payload 逐字节一致；排序键是全序（不用 `localeCompare`）；`--registry` 不可达时 12 次查询全失败而 192 个单元逐条不变、exit 0（真机）",
+        "licence": "PASS：无新依赖；默认离线；`--registry` 只读 npm 元数据（既有 signals 通道），不下载 tarball、不执行候选",
+        "ssot": "PASS：`upgrade-2026-10-30T03-40-00.000Z.json` + `.sha256`，`produced_by`/`generated_at`/`schema_version`/`limits[]` 齐全；记录器写盘前自扫 home 形态（第一次真跑把 `--dsh-home` 绝对路径写进 `runs[].command`，`results-privacy` 当场打红，产物移出仓库并重跑）；`upgrade.*` 三处同改（messages / 门白名单 / `docs/05`）",
+        "adversary": "反例一：把「会被拒」写成「会坏」——产物 `limits[]` 明写没有在 0.3.0 上启动过任何东西，且不验证 0.3.0 是否存在；反例二：让 registry 把行搬桶——注解在分桶之后挂上，测试加/删/翻转 `admitsTarget` 后 bucket 与 counts 逐字节相同；反例三：把无声明说成 `likely-fine`（沉默 ≠ 通过），它只能进 `cannot-tell`；反例四：把空组合渲染成「全绿」——空组合 exit 3 且不产出清单；反例五：坏快照回退读本机——直接 exit 2；反例六：`improved` 用「current 非法」冒充「升级修好了」——五条证据门槛里要求 current 合法且拒因不是声明缺陷；反例七：跨 profile 比较（`BS-38`）——输出里写死 profile 名与来源"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_impact.mjs --stamp 2026-10-30T03:40:00.000Z",
+        "artifact": "data/results/upgrade-2026-10-30T03-40-00.000Z.json",
+        "sha256": "ce800146a1b1f8513f375a6b4c6c1fbc35dfb17a034dcde809419f43153a9d9d",
+        "outcome": "26/26 自检：192 单元（2 bundle + 190 row）· 119 `would-be-denied`（1 bundle + 118 row）· 73 `cannot-tell` · 0 `improved` · 0 `likely-fine`；对照组 `--to 0.2.1-rc.4` 0 拒；`why` 的 unknown 集合 72=72（拒集合两侧皆空，产物自报 `denied_comparison_vacuous: true`）；registry 不可达 12 次失败而清单不变"
       }
     }
   ]

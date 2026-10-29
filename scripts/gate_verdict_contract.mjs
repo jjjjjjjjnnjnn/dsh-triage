@@ -21,7 +21,7 @@ const CONFIDENCE = new Set(['low', 'medium', 'high'])
  * a verdict - but the id is still a catalogue id, so it belongs in the same whitelist as the rest
  * (`docs/05-verdict-contract.md` §3).
  */
-const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe|tool|prior)\.[a-z0-9.-]+$/
+const MESSAGE_ID = /^(admission|collision|registry|runtime|remediation|missing|probe|tool|prior|upgrade)\.[a-z0-9.-]+$/
 
 /**
  * Extract the catalogue keys AND their `{placeholder}` requirements from the single

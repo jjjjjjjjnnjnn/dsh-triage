@@ -122,6 +122,11 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 `--execute` 会把候选装进独立的 `DSH_HOME`、起一次、**在树还活着时**探端口、用无头 Chromium 经 CDP 读挂载出来的 DOM、读候选行的相位，然后无论成败都清理。已测：`boot / http / client-render / inventory`。**未测**：工具/命名空间 diff——产物里写 `unmeasured`，绝不写成通过。
 
+`--help` 里还有两条：
+
+- **`dsh-triage upgrade --to <版本>`** —— 升级 dsh 之前先问：**目标运行时**会拒掉哪些 loader 行与 bundle，四桶（`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`），修复文案与 `why` 同源。默认离线；registry 查询只是注解，**不能**把行从一个桶挪到另一个桶。它只说「会被拒」，不说「会不会坏」。
+- **`dsh-triage outcomes`** —— 回流层的本地记录。**默认关闭**：关着的时候不建目录、不建文件。开启后（`--enable`）只存固定的字段白名单（无路径、无主机名、无日志、无自由文本），`--purge` 什么都不剩。**没有任何上传**，这条路径上没有联网代码。
+
 ## 它怎么判定
 
 每个判断都是一个 verdict，而 verdict 是一个带四种可能结论的数据结构：
@@ -156,7 +161,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 | 主张 | 怎么复现 |
 |---|---|
-| 构建、类型检查、403 个测试、9 道门 | `pnpm run verify` |
+| 构建、类型检查、427 个测试、9 道门 | `pnpm run verify` |
 | 这些门真的会红 | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission 语义与上游逐条对等 | `data/gold/admission-cases.json` —— 27 条人工签署金标，由 `admission-parity` 门锁死 |
 | `why` 在真实故障上点中根因 | `node scripts/d1_report.mjs --stamp <iso>` → 10 个真实案例、9 命中、1 条显式 `unknown`（`data/results/d1-*.json`） |

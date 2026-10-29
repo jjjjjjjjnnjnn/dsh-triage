@@ -27,6 +27,8 @@ import {
   findPresetDivergence,
   format,
   groupClaimsBySource,
+  hasNewDenials,
+  judgeUpgradeImpact,
   judgeVersionDrift,
   loadEnv,
   parseInventorySnapshot,
@@ -34,8 +36,11 @@ import {
   redactEnv,
   redactPath,
   redactVerdict,
+  registryFactFor,
+  renderUpgradeImpact,
   renderVerdict,
   rowTargets,
+  upgradeTargetProblem,
   verdictFromAdmission,
   verdictsFromCollisions,
   verdictsFromDuplicateCopies,
@@ -48,6 +53,12 @@ import {
   type InventoryPreset,
   type PresetDeclaration,
   type Locale,
+  type RowDeclaration,
+  type UpgradeBundleInput,
+  type UpgradeImpact,
+  type UpgradeJudgement,
+  type UpgradeRegistryFact,
+  type UpgradeRegistryFailure,
   type Verdict,
   type VersionDrift,
 } from '@dsh-triage/core'
@@ -143,6 +154,10 @@ interface Flags {
   readonly purge: boolean
   /** `outcomes --status`: how many records exist (the default when no verb is given). */
   readonly status: boolean
+  /** `upgrade --to <version>`: the runtime to judge the installed composition against. */
+  readonly to: string | null
+  /** `upgrade --registry`: look up "is there a published build that declares the target?" (off by default). */
+  readonly registry: boolean
 }
 
 interface Parsed {
@@ -163,6 +178,7 @@ Usage
   dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence
   dsh-triage index                   format-1 market index of versions measured "go" here
   dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge
+  dsh-triage upgrade --to <version>  which rows/bundles the target dsh would deny, and how to fix
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking
@@ -173,6 +189,7 @@ Flags
   --no-redact           keep absolute paths in --json output (default: redact to ~)
   --stamp <iso>         fixed timestamp for reproducible output
   --snapshot <file>     (audit) judge runtime phases from a pluginInventory snapshot
+  --snapshot <file>     (upgrade) judge a frozen composition snapshot (schema_version 1)
   --explain             (check) show the registry tag facts behind the verdict
   --execute             (probe) really run the plan inside an isolated DSH_HOME
   --dsh-main <path>     (probe --execute) DSH launcher entry the sandbox boots
@@ -191,6 +208,8 @@ Flags
   --disable             (outcomes) opt out again; existing records are kept until --purge
   --purge               (outcomes) delete every record this tool stored, then the directory
   --status              (outcomes) how many records exist (default when no verb is given)
+  --to <version>        (upgrade) target dsh version, exact semver (e.g. 0.3.0)
+  --registry            (upgrade) annotate with published builds that declare the target (offline by default)
   --help                this text
 
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
@@ -226,6 +245,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandServe(flags)
     case 'outcomes':
       return commandOutcomes(flags)
+    case 'upgrade':
+      return commandUpgrade(flags)
     default:
       process.stderr.write(`unknown command "${command}"; see --help\n`)
       return EXIT_USAGE
@@ -489,6 +510,296 @@ async function commandWhy(flags: Flags): Promise<number> {
     )
   }
   return exitFor(flags, findings)
+}
+
+/**
+ * `upgrade --to <version>`: which loader rows and bundles the **target** runtime would deny
+ * (`T-502`, `docs/specs/M5-upgrade.md`).
+ *
+ * Same engine, one runtime further: every unit is judged by `evaluateAdmission` with `env.dsh`
+ * replaced by the target, and the result is the verdict `why` would print on that runtime.
+ * Nothing here re-implements a range, and nothing here claims a boot was measured.
+ *
+ * NOT DONE ON PURPOSE: no profile edit, no automatic pin, no probe run, and no network unless
+ * `--registry` is passed (registry facts are annotations that cannot move a unit).
+ */
+async function commandUpgrade(flags: Flags): Promise<number> {
+  if (flags.to === null) {
+    process.stderr.write(
+      'usage: dsh-triage upgrade --to <version> [--profile <name>] [--dsh-home <path>] [--snapshot <file>] [--registry] [--strict] [--json]\n',
+    )
+    return EXIT_USAGE
+  }
+  // Validate BEFORE reading anything: a bad target must be a usage error whether or not the
+  // profile exists, and must never reach `satisfies()` (which returns false for garbage and
+  // would turn "bad flag" into "everything will break").
+  const problem = upgradeTargetProblem(flags.to)
+  if (problem !== null) {
+    process.stderr.write(`${problem}\n`)
+    return EXIT_USAGE
+  }
+  const target = flags.to.trim()
+  const stamp = stampOf(flags)
+  const warnings: string[] = []
+
+  let env: EnvFingerprint
+  let bundles: readonly UpgradeBundleInput[]
+  let rows: readonly RowDeclaration[]
+  let profileSource: 'live' | 'snapshot'
+
+  if (flags.snapshot !== null) {
+    const snapshot = readCompositionSnapshot(flags.snapshot)
+    if (!snapshot.ok) {
+      process.stderr.write(`cannot use composition snapshot ${flags.snapshot}: ${snapshot.detail}\n`)
+      return EXIT_USAGE
+    }
+    // A snapshot names the profile it was taken from; the answer belongs to that name, not to
+    // whatever `--profile` says (two profiles, two answers — BS-38).
+    env = {
+      dsh: snapshot.value.dsh,
+      node: process.versions.node,
+      platform: process.platform,
+      arch: process.arch,
+      profile: snapshot.value.profile,
+      profileDir: `<dsh-home>/profiles/${snapshot.value.profile}`,
+      bundles: snapshot.value.bundles.map((bundle) => bundle.name),
+      installed: [],
+    }
+    bundles = snapshot.value.bundles
+    rows = snapshot.value.rows
+    profileSource = 'snapshot'
+  } else {
+    // Resolve the home first: a *relative* `--dsh-home` would otherwise produce a relative
+    // `profileDir` in the embedded verdicts, which redaction cannot match against an absolute
+    // root (and `--json` is meant to be pasted into an issue).
+    const dshHome = resolve(resolveDshHome(flags))
+    const liveEnv = await requireEnv(flags, dshHome)
+    if (liveEnv === null) return EXIT_UNAVAILABLE
+    const composition = await loadComposition(liveEnv, dshHome)
+    const claims = collectClaims(composition, warnings)
+    env = liveEnv
+    bundles = composition.layers.map((layer) => ({ name: layer.name, version: layer.version, manifest: layer.manifest }))
+    rows = await resolveRows(liveEnv, rowTargets(claims))
+    profileSource = 'live'
+  }
+
+  // "Nothing sampled" is not a green report: an empty impact list would read as "all fine",
+  // so the command refuses to print one.
+  if (rows.length === 0 && bundles.length === 0) {
+    process.stderr.write(
+      `nothing sampled: profile "${env.profile}" has no bundle layer and no loader row, so there is no impact to report\n`,
+    )
+    for (const warning of warnings) process.stderr.write(`warn  ${warning}\n`)
+    return EXIT_UNAVAILABLE
+  }
+
+  const input = { env, target, bundles, rows, generatedAt: stamp, profileSource } as const
+  const first = judgeUpgradeImpact(input)
+  if (!first.ok) {
+    process.stderr.write(`${first.detail}\n`)
+    return EXIT_USAGE
+  }
+
+  // The registry is asked only about units that need a version to move to, and only after the
+  // first (offline) judgement has decided which those are.
+  let judged: UpgradeJudgement = first
+  if (flags.registry) {
+    const lookup = await registryLookupFor(first.impact, target, stamp)
+    judged = judgeUpgradeImpact({ ...input, registry: lookup.facts, registryFailures: lookup.failures })
+    if (!judged.ok) {
+      process.stderr.write(`${judged.detail}\n`)
+      return EXIT_USAGE
+    }
+    if (lookup.failures.length > 0) {
+      process.stderr.write(`registry: ${lookup.failures.length} lookup(s) failed; the report is unchanged\n`)
+    }
+  }
+  const impact = judged.impact
+
+  if (flags.json) {
+    writeJson(upgradeJsonPayload(impact))
+  } else {
+    process.stdout.write(renderUpgradeImpact(impact, flags.locale))
+    for (const warning of warnings) process.stdout.write(`warn  ${warning}\n`)
+  }
+  return flags.strict && hasNewDenials(impact) ? EXIT_FINDINGS : EXIT_OK
+}
+
+/** At most this many registry lookups per run (spec §6 rule 6): a 95-row profile must not fan out. */
+const MAX_REGISTRY_LOOKUPS = 12
+
+/**
+ * Ask npm for "is there a published build that declares the target?".
+ *
+ * Secondary evidence only: the caller merges these facts into a second `judgeUpgradeImpact`
+ * call where they can only attach annotations (spec §6, N9). A failed lookup is recorded and
+ * never changes the exit code.
+ */
+async function registryLookupFor(
+  impact: UpgradeImpact,
+  target: string,
+  stamp: string,
+): Promise<{ facts: readonly UpgradeRegistryFact[]; failures: readonly UpgradeRegistryFailure[] }> {
+  const wanted = [
+    ...new Set(
+      impact.units
+        .filter((unit) => (unit.bucket === 'would-be-denied' || unit.bucket === 'cannot-tell') && unit.version !== null)
+        .map((unit) => unit.name),
+    ),
+  ]
+    .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+    .slice(0, MAX_REGISTRY_LOOKUPS)
+
+  const facts: UpgradeRegistryFact[] = []
+  const failures: UpgradeRegistryFailure[] = []
+  for (const name of wanted) {
+    const packument = await fetchPackument(name, { at: stamp })
+    if (!packument.ok) {
+      failures.push({ package: name, code: packument.error.code, detail: packument.error.detail })
+      continue
+    }
+    const fact = registryFactFor({
+      packageName: name,
+      versions: packument.value.versions,
+      target,
+      publishedAt: packument.value.publishedAt,
+    })
+    if (fact !== null) facts.push(fact)
+  }
+  return { facts, failures }
+}
+
+/**
+ * `upgrade --json`: the impact list, with the per-unit judgement **flattened**.
+ *
+ * WHY NOT THE NESTED VERDICT: on a 190-row profile the full `Verdict` objects are ~1.8 MB,
+ * and every field a reader needs (`reasons`, `remediation`, `missing_evidence`) is already on
+ * the unit. The nested object duplicates them a second time. `conclusion` / `evidence_tiers`
+ * are copied out of it here, so the payload still says which tier the judgement rests on —
+ * and no `Verdict` object means no `profileDir` in a file that is meant to be shareable.
+ */
+function upgradeJsonPayload(impact: UpgradeImpact): Record<string, unknown> {
+  return {
+    schema_version: 1,
+    command: 'upgrade',
+    profile: impact.profile,
+    profile_source: impact.profile_source,
+    current: impact.current,
+    current_valid: impact.current_valid,
+    target: impact.target,
+    target_relation: impact.target_relation,
+    buckets: impact.buckets,
+    counts: impact.counts,
+    registry: impact.registry,
+    units: impact.units.map((unit) => {
+      const { verdict, ...rest } = unit
+      return {
+        ...rest,
+        conclusion: verdict === null ? null : verdict.conclusion,
+        evidence_tiers:
+          verdict === null
+            ? []
+            : [...new Set(verdict.evidence.map((item) => item.tier))].sort((left, right) => (left < right ? -1 : 1)),
+      }
+    }),
+    generated_at: impact.generated_at,
+  }
+}
+
+interface CompositionSnapshot {
+  readonly profile: string
+  readonly dsh: string | null
+  readonly bundles: readonly UpgradeBundleInput[]
+  readonly rows: readonly RowDeclaration[]
+}
+
+type SnapshotReading =
+  | { readonly ok: true; readonly value: CompositionSnapshot }
+  | { readonly ok: false; readonly detail: string }
+
+/**
+ * Read an `upgrade --snapshot` file: a frozen **composition** (declarations), not a runtime
+ * inventory. `audit --snapshot` reads the latter; the two share a flag name and nothing else.
+ *
+ * A rejected snapshot never falls back to the live profile: "I could not read your file" and
+ * "your profile is fine" are different sentences.
+ */
+function readCompositionSnapshot(path: string): SnapshotReading {
+  let raw: unknown
+  try {
+    raw = JSON.parse(readFileSync(path, 'utf8'))
+  } catch (error) {
+    return { ok: false, detail: `not readable as JSON (${error instanceof Error ? error.message : String(error)})` }
+  }
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, detail: 'expected a JSON object' }
+  }
+  const record = raw as Record<string, unknown>
+  if (record['schema_version'] !== 1) return { ok: false, detail: 'schema_version must be 1' }
+
+  const profile = record['profile']
+  if (typeof profile !== 'string' || profile.trim() === '') {
+    return { ok: false, detail: 'profile must be a non-empty string (the answer belongs to that profile)' }
+  }
+
+  const dsh = record['dsh']
+  if (dsh !== undefined && dsh !== null) {
+    if (typeof dsh !== 'string' || upgradeTargetProblem(dsh) !== null) {
+      return { ok: false, detail: 'dsh must be an exact version string or null' }
+    }
+  }
+
+  const rawBundles = record['bundles']
+  if (!Array.isArray(rawBundles)) return { ok: false, detail: 'bundles must be an array (may be empty)' }
+  const bundles: UpgradeBundleInput[] = []
+  for (const [index, entry] of rawBundles.entries()) {
+    if (entry === null || typeof entry !== 'object') return { ok: false, detail: `bundles[${index}] is not an object` }
+    const bundle = entry as Record<string, unknown>
+    if (typeof bundle['name'] !== 'string' || bundle['name'].trim() === '') {
+      return { ok: false, detail: `bundles[${index}].name must be a non-empty string` }
+    }
+    const manifest = bundle['manifest']
+    if (manifest === undefined) return { ok: false, detail: `bundles[${index}].manifest is required (null when unknown)` }
+    if (manifest !== null && (typeof manifest !== 'object' || Array.isArray(manifest))) {
+      return { ok: false, detail: `bundles[${index}].manifest must be an object or null` }
+    }
+    const version = bundle['version']
+    if (version !== undefined && version !== null && typeof version !== 'string') {
+      return { ok: false, detail: `bundles[${index}].version must be a string or null` }
+    }
+    bundles.push({ name: bundle['name'], version: version ?? null, manifest })
+  }
+
+  const rawRows = record['rows']
+  if (!Array.isArray(rawRows)) return { ok: false, detail: 'rows must be an array (may be empty)' }
+  const rows: RowDeclaration[] = []
+  for (const [index, entry] of rawRows.entries()) {
+    if (entry === null || typeof entry !== 'object') return { ok: false, detail: `rows[${index}] is not an object` }
+    const row = entry as Record<string, unknown>
+    for (const field of ['rowId', 'module', 'source'] as const) {
+      if (typeof row[field] !== 'string' || (row[field] as string).trim() === '') {
+        return { ok: false, detail: `rows[${index}].${field} must be a non-empty string` }
+      }
+    }
+    const manifest = row['manifest']
+    if (manifest === undefined) return { ok: false, detail: `rows[${index}].manifest is required (null when not installed)` }
+    if (manifest !== null && (typeof manifest !== 'object' || Array.isArray(manifest))) {
+      return { ok: false, detail: `rows[${index}].manifest must be an object or null` }
+    }
+    const version = row['version']
+    if (version !== undefined && version !== null && typeof version !== 'string') {
+      return { ok: false, detail: `rows[${index}].version must be a string or null` }
+    }
+    rows.push({
+      rowId: row['rowId'] as string,
+      module: row['module'] as string,
+      source: row['source'] as string,
+      version: version ?? null,
+      manifest,
+    })
+  }
+
+  return { ok: true, value: { profile: profile.trim(), dsh: typeof dsh === 'string' ? dsh : null, bundles, rows } }
 }
 
 async function commandCheck(flags: Flags, spec: string | undefined): Promise<number> {
@@ -1108,8 +1419,8 @@ function exactVersionOfSpec(spec: string): string | null {
   return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version) ? version : null
 }
 
-async function requireEnv(flags: Flags): Promise<EnvFingerprint | null> {
-  const result = await loadEnv({ dshHome: resolveDshHome(flags), profile: flags.profile })
+async function requireEnv(flags: Flags, dshHomeOverride?: string): Promise<EnvFingerprint | null> {
+  const result = await loadEnv({ dshHome: dshHomeOverride ?? resolveDshHome(flags), profile: flags.profile })
   if (!result.ok) {
     process.stderr.write(`cannot read the profile: ${result.error.code} — ${result.error.detail}\n`)
     if (result.error.code === 'profile-not-found') {
@@ -1237,6 +1548,8 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let disable = false
   let purge = false
   let status = false
+  let to: string | null = null
+  let registry = false
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index]
@@ -1382,6 +1695,15 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--status':
         status = true
         break
+      case '--to': {
+        const value = takeValue()
+        if (value === null) return null
+        to = value
+        break
+      }
+      case '--registry':
+        registry = true
+        break
       case '--locale': {
         const value = takeValue()
         if (value !== 'en' && value !== 'zh') return null
@@ -1393,7 +1715,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry }
   if (help) return { command: 'help', positionals: [], flags }
   const command = positionals.shift() ?? 'help'
   return { command, positionals, flags }

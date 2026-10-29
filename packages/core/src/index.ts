@@ -130,4 +130,30 @@ export {
 export type { CapabilityDiff, CapabilityMeta, CapabilitySnapshot, CapabilityTool } from './capabilities.js'
 export { diffCapabilities, parseCapabilitySnapshot } from './capabilities.js'
 
+export type {
+  UpgradeBucket,
+  UpgradeBundleInput,
+  UpgradeCause,
+  UpgradeCounts,
+  UpgradeImpact,
+  UpgradeImpactInput,
+  UpgradeJudgement,
+  UpgradeRegistryFact,
+  UpgradeRegistryFailure,
+  UpgradeRegistryNote,
+  UpgradeRelation,
+  UpgradeStanding,
+  UpgradeStandingStatus,
+  UpgradeUnit,
+} from './upgrade.js'
+export {
+  UPGRADE_BUCKETS,
+  compareUnits,
+  hasNewDenials,
+  judgeUpgradeImpact,
+  registryFactFor,
+  renderUpgradeImpact,
+  upgradeTargetProblem,
+} from './upgrade.js'
+
 export { redactEnv, redactPath, redactVerdict } from './redact.js'

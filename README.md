@@ -122,6 +122,11 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 `--execute` installs the candidate into its own `DSH_HOME`, boots it, checks the port while the tree is still alive, reads the mounted DOM through headless Chromium over CDP, reads the candidate row's phase, and always cleans up. Measured: `boot / http / client-render / inventory`. **Not** measured: tools/namespace diff — it is reported as `unmeasured`, never as a pass.
 
+Two more commands you will see in `--help`:
+
+- **`dsh-triage upgrade --to <version>`** — before you move your dsh build, ask which loader rows and bundles the *target* runtime would deny, in four buckets (`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`), with the same remediation text `why` uses. Offline by default; registry lookups are annotations that cannot move a row between buckets. It says "would be denied", never "will work".
+- **`dsh-triage outcomes`** — the local outcome store for the reflow layer. **Off by default**: while it is off, no directory and no file is created. When you turn it on (`--enable`), it stores only a fixed field whitelist (no paths, no hostnames, no logs, no free text), and `--purge` leaves nothing behind. Nothing is uploaded anywhere; there is no network code on that path.
+
 ## How it decides
 
 Every judgement is a verdict, and a verdict is a data structure with four possible conclusions:
@@ -156,7 +161,7 @@ Nothing in this README is asserted without a producer in the repo.
 
 | Claim | Reproduce it |
 |---|---|
-| build, typecheck, 403 tests, 9 gates | `pnpm run verify` |
+| build, typecheck, 427 tests, 9 gates | `pnpm run verify` |
 | the gates can actually fail | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission semantics match upstream | `data/gold/admission-cases.json` — 27 signed goldens, enforced by the `admission-parity` gate |
 | `why` finds the root cause in real failures | `node scripts/d1_report.mjs --stamp <iso>` → 10 real cases, 9 hits, 1 explicit `unknown` (`data/results/d1-*.json`) |
