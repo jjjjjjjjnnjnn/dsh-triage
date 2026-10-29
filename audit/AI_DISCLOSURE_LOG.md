@@ -546,3 +546,13 @@
 ### 2026-10-30 R43（补记）
 
 - 备注：R43 的 stand 标的是 2026-10-30，而本机时钟与提交时间都是 2026-10-29（`0210872` `+0800`）。R44 按真实时钟写 stand，并在 HANDOFF 顶部注明这处更正；不追改 R43 的历史文本
+
+### 2026-10-29 R47｜定位重定向：正门改成「升级日」+ 市场基线采证 + 流程分级 + 修数
+
+- 生成者：DeepSeek V4.1 Flash（主会话，单会话完成；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R47-S1…S4）
+- 范围：`scripts/record_market_baseline.mjs`（新）· `scripts/check_listing.mjs`（新增第 9 条断言 `listing-1584-is-qualified`）· `docs/ROADMAP.md`（D5 / §7.1 阶梯重写 / §4 指标）· `docs/00-vision.md`（§1b）· `PROJECT_RULES.md`（决策第 4 问 + M6 行）· `AGENTS.md` · `.agents/README.md` §6 · `.agents/rules/execution-playbook.md` §1c · `docs/specs/M6-upgrade-day.md`（新）· `docs/market/listing_zh.md` / `listing_en.md` · `docs/posts/README.md` · `docs/HANDOFF.md` · `INDEX.md` · `audit/blind_spots.json`（BS-43/BS-44）· `audit/AUDIT_2026-10-29_R47.md`（新）· `_archive/2026-10-29_HANDOFF-batch-rows-R29-R36.md`（新）
+- 人工决策：HUMAN 三答——「定位走哪条」→ **B 升级日当正门**；「流程要不要分级」→ **分级**；「1584 不是全量，要先修吗」→ **先修数**（`audit/SIGNOFF.md` R47 行）
+- 结果：**判据/阈值一字未动**。① 先取证：诊断类目周下载 **1,988**、市场类 380,240、装饰类 411,844、能力类 304,666、harness 540,139；`dsh-triage` **无下载记录**（404 → `no-record`，不写 0）；最近 **842** 条讨论里 **414 条故障（49.2%）**、**278 条（67.2%）零回复**。② 据此把正门换成「升级日」，出口写成可证伪的 **D5**（2 周内 reactions ≥10 / 外部引用 ≥1 / 周下载 ≥20，不达标走 D）。③ 流程分级落地，只降审核成本不降证据要求。④ 修数三处：`1584` 加「npm 关键词命中」限定（catalog 自称 7,557）、`listing` 里 dsh.so 从「尚未提交」改为「已提交未收录」、把对话里手算的 1,932 全部换成产物里的 1,988。⑤ 归档 §2 的 R29–R36 八行（逐行原文）。
+- 实测：**430 测试 / 9 门全绿 / `--mutate` 9/9**；新增 4 份产物（`market-baseline-2026-10-29T12-20-00`、`listing-…T12-00-00`（保留的红产物）、`listing-…T12-30-00`、`gates-…T12-40-00`）全部带 sha256 并被台账引用（**259 步 / 239 产物**）
+- 反思：这一轮最贵的动作不是写代码，是承认「**做对了的东西可能没人要**」。1,988 这个数字把「再加个功能」这条路堵住了：诊断品类整个加起来不到市场类的一个零头，而我们自己的下载记录是空的。真正救命的不是更严格的判据，而是**换一个门口**——升级日有明确时间点、只有本机能答、每次 rc 复现。另外三处旧漂移全在**对外叙述**里（1584 被当全量、dsh.so 状态过期、手算数字口径不一），没有一处是代码缺陷；抓到它们的办法只有一个：**把它做成脚本**。

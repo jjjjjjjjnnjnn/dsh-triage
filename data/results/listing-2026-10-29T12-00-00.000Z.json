@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/check_listing.mjs",
+  "generated_at": "2026-10-29T12:00:00.000Z",
+  "inputs": {
+    "version": "0.2.0",
+    "engines_dsh": ">=0.2.0-rc.1 <0.3.0-0",
+    "tests": 430,
+    "documents": [
+      "README.md",
+      "README.zh-CN.md",
+      "docs/market/listing_en.md",
+      "docs/market/listing_zh.md",
+      "docs/market/submissions/README.md",
+      "docs/market/submissions/awesome-lists.md",
+      "docs/posts/01-tool-disappeared.md",
+      "docs/posts/02-white-screen.md",
+      "docs/posts/03-before-you-upgrade.md",
+      "docs/posts/README.md"
+    ]
+  },
+  "referenced_evidence": [
+    "data/results/index-hosting-2026-10-29T18-10-00.000Z.json",
+    "data/results/index-hosting-2026-10-29T22-00-00.000Z.json",
+    "data/results/market-channels-2026-10-29T07-40-00.000Z.json",
+    "data/results/market-channels-2026-10-29T10-00-00.000Z.json",
+    "data/results/publish-2026-10-29T01-40-00.000Z.json",
+    "data/results/publish-2026-10-30T05-00-00.000Z.json",
+    "data/results/render-fixture-blank-2026-10-27T12-58-42.000Z.json",
+    "data/results/render-fixture-rendered-2026-10-27T12-58-49.000Z.json",
+    "data/results/upgrade-2026-10-30T03-40-00.000Z.json",
+    "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+    "data/results/upgrade-mixed-2026-10-29T07-10-00.000Z.json",
+    "data/results/upgrade-registry-live-2026-10-29T07-15-00.000Z.json",
+    "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json"
+  ],
+  "checks": [
+    {
+      "id": "documents-exist",
+      "ok": true,
+      "detail": "10 document(s)"
+    },
+    {
+      "id": "evidence-paths-exist",
+      "ok": true,
+      "detail": "13 evidence path(s) resolve with sha256"
+    },
+    {
+      "id": "version-matches-manifest",
+      "ok": true,
+      "detail": "every named version is 0.2.0"
+    },
+    {
+      "id": "engines-range-matches-manifest",
+      "ok": true,
+      "detail": "4 claim(s) all equal >=0.2.0-rc.1 <0.3.0-0"
+    },
+    {
+      "id": "test-count-matches",
+      "ok": true,
+      "detail": "1 claim(s) all equal 430"
+    },
+    {
+      "id": "no-placeholders-or-claims",
+      "ok": true,
+      "detail": "no placeholder, no unsupported claim"
+    },
+    {
+      "id": "posts-are-indexed",
+      "ok": true,
+      "detail": "3 post(s) listed in docs/posts/README.md"
+    },
+    {
+      "id": "listing-keeps-wilson-interval",
+      "ok": true,
+      "detail": "both listings must state the Wilson interval of the 12/13 convenience sample"
+    },
+    {
+      "id": "listing-keeps-forward-improved-boundary",
+      "ok": true,
+      "detail": "both listings and the upgrade post must state the forward-improved finding (0 of 1584)"
+    },
+    {
+      "id": "listing-1584-is-qualified",
+      "ok": false,
+      "detail": "docs/posts/README.md:calls-1584-a-census"
+    }
+  ],
+  "passed": false,
+  "limits": [
+    "this checks mechanically verifiable claims only: version, DSH range, test count, evidence pointers, forbidden phrases",
+    "prose quality, tone and whether the evidence actually supports a sentence are review work, not script work",
+    "numbers inside the cited artifacts are not re-derived here; each artifact is its own source of truth"
+  ]
+}

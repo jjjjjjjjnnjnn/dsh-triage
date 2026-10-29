@@ -1,12 +1,27 @@
 # Listing copy (English, ready to paste)
 
-> **Stand**: R45 (2026-10-29). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
+> **Stand**: R47 (2026-10-29). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
 > against the repo (version, DSH range, evidence paths). Chinese counterpart: `docs/market/listing_zh.md`.
 > Channel status lives in `docs/market/submissions/README.md`; long-form posts in `docs/posts/`.
 
 ## One line
 
-**Decide before you install; get the reason after it breaks.**
+**Before you take the next rc, see what it does to *your* set.**
+
+## Front door: upgrade day
+
+Every DSH release asks one concrete question: **I have two dozen plugins installed — how many still work after the bump?**
+
+```sh
+dsh-triage upgrade --to 0.2.1-rc.4
+```
+
+The answer is a table computed against **your installed set**, partitioned four ways: `would-be-denied`, `cannot-tell`,
+`improved`, `likely-fine`. Every row that would be dropped comes with the reason and the fix command, plus a summary
+you can paste straight into the issue thread.
+
+**That is the question nobody else can answer.** A marketplace says whether a package installs; a registry says whether
+it runs in a clean sandbox; only your machine says which of *your* rows breaks on the way up.
 
 ## Short description (for form fields)
 
@@ -61,14 +76,16 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 - `boot→sample` median is **4.9s idle / 12.3s under load** (p90 16.0s), both under the 20s budget — but the budget
   is a *waiting* budget for the first judgeable sample, not "one probe takes 20 seconds";
 - in the upgrade list, `improved` (denied today, admitted at the target) is only witnessed in the **downgrade**
-  geometry: across 1584 scanned plugins, **0** of the 202 denied today are admitted by a *newer* build. We say "the
-  target admits it", never "upgrading fixes it".
+  geometry: the scan covers the **1584 packages npm keyword search returns** (`dsh-plugin-catalog` advertises 7,557
+  entries; we have not verified that independently, so this is not a census), and **0** of the 202 denied today are
+  admitted by a *newer* build. We say "the target admits it", never "upgrading fixes it".
 
 ## Current status
 
-`0.2.0` is published on npm (four packages released together). Build side covers M0–M5-b. Distribution: three pull
+`0.2.0` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
 requests are open (#65 awaiting review, #193 approved but unmerged, walkinglabs #140 just opened), `merged: 0`, and
-the dsh.so form has **not** been submitted yet.
+the dsh.so form was **submitted by a human** — but its three per-plugin JSON endpoints still return 404, so the status
+is `submitted`, **not** `listed`.
 
 - format-1 index source (public URL, byte-verified): `https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - Badge: `dsh-triage badge <pkg>` renders an SVG from recorded measurements; no measurement renders `not measured`.

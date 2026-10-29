@@ -1,0 +1,482 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_market_baseline.mjs",
+  "generated_at": "2026-10-29T12:20:00.000Z",
+  "inputs": {
+    "window": "last-week",
+    "packages": 31,
+    "discussion_pages": [
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113
+    ],
+    "discussion_target": 900,
+    "offline": false,
+    "fixtures": "data/fixtures/market-baseline/<stamp>"
+  },
+  "packages": {
+    "dsh-doctor": {
+      "category": "diagnostics",
+      "week_downloads": 1175,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-verify": {
+      "category": "diagnostics",
+      "week_downloads": 462,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-plugin-guard": {
+      "category": "diagnostics",
+      "week_downloads": 196,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-plugin-check": {
+      "category": "diagnostics",
+      "week_downloads": 77,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-guard": {
+      "category": "diagnostics",
+      "week_downloads": 56,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-compat": {
+      "category": "diagnostics",
+      "week_downloads": 13,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-lint": {
+      "category": "diagnostics",
+      "week_downloads": 5,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-diagnose": {
+      "category": "diagnostics",
+      "week_downloads": 4,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-triage": {
+      "category": "diagnostics",
+      "week_downloads": null,
+      "downloads_state": "no-record",
+      "window": null
+    },
+    "dsh-preflight": {
+      "category": "diagnostics",
+      "week_downloads": null,
+      "downloads_state": "no-record",
+      "window": null
+    },
+    "dshmarket": {
+      "category": "marketplace",
+      "week_downloads": 292390,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-plugin-catalog": {
+      "category": "marketplace",
+      "week_downloads": 74910,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-plugin": {
+      "category": "marketplace",
+      "week_downloads": 12940,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-pet": {
+      "category": "decorative",
+      "week_downloads": 160718,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-whale-widget": {
+      "category": "decorative",
+      "week_downloads": 126408,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-plugin-wallpaper-engine": {
+      "category": "decorative",
+      "week_downloads": 44740,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-meme": {
+      "category": "decorative",
+      "week_downloads": 27382,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-dream-skin": {
+      "category": "decorative",
+      "week_downloads": 13443,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-dafeiyu": {
+      "category": "decorative",
+      "week_downloads": 39153,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-ops": {
+      "category": "capability",
+      "week_downloads": 51020,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-cost-meter": {
+      "category": "capability",
+      "week_downloads": 37432,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "@michengai/dsh-skills-manager": {
+      "category": "capability",
+      "week_downloads": 36004,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "@xmanrui/dsh-im": {
+      "category": "capability",
+      "week_downloads": 33328,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-free-search": {
+      "category": "capability",
+      "week_downloads": 22329,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-mnemon": {
+      "category": "capability",
+      "week_downloads": 25486,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-image-gen": {
+      "category": "capability",
+      "week_downloads": 19325,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "@liustack/modsearch": {
+      "category": "capability",
+      "week_downloads": 14530,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-connect-workbuddy": {
+      "category": "capability",
+      "week_downloads": 26042,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-codex-subscription": {
+      "category": "capability",
+      "week_downloads": 8300,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "dsh-bili-scroll": {
+      "category": "capability",
+      "week_downloads": 30870,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    },
+    "@deepseek-ai/dsh": {
+      "category": "harness",
+      "week_downloads": 540139,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-21",
+        "to": "2026-10-27"
+      }
+    }
+  },
+  "categories": {
+    "diagnostics": {
+      "members": [
+        "dsh-compat",
+        "dsh-diagnose",
+        "dsh-doctor",
+        "dsh-guard",
+        "dsh-lint",
+        "dsh-plugin-check",
+        "dsh-plugin-guard",
+        "dsh-preflight",
+        "dsh-triage",
+        "dsh-verify"
+      ],
+      "summed_members": 8,
+      "unrecorded_members": [
+        "dsh-preflight",
+        "dsh-triage"
+      ],
+      "week_downloads_total": 1988,
+      "note": "total sums only the 8 member(s) with a recorded download count; 2 have no record"
+    },
+    "marketplace": {
+      "members": [
+        "dsh-plugin",
+        "dsh-plugin-catalog",
+        "dshmarket"
+      ],
+      "summed_members": 3,
+      "unrecorded_members": [],
+      "week_downloads_total": 380240,
+      "note": "total sums only the 3 member(s) with a recorded download count; 0 have no record"
+    },
+    "decorative": {
+      "members": [
+        "dsh-dafeiyu",
+        "dsh-dream-skin",
+        "dsh-meme",
+        "dsh-pet",
+        "dsh-plugin-wallpaper-engine",
+        "dsh-whale-widget"
+      ],
+      "summed_members": 6,
+      "unrecorded_members": [],
+      "week_downloads_total": 411844,
+      "note": "total sums only the 6 member(s) with a recorded download count; 0 have no record"
+    },
+    "capability": {
+      "members": [
+        "@liustack/modsearch",
+        "@michengai/dsh-skills-manager",
+        "@xmanrui/dsh-im",
+        "dsh-bili-scroll",
+        "dsh-codex-subscription",
+        "dsh-connect-workbuddy",
+        "dsh-cost-meter",
+        "dsh-free-search",
+        "dsh-image-gen",
+        "dsh-mnemon",
+        "dsh-ops"
+      ],
+      "summed_members": 11,
+      "unrecorded_members": [],
+      "week_downloads_total": 304666,
+      "note": "total sums only the 11 member(s) with a recorded download count; 0 have no record"
+    },
+    "harness": {
+      "members": [
+        "@deepseek-ai/dsh"
+      ],
+      "summed_members": 1,
+      "unrecorded_members": [],
+      "week_downloads_total": 540139,
+      "note": "total sums only the 1 member(s) with a recorded download count; 0 have no record"
+    }
+  },
+  "triage": {
+    "registry_status": 200,
+    "versions": [
+      "0.0.0-stage",
+      "0.1.0",
+      "0.1.1",
+      "0.2.0"
+    ],
+    "dist_tags": {
+      "latest": "0.2.0"
+    }
+  },
+  "discussions": {
+    "upstream": "deepseek-ai/deepseek-harness",
+    "fetched": 842,
+    "page_numbers": [
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113
+    ],
+    "newest_number": 11444,
+    "oldest_number": 10596,
+    "window": {
+      "from": "2026-10-29T11:33:35Z",
+      "to": "2026-10-21T23:52:48Z"
+    },
+    "clusters": {
+      "session-history": {
+        "threads": 41,
+        "comments_total": 31,
+        "unanswered": 21
+      },
+      "plugin-breakage": {
+        "threads": 39,
+        "comments_total": 18,
+        "unanswered": 27
+      },
+      "install-startup": {
+        "threads": 43,
+        "comments_total": 25,
+        "unanswered": 28
+      },
+      "windows-native": {
+        "threads": 68,
+        "comments_total": 54,
+        "unanswered": 41
+      },
+      "model-provider": {
+        "threads": 68,
+        "comments_total": 31,
+        "unanswered": 49
+      },
+      "ui-ux": {
+        "threads": 224,
+        "comments_total": 125,
+        "unanswered": 147
+      },
+      "plugin-authoring": {
+        "threads": 20,
+        "comments_total": 16,
+        "unanswered": 13
+      }
+    },
+    "pain_threads": 414,
+    "pain_share": 0.4917,
+    "unanswered_share": 0.6715
+  },
+  "claims": [
+    {
+      "id": "diagnostics-category-ceiling",
+      "statement": "the whole diagnostics category sums to 1988 weekly downloads across the 8 of 10 members with a record",
+      "recompute": "categories.diagnostics.week_downloads_total"
+    },
+    {
+      "id": "diagnostics-share-of-marketplace",
+      "statement": "diagnostics is 0.0052 of the marketplace category",
+      "recompute": "compare categories.diagnostics / categories.marketplace"
+    },
+    {
+      "id": "this-package-has-no-record",
+      "statement": "dsh-triage downloads_state is 'no-record', which is not the same claim as zero downloads",
+      "recompute": "packages[\"dsh-triage\"].downloads_state"
+    },
+    {
+      "id": "decorative-outdraws-diagnostics",
+      "statement": "decorative members sum to 411844 weekly downloads, 207.165x the whole diagnostics category",
+      "recompute": "categories.decorative.week_downloads_total"
+    },
+    {
+      "id": "pain-share-and-unanswered",
+      "statement": "of the 842 most recent discussions, 414 (0.4917) match a pain cluster and 278 of those have zero replies",
+      "recompute": "discussions.pain_threads / discussions.unanswered_share"
+    }
+  ],
+  "failures": [],
+  "limits": [
+    "the package list is hand-classified, not a census: npm keyword search is the only discovery channel this repo has (dsh-plugin-catalog advertises 7,557 entries; keyword search returns 1,584)",
+    "a 404 from the downloads API is recorded as `no-record`, never as 0 - the two are different claims",
+    "discussion threads are classified by a fixed regex table over title + a 240-character excerpt; long bodies are not retained, so a re-run classifies the same excerpt, not the whole thread",
+    "github discussion paging is not stable: new threads shift page boundaries, so `page_numbers` and the newest/oldest numbers are recorded for every run and runs are not byte-comparable across days",
+    "this measures the ecosystem, not users: it cannot tell whether the demand is absent or merely unavailable in this delivery form (that is D5)"
+  ]
+}

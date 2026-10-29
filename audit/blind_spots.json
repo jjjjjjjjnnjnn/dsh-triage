@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R46 (2026-10-29)",
+  "stand": "R47 (2026-10-29)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -330,6 +330,24 @@
       "mitigation": "产物把 `target_relation: older` 与「目标未验证存在」写进 `source` / `limits[]`；记录器新增 `--expect-improved` 只断言「四桶非空 + 每个改善单元带两侧证据」，**不**断言方向；`^0.2.1` 这种前向声明由单测钉住（`tests/unit/upgrade.test.ts` R44 三条）。**对外口径**：四桶都有真机证据，但 `improved` 只有降级几何；不许把「目标放行」说成「升级会修好」",
       "owner": "scripts/scan_upgrade_declarations.mjs + scripts/record_upgrade_impact.mjs",
       "status": "open (R44): forward geometry has 0/1584 real samples; downgrade geometry witnessed on three real packages",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-43",
+      "area": "market/coverage",
+      "cannot_see": "生态的**真实规模**不可知。npm 关键词搜索只回来 1,584 个包（R44 的 `scan_upgrade_declarations`），而 `dsh-plugin-catalog` 自称 **7,557** 条；我们没有独立核实哪一边对（catalog 可能含 `github:` 源、未发布包、历史条目或重复条目）。后果：任何「占生态 x%」的分母都不成立，R44 的「前向 0/1584」只能读成「这 1,584 个关键词命中里没有」，不能读成「生态里不存在」",
+      "mitigation": "对外文案一律写「**npm 关键词命中的 1,584**」，禁止写「全量 / 全网」；`scripts/check_listing.mjs` 的新断言 `listing-1584-is-qualified` 会在出现 1584 却缺 `keyword/关键词` 限定、或把它说成 census 时判红（R47 第一次跑就抓到 `docs/posts/README.md` 一处）。市场基线产物把每个分母写进 `limits[]`",
+      "owner": "scripts/record_market_baseline.mjs + scripts/check_listing.mjs",
+      "status": "open (R47): the census denominator is unknown; the qualifier is machine-enforced",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-44",
+      "area": "product/demand",
+      "cannot_see": "诊断类在这个生态**没有需求形态**是实测的（品类周下载天花板 **1,988**、`dsh-triage` 无下载记录、装饰类 411,844、市场类 380,240；`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）。但**分不清**两种解释：需求不存在，还是需求存在而我们选错了交付形态。下载量与讨论数据都只能看到「现在没人装」，看不到「换一个入口会不会有人用」",
+      "mitigation": "唯一判据是 **D5**（`docs/ROADMAP.md` §2）：一张真机升级卡片 + 一次公开样本，2 周内 reactions ≥10 · 外部引用 ≥1 · 周下载 ≥20。不达标执行 **D**（承认它不是产品：作品集 + 上游 PR）。**禁止**用「再加一个功能」绕过；boot 守卫等留存功能在 D5 之前不做",
+      "owner": "docs/ROADMAP.md D5 + scripts/record_market_baseline.mjs",
+      "status": "open (R47): only D5 can separate \"no demand\" from \"wrong delivery form\"",
       "resolved_by": null
     }
   ]

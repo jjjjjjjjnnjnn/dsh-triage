@@ -1,6 +1,7 @@
 # DSH-Addition PROJECT_RULES.md（工程铁律）
 
-> **Stand**: R5 (2026-10-26) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
+> **Stand**: R47 (2026-10-29) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
+> **R47 变更范围**：只改 Stand、路线表状态与决策检查（新增第 4 问）；**10 条铁律一字未动**（冻结）。
 
 ---
 
@@ -35,21 +36,24 @@
 
 | 阶段 | 名字 | 交付物 | 出口门禁 | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
-| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（2026-10-26；现为 **9 门 / 9-9 CAUGHT**，门数随里程碑增长） |
-| **M1** | admission 对等 | `core/admission` + `data/gold/admission-cases.json`（21 条：13 synthetic + 8 npm 真快照） | 金标 100% 对等；负对照可复现 FAIL | 🟡 对等已锁死；**真实案例验收阻塞**（T-101 等 HUMAN 输入，见 `docs/HANDOFF.md` §8） |
-| **M2** | `why` 归因 | `dsh-triage why`：拒绝行 / import 失败 / 能力缺失 + 修复命令 | 在真实「工具消失」案例上一次命中根因 | — |
-| **M3** | 隔离实测 | `probe`：独立 `DSH_HOME` 装候选 → boot/http/render/inventory/namespace-diff | 单次 ≤20s；失败自动清理；默认 dry-run | — |
-| **M4** | 分发 1.0 | Web 面板（`settings.plugins.tab`）+ 徽章 + format-1 索引源 + `plugin_fit` 工具 | 上架 dsh-plugin-catalog / hub / dsh.so；2 渠道收录 | — |
-| **M5** | 回流 | opt-in 匿名结果上传 + 群体先验 + 时间序列回归 | 数据可用率 ≥80%；无 PII | — |
+| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（现为 **9 门 / 9-9 CAUGHT**） |
+| **M1** | admission 对等 | `core/admission` + `data/gold/admission-cases.json`（27 条） | 金标 100% 对等；负对照可复现 FAIL | ✅ 对等锁死；D1 机器可复算 9/10（label 自签，见 `BS-14`） |
+| **M2** | `why` 归因 + 运行时台账 | `why` / `audit` 行级归因 + 能力层事实与差分 | 真实「工具消失」案例一次命中根因 | ✅（P3 Remote 与 agent 作用域按 `ADR-0009` A 不做） |
+| **M3** | 隔离实测 | `probe`：独立 `DSH_HOME` 装候选 → boot/http/render/inventory | 单次 ≤20s；失败自动清理；默认 dry-run | ✅（`namespace-diff` 仍 `unmeasured`，`ADR-0009` A） |
+| **M4** | 分发件 | 面板 / 徽章 / 索引源 / `compat_verdict` / `serve` | 上架渠道收录 | ✅ 交付；**渠道全在别人手里**（`merged 0` / `listed 0`） |
+| **M5** | 回流 + 升级清单 | `outcomes`（本地半边）+ `upgrade --to` 四桶 | 数据可用率 ≥80%；无 PII | ✅ 本地半边 + 四桶；上传/聚合待 `ADR-0012` |
+| **M6** | **升级日正门（R47 起）** | 市场基线落盘 · `upgrade` 卡片（首行结论 + 可粘贴 markdown + 边界句）· 每次 rc 的公开样本 | **D5**：2 周内 reactions ≥10 且外部引用 ≥1 且周下载 ≥20；不达标 → 走「承认它不是产品」 | 🚧 进行中（`docs/ROADMAP.md` §2 D5） |
 
 **回滚**：任一污染 → 以 tag + `backup/snapshots/` 恢复，新提交覆盖，禁改历史。
 
 ---
 
-## 决策检查三问
+## 决策检查四问
 
 1. 是否让用户在「装之前」少犯一次错，或在「坏了之后」少花 30 分钟？
 2. 是否产生上游结构上拿不到的数据（组合 / 归因 / 时间序列）？
 3. 是否服务下载量增长或分发位获取？
+4. **（R47 新增）如果有人不装我们，他会怎么办？** —— 若「重装 / 回滚 / 发帖问人 / 直接问 agent」已在 30 秒内解决，则本功能不成立，别做。
 
-三否 → 立即终止该任务。
+**前三问任意两否 → 终止**；**第 4 问答案是「不用我们也能过」→ 必须换交付形态（进别人路径 / 换触发时刻），而不是加功能。**
+（依据：R47 实测诊断类目周下载天花板 **1,988** vs 市场类 **380,240**；`dsh-triage` **无下载记录**。证据 `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`。）

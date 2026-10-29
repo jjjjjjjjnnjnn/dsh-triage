@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R46 (2026-10-29)",
+  "stand": "R47 (2026-10-29)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6218,6 +6218,109 @@
         "artifact": "data/results/gates-2026-10-29T10-40-00.000Z.json",
         "sha256": "368a43114751c3ec5c65a70311301edea6c47e773fca66b3aac3cba975ec7456",
         "outcome": "ALL GREEN · 9 gates（430 测试；255 步 / 235 产物全部被引用）"
+      }
+    },
+    {
+      "id": "R47-S1",
+      "batch": "R47",
+      "step": "采证：把 R47 重定向的全部依据落成脚本与 SSOT（npm 分品类下载 + 上游 Discussions 痛点聚类），离线可复算",
+      "changed": [
+        "scripts/record_market_baseline.mjs",
+        "data/results/market-baseline-2026-10-29T12-20-00.000Z.json",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "docs/00-vision.md",
+        "PROJECT_RULES.md"
+      ],
+      "review": {
+        "correctness": "PASS：404 一律保留为 `downloads_state: no-record`，产物里没有任何一处把「无记录」写成 0；品类合计只累加有记录的成员，并写出 `summed_members` / `unrecorded_members`（diagnostics 1988 = 1175+462+196+77+56+13+5+4，与成员逐项自洽）；5 条 claim 每条都指到 JSON 内部路径，可被人肉复算",
+        "reproducibility": "PASS：原始响应写进 `data/fixtures/market-baseline/2026-10-29T12-20-00.000Z/`（下载与 registry 原样、讨论只留投影），`--fixtures <同一目录>` 离线重算得到同一批 claim；产物带 `produced_by` / `generated_at` / `schema_version` 与纯 hash 的 `.sha256`；本次 `failures = []`",
+        "licence": "PASS：只读 npm downloads API 与 GitHub 公开 Discussions（REST），不取任何插件产物、不进 quarantine、不写 userconfig；讨论只保留标题与 240 字符摘录，不复制正文",
+        "ssot": "PASS：AGENTS / ROADMAP / 00-vision / PROJECT_RULES 里引用的每个市场数字都改成这一份产物里的值（1,988 / 380,240 / 411,844 / 304,666 / 842 / 414 / 278），对话里手算的 1,932 全部作废；R47 的 stand 在 HANDOFF / INDEX / ROADMAP / step_reviews / blind_spots 五处一致",
+        "adversary": "反例一：把 downloads API 的 404 写成「0 下载」——被拒，字段是 `no-record`，AGENTS 与 HANDOFF 都点名这个区别；反例二：拿 1,584 当生态分母说「生态里不存在」——被拒，改成「这 1,584 个关键词命中里没有」（`BS-43`）；反例三：为让对比好看而删掉装饰类——被拒，五个品类全部保留在产物里"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-10-29T12:20:00.000Z",
+        "artifact": "data/results/market-baseline-2026-10-29T12-20-00.000Z.json",
+        "sha256": "7f5afe6d88f7415f3789e6ff46ce7b0c17653f74ad57433cc6fb25918850480e",
+        "outcome": "diagnostics 1988 / marketplace 380240 / decorative 411844 / capability 304666 / harness 540139；dsh-triage no-record（registry 4 个版本）；discussions 842 · pain 414 · unanswered 278；failures 0"
+      }
+    },
+    {
+      "id": "R47-S2",
+      "batch": "R47",
+      "step": "负对照：新增断言 `listing-1584-is-qualified` 在「把 1584 说成本文全量」时必须判红，红产物保留",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "docs/posts/README.md",
+        "data/results/listing-2026-10-29T12-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：把 `docs/posts/README.md` 的边界句临时改回 census 写法后，断言精确报 `docs/posts/README.md:calls-1584-a-census` 且 exit 1；改回带限定词的写法立刻转绿",
+        "reproducibility": "PASS：同一输入两次运行得到同一 sha256（`60e3e473…`），说明断言与渲染都是确定性的；红产物原样保留，不被后来的绿产物覆盖（脚本在目标文件已存在时 exit 2）",
+        "licence": "PASS：只读仓内文档，无外部数据、无第三方正文",
+        "ssot": "PASS：红产物与 12:30 的绿产物构成同一条断言的前后对照；`audit/AUDIT_2026-10-29_R47.md` §4 把它列为「自己抓住的旧漂移」而不是失败",
+        "adversary": "反例：断言若只匹配「全量」二字而不看否定式，会把「不是全量」也判红——第一版正是如此（`posts/README.md` 明明写着「不是全量」却被判红），已加 `CENSUS_DENIED`（不是全量 / not a census）修正；这条负对照同时证明修复没有把真阳性一起放掉"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T12:00:00.000Z --tests 430",
+        "artifact": "data/results/listing-2026-10-29T12-00-00.000Z.json",
+        "sha256": "60e3e4739a43ede369a98f26e033eafb4600c3646e7c93189c08d86474bf32bd",
+        "outcome": "FAIL listing-1584-is-qualified · docs/posts/README.md:calls-1584-a-census（exit 1，红产物保留）"
+      }
+    },
+    {
+      "id": "R47-S3",
+      "batch": "R47",
+      "step": "修数：三份对外文档的 `1584` 加「npm 关键词命中」限定；listing 的 dsh.so 状态由「尚未提交」改为「已提交未收录」",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/posts/README.md",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：检查器 10/10 全过，含新增的 `listing-1584-is-qualified`、既有的 `listing-keeps-wilson-interval` 与 `listing-keeps-forward-improved-boundary`；dsh.so 的表述与 `market-channels` 产物的 `indexed=false` / `submitted` 一致",
+        "reproducibility": "PASS：`--tests 430` 取自同日实测；产物带引用的 13 条证据路径且每条都有 `.sha256`；文件已存在时脚本拒绝覆盖（不会静默改写历史证据）",
+        "licence": "PASS：只改自家文案；未引用第三方正文，未新增外部数据源",
+        "ssot": "PASS：`1584` 的口径现在三处一致（posts / zh / en）且都由同一断言守住；`docs/posts/README.md` 的发布前检查同步说明了口径，避免下一位又把「关键词命中」写回「全量」",
+        "adversary": "反例一：限定词只加 zh 不加 en——被拒（断言逐行扫两份 + 三篇）；反例二：干脆删掉 1584 绕过断言——被拒（`listing-keeps-forward-improved-boundary` 要求三处都在）；反例三：把 dsh.so 写成 `listed`——被拒，三个 per-plugin JSON 端点仍是 404"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-29T12:30:00.000Z --tests 430",
+        "artifact": "data/results/listing-2026-10-29T12-30-00.000Z.json",
+        "sha256": "99aae42b0bcb409c02e428e490dca20321653726d087371ba17658039dfa99dc",
+        "outcome": "10/10 PASS（含 listing-1584-is-qualified；三处 1584 全部带 keyword 限定）"
+      }
+    },
+    {
+      "id": "R47-S4",
+      "batch": "R47",
+      "step": "整轮收口：定位重定向 + 市场基线 + 流程分级 + 修数 + 归档之后，9 门全绿并把门禁结果本身写成 SSOT",
+      "changed": [
+        "data/results/gates-2026-10-29T12-40-00.000Z.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "audit/AUDIT_2026-10-29_R47.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/SIGNOFF.md",
+        "_archive/2026-10-29_HANDOFF-batch-rows-R29-R36.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "docs/specs/M6-upgrade-day.md"
+      ],
+      "review": {
+        "correctness": "PASS：9 门全绿（含 `governance` 的 `archive-manifest`、`index-references`、`blind-spot:BS-43/BS-44` 与 `step-review` 的 `no-orphan-results`）；本轮所有改动都是文档 / 台账 / 采证脚本，**没有一行判据或阈值改动**（四桶、`improved` 五门槛、`admission.ts`、`data/gold/`、20s 预算、settle/readiness、9 门全部原样）",
+        "reproducibility": "PASS：`gates-2026-10-29T12-40-00.000Z.json` 由 `gate.mjs --record` 真跑产出并带纯 hash `.sha256`；同一台机器上先跑过一遍基线（430 测试 / ALL GREEN）再改，改完再跑同样结果；HANDOFF §3 给的是可复制的三条命令",
+        "licence": "PASS：新增文档只引用本仓产物与上游公开讨论的标题；`record_market_baseline` 的抓取范围写进 `limits[]`；未新增任何外部依赖",
+        "ssot": "PASS：R47 的 stand 在 HANDOFF / INDEX / ROADMAP / AGENTS / PROJECT_RULES / step_reviews / blind_spots 七处一致；HANDOFF §2 规模行的步数与产物数按实际重算（258 步）；归档行在 `ARCHIVE_MANIFEST` 登记且路径存在",
+        "adversary": "反例一：把「本轮零代码」写成「本轮零改动」——被拒，本轮新增了采证脚本与一条断言，HANDOFF 与 AUDIT 都逐条列出；反例二：让归档看起来更干净而删掉中间状态——被拒，八行逐行原文搬移，一句话未改；反例三：把 D5 写成「已启动」——被拒，HANDOFF §8 明写「D5 一个动作都还没执行」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-10-29T12:40:00.000Z",
+        "artifact": "data/results/gates-2026-10-29T12-40-00.000Z.json",
+        "sha256": "4507bf7e7eaf14a28df5c2154d8be2673d71adb23d1633515a1777a769ee7a7e",
+        "outcome": "ALL GREEN · 9 gates（430 测试；258 步 / 全部产物被引用）"
       }
     }
   ]

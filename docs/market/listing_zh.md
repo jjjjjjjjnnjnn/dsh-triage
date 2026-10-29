@@ -1,11 +1,23 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R45 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.2.0`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> **Stand**: R47 (2026-10-29)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.2.0`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
 > 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话
 
-**装之前判断该不该装，装完坏了告诉你为什么。**
+**升级 rc 之前，先看**你这套**会坏什么。**
+
+## 正门：升级日
+
+每次 DSH 发新 rc，问题都很具体：**我这 20 多个插件，升上去还有几个能用？**
+
+```sh
+dsh-triage upgrade --to 0.2.1-rc.4
+```
+
+输出是一张**按你的已装集合**算出来的表，四桶分区：`would-be-denied`（升上去会被摘掉）、`cannot-tell`（声明不足，判不了）、`improved`（今天被拒、目标版本放行）、`likely-fine`。每个会被摘掉的行都带**原因和修复命令**，附一句能直接粘到 issue/Discussion 的摘要。
+
+**它答的是别人答不了的那一问**：市场告诉你「这个包能不能装」，注册表告诉你「它在干净沙盒里跑不跑得起来」，只有本机能告诉你「**你这一套装法**升上去会坏哪几个」。
 
 ## 简介（≤120 字）
 
@@ -57,11 +69,11 @@ dsh-triage env                     # 环境指纹
 
 - 真实候选的通过率是 **12/13 = 0.923**（Wilson 95% **0.667–0.986**，手挑的便利样本，单机单运行时）；
 - `boot→sample` 空载中位数 **4.9s**、有载 **12.3s**（p90 16.0s），两侧都没越过 20s 预算——但预算只承诺「等到第一份可判样本」，不是「一次探针 20 秒」；
-- 升级影响清单里 `improved`（今天拒、目标放行）**只有"回到插件钉的那个版本"这一种真机形状**：扫 1584 个插件的 202 个「今天被拒」里，能被**更晚**版本放行的是 **0** 个。所以我们只说「目标版本会放行它」，不说「升级会修好」。
+- 升级影响清单里 `improved`（今天拒、目标放行）**只有"回到插件钉的那个版本"这一种真机形状**：扫描范围是 **npm 关键词命中的 1584 个包**（`dsh-plugin-catalog` 自称 7,557 条，我们没有独立核实，所以这里不写"全量"），其中 202 个「今天被拒」里，能被**更晚**版本放行的是 **0** 个。所以我们只说「目标版本会放行它」，不说「升级会修好」。
 
 ## 当前状态（提交前看一眼）
 
-`0.2.0` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升）。M0–M5-b 的**构建侧**已完成；**分发侧**：三条 PR 待审（#65 等审 / #193 已 approved 未合并 / walkinglabs #140 新开），`merged 0`，dsh.so 只是 `ready`、**尚未提交**。详见 `docs/market/submissions/README.md`。
+`0.2.0` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升）。M0–M6 的**构建侧**已完成；**分发侧**：三条 PR 待审（#65 等审 / #193 已 approved 未合并 / walkinglabs #140 新开），`merged 0`；dsh.so **已由人工提交，但三个 per-plugin JSON 端点仍 404 → 状态是 `submitted`，不是 `listed`**。详见 `docs/market/submissions/README.md`。
 
 - format-1 索引源（公开 URL，已逐字节校验）：`https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

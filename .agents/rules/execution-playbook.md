@@ -38,6 +38,18 @@ node scripts/gate_step_review.mjs          # 增量自检：缺轴/孤儿产物/
 node scripts/gate.mjs --record --stamp <iso>   # 整轮留痕：把门禁结果本身也写成 SSOT
 ```
 
+### 1c. 流程分级（R47 起，HUMAN 批准）
+
+先给这一轮**定性**，再决定走多重：
+
+| 轮型 | 判据 | 硬要求 | 豁免 |
+|---|---|---|---|
+| 判据轮 | 改 `conclusion` 的计算、admission 规则、冻结阈值、`data/gold/`、verdict 契约 | 四轴 + 对抗性 + 每步 `step_reviews.json` + 真跑产物 + `--mutate` | 无 |
+| 交付轮 | 文档 / 文案 / 分发 / 纯新增渲染 | 1 次真跑产物 + 1 个 verifier + 轮末 1 条汇总台账 | 四轴并行 review、per-step 台账 |
+| 采证轮 | 只读外部数据并落快照 | 原始快照进 `data/fixtures/`、`produced_by`、离线可复算 | 负对照 |
+
+**为什么允许豁免**：零用户阶段（周下载 0，见 `data/results/market-baseline-*.json`）最稀缺的资源是「接触用户的机会」，不是证据条数。豁免只针对**审核流程**，不针对**证据**：产物、sha256、可复算三件永远在。
+
 
 ## 2. 命令约定（Windows / 中文路径）
 
@@ -61,6 +73,7 @@ node scripts/gate.mjs --record --stamp <iso>   # 整轮留痕：把门禁结果�
 | 改了什么 | 必须同步 |
 |---|---|
 | 每一步（任何有产出的改动） | `audit/step_reviews.json`（四轴 + 对抗性 + real_test 产物 sha256） |
+| **交付轮 / 分发轮（R47 起）** | 代替上面的 per-step：**1 条轮末汇总**（产物 + sha256 + verifier 结论）写进 `audit/step_reviews.json` 或该轮审核报告 |
 | `packages/` `scripts/` `tests/` | `AGENTS.md` 架构图 + `INDEX.md` + `audit/AI_DISCLOSURE_LOG.md` + `PROJECT_RULES.md` 路线状态 |
 | 判据 / 阈值 / verdict 契约 | `docs/05-verdict-contract.md` + `docs/specs/*` + `audit/gate_ledger.json` |
 | 新依赖 / 新许可 / 新数据源 | `quarantine/vendor-manifest.json` + `COMPLIANCE.md` + `docs/02-signal-sources.md` |

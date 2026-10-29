@@ -46,6 +46,8 @@
 
 | 2026-10-30 | **R42 0.2.0 四包发布（new version, new surface）**：`@dsh-triage/core|signals|probe` + `dsh-triage` 一起升到 `0.2.0`（新增 `outcomes` 与 `upgrade` 两个命令） | 会话内：HUMAN 在交互终端执行四条 `npm publish`（OTP 在 HUMAN 手里）；对「四包一起升」的方案明确同意 | DeepSeek V4.1 Flash：**没有替 HUMAN 发布**；负责发布前预检（干净目录装四个 tarball 真跑，抓到「只升插件会装到旧 core 并 SyntaxError」）、发布后**匿名安装**复验（20 项）、以及文档/台账同步 | HUMAN 未逐条复核：四个包的 registry 完整性比对、匿名安装的具体命令、以及「core 新增导出必须先发 core」这条发布顺序 | `data/results/publish-2026-10-30T05-00-00.000Z.json` · `data/results/gates-2026-10-30T06-00-00.000Z.json` |
 
+| 2026-10-29 | **R47 定位重定向（改的是产品形态，不是判据）**：正门从「通用检查器」改为「**升级日**」；四条候选（A 进别人安装路径 / **B 升级日** / C 作者侧 CI / D 承认不是产品）由 HUMAN 选 **B**；同时批准**流程分级**（判据轮重 / 交付轮轻 / 采证轮只认可复算） | 会话内三问三答：「定位走哪条？」→ **B：把「升级日」当正门（推荐）**；「流程要不要分级？」→ **分级：判据轮重、分发轮轻（推荐）**；「我们自己的 1584 全量是错的，要先修吗？」→ **先修数再动产品（推荐）** | DeepSeek V4.1 Flash：先取证（`scripts/record_market_baseline.mjs` → `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`），再改 `AGENTS.md` / `docs/ROADMAP.md`（新增 **D5**）/ `docs/00-vision.md` / `PROJECT_RULES.md`（新增决策第 4 问 + M6）/ `.agents` 三份 / `docs/HANDOFF.md` / `INDEX.md`；**没有**改任何判据与阈值（四桶、`improved` 五门槛、`admission.ts`、`data/gold/`、20s 预算、settle/readiness、9 门全部原样） | HUMAN 未逐条复核：品类成员的手工归类（diagnostics / marketplace / decorative / capability）、D5 的三个门槛值（≥10 / ≥1 / ≥20）与 2 周窗口、以及「1584 是 npm 关键词口径」这处修正的具体措辞 | `data/results/market-baseline-2026-10-29T12-20-00.000Z.json` · `data/results/listing-2026-10-29T12-30-00.000Z.json` · `audit/AUDIT_2026-10-29_R47.md` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

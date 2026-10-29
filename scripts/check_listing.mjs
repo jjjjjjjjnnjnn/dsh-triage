@@ -178,6 +178,25 @@ check(
   zh.includes('1584') && en.includes('1584') && upgradePost.includes('1584'),
   'both listings and the upgrade post must state the forward-improved finding (0 of 1584)',
 )
+/* 7c. R47: 1584 is a keyword-search result, not a census (`dsh-plugin-catalog` advertises 7,557 entries).
+ * The number may stay; the word that makes it a lie may not. */
+const QUALIFIER = /关键词|keyword/i
+const CENSUS = /全量|全网|所有 dsh 插件|every dsh plugin|all dsh plugins/i
+const CENSUS_DENIED = /不是全量|非全量|not a census|no census/i
+const censusHits = []
+for (const [file, text] of texts) {
+  for (const line of text.split('\n')) {
+    if (!line.includes('1584')) continue
+    const claimsCensus = CENSUS.test(line) && !CENSUS_DENIED.test(line) && !PROHIBITION.test(line)
+    const missingQualifier = !QUALIFIER.test(line)
+    if (claimsCensus || missingQualifier) censusHits.push(`${file}:${claimsCensus ? 'calls-1584-a-census' : 'missing-keyword-qualifier'}`)
+  }
+}
+check(
+  'listing-1584-is-qualified',
+  censusHits.length === 0,
+  censusHits.slice(0, 4).join(', ') || 'every mention of 1584 says it is a keyword-search result, not a census',
+)
 
 const passed = checks.every((entry) => entry.ok)
 const artifact = {

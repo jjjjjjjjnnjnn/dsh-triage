@@ -42,15 +42,18 @@ ProbeRun ────────┘        │
 - `ProbeRun`（M3）：stages + outcome + durationMs
 - `Verdict`：结论 + 证据 + 替代方案
 
-## 4. 分发面（同一个引擎，四种外壳）
+## 4. 分发面（同一个引擎，五种外壳）
 
 | 外壳 | 用户价值 | 状态 |
 |---|---|---|
+| **升级日卡片（`upgrade --card`）** | **正门（R47）**：每次 rc 发布前回答「你这套会坏什么」，可粘贴进 Discussion | **M6（判据已定，渲染待做：`docs/specs/M6-upgrade-day.md`）** |
 | `dsh-triage why/check/audit` | CLI，零网络 | M0 已有（`why`/`audit` 基础版） |
 | Web 面板（`settings.plugins.tab`） | 在 DSH 内直接看到判断 | M4 |
 | 作者徽章（SVG） | README 曝光 → 自然获客 | M4 |
 | format-1 索引源 | 按本机环境过滤的 Discover 列表 | M4 |
 | `compat_verdict` Agent 工具 | Agent 装前自查 | M4 |
+
+> **R47 的顺序变了**：以前这五种外壳**并列**（谁先做都行），现在**卡片是正门**，其余四种是放大器。理由是外部取证：诊断类目周下载天花板 1,988（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`），并列做等于把预算摊平在一个没有需求的形态上。
 
 ## 5. 决策台账
 
@@ -62,3 +65,4 @@ ProbeRun ────────┘        │
 | D-04 | 门禁零第三方依赖 | 门禁失效比没有门禁更危险 |
 | D-05 | probe 默认 dry-run | 安装会执行第三方脚本（`COMPLIANCE.md` §5） |
 | D-06 | 产品名 `dsh-triage` | npm 未占用；语义即「分诊」（该不该装 / 为什么坏） |
+| **D-07（R47）** | **正门 = 升级日；卡片是第一种外壳，其余都是放大器** | 诊断类目无需求形态（1,988 vs 市场类 380,240）；升级日是唯一「有明确时间点 + 只有本机能答」的场景。见 `docs/adr/0013-upgrade-day-front-door.md` |
