@@ -33,7 +33,7 @@ for (const locale of ['zh', 'en'] as const) {
   test(`${locale}: the controls a person needs are present and CSP-safe`, () => {
     const html = renderPanelHtml(locale)
     // Search + two filters + sortable headers + drawer + theme + deep links.
-    for (const id of ['search', 'kind', 'conclusion', 'drawer', 'theme', 'refresh', 'counts', 'issues', 'next', 'rows']) {
+    for (const id of ['search', 'kind', 'conclusion', 'drawer', 'theme', 'refresh', 'counts', 'issues', 'next', 'rows', 'view-simple', 'view-advanced', 'hero-actions']) {
       assert.match(html, new RegExp(`id="${id}"`), `missing control #${id}`)
     }
     assert.match(html, /data-sort="generated_at"/, 'the artifact table must be sortable')
@@ -44,6 +44,12 @@ for (const locale of ['zh', 'en'] as const) {
     // becoming an XSS surface, and behaviour stays in one place.
     assert.doesNotMatch(html, /<[^>]+\son(click|load|change|input|submit)=/i, 'no inline event handlers')
     assert.match(html, /aria-live="polite"/, 'the verdict is announced when it arrives')
+    // A first-time user gets one sentence and one button; the ledger is one click away.
+    assert.match(html, /<body data-view="simple">/, 'the page opens in the simple view')
+    assert.match(html, /only-simple/, 'simple-view text exists')
+    assert.match(html, /only-advanced/, 'the detailed wording still exists')
+    assert.match(html, /id="view-simple"[^>]*aria-pressed="true"/, 'simple is the pressed state on load')
+    assert.match(html, /checked in \{ms\} ms|检查用时 \{ms\} 毫秒/, 'the panel says how long the check took')
   })
 }
 

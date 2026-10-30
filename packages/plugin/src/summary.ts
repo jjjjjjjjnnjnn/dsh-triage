@@ -24,6 +24,8 @@ export interface SummaryIssue {
   readonly kind: IssueKind
   /** One localized sentence. Never a code, never a JSON blob. */
   readonly line: string
+  /** The same thing in everyday words — what the panel shows when nobody asked for detail. */
+  readonly plain: string
   /** Copy-pasteable command, when the engine already produced one. */
   readonly fix: string | null
 }
@@ -37,6 +39,8 @@ export interface ProfileSummary {
   readonly tone: SummaryTone
   /** The sentence a user should read first. */
   readonly headline: string
+  /** The same verdict without jargon, for first-time users. */
+  readonly plain: string
   readonly counts: {
     /** Loader rows declared in this profile (the denominator a user expects). */
     readonly rows: number
@@ -85,6 +89,7 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       id: verdict.subject.name,
       kind: 'denied',
       line: firstReason(verdict, locale) ?? copy.deniedFallback,
+      plain: copy.plainDenied,
       fix: firstCommand(verdict),
     })
   }
@@ -93,6 +98,7 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       id: collision.id,
       kind: 'collision',
       line: copy.collision.replace('{owners}', collision.owners.join(', ')),
+      plain: copy.plainCollision,
       fix: null,
     })
   }
@@ -102,6 +108,7 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       id: duplicate.name,
       kind: 'duplicate',
       line: copy.duplicate.replace('{versions}', versions),
+      plain: copy.plainDuplicate,
       fix: null,
     })
   }
@@ -110,11 +117,12 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       id: verdict.subject.name,
       kind: 'unknown',
       line: firstReason(verdict, locale) ?? copy.unknownFallback,
+      plain: copy.plainUnknown,
       fix: null,
     })
   }
   for (const error of data.errors) {
-    issues.push({ id: 'profile', kind: 'unreadable', line: error, fix: null })
+    issues.push({ id: 'profile', kind: 'unreadable', line: error, plain: copy.plainUnreadable, fix: null })
   }
 
   const tone: SummaryTone =
@@ -136,9 +144,19 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
           ? copy.attention.replace('{n}', String(unknown.length + data.duplicateFindings.length + data.errors.length))
           : copy.ok
 
+  const plain =
+    data.claims.length === 0
+      ? copy.plainEmpty
+      : tone === 'broken'
+        ? copy.plainBroken.replace('{n}', String(denied.length + data.collisions.length))
+        : tone === 'attention'
+          ? copy.plainAttention.replace('{n}', String(unknown.length + data.duplicateFindings.length + data.errors.length))
+          : copy.plainOk
+
   return {
     tone: data.claims.length === 0 ? 'attention' : tone,
     headline,
+    plain,
     counts: {
       rows: data.claims.length,
       judged: data.rowVerdicts.length,
@@ -165,7 +183,8 @@ export function formatProfileSummary(summary: ProfileSummary, options: { locale:
   const lines: string[] = []
   lines.push(`${copy.title} · dsh ${options.env.dsh ?? 'unknown'} · profile ${options.env.profile} · ${options.env.platform}/${options.env.arch}`)
   lines.push('')
-  lines.push(`${copy.headline}  ${summary.headline}`)
+  lines.push(`${copy.headline}  ${summary.plain}`)
+  lines.push(`  ${summary.headline}`)
   lines.push(
     `  ${copy.counts
       .replace('{rows}', String(summary.counts.rows))
@@ -230,6 +249,15 @@ interface SummaryCopy {
   readonly emptyProfile: string
   readonly collision: string
   readonly duplicate: string
+  readonly plainOk: string
+  readonly plainAttention: string
+  readonly plainBroken: string
+  readonly plainEmpty: string
+  readonly plainDenied: string
+  readonly plainCollision: string
+  readonly plainDuplicate: string
+  readonly plainUnknown: string
+  readonly plainUnreadable: string
   readonly deniedFallback: string
   readonly unknownFallback: string
   readonly nextWhy: string
@@ -256,6 +284,15 @@ function summaryCopy(locale: Locale): SummaryCopy {
       collision: 'two rows claim this entry id (owners: {owners}) — the profile may fail to boot',
       duplicate: 'the same package is installed at more than one version ({versions})',
       deniedFallback: 'denied by admission',
+      plainOk: 'All good — nothing in this setup needs fixing.',
+      plainAttention: 'Nothing is broken, but there is (are) {n} thing(s) we could not judge. It usually still starts.',
+      plainBroken: '{n} thing(s) will break: they are likely to disappear when DSH starts.',
+      plainEmpty: 'No plugins were found — the folder is probably wrong, not empty.',
+      plainDenied: 'It gets blocked, so it may vanish when DSH starts.',
+      plainCollision: 'Two plugins want the same slot, so one of them may not take effect.',
+      plainDuplicate: 'Two copies of the same plugin are installed, so one can shadow the other.',
+      plainUnknown: 'It never says which versions it supports, so we cannot tell.',
+      plainUnreadable: 'This config file could not be read.',
       unknownFallback: 'not enough evidence to judge this row',
       nextWhy: 'row-by-row attribution',
       nextUpgrade: 'what the next dsh would deny',
@@ -278,6 +315,15 @@ function summaryCopy(locale: Locale): SummaryCopy {
     collision: '两行抢同一个 entry id（来自 {owners}），profile 可能起不来',
     duplicate: '同一个包装了两个版本（{versions}）',
     deniedFallback: '被 admission 拒绝',
+    plainOk: '一切正常：这套组合里没有要修的东西。',
+    plainAttention: '没有会坏的东西，但有 {n} 项我们判断不了，通常不影响启动。',
+    plainBroken: '有 {n} 个东西会出问题：DSH 启动后它们很可能直接消失。',
+    plainEmpty: '没读到任何插件——多半是目录指错了，不是「干净的」。',
+    plainDenied: '它会被挡住，启动后可能直接不见。',
+    plainCollision: '两个插件抢同一个位置，可能有一个不生效。',
+    plainDuplicate: '同一个插件装了两份，容易互相盖住。',
+    plainUnknown: '它没说自己支持哪个版本，所以我们判断不了。',
+    plainUnreadable: '这份配置读不出来。',
     unknownFallback: '证据不足，判不了这一行',
     nextWhy: '逐行归因',
     nextUpgrade: '升级前先看会坏什么',

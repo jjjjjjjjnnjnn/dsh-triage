@@ -597,3 +597,13 @@
 - 结果：**判据/阈值/`audit --json` 仍未动**。① 六个计数可点，点了就按类型筛「要看的地方」；② 证据页三个筛选（搜索 / 类型 / 结论）+ 六列可排序表头 + 右侧详情抽屉（复制名称 / sha256 / JSON）+「复制这段结论」；③ 主题三态（跟随系统 / 浅 / 深，`localStorage` 记住）、`/` `r` `l` `Esc` 快捷键、`#artifact=` 与 `#theme=` 深链；④ **两处真发现的界面缺陷**：注入的文案表漏 `allKinds` / `allConclusions` / `kbdHint`（下拉框与提示渲染成空，`--dump-dom` 才看见）、`color-scheme: light dark` 让浅色主题的画布仍是深色；⑤ 结论列现在读得出 `passed` / `ok` / `expectation_met`，252 个产物里不再有 200 个写着「没有结论」
 - 实测：**482 测试 / 0 fail**（477 → 482）· 9 门 ALL GREEN · 面板冒烟 **18/18**（新增 `page-controls`）· 真浏览器截图 4 张（深色首屏 / 深色证据页 / 详情抽屉 / 浅色首屏）
 - 反思：第一次截图「看起来干净」，但两个下拉框是空的——**界面缺陷不会让任何 HTTP 断言变红**，只能靠真的把 DOM 与截图拿出来看。所以这一轮加了一条结构性测试（`COPY.<key>` 全覆盖），把「读一个没注入的键」变成红；这比再写十条「页面含某字符串」有用。
+
+### 2026-10-30 R49 三｜交付：简单模式（人话）+ 发布预检查（把 404 翻成「还没登录」）
+
+- 生成者：DeepSeek V4.1 Flash（opencode 主会话；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R49-S3）
+- 范围：`packages/plugin/src/summary.ts`（`plain` 结论 + 每条问题的 `plain`，CLI 文本改为「人话在前、精确在后」）· `packages/plugin/src/serve.ts`（简单/详细双视图、主按钮、人话子行）· `packages/{core,plugin,signals,probe}/package.json`（`publishConfig.access=public`）· `package.json`（`release:publish`）· `scripts/release_preflight.mjs`（新）· `tests/unit/{summary,serve-ui}.test.ts` · `scripts/record_serve_smoke.mjs` · `data/results/serve-smoke-2026-10-30T12-10-00.000Z.json`（新）· 文档若干
+- 人工决策：用户第二次反馈——「控制面板让人看不懂，希望普通人也能用，最好傻瓜式操作，或者自动执行」，并附 `pnpm -r publish` 的 404。诊断结论：**不是包不存在，是 npm 登录已失效**（`npm whoami` 返回 401；未登录时发布 scoped 包会回 404）
+- 结果：**判据/阈值/`audit --json` 仍未动**。① 面板默认**简单模式**：一句话说清「会不会坏」+ 一个主按钮（有修复命令就复制命令，否则复制整份结果）+ 每条问题一句人话；右上角 `简单 / 详细` 切换；② 人话不撒谎：`tone` 非 ok 时 `plain` 禁止出现「一切正常」，154 行未声明仍然要说出来（换成「另外 154 个插件没说自己支持哪些版本，我们判断不了——这不等于它们没问题」）；③ CLI 的结论行也改成人话在前、精确陈述在后；④ 发布链路：`publishConfig.access=public` + `release_preflight.mjs`（登录 / 四包同版本 / 可见性 / 是否 build），把 404 直接翻成「你还没登录（`npm login`）」
+- 实测：**484 测试 / 0 fail**（482 → 484）· 9 门 ALL GREEN · 面板冒烟 **18/18**（8 个控件）· 简单模式在浅色/深色各截一张图确认
+- 反思：「简单」不是把技术文案删掉，而是**把同一句话换一种说法**——154 行未声明如果从简单模式里消失，那这个模式就是在撒谎。所以 `plain` 是 `summary` 的一部分（可被测试断言），而不是面板里临时拼的字符串。

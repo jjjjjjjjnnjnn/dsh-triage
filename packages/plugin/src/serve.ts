@@ -515,6 +515,13 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
     artifactFailed: copy.artifactFailed,
     conclusions: copy.conclusions,
     kbdHint: copy.kbdHint,
+    viewLabel: copy.viewLabel,
+    actionFix: copy.actionFix,
+    actionFixHint: copy.actionFixHint,
+    actionCopy: copy.actionCopy,
+    actionCopyHint: copy.actionCopyHint,
+    checked: copy.checked,
+    unjudgedSimple: copy.unjudgedSimple,
     allKinds: copy.allKinds,
     allConclusions: copy.allConclusions,
   }).replace(/</g, '\\u003c')
@@ -603,6 +610,20 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
   .stat[aria-pressed="true"] { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
   .stat.bad b { color:var(--bad); } .stat.warn b { color:var(--warn); } .stat.ok b { color:var(--ok); }
   .stat:disabled { cursor:default; opacity:.6; }
+
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .seg button { border:none; background:transparent; padding:5px 10px; font-size:12.5px; color:var(--muted); }
+  .seg button[aria-pressed="true"] { background:var(--soft); color:var(--fg); font-weight:600; }
+  .btn.big { font-size:15px; padding:11px 18px; border-radius:11px; }
+  .hero-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
+  .hero-actions .note { color:var(--muted); font-size:12.5px; }
+  body[data-view="simple"] .only-advanced { display:none !important; }
+  body[data-view="advanced"] .only-simple { display:none !important; }
+  body[data-view="simple"] .grid { grid-template-columns:minmax(0,1fr); }
+  body[data-view="simple"] #counts,
+  body[data-view="simple"] nav.tabs,
+  body[data-view="simple"] #tab-evidence,
+  body[data-view="simple"] #tab-raw { display:none; }
 
   .grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:16px; margin-top:16px; }
   @media (max-width:900px) { .grid { grid-template-columns:1fr; } .counts { grid-template-columns:repeat(3,minmax(0,1fr)); } }
@@ -707,7 +728,7 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
   .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style></head>
-<body>
+<body data-view="simple">
 
 <header class="top">
   <div class="brand"><span class="mark">◑</span><span>${copy.brand}</span><span class="sub">triage</span></div>
@@ -717,6 +738,10 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
     <span class="pill" id="pill-mode">${copy.readOnly}</span>
   </div>
   <span class="grow"></span>
+  <div class="seg" role="group" aria-label="${copy.viewLabel}">
+    <button id="view-simple" aria-pressed="true">${copy.viewSimple}</button>
+    <button id="view-advanced" aria-pressed="false">${copy.viewAdvanced}</button>
+  </div>
   <button class="btn icon" id="theme" title="${copy.themeTitle}" aria-label="${copy.themeTitle}">◐</button>
   <button class="btn primary" id="refresh" title="${copy.refreshTitle}">${copy.refresh}</button>
 </header>
@@ -725,6 +750,7 @@ export function renderPanelHtml(locale: 'en' | 'zh'): string {
   <section class="hero pending" id="hero" aria-live="polite">
     <div class="hero-head"><span class="dot"></span><h1 id="headline">${copy.loading}</h1></div>
     <p class="sub" id="sub">${copy.loadingSub}</p>
+    <div class="hero-actions" id="hero-actions"></div>
     <div class="counts" id="counts"></div>
   </section>
 
@@ -797,7 +823,7 @@ const NUM = (n) => (typeof n === 'number' ? n.toLocaleString() : '—');
 const MARK = { denied: ['✗','bad'], collision: ['✗','bad'], duplicate: ['!','warn'], unknown: ['?','muted'], unreadable: ['!','warn'] };
 const TONE = { go:'ok', passed:'ok', rendered:'ok', blocked:'bad', failed:'bad', blank:'bad', risky:'warn', unknown:'muted' };
 
-const state = { summary: null, env: {}, artifacts: [], issueFilter: null, query: '', kind: '', conclusion: '', sort: { key: 'generated_at', dir: 'desc' }, evidenceLoaded: false, rawLoaded: false, drawerName: null };
+const state = { summary: null, env: {}, ms: null, view: 'simple', artifacts: [], issueFilter: null, query: '', kind: '', conclusion: '', sort: { key: 'generated_at', dir: 'desc' }, evidenceLoaded: false, rawLoaded: false, drawerName: null };
 
 let toastTimer = null;
 function toast(text) {
@@ -851,7 +877,8 @@ function envLine() {
   if (state.env.profile) parts.push('profile ' + state.env.profile);
   if (state.env.platform) parts.push(state.env.platform + '/' + (state.env.arch || '?'));
   if (s && s.counts && s.counts.rows > s.counts.judged) {
-    parts.push(COPY.unjudged.replace('{n}', NUM(s.counts.rows - s.counts.judged)));
+    const template = state.view === 'simple' ? COPY.unjudgedSimple : COPY.unjudged;
+    parts.push(template.replace('{n}', NUM(s.counts.rows - s.counts.judged)));
   }
   return parts.join(' · ');
 }
@@ -867,8 +894,10 @@ function renderSummary() {
   const s = state.summary;
   const hero = $('hero');
   hero.className = 'hero ' + s.tone;
-  $('headline').textContent = s.headline;
+  // Simple view says the same thing without jargon; advanced keeps the wording audit prints.
+  $('headline').textContent = state.view === 'simple' ? s.plain : s.headline;
   $('sub').textContent = envLine();
+  renderHeroAction();
   $('pill-dsh').innerHTML = 'dsh <b>' + esc(state.env.dsh || 'unknown') + '</b>';
   $('pill-profile').innerHTML = 'profile <b>' + esc(state.env.profile || 'unknown') + '</b>';
   const c = s.counts;
@@ -881,6 +910,22 @@ function renderSummary() {
     stat('collisions', COPY.chips.collisions, c.collisions, c.collisions > 0 ? 'bad' : '', 'collision');
   renderIssues();
   renderNext();
+}
+
+/** One obvious next action, chosen from the verdict itself. Nothing is executed for the user. */
+function renderHeroAction() {
+  const s = state.summary;
+  const box = $('hero-actions');
+  if (!s) { box.innerHTML = ''; return; }
+  const fixable = s.issues.find((issue) => issue.fix !== null);
+  const ms = state.ms === null ? '' : ' · ' + COPY.checked.replace('{ms}', String(state.ms));
+  if (fixable) {
+    box.innerHTML = '<button class="btn primary big" data-copy="' + esc(fixable.fix) + '">' + esc(COPY.actionFix) + '</button>' +
+      '<span class="note">' + esc(fixable.id) + ' · ' + esc(COPY.actionFixHint) + ms + '</span>';
+    return;
+  }
+  box.innerHTML = '<button class="btn big" data-copy="' + esc(reportText()) + '">' + esc(COPY.actionCopy) + '</button>' +
+    '<span class="note">' + esc(COPY.actionCopyHint) + ms + '</span>';
 }
 
 function issuesMatching() {
@@ -910,7 +955,9 @@ function renderIssues() {
       ? ''
       : '<button class="btn tiny" data-copy="' + esc(issue.fix) + '" title="' + esc(issue.fix) + '">' + esc(COPY.copy) + '</button>';
     return '<div class="issue ' + mark[1] + '"><span class="badge">' + esc(mark[0]) + '</span>' +
-      '<div class="body"><div class="id">' + esc(issue.id) + '</div><div class="line">' + esc(issue.line) + '</div></div>' +
+      '<div class="body"><div class="id">' + esc(issue.id) + '</div>' +
+      '<div class="line only-simple">' + esc(issue.plain) + '</div>' +
+      '<div class="line only-advanced">' + esc(issue.line) + '</div></div>' +
       (fix ? '<div class="acts">' + fix + '</div>' : '') + '</div>';
   }).join('') +
     (filtered ? '' : s.more > 0 ? '<div class="hint">' + esc(s.more + ' ' + COPY.more) + '</div>' : '');
@@ -970,6 +1017,7 @@ async function loadSummary() {
   }
   state.summary = body.summary;
   state.env = body.env || {};
+  state.ms = typeof body.ms === 'number' ? body.ms : null;
   renderSummary();
 }
 
@@ -1149,6 +1197,18 @@ document.addEventListener('keydown', (event) => {
   if (row && row.matches && row.matches('tbody tr[data-name]')) openDrawer(row.getAttribute('data-name'));
 });
 
+function applyView(view) {
+  state.view = view;
+  document.body.setAttribute('data-view', view);
+  $('view-simple').setAttribute('aria-pressed', String(view === 'simple'));
+  $('view-advanced').setAttribute('aria-pressed', String(view === 'advanced'));
+  try { localStorage.setItem('triage-view', view); } catch (e) {}
+  if (state.summary) renderSummary();
+  if (view === 'advanced' && !state.evidenceLoaded) loadEvidence(false);
+}
+$('view-simple').onclick = () => applyView('simple');
+$('view-advanced').onclick = () => applyView('advanced');
+
 $('theme').onclick = cycleTheme;
 $('refresh').onclick = () => refresh();
 $('drawer-close').onclick = closeDrawer;
@@ -1181,6 +1241,12 @@ $('kbd-hint').textContent = COPY.kbdHint;
 // A link can carry the theme: screenshots, docs, and "open it the way I had it" all work
 // without touching the saved preference.
 if (location.hash.indexOf('#theme=') === 0) applyTheme(location.hash.slice('#theme='.length));
+try {
+  const savedView = localStorage.getItem('triage-view');
+  if (savedView === 'advanced' || savedView === 'simple') applyView(savedView);
+} catch (e) {}
+if (location.hash === '#advanced') applyView('advanced');
+if (location.hash === '#simple') applyView('simple');
 if (/^#(evidence|raw)$/.test(location.hash)) selectTab(location.hash.slice(1));
 if (location.hash.indexOf('#artifact=') === 0) {
   const wanted = decodeURIComponent(location.hash.slice('#artifact='.length));
@@ -1239,6 +1305,15 @@ interface PanelCopy {
   readonly artifactFailed: string
   readonly reportTitle: string
   readonly kbdHint: string
+  readonly viewLabel: string
+  readonly viewSimple: string
+  readonly viewAdvanced: string
+  readonly actionFix: string
+  readonly actionFixHint: string
+  readonly actionCopy: string
+  readonly actionCopyHint: string
+  readonly checked: string
+  readonly unjudgedSimple: string
   readonly conclusions: Readonly<Record<string, string>>
   readonly chips: Readonly<Record<string, string>>
 }
@@ -1292,6 +1367,15 @@ function panelCopy(locale: 'en' | 'zh'): PanelCopy {
       artifactFailed: 'could not read this artifact',
       reportTitle: 'Verdict',
       kbdHint: '/ search · r re-check · l theme · Esc close',
+      viewLabel: 'Detail level',
+      viewSimple: 'Simple',
+      viewAdvanced: 'Detailed',
+      actionFix: 'Copy the fix command',
+      actionFixHint: 'paste it into your terminal',
+      actionCopy: 'Copy this result',
+      actionCopyHint: 'paste it into an issue or a chat',
+      checked: 'checked in {ms} ms',
+      unjudgedSimple: '{n} more plugins never say which versions they support, so we cannot judge them (that is not the same as OK)',
       conclusions: { go: 'go', passed: 'passed', rendered: 'rendered', blocked: 'blocked', failed: 'failed', blank: 'blank', risky: 'risky', unknown: 'cannot tell', '∅': 'no conclusion' },
       chips: { rows: 'rows', judged: 'judged', go: 'go', denied: 'denied', unknown: 'cannot tell', collisions: 'collisions' },
     }
@@ -1343,6 +1427,15 @@ function panelCopy(locale: 'en' | 'zh'): PanelCopy {
     artifactFailed: '读不到这份产物',
     reportTitle: '结论',
     kbdHint: '/ 搜索 · r 重新检查 · l 主题 · Esc 关闭',
+    viewLabel: '详细程度',
+    viewSimple: '简单',
+    viewAdvanced: '详细',
+    actionFix: '复制修复命令',
+    actionFixHint: '粘贴到终端里执行',
+    actionCopy: '复制这份结果',
+    actionCopyHint: '贴到 issue 或聊天里',
+    checked: '检查用时 {ms} 毫秒',
+    unjudgedSimple: '另外 {n} 个插件没说自己支持哪些版本，我们判断不了（这不等于它们没问题）',
     conclusions: { go: '正常', passed: '通过', rendered: '渲染正常', blocked: '被拒', failed: '失败', blank: '白屏', risky: '有风险', unknown: '判不了', '∅': '无结论' },
     chips: { rows: '行', judged: '有判定', go: '正常', denied: '被拒', unknown: '判不了', collisions: '冲突' },
   }

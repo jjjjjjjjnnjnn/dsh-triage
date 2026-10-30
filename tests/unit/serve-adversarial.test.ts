@@ -24,6 +24,7 @@ function summary(): ProfileSummary {
   return {
     tone: 'ok',
     headline: 'no problems found',
+    plain: 'All good — nothing in this setup needs fixing.',
     counts: { rows: 1, judged: 1, go: 1, denied: 0, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
     issues: [],
     more: 0,

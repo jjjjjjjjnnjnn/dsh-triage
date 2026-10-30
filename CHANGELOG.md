@@ -71,6 +71,21 @@ when they do, the change is written here with the reason, not just the diff.
   a structural test now compares every `COPY.<key>` the page reads against the injected blob; and
   `color-scheme: light dark` left the canvas dark in light mode (white cards floating on black).
 
+### A first-time user gets one sentence and one button (R49, 2026-10-30)
+
+- **The panel opens in a simple view.** One plain sentence ("Nothing is broken, but 2 things we could
+  not judge. It usually still starts."), one primary button, and one everyday sentence per problem.
+  `Detailed` in the corner switches to the full UI — search, filters, sortable table, drawer.
+- **Plain language is part of the data, not the UI.** `summary.plain` and `issue.plain` are fields the
+  tests can assert on: when the verdict is not "ok", the plain sentence may not say "all good", and the
+  rows that declare no DSH range are still mentioned — in everyday words, not by deletion.
+- **The CLI says the same thing twice.** `dsh-triage` prints the plain sentence first, then the precise
+  statement the record uses; the counts keep the honest `rows (judged)` split.
+- **Publishing is self-explaining.** All four packages set `publishConfig.access=public`, and
+  `node scripts/release_preflight.mjs` checks login, one version across the four, visibility and build.
+  An expired npm token used to surface as `404 Not found`; it now says "not logged in — run npm login".
+
+
 ## [0.2.0] — 2026-10-30
 
 > Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).

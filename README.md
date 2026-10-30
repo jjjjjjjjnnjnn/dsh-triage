@@ -190,7 +190,7 @@ Nothing in this README is asserted without a producer in the repo.
 
 | Claim | Reproduce it |
 |---|---|
-| build, typecheck, 482 tests, 9 gates | `pnpm run verify` |
+| build, typecheck, 484 tests, 9 gates | `pnpm run verify` |
 | the gates can actually fail | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission semantics match upstream | `data/gold/admission-cases.json` — 27 signed goldens, enforced by the `admission-parity` gate |
 | `why` finds the root cause in real failures | `node scripts/d1_report.mjs --stamp <iso>` → 10 real cases, 9 hits, 1 explicit `unknown` (`data/results/d1-*.json`) |

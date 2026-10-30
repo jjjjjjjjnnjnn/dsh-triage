@@ -85,7 +85,7 @@ await withPanel({ resultsDir, locale: 'zh' }, async (panel) => {
   )
   // The controls are what makes the panel usable rather than merely readable; a page that
   // lost its search box or drawer would still answer 200 (that is how R49 found the CSP bug).
-  const controls = ['id="search"', 'id="kind"', 'id="conclusion"', 'id="drawer"', 'id="theme"', 'data-sort="generated_at"']
+  const controls = ['id="search"', 'id="kind"', 'id="conclusion"', 'id="drawer"', 'id="theme"', 'data-sort="generated_at"', 'id="view-simple"', 'id="view-advanced"']
   const missingControls = controls.filter((needle) => !page.text.includes(needle))
   check(
     'page-controls',

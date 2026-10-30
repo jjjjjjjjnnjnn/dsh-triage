@@ -193,3 +193,53 @@ test('both locales are complete: no template placeholder leaks into the text', (
     assert.doesNotMatch(text, /\{(n|rows|judged|go|denied|unknown|collisions|owners|versions)\}/, `${locale} left a placeholder`)
   }
 })
+
+/* --------------------------- plain language (R49b) ------------------------- */
+
+test('the plain sentence never contradicts the tone', () => {
+  const cases = [
+    { data: data({ claims: [claim('a')], rowVerdicts: [verdict('a', 'go')] }), forbidden: /break|坏|消失|判断不了/ },
+    { data: data({ claims: [claim('a')], rowVerdicts: [verdict('a', 'unknown')] }), forbidden: /All good|一切正常/ },
+    { data: data({ claims: [claim('a')], rowVerdicts: [verdict('a', 'blocked')] }), forbidden: /All good|一切正常|nothing needs fixing/ },
+    { data: data(), forbidden: /All good|一切正常/ },
+  ]
+  for (const locale of ['zh', 'en'] as const) {
+    for (const item of cases) {
+      const summary = buildProfileSummary(item.data, { locale })
+      assert.ok(summary.plain.length > 10, `${locale}: plain sentence missing`)
+      assert.doesNotMatch(summary.plain, item.forbidden, `${locale}/${summary.tone}: "${summary.plain}" reads wrong for this verdict`)
+      // No template placeholder may leak into the sentence a first-time user reads.
+      assert.doesNotMatch(summary.plain, /\{[a-z]+\}/, `${locale}: plain leaked a placeholder: ${summary.plain}`)
+    }
+  }
+})
+
+test('every issue carries a plain meaning alongside the technical line', () => {
+  const summary = buildProfileSummary(
+    data({
+      claims: [claim('a'), claim('b'), claim('c'), claim('d')],
+      rowVerdicts: [
+        verdict('a', 'blocked', {
+          reasons: [{ code: 'x', severity: 'block', messageId: 'admission.denied', params: {} }],
+          remediation: [{ kind: 'allow-version', command: 'dsh plugin allow a', note: 'n' }],
+        }),
+        verdict('b', 'unknown'),
+      ],
+      collisions: [{ id: 'llm', kind: 'conflicting-definitions', owners: ['x', 'y'], count: 2, names: ['x', 'y'] }],
+      duplicateFindings: [
+        { name: '@deepseek-ai/dsh-llm', kind: 'different-versions', copies: [{ path: 'a', version: '1.0.0', scope: 'profile' }, { path: 'b', version: '2.0.0', scope: 'shared' }] },
+      ],
+      errors: ['patch ./cordis.patch.yml could not be parsed'],
+    }),
+    { locale: 'zh', limit: 10 },
+  )
+  const kinds = new Set(summary.issues.map((issue) => issue.kind))
+  for (const kind of ['denied', 'collision', 'duplicate', 'unknown', 'unreadable']) {
+    assert.ok(kinds.has(kind as never), `missing an issue of kind ${kind}`)
+  }
+  for (const issue of summary.issues) {
+    assert.ok(issue.plain.length > 5, `${issue.kind}: no plain sentence`)
+    assert.notEqual(issue.plain, issue.line, `${issue.kind}: plain must differ from the technical line`)
+    assert.doesNotMatch(issue.plain, /admission|entry id|peer|@deepseek-ai/, `${issue.kind}: plain leaked jargon: ${issue.plain}`)
+  }
+})
