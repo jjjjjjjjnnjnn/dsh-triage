@@ -128,6 +128,7 @@ window.__ModuleLoader__.load({
           children.push(jsx('span', { children: ` · ${copy.reason}: ${issue.line}` }))
         }
         if (typeof issue.fix === 'string' && issue.fix !== '') {
+          children.push(jsx('span', { children: ' · ' }))
           children.push(
             jsx('button', {
               type: 'button',

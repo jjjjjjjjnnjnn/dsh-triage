@@ -317,7 +317,7 @@ function summaryCopy(locale: Locale): SummaryCopy {
     deniedFallback: '被 admission 拒绝',
     plainOk: '一切正常：这套组合里没有要修的东西。',
     plainAttention: '没有会坏的东西，但有 {n} 项我们判断不了，通常不影响启动。',
-    plainBroken: '有 {n} 个东西会出问题：DSH 启动后它们很可能直接消失。',
+    plainBroken: '有 {n} 个东西会出问题：DSH 启动后很可能直接不见。',
     plainEmpty: '没读到任何插件——多半是目录指错了，不是「干净的」。',
     plainDenied: '它会被挡住，启动后可能直接不见。',
     plainCollision: '两个插件抢同一个位置，可能有一个不生效。',

@@ -1,0 +1,12 @@
+# dsh-breaking-fixture — a bundle that must NOT load on a 0.2.x runtime.
+#
+# WHY A ROW AT ALL: `engines.dsh: ">=9.0.0"` alone says nothing to the loader; admission judges
+# *rows*. So the fixture ships one row pointing at its own module, and the range in package.json
+# decides it. On a 0.2.1-rc.4 runtime this row is denied, which is exactly what the settings tab's
+# "will break" screen needs in order to be seen by a test (R51, BS-47).
+#
+# The id is `compat-` prefixed for the same reason our own bundle's rows are: never reuse an
+# upstream row id.
+- insert:
+    - id: compat-breaking-fixture
+      name: dsh-breaking-fixture

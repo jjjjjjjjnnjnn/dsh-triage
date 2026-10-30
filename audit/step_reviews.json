@@ -6975,6 +6975,76 @@
         "sha256": "5ee0527ed6723ae72abf4cdf5d679f8b9301aa180644b4d4ef00d3b012b6bdaa",
         "outcome": "11/11 PASS · 925ms · 收口屏幕：提示行无术语 · 原因带标注 · 「下一步」三行可读 · 重复本地面板行已删"
       }
+    },
+    {
+      "id": "R51-S7",
+      "batch": "R51",
+      "step": "**尝试给「会坏」屏造证据（第一次）**：新增夹具 `tests/fixtures/client/breaking-plugin`（`engines.dsh: \">=9.0.0\"` + 一条 `compat-breaking-fixture` 行）与 `--extra-bundle` 开关，把它作为一个 bundle 加进沙盒 profile —— 结果 `install: failed`：**上游在安装阶段就拒绝**声明不含当前 runtime 的 bundle 并回滚 profile，还给出「要么升级、要么授予精确版本豁免」的原文提示",
+      "changed": [
+        "tests/fixtures/client/breaking-plugin/package.json",
+        "tests/fixtures/client/breaking-plugin/cordis.patch.yml",
+        "tests/fixtures/client/breaking-plugin/index.js",
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T20-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：这次是**失败即失败**——记录器没有把 install 失败说成别的东西，`exempt-grant` 尚未引入时的产物如实记 `install: failed` 并附上游原文。发现本身有价值：这个 UI 状态在现实里**不是**「装一个坏插件」得来的",
+        "reproducibility": "PASS：产物 `client-serve-2026-10-30T20-00-00.000Z.json`（`3551f880…`）保留上游拒绝的原文（含 `allow-version … --accept-risk` 提示）",
+        "licence": "PASS：夹具自写（MIT，本仓），无第三方代码；失败发生在一次性沙盒里，profile 被上游回滚，本机 `~/.dsh` 未被触碰",
+        "ssot": "PASS：结论写进 `audit/USER-TEST_2026-10-30_R51.md` §3 F6 与 `BS-47`，没有写成「无法测试」了事",
+        "adversary": "反例一：为了绿而跳过 install 断言，直接把 node_modules 塞进去——被拒，那是伪造 profile 状态；反例二：用 `--accept-risk` 让行变 `go` 再截图「会坏」屏——被拒，豁免生效后它就不该是会坏；反例三：把 install 失败写成「上游 bug」——被拒，这是上游有意的保护，应该改我们的造法"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --stamp 2026-10-30T20:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T20-00-00.000Z.json",
+        "sha256": "3551f880c7af4de98717bec7d2aa3ae2e65318801efb3756edf28a322039960a",
+        "outcome": "`bundle: passed` / `extra-bundles: passed` / **`install: failed`** / `cleanup: passed` —— 上游原文：`a plugin version compatible with this dsh runtime… to accept the risk, run: dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk`"
+      }
+    },
+    {
+      "id": "R51-S8",
+      "batch": "R51",
+      "step": "**造出「会坏」屏并当用户读它**：记录器改成「授予精确版本豁免 → 安装 → 撤销豁免」，让一条真实被拒行留在 profile 里。14/14 步通过，屏幕变成 `tone: broken` / `会坏 1` / 1 个复制按钮；人工阅读又发现两处缺陷：复制按钮文字与原因**粘在一起**（`不含 0.2.1-rc.4复制`，同一类「间距交给宿主 CSS」的错），以及单数用「它们」（`有 1 个东西…它们很可能直接消失`）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T20-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`exempt-grant` / `install` / `exempt-revoke` 三步各自落账，撤销后行确实回到被拒（`会坏 1`，`same-source`：`220 declared / 193 resolved / 1 will break`，与 CLI 一致）；`summary-visible` 同时记录 `tone: broken` 与 `copy_fix_buttons: 1`",
+        "reproducibility": "PASS：产物 `client-serve-2026-10-30T20-30-00.000Z.json`（`b729117d…`）含当时的完整屏幕文本，两处缺陷直接可读",
+        "licence": "PASS：豁免只写进一次性沙盒 profile 的 `compatibility.json`，随后删除；没有改本机任何 profile",
+        "ssot": "PASS：报告 §2 新增两行、§3 新增 F6/F7/F8、§4.2 收录「会坏」屏原文；`BS-47` 从「没有见证」改成「见证了一种来源」",
+        "adversary": "反例一：撤销豁免后不做同源校验，只看屏幕有没有「会坏」字样——被拒，`same-source` 四个计数一起比；反例二：把 `risky` 也算进「会坏」却不在两处用同一定义——被拒，比较式里显式 `blocked + risky`；反例三：看到「它们」觉得无所谓——被拒，那是陌生人第一眼会读到的句子，且同一句也出现在 CLI `status`"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --stamp 2026-10-30T20:30:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T20-30-00.000Z.json",
+        "sha256": "b729117d9b0acdfcee56108980ad5070147ff044a2cc5ac4adbbc1a443181179",
+        "outcome": "14/14 PASS · `会坏 1`（220 声明 / 193 解析 / 184 判不了）· tone `broken` · 1 个复制按钮 · 屏幕原文抓到 F7/F8"
+      }
+    },
+    {
+      "id": "R51-S9",
+      "batch": "R51",
+      "step": "**按「会坏」屏的阅读结果修两处，并复测**：复制按钮前插入 ` · ` 文本节点（不是 CSS 间距）；`summary.ts` 的 `plainBroken` 改成对单复数都成立的句子（`DSH 启动后很可能直接不见`，不再用「它们」）。复测 14/14，屏幕为 `… · 原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4 · 复制` 与 `有 1 个东西会出问题：DSH 启动后很可能直接不见。`",
+      "changed": [
+        "packages/plugin/client.js",
+        "packages/plugin/src/summary.ts",
+        "data/results/client-serve-2026-10-30T20-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：518 测试 / 0 fail；`plainBroken` 只改措辞不改判据（`summary.test.ts` 的 tone/计数/禁语断言原样通过），CLI 与面板同一份文案因此同步；复制按钮仍是 `data-copy-fix` 契约，按钮前多一个文本节点不影响点击",
+        "reproducibility": "PASS：产物 `client-serve-2026-10-30T20-50-00.000Z.json`（`0a1949fa…`）为同命令同夹具的复跑，屏幕文本可与 20:30 逐行对比",
+        "licence": "PASS：零依赖；夹具仍是本仓自写",
+        "ssot": "PASS：报告 §3 的 F7/F8 标注「已修」并给出复测产物，§5 第 1 条改成「已补，但只覆盖一种来源」；`BS-47` 状态改为 `partially closed`",
+        "adversary": "反例一：用 `marginLeft` 修间距——被拒（宿主 CSS 不可控，正是 F1/F7 的成因）；反例二：只改 client 的 `plainBroken` 副本——被拒，正文来自 `summary.ts`，两边必须同一份；反例三：把「会坏 1」的屏说成「所有来源都已覆盖」——被拒，`BS-47` 明确写了只覆盖「安装后撤豁免」这一种"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --stamp 2026-10-30T20:50:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T20-50-00.000Z.json",
+        "sha256": "0a1949fa03f2a36812eca70a9c9f4f9328f956d6b6f5c06060e9eb5e657cafe7",
+        "outcome": "14/14 PASS · `会坏 1` / `判不了 184` / tone `broken` · `copy_fix_buttons: 1` · `same-source` 220 声明 / 193 解析 / 1 会坏 / 184 判不了"
+      }
     }
   ]
 }

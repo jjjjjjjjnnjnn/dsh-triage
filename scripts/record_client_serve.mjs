@@ -22,7 +22,7 @@
 
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -118,15 +118,26 @@ async function main() {
   // The three `@deepseek-ai/dsh*` packages are the same ones the sandbox profile already runs —
   // without a base + web app the Host has nothing to serve and never prints a URL (R31 tried).
   mkdirSync(profileDir, { recursive: true })
-  writeFileSync(
-    join(profileDir, 'package.json'),
-    `${JSON.stringify(
-      sandboxProfileManifest({ bundleDir: bundle.dir, runtimeVersion: '0.2.1-rc.4', name: 'dsh-profile-client-serve' }),
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  )
+  const manifest = sandboxProfileManifest({ bundleDir: bundle.dir, runtimeVersion: '0.2.1-rc.4', name: 'dsh-profile-client-serve' })
+  /*
+   * EXTRA BUNDLES (R51, BS-47): a profile whose rows are ALL fine cannot show the tab's "will break"
+   * screen, so that screen had unit tests only. `--extra-bundle <dir>` stages a fixture bundle into
+   * the profile (dependency + `dsh.profile.bundles`), which is how a denied row gets onto the page
+   * without touching the machine's real DSH home.
+   */
+  const extraBundles = []
+  for (const source of String(argOf('--extra-bundle', '') ?? '').split(',').map((value) => value.trim()).filter((value) => value !== '')) {
+    const staged = join(profileDir, `.extra-${basename(source)}`)
+    cpSync(pathFor(source), staged, { recursive: true })
+    const extraManifest = JSON.parse(readFileSync(join(staged, 'package.json'), 'utf8'))
+    const extraName = String(extraManifest.name ?? '')
+    if (extraName === '') throw new Error(`${source}/package.json has no name`)
+    manifest.dependencies[extraName] = `file:${staged.replaceAll('\\', '/')}`
+    manifest.dsh.profile.bundles.push(extraName)
+    extraBundles.push({ name: extraName, version: String(extraManifest.version ?? '0.0.0'), engines: extraManifest.engines ?? null })
+  }
+  if (extraBundles.length > 0) record('extra-bundles', 'passed', `staged ${extraBundles.length} fixture bundle(s) into the profile`, { bundles: extraBundles })
+  writeFileSync(join(profileDir, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   writeFileSync(join(profileDir, 'cordis.yml'), '[]\n', 'utf8')
   /*
    * The same policy T-304 uses (`ADR-0007`): the launcher's install refuses unapproved build
@@ -143,6 +154,28 @@ async function main() {
   }
   writeFileSync(join(root, 'empty-npmrc'), '', 'utf8')
 
+  /*
+   * STAGING A DENIED ROW (R51, BS-47) — measured, not assumed: the launcher REFUSES TO INSTALL a
+   * bundle whose `engines.dsh` excludes the runtime (it rolled the profile back and told the
+   * operator to grant an exact-version exemption). So the only honest way to photograph the tab's
+   * "will break" screen is to grant the exemption, install, then REVOKE it — which is also a real
+   * state a user reaches when an exemption is withdrawn or the runtime moves.
+   */
+  if (extraBundles.length > 0) {
+    let granted = 'not attempted'
+    for (const extra of extraBundles) {
+      const grant = await run(
+        process.execPath,
+        [dshMain, 'plugin', '--profile', 'web', 'allow-version', `${extra.name}@${extra.version}`, '--dsh-version', '0.2.1-rc.4', '--accept-risk'],
+        { cwd: home, env, timeoutMs: 120_000 },
+      )
+      granted = grant.code === 0 ? 'granted' : `failed (exit ${grant.code}): ${clean(grant.stderr).slice(-300)}`
+      if (grant.code !== 0) break
+    }
+    record('exempt-grant', granted === 'granted' ? 'passed' : 'failed', granted, { bundles: extraBundles.map((entry) => `${entry.name}@${entry.version}`) })
+    if (granted !== 'granted') return await finish({ served: false, reason: 'exemption could not be granted' })
+  }
+
   const installed = await run(process.execPath, [dshMain, 'plugin', '--profile', 'web', 'install'], { cwd: home, env, timeoutMs: 600_000 })
   const installDetail = clean(`${installed.stdout}\n${installed.stderr}`).trim().slice(-800)
   if (installed.code !== 0) {
@@ -150,6 +183,15 @@ async function main() {
     return await finish({ served: false, reason: 'install failed' })
   }
   record('install', 'passed', installDetail.split('\n').slice(-3).join(' · ') || 'exit 0')
+
+  if (extraBundles.length > 0) {
+    const exemptions = join(profileDir, 'compatibility.json')
+    const existed = existsSync(exemptions)
+    if (existed) rmSync(exemptions, { force: true })
+    record('exempt-revoke', existed ? 'passed' : 'unmeasured', existed
+      ? 'removed the exemption file, so the staged row is judged on its declaration again (the tab should now show a "will break" row)'
+      : 'the launcher installed without writing an exemption file, so there was nothing to revoke')
+  }
 
   const port = Number(argOf('--port', '0'))
   const host = spawn(process.execPath, [dshMain, '--profile', 'web', '--port', String(port), '--no-open'], {
@@ -277,7 +319,7 @@ async function main() {
         record(
           'summary-visible',
           'passed',
-          `the tab rendered the summary: tone ${String(tabProbe.tone)}, ${String(tabProbe.issues)} issue row(s) on screen`,
+          `the tab rendered the summary: tone ${String(tabProbe.tone)}, ${String(tabProbe.issues)} issue row(s) on screen, ${String(tabProbe.copy_fix_buttons ?? 0)} copy-fix button(s)`,
           tabProbe,
         )
       }
@@ -542,6 +584,9 @@ const TAB_PROBE_EXPRESSION = `(() => {
     tone: tone === null ? null : tone.getAttribute('data-triage-tone'),
     counts_text: counts ? String(counts.textContent || '') : null,
     issues: el.querySelectorAll('[data-triage-issues] li').length,
+    // Copy buttons are only rendered when the engine produced a command; counting them is how the
+    // user test can prove the "fix me" affordance actually appeared (BS-47).
+    copy_fix_buttons: el.querySelectorAll('[data-copy-fix]').length,
     // The whole screen as a person reads it (R51 user test): analysis happens off-line, but the
     // text is captured from the real DOM so it cannot drift from what a user saw.
     text: String(el.innerText || '').slice(0, 4000),

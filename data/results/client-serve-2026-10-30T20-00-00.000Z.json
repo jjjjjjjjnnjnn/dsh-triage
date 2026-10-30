@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_serve.mjs",
+  "generated_at": "2026-10-30T20:00:00.000Z",
+  "label": "client-serve",
+  "outcome": {
+    "served": false,
+    "reason": "install failed"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvumuivy\\home",
+    "profile": "web",
+    "bundle": "file:packages/* (workspace rewritten)"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "extra-bundles",
+      "status": "passed",
+      "detail": "staged 1 fixture bundle(s) into the profile",
+      "bundles": [
+        {
+          "name": "dsh-breaking-fixture",
+          "engines": {
+            "dsh": ">=9.0.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "status": "failed",
+      "detail": "a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-breaking-fixture@1.0.0 on dsh 0.2.1-rc.4 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.\ndsh: restored package.json, pnpm-lock.yaml, and node_modules.\ndsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk\ndsh: to accept the risk, run: dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk\ndsh: plugin command failed; diagnostics: ~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvumuivy\\home\\profiles\\web\\.plugin-manager\\logs\\operation-AnrvQL\\pnpm.log"
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "host_log": [],
+  "limits": [
+    "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
+    "this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)",
+    "the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine"
+  ]
+}

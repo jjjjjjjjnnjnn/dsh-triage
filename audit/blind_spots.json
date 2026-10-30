@@ -371,10 +371,10 @@
     {
       "id": "BS-47",
       "area": "client/settings-tab (DSH UI)",
-      "cannot_see": "设置页的「会坏」视觉路径**只有单测覆盖**：R51 的四次真机跑（`client-serve-2026-10-30T17-00-00` … `T19-30-00`）用的沙盒 profile 全部是 `会坏 0 / 判不了 184`，所以「有被拒行时页面长什么样、复制修复命令是否可用」在真浏览器里**没被看见过**。同类未见证项：只测了 zh（en 走同一段代码但没人看过英文屏幕）；只有一个沙盒 profile、一个 Chromium（Edge headless）；「复制」按钮真的写入剪贴板（`navigator.clipboard`）没有被交互见证；设置页的 6 跳路径（首启浮层 → 更多 → 账号菜单 → 设置 → 内置插件 → 分诊台）在别的 DSH 版本里可能少一跳或多一跳。 另外：`record_client_serve` 的 `user-answer` 判据是**结构性**的（有人话结论 / 有具体行或「无需动手」/ 有命令），它不证明句子对陌生人**可读**——可读性仍是人工评审。",
-      "mitigation": "① 造一个**有被拒行**的 profile（`engines.dsh` 与 runtime 不相交的真实包，或用 `file:` 指向测试夹具）再跑一次 `record_client_serve`，把 `会坏 N > 0` 的屏幕文本落进产物；② 英文屏幕至少截一次（`--expect-tab-label Triage` 走同一条路径）；③ 复制按钮要么有真机点击见证，要么在文案上不承诺「已复制」；④ 路径跳数变了只要 `visible` 仍 `passed` 就说明可达，但**不要把 6 跳写成所有版本的事实**。",
+      "cannot_see": "设置页的「会坏」视觉路径**只被一种来源见证过**：R51 用 `--extra-bundle tests/fixtures/client/breaking-plugin`（授予 exemption → 安装 → 撤销 exemption）让 `会坏 1` 出现在真机屏幕上；「运行时升级之后才变坏」「手改 profile 塞进来的行」这两种来源仍只有推理。同类未见证项：只测了 zh（en 走同一段代码但没人看过英文屏）；一个 Chromium（Edge headless）、一个 DSH 版本（0.2.1-rc.4）；「复制」按钮**出现了**（`copy_fix_buttons: 1`）但**没人真的点下去**验证 `navigator.clipboard` 写入成功。另外：`record_client_serve` 的 `user-answer` 判据是**结构性**的（有人话结论 / 有具体行 / 有可粘贴命令），它不证明句子对陌生人**可读**——可读性仍由人工阅读承担（`audit/USER-TEST_2026-10-30_R51.md` 的 F1–F8 全部来自人读，不是机器判的）。",
+      "mitigation": "① 「会坏」屏已由 `--extra-bundle` 覆盖；若要覆盖「升级后变坏」，需在同一沙盒里先装 9.x 夹具再换 runtime，成本高于本轮收益，登记不假装；② 复制按钮要么加一次真机点击（CDP `Input.dispatchMouseEvent` + 读剪贴板），要么改文案不承诺「已复制」；③ 英文屏至少截一次（`--expect-tab-label Triage`）；④ 路径跳数变了只要 `visible` 仍 `passed` 就说明可达，但**不要把 6 跳写成所有版本的事实**。",
       "owner": "packages/plugin/client.js + scripts/record_client_serve.mjs",
-      "status": "open (R51): the \"will break\" screen and the copy button have unit tests only; one sandbox profile, one browser, zh only",
+      "status": "partially closed (R51): the \"will break\" screen was witnessed once (exemption granted → installed → revoked, client-serve-2026-10-30T20-50-00.000Z); the clipboard click, the English screen, other browsers and the \"broke after a runtime upgrade\" path are still unseen",
       "resolved_by": null
     }
   ]

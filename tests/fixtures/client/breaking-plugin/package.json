@@ -1,0 +1,17 @@
+{
+  "name": "dsh-breaking-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test fixture: a bundle whose single row declares a DSH range this runtime cannot satisfy. Used by scripts/record_client_serve.mjs --extra-bundle to make the settings tab show a 'will break' row (R51 user test, BS-47).",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "dsh": ">=9.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
