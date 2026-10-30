@@ -414,6 +414,32 @@ test('an empty profile is called out as a wrong home, not a clean one', () => {
   assert.match(text, /--dsh-home/, 'R49 lesson: zero rows usually means the wrong home, and the tab says so')
 })
 
+test('a rendered row separates the label from the command, and its reason from the conclusion', () => {
+  /*
+   * R51 user test, real DOM: "逐行归因dsh-triage why" — the label and the command rendered as one
+   * run-together string because the gap was left to the Host's CSS. A separator has to be written
+   * into the text. Same for the engine's reason, which a stranger could not tell apart from the
+   * conclusion ("…所以我们判断不了。 row timer 引入的 … 未安装").
+   */
+  const { exports } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  const summary: LoadedSummary = {
+    tone: 'attention',
+    headline: 'h',
+    plain: 'p',
+    counts: { rows: 3, judged: 1, go: 0, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [{ id: 'some-plugin', kind: 'unknown', line: 'declares no range', plain: 'cannot be judged', fix: null }],
+    more: 0,
+    next: [{ label: 'why', command: 'dsh-triage why' }],
+  }
+  const text = JSON.stringify(views.summaryView(summary, injected.copy, () => {}))
+  assert.match(text, /reason: declares no range/, 'the engine reason is labelled, not glued to the plain sentence')
+  assert.match(text, /"why — "/, 'label and command are separated inside the text itself')
+  assert.match(text, /"dsh-triage why"/, 'and the command is still copy-pasteable')
+})
+
 test('the manifest declares the browser half exactly the way the Host discovers it', () => {
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) as {
     files: string[]

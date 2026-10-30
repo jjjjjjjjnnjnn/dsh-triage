@@ -367,6 +367,15 @@
       "owner": "packages/plugin/src/serve.ts + tests/unit/serve.test.ts",
       "status": "open (R49): one browser (Edge headless) is the only rendering witness; clipboard fallback is exercised by no test",
       "resolved_by": null
+    },
+    {
+      "id": "BS-47",
+      "area": "client/settings-tab (DSH UI)",
+      "cannot_see": "设置页的「会坏」视觉路径**只有单测覆盖**：R51 的四次真机跑（`client-serve-2026-10-30T17-00-00` … `T19-30-00`）用的沙盒 profile 全部是 `会坏 0 / 判不了 184`，所以「有被拒行时页面长什么样、复制修复命令是否可用」在真浏览器里**没被看见过**。同类未见证项：只测了 zh（en 走同一段代码但没人看过英文屏幕）；只有一个沙盒 profile、一个 Chromium（Edge headless）；「复制」按钮真的写入剪贴板（`navigator.clipboard`）没有被交互见证；设置页的 6 跳路径（首启浮层 → 更多 → 账号菜单 → 设置 → 内置插件 → 分诊台）在别的 DSH 版本里可能少一跳或多一跳。 另外：`record_client_serve` 的 `user-answer` 判据是**结构性**的（有人话结论 / 有具体行或「无需动手」/ 有命令），它不证明句子对陌生人**可读**——可读性仍是人工评审。",
+      "mitigation": "① 造一个**有被拒行**的 profile（`engines.dsh` 与 runtime 不相交的真实包，或用 `file:` 指向测试夹具）再跑一次 `record_client_serve`，把 `会坏 N > 0` 的屏幕文本落进产物；② 英文屏幕至少截一次（`--expect-tab-label Triage` 走同一条路径）；③ 复制按钮要么有真机点击见证，要么在文案上不承诺「已复制」；④ 路径跳数变了只要 `visible` 仍 `passed` 就说明可达，但**不要把 6 跳写成所有版本的事实**。",
+      "owner": "packages/plugin/client.js + scripts/record_client_serve.mjs",
+      "status": "open (R51): the \"will break\" screen and the copy button have unit tests only; one sandbox profile, one browser, zh only",
+      "resolved_by": null
     }
   ]
 }

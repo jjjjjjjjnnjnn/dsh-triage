@@ -6906,6 +6906,75 @@
         "sha256": "151135d99c85472086c57069d7309fddbc25b87c4501e4377c7c4e3193116b79",
         "outcome": "10/10 PASS · 设置页渲染出「分诊台」→ 点击后 DOM 是 summary 视图 · 计数行 `行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184` · 3 条问题行 · 与 CLI 同源"
       }
+    },
+    {
+      "id": "R51-S4",
+      "batch": "R51",
+      "step": "**模拟用户测试（基线）**：`record_client_serve` 增加 `user-answer` 一步与 `tab_probe.text`（把屏幕上**原样**的文字取回），然后只读这一屏扮演陌生人——六跳到达、0.9 秒出结论，但屏幕文本暴露 3 处可读性缺陷（`逐行归因dsh-triage why` 粘连、引擎原因与结论句粘连且含 `row` 术语、本地面板说两遍），另有一处术语（`messageId`）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T18-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`user-answer` 三条判据都是结构性的（结论句存在 / 有具体行或「无需动手」/ 有可粘贴命令），不依赖任何自然语言判断；证据里同时留 `answers` 与 `ms_to_answer`，任何人都能看出它凭什么通过",
+        "reproducibility": "PASS：产物 `client-serve-2026-10-30T18-30-00.000Z.json`（`34cac21b…`）含 `tab_probe.text`（脱敏后 1.6KB），是本轮「屏幕原文」的唯一来源",
+        "licence": "PASS：只读页面文本，无新增依赖、无凭据；包名与行 id 都是公开 npm 名",
+        "ssot": "PASS：`tab_probe.text` 与 `tab_probe.counts_text` 同源（同一 DOM 节点的 innerText 与计数行），截图未提交因此**不声称有截图**",
+        "adversary": "反例一：把「页面上有字」当通过——被拒，三条判据分开记录（conclusion/which_row/what_to_type），任一为 no 即 failed；反例二：让测试者读 README 再评——被拒，协议规定只看这一屏；反例三：把发现的措辞问题就地改成「已修」——被拒，先跑基线留证再修"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T18:30:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T18-30-00.000Z.json",
+        "sha256": "34cac21b451f3e629b7ba7035d7fdb582d10dd97bc43cc8dd70c28a0233ac1b7",
+        "outcome": "11/11 PASS · 六跳到达 · 925±1ms 出答案 · `user-answer` passed；屏幕原文落进产物，三处可读性缺陷被人工阅读发现"
+      }
+    },
+    {
+      "id": "R51-S5",
+      "batch": "R51",
+      "step": "**按用户测试结果修文案（第一轮）**：给引擎原因加从属标注（`· 原因: …`）、给「下一步」的标签与命令之间写入分隔符、删掉与「下一步」重复的「也可以开本地面板」一行，并加一条单测钉住前两条（`\"why — \"` 与 `reason:` 必须在文本里）",
+      "changed": [
+        "packages/plugin/client.js",
+        "tests/unit/client-tab.test.ts",
+        "data/results/client-serve-2026-10-30T19-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：518 测试 / 0 fail（+1）。`summaryView`/`failureView` 未改判据面：分隔符与 `原因:` 都是纯文本，数字仍全部来自 payload；字典键 `panel` 与其注入一并删除，避免留下死文案",
+        "reproducibility": "PASS：`client-serve-2026-10-30T19-00-00.000Z.json` 是修后同一命令的复跑（11/11），`tab_probe.text` 可直接与基线逐行对比",
+        "licence": "PASS：零依赖、零外部资源；文案改动不影响打包（`client.js` 仍是 classic script）",
+        "ssot": "PASS：`docs/specs/M4-surface.md` §3.4 与 `audit/USER-TEST_2026-10-30_R51.md` 同轮记录「修什么、为什么」，测试与实现同步",
+        "adversary": "反例一：用 CSS `margin-left` 造间隔——被拒，宿主 CSS 不可控（正是它导致粘连），分隔符必须写进文本；反例二：把引擎原因整段藏起来「简洁」——被拒，原因是有用的细节，只是要标从属；反例三：删掉 `panel` 文案却留着字典键——被拒，死文案会在下一次改动时被误用"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T19:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T19-00-00.000Z.json",
+        "sha256": "6e597af9fab505190e415cbc95299fc1ca69cd50ffc38e545e72e3fd191165dd",
+        "outcome": "11/11 PASS · 919ms · 屏幕出现 ` · 原因: …` 与 `逐行归因 — dsh-triage why`，重复的本地面板行消失"
+      }
+    },
+    {
+      "id": "R51-S6",
+      "batch": "R51",
+      "step": "**按用户测试结果修文案（第二轮，收口）**：提示行的 `messageId` 术语去掉；复跑确认 11/11 与 925ms，并把「没被看见的那一面」（会坏 0 的 profile、只有 zh、剪贴板未见证）登记为新盲区 `BS-47` + 报告 §5，不写成「已验证」",
+      "changed": [
+        "packages/plugin/client.js",
+        "audit/blind_spots.json",
+        "audit/USER-TEST_2026-10-30_R51.md",
+        "data/results/client-serve-2026-10-30T19-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：518 测试 / 0 fail；`hint` 只删一个从句，判据与字段一个未动；`BS-47` 明确列出「`会坏 N>0` 的屏幕、英文屏、剪贴板、其它浏览器/版本」四类未见证项",
+        "reproducibility": "PASS：`client-serve-2026-10-30T19-30-00.000Z.json`（`5ee0527e…`）为收口产物，`tab_probe.text` 即报告 §4 的原文",
+        "licence": "PASS：无新增依赖；报告与盲区里不含本机路径或个人身份",
+        "ssot": "PASS：报告 §2 的三行结果表与三份产物的 status 逐条对应；`HANDOFF` 的规模行与本台账同步（518 测试 / 285 步 / 265 产物 / 47 盲区）",
+        "adversary": "反例一：把「11/11 通过」当成「陌生人可用」——被拒，报告单列 `user-answer` 只是结构性判据，可读性由人工阅读承担，并留下未修项 F5；反例二：为了绿而删掉 `会坏 0` 这个事实——被拒，`BS-47` 就是这句话；反例三：把这次四跑说成「在四种环境下验证」——被拒，四次是同环境复跑"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T19:30:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T19-30-00.000Z.json",
+        "sha256": "5ee0527ed6723ae72abf4cdf5d679f8b9301aa180644b4d4ef00d3b012b6bdaa",
+        "outcome": "11/11 PASS · 925ms · 收口屏幕：提示行无术语 · 原因带标注 · 「下一步」三行可读 · 重复本地面板行已删"
+      }
     }
   ]
 }

@@ -50,10 +50,11 @@ window.__ModuleLoader__.load({
     const zh = {
       tab: '分诊台',
       title: '分诊台 · 这套装会不会坏',
-      hint: '结论由命令行同一引擎在宿主侧算好，这里只负责显示（同一份证据、同一条 messageId）。',
+      hint: '结论由命令行同一引擎在宿主侧算好，这里只负责显示。',
       counts: '行 {rows} · 有判定 {judged} · 正常 {go} · 会坏 {denied} · 判不了 {unknown}',
       issues: '要看的地方',
       noIssues: '没有需要你动手的行。',
+      reason: '原因',
       unknownSuffix: '不声明支持区间的行不算通过，只能算判不了。',
       more: '还有 {n} 条没在这里列出。',
       next: '下一步',
@@ -65,16 +66,16 @@ window.__ModuleLoader__.load({
       unreachable: '拿不到结论（只读路由没回答）——这不是「没问题」。',
       noWeb: '这个 profile 没有 web 服务，所以没有这条路由；请在终端用 `dsh-triage status`。',
       empty: '这个 home/profile 里一行插件都没有——通常是 --dsh-home / --profile 指错了。',
-      panel: '也可以开本地面板：dsh-triage serve',
       errorEmpty: '路由没有返回 summary 字段，因此不显示任何数字。',
     }
     const en = {
       tab: 'Triage',
       title: 'Triage · will this setup break?',
-      hint: 'The conclusion is computed on the host by the same engine as the CLI; this tab only displays it (same evidence, same messageId).',
+      hint: 'The conclusion is computed on the host by the same engine as the CLI; this tab only displays it.',
       counts: 'rows {rows} · judged {judged} · fine {go} · will break {denied} · cannot tell {unknown}',
       issues: 'What needs you',
       noIssues: 'Nothing here needs your hands.',
+      reason: 'reason',
       unknownSuffix: 'Rows that declare no version range are not a pass — they are "cannot tell".',
       more: '{n} more not listed here.',
       next: 'Next step',
@@ -86,7 +87,6 @@ window.__ModuleLoader__.load({
       unreachable: 'No conclusion (the read-only route did not answer) — that is not "all good".',
       noWeb: 'This profile serves no web surface, so the route does not exist. Use `dsh-triage status` in a terminal.',
       empty: 'This home/profile yields zero plugin rows — usually --dsh-home / --profile points somewhere else.',
-      panel: 'Local panel: dsh-triage serve',
       errorEmpty: 'The route returned no summary field, so no numbers are shown.',
     }
 
@@ -121,8 +121,12 @@ window.__ModuleLoader__.load({
         const children = [
           jsx('code', { children: String(issue.id) }),
           jsx('span', { children: ` — ${String(issue.plain)}` }),
-          jsx('span', { children: ` ${String(issue.line)}` }),
         ]
+        // The engine's own reason is subordinate to the plain sentence, and labelled as such: a
+        // reader must not have to guess which half of the line is the conclusion and which is detail.
+        if (typeof issue.line === 'string' && issue.line !== '') {
+          children.push(jsx('span', { children: ` · ${copy.reason}: ${issue.line}` }))
+        }
         if (typeof issue.fix === 'string' && issue.fix !== '') {
           children.push(
             jsx('button', {
@@ -180,14 +184,15 @@ window.__ModuleLoader__.load({
             jsxs('ul', {
               children: summary.next.map((step) =>
                 jsxs('li', {
-                  children: [jsx('span', { children: String(step.label) }), jsx('code', { children: String(step.command) })],
+                  // A separator is written INTO the line, not left to the Host's CSS: in the real
+                  // page the label and the command rendered as one run-together string ("逐行归因dsh-triage why").
+                  children: [jsx('span', { children: `${String(step.label)} — ` }), jsx('code', { children: String(step.command) })],
                 }),
               ),
             }),
           )
         }
         children.push(jsx('p', { children: copy.source }))
-        children.push(jsx('p', { children: copy.panel }))
         children.push(jsx('button', { type: 'button', onClick: onRefresh, children: copy.reload }))
         return jsxs('div', { 'data-triage-tab': 'summary', children })
       }
@@ -319,6 +324,7 @@ window.__ModuleLoader__.load({
           counts: t('counts'),
           issues: t('issues'),
           noIssues: t('noIssues'),
+          reason: t('reason'),
           unknownSuffix: t('unknownSuffix'),
           more: t('more'),
           next: t('next'),
@@ -330,7 +336,6 @@ window.__ModuleLoader__.load({
           unreachable: t('unreachable'),
           noWeb: t('noWeb'),
           empty: t('empty'),
-          panel: t('panel'),
           errorEmpty: t('errorEmpty'),
         },
         /*

@@ -282,6 +282,31 @@ async function main() {
         )
       }
       /*
+       * USER ANSWER (R51 user test): does the screen answer the three questions a stranger has —
+       * will it break / which row / what do I type? Checked structurally, not by reading prose:
+       * a rendered conclusion sentence, at least one named row (or an explicit "nothing needs you"),
+       * and a copy-pasteable command. `ms` is how long the wait was between click and answer.
+       */
+      if (browser === null || tabProbe === null || tabProbe.present !== true) {
+        record('user-answer', 'unmeasured', 'no tab body was captured, so the three questions were not put to it', {})
+      } else {
+        const tabText = String(tabProbe.text ?? '')
+        const answers = {
+          conclusion: typeof tabProbe.tone === 'string' && tabProbe.tone !== '',
+          which_row: Number(tabProbe.issues ?? 0) > 0 || /没有需要你动手|Nothing here needs your hands/.test(tabText),
+          what_to_type: tabText.includes('dsh-triage'),
+        }
+        const all = answers.conclusion && answers.which_row && answers.what_to_type
+        record(
+          'user-answer',
+          all ? 'passed' : 'failed',
+          `${all ? 'the first screen answers' : 'the first screen does not answer'} will-it-break / which-row / what-to-type ` +
+            `(${Object.entries(answers).map(([key, value]) => `${key}:${value ? 'yes' : 'no'}`).join(' · ')}) · answered in ${String(observed.visible.evidence?.tab_ms ?? '?')}ms`,
+          { answers, ms_to_answer: observed.visible.evidence?.tab_ms ?? null, text_chars: tabText.length },
+        )
+      }
+
+      /*
        * SAME SOURCE (T-401 ②, R33): the tab's numbers must be the CLI's numbers for the SAME home and
        * profile — otherwise "the panel shows the CLI's conclusions" is just a sentence. The comparison
        * runs the real CLI against the sandbox the Host just served.
@@ -517,6 +542,9 @@ const TAB_PROBE_EXPRESSION = `(() => {
     tone: tone === null ? null : tone.getAttribute('data-triage-tone'),
     counts_text: counts ? String(counts.textContent || '') : null,
     issues: el.querySelectorAll('[data-triage-issues] li').length,
+    // The whole screen as a person reads it (R51 user test): analysis happens off-line, but the
+    // text is captured from the real DOM so it cannot drift from what a user saw.
+    text: String(el.innerText || '').slice(0, 4000),
   })
 })()`
 
@@ -615,6 +643,8 @@ async function probeVisibility(evaluate, mount) {
     let body = 'unmeasured'
     let probe = null
     if (tab !== null) {
+      // Time-to-answer: how long a person waits between clicking our tab and reading a conclusion.
+      const openedAt = Date.now()
       snapshot = await hop('open-tab', tab)
       // The tab fills in asynchronously; wait until the DOM carries a decided view, or say it never did.
       // `pending` is a real state (the fetch has not answered yet) and must not be read as a verdict.
@@ -624,6 +654,7 @@ async function probeVisibility(evaluate, mount) {
         if (decided) break
         await pause(500)
       }
+      evidence.tab_ms = Date.now() - openedAt
       evidence.tab_probe = probe
       body = probe !== null && probe.present === true ? (probe.mode === 'summary' ? 'passed' : 'degraded') : 'failed'
       evidence.tab_body = body
