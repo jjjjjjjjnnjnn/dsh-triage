@@ -40,6 +40,7 @@
 | 跨源读取 | `Origin` 必须匹配 `^http://(127\.0\.0\.1|localhost)(:\d+)?$`；`127.0.0.1.evil` / `https://` / `null` 全部 403；不发 CORS 头 | `handle()` | *origins that merely start with 127.0.0.1…* |
 | 并发把事件循环压死 | 单飞：并发请求共享一次扫描；**无 TTL**（下一次点击重新读） | `singleFlight()` | *ten concurrent readers share one scan…* |
 | 页面被自己的 CSP 打死 | `connect-src 'self'`（`default-src 'none'` 会连带禁止 `fetch`） | `/` 响应头 | *the CSP lets the page call its own API* |
+| 深链带入非法名字 | `#artifact=<名>` 只作为 `/api/artifact?name=` 的输入，走的仍是同一套名字校验 + realpath 包含性检查；深链不新增任何读写能力 | `renderPanelHtml` 初始化段 | `serve-adversarial` · *every traversal spelling is refused*（同一个入口） |
 | XSS（产物名/结论/错误信息进 DOM） | 所有插值过 `esc()`（`& < > " '`）；注入脚本的文案 `JSON.stringify(...).replace(/</g,'\u003c')`；无 inline 事件属性 | `renderPanelHtml` | 见 §5 红线 |
 | 令牌被 Referer 带走 | 页面无任何外部资源（`img-src data:`、无 CDN） | CSP | *the page ships no remote assets* |
 
@@ -75,7 +76,7 @@
 pnpm run build
 node --test tests/unit/serve-adversarial.test.ts   # 11 条拒绝
 node --test tests/unit/serve.test.ts               # 面板契约（含 CSP）
-node scripts/record_serve_smoke.mjs --stamp <ISO>  # 17 项真跑（含 501 两态）
+node scripts/record_serve_smoke.mjs --stamp <ISO>  # 18 项真跑（含 501 两态 + page-controls）
 ```
 
 浏览器侧（R49 起，改面板**必须**至少跑一次）：

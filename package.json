@@ -16,6 +16,7 @@
     "gate": "node scripts/gate.mjs",
     "gate:fast": "node scripts/gate.mjs --fast",
     "release:check": "node scripts/gate_release_pack.mjs",
+    "release:publish": "pnpm -r publish --access public",
     "scan:env": "node scripts/scan_env.mjs",
     "verify": "pnpm run build && pnpm run typecheck && pnpm run test && pnpm run gate",
     "cli": "node packages/plugin/dist/cli.js"

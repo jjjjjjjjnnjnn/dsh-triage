@@ -1535,7 +1535,9 @@ async function commandServe(flags: Flags): Promise<number> {
           ok: true,
           payload: auditJsonPayload(loaded.data, { noRedact: false, roots: auditRedactRoots(dshHome) }),
           // Same object the CLI's first screen prints, from the same scan.
-          summary: buildProfileSummary(loaded.data, { locale: flags.locale }),
+          // The panel has room the terminal does not: show more than the CLI's default so
+          // "show all" in the UI is not a lie. The counts are unaffected by the cap.
+          summary: buildProfileSummary(loaded.data, { locale: flags.locale, limit: 50 }),
         }
       }
   const panel = await startPanel({

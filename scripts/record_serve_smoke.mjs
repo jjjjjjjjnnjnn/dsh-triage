@@ -83,6 +83,15 @@ await withPanel({ resultsDir, locale: 'zh' }, async (panel) => {
     page.status === 200 && page.text.includes('证据面板') && page.text.includes('/api/artifacts'),
     `GET / → ${page.status}, ${page.text.length} bytes`,
   )
+  // The controls are what makes the panel usable rather than merely readable; a page that
+  // lost its search box or drawer would still answer 200 (that is how R49 found the CSP bug).
+  const controls = ['id="search"', 'id="kind"', 'id="conclusion"', 'id="drawer"', 'id="theme"', 'data-sort="generated_at"']
+  const missingControls = controls.filter((needle) => !page.text.includes(needle))
+  check(
+    'page-controls',
+    missingControls.length === 0,
+    missingControls.length === 0 ? `${controls.length} controls present` : `missing ${missingControls.join(', ')}`,
+  )
 
   const health = await get(panel.port, `/api/health?token=${panel.token}`)
   const healthBody = JSON.parse(health.text)

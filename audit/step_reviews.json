@@ -6648,6 +6648,31 @@
         "sha256": "192222528e1fdd28ed209baa02baf29ddc6f58a715db18c92b86ba90c929460b",
         "outcome": "17/17 PASS · 面板首屏 tone=attention（fixture profile + 合成快照）· `--no-audit` 时 `/api/audit` 与 `/api/summary` 都 501 · summary 与 ledger 同源 · 脱敏后 `env.profileDir=~\\profiles\\desktop`"
       }
+    },
+    {
+      "id": "R49-S2",
+      "batch": "R49",
+      "step": "用户反馈「控制起来不一目了然、没有清爽的 UI」后的第二轮：面板从「能读」改成「能操作」——搜索 / 类型 / 结论三个筛选、可排序表格、右侧详情抽屉、修复命令与结论一键复制、主题与快捷键、`#artifact=` / `#theme=` 深链；同时修掉两处会让界面半坏的实现缺陷（注入的文案表漏键、浅色主题下画布仍是深色）",
+      "changed": [
+        "packages/plugin/src/serve.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/serve-ui.test.ts",
+        "scripts/record_serve_smoke.mjs",
+        "data/results/serve-smoke-2026-10-30T11-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：482 测试 / 0 fail（477 → 482，新增 5 条 UI 契约）。新测试里最关键的一条是结构性的：把页面里所有 `COPY.<key>` 读法抓出来，逐个比对注入的 blob——这正是第一次真机截图暴露的缺陷（`allKinds` / `allConclusions` / `kbdHint` 被读但没注入，两个下拉框和快捷键提示渲染成空），现在缺一个键就是红。另有一条把 5 种录法（`conclusion` / `passed` / `ok` / `expectation_met` / 都没有）钉死，避免「252 个产物里 200 个说没有结论」",
+        "reproducibility": "PASS：新产物 `data/results/serve-smoke-2026-10-30T11-40-00.000Z.json`（18/18，脚本产出、`.sha256` 同批）。冒烟比上一轮多一条 `page-controls`：页面必须同时含 `search` / `kind` / `conclusion` / `drawer` / `theme` / `data-sort`，因为「HTTP 200 + 有证据面板字样」在页面只剩壳的时候也成立（R49-S1 踩过）",
+        "licence": "PASS：仍然零依赖、无框架、无远程资源；颜色用 CSS 自定义属性与 `color-mix(in oklab, …)`，没有引入图标字体或图片；快捷键与主题全部内联实现",
+        "ssot": "PASS：482 测试 / 273 步 / 253 产物三处（`AGENTS.md`、`INDEX.md`、`docs/HANDOFF.md`）与本台账一致；`docs/SECURITY.md` §6 的自验命令同步为 18 项；旧产物 `serve-smoke-2026-10-30T10-30-00.000Z.json` **不删不改**（它记录的是改版前的面板，17/17）",
+        "adversary": "反例一：只截图不看 DOM 就宣布 UI 完成——被拒，第一次截图看起来「很干净」，但下拉框是空的，靠 `--dump-dom` 才发现注入的文案表漏了三个键；反例二：把筛选做成「只在前端过滤已下载的 8 条」——被拒，`commandServe` 把面板的 summary 上限提到 50，`more` 仍然如实说还有多少；反例三：用 `appearance:none` 自绘下拉来「看起来统一」，却让键盘和读屏失效——没做，保留原生 `<select>`；反例四：给抽屉加「删除产物」之类写操作按钮——被拒，面板仍然只读，`POST` 仍 501/403"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-30T11:40:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-30T11-40-00.000Z.json",
+        "sha256": "26b13d2f59a8e4a2597a5666e8e93c9891700c2b90fee2ef6662dfeb3a1b66f0",
+        "outcome": "18/18 PASS · `page-renders` 200（32580 bytes，改版前 13294）· `page-controls` 6 个控件齐 · `--no-audit` 两态 501 · summary 与 ledger 同源 · 脱敏 `~\\profiles\\desktop`"
+      }
     }
   ]
 }

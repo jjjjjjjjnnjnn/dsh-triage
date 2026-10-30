@@ -587,3 +587,13 @@
 - 结果：**判据/阈值/`audit --json` 一字未动**。① 无参 `dsh-triage` 从「36 行 usage、exit 0」变成 `status` 的一屏答案；② `audit` 默认打摘要（9 行），全台账进 `--all`（170 行）；③ 面板首屏 = 结论横幅 + 六 chip + 问题卡片 + 下一步，证据与原始 JSON 退到两个页签；④ 三个真发现：CSP `default-src 'none'` 连带拦掉页面自己的 `fetch()`（旧面板在真浏览器里从来没加载出表，冒烟脚本写着 `no browser is involved`）、空组合被判「没有问题」、列表路由整份读入任意大小 JSON；⑤ `docs/SECURITY.md` 写清威胁模型与三条红线，`tests/unit/serve-adversarial.test.ts` 11 条拒绝
 - 实测：**477 测试 / 0 fail**（452 → 477）· 9 门 ALL GREEN · `--mutate` 9/9 · 面板冒烟 **17/17** + 独立复算 17/17 · `data/results/serve-smoke-2026-10-30T10-30-00.000Z.json`
 - 反思：这一轮修的是一类**不会让任何门变红**的错误——「页面看起来正常，其实永远空」。API 层断言全绿，用户看到的却是一个空壳，因为浏览器把页面自己的 `fetch` 拦了。以后改面板必须至少截一张图；同时「沉默 = 通过」这个错误在三个地方各出现了一次（空组合、未声明行、关闭的路由），这次的修法不是加文案，而是让状态码 / 横幅 / 计数三者都可区分。
+
+### 2026-10-30 R49 续｜交付：按用户反馈重做面板（搜索 / 筛选 / 排序 / 详情抽屉 / 主题 / 深链）
+
+- 生成者：DeepSeek V4.1 Flash（opencode 主会话；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R49-S2）
+- 范围：`packages/plugin/src/serve.ts`（页面整体重写：应用外壳 / 计数筛选 / 工具栏 / 可排序表 / 抽屉 / 主题 / 快捷键 / 深链；`summarizeArtifact` 增加 `passed`·`ok`·`expectation_met` 三种录法）· `packages/plugin/src/cli.ts`（面板的 summary 上限提到 50，终端仍是 8）· `tests/unit/serve-ui.test.ts`（新，5 条）· `scripts/record_serve_smoke.mjs`（新增 `page-controls`）· `data/results/serve-smoke-2026-10-30T11-40-00.000Z.json`（新）· `docs/{HANDOFF,SECURITY}.md` · `INDEX.md` · `AGENTS.md` · `README*.md` · `CHANGELOG.md` · `audit/{step_reviews}.json` · `audit/AUDIT_2026-10-30_R49.md`（追加 §8）
+- 人工决策：用户在会话里直接反馈「控制起来不一目了然，没有适合清爽的 UI，不容易查看和控制」，并附上 `npm publish` 在仓根报 `EPRIVATE` 的截图。据此做两件事：**面板从「能读」做到「能操作」**；**把发布入口写清楚**（根 `package.json` 是 `private: true` 的工作区根，正确入口是 `pnpm -r publish --access public`，已加成 `pnpm run release:publish`）
+- 结果：**判据/阈值/`audit --json` 仍未动**。① 六个计数可点，点了就按类型筛「要看的地方」；② 证据页三个筛选（搜索 / 类型 / 结论）+ 六列可排序表头 + 右侧详情抽屉（复制名称 / sha256 / JSON）+「复制这段结论」；③ 主题三态（跟随系统 / 浅 / 深，`localStorage` 记住）、`/` `r` `l` `Esc` 快捷键、`#artifact=` 与 `#theme=` 深链；④ **两处真发现的界面缺陷**：注入的文案表漏 `allKinds` / `allConclusions` / `kbdHint`（下拉框与提示渲染成空，`--dump-dom` 才看见）、`color-scheme: light dark` 让浅色主题的画布仍是深色；⑤ 结论列现在读得出 `passed` / `ok` / `expectation_met`，252 个产物里不再有 200 个写着「没有结论」
+- 实测：**482 测试 / 0 fail**（477 → 482）· 9 门 ALL GREEN · 面板冒烟 **18/18**（新增 `page-controls`）· 真浏览器截图 4 张（深色首屏 / 深色证据页 / 详情抽屉 / 浅色首屏）
+- 反思：第一次截图「看起来干净」，但两个下拉框是空的——**界面缺陷不会让任何 HTTP 断言变红**，只能靠真的把 DOM 与截图拿出来看。所以这一轮加了一条结构性测试（`COPY.<key>` 全覆盖），把「读一个没注入的键」变成红；这比再写十条「页面含某字符串」有用。

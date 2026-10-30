@@ -60,6 +60,17 @@ when they do, the change is written here with the reason, not just the diff.
   symlink/junction escapes, files over 2MB, cross-origin reads, near-miss tokens, and concurrent
   refreshes are all refused or collapsed into a single scan.
 
+- **The panel is now usable, not just readable** (same round, after the first screenshot pass): search
+  by name / kind / subject, filter by kind and by conclusion, sort any column, open an artifact in a
+  side drawer with copy buttons for its name, `sha256` and full JSON, and "copy this verdict" which
+  puts the verdict, counts, rows and next commands on the clipboard as plain text. Six counters are
+  clickable and filter the issue list; `l` cycles the theme, `/` jumps to search, `r` re-reads the
+  profile, `Esc` closes the drawer. `#artifact=<name>` and `#theme=light` make a view linkable.
+- **Two interface defects found the same way**: the injected copy table was missing three keys
+  (`allKinds`, `allConclusions`, `kbdHint`), so both dropdowns and the keyboard hint rendered blank —
+  a structural test now compares every `COPY.<key>` the page reads against the injected blob; and
+  `color-scheme: light dark` left the canvas dark in light mode (white cards floating on black).
+
 ## [0.2.0] — 2026-10-30
 
 > Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).
