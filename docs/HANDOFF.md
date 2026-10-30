@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R51 (2026-10-30，交付轮：DSH 设置页显示「一屏答案」+ 0.3.0 已发到 npm 的收口)｜**下一件事 `T-815`**：`fix` 的「装包」，已获授权但**只在 `sandbox/` 隔离 profile 上**，五步计划见 §3｜上一轮 R50：`0.3.0` 发到 npm + 发布预检查修掉「没调起 npm 却报你 401」的假警报。
+> **Stand**: R51 (2026-10-30，交付轮：DSH 设置页显示「一屏答案」+ 模拟用户测试两轮（会坏屏 / 英文屏 / 真点复制）+ 0.3.0 已发到 npm 的收口)｜**下一件事：发 0.3.1（HUMAN，OTP）把页签送到用户手里**，然后 slot 枚举 spike / 升级日按钮 / `T-815`，四条见 §3 的表｜上一轮 R50：`0.3.0` 发到 npm + 发布预检查修掉「没调起 npm 却报你 401」的假警报。
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -90,7 +90,30 @@ $env:HTTPS_PROXY="http://127.0.0.1:19828"; gh run list --repo jjjjjjjjnnjnn/dsh-
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
 
-## R49 第 6 段（本轮最后）：CI 修复 + T-816 交付 + T-815 已获授权、未动工
+## R51 交接（2026-10-30，最后一个动作就是写这段）
+
+**交接时的真实状态**（`80ed55a`，本轮末提交）：**518 测试 / 9 门 ALL GREEN / `--mutate` 9/9**，工作区干净，`main` = `origin/main`。
+
+**这一轮做了什么**（一句话）：把「一屏答案」从 CLI / 本地面板搬进 **DSH 设置页的页签**，然后**当用户去读它**——先造出「会坏」屏、英文屏与真实点击，再按读出来的毛病逐条修。
+
+**下一位的第一件事（按价值排序，选一个）**：
+
+| 顺序 | 任务 | 为什么是它 | 起点 |
+|---|---|---|---|
+| 1 | **发 0.3.1（HUMAN 动作）** | 页签是包内文件，registry 上的 0.3.0 **不含**这块 UI；不发版用户永远看不到 | 终端 `pnpm -r publish`（需 OTP）→ `node scripts/record_publish.mjs --version 0.3.1`（`--stamp` 可省） |
+| 2 | **slot 枚举 spike** | 决定「插件列表行级徽章」能不能做：目前只有 `settings.plugins.tab` 有真机证据 | 真浏览器里枚举可用 slot，落 `data/results/spike-slots-<stamp>.json` |
+| 3 | **「升级日四桶」做成页签第二个按钮** | 正门能力还没进 UI；但会读 registry，必须按需触发 + 20s 上限 + 明确标注 | `packages/plugin/src/host-*.ts` 加一条只读路由，页签加按钮 |
+| 4 | **`T-815`（`fix` 的「装包」）** | 已获 HUMAN 授权，但**只在 `sandbox/` 隔离 profile**，五步计划见下面的 R49 段 | `docs/specs/M7-autofix.md` §5 |
+
+**四条不许踩的坑（本轮新增，§4 也有行）**：
+1. **别把「检查没跑起来」写成结论**——preflight 那次把 `spawnSync npm ENOENT` 报成「你的 token 401」（R50）；页签的 DOM 探针也差点把 `pending` 当答案（R51）。不跑就报 `could-not-run` / `unmeasured`。
+2. **浏览器里的间距不能交给宿主 CSS**——`逐行归因dsh-triage why`、`不含…复制` 两处都是这么坏的；分隔符必须写进文本本身。
+3. **`summary.rows` 是「声明行」，`audit --json` 的 `rows` 是「解析行」**（219 vs 192）。两个都叫 rows，比较时用哪一个必须显式写。
+4. **记录器不许往产物里写绝对路径**——`extra-bundles` 的 `staged` 撞了 `results-privacy`，六份产物事后脱敏（台账写明）。
+
+**`BS-47` 的剩余（写在这里，别当成已完成）**：真·runtime 升级路径只有「声明被改」的模拟；中文轮真鼠标点击到了按钮却没触发 handler（未归因，探针回落 `dom-click` 并标 `method`）；只测过 Edge headless 与 0.2.1-rc.4。
+
+## R49 第 6 段：CI 修复 + T-816 交付 + T-815 已获授权、未动工
 
 **交接时的真实状态**（`7c55109` 之后、本轮末提交前）：**510 测试 / 9 门 ALL GREEN / `--mutate` 9/9**，
 工作区干净，`main` 与 `origin/main` 一致，**CI 已绿**（`gh run list` 最新一次 `completed/success`）。
