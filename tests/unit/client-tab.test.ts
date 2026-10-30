@@ -9,6 +9,10 @@
  * THE PROPERTY THIS FILE EXISTS TO PIN: a contract mismatch must produce ZERO registrations.
  * A half-registered tab (or a thrown error) would break the settings page of a user whose DSH is
  * newer than the contract we verified against. "Nothing happens" is the correct failure mode.
+ *
+ * R51 ADDED A SECOND PROPERTY: the tab may only show what the Host payload said. Four different
+ * failures (no route / unreadable profile / no summary field / dead process) each get their own
+ * sentence and none of them may render as a table of zeros — a zero-filled table reads as "fine".
  */
 
 import assert from 'node:assert/strict'
@@ -22,11 +26,17 @@ const repoRoot = fileURLToPath(new URL('../../', import.meta.url))
 const SOURCE_PATH = join(repoRoot, 'packages', 'plugin', 'client.js')
 const MANIFEST_PATH = join(repoRoot, 'packages', 'plugin', 'package.json')
 
+interface Views {
+  readonly summaryView: (summary: unknown, copy: Record<string, string>, onRefresh: () => void) => Record<string, unknown>
+  readonly failureView: (result: unknown, copy: Record<string, string>, onRefresh: () => void) => Record<string, unknown>
+}
+
 interface Exports {
   readonly NS: string
   readonly inject: readonly string[]
   readonly apply: (ctx: unknown) => unknown
   readonly register: (ctx: unknown, require: (id: string) => unknown) => unknown
+  readonly views: () => Views | null
 }
 
 /** Execute the shipped file with a fake loader and return what the factory exported. */
@@ -161,10 +171,11 @@ test('apply publishes a marker so a real page can be asked whether the tab regis
   const { exports, window } = loadBundle()
   const fake = fakeContext()
   exports.apply(fake.ctx)
-  const marker = window.__dshTriage as { registered: boolean; slot: string; id: string }
+  const marker = window.__dshTriage as { registered: boolean; slot: string; id: string; route: string }
   assert.equal(marker.registered, true)
   assert.equal(marker.slot, 'settings.plugins.tab')
   assert.equal(marker.id, 'compat-triage')
+  assert.equal(marker.route, '/compat-triage/summary', 'R51: the marker names the route the tab reads')
 
   const refused = loadBundle()
   const withoutSlots = fakeContext({ slots: false })
@@ -215,90 +226,192 @@ test('an unexpected contract shape throws inside apply and is swallowed', () => 
   assert.equal(marker.id, 'compat-triage')
 })
 
-test('the tab counts what the Host route says and never invents a count', async () => {
-  const payload = {
-    rows: [{ row_id: 'a' }, { row_id: 'b' }, { row_id: 'c' }],
-    row_verdicts: [
-      { row_id: 'a', conclusion: 'go' },
-      { row_id: 'b', conclusion: 'blocked' },
-      { row_id: 'c', conclusion: 'unknown' },
-    ],
+/** What the tab's `inject()` hands the component (C3). */
+interface LoadedSummary {
+  readonly tone: string
+  readonly headline: string
+  readonly plain: string
+  readonly counts: Record<string, number>
+  readonly issues: ReadonlyArray<Record<string, unknown>>
+  readonly more: number
+  readonly next: ReadonlyArray<Record<string, string>>
+}
+
+interface InjectedTab {
+  readonly locale: string
+  readonly copy: Record<string, string>
+  readonly load: () => Promise<{ ok: boolean; kind: string | null; detail: string | null; summary: LoadedSummary | null }>
+}
+
+/** Mount the tab the way the Host does: invoke the lazy injection, then read its props. */
+function mountTab(fake: FakeContext, exports: Exports): {
+  Component: (props: unknown) => Record<string, unknown>
+  injected: InjectedTab
+  views: Views
+} {
+  fake.invokeInjection()
+  const registration = fake.registrations[0]
+  assert.ok(registration, 'the slot registration must exist')
+  const inject = registration.inject
+  assert.equal(typeof inject, 'function')
+  const injected = (inject as () => InjectedTab)()
+  const component = fake.components[0]
+  assert.equal(typeof component, 'function', 'C2: slots.register receives the component as its second argument')
+  const views = exports.views()
+  assert.ok(views, 'the pure views are exposed once the tab renders (test seam only)')
+  /*
+   * The fake `locale.bind` resolves to `ns:key` placeholders, so use the registered English
+   * dictionary here: the assertions below are about real sentences, not about the binding.
+   */
+  const dictionary = fake.dictionaryCalls[0]?.copy.en as Record<string, string> | undefined
+  assert.ok(dictionary, 'C5: the dictionary is registered before the tab is injected')
+  return {
+    Component: component as (props: unknown) => Record<string, unknown>,
+    injected: { ...injected, copy: dictionary },
+    views,
   }
-  const { exports } = loadBundle({
-    fetch: async () => ({ ok: true, status: 200, json: async () => payload }),
-  })
-  const good = fakeContext()
-  exports.apply(good.ctx)
-  good.invokeInjection()
-  const loaded = await (
-    good.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; verdicts: { go: number; blocked: number; unknown: number } | null }> }
-  )().load()
+}
+
+test('the tab reads the summary projection and never invents a number', async () => {
+  const summary = {
+    tone: 'broken',
+    headline: '2 rows will break',
+    plain: 'Two of your plugins will break on this version.',
+    counts: { rows: 7, judged: 5, go: 3, denied: 2, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [
+      {
+        id: 'dsh-mcp-connector',
+        kind: 'denied',
+        line: 'declared 0.2.1-rc.4',
+        plain: 'cannot load here',
+        fix: 'dsh-triage fix dsh-mcp-connector',
+      },
+    ],
+    more: 1,
+    next: [{ label: 'why', command: 'dsh-triage why' }],
+  }
+  const payload = { env: { dsh: '0.2.1-rc.4', profile: 'web' }, summary: { zh: summary, en: summary }, ms: 12 }
+
+  const good = loadBundle({ fetch: async () => ({ ok: true, status: 200, json: async () => payload }) })
+  const goodFake = fakeContext()
+  good.exports.apply(goodFake.ctx)
+  const { injected } = mountTab(goodFake, good.exports)
+  const loaded = await injected.load()
   assert.equal(loaded.ok, true)
-  assert.equal(loaded.count, 3, 'the row count is the Host payload, not a local guess')
-  // Spread first: the tally object is created inside the vm realm, so only its fields may be compared.
-  assert.deepEqual({ ...loaded.verdicts }, { go: 1, blocked: 1, unknown: 1 }, 'the tally mirrors the CLI verdicts')
+  assert.equal(injected.locale, 'en', 'the payload locale follows the Host binding, not navigator')
+  // Spread first: the object is created inside the vm realm, so only its fields may be compared.
+  assert.deepEqual({ ...loaded.summary!.counts }, summary.counts, 'counts are the payload verbatim')
 
-  // 409 with the CLI's own sentence: the tab must say it could not read, not "0 rows".
-  const unavailable = loadBundle({
-    fetch: async () => ({ ok: false, status: 409, json: async () => ({ error: 'profile-not-found — no such profile' }) }),
-  })
-  const bad = fakeContext()
-  unavailable.exports.apply(bad.ctx)
-  bad.invokeInjection()
-  const failed = await (
-    bad.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null; detail: string | null }> }
-  )().load()
-  assert.equal(failed.ok, false, 'an unreadable profile is not "0 rows"')
-  assert.equal(failed.count, null)
-  assert.match(String(failed.detail), /profile-not-found/)
-
-  // A dead route (network error) is also a failure, never an empty ledger.
-  const thrown = loadBundle({
-    fetch: async () => {
-      throw new Error('failed to fetch')
+  /*
+   * THE FOUR FAILURES HAVE FOUR MEANINGS. Collapsing them into "0 rows" is precisely the mistake
+   * this repository exists to attribute, so each is pinned separately.
+   */
+  const cases: Array<{ name: string; plugin: ReturnType<typeof loadBundle>; kind: string; detail?: RegExp }> = [
+    {
+      name: 'the profile serves no web surface',
+      plugin: loadBundle({ fetch: async () => ({ ok: false, status: 404, json: async () => ({ error: 'not found' }) }) }),
+      kind: 'route-missing',
     },
-  })
-  const down = fakeContext()
-  thrown.exports.apply(down.ctx)
-  down.invokeInjection()
-  const noreply = await (
-    down.registrations[0]!.inject as () => { load: () => Promise<{ ok: boolean; count: number | null }> }
-  )().load()
-  assert.equal(noreply.ok, false)
-  assert.equal(noreply.count, null)
+    {
+      name: 'the profile could not be read',
+      plugin: loadBundle({
+        fetch: async () => ({ ok: false, status: 409, json: async () => ({ error: 'profile-not-found — no such profile' }) }),
+      }),
+      kind: 'http',
+      detail: /profile-not-found/,
+    },
+    {
+      name: 'the route answered without a summary field',
+      plugin: loadBundle({ fetch: async () => ({ ok: true, status: 200, json: async () => ({ env: {} }) }) }),
+      kind: 'no-summary',
+    },
+    {
+      name: 'the route was not there at all',
+      plugin: loadBundle({
+        fetch: async () => {
+          throw new Error('failed to fetch')
+        },
+      }),
+      kind: 'thrown',
+    },
+  ]
+  for (const entry of cases) {
+    const fake = fakeContext()
+    entry.plugin.exports.apply(fake.ctx)
+    const loadedCase = await mountTab(fake, entry.plugin.exports).injected.load()
+    assert.equal(loadedCase.ok, false, entry.name)
+    assert.equal(loadedCase.kind, entry.kind, entry.name)
+    if (entry.detail !== undefined) assert.match(String(loadedCase.detail), entry.detail, entry.name)
+  }
 })
 
-test('the tab component renders from injected props and never touches host modules', () => {
+test('the tab renders the payload sentence and never a hard-coded figure', () => {
   const { exports, source } = loadBundle()
   const fake = fakeContext()
   exports.apply(fake.ctx)
-  fake.invokeInjection()
-  const Component = fake.components[0] as (props: unknown) => Record<string, unknown>
-  assert.equal(typeof Component, 'function', 'C2: slots.register receives the component as its second argument')
-  const copy = {
-    tab: 'Triage',
-    title: 'Triage title',
-    hint: 'hint',
-    command: 'dsh-triage audit',
-    commandHint: 'run it',
-    rows: 'rows: {count}',
-    rowsUnknown: 'no inventory',
-    rowsFact: 'a count is a fact',
-    reload: 'Refresh',
-    failed: 'Read failed',
-    panel: 'panel',
+  const { injected, views } = mountTab(fake, exports)
+  const summary: LoadedSummary = {
+    tone: 'attention',
+    headline: '184 rows declare nothing',
+    plain: 'We cannot tell whether 184 of your plugins will load.',
+    counts: { rows: 156, judged: 2, go: 1, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [
+      { id: 'dsh-status-rotator', kind: 'unknown', line: 'declares no range', plain: 'we cannot judge this one', fix: null },
+    ],
+    more: 0,
+    next: [{ label: 'why', command: 'dsh-triage why' }],
   }
-  const tree = Component({ copy, load: async () => ({ ok: true, count: 2, detail: null }) })
+  const tree = views.summaryView(summary, injected.copy, () => {})
   const text = JSON.stringify(tree)
-  assert.match(text, /Triage title/, 'the tab renders its own copy')
-  assert.match(text, /dsh-triage audit/, 'and it points the user at the CLI, which owns the verdicts')
-  assert.match(text, /no inventory/, 'with no count yet it says so instead of showing 0')
+  assert.match(text, /will this setup break/, 'the tab renders its own copy')
+  assert.match(text, /cannot tell whether 184/, 'the plain sentence is the payload sentence, verbatim')
+  assert.match(text, /dsh-status-rotator/, 'and it names the row the engine named')
+  assert.match(text, /dsh-triage why/, 'the next step is the engine step, not ours')
+  assert.match(text, /156/, 'the numbers shown come from the payload')
+  assert.match(text, /compat-triage\/summary/, 'and it says which route answered')
 
   // The bundle must not import host-side modules (S2): only react + the jsx runtime are allowed.
   const requires = [...source.matchAll(/require\((['"])([^'"]+)\1\)/g)].map((match) => match[2])
   assert.deepEqual([...new Set(requires)].sort(), ['react', 'react/jsx-runtime'])
   assert.ok(!source.includes('@dsh-triage/'), 'the browser half must not reference our host packages')
   assert.ok(!/require\((['"])node:/.test(source), 'the browser half must not require node builtins')
+})
+
+test('a failed read says "no conclusion", not a table of zeros', () => {
+  const { exports } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  const sentences: Record<string, RegExp> = {
+    'route-missing': /serves no web surface/,
+    'no-summary': /returned no summary/,
+    thrown: /did not answer/,
+  }
+  for (const kind of Object.keys(sentences)) {
+    const tree = views.failureView({ ok: false, kind, summary: null, detail: 'HTTP 404' }, injected.copy, () => {})
+    const text = JSON.stringify(tree)
+    assert.doesNotMatch(text, /"0"/, `${kind}: no zero-filled count is rendered`)
+    assert.doesNotMatch(text, /Nothing here needs your hands/, `${kind}: an unreadable profile is not a clean one`)
+    assert.match(text, sentences[kind]!, `${kind}: each failure gets its own sentence`)
+  }
+})
+
+test('an empty profile is called out as a wrong home, not a clean one', () => {
+  const { exports } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  const summary: LoadedSummary = {
+    tone: 'attention',
+    headline: 'no rows',
+    plain: 'This profile yielded zero plugin rows.',
+    counts: { rows: 0, judged: 0, go: 0, denied: 0, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [],
+    more: 0,
+    next: [],
+  }
+  const text = JSON.stringify(views.summaryView(summary, injected.copy, () => {}))
+  assert.match(text, /--dsh-home/, 'R49 lesson: zero rows usually means the wrong home, and the tab says so')
 })
 
 test('the manifest declares the browser half exactly the way the Host discovers it', () => {

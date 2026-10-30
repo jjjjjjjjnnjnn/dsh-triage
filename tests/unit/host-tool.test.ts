@@ -312,7 +312,7 @@ test('a profile with a tool registry gets the tool even when it has no web serve
 test('a profile with a web server still gets the route when it has no tool registry', () => {
   const h = harness({ webServer: { register: () => () => undefined } })
   quietly(() => apply(h.ctx as never, {}))
-  assert.deepEqual(h.routes, ['/compat-triage/audit'])
+  assert.deepEqual(h.routes, ['/compat-triage/audit', '/compat-triage/summary'], 'R51: the tab reads the summary route; both are registered together')
   assert.equal(h.registrations.length, 0)
 })
 
@@ -328,7 +328,7 @@ test('the tool can be turned off without unpatching the row', () => {
   const h = harness({ tools: { register: () => () => undefined }, webServer: { register: () => () => undefined } })
   quietly(() => apply(h.ctx as never, { agentTool: false }))
   assert.equal(h.registrations.length, 0)
-  assert.deepEqual(h.routes, ['/compat-triage/audit'], 'the other half keeps working')
+  assert.deepEqual(h.routes, ['/compat-triage/audit', '/compat-triage/summary'], 'the other half keeps working')
 })
 
 test('an unanchored profile mounts neither half and says so', () => {

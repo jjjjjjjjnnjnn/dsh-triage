@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R50 (2026-10-30)",
+  "stand": "R51 (2026-10-30)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6828,6 +6828,83 @@
         "artifact": "data/results/release-preflight-2026-10-30T15-20-00.000Z.json",
         "sha256": "45821ba56ec596eac220b1564f82c2ef7e57883759a3eaea1e036af2cbcbb181",
         "outcome": "五项检查跑起来：`npm user: jjjjjjjjnnjnn`（登录正常，不再是假警报）· `version: 0.3.0` · `workspace: 5 dep(s) 走 pnpm 改写` · 第 6 项如实判红 `version-already-published`（0.3.0 已发布，重发=403）"
+      }
+    },
+    {
+      "id": "R51-S1",
+      "batch": "R51",
+      "step": "**把「一屏答案」搬进 DSH 设置页**（用户要求「直接简洁地集成到 DSH UI」）：新只读路由 `GET /compat-triage/summary`（`buildProfileSummary()` 的 zh/en 两份投影，宿主算、浏览器只显示）+ 重写 `client.js` 页签（人话结论 / 计数行 / 最多 3 条「要看的地方」带复制修复 / 下一步 / 刷新），四种失败四种句子。**首次真机跑红**：`same-source` 判「tab 与 CLI 不一致」（219 vs 192）——根因是记录器把 `summary.rows`（声明行数）与 `audit --json` 的 `rows`（解析后行数）当同一件事比较，不是产品缺陷",
+      "changed": [
+        "packages/plugin/src/host-summary-route.ts",
+        "packages/plugin/src/host.ts",
+        "packages/plugin/src/host-audit-route.ts",
+        "packages/plugin/client.js",
+        "tests/unit/host-summary-route.test.ts",
+        "tests/unit/client-tab.test.ts",
+        "tests/unit/host-tool.test.ts",
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T17-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：517 测试 / 0 fail（+7：路由守卫 405/403/409/500/载荷不重排共 5 条；客户端 +2）。浏览器侧不算任何判据——`load()` 只挑语言、转发失败，数字全部来自 payload；`views()` 只是把纯视图暴露给 vm 测试（Host 只调 `apply`）。`/compat-triage/audit` 的 handler 与载荷一字未改（`host-audit-route.test.ts` 六条原样通过），新路由复用同一个 `auditRequestVerdict()` 守卫——两条路由各自实现守卫是「其中一条开着」的经典成因",
+        "reproducibility": "PASS：真机 `record_client_serve` 三次跑全部落盘并带 sha256。**第一次的产物保留为红证**（`client-serve-2026-10-30T17-00-00.000Z.json`：`same-source: failed`，`tab_data.counts.rows=219` vs `cli_data.rows=192`），任何人可复算那次比较",
+        "licence": "PASS：零新增依赖；路由只读、`no-store`、不带 token；`client.js` 仍是无 bundler 的 classic script，`require()` 只有 `react` 与 `react/jsx-runtime`（测试逐字断言）；新增载荷不含 home 路径（env 只有 dsh/profile/platform/arch，且 profile 是目录名）",
+        "ssot": "PASS：`summary.ts` 未改，`status` / `serve` / 新路由三处同源；`docs/specs/M4-surface.md` 新增 §3.4 把「哪层负责什么」写死（路由 / 投影 / 两语言 / 语言选择 / 失败 / 数字）；`INDEX.md` 与 `AGENTS.md` 同轮更新",
+        "adversary": "反例一：把 `summary` 兄弟键塞进 `/compat-triage/audit`（少写一个文件）——被拒，那条路由的契约是「逐字节等于 `audit --json`」，加键就把一条有真机证据的承诺弄脏；反例二：让浏览器自己从 payload 拼人话——被拒，措辞是结论的一部分，翻译会引入第二个判据；反例三：读到 `data-triage-tab` 存在就判「渲染成功」——被拒，见 S2（pending 也算存在）；反例四：把 219 vs 192 判成产品 bug 并去「修」计数——被拒，先查两个数字各自的定义，结论是记录器错"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T17:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T17-00-00.000Z.json",
+        "sha256": "e8d39c53ef5ec9e5ec72d8d62136bdfadced29d46ed7a511ee676cf0ff21ade2",
+        "outcome": "9 步：bundle/install/boot/graph/client/mount/**visible:passed**/**summary-visible:passed**/`same-source:failed`/cleanup —— 页面真的渲染出了摘要（`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`，3 条问题行），失败项是记录器的比较映射写错"
+      }
+    },
+    {
+      "id": "R51-S2",
+      "batch": "R51",
+      "step": "**修记录器的比较映射，并抓到第二个缺陷**：`same-source` 现在同时比 `declared`（声明行）与 `rows`（解析行），并把「会坏」定义为 `blocked + risky`。复跑后 `same-source` 绿，但 `visible:unmeasured`——DOM 探针一旦看到 `data-triage-tab` 就收工，而那一刻组件还停在 `mode:\"error\" / kind:\"pending\"`（fetch 未回），等于**把「还没回答」当成结论**",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T17-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`readCliAudit` 现在返回 `{ rows(解析), declared(声明), judged, verdicts{go,blocked,risky,unknown} }`，比较写成一条式子并对每个数字取同一来源；探针等待条件改成「`mode === \"summary\"` 或 `mode === \"error\" && kind !== \"pending\"`」——两种终态才收工，`pending` 明确不算",
+        "reproducibility": "PASS：`client-serve-2026-10-30T17-30-00.000Z.json` 保留这次「映射已对、探针仍错」的中间态（`same-source:passed` 且 `visible:unmeasured`），复算只需同一条命令",
+        "licence": "PASS：只改记录器，零依赖、零凭据；产物照旧脱敏（`<repo>` / `~` 替换）",
+        "ssot": "PASS：探针字段名与 `client.js` 的 DOM 契约（`data-triage-tab` / `-kind` / `-tone` / `-counts` / `-issues`）一一对应，`docs/specs/M4-surface.md` §3.4 的验收段写明这两步各断言什么",
+        "adversary": "反例一：把 `visible` 判绿了事（「标签出现了」就是通过）——被拒，标签出现过但正文是 pending 时，用户看到的是空页；反例二：把 `pending` 也当 `error` 终态并记 `failed`——被拒，那会把「读得慢」记成「读不到」，两类事实必须分开；反例三：放宽比较（只比 `judged`）——被拒，行数本身就是用户第一眼看的数字"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T17:30:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T17-30-00.000Z.json",
+        "sha256": "db1599ae4c525afddca5c9075148fee9e94566e3fb4918d7d4f406303c8b8d25",
+        "outcome": "10 步：`same-source: passed`（219 声明 / 192 解析 / 184 判不了，两侧一致）；`visible: unmeasured`（探针读到 `mode:error, kind:pending` 就收工，`summary-visible` 因之 fail）——本轮的所有失败都被记成事实，没有一项被抹平"
+      }
+    },
+    {
+      "id": "R51-S3",
+      "batch": "R51",
+      "step": "**第三次真机收口**：探针改为等到终态后复跑，`record_client_serve` **10/10**——`mount` / `visible` / **`summary-visible`**（DOM 里必须是 `data-triage-tab=\"summary\"` 且带计数行）/ `same-source` 全绿，页面读数 `行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`，3 条问题行，tone `attention`",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T18-00-00.000Z.json",
+        "docs/specs/M4-surface.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：10 步全绿；`summary-visible` 的判据是「view = summary + 计数行存在」，`same-source` 四个计数与 CLI `audit --json` 逐项相等（`219 declared / 192 resolved / 0 go / 0 will break / 184 unknown`）。渲染成降级视图会被判 `failed`——profile 是可读的，降级就是缺陷",
+        "reproducibility": "PASS：`client-serve-2026-10-30T18-00-00.000Z.json`（`151135d9…`）+ `.sha256`；同一命令三次跑（17:00 / 17:30 / 18:00）留下了完整的「红 → 中间态 → 绿」链，任何人都能看出修的是什么",
+        "licence": "PASS：无新增依赖；一次性沙盒（`%TEMP%/dsh-triage-client/*`）用完即删；不写 `~/.dsh`，不继承任何 npm 凭据（空 userconfig）",
+        "ssot": "PASS：真机读数与 `dsh-triage status` 的同一份摘要一致（219/184），也与 `docs/specs/M4-surface.md` §3.4 的判据表一致；`HANDOFF` / `INDEX` / `AGENTS` / `blind_spots` 的 Stand 同轮改为 R51",
+        "adversary": "反例一：只加「标签出现」这一条断言就宣布集成完成——被拒，那在 R33 就通过了，用户看到的仍是一个空页；反例二：让 `summary-visible` 与 `same-source` 各查一套数字（DOM 文本 vs marker）——被拒，两者都取自同一份 payload、且 DOM 文本作为独立证据一起记录（`tab_dom_counts`）；反例三：把这次 10/10 当成「任意 profile 都能渲染」——被拒，产物只覆盖一个沙盒 profile，README/HANDOFF 不写「已验证所有环境」"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-10-30T18:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T18-00-00.000Z.json",
+        "sha256": "151135d99c85472086c57069d7309fddbc25b87c4501e4377c7c4e3193116b79",
+        "outcome": "10/10 PASS · 设置页渲染出「分诊台」→ 点击后 DOM 是 summary 视图 · 计数行 `行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184` · 3 条问题行 · 与 CLI 同源"
       }
     }
   ]

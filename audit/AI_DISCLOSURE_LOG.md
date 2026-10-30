@@ -629,3 +629,13 @@
 - **更正上一轮的一处判断**：本文件 R49 第三轮那条写「诊断结论：不是包不存在，是 npm 登录已失效（`npm whoami` 返回 401）」——**那个 401 从来没有被观测到**，它是 preflight 里写死的句子。真实原因是同一轮新写的 preflight 在 Windows 上 spawn 不到 `npm.cmd`。原处保留不改，以免把历史修得像一直都对。
 - 反思：**凡「结论」都必须能指回一次真实调用**。把 `catch` 里的任何失败都翻译成一个人话原因，读起来很像负责，实际是把「我们不知道」冒充成「你知道该怎么做」——这次代价是用户去改一个没坏的东西、发布延后一轮。`could-not-run` 这个状态值得在其它检查器里也推广。
 
+### 2026-10-30 R51｜交付：把「一屏答案」直接放进 DSH 设置页（只读路由 + 页签重写）
+
+- 生成者：DeepSeek V4.1 Flash（主会话：可行性判断、路由与页签实现、真机三次跑、文档）
+- SessionID：主会话；台账 `R51-S1` / `R51-S2` / `R51-S3`
+- 范围：`packages/plugin/src/host-summary-route.ts`（新）· `packages/plugin/src/host.ts`（两条路由同挂、共用一次扫描）· `packages/plugin/src/host-audit-route.ts`（`sendJson` 导出）· `packages/plugin/client.js`（页签重写）· `tests/unit/{host-summary-route,client-tab,host-tool}.test.ts` · `scripts/record_client_serve.mjs`（+`summary-visible`，`same-source` 改写）· `docs/specs/M4-surface.md` §3.4 · `data/results/client-serve-2026-10-30T{17-00-00,17-30-00,18-00-00}.000Z.json`（新）
+- 人工决策：用户问「能否直接把目前项目的能力简洁地集成到 DSH UI」，并同意按推荐的 v1 做（只做现状摘要，不做需要实时联网的「升级日四桶」，行级徽章留待 slot 枚举 spike）
+- 结果：① 结论能进 UI 的前提是 **R33 打通的只读路由**：结论在宿主侧用 `buildProfileSummary()`（CLI / `serve` 同一个纯投影）算好，浏览器只显示；② 新路由 `GET /compat-triage/summary` 回 `{ env, summary: { zh, en }, ms }`，**故意不动** `/compat-triage/audit`（它的契约是逐字节等于 `audit --json`）；③ 页签从「N 行 + 三个计数 + 请去终端」变成一屏答案：人话结论、计数行、最多 3 条「要看的地方」（带复制修复命令）、下一步、刷新；④ **四种失败四种句子**，零行组合单独提示「通常是 --dsh-home 指错了」；⑤ **真机三次跑抓到自己两个缺陷**（记录器把「声明行」与「解析行」当同一件事；DOM 探针把 `pending` 当结论），两次红/中间态产物都保留
+- 实测：**517 测试 / 0 fail**（510 → 517）· 9 门 ALL GREEN · `--mutate` 9/9 · `record_client_serve` **10/10**（`client-serve-2026-10-30T18-00-00.000Z.json`）· 页面读数与 CLI 同源：`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`
+- 反思：这一轮真正的工作量不在写 UI，而在**确认「哪个位置可以先做」**：DSH 里只有 `settings.plugins.tab` 有真机证据，行级徽章没有任何 slot 证据——所以先说清楚「不做承诺不了的那部分」，再写代码。另外两次红都是**检查器自己的错**，不是产品错：红产物保留比「抹平成绿」有价值得多。
+

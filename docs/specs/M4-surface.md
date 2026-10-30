@@ -127,6 +127,21 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 
 > 边界：`visible` 证明的是「设置页里渲染出我们的 tab」（不是视觉回归）；`same-source` 证明的是「两侧数字一致」（payload 里没有字段被谁重排）。**两个 profile 恰好行数相同**时 `same-source` 负对照会变成「一致」而失败，届时换 profile，别放宽比较。
 
+### 3.4 R51：tab 显示「一屏答案」，而不是让用户去终端（`/compat-triage/summary`）
+
+R50 之前的 tab 只显示「宿主报告 N 行 + go/blocked/unknown 三个数 + 请去终端跑 `dsh-triage audit`」。它守住的是真规则（浏览器不算判据），但 R33 打通只读路由之后，结论已经可以**在宿主侧由同一引擎算好**，浏览器只负责显示——那才是「简洁地集成进 DSH UI」。
+
+| 层 | 决定 | 为什么 |
+|---|---|---|
+| 路由 | 新增 `GET /compat-triage/summary`，载荷 `{ env, summary: { zh, en }, ms }` | 不改 `/compat-triage/audit`：它的契约是「逐字节等于 `audit --json`」，加兄弟键会弄脏一条有真机证据的承诺 |
+| 投影 | `buildProfileSummary()`（`status` / `serve` / CLI 用的同一个） | 摘要不是第二套引擎；两边不一致时，摘要一定是错的 |
+| 两语言 | 宿主一次扫描出 `zh` + `en` | 浏览器不许自己翻译判据语言（措辞是结论的一部分） |
+| 语言选择 | 用宿主 `locale.bind(NS)` 的实际绑定（`t('tab') === zh.tab ? 'zh' : 'en'`） | 不嗅 `navigator`：页面显示哪种语言，结论就用哪种语言 |
+| 失败 | 四种失败四种句子：无路由（profile 没 web 面）/ 读不到（409）/ 无 `summary` 字段（版本错位）/ 进程死（fetch 抛） | 零填充表格读起来就是「没问题」，那正是这个产品最不该犯的错 |
+| 数字 | 只显示 payload 里的数；`rows === 0` 单独提示「通常是 `--dsh-home`/`--profile` 指错了」 | 空组合不是干净组合（R49 的教训） |
+
+**验收**：`record_client_serve` 从 9 步扩到 **10 步**，新增 `summary-visible`（DOM 里必须是 `data-triage-tab="summary"` 且有计数行；渲染成降级视图 = `failed`，因为 profile 是可读的），`same-source` 改成比较**摘要的四个计数**与 CLI 的 `rows` / `go` / `blocked+risky` / `unknown`（「会坏」这个折叠只在摘要里定义一次）。
+
 ---
 
 ## 4. 形态 C：可双击的 exe（SEA）

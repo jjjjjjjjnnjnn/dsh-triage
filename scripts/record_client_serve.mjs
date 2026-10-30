@@ -257,6 +257,31 @@ async function main() {
       visibleStatus = observed.visible.status
       record('visible', observed.visible.status, observed.visible.detail, observed.visible.evidence)
       /*
+       * SUMMARY VISIBLE (R51): the tab must render the ANSWER, not merely exist. The DOM probe
+       * reports which view it rendered and how many issue rows it showed; the counts line is what
+       * the same-source step below compares with the CLI.
+       */
+      const tabProbe = observed.visible.evidence?.tab_probe ?? null
+      if (browser === null || tabProbe === null) {
+        record('summary-visible', 'unmeasured', 'the tab body was never probed (see the visible step)', {})
+      } else if (tabProbe.present !== true) {
+        record('summary-visible', 'failed', 'the tab mounted but no triage view appeared in the DOM', tabProbe)
+      } else if (tabProbe.mode !== 'summary') {
+        record(
+          'summary-visible',
+          'failed',
+          `the tab rendered a degraded view (${String(tabProbe.kind)}) instead of the answer — on a readable profile that is a defect, not a degradation`,
+          tabProbe,
+        )
+      } else {
+        record(
+          'summary-visible',
+          'passed',
+          `the tab rendered the summary: tone ${String(tabProbe.tone)}, ${String(tabProbe.issues)} issue row(s) on screen`,
+          tabProbe,
+        )
+      }
+      /*
        * SAME SOURCE (T-401 ②, R33): the tab's numbers must be the CLI's numbers for the SAME home and
        * profile — otherwise "the panel shows the CLI's conclusions" is just a sentence. The comparison
        * runs the real CLI against the sandbox the Host just served.
@@ -267,24 +292,31 @@ async function main() {
        * produce a disagreement, which proves the comparison is real and not a tautology.
        */
       const cli = await readCliAudit(pathFor(String(argOf('--cli-home', home))), String(argOf('--cli-profile', 'web')), env)
-      if (fromTab === null || cli === null || cli.error !== undefined) {
-        record('same-source', 'unmeasured', 'the tab published no data or the CLI could not read the same profile', {
+      if (fromTab === null || fromTab.counts === null || fromTab.counts === undefined || cli === null || cli.error !== undefined) {
+        record('same-source', 'unmeasured', 'the tab published no counts or the CLI could not read the same profile', {
           tab_data: fromTab,
           cli_error: cli === null ? 'cli audit produced no payload' : (cli.error ?? null),
         })
       } else {
+        /*
+         * The summary's `denied` bucket is `blocked` + `risky`, so the comparison uses the CLI's
+         * blocked count only when the CLI reports no risky rows; otherwise the honest comparison is
+         * "the four numbers the CLI itself would print". R51 keeps that mapping explicit and file-
+         * local: two different definitions of "will break" is how the tab and the CLI drift apart.
+         */
         const same =
-          fromTab.rows === cli.rows &&
-          fromTab.verdicts?.go === cli.verdicts.go &&
-          fromTab.verdicts?.blocked === cli.verdicts.blocked &&
-          fromTab.verdicts?.unknown === cli.verdicts.unknown
+          fromTab.counts.rows === cli.declared &&
+          fromTab.counts.judged === cli.judged &&
+          fromTab.counts.go === cli.verdicts.go &&
+          fromTab.counts.denied === cli.verdicts.blocked + cli.verdicts.risky &&
+          fromTab.counts.unknown === cli.verdicts.unknown
         record(
           'same-source',
           same ? 'passed' : 'failed',
           same
-            ? `the tab and the CLI agree on this profile: ${cli.rows} rows, ${cli.verdicts.go} go / ${cli.verdicts.blocked} blocked / ${cli.verdicts.unknown} unknown`
+            ? `the tab and the CLI agree on this profile: ${cli.declared} declared rows (${cli.rows} resolved), ${cli.verdicts.go} go / ${cli.verdicts.blocked + cli.verdicts.risky} will break / ${cli.verdicts.unknown} unknown`
             : 'the tab and the CLI disagree on the same profile',
-          { tab_data: fromTab, cli_data: cli },
+          { tab_data: fromTab, cli_data: cli, tab_dom_counts: tabProbe?.counts_text ?? null },
         )
       }
     }
@@ -472,8 +504,22 @@ const INTRO_NAMES = ['继续', 'continue', '知道了', 'got it', '开始使用'
  * plugins" — the bare word 插件 is the plugin manager in the app chrome, a different surface.
  */
 const PLUGIN_SECTION_NAMES = ['内置插件', 'built-in plugins', '插件', 'plugins']
-/** Locale-independent marker of our tab body: the command the tab publishes (`client.js`). */
-const TAB_BODY_MARKER = 'dsh-triage audit'
+/** Locale-independent marker of our tab body (R51): the view the component rendered. */
+const TAB_PROBE_EXPRESSION = `(() => {
+  const el = document.querySelector('[data-triage-tab]')
+  if (!el) return JSON.stringify({ present: false })
+  const counts = el.querySelector('[data-triage-counts]')
+  const tone = el.querySelector('[data-triage-tone]')
+  return JSON.stringify({
+    present: true,
+    mode: el.getAttribute('data-triage-tab'),
+    kind: el.getAttribute('data-triage-kind'),
+    tone: tone === null ? null : tone.getAttribute('data-triage-tone'),
+    counts_text: counts ? String(counts.textContent || '') : null,
+    issues: el.querySelectorAll('[data-triage-issues] li').length,
+  })
+})()`
+
 
 /**
  * Click into Settings and look for our tab. Three outcomes, and only one of them is a claim:
@@ -559,18 +605,29 @@ async function probeVisibility(evaluate, mount) {
   evidence.controls_after = controlNames(snapshot).slice(0, 60)
   if (match !== null) {
     /*
-     * A label is not the same claim as a rendered tab: click the tab we just found and look for a
-     * marker that is identical in both locales (the command the tab publishes). This is still not
-     * "the content matches the CLI" — that needs the Host-side Remote (R33 spike) — but it does prove
-     * our component rendered instead of a label with nothing behind it.
+     * A label is not the same claim as a rendered tab: click the tab we just found and ask the DOM
+     * what it rendered. R51 changed the question from "does the body mention a command" to "is this
+     * the SUMMARY view, with a counts line filled from the payload" — a tab that renders an error
+     * is a different claim from one that renders an answer, and both must be told apart from
+     * "nothing rendered at all".
      */
     const tab = pickControl(snapshot.controls, [match])
     let body = 'unmeasured'
+    let probe = null
     if (tab !== null) {
       snapshot = await hop('open-tab', tab)
-      body = String(snapshot.text).includes(TAB_BODY_MARKER) ? 'passed' : 'failed'
+      // The tab fills in asynchronously; wait until the DOM carries a decided view, or say it never did.
+      // `pending` is a real state (the fetch has not answered yet) and must not be read as a verdict.
+      for (let attempt = 0; attempt < 16; attempt += 1) {
+        probe = await evaluate(TAB_PROBE_EXPRESSION)
+        const decided = probe !== null && probe.present === true && (probe.mode === 'summary' || (probe.mode === 'error' && probe.kind !== 'pending'))
+        if (decided) break
+        await pause(500)
+      }
+      evidence.tab_probe = probe
+      body = probe !== null && probe.present === true ? (probe.mode === 'summary' ? 'passed' : 'degraded') : 'failed'
       evidence.tab_body = body
-      // The tab fills in asynchronously; wait until it publishes what it rendered, or say so.
+      // The tab also publishes what it showed, so the numbers can be compared with the CLI's.
       let markerAfter = null
       for (let attempt = 0; attempt < 12; attempt += 1) {
         markerAfter = await evaluate('JSON.stringify(window.__dshTriage || null)')
@@ -580,11 +637,13 @@ async function probeVisibility(evaluate, mount) {
       evidence.marker_after_tab = markerAfter
     }
     return {
-      status: body === 'failed' ? 'failed' : 'passed',
+      status: body === 'failed' ? 'failed' : body === 'degraded' ? 'unmeasured' : 'passed',
       detail:
         body === 'failed'
           ? `the tab label ${JSON.stringify(match)} appeared, but clicking it rendered no tab body`
-          : `the settings page rendered ${JSON.stringify(match)}${body === 'passed' ? ' and its tab body' : ''} after opening Settings`,
+          : body === 'degraded'
+            ? `the settings page rendered ${JSON.stringify(match)}, but the tab showed a degraded view (${String(evidence.tab_probe?.kind ?? 'unknown')}) instead of the summary`
+            : `the settings page rendered ${JSON.stringify(match)} and the summary view (${String(evidence.tab_probe?.tone ?? 'unknown')} · ${String(evidence.tab_probe?.issues ?? 0)} issue(s) shown)`,
       evidence: { ...evidence, tab_match: match },
     }
   }
@@ -673,13 +732,33 @@ async function readCliAudit(home, profile, env) {
   }
   try {
     const payload = JSON.parse(result.stdout)
-    const verdicts = { go: 0, blocked: 0, unknown: 0 }
+    // `risky` is counted apart from `blocked` because the summary folds them into one bucket
+    // ("will break"), and a fold that happens in two places must be checked in one place.
+    const verdicts = { go: 0, blocked: 0, risky: 0, unknown: 0 }
     for (const verdict of Array.isArray(payload.row_verdicts) ? payload.row_verdicts : []) {
-      if (verdict && verdict.conclusion === 'go') verdicts.go += 1
-      else if (verdict && verdict.conclusion === 'blocked') verdicts.blocked += 1
+      const conclusion = verdict && verdict.conclusion
+      if (conclusion === 'go') verdicts.go += 1
+      else if (conclusion === 'blocked') verdicts.blocked += 1
+      else if (conclusion === 'risky') verdicts.risky += 1
       else verdicts.unknown += 1
     }
-    return { rows: Array.isArray(payload.rows) ? payload.rows.length : null, verdicts }
+    /*
+     * TWO DIFFERENT "ROWS" EXIST, AND THE FIRST RUN OF THIS STEPS (R51) CONFUSED THEM:
+     *   payload.claims[].entries  — every declared loader row (what `status` calls 行 / rows)
+     *   payload.rows              — rows that resolved to a target after composition (a subset)
+     * The summary counts the first, because that is the denominator a user expects. Comparing it
+     * against the second made a correct tab look like a liar (219 vs 192). Both are reported now.
+     */
+    const declared = (Array.isArray(payload.claims) ? payload.claims : []).reduce(
+      (total, group) => total + (Array.isArray(group?.entries) ? group.entries.length : 0),
+      0,
+    )
+    return {
+      rows: Array.isArray(payload.rows) ? payload.rows.length : null,
+      declared: declared > 0 ? declared : null,
+      judged: Array.isArray(payload.row_verdicts) ? payload.row_verdicts.length : null,
+      verdicts,
+    }
   } catch {
     return null
   }

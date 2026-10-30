@@ -56,7 +56,7 @@ export function auditRequestVerdict(input: {
   return { ok: false, status: 403, error: 'request carries no same-origin evidence' }
 }
 
-function sendJson(response: ServerResponse, status: number, payload: unknown): void {
+export function sendJson(response: ServerResponse, status: number, payload: unknown): void {
   const body = `${JSON.stringify(payload)}\n`
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',

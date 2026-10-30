@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R50 (2026-10-30)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
+> **Stand**: R51 (2026-10-30)｜接手先读 `docs/AI_HANDOVER.md`｜路线见 `PROJECT_RULES.md` Roadmap
 
 ## 🔍 按需求快速索引
 

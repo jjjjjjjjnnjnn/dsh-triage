@@ -15,17 +15,20 @@
  *   C5 copy goes through ctx.locale.register + bind, side effects through ctx.effect
  *   C6 a READ-ONLY tab is an accepted shape upstream, so we do not compete for a slot
  *
- * WHAT THIS TAB DELIBERATELY DOES NOT DO: it renders no verdicts. Judgement ("go / blocked /
- * unknown") is computed by the CLI and by the local `serve` panel from recorded evidence; a
- * settings tab cannot read `data/results` and must not invent a conclusion from what little the
- * browser can see (铁律 1: no evidence → no claim). So the tab shows (a) how to get the answer,
- * and (b) one honest fact it *can* verify: how many rows the Host reports (row count only,
- * labelled as a fact, never as a verdict).
+ * R51 — WHAT CHANGED, AND WHY: until R50 this tab showed a row count, a verdict tally and the
+ * sentence "run `dsh-triage audit` in a terminal". The rule it respected was real (the browser
+ * cannot compute a verdict), but the conclusion had become reachable by then: R33 opened a
+ * read-only route, so the answer could be *computed on the host, by the CLI's own engine*, and
+ * merely *displayed* here. The tab now asks `/compat-triage/summary` for
+ * `buildProfileSummary()`'s output — the same projection `dsh-triage status` and `serve` print —
+ * and renders it. It still decides nothing: every number and every sentence below comes from the
+ * payload, and when the payload is missing it says so instead of rendering zeros.
  *
  * DEGRADATION IS THE DEFAULT: every registration is wrapped, and the tab is only registered
  * when the whole contract is present (slots.inject, slots.register, locale.register, a renderer).
  * A missing piece means ZERO registrations — no half-rendered tab, no error page.
  */
+
 window.__ModuleLoader__.load({
   id: 'dsh-triage',
   factory: (require) => {
@@ -33,38 +36,182 @@ window.__ModuleLoader__.load({
     const NS = 'compat-triage'
     /** Services this tab needs; the loader only exposes these to `require`/ctx (C4). */
     const inject = ['slots', 'locale', 'modules']
+    /** The read-only route built in R51. One place, so a rename cannot drift between halves. */
+    const SUMMARY_URL = '/compat-triage/summary'
+    /** How many issues a settings tab may show before it stops being a settings tab. */
+    const ISSUES_SHOWN = 3
+    /**
+     * The pure views, kept so the vm test can render them without a React runtime (see
+     * `views()` at the bottom). They are NOT part of the Host contract: the Host only calls
+     * `apply`, and everything else here is for our own assertions.
+     */
+    let lastViews = null
 
     const zh = {
       tab: '分诊台',
-      title: '分诊台 · 装之前判断，坏之后定位',
-      hint: '结论由命令行的同一个引擎给出（同一份证据、同一条 messageId）。这里只显示宿主事实与入口。',
-      command: 'dsh-triage audit',
-      commandHint: '在本机终端运行；加 --json 可拿到逐行结论。',
-      rows: '宿主报告 {count} 行插件',
-      rowsUnknown: '没拿到宿主插件清单（只读路由不可用）',
-      rowsFact: '行数是事实，不是结论。',
-      verdicts: 'CLI 同一引擎的结论：{go} go · {blocked} blocked · {unknown} unknown',
-      verdictsUnknown: '没拿到结论（只读路由不回答）',
-      source: '数据来自宿主只读路由 /compat-triage/audit，与 dsh-triage audit --json 同源。',
+      title: '分诊台 · 这套装会不会坏',
+      hint: '结论由命令行同一引擎在宿主侧算好，这里只负责显示（同一份证据、同一条 messageId）。',
+      counts: '行 {rows} · 有判定 {judged} · 正常 {go} · 会坏 {denied} · 判不了 {unknown}',
+      issues: '要看的地方',
+      noIssues: '没有需要你动手的行。',
+      unknownSuffix: '不声明支持区间的行不算通过，只能算判不了。',
+      more: '还有 {n} 条没在这里列出。',
+      next: '下一步',
+      source: '数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。',
       reload: '刷新',
+      copy: '复制',
       failed: '读取失败',
+      pending: '正在读宿主…',
+      unreachable: '拿不到结论（只读路由没回答）——这不是「没问题」。',
+      noWeb: '这个 profile 没有 web 服务，所以没有这条路由；请在终端用 `dsh-triage status`。',
+      empty: '这个 home/profile 里一行插件都没有——通常是 --dsh-home / --profile 指错了。',
       panel: '也可以开本地面板：dsh-triage serve',
+      errorEmpty: '路由没有返回 summary 字段，因此不显示任何数字。',
     }
     const en = {
       tab: 'Triage',
-      title: 'Triage · judge before install, attribute after breakage',
-      hint: 'Verdicts come from the same engine as the CLI (same evidence, same messageId). This tab shows host facts and entry points only.',
-      command: 'dsh-triage audit',
-      commandHint: 'Run it in a local terminal; add --json for per-row verdicts.',
-      rows: 'The host reports {count} plugin rows',
-      rowsUnknown: 'Host plugin inventory unavailable (read-only route not answering)',
-      rowsFact: 'A row count is a fact, not a verdict.',
-      verdicts: 'Conclusions from the CLI engine: {go} go · {blocked} blocked · {unknown} unknown',
-      verdictsUnknown: 'No conclusions (the read-only route did not answer)',
-      source: 'Read from the host route /compat-triage/audit, the same payload as dsh-triage audit --json.',
+      title: 'Triage · will this setup break?',
+      hint: 'The conclusion is computed on the host by the same engine as the CLI; this tab only displays it (same evidence, same messageId).',
+      counts: 'rows {rows} · judged {judged} · fine {go} · will break {denied} · cannot tell {unknown}',
+      issues: 'What needs you',
+      noIssues: 'Nothing here needs your hands.',
+      unknownSuffix: 'Rows that declare no version range are not a pass — they are "cannot tell".',
+      more: '{n} more not listed here.',
+      next: 'Next step',
+      source: 'Read from the host route /compat-triage/summary, the same projection `dsh-triage status` prints.',
       reload: 'Refresh',
+      copy: 'Copy',
       failed: 'Read failed',
+      pending: 'Reading the host…',
+      unreachable: 'No conclusion (the read-only route did not answer) — that is not "all good".',
+      noWeb: 'This profile serves no web surface, so the route does not exist. Use `dsh-triage status` in a terminal.',
+      empty: 'This home/profile yields zero plugin rows — usually --dsh-home / --profile points somewhere else.',
       panel: 'Local panel: dsh-triage serve',
+      errorEmpty: 'The route returned no summary field, so no numbers are shown.',
+    }
+
+    /** Fill `{name}` placeholders. A missing value becomes `?`, never `0`. */
+    function fill(template, values) {
+      return String(template).replace(/\{(\w+)\}/g, (whole, key) =>
+        Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : '?',
+      )
+    }
+
+    /** A clipboard we do not have is a no-op, not a fake "copied". */
+    function copyText(text) {
+      try {
+        if (typeof navigator === 'object' && navigator !== null && navigator.clipboard) {
+          void navigator.clipboard.writeText(String(text))
+        }
+      } catch {
+        // Ignored on purpose: the command is on screen either way.
+      }
+    }
+
+    /**
+     * The two pure views. Everything they print comes from `copy` (the Host's localization) and
+     * `summary` (the Host's projection); nothing here counts, ranks or fills a missing field.
+     */
+    function makeViews(jsxRuntime) {
+      const jsx = jsxRuntime.jsx
+      const jsxs = jsxRuntime.jsxs
+
+      /** One line per issue: what it is, in everyday words, plus the fix when the engine gave one. */
+      function issueRow(issue, copy, index) {
+        const children = [
+          jsx('code', { children: String(issue.id) }),
+          jsx('span', { children: ` — ${String(issue.plain)}` }),
+          jsx('span', { children: ` ${String(issue.line)}` }),
+        ]
+        if (typeof issue.fix === 'string' && issue.fix !== '') {
+          children.push(
+            jsx('button', {
+              type: 'button',
+              'data-copy-fix': String(issue.id),
+              onClick: () => copyText(issue.fix),
+              children: copy.copy,
+            }),
+          )
+        }
+        return jsxs('li', { 'data-issue-kind': String(issue.kind), 'data-issue-index': index, children })
+      }
+
+      function summaryView(summary, copy, onRefresh) {
+        const counts = summary && summary.counts ? summary.counts : null
+        const children = [jsx('h3', { children: copy.title }), jsx('p', { children: copy.hint })]
+        children.push(
+          jsx('p', {
+            'data-triage-tone': String(summary && summary.tone ? summary.tone : 'unknown'),
+            children: jsx('strong', { children: String((summary && summary.plain) || (summary && summary.headline) || '') }),
+          }),
+        )
+        if (counts !== null) {
+          children.push(
+            jsx('p', {
+              'data-triage-counts': '1',
+              children: fill(copy.counts, {
+                rows: counts.rows,
+                judged: counts.judged,
+                go: counts.go,
+                denied: counts.denied,
+                unknown: counts.unknown,
+              }),
+            }),
+          )
+          // Zero rows is not a clean profile: it is usually the wrong home. Say so (R49's lesson).
+          if (counts.rows === 0) children.push(jsx('p', { children: copy.empty }))
+        }
+        const issues = summary && Array.isArray(summary.issues) ? summary.issues.slice(0, ISSUES_SHOWN) : []
+        if (issues.length === 0) children.push(jsx('p', { children: copy.noIssues }))
+        else {
+          children.push(jsx('h4', { children: copy.issues }))
+          children.push(
+            jsxs('ul', {
+              'data-triage-issues': String(issues.length),
+              children: issues.map((issue, index) => issueRow(issue, copy, index)),
+            }),
+          )
+          if (summary.more > 0) children.push(jsx('p', { children: fill(copy.more, { n: summary.more }) }))
+        }
+        if (counts !== null && counts.unknown > 0) children.push(jsx('p', { children: copy.unknownSuffix }))
+        if (summary && Array.isArray(summary.next) && summary.next.length > 0) {
+          children.push(jsx('h4', { children: copy.next }))
+          children.push(
+            jsxs('ul', {
+              children: summary.next.map((step) =>
+                jsxs('li', {
+                  children: [jsx('span', { children: String(step.label) }), jsx('code', { children: String(step.command) })],
+                }),
+              ),
+            }),
+          )
+        }
+        children.push(jsx('p', { children: copy.source }))
+        children.push(jsx('p', { children: copy.panel }))
+        children.push(jsx('button', { type: 'button', onClick: onRefresh, children: copy.reload }))
+        return jsxs('div', { 'data-triage-tab': 'summary', children })
+      }
+
+      /**
+       * FOUR FAILURES, FOUR SENTENCES. "No route" is a profile shape, "unreadable" is a profile
+       * state, "no summary field" is a version skew, "thrown" is a dead process — and none of them
+       * is "no problems", which is what a zero-filled table would say.
+       */
+      function failureView(result, copy, onRefresh) {
+        const kind = result === null ? 'pending' : result.kind
+        const children = [jsx('h3', { children: copy.title }), jsx('p', { children: copy.hint })]
+        if (kind === 'route-missing') children.push(jsx('p', { children: copy.noWeb }))
+        else if (kind === 'no-summary') children.push(jsx('p', { children: copy.errorEmpty }))
+        else if (kind === 'pending') children.push(jsx('p', { children: copy.pending }))
+        else children.push(jsx('p', { children: copy.unreachable }))
+        if (result !== null && result.detail) {
+          children.push(jsx('p', { children: `${copy.failed}: ${String(result.detail)}` }))
+        }
+        children.push(jsx('button', { type: 'button', onClick: onRefresh, children: copy.reload }))
+        return jsxs('div', { 'data-triage-tab': 'error', 'data-triage-kind': String(kind), children })
+      }
+
+      return { summaryView, failureView }
     }
 
     /**
@@ -74,11 +221,11 @@ window.__ModuleLoader__.load({
     function makeTab(react, jsxRuntime) {
       if (react === null || jsxRuntime === null) return null
       const { useState, useEffect, useCallback } = react
-      const jsx = jsxRuntime.jsx
-      const jsxs = jsxRuntime.jsxs
+      const views = makeViews(jsxRuntime)
+      lastViews = views
       return function CompatTriageTab(props) {
         const copy = props.copy
-        const [state, setState] = useState({ status: 'idle', count: null, verdicts: null, detail: null })
+        const [state, setState] = useState({ status: 'idle', result: null })
         const load = useCallback(() => {
           let cancelled = false
           setState((previous) => ({ ...previous, status: 'loading' }))
@@ -86,54 +233,25 @@ window.__ModuleLoader__.load({
             .then(() => props.load())
             .then((result) => {
               if (cancelled) return
-              setState({
-                status: result.ok ? 'ready' : 'failed',
-                count: result.count ?? null,
-                verdicts: result.verdicts ?? null,
-                detail: result.detail ?? null,
-              })
+              setState({ status: result && result.ok ? 'ready' : 'failed', result })
             })
             .catch((error) => {
               if (cancelled) return
-              setState({ status: 'failed', count: null, verdicts: null, detail: String((error && error.message) || error) })
+              setState({
+                status: 'failed',
+                result: { ok: false, kind: 'thrown', detail: String((error && error.message) || error) },
+              })
             })
           return () => {
             cancelled = true
           }
         }, [props])
         useEffect(() => load(), [load])
-        const rowsText =
-          state.count === null
-            ? copy.rowsUnknown
-            : copy.rows.replace('{count}', String(state.count))
-        const verdictsText =
-          state.verdicts === null
-            ? copy.verdictsUnknown
-            : copy.verdicts
-                .replace('{go}', String(state.verdicts.go))
-                .replace('{blocked}', String(state.verdicts.blocked))
-                .replace('{unknown}', String(state.verdicts.unknown))
-        return jsxs('div', {
-          children: [
-            jsx('h3', { children: copy.title }),
-            jsx('p', { children: copy.hint }),
-            jsx('p', { children: rowsText }),
-            jsx('p', { children: verdictsText }),
-            jsx('p', { children: copy.source }),
-            jsx('p', { children: copy.rowsFact }),
-            jsx('p', {
-              children: [
-                jsx('code', { children: copy.command }),
-                jsx('span', { children: ` — ${copy.commandHint}` }),
-              ],
-            }),
-            jsx('p', { children: copy.panel }),
-            state.status === 'failed' && state.detail !== null
-              ? jsx('p', { children: `${copy.failed}: ${state.detail}` })
-              : null,
-            jsx('button', { type: 'button', onClick: load, children: copy.reload }),
-          ],
-        })
+        const result = state.result
+        if (state.status !== 'ready' || result === null || result.ok !== true || result.summary === null) {
+          return views.failureView(state.status === 'idle' ? null : result, copy, load)
+        }
+        return views.summaryView(result.summary, copy, load)
       }
     }
 
@@ -185,35 +303,56 @@ window.__ModuleLoader__.load({
       if (effect !== null) effect(registerDictionaries, 'compat-triage:dictionaries')
       else registerDictionaries()
       const t = locale.bind(NS)
+      /*
+       * WHICH LOCALE THE PAYLOAD SHOULD BE READ IN: ask the Host's own binding, do not sniff the
+       * browser. `t('tab')` resolving to the zh dictionary means this page is being shown in
+       * Chinese, so the Chinese sentences are the correct ones; anything else (a third locale, or
+       * a test double) falls back to English, which is also what `summary.en` is for.
+       */
+      const activeLocale = t('tab') === zh.tab ? 'zh' : 'en'
       const injected = () => ({
+        locale: activeLocale,
         copy: {
           tab: t('tab'),
           title: t('title'),
           hint: t('hint'),
-          command: t('command'),
-          commandHint: t('commandHint'),
-          rows: t('rows'),
-          rowsUnknown: t('rowsUnknown'),
-          rowsFact: t('rowsFact'),
-          verdicts: t('verdicts'),
-          verdictsUnknown: t('verdictsUnknown'),
+          counts: t('counts'),
+          issues: t('issues'),
+          noIssues: t('noIssues'),
+          unknownSuffix: t('unknownSuffix'),
+          more: t('more'),
+          next: t('next'),
           source: t('source'),
           reload: t('reload'),
+          copy: t('copy'),
           failed: t('failed'),
+          pending: t('pending'),
+          unreachable: t('unreachable'),
+          noWeb: t('noWeb'),
+          empty: t('empty'),
           panel: t('panel'),
+          errorEmpty: t('errorEmpty'),
         },
         /*
-         * FACTS FROM THE HOST, NOT JUDGEMENTS MADE HERE (铁律 1). Since R33 the tab reads the Host's
-         * read-only route, which answers with the exact payload `dsh-triage audit --json` prints —
-         * built by the same `loadAuditData()`/`auditJsonPayload()` the CLI uses. The tab only counts
-         * what the payload says; it never decides a conclusion and never guesses a missing field.
+         * FACTS FROM THE HOST, NOT JUDGEMENTS MADE HERE (铁律 1). The route answers with the
+         * projection `dsh-triage status` prints, built by `buildProfileSummary()` from the same
+         * `loadAuditData()` the CLI calls. This function only picks a locale and forwards the
+         * failure: it counts nothing and never fills a missing field with a plausible value.
          */
         load: async () => {
           /** Publish what the tab just showed, so a real page can be asked for it (R33 same-source). */
           const publishData = (result) => {
             try {
               if (typeof window === 'object' && window !== null) {
-                window.__dshTriage = { ...(window.__dshTriage || {}), data: { ok: result.ok, rows: result.count, verdicts: result.verdicts, detail: result.detail ?? null } }
+                window.__dshTriage = {
+                  ...(window.__dshTriage || {}),
+                  data: {
+                    ok: result.ok,
+                    kind: result.kind ?? null,
+                    tone: result.summary && result.summary.tone ? result.summary.tone : null,
+                    counts: result.summary && result.summary.counts ? result.summary.counts : null,
+                  },
+                }
               }
             } catch {
               // A frozen window only costs the diagnostic marker, never the tab.
@@ -222,15 +361,17 @@ window.__ModuleLoader__.load({
           }
           let response
           try {
-            response = await fetch('/compat-triage/audit', {
+            response = await fetch(SUMMARY_URL, {
               credentials: 'include',
               headers: { accept: 'application/json' },
             })
           } catch (error) {
             // A dead route is a fact to report, not an exception to render: `load` never throws.
-            return publishData({ ok: false, count: null, verdicts: null, detail: String((error && error.message) || error) })
+            return publishData({ ok: false, kind: 'thrown', summary: null, detail: String((error && error.message) || error) })
           }
           if (!response.ok) {
+            // 404 is the one failure with its own meaning: this profile serves no web surface.
+            const kind = response.status === 404 ? 'route-missing' : 'http'
             let detail = `HTTP ${response.status}`
             try {
               const body = await response.json()
@@ -238,21 +379,14 @@ window.__ModuleLoader__.load({
             } catch {
               // A non-JSON error body is still an error; the status is the fact we have.
             }
-            return publishData({ ok: false, count: null, verdicts: null, detail })
+            return publishData({ ok: false, kind, summary: null, detail })
           }
           const payload = await response.json()
-          const rows = Array.isArray(payload?.rows) ? payload.rows.length : null
-          const verdicts = Array.isArray(payload?.row_verdicts) ? payload.row_verdicts : null
-          const tally = verdicts === null ? null : { go: 0, blocked: 0, unknown: 0 }
-          if (verdicts !== null) {
-            for (const verdict of verdicts) {
-              const conclusion = verdict && verdict.conclusion
-              if (conclusion === 'go') tally.go += 1
-              else if (conclusion === 'blocked') tally.blocked += 1
-              else tally.unknown += 1
-            }
+          const summary = payload && payload.summary ? payload.summary[activeLocale] || payload.summary.en || null : null
+          if (summary === null) {
+            return publishData({ ok: false, kind: 'no-summary', summary: null, detail: null })
           }
-          return publishData({ ok: true, count: rows, verdicts: tally, detail: null })
+          return publishData({ ok: true, kind: null, summary, detail: null })
         },
       })
       slots.inject('settings.plugins.tab', () =>
@@ -276,7 +410,7 @@ window.__ModuleLoader__.load({
         const registered = register(ctx, require)
         publishMarker(
           registered
-            ? { registered: true, slot: 'settings.plugins.tab', id: NS }
+            ? { registered: true, slot: 'settings.plugins.tab', id: NS, route: SUMMARY_URL }
             : { registered: false, reason: 'contract-missing', id: NS },
         )
         return registered
@@ -288,6 +422,11 @@ window.__ModuleLoader__.load({
       }
     }
 
-    return { NS, inject, apply, register }
+    /** Test seam: the pure views, available after a successful registration. */
+    function views() {
+      return lastViews
+    }
+
+    return { NS, inject, apply, register, views }
   },
 })

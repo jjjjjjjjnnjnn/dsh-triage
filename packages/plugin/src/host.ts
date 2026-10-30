@@ -28,6 +28,8 @@ import { basename, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { auditJsonPayload, auditRedactRoots, loadAuditData } from './audit-data.js'
 import { AUDIT_ROUTE_PATH, createAuditRouteHandler } from './host-audit-route.js'
+import { SUMMARY_ROUTE_PATH, createSummaryRouteHandler } from './host-summary-route.js'
+import { buildProfileSummary } from './summary.js'
 import { createCompatVerdictTool, type CompatVerdictTool, type ToolsRegistryLike } from './host-tool.js'
 import { loadEnv } from '@dsh-triage/core'
 
@@ -43,6 +45,16 @@ export interface HostConfig {
    * deployment that does not want the tool in its models' surface can disable this one key.
    */
   readonly agentTool?: boolean
+}
+
+/** The slice of the `audit --json` payload this file reads back (the env headline only). */
+interface AuditPayloadLike {
+  readonly env?: {
+    readonly dsh?: unknown
+    readonly profile?: unknown
+    readonly platform?: unknown
+    readonly arch?: unknown
+  }
 }
 
 /** The narrow slice of the webserver contract we use; upstream owns the rest. */
@@ -185,6 +197,38 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
   }
 
   if (config.auditRoute !== false) {
+    /**
+     * ONE scaffold for both routes (R51): the two answers a user wants ("is it broken" and "what do
+     * I type") must never come from two different reads of the same profile — that is how a tab and
+     * a CLI start disagreeing. Each route runs its own scan because each is its own request; what
+     * they share is the reader, the redaction and the timestamp rule.
+     */
+    const scan = async (): Promise<
+      | {
+          ok: true
+          data: Extract<Awaited<ReturnType<typeof loadAuditData>>, { ok: true }>['data']
+          payload: AuditPayloadLike
+        }
+      | { ok: false; message: string }
+    > => {
+      const loaded = await loadEnv({ dshHome: bound.dshHome, profile: bound.profile })
+      if (!loaded.ok) return { ok: false, message: `${loaded.error.code} — ${loaded.error.detail}` }
+      const data = await loadAuditData({
+        env: loaded.value,
+        dshHome: bound.dshHome,
+        // The payload's timestamp describes the read, not a verdict: one read, one stamp.
+        stamp: new Date().toISOString(),
+        snapshotPath: null,
+        noRedact: false,
+      })
+      if (!data.ok) return { ok: false, message: data.message }
+      return {
+        ok: true,
+        data: data.data,
+        payload: auditJsonPayload(data.data, { noRedact: false, roots: auditRedactRoots(bound.dshHome) }) as AuditPayloadLike,
+      }
+    }
+
     mountWhenAvailable(ctx, ['webServer'], `read-only ${AUDIT_ROUTE_PATH}`, (scope) => {
       const webServer = readWebServer(scope)
       if (webServer === undefined) {
@@ -193,23 +237,48 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
       }
       const handler = createAuditRouteHandler({
         read: async () => {
-          const loaded = await loadEnv({ dshHome: bound.dshHome, profile: bound.profile })
-          if (!loaded.ok) return { ok: false, message: `${loaded.error.code} — ${loaded.error.detail}` }
-          const data = await loadAuditData({
-            env: loaded.value,
-            dshHome: bound.dshHome,
-            // The payload's timestamp describes the read, not a verdict: one read, one stamp.
-            stamp: new Date().toISOString(),
-            snapshotPath: null,
-            noRedact: false,
-          })
-          if (!data.ok) return { ok: false, message: data.message }
-          return { ok: true, payload: auditJsonPayload(data.data, { noRedact: false, roots: auditRedactRoots(bound.dshHome) }) }
+          const scanned = await scan()
+          if (!scanned.ok) return { ok: false, message: scanned.message }
+          return { ok: true, payload: scanned.payload }
         },
       })
-      const register = (): (() => void) => webServer.register({ kind: 'exact', path: AUDIT_ROUTE_PATH, handler })
-      const dispose = typeof scope.effect === 'function' ? scope.effect(register, 'compat-triage: audit route') : register()
-      announce(ctx, `read-only ${AUDIT_ROUTE_PATH} registered (profile ${bound.profile})`)
+      const summaryHandler = createSummaryRouteHandler({
+        read: async () => {
+          const startedAt = Date.now()
+          const scanned = await scan()
+          if (!scanned.ok) return { ok: false, message: scanned.message }
+          const env = scanned.payload.env ?? {}
+          return {
+            ok: true,
+            body: {
+              env: {
+                dsh: typeof env.dsh === 'string' ? env.dsh : null,
+                profile: typeof env.profile === 'string' ? env.profile : null,
+                platform: typeof env.platform === 'string' ? env.platform : null,
+                arch: typeof env.arch === 'string' ? env.arch : null,
+              },
+              // Two locales from one scan: the browser half must not translate judgement language
+              // itself, and it must not pick the words that make a verdict sound better.
+              summary: {
+                zh: buildProfileSummary(scanned.data, { locale: 'zh' }),
+                en: buildProfileSummary(scanned.data, { locale: 'en' }),
+              },
+              ms: Date.now() - startedAt,
+            },
+          }
+        },
+      })
+      const register = (): (() => void) => {
+        const disposers = [
+          webServer.register({ kind: 'exact', path: AUDIT_ROUTE_PATH, handler }),
+          webServer.register({ kind: 'exact', path: SUMMARY_ROUTE_PATH, handler: summaryHandler }),
+        ]
+        return () => {
+          for (const dispose of disposers) dispose()
+        }
+      }
+      const dispose = typeof scope.effect === 'function' ? scope.effect(register, 'compat-triage: audit routes') : register()
+      announce(ctx, `read-only ${AUDIT_ROUTE_PATH} + ${SUMMARY_ROUTE_PATH} registered (profile ${bound.profile})`)
       void dispose
     })
   }
