@@ -86,6 +86,34 @@ when they do, the change is written here with the reason, not just the diff.
   An expired npm token used to surface as `404 Not found`; it now says "not logged in — run npm login".
 
 
+### Autofix: the tool can now repair one thing, and refuses the rest (R49, 2026-10-30)
+
+- **`dsh-triage fix`** prints a plan and writes nothing. `--apply` writes only items the plan marked
+  ready; `--undo <journal>` restores the previous bytes exactly. `--json` carries the same plan.
+- **One write exists today**: an exact-version exemption in the profile's `compatibility.json`, in the
+  format upstream writes (2-space JSON, sorted keys, trailing newline), and only when the installed
+  runtime actually reads that file. On a runtime that does not (0.1.0-rc.6 does not), `fix` says so
+  instead of writing a file nothing reads.
+- **Refusals are part of the feature**: a non-exact version, a package whose install shape we do not
+  know, a compatibility file this tool did not write — each is reported, not "repaired". Editing a
+  plugin's own `engines.dsh` to silence the loader is deliberately absent: that would be lying to the
+  loader, and the next reinstall undoes it anyway.
+- Two real defects were found by recording the write path instead of mocking it: a second `--apply`
+  in the same second used to overwrite the first backup (so `--undo` restored the *patched* file), and
+  backup directories could not be created at all because an ISO stamp contains `:`.
+
+### The panel, redesigned (R49, 2026-10-30)
+
+- Visual pass, done by a separate agent and reviewed against real browser screenshots: the card wall,
+  shadows, gradients and emoji are gone; two type sizes plus one number; colour only for
+  normal / undecided / broken; `问题` and `命令` are one column instead of two competing panels.
+- The six counters are one hairline row; they still filter the issue list when clicked, and they are
+  hidden in the simple view.
+- Issue rows use words (`被拒` / `判不了` / `重复`) instead of symbols, and keep the exact engine
+  sentence one click away in the detailed view.
+- Deep links combine now: `#theme=dark&advanced&evidence`, plus `#artifact=<name>` opening the drawer.
+
+
 ## [0.2.0] — 2026-10-30
 
 > Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).

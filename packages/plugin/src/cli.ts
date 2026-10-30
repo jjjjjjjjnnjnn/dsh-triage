@@ -92,6 +92,7 @@ import {
   realProbeDeps,
   sandboxBundles,
 } from './probe-run.js'
+import { applyExemptionFixes, planFixes, readProfileDependencies, runtimeSupportsExemptions, undoFix } from './fix.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
 import { buildProfileSummary, formatProfileSummary } from './summary.js'
 
@@ -135,6 +136,10 @@ interface Flags {
   readonly out: string | null
   /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
   readonly allowExecute: boolean
+  /** `fix --apply`: actually write. Without it, `fix` only prints the plan. */
+  readonly apply: boolean
+  /** `fix --undo <journal>`: restore the files a previous apply changed. */
+  readonly undo: string | null
   /** `serve --audit`: expose `GET /api/audit` (read-only). On by default since R49. */
   readonly audit: boolean
   /** `serve --no-audit`: serve artifacts only; `/api/audit` answers 501 and says why. */
@@ -192,9 +197,12 @@ Usage
   dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge
   dsh-triage upgrade --to <version>  which rows/bundles the target dsh would deny, and how to fix
   dsh-triage upgrade --to next|latest  same judgement, with the target resolved from npm dist-tags
+  dsh-triage fix                     what can be repaired automatically; --apply writes, --undo reverts
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking (audit: print the full ledger)
+  --apply               (fix) actually write the plan; without it nothing is written
+  --undo <journal>      (fix) restore the files an earlier --apply changed
   --strict              exit 1 when a conclusion is not "go"
   --profile <name>      profile name (default: web)
   --dsh-home <path>     override $DSH_HOME (default: ~/.dsh)
@@ -244,6 +252,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return EXIT_OK
     case 'status':
       return commandStatus(flags)
+    case 'fix':
+      return commandFix(flags)
     case 'env':
       return commandEnv(flags)
     case 'why':
@@ -1169,6 +1179,98 @@ async function commandStatus(flags: Flags): Promise<number> {
   return outcome
 }
 
+/**
+ * `dsh-triage fix` — the autofix surface (M7, `docs/specs/M7-autofix.md`).
+ *
+ * Prints a plan by default and writes NOTHING. `--apply` writes only the items the plan marked
+ * `ready`, backs the file up first, and records a journal so `--undo` can put it back.
+ */
+async function commandFix(flags: Flags): Promise<number> {
+  if (flags.undo !== null) {
+    try {
+      const { restored } = undoFix(flags.undo)
+      if (flags.json) {
+        writeJson({ schema_version: 1, command: 'fix', undo: flags.undo, restored })
+      } else {
+        process.stdout.write(`restored ${restored.length} file(s):\n`)
+        for (const file of restored) process.stdout.write(`  ${file}\n`)
+      }
+      return EXIT_OK
+    } catch (error) {
+      process.stderr.write(`cannot undo: ${error instanceof Error ? error.message : String(error)}\n`)
+      return EXIT_UNAVAILABLE
+    }
+  }
+
+  const env = await requireEnv(flags)
+  if (env === null) return EXIT_UNAVAILABLE
+  const dshHome = resolveDshHome(flags)
+  const loaded = await loadAuditData({
+    env,
+    dshHome,
+    stamp: stampOf(flags),
+    snapshotPath: flags.snapshot,
+    noRedact: flags.noRedact,
+  })
+  if (!loaded.ok) {
+    process.stderr.write(`${loaded.message}\n`)
+    return EXIT_UNAVAILABLE
+  }
+
+  const exemptionSupport = runtimeSupportsExemptions(env.profileDir)
+  const plan = planFixes(loaded.data, {
+    exemptionSupport,
+    installable: readProfileDependencies(env.profileDir),
+  })
+
+  let run: ReturnType<typeof applyExemptionFixes> = { journal: '', changes: [], skipped: [], dryRun: true }
+  if (flags.apply && plan.applicable > 0) {
+    try {
+      run = applyExemptionFixes(plan, { stamp: stampOf(flags), dryRun: false })
+    } catch (error) {
+      process.stderr.write(`cannot apply: ${error instanceof Error ? error.message : String(error)}\n`)
+      return EXIT_UNAVAILABLE
+    }
+  }
+
+  if (flags.json) {
+    // Same rule as every other command: absolute home paths are redacted unless --no-redact.
+    const safePlan = flags.noRedact
+      ? plan
+      : { ...plan, profileDir: plan.profileDir.replace(/^[A-Za-z]:\\Users\\[^\\]+/u, '~').replace(/^\/home\/[^/]+/u, '~') }
+    writeJson({ schema_version: 1, command: 'fix', plan: safePlan, run })
+  } else {
+    const zh = flags.locale === 'zh'
+    if (plan.items.length === 0) {
+      process.stdout.write(zh ? '没有需要修复的项。\n' : 'nothing to fix.\n')
+    } else {
+      process.stdout.write(zh ? `可修复 ${plan.applicable} / ${plan.items.length} 项\n` : `${plan.applicable} of ${plan.items.length} fixable\n`)
+      for (const item of plan.items) {
+        const mark = item.status === 'ready' ? '✓' : '·'
+        process.stdout.write(`  ${mark} ${item.id}  [${item.action}/${item.status}]\n      ${item.detail}\n`)
+        if (item.status !== 'ready' && item.command !== null) process.stdout.write(`      ${item.command}\n`)
+      }
+    }
+    if (!plan.exemptionSupport) {
+      process.stdout.write(
+        zh
+          ? `\n本机运行时（dsh ${plan.runtime ?? '?'}）不读取 compatibility.json，因此豁免类修复不可用。\n`
+          : `\nthis runtime (dsh ${plan.runtime ?? '?'}) does not read compatibility.json, so exemptions cannot be applied here.\n`,
+      )
+    }
+    if (run.dryRun) {
+      if (plan.applicable > 0) {
+        process.stdout.write(zh ? '\n只出了计划，没有写任何文件。要执行：dsh-triage fix --apply\n' : '\nplan only — nothing was written. To apply: dsh-triage fix --apply\n')
+      }
+    } else {
+      process.stdout.write(zh ? `\n已写入 ${run.changes.length} 处，撤销：dsh-triage fix --undo ${run.journal}\n` : `\nwrote ${run.changes.length} change(s); undo with: dsh-triage fix --undo ${run.journal}\n`)
+    }
+  }
+
+  if (plan.items.length === 0) return EXIT_OK
+  return run.dryRun ? EXIT_FINDINGS : plan.applicable === run.changes.length ? EXIT_OK : EXIT_FINDINGS
+}
+
 async function commandAudit(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
@@ -1762,6 +1864,8 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let results: string | null = null
   let out: string | null = null
   let allowExecute = false
+  let apply = false
+  let undo: string | null = null
   let audit = false
   let noAudit = false
   let readinessTimeoutMs: number | null = null
@@ -1813,6 +1917,15 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--explain':
         explain = true
         break
+      case '--apply':
+        apply = true
+        break
+      case '--undo': {
+        const value = takeValue()
+        if (value === null) return null
+        undo = value
+        break
+      }
       case '--help':
       case '-h':
         help = true
@@ -1946,7 +2059,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, noAudit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, apply, undo, audit, noAudit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
   if (help) return { command: 'help', positionals: [], flags }
   // R49: no subcommand is not an error. It is the question the product exists to answer.
   const command = positionals.shift() ?? 'status'

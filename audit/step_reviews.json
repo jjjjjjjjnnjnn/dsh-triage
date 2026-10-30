@@ -6705,6 +6705,56 @@
         "sha256": "a959fbcb9c4cdd7947e06478bf42a1e22fd92a680b3d2c9018e1127100747a5a",
         "outcome": "18/18 PASS · 页面 36039 bytes · 8 个控件齐（含简单/详细切换）· `--no-audit` 两态 501 · summary 与 ledger 同源 · 脱敏 `~\\profiles\\desktop`"
       }
+    },
+    {
+      "id": "R49-S4",
+      "batch": "R49",
+      "step": "用户要求「尽量直接修好，做一个自动打补丁的插件」：新增 `packages/plugin/src/fix.ts` + `dsh-triage fix`（计划 / `--apply` / `--undo`），先定判据（`docs/specs/M7-autofix.md`）再写码——哪些能自动修（0.2.x 的精确版本豁免）、哪些必须拒绝（改插件 `engines.dsh` = 对加载器撒谎）、以及为什么本机 0.1.0-rc.6 上豁免是假修（全量搜索已安装 `@deepseek-ai/*`，`compatibility.json` 零命中）",
+      "changed": [
+        "packages/plugin/src/fix.ts",
+        "packages/plugin/src/cli.ts",
+        "docs/specs/M7-autofix.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "tests/unit/fix.test.ts",
+        "scripts/record_fix_plan.mjs",
+        "data/results/fix-2026-10-30T13-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：494 测试 / 0 fail（含 10 条 fix 单测）。写入面只有一条路径（精确版本豁免），且写入前必须同时满足：运行时**实现存在**（不是版本号 ≥ 某值）、版本是规范精确 semver、compatibility.json 可解析或不存在。`--apply` 才会写；`--undo` 逐字节还原。**判据零改动**：`admission.ts` / 四桶 / 阈值 / `audit --json` 全部原样——这一轮没有让 audit 读取豁免（那需要金标与 HUMAN 签字，已开 T-816）",
+        "reproducibility": "PASS：`scripts/record_fix_plan.mjs` 在**一次性临时 profile** 上真跑 14/14（计划 → dry-run 不写 → apply → 幂等 → undo 逐字节），产物 `data/results/fix-2026-10-30T13-20-00.000Z.json` + sha256；不碰 `~/.dsh`，`limits[]` 写明「没有启动真运行时」",
+        "licence": "PASS：零新增依赖；只用 Node 内置 `fs`/`path`；没有任何网络调用（pin 的 registry 查询未实现，见 spec §5）",
+        "ssot": "PASS：494 测试 / 276 步 / 256 产物在 `AGENTS.md`、`INDEX.md`、`docs/HANDOFF.md` 与本台账一致；`docs/specs/M7-autofix.md` 已在 `INDEX.md` 登记；两个新产物都被本台账引用（`no-orphan-results` 绿）",
+        "adversary": "反例一：直接改 `node_modules/<pkg>/package.json` 的 `engines.dsh` 让加载器放行——**永不实现**，那是对加载器撒谎且升级即失效，spec §1 表 C 写明了理由；反例二：在 0.1.0-rc.6 上照写 compatibility.json 然后宣称「已修复」——被拒，写了个没人读的文件比不修更糟，`runtimeSupportsExemptions()` 用实现存在性判定；反例三：`--apply` 失败后留下半个文件——被拒，写入是临时文件 + rename 的原子替换，失败即删临时文件；反例四：第二次 apply 覆盖第一次的备份，让 undo 还原出「已修补」的文件——**这个反例真的被记录器抓到了**（首次跑 13/14），修法是把备份目录与 journal 都按「每次运行」独立命名，并补了一条单测钉死"
+      },
+      "real_test": {
+        "command": "node scripts/record_fix_plan.mjs --stamp 2026-10-30T13:20:00.000Z",
+        "artifact": "data/results/fix-2026-10-30T13-20-00.000Z.json",
+        "sha256": "f31d7db309325a1cb96c192af1a788ef062388e997bad57024f5bb14d32a57cb",
+        "outcome": "14/14 PASS · 无支持运行时 → 0 可修且不写盘 · 有支持运行时 → 写明 upstream 格式（2 空格 JSON + 末尾换行）、保留既有豁免、幂等 · 备份与 journal 落盘 · undo 逐字节还原 · 产物已脱敏（<tmp>）"
+      }
+    },
+    {
+      "id": "R49-S5",
+      "batch": "R49",
+      "step": "用户反馈「UI 太丑、文字太 AI 化、结构与设计不直观」：交给**独立 agent** 重做面板视觉与文案（只动 `serve.ts` 的 `renderPanelHtml` 与 `PanelCopy`），主会话验收截图并修回一处回归（产物名在固定列宽下被截断）",
+      "changed": [
+        "packages/plugin/src/serve.ts",
+        "data/results/serve-smoke-2026-10-30T13-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：494 测试 / 0 fail（面板契约 29/29 由 agent 自验，主会话复跑全量）；所有契约保留——13 个必需 id、`<body data-view=\"simple\">`、`data-sort=\"generated_at\"`、`#artifact=`/`#theme=`、`aria-live`、无内联事件、CSP 与路由/安全函数未改（diff 只从 `renderPanelHtml` 起）",
+        "reproducibility": "PASS：冒烟 `data/results/serve-smoke-2026-10-30T13-10-00.000Z.json` 18/18（`page-controls` 仍要求 8 个控件）；主会话独立截了 5 张图（简单深/浅、详细、抽屉、off 态）逐张看过",
+        "licence": "PASS：无框架、无远程资源、无图标字体；颜色只用 CSS 变量与系统字体，`img-src data:` 仍成立",
+        "ssot": "PASS：494 测试 / 276 步 / 256 产物四处一致；视觉改动只影响人类可读渲染，`audit --json` 逐字节未变，`status --json` 的形状未变",
+        "adversary": "反例一：为了「干净」把「另外 N 行未声明」从简单视图删掉——被拒，那正是 R49 第一轮修掉的谎，简单视图只是换措辞；反例二：用自绘下拉让视觉统一——没做，保留原生 `<select>`（键盘与读屏）；反例三：只看代码不看页面——被拒，agent 与主会话都跑了 Edge headless 截图；反例四（真实回归）：新列宽把产物名截断成 `serve-smoke-2026-10-30T12-10-`，截图比对时发现，改成 36% 列宽 + `word-break:break-all` 后复截确认"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-30T13:10:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-30T13-10-00.000Z.json",
+        "sha256": "3bf8de149ef13314a637cb3a64219d9075c1ba24a89906e44df2ec4722156068",
+        "outcome": "18/18 PASS · 页面渲染 200 · 8 个控件齐 · 501/409 路径不变 · 与 `audit --json` 同源"
+      }
     }
   ]
 }

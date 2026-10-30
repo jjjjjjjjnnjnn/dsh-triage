@@ -190,7 +190,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 | 主张 | 怎么复现 |
 |---|---|
-| 构建、类型检查、484 个测试、9 道门 | `pnpm run verify` |
+| 构建、类型检查、494 个测试、9 道门 | `pnpm run verify` |
 | 这些门真的会红 | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission 语义与上游逐条对等 | `data/gold/admission-cases.json` —— 27 条人工签署金标，由 `admission-parity` 门锁死 |
 | `why` 在真实故障上点中根因 | `node scripts/d1_report.mjs --stamp <iso>` → 10 个真实案例、9 命中、1 条显式 `unknown`（`data/results/d1-*.json`） |
