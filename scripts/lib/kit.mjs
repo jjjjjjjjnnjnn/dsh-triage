@@ -151,7 +151,12 @@ export async function runGate(name, buildChecks) {
     for (const item of checks.items) {
       process.stdout.write(`${item.ok ? 'PASS' : 'FAIL'}  ${name}/${item.id}${item.detail ? ` — ${item.detail}` : ''}\n`)
     }
+    // CI logs are long and get trimmed: name the failing checks in the summary too, so a red
+    // run is diagnosable without hunting for a line in the middle of 600 test results.
     process.stdout.write(`${ok ? 'OK' : 'FAILED'}  ${name}${mutate ? ' (mutate)' : ''}\n`)
+    if (!ok) {
+      process.stdout.write(`FAILING: ${checks.failed.map((item) => item.id).join(', ')}\n`)
+    }
   }
   process.exitCode = ok ? 0 : 1
 }
