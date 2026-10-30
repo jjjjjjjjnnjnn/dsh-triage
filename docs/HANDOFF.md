@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R49 (2026-10-30，**交付轮**：把「证据浏览器」改成「打开就有一屏答案」——无参 `status` / `audit` 摘要优先 / 面板首屏 + 安全与抗干扰收口；判据/阈值一字未动)｜**上一轮 R48**：升级日入口四项 + 四包升 `0.3.0`（registry 仍 0.2.0，等 HUMAN `npm publish`）｜接手先读本文件 + `PROJECT_RULES.md` + `INDEX.md`。
+> **Stand**: R49 (2026-10-30，交付轮 **+ 一处判据变更**：`T-816` 让行级 admission 读取 profile 的 `compatibility.json`（HUMAN 批准，见 `audit/SIGNOFF.md`）；其余判据/阈值一字未动)｜**下一件事 `T-815`**：`fix` 的「装包」，已获授权但**只在 `sandbox/` 隔离 profile 上**，五步计划见 §3｜上一轮 R48：升级日入口四项 + 四包升 `0.3.0`（registry 仍 0.2.0，等 HUMAN `pnpm -r publish`）。
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -76,7 +76,56 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
-**验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。**R49 已把「打开就有一屏答案」交出去；现在只剩「发出去」与「判 D5」。**
+**验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。
+
+**还要确认 CI 是绿的**（这是本机看不见的一层）：
+
+```powershell
+$env:HTTPS_PROXY="http://127.0.0.1:19828"; gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
+```
+
+验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R49 第 6 段（本轮最后）：CI 修复 + T-816 交付 + T-815 已获授权、未动工
+
+**交接时的真实状态**（`7c55109` 之后、本轮末提交前）：**500 测试 / 9 门 ALL GREEN / `--mutate` 9/9**，
+工作区干净，`main` 与 `origin/main` 一致，**CI 已绿**（`gh run list` 最新一次 `completed/success`）。
+
+1. **CI 红了两周，根因不是测试**：`.github/workflows/ci.yml` 第 97 行 `needs: verify    steps:`
+   两个键写在一行 → **workflow 无法解析**，GitHub 显示"失败"但 **0 个 job**。拆行后立刻暴露出
+   第二个真 bug：`governance/index-references` 把 `sandbox/`（**被 `.gitignore` 忽略**）当成断链——
+   本机存在、CI 干净检出不存在。修法：**被 git 忽略的路径不算断链**（`scripts/gate_governance.mjs`
+   的 `ignoredPrefixes()` / `isIgnored()`）。两条都已修并推送（`ac932d1`、`271b6f3`）。
+2. **T-816 已交付**（你批准「1+2 都做」）：行级 admission 现在读 profile 自己的
+   `compatibility.json`（上游 0.2.x 的精确版本豁免）。有精确豁免 → `blocked` 变 `go`，**保留**
+   原有 unmet 理由并加一条 `admission-exempted`（warn）；文件读不懂 → 0 条豁免且**不可改写**。
+   新增 `packages/core/src/exemption.ts` + `tests/unit/exemption.test.ts`（6 条），
+   语义写进 `docs/04-admission-semantics.md`，授权写进 `audit/SIGNOFF.md`。
+3. **T-815 已获你授权，但还没写**（这是下一位的第一件事）：「装包」这条修法要在 profile 里跑
+   `pnpm install`。**你已明确同意在 `sandbox/` 的隔离 profile 上真跑，不碰 `~/.dsh`。**
+   计划（照 `docs/specs/M7-autofix.md` §5 扩写即可）：
+
+   | 步 | 做什么 | 判据 |
+   |---|---|---|
+   | 1 | 从 registry 解析一个**声明包含当前 runtime** 的精确版本（用 `packages/signals/src/npm.ts#fetchPackument`，逐字不回写） | 版本必须精确 semver 且其 `engines.dsh`/peer 包含 runtime；否则 `no-compatible-version` |
+   | 2 | 只在包**已在 profile `dependencies`** 时写 manifest（备份 + journal） | 不在依赖里 → `unknown-install-shape`，不写 |
+   | 3 | `fix --apply --install` 才真跑 `pnpm install`（默认不跑） | 无 `--install` 时只写清单，输出明确说"还没装" |
+   | 4 | 装完**用同一引擎重跑** `loadAuditData`，那条 denial 必须消失 | 没消失 → 视为失败并回滚 |
+   | 5 | 失败自动回滚（manifest + 备份），journal 记 before/after sha256 | `--undo` 仍能整条回滚 |
+
+   现有可复用的东西：`fix.ts` 的 `planFixes/applyExemptionFixes/undoFix` 与每次运行独立的
+   backups/journal；`scripts/record_fix_plan.mjs` 是"一次性 profile 上真跑"的模板，照它加一份
+   `record_fix_install.mjs`（隔离 profile 副本 + 真安装 + 重跑判定 + 回滚），产物进 `data/results/`。
+4. **两个已知缺口**（写在这里，别当成已完成）：
+   - 摘要**没有单列**"靠豁免在跑"的行：`status` 里它们算 `go`，细节只在 `audit --all` 与面板详细视图；
+   - `fix` 的 `pin` 分支目前只会报 `no-compatible-version`（没有 registry 解析）。
+
+**下一位交接要点（三句话）**：① **先跑三条命令确认环境**（见 §1），再动 T-815；② **写盘功能必须有
+记录器**——备份被覆盖那个 bug 是记录器抓到的，单测 mock 抓不到；③ **改完必须推送并看 CI**：
+`gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1`，本机 `gh` 已登录，`HTTPS_PROXY=http://127.0.0.1:19828`。
+
+**本轮新增的三条坑（§4 也各有一行）**：YAML 两个键写一行会静默杀死整个 workflow；`.gitignore`
+里的路径不能当引用检查；同一秒 `--apply` 两次会覆盖备份（已修）。
 
 **R49 交接要点（三句话）**：① **正门现在是 `dsh-triage` 本身**——无参 = `status`，一屏回答「坏没坏 / 哪一条 / 敲什么」，`audit` 默认也只打摘要，全台账在 `--all`；面板 `serve` 首屏是同一份 summary（`/api/summary`），证据在页签里。② **判据一字未动**：`summary.ts` 是纯投影，`audit --json` 逐字节不变，四桶/`improved`/`admission.ts`/20s 全部原样；改摘要文案只影响人类可读输出。③ **面板第一次真的在浏览器里被打开过**（Edge headless 截图 + CDP 不需要）——CSP 那个 bug 说明「API 冒烟全绿」不等于「页面能用」，以后改面板必须至少跑一次 `msedge --headless --screenshot`。
 
@@ -278,6 +327,10 @@ node scripts/d2_report.mjs --matrix data/results/probe-matrix-<新 stamp>.json -
 | `gate.mjs --record` 报「refusing to overwrite existing evidence」 | 选了一个历史上已用过的 stamp（本仓有 80+ 份 `gates-*`，11:00/13:00 这类整点很容易撞） | 换一个没被占用的 stamp；**不要**为了用某个 stamp 去删历史产物（R45 踩了一次：09-10 撞车 → 改用 09-30） |
 
 ---
+
+| **CI 全红但其实没跑** | GitHub 显示 `failure`，点进去 0 个 job | `.github/workflows/ci.yml` 里 `needs: verify    steps:` 两个键写在同一行 → YAML 非法 | 拆行；**改 workflow 后一定看一次 run**（本机 `gh run list`） |
+| **本机绿、CI 红** | `governance/index-references` 只在 CI 红 | INDEX 引用了 `sandbox/`，而它被 `.gitignore` 忽略：本机有、干净检出没有 | 门禁现在跳过被 git 忽略的引用；**别用它掩盖"文件真的不存在"** |
+| **备份被后一次 apply 覆盖** | `--undo` 还原出"已修补"的文件 | 同一 stamp（同一秒）连跑两次 `fix --apply`，备份目录同名 | 每次运行独立的 backups/journal 目录（`runName` 后缀 `-2`），`tests/unit/fix.test.ts` 钉死 |
 
 ## 5. 冻结区（改之前必须问 HUMAN）
 

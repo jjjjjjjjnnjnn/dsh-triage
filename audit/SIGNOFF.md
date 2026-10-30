@@ -56,6 +56,8 @@
 
 | 2026-10-30 | **R49 T-816 判据变更（冻结区相邻）**：行级 admission 读取 profile 的 `compatibility.json`；有精确豁免的行由 `blocked` 变 `go`，并在 reasons 里追加 `admission-exempted`（warn） | 用户原话「1+2 都做」（回应「T-815 装包 / T-816 读豁免」两项） | DeepSeek V4.1 Flash：与上游语义逐条对齐（只认精确对，文件读不懂=0 条且不可改写）；500 测试 / 金标 parity 未变；6 条新单测 | 豁免文件在真实 0.2.x 运行时上的行为（本机 0.1.0-rc.6 无此实现，只有沙盒源码作为依据）；摘要未单列「靠豁免在跑」的行 | `data/results/fix-2026-10-30T14-10-00.000Z.json` · `tests/unit/exemption.test.ts` · `audit/step_reviews.json` R49-S6 |
 
+| 2026-10-30 | **R49 T-815 授权（写盘范围）**：允许 `fix` 在 profile 里执行 `pnpm install`（改 `node_modules` 与 lockfile） | 用户原话「同意」（回应「是否允许在 `sandbox/` 的隔离 profile 上真跑安装」） | DeepSeek V4.1 Flash：**尚未实现**，交接在 `docs/HANDOFF.md` §3 | 授权范围仅限隔离副本；**真实 `~/.dsh` 仍需逐次确认** | `docs/HANDOFF.md` §3 · `docs/BACKLOG.md` T-815 |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |
