@@ -40,7 +40,8 @@ DSH 插件分诊台：一条命令查出「工具为什么静默消失」——�
 ```sh
 dsh-triage why                     # 归因：被拒的行 + 影响 + 可直接复制的修复命令
 dsh-triage check <包>              # 装前判断：go / blocked / unknown + 原因 + 修复
-dsh-triage audit                   # 当前组合：行级 admission 结论 + 副本来源 + 相位
+dsh-triage                         # 一屏答案：坏没坏 / 哪一条 / 下一步敲什么（等同 status）
+dsh-triage audit                   # 当前组合：默认先给结论摘要（全台账用 --all）
 dsh-triage probe <包> --execute --dsh-main <...>   # 隔离实测：boot / http / 渲染 / 台账，跑完必清理
 dsh-triage upgrade --to <版本|next|latest>   # 升级影响：目标运行时会把哪一行摘掉（四桶；精确版本全程离线）
 dsh-triage badge <包>              # 把「已经记录过的那次运行」渲染成 shields 风格 SVG

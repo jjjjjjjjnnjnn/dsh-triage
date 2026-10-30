@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R48 (2026-10-29)",
+  "stand": "R49 (2026-10-30)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -357,6 +357,15 @@
       "mitigation": "① 拒绝分支由单测钉死（三条拒绝码 + 不回退 latest + 不改写 `v` 前缀），并在 `data/results/upgrade-entry-*.json` 的 `limits[]` 里写明「没有真机见证」；② 时点断言由 `--fixtures` 离线复算保住「当时那条值来自 registry」，同时 `check_listing` 的 `readme-shows-real-card` 会在卡片数字漂移时打红；③ 每次 rc 发布后重跑 `record_upgrade_entry.mjs` 即可得到新快照——R48 收尾时的那次重跑（`next=0.2.1-rc.5`）26/26 全绿，证明这条路径不依赖记忆里的版本号；④ 真正要补拒绝分支的见证：等上游发布一次只有 `latest` 的包，或让某包的 tag 临时指向范围值",
       "owner": "scripts/record_upgrade_entry.mjs + tests/unit/upgrade-target.test.ts",
       "status": "open (R48): refusal branches are unit-tested only; the verbatim claim is a point-in-time snapshot (witnessed twice: rc.4 -> rc.5 inside one round)",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-46",
+      "area": "serve/panel-rendering",
+      "cannot_see": "「HTTP 冒烟全绿」不等于「页面在浏览器里能用」。R49 之前 `record_serve_smoke.mjs` 的断言全在 HTTP 层，注释还写着 `no browser is involved`；一个 CSP `default-src 'none'` 就把页面自己的 `fetch()` 全部拦掉，面板在真浏览器里始终是空壳，而**没有任何 HTTP 状态码会变红**。同类未见证项：面板只在 Edge（Chromium）headless 里被看过；Firefox / Safari / 移动视口没测；「复制修复命令」按钮的剪贴板路径（含无 clipboard 权限时的回退）没有真机交互见证",
+      "mitigation": "① 改面板必须至少跑一次 `msedge --headless=new --screenshot`，验收标准是「截图里能看到结论横幅 + 计数 + 要看的地方」（写进 `docs/SECURITY.md` §6 与 `docs/HANDOFF.md` §3）；② CSP 由单测钉死：必须含 `connect-src 'self'`、必须没有通配符、`default-src` 仍是 `none`；③ 页面所有插值走 `esc()`，注入 `<script>` 的文案把 `<` 转义成 U+003C；④ 仍未覆盖的浏览器与剪贴板路径登记在此，**不写成「已验证」**",
+      "owner": "packages/plugin/src/serve.ts + tests/unit/serve.test.ts",
+      "status": "open (R49): one browser (Edge headless) is the only rendering witness; clipboard fallback is exercised by no test",
       "resolved_by": null
     }
   ]

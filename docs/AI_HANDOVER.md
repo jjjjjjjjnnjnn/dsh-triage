@@ -1,6 +1,6 @@
 # AI_HANDOVER · 接手清单
 
-> **Stand**: R48 (2026-10-29)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
+> **Stand**: R49 (2026-10-30)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
 
 ## 1. 五分钟检查（禁跳过）
 

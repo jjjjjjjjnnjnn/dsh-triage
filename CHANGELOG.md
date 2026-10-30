@@ -31,6 +31,35 @@ when they do, the change is written here with the reason, not just the diff.
   (`readme-shows-real-card` in `scripts/check_listing.mjs`) re-reads the cited artifact and fails the
   copy if a bucket count, the sandbox annotation or the recompute command drifts.
 
+### First screen is the answer (R49, 2026-10-30)
+
+> Still part of `0.3.0`: it had not been published when this landed. **No judgement changed** — the
+> buckets, the `improved` thresholds, every admission rule, `audit --json` and every exit code are
+> untouched. Only what a person reads first changed.
+
+- **`dsh-triage` with no subcommand is now `status`.** It prints the verdict, the counts, the rows to
+  look at, and the commands to run — in that order. It used to print a 36-line usage screen and exit 0.
+- **`audit` prints the summary by default.** The full ledger (170 lines on a real profile) moved behind
+  `audit --all`. `audit --json` is byte-for-byte unchanged: scripts that parse it see no difference.
+- **The counts say what was actually judged.** `156 rows (2 judged)` — the other 154 declare no
+  `@deepseek-ai/dsh*` range at all, and the summary says so out loud instead of counting them as
+  passing. A profile that yields **zero** rows is reported as `attention` ("usually the wrong
+  `--dsh-home` or `--profile`"), never as a clean bill.
+- **`serve` opens on the answer.** Conclusion banner, six counters, one card per thing to look at
+  (with a copy button for the exact fix command), and the next three commands. The `data/results`
+  artifacts and the raw `audit --json` payload are one click away under two tabs (`#evidence`,
+  `#raw` deep links). The panel now reads the current profile by default; `--no-audit` keeps the old
+  artifacts-only mode, and **both** routes answer `501` in it rather than an empty ledger.
+- **Fixed while building it**: the panel's CSP (`default-src 'none'`) was also blocking the page's own
+  `fetch()` calls, so the first screen rendered empty in a real browser while every HTTP smoke check
+  stayed green. `connect-src 'self'` is now set, with a regression test. Two more "looks clean but
+  isn't" cases were closed the same way: an empty composition, and a listing route that parsed
+  arbitrarily large files.
+- **Security**: `docs/SECURITY.md` now states the threat model, what is refused (with the test that
+  proves it), and what is explicitly *not* defended. Seeing it in practice: 20 traversal spellings,
+  symlink/junction escapes, files over 2MB, cross-origin reads, near-miss tokens, and concurrent
+  refreshes are all refused or collapsed into a single scan.
+
 ## [0.2.0] — 2026-10-30
 
 > Published to npm on 2026-10-30; anonymous install verified (`data/results/publish-2026-10-30T05-00-00.000Z.json`).

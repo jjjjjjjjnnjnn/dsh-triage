@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R48 (2026-10-29)",
+  "stand": "R49 (2026-10-30)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6617,6 +6617,36 @@
         "artifact": "data/results/upgrade-entry-2026-10-29T20-10-00.000Z.json",
         "sha256": "da2fa2ae4ab778f080ae9a572cf9307857387cf23b0b5f23387b7f2bf87ef0df",
         "outcome": "26/26 PASS · registry next 0.2.1-rc.5（上游在本轮内发布）/ latest 0.2.1-rc.2 · profile upstream"
+      }
+    },
+    {
+      "id": "R49-S1",
+      "batch": "R49",
+      "step": "交付轮轮末一条汇总：把「证据浏览器」改成「打开就有一屏答案」（无参 = `status` / `audit` 摘要优先 / 面板首屏），并收口面板的安全与抗干扰；判定引擎、阈值、`audit --json` 逐字节未动。真跑 = `record_serve_smoke` 17/17（含 `--no-audit` 两态 501 与 summary↔ledger 同源）",
+      "changed": [
+        "packages/plugin/src/summary.ts",
+        "docs/SECURITY.md",
+        "packages/plugin/src/serve.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/summary.test.ts",
+        "tests/unit/serve.test.ts",
+        "tests/unit/serve-adversarial.test.ts",
+        "tests/e2e/cli.test.ts",
+        "scripts/record_serve_smoke.mjs",
+        "data/results/serve-smoke-2026-10-30T10-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：477 测试 / 0 fail（452 → 477）。判据侧零改动：`audit --json` 的既有逐字段 e2e 断言原样通过，`summary.ts` 只读 `loadAuditData()` 的返回值，没有第二条判定路径。面板与 CLI 的一致性由两条冒烟项盯着：`summary-parity-with-ledger`（summary 的 `judged` 必须等于 ledger 的 `row_verdicts` 长度）与 `audit-parity`（`/api/audit` 与 `audit --json` 逐项相同）。面板首屏另用 Edge headless 真截图确认过（结论横幅 + 六 chip + 两张问题卡都在）",
+        "reproducibility": "PASS：产物由 `scripts/record_serve_smoke.mjs` 写出，`produced_by` / `generated_at` 齐全，`.sha256` 与文件同批；独立复算用 `--stamp 2026-10-30T10:45:00.000Z --out <临时目录>` 再跑一次：17/17、检查 id 序列完全相同、`by_conclusion` 相同（`risky 5 / blocked 2 / unknown 1`），只有 `ms` 计时字段不同——计时不该逐字节复现，检查项应该",
+        "licence": "PASS：零新增运行时依赖（面板仍是零依赖的 HTTP + 内联 HTML）；`docs/SECURITY.md` 只描述本仓行为，不含第三方数据或代码；Edge headless 只用于本地截图，不引入仓库资产",
+        "ssot": "PASS：477 测试 / 272 步 / 252 产物在 `AGENTS.md`、`INDEX.md`、`docs/HANDOFF.md`、本台账四处一致；`docs/SECURITY.md` 已在 `INDEX.md` 登记（`governance/index-references` 只看行内反引号路径，已过）；本轮唯一的 `data/results` 新产物就是本条引用的那份，`no-orphan-results` 归零",
+        "adversary": "反例一：只跑 `--fast` 就宣布全绿——被拒，跳过需要构建的门等于没验，本轮判据是完整套件 + `--mutate` 9/9；反例二：在单测里 mock `fetch` 证明「面板能用」——被拒，这正是旧冒烟脚本的错（注释写着 `no browser is involved`），CSP 把页面自己的 fetch 拦掉了都没人发现，所以本轮必须有真浏览器截图；反例三：把「154 行没声明区间」并入 `go` 计数让仪表盘好看——被拒，摘要里那 154 必须独立成句且不进 `go`，`tests/unit/summary.test.ts` 的 *rows and judged are different numbers* 逐字断言了这一点"
+      },
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-10-30T10:30:00.000Z",
+        "artifact": "data/results/serve-smoke-2026-10-30T10-30-00.000Z.json",
+        "sha256": "192222528e1fdd28ed209baa02baf29ddc6f58a715db18c92b86ba90c929460b",
+        "outcome": "17/17 PASS · 面板首屏 tone=attention（fixture profile + 合成快照）· `--no-audit` 时 `/api/audit` 与 `/api/summary` 都 501 · summary 与 ledger 同源 · 脱敏后 `env.profileDir=~\\profiles\\desktop`"
       }
     }
   ]

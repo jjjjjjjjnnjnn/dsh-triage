@@ -578,3 +578,12 @@
 - SessionID：待 HUMAN 回填（opencode 主会话）
 - 备注：`npm publish 0.3.0` 与 `record_publish` 尚未执行，所以 README 里「0.3.0 on npm」在这一刻**领先于 registry**——这是本轮唯一未关闭的窗口，写在 HANDOFF §3 第 1 条
 
+### 2026-10-30 R49｜交付：把「证据浏览器」改成「打开就有一屏答案」+ 面板安全与抗干扰收口
+
+- 生成者：DeepSeek V4.1 Flash（opencode 主会话，兼 implementer / verifier / adversary；未开 subagent）
+- SessionID：主会话（无 subagent；`audit/step_reviews.json` R49-S1）
+- 范围：`packages/plugin/src/summary.ts`（新）· `packages/plugin/src/serve.ts`（面板重写 + `/api/summary` + `resolveArtifact` + `singleFlight` + CSP）· `packages/plugin/src/cli.ts`（`commandStatus` / `commandAudit` 摘要 / `commandServe` / HELP / `--no-audit`）· `tests/unit/summary.test.ts`（新）· `tests/unit/serve.test.ts` · `tests/unit/serve-adversarial.test.ts`（新）· `tests/e2e/cli.test.ts` · `tests/e2e/inventory-cli.test.ts` · `scripts/record_serve_smoke.mjs` · `docs/SECURITY.md`（新）· `docs/HANDOFF.md` · `INDEX.md` · `AGENTS.md` · `CHANGELOG.md` · `docs/BACKLOG.md` · `audit/step_reviews.json` · `audit/blind_spots.json` · `audit/SIGNOFF.md` · `audit/AUDIT_2026-10-30_R49.md`（新）
+- 人工决策：会话内「继续」——按 R49 既定收口继续（跑门禁 / 落真跑产物 / 同步文档）。**没有**新的产品决策，也没有放宽任何判据
+- 结果：**判据/阈值/`audit --json` 一字未动**。① 无参 `dsh-triage` 从「36 行 usage、exit 0」变成 `status` 的一屏答案；② `audit` 默认打摘要（9 行），全台账进 `--all`（170 行）；③ 面板首屏 = 结论横幅 + 六 chip + 问题卡片 + 下一步，证据与原始 JSON 退到两个页签；④ 三个真发现：CSP `default-src 'none'` 连带拦掉页面自己的 `fetch()`（旧面板在真浏览器里从来没加载出表，冒烟脚本写着 `no browser is involved`）、空组合被判「没有问题」、列表路由整份读入任意大小 JSON；⑤ `docs/SECURITY.md` 写清威胁模型与三条红线，`tests/unit/serve-adversarial.test.ts` 11 条拒绝
+- 实测：**477 测试 / 0 fail**（452 → 477）· 9 门 ALL GREEN · `--mutate` 9/9 · 面板冒烟 **17/17** + 独立复算 17/17 · `data/results/serve-smoke-2026-10-30T10-30-00.000Z.json`
+- 反思：这一轮修的是一类**不会让任何门变红**的错误——「页面看起来正常，其实永远空」。API 层断言全绿，用户看到的却是一个空壳，因为浏览器把页面自己的 `fetch` 拦了。以后改面板必须至少截一张图；同时「沉默 = 通过」这个错误在三个地方各出现了一次（空组合、未声明行、关闭的路由），这次的修法不是加文案，而是让状态码 / 横幅 / 计数三者都可区分。

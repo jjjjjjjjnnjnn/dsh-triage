@@ -45,7 +45,8 @@ None of these are mysterious: a package without `dsh.bundle` never joins the pro
 ```sh
 dsh-triage why                     # who got dropped, why, and the exact fix
 dsh-triage check <pkg[@version]>   # go / blocked / unknown before you install
-dsh-triage audit                   # row-level verdicts for the installed set, plus copy provenance
+dsh-triage                         # the answer first: is it broken, which row, what to run next (= status)
+dsh-triage audit                   # the installed set: summary by default, full ledger behind --all
 dsh-triage probe <pkg> --execute --dsh-main <...>   # isolated boot / http / render / inventory, always cleaned up
 dsh-triage upgrade --to <version|next|latest>  # which rows a target DSH build would deny (exact versions stay offline)
 dsh-triage badge <pkg>             # shields-style SVG rendered from recorded evidence

@@ -183,10 +183,21 @@ test('presets reach the terminal and the JSON, and the transport is printed', ()
       },
     })
 
-    const result = runCli(['audit', '--snapshot', snapshot, '--dsh-home', fixture.dshHome, '--stamp', STAMP], fixture)
+    // R49: the ledger moved behind `--all`; the default screen is the summary. Both are
+    // pinned here so neither can quietly become the other.
+    const brief = runCli(['audit', '--snapshot', snapshot, '--dsh-home', fixture.dshHome, '--stamp', STAMP], fixture)
+    assert.equal(brief.status, 1, brief.stderr)
+    assert.match(brief.stdout, /What to look at/, 'the first screen answers "what do I act on"')
+    assert.ok(!brief.stdout.includes('transport in-process-projection'), 'the ledger is not the first screen')
+    assert.match(brief.stdout, /full ledger behind --all/)
+
+    const result = runCli(
+      ['audit', '--all', '--snapshot', snapshot, '--dsh-home', fixture.dshHome, '--stamp', STAMP],
+      fixture,
+    )
     // T-112: the two presets disagree about `tools`, and the failing side must survive.
     assert.equal(result.status, 1, result.stderr)
-    assert.match(result.stdout, /transport in-process-projection/, 'the sample transport is part of the header')
+    assert.match(result.stdout, /transport in-process-projection/, 'the sample transport is part of the ledger header')
     assert.match(result.stdout, /agent presets \(2\)/, 'the preset section must render')
     assert.match(result.stdout, /standard \(default\)/, 'the default preset is named')
     assert.match(result.stdout, /cross-preset divergence: 1/, 'the disagreement is counted')

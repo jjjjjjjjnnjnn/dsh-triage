@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）
 
-> **Stand**: R48 (2026-10-29) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2（npm `latest`；`next` = 0.2.1-rc.4，即仓内沙盒）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R49 (2026-10-30) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.2（npm `latest`；`next` = 0.2.1-rc.4，即仓内沙盒）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 > **R47 重定向**：正门从「通用检查器」改为「**升级日**」。依据是外部取证（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）：诊断类目周下载天花板 **1,988**（市场类 380,240 / 装饰类 411,844）；同时上游最近 842 条 Discussions 里故障帖 **49.2%**、其中 **67.2% 零回复**。痛点真、形态错 → 换触发时刻，不换判据。
 

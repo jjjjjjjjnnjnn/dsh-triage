@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { listArtifacts, renderPanelHtml, startPanel, summarizeArtifact } from '../../packages/plugin/dist/serve.js'
+import type { ProfileSummary } from '../../packages/plugin/dist/summary.js'
 
 function fixtureDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'triage-serve-'))
@@ -138,14 +139,29 @@ test('--allow-execute opens the gate but actions stay unimplemented (501, not 20
 
 /* ----------------------------- the audit route (T-406) --------------------- */
 
-test('/api/audit is off by default and says so with 501, never an empty ledger', async () => {
+/** The shape `buildProfileSummary()` produces; the panel must not re-derive any of it. */
+function summaryFixture(): ProfileSummary {
+  return {
+    tone: 'attention',
+    headline: 'nothing is denied, but 1 thing has no evidence either way',
+    counts: { rows: 3, judged: 1, go: 0, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [{ id: 'hmr', kind: 'unknown', line: 'no dsh range declared', fix: null }],
+    more: 0,
+    next: [{ label: 'row-by-row attribution', command: 'dsh-triage why' }],
+  }
+}
+
+test('the panel is started without a loader (--no-audit): 501, never an empty ledger', async () => {
   const dir = fixtureDir()
   const panel = await startPanel({ resultsDir: dir })
   try {
     const off = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
     assert.equal(off.status, 501)
     const body = (await off.json()) as { error: string }
-    assert.match(body.error, /--audit/, 'the answer has to name the switch that turns it on')
+    assert.match(body.error, /--no-audit/, 'the answer has to name the switch that turns it back on')
+
+    const summaryOff = await fetch(`http://127.0.0.1:${panel.port}/api/summary?token=${panel.token}`)
+    assert.equal(summaryOff.status, 501, 'the verdict route is off for the same reason as the ledger')
 
     const health = await fetch(`http://127.0.0.1:${panel.port}/api/health?token=${panel.token}`)
     assert.equal(((await health.json()) as { audit: boolean }).audit, false)
@@ -161,7 +177,7 @@ test('/api/audit is off by default and says so with 501, never an empty ledger',
 test('/api/audit returns the payload it was given, not a re-derivation', async () => {
   const dir = fixtureDir()
   const payload = { schema_version: 1, command: 'audit', row_verdicts: [{ conclusion: 'blocked' }], collisions: [] }
-  const panel = await startPanel({ resultsDir: dir, audit: async () => ({ ok: true, payload }) })
+  const panel = await startPanel({ resultsDir: dir, audit: async () => ({ ok: true, payload, summary: summaryFixture() }) })
   try {
     const response = await fetch(`http://127.0.0.1:${panel.port}/api/audit?token=${panel.token}`)
     assert.equal(response.status, 200)
@@ -173,6 +189,38 @@ test('/api/audit returns the payload it was given, not a re-derivation', async (
       headers: { origin: 'http://evil.example' },
     })
     assert.equal(crossOrigin.status, 403)
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('/api/summary answers the first screen: the injected summary plus the env it was measured on', async () => {
+  const dir = fixtureDir()
+  const payload = { schema_version: 1, command: 'audit', env: { dsh: '0.1.0-rc.6', profile: 'web', platform: 'win32', arch: 'x64', profileDir: '~/x' } }
+  const summary = summaryFixture()
+  let calls = 0
+  const panel = await startPanel({
+    resultsDir: dir,
+    audit: async () => {
+      calls += 1
+      return { ok: true, payload, summary }
+    },
+  })
+  try {
+    const response = await fetch(`http://127.0.0.1:${panel.port}/api/summary?token=${panel.token}`)
+    assert.equal(response.status, 200)
+    const body = (await response.json()) as {
+      summary: typeof summary
+      env: Record<string, string | null>
+      ms: number
+    }
+    assert.deepEqual(body.summary, summary, 'the panel renders the summary it was handed')
+    assert.equal(body.env.dsh, '0.1.0-rc.6')
+    assert.equal(body.env.profile, 'web')
+    assert.equal('profileDir' in body.env, false, 'the first screen never needs the profile directory')
+    assert.equal(calls, 1, 'one request, one scan')
+    assert.match(response.headers.get('x-triage-audit-ms') ?? '', /^\d+$/)
   } finally {
     await new Promise<void>((resolve) => panel.server.close(() => resolve()))
     rmSync(dir, { recursive: true, force: true })
@@ -242,4 +290,21 @@ test('the page ships no remote assets, in both locales', () => {
   }
   assert.match(renderPanelHtml('en'), /Triage · evidence panel/)
   assert.match(renderPanelHtml('zh'), /分诊台 · 证据面板/)
+})
+
+test('the CSP lets the page call its own API (the bug R49 found by opening a browser)', async () => {
+  const dir = fixtureDir()
+  const panel = await startPanel({ resultsDir: dir })
+  try {
+    const page = await fetch(panel.url)
+    const csp = page.headers.get('content-security-policy') ?? ''
+    // `default-src 'none'` also governs connect-src: without this directive every fetch() on
+    // the page is blocked and the panel renders an empty shell that still looks "up".
+    assert.match(csp, /connect-src 'self'/, `CSP must allow same-origin fetch: ${csp}`)
+    assert.match(csp, /default-src 'none'/, 'and still deny everything else')
+    assert.doesNotMatch(csp, /connect-src \*/, 'never a wildcard')
+  } finally {
+    await new Promise<void>((resolve) => panel.server.close(() => resolve()))
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

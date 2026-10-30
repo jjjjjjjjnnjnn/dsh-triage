@@ -291,3 +291,46 @@ test('audit reports the loader row of the incompatible bundle', () => {
     rmSync(fixture.root, { recursive: true, force: true })
   }
 })
+
+test('no subcommand is the status command, not a usage screen (R49)', () => {
+  const fixture = buildFixture()
+  try {
+    const bare = runCli([], fixture)
+    assert.equal(bare.status, 1, 'a profile with a denial is not a clean exit')
+    assert.doesNotMatch(bare.stdout, /Usage/, 'opening the product must not print the manual')
+    assert.match(bare.stdout, /Verdict/, 'the first line answers the question')
+    assert.match(bare.stdout, /fake-bundle/, 'the broken thing is named')
+    assert.match(bare.stdout, /dsh-triage why/, 'and the next step is a command, not prose')
+
+    const help = runCli(['--help'], fixture)
+    assert.equal(help.status, 0)
+    assert.match(help.stdout, /Usage/)
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('status --json is the same answer, and it is deterministic', () => {
+  const fixture = buildFixture()
+  try {
+    const args = ['status', '--json', '--dsh-home', fixture.dshHome, '--stamp', '2026-01-01T00:00:00.000Z']
+    const first = runCli(args, fixture)
+    const second = runCli(args, fixture)
+    assert.equal(first.status, 1, first.stderr)
+    assert.equal(first.stdout, second.stdout, 'same profile + same stamp must be byte-identical')
+
+    const payload = JSON.parse(first.stdout)
+    assert.equal(payload.command, 'status')
+    assert.equal(payload.tone, 'broken', 'a denied bundle is broken, not "unknown"')
+    assert.equal(payload.counts.denied > 0, true)
+    assert.equal(payload.counts.rows >= payload.counts.judged, true, 'rows is the denominator, judged the subset')
+    assert.ok(Array.isArray(payload.issues) && payload.issues.length > 0)
+    assert.equal(payload.issues[0].kind, 'denied', 'the thing that is actually broken comes first')
+    assert.ok(
+      typeof payload.issues[0].fix === 'string' && payload.issues[0].fix.includes('--dsh-version'),
+      'the fix is the same copy-pasteable command `why` prints',
+    )
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})

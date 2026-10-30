@@ -1,6 +1,6 @@
 # DSH-Addition PROJECT_RULES.md（工程铁律）
 
-> **Stand**: R48 (2026-10-29) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
+> **Stand**: R49 (2026-10-30) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
 > **R47 变更范围**：只改 Stand、路线表状态与决策检查（新增第 4 问）；**10 条铁律一字未动**（冻结）。
 > **R48 变更范围**：只改 Stand 与 M6 的状态行（把 R48 的四项收口写进路线表）；**铁律仍然一字未动**。
 

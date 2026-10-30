@@ -1,6 +1,6 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.2.0`（registry 现值）· manifest 已升 **0.3.0，等 HUMAN `npm publish`**（R48）｜**Stand**: R48 (2026-10-29)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；**R48 已交付「陌生人 60 秒」四项**（`--to next` / 无参数引导 / 卡片落盘 / README 首屏） | M0 ✅（9 门 / 9-9 · **452 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日 ✅ 入口四项（R48），出口 = D5 待判**（细节以 `docs/HANDOFF.md` §2 为准）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.2.0`（registry 现值）· manifest 已升 **0.3.0，等 HUMAN `npm publish`**（R48）｜**Stand**: R49 (2026-10-30)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；**R48 已交付「陌生人 60 秒」四项**（`--to next` / 无参数引导 / 卡片落盘 / README 首屏）；**R49 修好「打开就有一屏答案」**（无参 = `status`、`audit` 摘要优先、面板首屏 + `docs/SECURITY.md` + 11 条对抗性测试） | M0 ✅（9 门 / 9-9 · **477 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日 ✅ 入口四项（R48），出口 = D5 待判**（细节以 `docs/HANDOFF.md` §2 为准）
 > **Mission**: 在 DSH 生态里做「升级日」的判断层——每次 rc 发布，回答「**你这套已装集合**升上去会坏什么、怎么修」，再把同一份结果做成市场 / 索引源 / CI 能直接消费的数据 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
 > **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
@@ -69,7 +69,7 @@ DSH-Addition/  (repo: dsh-triage · 品牌：分诊台 / Triage)
 │   ├── core/     @dsh-triage/core   # 判断引擎：admission 语义 / env 指纹 / 能力台账 / 相位层 / 副本来源 / dsh.compatibility 与 registry 次要通道 / upgrade 四桶 / verdict 组装（纯函数、可离线）
 │   ├── signals/  @dsh-triage/signals# 信号适配器：npm registry / dsh.so / hub catalog / 本机外部工具产物
 │   ├── probe/    @dsh-triage/probe  # 隔离实测（M3）：plan 生成 + exec 执行/判定 + host 唯一一份 Host I/O（样本循环：`{error}` 才开替换窗口，ADR-0008 E）+ render 白屏判定（CDP）+ hooks/inventory-hook.mjs
-│   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板（client.js）+ Host 只读路由（host-audit-route.ts）+ Agent 工具 compat_verdict（host-tool.ts + fit.ts，与 check 同一条引擎链；hooks/tool-hook.mjs 只做真机取证）+ bin CLI + probe-run.ts + serve.ts（本地面板）+ audit-data.ts（audit 的纯数据层，CLI 与面板共用）
+│   └── plugin/   dsh-triage         # 用户安装件：DSH profile bundle + Web 面板（client.js）+ Host 只读路由（host-audit-route.ts）+ Agent 工具 compat_verdict（host-tool.ts + fit.ts，与 check 同一条引擎链；hooks/tool-hook.mjs 只做真机取证）+ bin CLI + probe-run.ts + serve.ts（本地面板）+ audit-data.ts（audit 的纯数据层，CLI 与面板共用）+ summary.ts（一屏答案的纯投影，CLI 与面板共用）
 ├── scripts/                       # 门禁（gate_*，9 门）+ 真跑落盘（scan_env / record_case / record_audit / record_registry / record_probe / record_render_fixture / record_serve_smoke / render_inventory / d1_report / probe_live_sample / bootstrap_upstream / record_upgrade_impact / record_market_baseline）
 ├── tests/                         # node:test + TS（admission / verdict / ledger / governance）
 ├── AGENTS.md / PROJECT_RULES.md / INDEX.md / COMPLIANCE.md / LICENSE(MIT)

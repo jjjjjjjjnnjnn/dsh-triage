@@ -24,6 +24,7 @@ import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { makeRedactor, redactDeep } from './lib/live.mjs'
 import { auditJsonPayload, auditRedactRoots, loadAuditData } from '../packages/plugin/dist/audit-data.js'
 import { startPanel } from '../packages/plugin/dist/serve.js'
+import { buildProfileSummary } from '../packages/plugin/dist/summary.js'
 import { loadEnv } from '../packages/core/dist/index.js'
 
 const argv = process.argv.slice(2)
@@ -121,9 +122,12 @@ await withPanel({ resultsDir, locale: 'zh' }, async (panel) => {
   const post = await get(panel.port, `/api/probe?token=${panel.token}`, { method: 'POST' })
   check('post-read-only', post.status === 403, `POST /api/probe → ${post.status}`)
 
-  // T-406: without --audit the route must say so, not answer with an empty ledger.
+  // R49: the panel reads the profile by default; starting it without a loader is the
+  // `--no-audit` mode, and both routes must say so instead of answering an empty ledger.
   const auditOff = await get(panel.port, `/api/audit?token=${panel.token}`)
-  check('audit-off-501', auditOff.status === 501, `GET /api/audit without --audit → ${auditOff.status}`)
+  check('audit-off-501', auditOff.status === 501, `GET /api/audit without a loader (--no-audit) → ${auditOff.status}`)
+  const summaryOff = await get(panel.port, `/api/summary?token=${panel.token}`)
+  check('summary-off-501', summaryOff.status === 501, `GET /api/summary without a loader (--no-audit) → ${summaryOff.status}`)
 })
 
 /* --------------------------- audit-enabled panel (T-406) ------------------- */
@@ -147,10 +151,32 @@ await withPanel(
         noRedact: false,
       })
       if (!loaded.ok) return { ok: false, message: loaded.message }
-      return { ok: true, payload: auditJsonPayload(loaded.data, { noRedact: false, roots: auditRedactRoots(auditHome) }) }
+      return {
+        ok: true,
+        payload: auditJsonPayload(loaded.data, { noRedact: false, roots: auditRedactRoots(auditHome) }),
+        summary: buildProfileSummary(loaded.data, { locale: 'zh' }),
+      }
     },
   },
   async (panel) => {
+    // R49: the first screen is the verdict, and it comes from the same scan as the ledger.
+    const summaryResponse = await get(panel.port, `/api/summary?token=${panel.token}`)
+    const summaryBody = summaryResponse.status === 200 ? JSON.parse(summaryResponse.text) : null
+    check(
+      'summary-first-screen',
+      summaryResponse.status === 200 &&
+        typeof summaryBody?.summary?.headline === 'string' &&
+        typeof summaryBody?.summary?.tone === 'string' &&
+        typeof summaryBody?.env?.profile === 'string',
+      `GET /api/summary → ${summaryResponse.status}, tone=${summaryBody?.summary?.tone ?? '?'}, ${summaryResponse.headers.get('x-triage-audit-ms') ?? '?'}ms`,
+    )
+    check(
+      'summary-parity-with-ledger',
+      summaryBody === null
+        ? false
+        : summaryBody.summary.counts.judged === (JSON.parse((await get(panel.port, `/api/audit?token=${panel.token}`)).text).row_verdicts ?? []).length,
+      'the summary counts the same verdicts the ledger carries',
+    )
     const response = await get(panel.port, `/api/audit?token=${panel.token}`)
     const payload = response.status === 200 ? JSON.parse(response.text) : null
     const verdicts = payload?.row_verdicts ?? []

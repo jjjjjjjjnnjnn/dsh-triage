@@ -93,6 +93,7 @@ import {
   sandboxBundles,
 } from './probe-run.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
+import { buildProfileSummary, formatProfileSummary } from './summary.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -134,8 +135,10 @@ interface Flags {
   readonly out: string | null
   /** `serve --allow-execute`: enable actions (still 501 today; the flag is the gate). */
   readonly allowExecute: boolean
-  /** `serve --audit`: expose `GET /api/audit` (read-only; off by default, and 501 when off). */
+  /** `serve --audit`: expose `GET /api/audit` (read-only). On by default since R49. */
   readonly audit: boolean
+  /** `serve --no-audit`: serve artifacts only; `/api/audit` answers 501 and says why. */
+  readonly noAudit: boolean
   /** `probe --execute --readiness-timeout <ms>`: budget for a settled tree (R17). */
   readonly readinessTimeoutMs: number | null
   /** `probe --execute --unsettled-timeout <ms>`: window for a tree still composing (R17). */
@@ -176,12 +179,14 @@ interface Parsed {
 const HELP = `dsh-triage — the judgment layer for DeepSeek Harness plugins
 
 Usage
+  dsh-triage                         one screen: is this profile broken, which row, what to type
+  dsh-triage status                  the same answer, as an explicit command
   dsh-triage env                     environment fingerprint
   dsh-triage why                     why did a plugin silently disappear?
   dsh-triage check <pkg[@version]>   judge a candidate before installing
-  dsh-triage audit                   capability ledger of the installed set
+  dsh-triage audit                   the same answer, plus the full ledger with --all
   dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)
-  dsh-triage serve                   open a read-only local evidence panel (127.0.0.1)
+  dsh-triage serve                   open the local panel (127.0.0.1, token-gated)
   dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence
   dsh-triage index                   format-1 market index of versions measured "go" here
   dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge
@@ -189,7 +194,7 @@ Usage
   dsh-triage upgrade --to next|latest  same judgement, with the target resolved from npm dist-tags
 Flags
   --json                machine-readable output
-  --all                 include findings that are not blocking
+  --all                 include findings that are not blocking (audit: print the full ledger)
   --strict              exit 1 when a conclusion is not "go"
   --profile <name>      profile name (default: web)
   --dsh-home <path>     override $DSH_HOME (default: ~/.dsh)
@@ -210,6 +215,7 @@ Flags
   --results <dir>       (serve, badge) directory of evidence to read (default: ./data/results)
   --out <file>          (badge) write the SVG here; (upgrade --card) write the card here, print the path
   --allow-execute       (serve) enable actions; without it the panel is read-only
+  --no-audit            (serve) artifacts only; skip reading the current profile
   --audit               (serve) expose GET /api/audit (current composition, same engine as the CLI)
   --outcomes <mode>     (check, probe) record this verdict locally: off | local (per-run, not saved)
   --enable              (outcomes) opt in to the local outcome store
@@ -236,6 +242,8 @@ async function run(argv: readonly string[]): Promise<number> {
     case 'help':
       process.stdout.write(HELP)
       return EXIT_OK
+    case 'status':
+      return commandStatus(flags)
     case 'env':
       return commandEnv(flags)
     case 'why':
@@ -1130,6 +1138,37 @@ function countPresetRows(preset: InventoryPreset): string {
   return `${active} active · ${disabled} disabled · ${conditional} conditional · ${other} other`
 }
 
+async function commandStatus(flags: Flags): Promise<number> {
+  const env = await requireEnv(flags)
+  if (env === null) return EXIT_UNAVAILABLE
+  const dshHome = resolveDshHome(flags)
+  const loaded = await loadAuditData({
+    env,
+    dshHome,
+    stamp: stampOf(flags),
+    snapshotPath: flags.snapshot,
+    noRedact: flags.noRedact,
+  })
+  if (!loaded.ok) {
+    process.stderr.write(`${loaded.message}\n`)
+    return EXIT_UNAVAILABLE
+  }
+  const summary = buildProfileSummary(loaded.data, { locale: flags.locale })
+  // Same exit contract as `audit` (one function, not a second opinion).
+  const outcome = auditExitOutcome(loaded.data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
+  if (flags.json) {
+    writeJson({
+      schema_version: 1,
+      command: 'status',
+      env: redactedEnv(env, { noRedact: flags.noRedact, roots: auditRedactRoots(dshHome) }),
+      ...summary,
+    })
+    return outcome
+  }
+  process.stdout.write(formatProfileSummary(summary, { locale: flags.locale, env }))
+  return outcome
+}
+
 async function commandAudit(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
@@ -1158,7 +1197,15 @@ async function commandAudit(flags: Flags): Promise<number> {
     return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
   }
 
-  process.stdout.write(`capability ledger · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`)
+  // R49: the human answer first. The ledger below is the evidence, and it is one flag away
+  // (`--all`) instead of being the only thing between the user and their answer.
+  const summary = buildProfileSummary(data, { locale: flags.locale })
+  process.stdout.write(formatProfileSummary(summary, { locale: flags.locale, env }))
+  if (!flags.all) {
+    process.stdout.write('\n(full ledger behind --all; `audit --json` carries every field)\n')
+    return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
+  }
+  process.stdout.write(`\ncapability ledger · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`)
   for (const [source, list] of grouped) {
     process.stdout.write(`\n${source}  (${list.length} rows)\n`)
     for (const claim of list) {
@@ -1464,10 +1511,12 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
 async function commandServe(flags: Flags): Promise<number> {
   const resultsDir = flags.results === null ? resolve(process.cwd(), 'data/results') : resolve(flags.results)
   const dshHome = resolveDshHome(flags)
-  // T-406: `--audit` is explicit. Without it the panel still works (artifacts only) and
-  // `/api/audit` answers 501 — the panel never silently "reads nothing" and calls it clean.
-  const audit = flags.audit
-    ? async (): Promise<AuditSnapshot> => {
+  // R49: the panel's whole purpose is the current composition, so it reads the profile by
+  // default. `--no-audit` keeps the old artifacts-only mode (and `/api/audit` answers 501,
+  // never an empty ledger that looks clean).
+  const audit = flags.noAudit
+    ? null
+    : async (): Promise<AuditSnapshot> => {
         const loadedEnv = await loadEnv({ dshHome, profile: flags.profile })
         if (!loadedEnv.ok) {
           return { ok: false, message: `cannot read the profile: ${loadedEnv.error.code} — ${loadedEnv.error.detail}` }
@@ -1485,9 +1534,10 @@ async function commandServe(flags: Flags): Promise<number> {
         return {
           ok: true,
           payload: auditJsonPayload(loaded.data, { noRedact: false, roots: auditRedactRoots(dshHome) }),
+          // Same object the CLI's first screen prints, from the same scan.
+          summary: buildProfileSummary(loaded.data, { locale: flags.locale }),
         }
       }
-    : null
   const panel = await startPanel({
     resultsDir,
     port: flags.port ?? 0,
@@ -1711,6 +1761,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let out: string | null = null
   let allowExecute = false
   let audit = false
+  let noAudit = false
   let readinessTimeoutMs: number | null = null
   let unsettledReadinessMs: number | null = null
   let copyProfile: string | null = null
@@ -1827,6 +1878,9 @@ function parseArgs(argv: readonly string[]): Parsed | null {
       case '--audit':
         audit = true
         break
+      case '--no-audit':
+        noAudit = true
+        break
       case '--readiness-timeout': {
         const value = takeValue()
         if (value === null) return null
@@ -1890,9 +1944,10 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, audit, noAudit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
   if (help) return { command: 'help', positionals: [], flags }
-  const command = positionals.shift() ?? 'help'
+  // R49: no subcommand is not an error. It is the question the product exists to answer.
+  const command = positionals.shift() ?? 'status'
   return { command, positionals, flags }
 }
 
