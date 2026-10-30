@@ -617,3 +617,15 @@
 - 结果：① `fix` 默认只出计划，`--apply` 才写、`--undo` 逐字节还原；写入面只有精确版本豁免，且要求运行时**实现存在**（本机 0.1.0-rc.6 零命中 → 如实说不可用）；② **记录器抓到真缺陷**：同 stamp 第二次 apply 覆盖第一次备份，导致 undo 还原成"已修补"状态——改为每次运行独立备份目录 + journal，补单测；③ 面板由独立 agent 重做成去 AI 化视觉（三级字号、三色语义、单列 900px、六计数一行、实词替代符号、深链组合）；主会话验收时修回一处新回归（产物名被列宽截断）
 - 实测：**494 测试 / 0 fail** · `fix` 记录器 **14/14** · 面板冒烟 **18/18** · 5 张真浏览器截图（简单深/浅、详细、抽屉、off 态）
 - 反思：这一轮证明「记录器 > 单测」——备份被覆盖那个 bug，单测用 mock 不会发现，因为 mock 不模拟"同一秒内跑两次"。所有会写用户文件的功能，都必须有一段在**一次性真实目录**上跑的记录器。
+
+### 2026-10-30 R50｜交付：0.3.0 发到 npm + 修掉发布预检查的假警报（「你没登录」其实是「我们没调起 npm」）
+
+- 生成者：DeepSeek V4.1 Flash（主会话：发布取证、预检查修复、文档）｜HUMAN：亲自执行 `pnpm -r publish`（需要 6 位 OTP，agent shell 拿不到）
+- SessionID：主会话；台账 `R50-S1` / `R50-S2`
+- 范围：`scripts/lib/npm-auth.mjs`（新）· `scripts/lib/npm-auth.d.mts`（新）· `scripts/release_preflight.mjs`（重写检查 1、新增检查 5/6、`--out`）· `tests/unit/release-preflight.test.ts`（新，10 条）· `data/results/{publish-2026-10-30T14-40-00,release-preflight-2026-10-30T15-20-00}.json`（新）· 文档若干
+- 人工决策：用户先报「`pnpm run release:publish` 报 not-logged-in（401）」，随后自行在终端发布成功；据实提示「先修后发」，用户选「同意，继续先修后发」（发布已先行完成，本轮把工具修对并补取证）
+- 结果：① **四个包 0.3.0 上架**，`record_publish` **20/20**——registry 字节 = 本地 `pnpm pack` tarball（sha512 逐字节）、匿名（空 userconfig）安装 exit 0、CLI 15 命令、`import()` 导出 6 个名字；② **预检查的 bug 是「检查没跑起来被写成结论」**：Windows 上 `execFileSync('npm')` = `spawnSync npm ENOENT`，老代码把任何失败硬编码成「401，去 npm login」，于是用户去重登一个本来正常的账号（`npm whoami` 实测打印 `jjjjjjjjnnjnn`）。改法：`ComSpec /d /s /c` 调 npm + 三态判定（`logged-in` / `not-logged-in` / **`could-not-run`**），红对照测试把 `ENOENT` 钉成测量值；③ 顺手补两项真会挡住发布的检查（`workspace:` 未被改写 / **目标版本已在 registry**），registry 连不上只记 note 不说「还没发」；④ `--out` 让预检查能落带 sha256 的产物（本仓规矩：没产物不算一步）
+- 实测：**510 测试 / 0 fail**（500 → 510）· 9 门 ALL GREEN · `--mutate` **9/9** · `record_publish` **20/20** · 预检查自报 `ok:false` 且**只有** `version-already-published`（0.3.0 已发，重发=403——这是如实的负结论，不是回归）
+- **更正上一轮的一处判断**：本文件 R49 第三轮那条写「诊断结论：不是包不存在，是 npm 登录已失效（`npm whoami` 返回 401）」——**那个 401 从来没有被观测到**，它是 preflight 里写死的句子。真实原因是同一轮新写的 preflight 在 Windows 上 spawn 不到 `npm.cmd`。原处保留不改，以免把历史修得像一直都对。
+- 反思：**凡「结论」都必须能指回一次真实调用**。把 `catch` 里的任何失败都翻译成一个人话原因，读起来很像负责，实际是把「我们不知道」冒充成「你知道该怎么做」——这次代价是用户去改一个没坏的东西、发布延后一轮。`could-not-run` 这个状态值得在其它检查器里也推广。
+

@@ -82,8 +82,14 @@ when they do, the change is written here with the reason, not just the diff.
 - **The CLI says the same thing twice.** `dsh-triage` prints the plain sentence first, then the precise
   statement the record uses; the counts keep the honest `rows (judged)` split.
 - **Publishing is self-explaining.** All four packages set `publishConfig.access=public`, and
-  `node scripts/release_preflight.mjs` checks login, one version across the four, visibility and build.
+  `node scripts/release_preflight.mjs` checks login, one version across the four, visibility, build,
+  whether anything still left a `workspace:` spec for the publish tool to rewrite, and whether this
+  version is already on the registry (re-publishing it only yields a 403).
   An expired npm token used to surface as `404 Not found`; it now says "not logged in — run npm login".
+  And a check that never ran no longer masquerades as that sentence: on Windows `npm` is `npm.cmd`,
+  which cannot be spawned without a shell, and the old code reported the resulting `ENOENT` as
+  "your token returned 401" — sending an operator off to re-login with working credentials. The three
+  outcomes (logged in / not logged in / could not ask) are now separate, with a test that pins it.
 
 
 ### Autofix: the tool can now repair one thing, and refuses the rest (R49, 2026-10-30)

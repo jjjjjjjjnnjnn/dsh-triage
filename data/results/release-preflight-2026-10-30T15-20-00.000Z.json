@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/release_preflight.mjs",
+  "generated_at": "2026-10-30T15:20:00.000Z",
+  "ok": false,
+  "target_version": "0.3.0",
+  "problems": [
+    {
+      "id": "version-already-published",
+      "detail": "@dsh-triage/core@0.3.0, dsh-triage@0.3.0, @dsh-triage/signals@0.3.0, @dsh-triage/probe@0.3.0 已经在 registry 上了；再次发布会报 cannot publish over the previously published versions",
+      "fix": "先把四个包的 version 一起 bump（如 0.3.1），或者这版已经发好了：直接跑 `node scripts/record_publish.mjs --version 0.3.0` 取证（`--stamp` 可省，默认当前时间；别把 `<ISO>` 原样粘进 PowerShell，`<` 是保留符）"
+    }
+  ],
+  "notes": [
+    "npm user: jjjjjjjjnnjnn",
+    "version: 0.3.0",
+    "workspace: protocol: 5 dep(s), publish goes through pnpm (rewritten)"
+  ],
+  "limits": [
+    "this is the pre-publish check, not the release: it says nothing about the bytes a registry would serve (that is `record_publish`)",
+    "a registry it could not reach is reported as a note, never as a pass"
+  ]
+}

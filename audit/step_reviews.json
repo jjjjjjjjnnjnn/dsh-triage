@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R49 (2026-10-30)",
+  "stand": "R50 (2026-10-30)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -6782,6 +6782,52 @@
         "artifact": "data/results/fix-2026-10-30T14-10-00.000Z.json",
         "sha256": "b532b56a86427bdf57a146ec0c9c12cc78dcee7c3677731976c535b55f5f80c7",
         "outcome": "14/14 PASS · 写入面仍是精确版本豁免 · undo 逐字节 · 读取器与 verdict 的新语义由 `tests/unit/exemption.test.ts` 6 条钉死"
+      }
+    },
+    {
+      "id": "R50-S1",
+      "batch": "R50",
+      "step": "**0.3.0 已发布，取证**：HUMAN 在自己终端完成 `pnpm -r publish`（0.3.0，agent shell 拿不到 6 位 OTP），随后由 agent 真跑 `record_publish` 的全链——registry 上的字节 = 本地 `pnpm pack` 的 tarball、工作区协议已改写、匿名（空 userconfig）装得上、CLI 能跑、模块能 import",
+      "changed": [
+        "data/results/publish-2026-10-30T14-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：20/20 检查全绿——四个包 `latest=0.3.0`；`rewritten:*` 证明 registry 上没有残留 `workspace:`；`bytes:*` 四个 tarball 的 sha512 与 registry 的 `dist.integrity` 逐字节相同（`dsh-triage` f1286429ee8e…）；`anonymous-install` exit 0（`npm_config_userconfig` 指向空文件，操作者 token 无法帮忙）；`cli-runs` exit 0；`module-resolves` 导出 `apply,default,loadBundleLayers,loadComposition,loadPatchText,name`",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --version 0.3.0 --stamp 2026-10-30T14:40:00.000Z --tarball-dir <pnpm pack 输出>`；产物 `data/results/publish-2026-10-30T14-40-00.000Z.json` 自带 `git_head=c2cd485…` 与 `git_dirty=false`，任何人在同一 commit 重跑只需网络",
+        "licence": "PASS：只读 registry + 一次性 `%TEMP%` 安装目录，结束即删；没有写入本机 `~/.dsh` 或全局 npm 配置，没有新增依赖",
+        "ssot": "PASS：SSOT 里 `ok=true` / `checks.length=20` / 失败项 0；与 registry 实际状态（四个包 `latest=0.3.0`）一致；此前 `publish-2026-10-29T…` 三份历史产物未改动（R40 的教训：重发用新 stamp，不覆盖旧证据）",
+        "adversary": "反例一：「`pnpm publish` 打印 ✅ Published 就等于发布成功」——被拒，所以才有这份东西：它检查的是 registry 真正提供的字节与匿名可装性；反例二：用操作者 token 装一遍就算「用户装得上」——被拒，`npm_config_userconfig` 指向空文件；反例三：跳字节省判「一样」——被拒，`bytes:*` 比的是 sha512 全文，不是文件名或大小"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 0.3.0 --stamp 2026-10-30T14:40:00.000Z --tarball-dir %TEMP%\\dsh-triage-pack-0.3.0",
+        "artifact": "data/results/publish-2026-10-30T14-40-00.000Z.json",
+        "sha256": "baf5183095551cf08fb6933aa52ebd8d80103d5093d1aeed5c2d197703fa5433",
+        "outcome": "20/20 PASS · 四个包 latest=0.3.0 · registry 字节 = 本地 tarball · 匿名安装 exit 0 · CLI 15 行命令 · `import()` 成功"
+      }
+    },
+    {
+      "id": "R50-S2",
+      "batch": "R50",
+      "step": "**修发布预检查的假警报**：`pnpm run release:publish` 报 `not-logged-in（npm whoami 返回 401）`，但同一台机器 `npm whoami` 打印 `jjjjjjjjnnjnn`。根因是检查从没跑起来——Windows 上 `npm` 是 `npm.cmd`，Node 拒绝无 shell 直接 spawn（`spawnSync npm ENOENT`），而任何失败都被硬编码成「你的 token 401」。检查「没跑起来」被当成结论上报，用户去重登了一个本来正常的账号。顺手补两项会真正挡住发布的检查（`workspace:` 改写前提、目标版本是否已发布）并让 `--out` 能落带 sha256 的产物",
+      "changed": [
+        "scripts/lib/npm-auth.mjs",
+        "scripts/lib/npm-auth.d.mts",
+        "scripts/release_preflight.mjs",
+        "tests/unit/release-preflight.test.ts",
+        "data/results/release-preflight-2026-10-30T15-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：510 测试 / 0 fail（+10）。三态分开——`logged-in`（有名字）/ `not-logged-in`（文本里真有 `E401`/`ENEEDAUTH`/401）/ `could-not-run`（其余一律，且原样引用观测到的首行）；`npmInvocation` 在 win32 走 `ComSpec /d /s /c`（与 `gate_release_pack`/`record_publish` 同款，不用被 DEP0190 弃用的 `shell:true`）；真机复跑输出 `ok npm user: jjjjjjjjnnjnn`",
+        "reproducibility": "PASS：`tests/unit/release-preflight.test.ts` 10 条离线可复算，其中一条是**红对照**——直接按老写法 `spawnSync('npm')` 断言 `error.code === ENOENT`，把根因钉成测量值而不是注释；产物 `data/results/release-preflight-2026-10-30T15-20-00.000Z.json` 用 `--out` 落盘并带 `.sha256`，`notes` 里留着「npm user: jjjjjjjjnnjnn」可直接看出检查确实跑起来了",
+        "licence": "PASS：零新增依赖（只用 `node:child_process`/`node:fs`/`node:path` + 全局 `fetch`）；不读不写任何凭据，`npm whoami` 由 npm 自己用既有配置发起；产物不含 token（`observed` 只保留首行，本机实测为用户名）",
+        "ssot": "PASS：产物 `ok=false` 只有一项 `version-already-published`——这是**如实**的负结论（0.3.0 已经发了，再发就是 403），不是回归；`--json` 形状与 `--out` 载荷同源（`report` 是同一个对象）；`pnpm run verify` 9 门全绿",
+        "adversary": "反例一：把所有失败都说成「没登录」（老行为）——被拒，红对照测试钉住 `ENOENT` 必须落 `could-not-run`，且报错文案里明确写「这不等于没登录」；反例二：把 `version-already-published` 设成 warn 让它「绿」——被拒，重发就是会失败，绿了才是骗人；反例三：registry 连不上时判「还没发过」——被拒，改成 note「没能确认……这不等于还没发」；反例四：`--out` 顺手写 `ok=true`——被拒，载荷是 `report` 本身，`ok` 由 `problems.length` 决定；反例五：用 `shell:true` 绕开 Windows 问题——被拒，DEP0190 且参数注入，改用 ComSpec 单命令串"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --out data/results/release-preflight-2026-10-30T15-20-00.000Z.json --stamp 2026-10-30T15:20:00.000Z",
+        "artifact": "data/results/release-preflight-2026-10-30T15-20-00.000Z.json",
+        "sha256": "45821ba56ec596eac220b1564f82c2ef7e57883759a3eaea1e036af2cbcbb181",
+        "outcome": "五项检查跑起来：`npm user: jjjjjjjjnnjnn`（登录正常，不再是假警报）· `version: 0.3.0` · `workspace: 5 dep(s) 走 pnpm 改写` · 第 6 项如实判红 `version-already-published`（0.3.0 已发布，重发=403）"
       }
     }
   ]

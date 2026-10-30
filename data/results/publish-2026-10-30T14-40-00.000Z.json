@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-10-30T14:40:00.000Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "0.3.0",
+    "git_head": "c2cd485e47de7a2856596221ff687167bf4b42bd",
+    "git_dirty": false
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-10-30T14:40:00.000Z"
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": true,
+      "version": "0.3.0",
+      "latest": "0.3.0",
+      "published_at": "2026-10-30T03:23:08.515Z",
+      "integrity": "sha512-grkN4O0uYn3we/TP56YQg6FH2ym/jrLc9PnsHlou3vuzGoJFusrw5GZuQAANlo0wdCz7qS5cZ0d20oHitEKDDw==",
+      "shasum": "49546edff392106853c82572a95cda2bcb5a2152",
+      "file_count": 79,
+      "unpacked_size": 449565,
+      "dependencies": {
+        "yaml": "^2.8.1",
+        "semver": "^7.7.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.0"
+      },
+      "local_tarball": {
+        "file": "dsh-triage-core-0.3.0.tgz",
+        "sha512": "sha512-grkN4O0uYn3we/TP56YQg6FH2ym/jrLc9PnsHlou3vuzGoJFusrw5GZuQAANlo0wdCz7qS5cZ0d20oHitEKDDw==",
+        "sha1": "49546edff392106853c82572a95cda2bcb5a2152",
+        "matches_registry": true
+      }
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": true,
+      "version": "0.3.0",
+      "latest": "0.3.0",
+      "published_at": "2026-10-30T03:24:25.846Z",
+      "integrity": "sha512-1XjHGOWs8ZDma8yVaDI0S7m3lCDjPdoyXqUFcJ+jeW6mxWCqUcThXwyqqzbOhhjATZ1ML2fvczw7avu2J/r4Tg==",
+      "shasum": "a7fb1a8b2723e6698b3b030b20c684504700b0d9",
+      "file_count": 19,
+      "unpacked_size": 37167,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.0"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.0"
+      },
+      "local_tarball": {
+        "file": "dsh-triage-signals-0.3.0.tgz",
+        "sha512": "sha512-1XjHGOWs8ZDma8yVaDI0S7m3lCDjPdoyXqUFcJ+jeW6mxWCqUcThXwyqqzbOhhjATZ1ML2fvczw7avu2J/r4Tg==",
+        "sha1": "a7fb1a8b2723e6698b3b030b20c684504700b0d9",
+        "matches_registry": true
+      }
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": true,
+      "version": "0.3.0",
+      "latest": "0.3.0",
+      "published_at": "2026-10-30T03:23:54.010Z",
+      "integrity": "sha512-89Sku/6tvI4p301lR+SIBLTRgvi7P4LgNyQupvNhpMFTx0w+Ko/tWwnzGyp5GRSTpXFEtMnfx0RzxDbzDpnDdQ==",
+      "shasum": "ccecdab5b50e9c35d850feb65df2db64df62ca0e",
+      "file_count": 27,
+      "unpacked_size": 335698,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.0"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.0"
+      },
+      "local_tarball": {
+        "file": "dsh-triage-probe-0.3.0.tgz",
+        "sha512": "sha512-89Sku/6tvI4p301lR+SIBLTRgvi7P4LgNyQupvNhpMFTx0w+Ko/tWwnzGyp5GRSTpXFEtMnfx0RzxDbzDpnDdQ==",
+        "sha1": "ccecdab5b50e9c35d850feb65df2db64df62ca0e",
+        "matches_registry": true
+      }
+    },
+    {
+      "name": "dsh-triage",
+      "ok": true,
+      "version": "0.3.0",
+      "latest": "0.3.0",
+      "published_at": "2026-10-30T03:23:20.332Z",
+      "integrity": "sha512-zUwBSIeLMZlIcCyxlqUCgmy3C+A1JKPDASjiwykJZEvJ4VVmhdK17f+5k4Dw5zzQ9UCYhv45uxLkNzU7G0IjhA==",
+      "shasum": "f1286429ee8ec764678078545f071aa98f27fb4d",
+      "file_count": 77,
+      "unpacked_size": 594571,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.0",
+        "@dsh-triage/probe": "0.3.0",
+        "@dsh-triage/signals": "0.3.0"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.1 <0.3.0-0",
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.0"
+      },
+      "local_tarball": {
+        "file": "dsh-triage-0.3.0.tgz",
+        "sha512": "sha512-zUwBSIeLMZlIcCyxlqUCgmy3C+A1JKPDASjiwykJZEvJ4VVmhdK17f+5k4Dw5zzQ9UCYhv45uxLkNzU7G0IjhA==",
+        "sha1": "f1286429ee8ec764678078545f071aa98f27fb4d",
+        "matches_registry": true
+      }
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@0.3.0",
+    "exit_code": 0,
+    "tail": "added 6 packages in 16s",
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": true,
+        "version": "0.3.0",
+        "expected": "0.3.0"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": true,
+        "version": "0.3.0",
+        "expected": "0.3.0"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": true,
+        "version": "0.3.0",
+        "expected": "0.3.0"
+      }
+    ],
+    "cli": {
+      "exit_code": 0,
+      "first_lines": "dsh-triage — the judgment layer for DeepSeek Harness plugins\n\nUsage",
+      "commands": "dsh-triage — the judgment layer for DeepSeek Harness plugins\n  dsh-triage                         one screen: is this profile broken, which row, what to type\n  dsh-triage status                  the same answer, as an explicit command\n  dsh-triage env                     environment fingerprint\n  dsh-triage why                     why did a plugin silently disappear?\n  dsh-triage check <pkg[@version]>   judge a candidate before installing\n  dsh-triage audit                   the same answer, plus the full ledger with --all\n  dsh-triage probe <pkg[@version]>   print an isolated probe plan (dry-run)\n  dsh-triage serve                   open the local panel (127.0.0.1, token-gated)\n  dsh-triage badge <pkg[@version]>   shields-style SVG rendered from recorded evidence\n  dsh-triage index                   format-1 market index of versions measured \"go\" here\n  dsh-triage outcomes                local outcome store: status / --enable / --disable / --purge\n  dsh-triage upgrade --to <version>  which rows/bundles the target dsh would deny, and how to fix\n  dsh-triage upgrade --to next|latest  same judgement, with the target resolved from npm dist-tags\n  dsh-triage fix                     what can be repaired automatically; --apply writes, --undo reverts"
+    },
+    "module_exports": "apply,default,loadBundleLayers,loadComposition,loadPatchText,name",
+    "scratch": "<tmp>"
+  },
+  "checks": [
+    {
+      "id": "rewritten:@dsh-triage/core",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/core",
+      "ok": true,
+      "detail": "latest=0.3.0"
+    },
+    {
+      "id": "bytes:@dsh-triage/core",
+      "ok": true,
+      "detail": "local tarball is byte-identical to the registry copy (49546edff392…)"
+    },
+    {
+      "id": "rewritten:@dsh-triage/signals",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/signals",
+      "ok": true,
+      "detail": "latest=0.3.0"
+    },
+    {
+      "id": "bytes:@dsh-triage/signals",
+      "ok": true,
+      "detail": "local tarball is byte-identical to the registry copy (a7fb1a8b2723…)"
+    },
+    {
+      "id": "rewritten:@dsh-triage/probe",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/probe",
+      "ok": true,
+      "detail": "latest=0.3.0"
+    },
+    {
+      "id": "bytes:@dsh-triage/probe",
+      "ok": true,
+      "detail": "local tarball is byte-identical to the registry copy (ccecdab5b50e…)"
+    },
+    {
+      "id": "rewritten:dsh-triage",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:dsh-triage",
+      "ok": true,
+      "detail": "latest=0.3.0"
+    },
+    {
+      "id": "bytes:dsh-triage",
+      "ok": true,
+      "detail": "local tarball is byte-identical to the registry copy (f1286429ee8e…)"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": true,
+      "detail": "npm install dsh-triage@0.3.0 exit 0 · added 6 packages in 16s"
+    },
+    {
+      "id": "installed-tree",
+      "ok": true,
+      "detail": "node_modules/dsh-triage exists"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": true,
+      "detail": "@dsh-triage/core@0.3.0 (declared 0.3.0)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": true,
+      "detail": "@dsh-triage/signals@0.3.0 (declared 0.3.0)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": true,
+      "detail": "@dsh-triage/probe@0.3.0 (declared 0.3.0)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": true,
+      "detail": "exit 0 · 15 command line(s) · dsh-triage — the judgment layer for DeepSeek Harness plugins"
+    },
+    {
+      "id": "module-resolves",
+      "ok": true,
+      "detail": "import('dsh-triage') → apply,default,loadBundleLayers,loadComposition,loadPatchText,name"
+    }
+  ],
+  "ok": true,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}
