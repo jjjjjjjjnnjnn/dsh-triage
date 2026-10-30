@@ -53,5 +53,5 @@
 
 1. **授权跑安装**：`pin` 的"装"需要在 profile 目录执行 `pnpm install`。默认不做
    （`--install` 才做），因为它会改 `node_modules` 与 lockfile。
-2. **授权改判据**：若要让 `audit` 读取 `compatibility.json`（B 类修复对 0.2.x 生效），
-   必须动 `admission` 相邻逻辑（冻结区），要单独的 spec + 金标 + HUMAN-SIGN。
+2. ~~**授权改判据**：让 `audit` 读取 `compatibility.json`~~ —— **R49 T-816 已交付**（HUMAN 批准）：
+   `packages/core/src/exemption.ts` + 行级 verdict 的 `admission.exempted` 理由；见 `docs/04-admission-semantics.md`。

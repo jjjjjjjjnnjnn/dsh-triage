@@ -6755,6 +6755,34 @@
         "sha256": "3bf8de149ef13314a637cb3a64219d9075c1ba24a89906e44df2ec4722156068",
         "outcome": "18/18 PASS · 页面渲染 200 · 8 个控件齐 · 501/409 路径不变 · 与 `audit --json` 同源"
       }
+    },
+    {
+      "id": "R49-S6",
+      "batch": "R49",
+      "step": "**判据轮**（HUMAN 批准）：让行级 admission 读取 profile 自己的豁免文件（`compatibility.json`，上游 0.2.x 的 `allow-version` 语义）。在此之前，一个加载器会放行的行被我们报成 `blocked`——工具与运行中的 profile 不一致，正是这个产品最不该犯的错",
+      "changed": [
+        "packages/core/src/exemption.ts",
+        "packages/core/src/verdict.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/audit-data.ts",
+        "packages/plugin/src/fix.ts",
+        "tests/unit/exemption.test.ts",
+        "data/results/fix-2026-10-30T14-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：500 测试 / 0 fail（+6：读取器两条、精确匹配一条、verdict 三条）。语义与上游逐条对齐——只有**精确** `name@version` 对**精确** runtime 才算匹配（范围、别的版本、别的 runtime 一律不匹配）；`blocked → go` 但**保留**原有 unmet 理由，并追加一条 `admission-exempted`（severity `warn`），所以「放行」不会被读成「兼容」。没有豁免文件时行为一字未变（金标 parity 与全部既有 verdict 测试照原样通过）",
+        "reproducibility": "PASS：新产物 `data/results/fix-2026-10-30T14-10-00.000Z.json`（14/14，一次性 profile）；`tests/unit/exemption.test.ts` 用真实 `verdictsFromRowAdmission`（不是 mock）证明两种结论，数据集在测试里显式写出",
+        "licence": "PASS：零依赖；读取器只用 `node:fs`；没有网络；豁免文件内容只被解析成字符串数组，绝不执行",
+        "ssot": "PASS：500 测试 / 277 步 / 257 产物在 `AGENTS.md`、`INDEX.md`、`docs/HANDOFF.md`、本台账一致；`docs/04-admission-semantics.md` 补了「豁免」一节；`docs/specs/M7-autofix.md` §5 的 T-816 标记为已交付",
+        "adversary": "反例一：把「有豁免」直接当 `go` 且不留理由——被拒，那样用户会以为插件真的兼容；反例二：用 semver 范围匹配豁免键（`^1.2.3` 也算）——被拒，上游只接受规范精确版本，`parseExemptionKey` 用同一正则；反例三：文件读不懂时按「无豁免」继续并允许改写——被拒，`rewritable:false` 会同时阻止 `fix` 覆盖用户内容；反例四：豁免写成 `go` 以后把它算进「正常」却不在任何地方说明——已知缺口，`audit --all` 与详细视图能看到 warn 理由，但摘要计数暂未单列（已记入未决）"
+      },
+      "real_test": {
+        "command": "node scripts/record_fix_plan.mjs --stamp 2026-10-30T14:10:00.000Z",
+        "artifact": "data/results/fix-2026-10-30T14-10-00.000Z.json",
+        "sha256": "b532b56a86427bdf57a146ec0c9c12cc78dcee7c3677731976c535b55f5f80c7",
+        "outcome": "14/14 PASS · 写入面仍是精确版本豁免 · undo 逐字节 · 读取器与 verdict 的新语义由 `tests/unit/exemption.test.ts` 6 条钉死"
+      }
     }
   ]
 }

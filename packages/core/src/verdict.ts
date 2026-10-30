@@ -12,6 +12,7 @@
 import { gt, minVersion } from 'semver'
 import type { AdmissionResult } from './admission.js'
 import { evaluateAdmission } from './admission.js'
+import { isExempted } from './exemption.js'
 import { judgeCompatChannel } from './compat-channel.js'
 import type { EntryCollision } from './ledger.js'
 import { catalogFor, format, type Locale } from './messages.js'
@@ -255,6 +256,12 @@ export interface RowAdmissionInput {
   readonly env: EnvFingerprint
   readonly rows: readonly RowDeclaration[]
   readonly generatedAt: string
+  /**
+   * The profile's own exemptions (`compatibility.json`). When one covers this exact
+   * module@version on this exact runtime, the loader admits the row, so we must not report it as
+   * blocked — a tool that disagrees with the running profile is worse than a tool that says nothing.
+   */
+  readonly exemptions?: Readonly<Record<string, readonly string[]>>
 }
 
 /**
@@ -416,6 +423,41 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
                 .join(', ')} lists it under ${[...new Set(declaredBy.map((origin) => origin.field))].join('/')}; moving it to peerDependencies (or removing the declaring plugin) removes the shadowing copy`,
             },
           ]
+
+    if (isExempted(input.exemptions ?? {}, module, first.version, runtime)) {
+      // The profile granted this exact pair; the loader will admit the row. Report the row as
+      // admitted and keep the risk visible, rather than a `blocked` the runtime disagrees with.
+      out.push(
+        finish({
+          subject,
+          env: input.env,
+          conclusion: 'go',
+          confidence: { level: 'medium', basis: 'declared' },
+          reasons: [
+            scopeReason,
+            {
+              code: 'admission-exempted',
+              severity: 'warn',
+              messageId: 'admission.exempted',
+              params: { module, version: first.version ?? 'unknown', runtime },
+            },
+            ...admission.unmet.map((requirement) => unmetReason(requirement, runtime)),
+          ],
+          evidence: [rowEvidence, runtimeEvidence],
+          remediation: [
+            {
+              kind: 'probe',
+              messageId: 'remediation.probe',
+              params: { module },
+              note: 'the exemption bypasses the declaration only; behaviour is still unproven',
+            },
+          ],
+          missingEvidence: [],
+          generatedAt: input.generatedAt,
+        }),
+      )
+      continue
+    }
 
     out.push(
       finish({

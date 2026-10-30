@@ -27,6 +27,7 @@ import {
   redactVerdict,
   rowTargets,
   verdictsFromInventory,
+  readProfileExemptions,
   verdictsFromRowAdmission,
   type DuplicateCopy,
   type EntryClaim,
@@ -97,7 +98,10 @@ export async function loadAuditData(input: AuditLoadInput): Promise<AuditLoad> {
   // every row, not only for the denied ones (R8 adversary finding F11).
   const rows = await resolveRows(input.env, rowTargetsOf(claims))
   // T-105: `why` and `audit` must reach the SAME row-level admission conclusion.
-  const rowVerdicts = verdictsFromRowAdmission({ env: input.env, rows, generatedAt: input.stamp })
+  // A profile can exempt an exact plugin@version for an exact runtime. The loader honours it at
+  // boot, so judging the row blind would make this tool disagree with the running profile.
+  const exemptions = readProfileExemptions(input.env.profileDir).exemptions
+  const rowVerdicts = verdictsFromRowAdmission({ env: input.env, rows, exemptions, generatedAt: input.stamp })
 
   let snapshot: InventorySnapshot | null = null
   let inventoryVerdicts: readonly Verdict[] = []

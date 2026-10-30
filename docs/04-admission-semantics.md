@@ -40,3 +40,27 @@
 1. 上游若改用自研区间实现或更改 prerelease 处理，我们会出现系统性偏差 → 每次基线升级必须重跑 parity 门（`audit/blind_spots.json` BS-02）。
 2. `workspace:` peer 在源码工作区内是合法的；对已安装的第三方插件我们判 `denied`，这是一个**保守选择**，已在夹具中显式记录。
 3. 本模块只判定「声明层」；运行期行为（是否注册上工具、前端是否渲染）不在它的能力范围（BS-01）。
+
+## 版本豁免（compatibility.json）
+
+上游 0.2.x 允许 profile 记录「这个**精确**插件版本可以在**精确** DSH 版本上跑」，加载器在启动时读
+`<profile>/compatibility.json` 并放行。格式（与 `dsh-app-boot#setProfileVersionExemption` 写出的
+一致）：
+
+```json
+{
+  "<pkg>@<精确版本>": ["<精确 dsh 版本>"]
+}
+```
+
+**我们的语义（R49 T-816 起）**：
+
+| 情况 | 结论 | 理由 |
+|---|---|---|
+| 无豁免 | `blocked`（与以前一致） | unmet 声明 |
+| 精确 `pkg@ver` 对精确 runtime 有豁免 | `go` | 追加 `admission-exempted`（warn）+ **保留**原有 unmet 理由 |
+| 键是范围 / 版本不同 / runtime 不同 | 不匹配 | 与上游同样只认精确对 |
+| 文件读不懂 | 视为 0 条豁免，且**不可改写** | 改写会丢用户内容 |
+
+为什么 `go` 而不是「新的第三种结论」：加载器已经放行，我们没有独立的结论词；把风险放在
+`reasons` 里（warn + 原文 unmet）比造一个新词更不容易被误读。

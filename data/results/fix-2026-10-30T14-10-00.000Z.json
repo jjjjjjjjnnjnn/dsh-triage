@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_fix_plan.mjs",
+  "generated_at": "2026-10-30T14:10:00.000Z",
+  "mode": "throwaway-profile",
+  "runtime": {
+    "supported": "0.2.1-rc.4",
+    "unsupported": "0.1.0-rc.6"
+  },
+  "result": {
+    "supported": {
+      "applicable": 1,
+      "status": "ready",
+      "before_sha256": "34030028a4dd70897ffdeed29408ca256fc8cd55411c541017f0a31ad92a66df",
+      "after_sha256": "95751c62a3f8a38f21ee7310b689bf41f9ac988f140d44c8665399bd58a2abf1"
+    },
+    "plain": {
+      "applicable": 0,
+      "status": "unknown-install-shape"
+    },
+    "dry_run_wrote_nothing": true,
+    "undo_bytes_identical": true
+  },
+  "checks": [
+    {
+      "id": "unsupported-detected",
+      "ok": true,
+      "detail": "exemptionSupport=false"
+    },
+    {
+      "id": "unsupported-not-applicable",
+      "ok": true,
+      "detail": "applicable=0"
+    },
+    {
+      "id": "unsupported-says-why",
+      "ok": true,
+      "detail": "@fixture/plugin is not in the profile's dependencies, so this tool does not know how it was installed."
+    },
+    {
+      "id": "unsupported-writes-nothing",
+      "ok": true,
+      "detail": "profile untouched"
+    },
+    {
+      "id": "supported-detected",
+      "ok": true,
+      "detail": "exemptionSupport=true"
+    },
+    {
+      "id": "supported-ready",
+      "ok": true,
+      "detail": "applicable=1 status=ready"
+    },
+    {
+      "id": "dry-run-writes-nothing",
+      "ok": true,
+      "detail": "file unchanged"
+    },
+    {
+      "id": "apply-adds-exemption",
+      "ok": true,
+      "detail": "{\"@fixture/plugin@1.2.3\":[\"0.2.1-rc.4\"],\"existing@0.0.1\":[\"0.2.0\"]}"
+    },
+    {
+      "id": "apply-preserves-existing",
+      "ok": true,
+      "detail": "[\"0.2.0\"]"
+    },
+    {
+      "id": "apply-keeps-format",
+      "ok": true,
+      "detail": "2-space JSON + trailing newline"
+    },
+    {
+      "id": "apply-writes-backup",
+      "ok": true,
+      "detail": "<tmp>\\supported\\.dsh-triage\\backups\\2026-10-30T14-10-00.000Z\\compatibility.json"
+    },
+    {
+      "id": "apply-writes-journal",
+      "ok": true,
+      "detail": "<tmp>\\supported\\.dsh-triage\\journal\\2026-10-30T14-10-00.000Z.json"
+    },
+    {
+      "id": "apply-is-idempotent",
+      "ok": true,
+      "detail": "second apply keeps one version"
+    },
+    {
+      "id": "undo-restores-bytes",
+      "ok": true,
+      "detail": "1 file(s), identical=true"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the write path is exercised on a throwaway profile, never on ~/.dsh",
+    "a real runtime is not booted: support is proven by the implementation file being present",
+    "pin (installing a compatible plugin build) is not implemented — see docs/specs/M7-autofix.md §5"
+  ]
+}

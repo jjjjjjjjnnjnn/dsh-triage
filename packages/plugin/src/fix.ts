@@ -19,9 +19,11 @@
  *   the loader) is deliberately absent; see `docs/specs/M7-autofix.md` §1 C.
  */
 
+import { isExactExemptionVersion as coreIsExactVersion } from '@dsh-triage/core'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { AuditData } from './audit-data.js'
+import { readProfileExemptions as readCompatibilityFile } from '@dsh-triage/core'
 
 export type FixAction = 'exemption' | 'pin'
 
@@ -187,10 +189,8 @@ export function safeStamp(stamp: string): string {
   return stamp.replace(/:/g, '-')
 }
 
-/** Refuse anything that is not a canonical exact SemVer — the same rule upstream applies. */
-export function isExactVersion(value: string): boolean {
-  return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(value)
-}
+/** Refuse anything that is not a canonical exact SemVer — the rule lives in core, not here. */
+export const isExactVersion = coreIsExactVersion
 
 /** `name@version` where the version is exact. Throws otherwise; never guesses. */
 export function parsePackageVersion(value: string): { name: string; version: string } {
@@ -201,38 +201,6 @@ export function parsePackageVersion(value: string): { name: string; version: str
   if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(name)) throw new Error(`not an npm package name: "${name}"`)
   if (!isExactVersion(version)) throw new Error(`not an exact version: "${version}"`)
   return { name, version }
-}
-
-/**
- * Read the compatibility file the way upstream does: unreadable or unparsable means
- * "authorizes nothing **and** must not be rewritten", because rewriting would discard whatever
- * the user has in there.
- */
-export function readCompatibility(profileDir: string): {
-  readonly exemptions: Record<string, readonly string[]>
-  readonly rewritable: boolean
-} {
-  const file = join(profileDir, COMPAT_FILE)
-  if (!existsSync(file)) return { exemptions: {}, rewritable: true }
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'))
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { exemptions: {}, rewritable: false }
-    const out: Record<string, string[]> = {}
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || !isExactVersion(entry))) {
-        return { exemptions: {}, rewritable: false }
-      }
-      try {
-        parsePackageVersion(key)
-      } catch {
-        return { exemptions: {}, rewritable: false }
-      }
-      out[key] = value as string[]
-    }
-    return { exemptions: out, rewritable: true }
-  } catch {
-    return { exemptions: {}, rewritable: false }
-  }
 }
 
 /**
@@ -255,7 +223,7 @@ export function applyExemptionFixes(
   if (plan.runtime === null) throw new Error('the runtime version is unknown; an exemption must name an exact runtime')
 
   const file = join(plan.profileDir, COMPAT_FILE)
-  const current = readCompatibility(plan.profileDir)
+  const current = readCompatibilityFile(plan.profileDir)
   if (!current.rewritable) {
     throw new Error(`${file} was not written by this tool and cannot be parsed; refusing to rewrite it (fix it by hand first)`)
   }
@@ -294,7 +262,7 @@ export function applyExemptionFixes(
   atomicWrite(file, serialize(next))
 
   const after = readFileSync(file, 'utf8')
-  const verified = readCompatibility(plan.profileDir)
+  const verified = readCompatibilityFile(plan.profileDir)
   if (!verified.rewritable) throw new Error(`${file} could not be read back after writing; the profile may need manual repair`)
 
   const journalPath = join(journalDir, `${runName}.json`)
@@ -340,6 +308,15 @@ export function undoFix(journalPath: string): { readonly restored: readonly stri
     restored.push(change.file)
   }
   return { restored }
+}
+
+/** Kept for callers and tests: the parser itself lives in core (`readProfileExemptions`). */
+export function readCompatibility(profileDir: string): {
+  readonly exemptions: Readonly<Record<string, readonly string[]>>
+  readonly rewritable: boolean
+} {
+  const reading = readCompatibilityFile(profileDir)
+  return { exemptions: reading.exemptions, rewritable: reading.rewritable }
 }
 
 /* -------------------------------- helpers --------------------------------- */

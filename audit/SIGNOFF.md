@@ -54,6 +54,8 @@
 
 | 2026-10-30 | **R49 交付轮（改的是人类可读输出与面板首屏，不是判据）**：无参 = `status`；`audit` 默认打摘要、全台账进 `--all`；`serve` 默认读当前 profile，首屏 = 结论 + 计数 + 要看的地方；`--no-audit` 保留旧模式 | 会话内「继续」（承接 R49 既定收口：跑门禁 / 落产物 / 同步文档）；**没有**单独批准具体文案 | DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）：跑 477 测试、9 门 ALL GREEN、`--mutate` 9/9；面板冒烟 17/17 + 一次独立复算 17/17；判据 / 阈值 / `audit --json` 一字未动 | 摘要与面板的**措辞**（中英文案）、配色与布局、11 条对抗性用例的选取，以及「复制修复命令」按钮的真实点击（只做到 DOM 层生成）；未由 HUMAN 逐条读 | `data/results/serve-smoke-2026-10-30T10-30-00.000Z.json` · `audit/AUDIT_2026-10-30_R49.md` · `audit/step_reviews.json` R49-S1 · `docs/SECURITY.md` |
 
+| 2026-10-30 | **R49 T-816 判据变更（冻结区相邻）**：行级 admission 读取 profile 的 `compatibility.json`；有精确豁免的行由 `blocked` 变 `go`，并在 reasons 里追加 `admission-exempted`（warn） | 用户原话「1+2 都做」（回应「T-815 装包 / T-816 读豁免」两项） | DeepSeek V4.1 Flash：与上游语义逐条对齐（只认精确对，文件读不懂=0 条且不可改写）；500 测试 / 金标 parity 未变；6 条新单测 | 豁免文件在真实 0.2.x 运行时上的行为（本机 0.1.0-rc.6 无此实现，只有沙盒源码作为依据）；摘要未单列「靠豁免在跑」的行 | `data/results/fix-2026-10-30T14-10-00.000Z.json` · `tests/unit/exemption.test.ts` · `audit/step_reviews.json` R49-S6 |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |
