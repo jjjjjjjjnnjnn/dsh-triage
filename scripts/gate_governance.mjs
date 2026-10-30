@@ -33,7 +33,12 @@ await runGate('governance', async ({ checks, mutate }) => {
       referenced.push(candidate)
     }
   }
-  const uniqueReferences = [...new Set(referenced)]
+  // A path that is git-ignored can never exist on a clean checkout, so a document that
+  // mentions it (sandbox/, data/raw/, …) is not a broken reference. Windows hides this: the
+  // directory is there locally and the gate goes green, then CI goes red. That is how this
+  // was found.
+  const ignored = ignoredPrefixes()
+  const uniqueReferences = [...new Set(referenced)].filter((reference) => !isIgnored(reference, ignored))
   const phantom = mutate ? 'docs/does-not-exist.md' : null
   const broken = uniqueReferences.filter((path) => !exists(stripAnchor(path)))
   const mutatedBroken = phantom !== null && !exists(phantom) ? [phantom] : []
@@ -276,6 +281,28 @@ await runGate('governance', async ({ checks, mutate }) => {
     'AI_DISCLOSURE_LOG.md must carry a SessionID field',
   )
 })
+
+/** Top-level entries from .gitignore (comments and negations skipped). */
+function ignoredPrefixes() {
+  let text = ''
+  try {
+    text = readText('.gitignore')
+  } catch {
+    return []
+  }
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#') && !line.startsWith('!'))
+    .map((line) => line.replace(/^\//, '').replace(/\/$/, ''))
+    .filter((line) => line !== '')
+}
+
+/** Is this reference (or its first segment) git-ignored? */
+function isIgnored(reference, prefixes) {
+  const clean = (reference.split('#')[0] ?? reference).replace(/\\/g, '/').replace(/\/$/, '')
+  return prefixes.some((prefix) => clean === prefix || clean.startsWith(`${prefix}/`))
+}
 
 function looksLikePath(value) {
   if (value.startsWith('http') || value.startsWith('#') || value.startsWith('@')) return false
