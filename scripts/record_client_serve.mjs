@@ -44,6 +44,11 @@ const installDir = pathFor(String(argOf('--install', '')))
 const outDir = pathFor(argOf('--out', 'data/results'))
 const bootTimeoutMs = Number(argOf('--boot-timeout-ms', '120000'))
 const label = String(argOf('--label', 'client-serve')).replace(/[^a-zA-Z0-9._-]+/g, '-')
+/** `--lang en` makes the browser claim English, which is how the en half of the tab is witnessed. */
+const uiLang = String(argOf('--lang', '')).toLowerCase()
+/** `--fixture-range` / `--break-after-install` stage a row that is fine at install and denied afterwards. */
+const fixtureRange = argOf('--fixture-range', null)
+const breakAfterInstall = argOf('--break-after-install', null)
 if (stamp === null || !existsSync(dshMain)) {
   process.stderr.write('usage: node scripts/record_client_serve.mjs --dsh-main <bin.js> --install <dir> --stamp <iso>\n')
   process.exit(2)
@@ -129,14 +134,31 @@ async function main() {
   for (const source of String(argOf('--extra-bundle', '') ?? '').split(',').map((value) => value.trim()).filter((value) => value !== '')) {
     const staged = join(profileDir, `.extra-${basename(source)}`)
     cpSync(pathFor(source), staged, { recursive: true })
-    const extraManifest = JSON.parse(readFileSync(join(staged, 'package.json'), 'utf8'))
+    const extraManifestPath = join(staged, 'package.json')
+    const extraManifest = JSON.parse(readFileSync(extraManifestPath, 'utf8'))
+    /*
+     * A ROW THAT BECOMES DENIED AFTER INSTALL (R51, BS-47): upstream refuses to install a bundle
+     * whose range excludes the runtime, so "it was fine yesterday" cannot be reproduced by
+     * installing a broken bundle. `--fixture-range` installs a compatible claim; then
+     * `--break-after-install` rewrites the installed manifest, which is what a plugin update (or a
+     * hand-edited profile) does to a row that used to pass. It is NOT the same thing as the runtime
+     * moving — the report says which one was simulated.
+     */
+    if (fixtureRange !== null) {
+      extraManifest.engines = { ...(extraManifest.engines ?? {}), dsh: String(fixtureRange) }
+      writeFileSync(extraManifestPath, `${JSON.stringify(extraManifest, null, 2)}\n`, 'utf8')
+    }
     const extraName = String(extraManifest.name ?? '')
     if (extraName === '') throw new Error(`${source}/package.json has no name`)
     manifest.dependencies[extraName] = `file:${staged.replaceAll('\\', '/')}`
     manifest.dsh.profile.bundles.push(extraName)
-    extraBundles.push({ name: extraName, version: String(extraManifest.version ?? '0.0.0'), engines: extraManifest.engines ?? null })
+    extraBundles.push({ name: extraName, version: String(extraManifest.version ?? '0.0.0'), engines: extraManifest.engines ?? null, staged })
   }
-  if (extraBundles.length > 0) record('extra-bundles', 'passed', `staged ${extraBundles.length} fixture bundle(s) into the profile`, { bundles: extraBundles })
+  if (extraBundles.length > 0) record('extra-bundles', 'passed', `staged ${extraBundles.length} fixture bundle(s) into the profile`, {
+    // `staged` is deliberately NOT recorded: it is an absolute sandbox path, and `results-privacy`
+    // (rightly) refuses any home-shaped path in an artifact. R51's first six runs leaked it here.
+    bundles: extraBundles.map((entry) => ({ name: entry.name, version: entry.version, engines: entry.engines })),
+  })
   writeFileSync(join(profileDir, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   writeFileSync(join(profileDir, 'cordis.yml'), '[]\n', 'utf8')
   /*
@@ -191,6 +213,30 @@ async function main() {
     record('exempt-revoke', existed ? 'passed' : 'unmeasured', existed
       ? 'removed the exemption file, so the staged row is judged on its declaration again (the tab should now show a "will break" row)'
       : 'the launcher installed without writing an exemption file, so there was nothing to revoke')
+  }
+
+  if (breakAfterInstall !== null && extraBundles.length > 0) {
+    // What a plugin update does: the same row, a narrower claim. The installed copy is what the
+    // audit reads, so both the staged source and the installed copy are rewritten.
+    const rewritten = []
+    for (const extra of extraBundles) {
+      const candidates = [
+        join(extra.staged, 'package.json'),
+        join(profileDir, 'node_modules', ...extra.name.split('/'), 'package.json'),
+        join(profileDir, 'node_modules', '.pnpm', 'node_modules', ...extra.name.split('/'), 'package.json'),
+      ]
+      for (const file of candidates) {
+        if (!existsSync(file)) continue
+        const manifest = JSON.parse(readFileSync(file, 'utf8'))
+        if (String(manifest.name ?? '') !== extra.name) continue
+        manifest.engines = { ...(manifest.engines ?? {}), dsh: String(breakAfterInstall) }
+        writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
+        rewritten.push(clean(file).replace(/^.*?profiles/, '<profile>'))
+      }
+    }
+    record('break-after-install', rewritten.length > 0 ? 'passed' : 'failed', rewritten.length > 0
+      ? `rewrote ${rewritten.length} installed manifest(s) so ${extraBundles.map((entry) => entry.name).join(', ')} now declares engines.dsh ${String(breakAfterInstall)} — a row that passed at install time and is denied afterwards`
+      : 'could not find the installed manifest to rewrite, so nothing was made to break', { files: rewritten })
   }
 
   const port = Number(argOf('--port', '0'))
@@ -349,6 +395,27 @@ async function main() {
       }
 
       /*
+       * ENGLISH SCREEN (R51, BS-47): the en dictionary existed in the bundle but no one had seen it
+       * on screen. `--lang en` makes the browser (and therefore the Host) claim English; this step
+       * reads the rendered text and says whether the English sentences are what a user gets.
+       */
+      const tabText = String(tabProbe?.text ?? '')
+      const looksEnglish = /will this setup break|What needs you|Next step|cannot tell/i.test(tabText)
+      if (uiLang === 'en') {
+        record('english-screen', tabProbe?.present === true && looksEnglish ? 'passed' : 'failed', tabProbe?.present === true && looksEnglish
+          ? 'the tab rendered its English dictionary (same code path, en sentences)'
+          : `asked for English but the tab text is not English: ${tabText.slice(0, 120)}`)
+      } else {
+        record('english-screen', 'unmeasured', 'no --lang en was passed, so the English screen is not claimed by this run')
+      }
+      /*
+       * CLIPBOARD (R51, BS-47): the button existing is not the same claim as the command reaching
+       * the clipboard. The probe clicked it with a real mouse event and read the clipboard back.
+       */
+      const clipboard = observed.visible.evidence?.clipboard ?? null
+      record('clipboard-copy', clipboard?.status ?? 'unmeasured', clipboard?.detail ?? 'no clipboard probe ran', clipboard?.evidence ?? {})
+
+      /*
        * SAME SOURCE (T-401 ②, R33): the tab's numbers must be the CLI's numbers for the SAME home and
        * profile — otherwise "the panel shows the CLI's conclusions" is just a sentence. The comparison
        * runs the real CLI against the sandbox the Host just served.
@@ -490,6 +557,18 @@ async function observePage(browser, pageUrl, cookie) {
     })
     await send('Page.enable')
     await send('Network.enable')
+    /*
+     * LANGUAGE (R51, BS-47): the tab picks its sentences from the Host's locale binding, and the
+     * Host follows the browser's language. `--lang en` makes the browser claim English so the en
+     * half of the dictionary is actually seen on screen instead of merely existing in the bundle.
+     */
+    if (uiLang === 'en') {
+      await send('Emulation.setLocaleOverride', { locale: 'en-US' }).catch(() => undefined)
+      await send('Page.addScriptToEvaluateOnNewDocument', {
+        source: "Object.defineProperty(navigator, 'language', { get: () => 'en-US' }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });",
+      })
+      await send('Network.setExtraHTTPHeaders', { headers: { 'accept-language': 'en-US,en;q=0.9' } })
+    }
     for (const pair of cookie.split(';')) {
       const [name, ...rest] = pair.trim().split('=')
       const value = rest.join('=')
@@ -537,7 +616,7 @@ async function observePage(browser, pageUrl, cookie) {
             ? 'the client runner called apply and the settings slot accepted the tab'
             : `refused: ${String(marker.reason)}`,
       }
-      observed = { marker: mount, visible: await probeVisibility(evaluate, mount).catch((error) => ({
+      observed = { marker: mount, visible: await probeVisibility(evaluate, mount, send).catch((error) => ({
         status: 'unmeasured',
         detail: `the visibility probe failed before it could answer: ${String(error && error.message ? error.message : error)}`,
         evidence: { tab_registered: mount.registered === true },
@@ -600,7 +679,7 @@ const TAB_PROBE_EXPRESSION = `(() => {
  * label was not there; `unmeasured` = the page never offered a settings entry (we report what it did
  * offer instead of inventing a selector).
  */
-async function probeVisibility(evaluate, mount) {
+async function probeVisibility(evaluate, mount, send) {
   const evidence = { tab_registered: mount.registered === true, hops: [] }
   if (mount.registered !== true) {
     return {
@@ -667,12 +746,30 @@ async function probeVisibility(evaluate, mount) {
      * the slot name: upstream registers `settings.section` id `plugins` with label 内置插件 /
      * "Built-in plugins" (verified in its client.js, and measured again here in R33). The chrome
      * button named 插件 opens the plugin MANAGER, a different surface with no `settings.plugins.tab`.
+     *
+     * R51 (English run): in English BOTH surfaces are labelled "Plugins", and the chrome one comes
+     * first in DOM order — so clicking "the first match" opened the manager and the tab was never
+     * reachable. Try every candidate in turn and stop at the first one that reveals the tab; a
+     * single guess here is exactly the "wrong guess becomes a red light" shape this probe avoids.
      */
-    const section = pickControl(snapshot.controls, PLUGIN_SECTION_NAMES)
-    if (section !== null) {
-      evidence.plugin_section = section.name
-      snapshot = await hop('open-plugin-settings-section', section)
+    const candidates = []
+    let remaining = [...snapshot.controls]
+    for (;;) {
+      const hit = pickControl(remaining, PLUGIN_SECTION_NAMES)
+      if (hit === null) break
+      candidates.push(hit)
+      remaining = remaining.filter((control) => control !== hit)
+    }
+    for (const candidate of candidates) {
+      snapshot = await hop(`open-plugin-settings-section:${candidate.name}`, candidate)
       match = matchTab(snapshot, TAB_LABELS)
+      if (match !== null) {
+        evidence.plugin_section = candidate.name
+        break
+      }
+      // Not this one: get back to the settings list before trying the next candidate.
+      const back = pickControl(snapshot.controls, SETTINGS_NAMES)
+      if (back !== null) snapshot = await hop('back-to-settings', back)
     }
   }
   evidence.controls_after = controlNames(snapshot).slice(0, 60)
@@ -703,6 +800,95 @@ async function probeVisibility(evaluate, mount) {
       evidence.tab_probe = probe
       body = probe !== null && probe.present === true ? (probe.mode === 'summary' ? 'passed' : 'degraded') : 'failed'
       evidence.tab_body = body
+      /*
+       * A REAL CLICK ON THE COPY BUTTON (R51, BS-47): the button existing is not the same claim as
+       * the clipboard receiving the command. This grants clipboard permission, clicks the button
+       * with a real mouse event at its measured centre, and reads the clipboard back — comparing it
+       * with the `fix` string the route published for that same row.
+       */
+      evidence.clipboard = { status: 'unmeasured', detail: 'no copy button rendered (the engine produced no command for these rows)', evidence: {} }
+      if (probe !== null && Number(probe.copy_fix_buttons ?? 0) > 0) {
+        try {
+          const origin = new URL(snapshot.url || 'http://127.0.0.1').origin
+          await send('Browser.grantPermissions', { origin, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'] })
+          await send('Page.bringToFront')
+          // Scroll first, measure AFTER the animation settles: measuring during a smooth scroll is
+          // how the zh run clicked a coordinate the button had already left (R51).
+          await evaluate(`(() => {
+            const el = document.querySelector('[data-copy-fix]')
+            if (el) el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' })
+            return JSON.stringify({ ok: el !== null })
+          })()`)
+          await pause(350)
+          const spot = await evaluate(`(() => {
+            const el = document.querySelector('[data-copy-fix]')
+            if (!el) return JSON.stringify({ ok: false, reason: 'no button' })
+            const rect = el.getBoundingClientRect()
+            const x = Math.round(rect.left + rect.width / 2)
+            const y = Math.round(rect.top + rect.height / 2)
+            const hit = document.elementFromPoint(x, y)
+            return JSON.stringify({
+              ok: true,
+              x,
+              y,
+              id: el.getAttribute('data-copy-fix'),
+              on_button: hit !== null && hit.closest('[data-copy-fix]') !== null,
+              hit: hit === null ? 'none' : String(hit.tagName),
+            })
+          })()`)
+          if (spot === null || spot.ok !== true) throw new Error('the copy button reported no rectangle')
+          await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: spot.x, y: spot.y })
+          await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: spot.x, y: spot.y, button: 'left', clickCount: 1 })
+          await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: spot.x, y: spot.y, button: 'left', clickCount: 1 })
+          await pause(300)
+          // Read what the page itself reported about the write, then read the clipboard back: the
+          // two together separate "the button never tried" from "the browser refused".
+          let reported = await evaluate(`JSON.stringify((window.__dshTriage && window.__dshTriage.clipboard) || null)`)
+          let method = 'mouse'
+          if (reported === null) {
+            /*
+             * A real mouse event that reaches the button but produces no handler call is a hit-test
+             * problem we have not explained (zh run, R51: `on_button: true`, no clipboard write).
+             * Falling back to the element's own click() answers the question a user actually cares
+             * about — "does the button do its job" — and the artifact records WHICH method worked,
+             * so nobody can read `dom-click` as "a real click was proven".
+             */
+            method = 'dom-click'
+            await evaluate(`(() => {
+              const el = document.querySelector('[data-copy-fix]')
+              if (el) el.click()
+              return JSON.stringify({ clicked: el !== null })
+            })()`)
+            await pause(300)
+            reported = await evaluate(`JSON.stringify((window.__dshTriage && window.__dshTriage.clipboard) || null)`)
+          }
+          const expected = await evaluate(`fetch('/compat-triage/summary', { credentials: 'include' }).then((r) => r.json()).then((payload) => {
+            const pick = (summary) => (summary && Array.isArray(summary.issues) ? summary.issues.find((issue) => issue && issue.id === ${JSON.stringify(spot.id)}) : null)
+            const hit = pick(payload.summary && payload.summary.en) || pick(payload.summary && payload.summary.zh)
+            return JSON.stringify({ fix: hit && typeof hit.fix === 'string' ? hit.fix : null })
+          }).catch(() => JSON.stringify({ fix: null }))`)
+          const clipboard = await evaluate(`navigator.clipboard.readText().then((text) => JSON.stringify({ text })).catch((error) => JSON.stringify({ error: String(error && error.message ? error.message : error) }))`)
+          const wanted = expected && typeof expected.fix === 'string' ? expected.fix : null
+          const got = clipboard && typeof clipboard.text === 'string' ? clipboard.text : null
+          const same = wanted !== null && got !== null && got.trim() === wanted.trim()
+          evidence.clipboard = {
+            status: wanted === null ? 'unmeasured' : same ? 'passed' : 'failed',
+            detail:
+              wanted === null
+                ? `the route published no fix command for ${spot.id}, so there was nothing to copy`
+                : same
+                  ? `clicking the copy button put the engine's own command on the clipboard (${wanted})`
+                  : `clipboard does not hold the published command (wanted ${JSON.stringify(wanted)}, got ${JSON.stringify(got ?? (clipboard && clipboard.error))})`,
+            evidence: { button_id: spot.id, wanted, got, method, on_button: spot.on_button ?? null, page_reported: reported ?? null, clipboard_error: clipboard && clipboard.error ? String(clipboard.error) : null },
+          }
+        } catch (error) {
+          evidence.clipboard = {
+            status: 'unmeasured',
+            detail: `the clipboard click could not be driven: ${String(error && error.message ? error.message : error)}`,
+            evidence: {},
+          }
+        }
+      }
       // The tab also publishes what it showed, so the numbers can be compared with the CLI's.
       let markerAfter = null
       for (let attempt = 0; attempt < 12; attempt += 1) {

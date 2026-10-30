@@ -99,12 +99,28 @@ window.__ModuleLoader__.load({
 
     /** A clipboard we do not have is a no-op, not a fake "copied". */
     function copyText(text) {
+      const report = (ok, error) => {
+        try {
+          if (typeof window === 'object' && window !== null) {
+            window.__dshTriage = { ...(window.__dshTriage || {}), clipboard: { ok, error: error ?? null } }
+          }
+        } catch {
+          // Recording the outcome is a nicety; the button still works without it.
+        }
+      }
       try {
         if (typeof navigator === 'object' && navigator !== null && navigator.clipboard) {
-          void navigator.clipboard.writeText(String(text))
+          navigator.clipboard.writeText(String(text)).then(
+            () => report(true, null),
+            // The failure is published, not swallowed: a button that cannot copy must be visible as
+            // such to the probe (R51 user test), not merely unhelpful to the person clicking it.
+            (error) => report(false, String((error && error.message) || error)),
+          )
+          return
         }
-      } catch {
-        // Ignored on purpose: the command is on screen either way.
+        report(false, 'navigator.clipboard is unavailable')
+      } catch (error) {
+        report(false, String((error && error.message) || error))
       }
     }
 

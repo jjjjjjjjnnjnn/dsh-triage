@@ -371,10 +371,10 @@
     {
       "id": "BS-47",
       "area": "client/settings-tab (DSH UI)",
-      "cannot_see": "设置页的「会坏」视觉路径**只被一种来源见证过**：R51 用 `--extra-bundle tests/fixtures/client/breaking-plugin`（授予 exemption → 安装 → 撤销 exemption）让 `会坏 1` 出现在真机屏幕上；「运行时升级之后才变坏」「手改 profile 塞进来的行」这两种来源仍只有推理。同类未见证项：只测了 zh（en 走同一段代码但没人看过英文屏）；一个 Chromium（Edge headless）、一个 DSH 版本（0.2.1-rc.4）；「复制」按钮**出现了**（`copy_fix_buttons: 1`）但**没人真的点下去**验证 `navigator.clipboard` 写入成功。另外：`record_client_serve` 的 `user-answer` 判据是**结构性**的（有人话结论 / 有具体行 / 有可粘贴命令），它不证明句子对陌生人**可读**——可读性仍由人工阅读承担（`audit/USER-TEST_2026-10-30_R51.md` 的 F1–F8 全部来自人读，不是机器判的）。",
-      "mitigation": "① 「会坏」屏已由 `--extra-bundle` 覆盖；若要覆盖「升级后变坏」，需在同一沙盒里先装 9.x 夹具再换 runtime，成本高于本轮收益，登记不假装；② 复制按钮要么加一次真机点击（CDP `Input.dispatchMouseEvent` + 读剪贴板），要么改文案不承诺「已复制」；③ 英文屏至少截一次（`--expect-tab-label Triage`）；④ 路径跳数变了只要 `visible` 仍 `passed` 就说明可达，但**不要把 6 跳写成所有版本的事实**。",
+      "cannot_see": "设置页的两条关键路径都已见证过一次：**「会坏」屏**（① 安装后撤豁免；② 装完之后声明被改，`client-serve-2026-10-30T23-00-00.000Z.json`）、**英文屏**（22:00，`--lang en`）、**复制按钮真的写进剪贴板**（22:00，真鼠标点击，`method: mouse`）。仍未见证的部分：① **真正的「运行时版本变了」**——这需要另一个 runtime（9.x 或更老的），本轮用「声明被改」模拟，两者在页面上同形但成因不同；② **中文轮的鼠标点击没能触发 handler**（22:20/22:40 复现，`on_button: true` + `page_reported: null`，原因未查明；探针回落到 `dom-click` 并如实记录 `method`）；③ 一个浏览器（Edge headless）、一个 DSH 版本（0.2.1-rc.4）；④ `user-answer` 是**结构性**判据，不证明句子可读——可读性由 `audit/USER-TEST_2026-10-30_R51.md` 的人工阅读承担。",
+      "mitigation": "① 「会坏」屏由 `--extra-bundle` + `--fixture-range` + `--break-after-install` 覆盖，英文屏由 `--lang en` 覆盖，两条命令都写进 `docs/HANDOFF.md` §3 与报告 §6；② 中文轮点击未归因，先保 `method` 字段，别删真鼠标那一步；③ 覆盖「真·runtime 升级」要么找一个真实 9.x runtime，要么明确承认只有「声明变化」的见证；④ 复制按钮的可用性不再靠「按钮存在」推断，产物里有剪贴板内容与页面自报结果两路证据。",
       "owner": "packages/plugin/client.js + scripts/record_client_serve.mjs",
-      "status": "partially closed (R51): the \"will break\" screen was witnessed once (exemption granted → installed → revoked, client-serve-2026-10-30T20-50-00.000Z); the clipboard click, the English screen, other browsers and the \"broke after a runtime upgrade\" path are still unseen",
+      "status": "mostly closed (R51): will-break screen (two sources), English screen and a real clipboard click are witnessed; still unseen: a true runtime upgrade, the zh mouse-click handler gap (unexplained), other browsers/DSH versions",
       "resolved_by": null
     }
   ]

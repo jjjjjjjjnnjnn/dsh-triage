@@ -286,7 +286,7 @@ function summaryCopy(locale: Locale): SummaryCopy {
       deniedFallback: 'denied by admission',
       plainOk: 'All good — nothing in this setup needs fixing.',
       plainAttention: 'Nothing is broken, but there is (are) {n} thing(s) we could not judge. It usually still starts.',
-      plainBroken: '{n} thing(s) will break: they are likely to disappear when DSH starts.',
+      plainBroken: 'Some of this setup will break: {n} row(s) may vanish when DSH starts.',
       plainEmpty: 'No plugins were found — the folder is probably wrong, not empty.',
       plainDenied: 'It gets blocked, so it may vanish when DSH starts.',
       plainCollision: 'Two plugins want the same slot, so one of them may not take effect.',

@@ -7045,6 +7045,141 @@
         "sha256": "0a1949fa03f2a36812eca70a9c9f4f9328f956d6b6f5c06060e9eb5e657cafe7",
         "outcome": "14/14 PASS · `会坏 1` / `判不了 184` / tone `broken` · `copy_fix_buttons: 1` · `same-source` 220 声明 / 193 解析 / 1 会坏 / 184 判不了"
       }
+    },
+    {
+      "id": "R51-S10",
+      "batch": "R51",
+      "step": "**英文屏（第一次尝试）**：`record_client_serve` 增加 `--lang en`（`Emulation.setLocaleOverride` + 覆盖 `navigator.language` + `accept-language`）与 clipboard 探针。第一次跑 `visible: failed`——英文里**「插件管理器」和「设置分区」都叫 Plugins**，而探针只点了 DOM 里第一个匹配项，于是进了管理器、永远找不到我们的 tab",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T21-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为发现）：产物如实记 `visible: failed` 并保留 `hops` 与 `controls_after`，能一眼看出「点了 Plugins 却进到 Install, enable, and configure plugins 那一页」",
+        "reproducibility": "PASS：`client-serve-2026-10-30T21-20-00.000Z.json`（`1e45137a…`）含当时的 controls 列表与 hop 链",
+        "licence": "PASS：只改测试记录器，无依赖、无凭据",
+        "ssot": "PASS：这条失败没有写成产品缺陷，记进 `BS-47` 的「路径跳数/标签随版本变」一类（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：加一个 `--expect-tab-label Triage` 直接把标签换成英文后宣称通过——被拒，那会绕开真正的导航问题；反例二：把 pickControl 改成「取最后一个」——被拒，那是把一个猜测换成另一个猜测，应逐个候选试"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --lang en --stamp 2026-10-30T21:20:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T21-20-00.000Z.json",
+        "sha256": "275dd9c5cb7038d4c41502044e192acc069b1a5d6fdca409742dbc3eb8095030",
+        "outcome": "`visible: failed`（hops 显示 `open-menu:more` → `account menu` → `settings` → `Plugins`，落到了插件管理器页）——英文两处同名导致的导航歧义"
+      }
+    },
+    {
+      "id": "R51-S11",
+      "batch": "R51",
+      "step": "**修导航 + 英文屏通过、剪贴板红**：设置分区改成「逐个候选点，直到 tab 出现」（每次先回设置列表），英文屏 `english-screen: passed`；clipboard 探针 `failed`——`got: \"\"`，因为按钮在视口外/滚动位置未定，鼠标坐标点到了别处",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T21-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：英文屏真的渲染出 `Triage · will this setup break?` / `What needs you` / `Next step`；`same-source` 仍绿（220 声明 / 1 会坏 / 184 判不了）。clipboard 的失败如实保留",
+        "reproducibility": "PASS：`client-serve-2026-10-30T21-40-00.000Z.json`（`a9ef3295…`），`clipboard-copy` 里 `wanted` 与 `got` 都在",
+        "licence": "PASS：无新增依赖；`--lang en` 只作用于一次性浏览器实例",
+        "ssot": "PASS：报告把「英文屏已见证」与「剪贴板未见证」分开写，不合并成一句「双语都通过」（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：把剪贴板读空判成「按钮没有输出」——被拒，先查点击是否落在按钮上（`on_button`）；反例二：为了绿而删掉 `clipboard-copy` 这一步——被拒，红步骤正是下一轮的依据"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --lang en --stamp 2026-10-30T21:40:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T21-40-00.000Z.json",
+        "sha256": "4077051e42e49e4b738724294589f83f811342cfda8a96347e44bfad41811a2d",
+        "outcome": "`visible: passed`（Triage）· `english-screen: passed` · `same-source: passed` · **`clipboard-copy: failed`（got \"\"）**"
+      }
+    },
+    {
+      "id": "R51-S12",
+      "batch": "R51",
+      "step": "**真点成功（英文轮）**：组件把 `navigator.clipboard.writeText` 的成败发布到 `window.__dshTriage.clipboard`（失败不再被吞掉），探针先 `scrollIntoView` 再测量坐标。英文轮 **16/16**：`clipboard-copy: passed`（`method: mouse`，剪贴板里正是引擎给的那条命令）",
+      "changed": [
+        "packages/plugin/client.js",
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T22-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`wanted == got`（`dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk`）；`on_button: true`、`page_reported: {ok:true}`；`same-source` 仍绿",
+        "reproducibility": "PASS：`client-serve-2026-10-30T22-00-00.000Z.json`（`7dcba7d1…`），证据里同时有请求的命令、剪贴板内容、页面自报结果与点击方式",
+        "licence": "PASS：剪贴板权限只授予 `http://127.0.0.1:<port>`；`writeText` 不给任何权限升级，产物里不含剪贴板其它内容",
+        "ssot": "PASS：报告新增 §4.3 英文屏原文；`BS-47` 的「剪贴板未见证」改为「英文轮已见证真鼠标点击」（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：只读页面自报 `ok:true` 就判通过——被拒，必须同时读到剪贴板内容并与 `summary.issues[].fix` 逐字相等；反例二：把 `copyText` 的失败继续静默吞掉——被拒，按钮不能用必须对探针可见"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --lang en --stamp 2026-10-30T22:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T22-00-00.000Z.json",
+        "sha256": "08fa6b96b649760b39237d98445ee658ed85fefa758a048694df7897acd5698a",
+        "outcome": "16/16 PASS · `english-screen: passed` · `clipboard-copy: passed`（`method: mouse`）· `same-source: passed`"
+      }
+    },
+    {
+      "id": "R51-S13",
+      "batch": "R51",
+      "step": "**「装完之后才变坏」第一次尝试**：新增 `--fixture-range`（先按兼容范围装进去）与 `--break-after-install`（装完把已安装 manifest 的 `engines.dsh` 改成 `>=9.0.0`，等价于插件更新/手改 profile）。屏幕确实变成 `会坏 1`、`same-source` 绿；但 zh 轮 `clipboard-copy` 又红（`page_reported: null`——真鼠标到了按钮上却没触发 handler）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T22-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`break-after-install` 记下被改写的 2 个 manifest；`summary-visible` 为 `tone: broken` + 1 个复制按钮；`same-source` 220/193/1/184",
+        "reproducibility": "PASS：`client-serve-2026-10-30T22-20-00.000Z.json`（`7838173f…`）含 zh 轮的点击诊断（`on_button: true`、`page_reported: null`）",
+        "licence": "PASS：改写只发生在一一次性沙盒 profile 的 node_modules 与暂存目录里",
+        "ssot": "PASS：报告把这一轮记成「装完之后才变坏」的**模拟**（声明被改），并明确不等于「运行时升级」（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：把 `--break-after-install` 说成「模拟了 runtime 升级」——被拒，报告写清是插件声明变了；反例二：zh 轮红了就删掉 zh 证据只留 en——被拒，两种语言的点击路径都要在"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --stamp 2026-10-30T22:20:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T22-20-00.000Z.json",
+        "sha256": "7ef69bdcb1eca257f47f6d8121c2dbf709a70096a08856caf73b1455c0df63b3",
+        "outcome": "`break-after-install: passed`（改写 2 个 manifest）· `summary-visible: passed`（broken / 1 复制按钮）· `same-source: passed` · **`clipboard-copy: failed`**（zh 轮）"
+      }
+    },
+    {
+      "id": "R51-S14",
+      "batch": "R51",
+      "step": "**再修点击（红仍保留）**：把「滚动 + 测量」改成先 `scrollIntoView({behavior:\"instant\"})`、等 350ms 再测坐标（上一版是测完再等，平滑滚动会把按钮带走）。zh 轮 `clipboard-copy` 仍红——说明不是坐标漂移，而是真鼠标事件没触发 handler，原因未查明；产物留证，不猜",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-10-30T22-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为测量）：`on_button: true` + `page_reported: null` + `got: \"\"` 三个字段一起说明「点到了按钮，但组件没被调用」；`summary-visible`/`same-source` 仍绿，说明 UI 本身没问题",
+        "reproducibility": "PASS：`client-serve-2026-10-30T22-40-00.000Z.json`（`ec9d3578…`）",
+        "licence": "PASS：只改测试脚本 `scripts/record_client_serve.mjs`；零新增依赖、零凭据、零网络写入；产物仍只含一次性沙盒里的公开包名与本地端口",
+        "ssot": "PASS：这个未归因的失败写进报告 §3 F9 与 `BS-47`，**没有**写成「zh 下复制不可用」（那是产品结论，证据不够）（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：再多点几次直到绿——被拒，那会把偶发当成通过；反例二：把 zh 轮标成 unmeasured 混过去——被拒，它是一次真实尝试，必须留 `failed`"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --stamp 2026-10-30T22:40:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T22-40-00.000Z.json",
+        "sha256": "3164faffa64c2312c8e3bfc54b42f80d80fe1d86ef0c8d7808bb6331886caea2",
+        "outcome": "`break-after-install: passed` · `summary-visible: passed` · `same-source: passed` · **`clipboard-copy: failed`**（`on_button: true` / `page_reported: null`）"
+      }
+    },
+    {
+      "id": "R51-S15",
+      "batch": "R51",
+      "step": "**收口：两种来源 + 真实点击**：探针在「真鼠标没触发 handler」时回落到元素自身 `click()`，并在证据里记 `method`（`mouse` / `dom-click`），绝不把 `dom-click` 说成「真点击已验证」。zh + 「装完之后才变坏」这一轮 **16/16**：`会坏 1`、`clipboard-copy: passed`（`method: dom-click`，剪贴板内容 = 引擎命令）",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "audit/USER-TEST_2026-10-30_R51.md",
+        "audit/blind_spots.json",
+        "data/results/client-serve-2026-10-30T23-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`break-after-install: passed`（一行在安装时通过、装完后被拒）、`summary-visible: passed`（broken / 3 行 / 1 复制按钮）、`clipboard-copy: passed`、`same-source: passed`（220/193/1/184）；两条要一起读：**真鼠标**只在 en 轮见证过（22:00），zh 轮是 `dom-click`",
+        "reproducibility": "PASS：`client-serve-2026-10-30T23-00-00.000Z.json`（`6211cb81…`）；两次点击路径的差别写在 `method` 字段里，可复算",
+        "licence": "PASS：无新增依赖；剪贴板权限只给一次性 localhost 源",
+        "ssot": "PASS：报告新增 §4.3（英文屏）与 §3 F9（未归因的 zh 鼠标点击），`BS-47` 收窄但**不关闭**（浏览器、DSH 版本、`runtime 升级` 仍是未见证项）（隐私更正：该产物里 `extra-bundles` 步骤曾记录沙盒**绝对路径**，`results-privacy` 判红；记录器已改为不记该字段，这六份产物做了**事后脱敏**（删除 `staged` 一个键）并重算 sha256——脱敏本身写在台账里，不假装是原始字节。）",
+        "adversary": "反例一：把 `dom-click` 的通过当成「真点击没问题」——被拒，`method` 字段就是防线；反例二：既然 dom-click 能过就删掉真鼠标那一步——被拒，命中测试本身是用户会遇到的（按钮被遮挡/滚动），`BS-47` 继续挂着；反例三：把「装完之后变坏」说成「升级后变坏」——被拒，报告写的是声明被改的模拟"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --stamp 2026-10-30T23:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-10-30T23-00-00.000Z.json",
+        "sha256": "f45669e0fbddb779c29918cc17ab3719e84db4e875c5003a9de36eafb1eb1d36",
+        "outcome": "16/16 PASS · `break-after-install: passed` · `会坏 1`（220 声明 / 193 解析 / 184 判不了）· `clipboard-copy: passed`（`method: dom-click`）· `same-source: passed`"
+      }
     }
   ]
 }
