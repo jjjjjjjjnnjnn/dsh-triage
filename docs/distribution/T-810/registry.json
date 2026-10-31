@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "batch": "T-810",
+  "generated_by": "hand-written registry; `scripts/check_listing.mjs` recomputes every cited sha256",
+  "rule": "每篇草稿只能引用这里登记过的真机产物；被引用产物的 sha256 由检查器复算，改数不重跑即红",
+  "drafts": [
+    {
+      "file": "01-rc5-discussion-reply.md",
+      "channel": "upstream GitHub Discussions · reply under the rc.5 release thread",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
+      ]
+    },
+    {
+      "file": "02-github-fault-diagnosis.md",
+      "channel": "GitHub · a real \"plugin disappeared\" issue, only when it can be answered same-day",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/why-case-CASE-11080-2026-10-26T12-00-00.000Z.json"
+      ]
+    },
+    {
+      "file": "03-x-en.md",
+      "channel": "X · 4-post English thread",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
+      ]
+    },
+    {
+      "file": "04-zh-longform.md",
+      "channel": "中文社区长文（项目口吻，不露个人身份）",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json",
+        "data/results/market-baseline-2026-10-31T06-40-00.000Z.json"
+      ]
+    },
+    {
+      "file": "05-bili-script.md",
+      "channel": "B 站 60–90 秒脚本（需要真录屏才发）",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
+      ]
+    }
+  ]
+}

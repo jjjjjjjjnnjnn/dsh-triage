@@ -17,12 +17,12 @@ npm 上 `dsh-triage@0.3.0` · 一个 CLI + 一个 profile bundle · 只读 · �
 
 每个 dsh rc 发布时，真正的问题是：**我这套已装集合升上去会坏什么？**
 
-<!-- upgrade-card: data/results/upgrade-card-2026-10-29T13-00-00.000Z.json -->
+<!-- upgrade-card: data/results/upgrade-card-2026-10-31T09-00-00.000Z.json -->
 ```console
 $ dsh-triage upgrade --to next
-# 升级日 · 0.3.0
+# 升级日 · 0.2.1-rc.5
 
-**upstream：192 个单元（2 bundle + 190 行）升到 0.3.0 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
+**upstream：192 个单元（2 bundle + 190 行）升到 0.2.1-rc.5 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
 
 > profile `upstream`（live）· 当前 0.2.1-rc.4 · 目标比当前新
 > 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。
@@ -36,7 +36,7 @@ $ dsh-triage upgrade --to next
 ```
 <!-- /upgrade-card -->
 
-**这些数字的出处**：仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标 `0.3.0`）—— **不是你的机器**，也不构成对你那套集合的结论。真正让它有意义的是**你的组合**；这里能复现的是形状。复算命令：`node scripts/record_upgrade_card.mjs --stamp <ISO>`。
+**这些数字的出处**：仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标 `0.2.1-rc.5`——录制时 npm `latest` 指向的那个构建）—— **不是你的机器**，也不构成对你那套集合的结论。真正让它有意义的是**你的组合**；这里能复现的是形状。复算命令：`node scripts/record_upgrade_card.mjs --stamp <ISO> --to <version>`。
 
 - `--to next` / `--to latest` 从 npm `dist-tags` 解析目标（读一次，然后走**同一条**判定）；`--to <精确版本>` 全程不联网。
 - `--card --out card.md` 把上面这些字节原样写到文件并打印路径，方便把样本带到 issue / Discussion 里。
@@ -190,7 +190,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 
 | 主张 | 怎么复现 |
 |---|---|
-| 构建、类型检查、500 个测试、9 道门 | `pnpm run verify` |
+| 构建、类型检查、529 个测试、9 道门 | `pnpm run verify` |
 | 这些门真的会红 | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission 语义与上游逐条对等 | `data/gold/admission-cases.json` —— 27 条人工签署金标，由 `admission-parity` 门锁死 |
 | `why` 在真实故障上点中根因 | `node scripts/d1_report.mjs --stamp <iso>` → 10 个真实案例、9 命中、1 条显式 `unknown`（`data/results/d1-*.json`） |

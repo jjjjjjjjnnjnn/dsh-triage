@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R51 (2026-10-30)",
+  "stand": "R52 (2026-10-31)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -7179,6 +7179,201 @@
         "artifact": "data/results/client-serve-2026-10-30T23-00-00.000Z.json",
         "sha256": "f45669e0fbddb779c29918cc17ab3719e84db4e875c5003a9de36eafb1eb1d36",
         "outcome": "16/16 PASS · `break-after-install: passed` · `会坏 1`（220 声明 / 193 解析 / 184 判不了）· `clipboard-copy: passed`（`method: dom-click`）· `same-source: passed`"
+      }
+    },
+    {
+      "id": "R52-S1",
+      "batch": "R52",
+      "step": "**采证轮：让「634 次周下载」不能再说成需求**。新增纯函数 `scripts/lib/download-shape.mjs`（`classifyDownloadShape` / `judgeWeeklyDemand`）+ 类型声明 + 7 条单测；`record_market_baseline.mjs` 采集按天序列、给每个包写 `download_shape`、把 D5 的判定做成机器可读的 `d5` 块。真跑一份干净产物（854 条讨论 / 405 条故障 / 256 条零回复，`failures: []`）",
+      "changed": [
+        "scripts/lib/download-shape.mjs",
+        "scripts/lib/download-shape.d.mts",
+        "scripts/record_market_baseline.mjs",
+        "tests/unit/download-shape.test.ts",
+        "tests/governance/market-baseline.test.ts",
+        "docs/ROADMAP.md",
+        "audit/SIGNOFF.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`dsh-triage` 634 次全部落在 2026-10-29 → `single-day-burst` → `d5.verdict = burst-not-demand`、`counts_as_demand = false`；同一次采集里 29 个生态包是 `steady`、1 个 `no-record`，所以规则不是「所有包都说不是需求」。反向对照（`tests/governance/market-baseline.test.ts`）把该包的周合计改成 25 且日序列摊成 7 天 → `steady` / `threshold-met` / `counts_as_demand = true`，证明规则不会靠「永远说不」通过",
+        "reproducibility": "PASS：在线 `market-baseline-2026-10-31T06-40-00.000Z.json`（`fce85c32…`）与离线复算 `market-baseline-2026-10-31T07-10-00.000Z.json`（`62080349…`）在归一化 `generated_at` / `inputs.offline` / `inputs.fixtures` 三个「怎么跑出来的」字段后**逐字节相同**；fixtures 进 `data/fixtures/market-baseline/`，`--fixtures` 可离线重放",
+        "licence": "PASS：无新增依赖（只用 node 内置 `fetch` / `fs`）；npm 与 GitHub 都是公开只读 API；`GITHUB_TOKEN` 只从环境读、不写进产物",
+        "ssot": "PASS：`gate_governance` 的 `results-privacy` 在本轮**真的抓到我一次**——离线复算把 `inputs.fixtures` 写成了绝对路径，`07:00` 那份产物被删除并把记录器改成 `portablePath()`（仓内相对 / 仓外只留末段）；新产物带 `produced_by` / `generated_at` / `schema_version` / `.sha256`；口径变更记进 `SIGNOFF` R52 与 `ROADMAP` §2；新增 `BS-48`",
+        "adversary": "反例一：直接读周合计 634 ≥ 20 判 D5 通过——被拒，产物里 `d5.counts_as_demand = false`，单测把这条误读钉成断言（`total >= 20` 为真但 `counts_as_demand` 为假）；反例二：把「没读出序列」写成「没有需求」——被拒，`unreadable` 一律 `unmeasurable`；反例三：为了好看把 634 标成 `steady`——被拒，形状由日序列算，`peak_share = 1`；反例四：把 429 缓存的失败响应当 fixture 重放——已修，非 200/404 不写 fixture"
+      },
+      "real_test": {
+        "command": "$env:GITHUB_TOKEN = (gh auth token); node scripts/record_market_baseline.mjs --stamp 2026-10-31T06:40:00.000Z",
+        "artifact": "data/results/market-baseline-2026-10-31T06-40-00.000Z.json",
+        "sha256": "fce85c3258608f27172427a12660f087b9a55787c2d09ccaaa52b1c65ed022a1",
+        "outcome": "`failures: []` · 诊断 3,074 / 市场 513,534 / 装饰 552,956 · 形状 `steady 29 / single-day-burst 1 / no-record 1` · `d5 = burst-not-demand` · 讨论 854 条 / 故障 405 / 零回复 256"
+      }
+    },
+    {
+      "id": "R52-S2",
+      "batch": "R52",
+      "step": "**离线复算**：用 S1 的 fixtures 重算整份基线，证明「数字不是手填的」",
+      "changed": [
+        "scripts/record_market_baseline.mjs",
+        "data/results/market-baseline-2026-10-31T07-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：与 S1 的在线产物在归一化三个「怎么跑出来的」字段后逐字节相同（品类合计、29+1+1 的形状分布、`d5` 全部字段、讨论聚类一致）",
+        "reproducibility": "PASS：命令与产物一一对应；`inputs.offline = true`，`inputs.fixtures` 是仓内相对路径（不是绝对路径）",
+        "licence": "PASS：离线运行，无网络、无新增依赖，只读 data/fixtures 下的原始响应，不触达任何外部服务",
+        "ssot": "PASS：产物带 sha256；这次复算同时是「`portablePath()` 修好之后」的见证（同一份数据上一版写的是 `C:\\Users\\…`）",
+        "adversary": "反例：把复算产物说成「又跑了一次线上采集」——被拒，文件里 `inputs.offline = true` 且 `fixtures` 指到 S1 的目录"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-10-31T07:10:00.000Z --fixtures data/fixtures/market-baseline/2026-10-31T06-40-00.000Z",
+        "artifact": "data/results/market-baseline-2026-10-31T07-10-00.000Z.json",
+        "sha256": "6208034918900fe0c1af3bae531111d99e18094f4dc1c1eb32defe057453b0c1",
+        "outcome": "离线复算与在线产物一致（归一化后逐字节相同）；`d5 = burst-not-demand`；无 home 路径"
+      }
+    },
+    {
+      "id": "R52-S3",
+      "batch": "R52",
+      "step": "**保留的红产物（429）**：第一次真跑时请求太密，npm downloads API 对 11 个包返回 `429`，它们被写成 `unreadable`。**这份产物不改、不删**，它是「品类合计会静默少一截」的唯一见证；随后按实测把 62 次请求降成 10 次（批量查询）+ 分端点节奏 + 429 不进 fixture",
+      "changed": [
+        "scripts/record_market_baseline.mjs",
+        "data/results/market-baseline-2026-10-31T05-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为红样本）：产物自报 `failures` 11 条 429，对应包是 `downloads_state: error-429` + `download_shape: unreadable`，**没有**被写成 0 或 `no-demand`",
+        "reproducibility": "PASS：`failures` 逐条点名包名与端点；同一次采集的 fixtures 保留，可离线重放",
+        "licence": "PASS：无第三方依赖；只访问 npm 公开只读 API（downloads point/range），不使用也不记录任何凭据",
+        "ssot": "PASS：红产物按规矩保留并在台账里点名；它同时也是「为什么不许把周合计单独当结论」的第二条证据",
+        "adversary": "反例一：把它当成「生态里这些包没人装」——被拒，`unreadable` 不是「没有需求」；反例二：把 429 响应当 fixture 缓存让离线复算重放——被拒（只有 200/404 才写 fixture）；反例三：靠调大重试次数硬扛——实测不够（窗口约 5s、预算约 11 次/窗口），真正的修法是减少请求"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-10-31T05:30:00.000Z",
+        "artifact": "data/results/market-baseline-2026-10-31T05-30-00.000Z.json",
+        "sha256": "0a8cb7dd579cb9248e8d1150f1dc14192ff62cff0693f51cf5fd4f246c96ca64",
+        "outcome": "红（保留）：11 个包 `429` → `unreadable`；`d5` 仍判 `burst-not-demand`（我们的序列已取到）"
+      }
+    },
+    {
+      "id": "R52-S4",
+      "batch": "R52",
+      "step": "**保留的红产物（0 条讨论）**：GitHub 匿名额度耗尽后返回 `403 API rate limit exceeded`，脚本当时会把 `threads: 0` 写进产物——那读起来就是「没人有问题」。改成：读不到讨论就 **exit 2、一个产物都不写**，并给出 `GITHUB_TOKEN` 的修法；离线路径同样拒绝空 projection",
+      "changed": [
+        "scripts/record_market_baseline.mjs",
+        "tests/governance/market-baseline.test.ts",
+        "data/results/market-baseline-2026-10-31T06-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为红样本）：产物 `discussions.fetched = 0`、`failures` 里有 `HTTP 403`；修复后同一条件下进程 exit 2 且不落产物（端到端测试 `an empty discussion projection refuses to write a baseline` 断言目录为空）",
+        "reproducibility": "PASS：`failures` 里带 GitHub 原文首行（含 `API rate limit exceeded`），足以判断这是额度问题而不是「没有讨论」",
+        "licence": "PASS：`GITHUB_TOKEN` 只从环境读，不落盘、不进产物",
+        "ssot": "PASS：红产物保留并在台账点名；新行为写成测试而不是只写文档",
+        "adversary": "反例：`pain_threads: 0` 被读成「上游没有痛点」——被拒；同一类错误在这个仓已经出现过两次（R50 把没跑起来的检查报成 401、R51 把 `pending` 当答案），所以这次把「空表 = 拒绝出产物」做成硬行为"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-10-31T06:20:00.000Z",
+        "artifact": "data/results/market-baseline-2026-10-31T06-20-00.000Z.json",
+        "sha256": "2403a63227fb27e74f5c61a0ef5cb5b743fdbf2a5ce85f29a5d426a4efd661a6",
+        "outcome": "红（保留）：`discussions.fetched = 0`、17 条 failures（403 × 9 + range 429 × 8）；修复后同条件 exit 2 且零产物"
+      }
+    },
+    {
+      "id": "R52-S5",
+      "batch": "R52",
+      "step": "**升级日卡片换成真实存在的目标**：`--to 0.2.1-rc.5`（当天的 npm `latest`）重录卡片，14/14；两份 README 首屏的 `upgrade-card` 块改指向新产物，并如实修掉「目标 0.3.0」这个从未存在过的版本号；顺带把两份 README 的测试数 500 → 529（`check_listing` 当场抓到它已经僵了一轮）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：target 逐字 `0.2.1-rc.5`；四桶 119 / 73 / 0 / 0 与 `--json` 的 `inputs.counts` 逐项相同；`improved = 0` 且卡片仍只有 `BS-42` 那句边界（「目标版本会放行它」）。**诚实说明**：123 → 数字与旧的 `--to 0.3.0` 卡片完全相同，因为两个目标都在 rc.4 的精确钉定区间之外——草稿里不许把「换了目标数字没变」包装成新发现",
+        "reproducibility": "PASS：`upgrade-card-2026-10-31T09-00-00.000Z.json`（`809ba264…`）；同一命令两次渲染 sha256 相同（recorder 的 `card-is-deterministic`）；README 的数字由 `check_listing` 从被引用产物读回，改一个数即红",
+        "licence": "PASS：只读本地沙盒 profile，不联网（精确版本判定全程离线）",
+        "ssot": "PASS：`check_listing` 的 `readme-shows-real-card` 在改完 README 后仍是 PASS；卡片里没有 home 路径（recorder 自带检查）",
+        "adversary": "反例一：继续拿 `--to 0.3.0` 当样本——被拒，那个版本从没发布过，读者无法复算；反例二：把「119 会被拒」写成「升级会坏」——被拒，卡片只描述声明层，`check_listing` 与 recorder 各有禁用话术检查；反例三：手改 README 里的数字而不重跑——被拒，`inputs.counts` 比对会红（R48 的两条红产物就是这条的见证）"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --stamp 2026-10-31T09:00:00.000Z --to 0.2.1-rc.5",
+        "artifact": "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json",
+        "sha256": "809ba264730f11e822a841a97aa824dbe645d9dd026e2e4b426a9688f0b4092a",
+        "outcome": "14/14 PASS · target `0.2.1-rc.5` · 192 单元 / 119 拒 / 73 判不了 / 0 改善 / 0 像没事 · 两次渲染逐字节相同"
+      }
+    },
+    {
+      "id": "R52-S6",
+      "batch": "R52",
+      "step": "**`T-810` 五篇草稿 + 机器可查的登记表**：`docs/distribution/T-810/`（上游 rc.5 Discussion 回复 / GitHub 故障帖诊断 / X 英文 4 条 / 中文长文 / B 站脚本）；`scripts/check_listing.mjs` 新增第 9 条断言 `drafts-cite-real-artifacts`（引用的产物必须存在、sha256 复算一致、正文真的写了那个路径、必须有可跑命令、禁用话术与个人身份）",
+      "changed": [
+        "docs/distribution/T-810/00-README.md",
+        "docs/distribution/T-810/01-rc5-discussion-reply.md",
+        "docs/distribution/T-810/02-github-fault-diagnosis.md",
+        "docs/distribution/T-810/03-x-en.md",
+        "docs/distribution/T-810/04-zh-longform.md",
+        "docs/distribution/T-810/05-bili-script.md",
+        "docs/distribution/T-810/registry.json",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：12/12 断言全过；五篇草稿每篇至少引用一个真机产物，且登记表里的 `cites` 与正文路径一一对应；发布状态全部是 `draft`（**一篇都没发**，发布是 HUMAN 的动作）",
+        "reproducibility": "PASS：`listing-2026-10-31T10-40-00.000Z.json`（`9d5b8398…`）；任何一篇被引用的产物改一个字节，第 9 条断言立刻红（sha256 复算）",
+        "licence": "PASS：文案不复制上游文档正文，只引用本仓产物与公开数字；无新增依赖",
+        "ssot": "PASS：登记表是草稿与证据的唯一对应关系；`INSULAR`——草稿目录不进 `check_listing` 的 DOCUMENTS 集合（那一组是上架文案），改由第 9 条统一管，避免两处规则打架",
+        "adversary": "反例一：把 634 次周下载写成「已有用户」——被拒，`BS-48` 与 `d5.verdict = burst-not-demand` 都在产物里；反例二：写「升级会修好」——被拒（草稿里只有「目标版本会放行它」）；反例三：引用一个正文没提到的产物充数——被拒，10:50 那条红产物就是这条负对照；反例四：塞个人身份换信任——被拒，`IDENTITY` 三组模式盯着"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-31T10:40:00.000Z --tests 529",
+        "artifact": "data/results/listing-2026-10-31T10-40-00.000Z.json",
+        "sha256": "9d5b8398d44fec721a2395c9ffcee94581d5650b7c522575014b983f03ea1515",
+        "outcome": "12/12 PASS · 5 篇草稿 · 引用产物的 sha256 全部对得上 · README 卡片四桶数字与产物一致"
+      }
+    },
+    {
+      "id": "R52-S7",
+      "batch": "R52",
+      "step": "**保留的红产物（新断言第一次跑就抓到两类真问题）**：`test-count-matches` 抓到两份 README 的「500 tests」已僵（真实是 529）；`drafts-cite-real-artifacts` 抓到我自己的草稿把禁用话术写进了正文（04 的「全网」「已收录」、01 的 `upgrade fixes`）。产物不改、不删",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/distribution/T-810/01-rc5-discussion-reply.md",
+        "docs/distribution/T-810/04-zh-longform.md",
+        "scripts/check_listing.mjs",
+        "data/results/listing-2026-10-31T10-00-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为红样本）：产物 `passed = false`，两条 FAIL 的 detail 逐条点名文件与短语；修复分别是改数字与改写句子，**没有**放宽断言",
+        "reproducibility": "PASS：红产物保留，`checks[]` 里能看到两次失败的确切原因",
+        "licence": "PASS：无第三方依赖，纯文本检查",
+        "ssot": "PASS：红产物在台账里被点名；它同时是「新断言不是永远绿」的见证——没有它，第 9 条可能从第一天起就是空转",
+        "adversary": "反例：把禁用话术的检查改成「只在 prohibit 行之外才算」当成绕过——被拒，本轮修的是草稿措辞（「不许说」「没有出现」），不是规则白名单"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-31T10:00:00.000Z --tests 522",
+        "artifact": "data/results/listing-2026-10-31T10-00-00.000Z.json",
+        "sha256": "bcd265bad1409898e893430a3c2d67605a899440fcc210bad5df37fec7bb8a6f",
+        "outcome": "红（保留）：`test-count-matches` 抓到 README 的 500（真实 529）；`drafts-cite-real-artifacts` 抓到 3 处禁用话术"
+      }
+    },
+    {
+      "id": "R52-S8",
+      "batch": "R52",
+      "step": "**第 9 条断言的定向负对照**：把 `03-x-en.md` 的登记项改成另一个真实存在、但正文没提到的产物，复跑检查器 → 必须红；改回后转绿。这一步证明「引用」不是「堆一个存在的路径就算数」",
+      "changed": [
+        "docs/distribution/T-810/registry.json",
+        "scripts/check_listing.mjs",
+        "data/results/listing-2026-10-31T10-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（作为负对照）：失败句子是 `03-x-en.md: cites … in the registry but not in the text`——正是设计要抓的那一类",
+        "reproducibility": "PASS：复现步骤两步（改 registry → 跑检查器），改回后同一命令转绿（10:40 的绿产物）",
+        "licence": "PASS：纯文本与 JSON 操作，无依赖",
+        "ssot": "PASS：负对照产物保留；`registry.json` 已恢复成五篇草稿各自引用原产物",
+        "adversary": "反例一：只登记不引用（正文没有路径）——被拒；反例二：引用不存在的路径——被拒（`cites a missing artifact`）；反例三：引用存在但 sha256 对不上——被拒（`does not match its .sha256`）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-10-31T10:50:00.000Z --tests 529",
+        "artifact": "data/results/listing-2026-10-31T10-50-00.000Z.json",
+        "sha256": "9843a7ca1375b5b0ba343d9502a735fc900bce5c6eb7c89c80f1c840393d4489",
+        "outcome": "红（负对照）：`drafts-cite-real-artifacts` 失败并要求正文出现该路径；registry 已还原"
       }
     }
   ]

@@ -1,8 +1,8 @@
 # DSH-Addition AGENTS.md
 
-> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.3.0`（**2026-10-30 已发布**，四包同版本；匿名安装 + registry 字节比对 20/20，见 `data/results/publish-2026-10-30T14-40-00.000Z.json`）｜**Stand**: R51 (2026-10-30)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；**R48 已交付「陌生人 60 秒」四项**（`--to next` / 无参数引导 / 卡片落盘 / README 首屏）；**R49 修好「打开就有一屏答案」**（无参 = `status`、`audit` 摘要优先、面板首屏 + `docs/SECURITY.md` + 11 条对抗性测试），并按用户反馈把面板做成可操作（搜索 / 筛选 / 排序 / 详情抽屉 / 主题 / 深链），再默认成**简单模式**（人话结论 + 一个按钮 + 简单/详细切换），并交付**自动修复**（`fix`：计划 / `--apply` / `--undo`，先备份后原子写，M7 判据）与**面板视觉重做**（独立 agent，去 AI 化），冒烟 18/18；**R50 把 0.3.0 发出去并修掉发布预检查的假警报**（preflight 在 Windows 上没调起 npm 却报「你的 token 401」，详见 `scripts/lib/npm-auth.mjs`）；**R51 让这份答案直接出现在 DSH 设置页**（新只读路由 `/compat-triage/summary` + 页签重写成一屏答案：人话结论 / 计数 / 最多 3 条「要看的地方」+ 复制修复，真机 10 步含 `summary-visible` 与 `same-source`）| M0 ✅（9 门 / 9-9 · **518 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具 / **设置页一屏答案**）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日 ✅ 入口四项（R48），出口 = D5 待判**（细节以 `docs/HANDOFF.md` §2 为准）
+> **产品名**: **dsh-triage**（品牌：分诊台 / Triage）｜**仓库**: `https://github.com/jjjjjjjjnnjnn/dsh-triage`（public）｜**npm**: `dsh-triage@0.3.0`（**2026-10-30 已发布**，四包同版本；匿名安装 + registry 字节比对 20/20，见 `data/results/publish-2026-10-30T14-40-00.000Z.json`）｜**Stand**: R52 (2026-10-31)｜**定位（R47 重定向）**：正门从「通用检查器」改成「**升级日**」——每次 rc 发布回答「**你这套已装集合**升上去会坏什么」；**R48 已交付「陌生人 60 秒」四项**（`--to next` / 无参数引导 / 卡片落盘 / README 首屏）；**R49 修好「打开就有一屏答案」**（无参 = `status`、`audit` 摘要优先、面板首屏 + `docs/SECURITY.md` + 11 条对抗性测试），并按用户反馈把面板做成可操作（搜索 / 筛选 / 排序 / 详情抽屉 / 主题 / 深链），再默认成**简单模式**（人话结论 + 一个按钮 + 简单/详细切换），并交付**自动修复**（`fix`：计划 / `--apply` / `--undo`，先备份后原子写，M7 判据）与**面板视觉重做**（独立 agent，去 AI 化），冒烟 18/18；**R50 把 0.3.0 发出去并修掉发布预检查的假警报**（preflight 在 Windows 上没调起 npm 却报「你的 token 401」，详见 `scripts/lib/npm-auth.mjs`）；**R51 让这份答案直接出现在 DSH 设置页**（新只读路由 `/compat-triage/summary` + 页签重写成一屏答案：人话结论 / 计数 / 最多 3 条「要看的地方」+ 复制修复，真机 10 步含 `summary-visible` 与 `same-source`）；**R52 让 D5 的下载口径不再能被单日爆发骗过**（`download_shape` 判定：7 条单测 + 4 条端到端，含「真实 634 序列必须判成 burst」与「steady 25 必须算通过」两条方向相反的对照；基线真跑 `failures: []` + 离线逐字节复算），并把升级日卡片换成**真实存在的 `0.2.1-rc.5`**、交付 `T-810` 五篇草稿与 `check_listing` 第 9 条断言（12/12，含两条红产物与一条定向负对照）| M0 ✅（9 门 / 9-9 · **529 测试**）· M1 ✅（27 金标 / D1 9-10）· M2 ✅ · M3 ✅（R14–R37，稳定性有分布）· M4 ✅（面板 / 徽章 / 索引源 / Agent 工具 / **设置页一屏答案**）· M5-a 本地半边 ✅（R41）· M5-b ✅（R42/R44）· **M6 升级日 ✅ 入口四项（R48），出口 = D5 待判**（细节以 `docs/HANDOFF.md` §2 为准）
 > **Mission**: 在 DSH 生态里做「升级日」的判断层——每次 rc 发布，回答「**你这套已装集合**升上去会坏什么、怎么修」，再把同一份结果做成市场 / 索引源 / CI 能直接消费的数据 | **Root**: `DSH-Addition`（仓内相对路径；本机绝对路径见 `docs/07-environment.md`）
-> **上游**: DeepSeek Harness（`@deepseek-ai/dsh` 0.2.1-rc.2，本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
+> **上游**: DeepSeek Harness（npm `latest` = `next` = **0.2.1-rc.5**；仓内沙盒 0.2.1-rc.4；本机 profile 实测 0.1.0-rc.6） | **Node**: ≥22.19（本机 v24.15.0） | **pnpm**: 12.15.0
 > **接手先读**: `docs/HANDOFF.md` → `PROJECT_RULES.md` → `INDEX.md`（三份即可开工）
 
 ---
@@ -13,10 +13,10 @@
 
 **为什么改（R47，外部取证；证据见 `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）**：三个产品存在性问题（为什么必须装 / 为什么要有这功能 / 为什么不用别人的）在 R46 之前都没有答案。取证后的结论是——**通用诊断类在这个生态里没有需求形态**：
 
-| 事实 | 数值（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`，`last-week`） |
+| 事实 | 数值（R47 窗口 `data/results/market-baseline-2026-10-29T12-20-00.000Z.json`；"我们自己"那一行是 R52 复测 `market-baseline-2026-10-31T06-40-00.000Z.json`） |
 |---|---|
-| 诊断类目天花板 | 整个品类周下载 **1,988**（`dsh-doctor` 1,175 / `dsh-verify` 462 / `plugin-guard` 196 / `plugin-check` 77 / `dsh-guard` 56 / 其余 12），是市场类（**380,240**）的 **0.52%**、装饰类（**411,844**）的 **0.48%** |
-| 我们自己 | `dsh-triage` **无下载记录**（downloads API 404 → 产物写 `downloads_state: no-record`，**不写成 0**）；registry 有 0.2.0 |
+| 诊断类目天花板 | 整个品类周下载 **1,988**（`dsh-doctor` 1,175 / `dsh-verify` 462 / `plugin-guard` 196 / `plugin-check` 77 / `dsh-guard` 56 / 其余 12），是市场类（**380,240**）的 **0.52%**、装饰类（**411,844**）的 **0.48%**。**R52 复测（新窗口）：诊断 3,074 / 市场 513,534 / 装饰 552,956** |
+| 我们自己 | `dsh-triage` 周下载 **634**，但**全部落在 2026-10-29 一天**（前后都是 0）→ `download_shape: single-day-burst`，**按 D5 读数规则不算需求**（`data/results/market-baseline-2026-10-31T06-40-00.000Z.json` 的 `d5.verdict = burst-not-demand`，`BS-48`）；registry 有 0.3.0 |
 | 痛点是真的 | 上游最近 **842** 条 Discussions 里 **414 条是故障（49.2%）**，其中 **278 条零回复（67.2%）** |
 | 但形态不对 | 赢家都是「在界面里、开箱可感、零配置、高频」：装饰类合计 411,844、市场类 380,240、能力类 304,666；harness 本体 540,139 |
 

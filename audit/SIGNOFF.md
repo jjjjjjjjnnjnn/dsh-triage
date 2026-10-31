@@ -58,6 +58,8 @@
 
 | 2026-10-30 | **R49 T-815 授权（写盘范围）**：允许 `fix` 在 profile 里执行 `pnpm install`（改 `node_modules` 与 lockfile） | 用户原话「同意」（回应「是否允许在 `sandbox/` 的隔离 profile 上真跑安装」） | DeepSeek V4.1 Flash：**尚未实现**，交接在 `docs/HANDOFF.md` §3 | 授权范围仅限隔离副本；**真实 `~/.dsh` 仍需逐次确认** | `docs/HANDOFF.md` §3 · `docs/BACKLOG.md` T-815 |
 
+| 2026-10-31 | **R52 D5 读数口径变更（决策门，非 verdict 判据）**：`周下载 ≥20` 只在 `download_shape = steady` 时判定（≥2 天有下载且无单日占比 >80%）；`single-day-burst` / `no-record` / `no-downloads` 一律记「未观测到需求」，`unreadable` 记 `unmeasurable`。**四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门一字未动** | 会话内二问二答：「R52 做哪条线？」→ **A→B：先修计量，再备分发（推荐）**；「D5 的周下载读数规则要不要改？」→ **批准：单日爆发不算需求（推荐）** | DeepSeek V4.1 Flash：新增纯函数 `scripts/lib/download-shape.mjs`（7 条单测，含「真实 634 序列必须判成 burst」的负对照）+ 4 条端到端测试（`tests/governance/market-baseline.test.ts`，含「steady 25 必须算通过」的反向对照）；`record_market_baseline.mjs` 加日序列采集、形状判定、批量请求（62 → 10 次，429 由批量解决）、失败不写 fixture、空讨论表拒绝出产物、`inputs.fixtures` 只写仓内相对路径；真跑 `market-baseline-2026-10-31T06-40-00.000Z.json`（`failures: []`）+ 离线复算 `07-10`（除两个「怎么跑出来的」字段外逐字节相同）；保留两份红产物见证 429 与「0 条讨论」。**没有**改动任何 verdict 判据、阈值、四桶或冻结区 | HUMAN 未逐条复核：80% 与「≥2 天」这两个常量、把「稳态 ≥20」当需求证据仍然是弱证据（`BS-48`），以及本轮引用上游 `latest` 已变 rc.5 这件事对既有卡片证据的影响 | `data/results/market-baseline-2026-10-31T06-40-00.000Z.json` · `market-baseline-2026-10-31T07-10-00.000Z.json` · `market-baseline-2026-10-31T05-30-00.000Z.json`（红：429）· `market-baseline-2026-10-31T06-20-00.000Z.json`（红：0 条讨论）· `audit/blind_spots.json` BS-48 |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |

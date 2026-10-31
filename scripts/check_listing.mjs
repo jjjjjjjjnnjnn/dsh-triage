@@ -248,6 +248,82 @@ check(
   cardProblems.slice(0, 4).join('; ') || 'both READMEs quote the artifact the card was recorded from',
 )
 
+/* 9. Distribution drafts (T-810, R52): the copy that will go OUT must cite artifacts that exist and still hash.
+ * D5's sample is the first thing a stranger reads, and it is the easiest place to re-type a number by hand.
+ * `docs/distribution/T-810/registry.json` is the only allowed source of evidence pointers; a draft that cites
+ * an artifact it did not register, or a registry that points at a file that moved, both fail here. */
+const DRAFTS_DIR = 'docs/distribution/T-810'
+const draftProblems = []
+let draftCount = 0
+const registryPath = abs(`${DRAFTS_DIR}/registry.json`)
+if (!existsSync(registryPath)) {
+  draftProblems.push(`${registryPath} is missing`)
+} else {
+  let registry = null
+  try {
+    registry = JSON.parse(readFileSync(registryPath, 'utf8'))
+  } catch {
+    draftProblems.push('registry.json does not parse')
+  }
+  const drafts = Array.isArray(registry?.drafts) ? registry.drafts : []
+  if (drafts.length === 0) draftProblems.push('registry.json lists no drafts')
+  const onDisk = readdirSync(abs(DRAFTS_DIR))
+    .filter((name) => name.endsWith('.md') && name !== '00-README.md')
+    .sort()
+  const listed = drafts.map((entry) => String(entry.file ?? '')).sort()
+  for (const name of onDisk) if (!listed.includes(name)) draftProblems.push(`${name}: on disk but not in registry.json`)
+  for (const name of listed) if (!onDisk.includes(name)) draftProblems.push(`${name}: in registry.json but not on disk`)
+
+  // The phrases five draft rules forbid, and the ban on personal identity, are checked on the drafts themselves.
+  const DRAFT_FORBIDDEN = ['升级会修好', '升级即修复', 'upgrade fixes', '全网', '已收录', 'every dsh plugin', '所有 dsh 插件']
+  const DRAFT_PROHIBITION = /严禁|不写|不许|不做|不得|禁止|不出现|没有出现|never|cannot|do not|don't|不要写/i
+  const IDENTITY = [/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, /我的微信|个人微信|加我微信/, /个人主页/]
+
+  for (const entry of drafts) {
+    const name = String(entry.file ?? '')
+    const status = String(entry.status ?? '')
+    if (!['draft', 'posted'].includes(status)) draftProblems.push(`${name}: status must be draft|posted (got "${status}")`)
+    if (status === 'posted' && (entry.posted_url === null || entry.posted_url === undefined || entry.posted_on === null || entry.posted_on === undefined)) {
+      draftProblems.push(`${name}: posted drafts must record posted_url and posted_on`)
+    }
+    const cites = Array.isArray(entry.cites) ? entry.cites : []
+    if (cites.length === 0) draftProblems.push(`${name}: cites no artifact`)
+    if (!existsSync(abs(`${DRAFTS_DIR}/${name}`))) {
+      draftProblems.push(`${name}: missing`)
+      continue
+    }
+    draftCount += 1
+    const text = readFileSync(abs(`${DRAFTS_DIR}/${name}`), 'utf8')
+    for (const cite of cites) {
+      if (!/^data\/results\/[A-Za-z0-9._-]+\.json$/.test(String(cite))) {
+        draftProblems.push(`${name}: "${cite}" is not a data/results artifact`)
+        continue
+      }
+      if (!existsSync(abs(String(cite)))) {
+        draftProblems.push(`${name}: cites a missing artifact ${cite}`)
+        continue
+      }
+      const recorded = existsSync(abs(`${cite}.sha256`)) ? readFileSync(abs(`${cite}.sha256`), 'utf8').trim() : ''
+      const actual = sha256(readFileSync(abs(String(cite)), 'utf8'))
+      if (recorded !== actual) draftProblems.push(`${name}: ${cite} does not match its .sha256`)
+      if (!text.includes(String(cite))) draftProblems.push(`${name}: cites ${cite} in the registry but not in the text`)
+    }
+    if (!/upgrade --to|record_upgrade_card\.mjs|dsh-triage audit/.test(text)) {
+      draftProblems.push(`${name}: no recompute command a reader could run`)
+    }
+    for (const line of text.split('\n')) {
+      if (DRAFT_PROHIBITION.test(line)) continue
+      for (const phrase of DRAFT_FORBIDDEN) if (line.includes(phrase)) draftProblems.push(`${name}: forbidden claim "${phrase}"`)
+      for (const pattern of IDENTITY) if (pattern.test(line)) draftProblems.push(`${name}: personal identity (${pattern.source})`)
+    }
+  }
+}
+check(
+  'drafts-cite-real-artifacts',
+  draftProblems.length === 0,
+  draftProblems.slice(0, 4).join('; ') || `${draftCount} draft(s), every cited artifact hashes and every draft carries a recompute command`,
+)
+
 const passed = checks.every((entry) => entry.ok)
 const artifact = {
   schema_version: 1,

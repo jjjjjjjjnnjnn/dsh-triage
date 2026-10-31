@@ -1,0 +1,1282 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_market_baseline.mjs",
+  "generated_at": "2026-10-31T05:30:00.000Z",
+  "inputs": {
+    "window": "last-week",
+    "packages": 31,
+    "discussion_pages": [
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "discussion_target": 900,
+    "offline": false,
+    "fixtures": "data/fixtures/market-baseline/<stamp>"
+  },
+  "packages": {
+    "dsh-doctor": {
+      "category": "diagnostics",
+      "week_downloads": 1511,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 19.0%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-28",
+      "peak_share": 0.1899,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 181,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 245,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 184,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 193,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 196,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 287,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 225,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-verify": {
+      "category": "diagnostics",
+      "week_downloads": 510,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 17.1%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.1706,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 57,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 52,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 76,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 87,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 73,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 86,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 79,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-plugin-guard": {
+      "category": "diagnostics",
+      "week_downloads": 223,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 21.5%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.2152,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 22,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 34,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 26,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 48,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 31,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 39,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 23,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-plugin-check": {
+      "category": "diagnostics",
+      "week_downloads": 91,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 23.1%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.2308,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 12,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 10,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 12,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 21,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 9,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 13,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 14,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-guard": {
+      "category": "diagnostics",
+      "week_downloads": 77,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 20.8%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.2078,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 8,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 5,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 11,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 16,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 9,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 15,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 13,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-compat": {
+      "category": "diagnostics",
+      "week_downloads": 16,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "6/7 天有下载，最大单日占比 37.5%",
+      "days_with_downloads": 6,
+      "peak_day": "2026-10-24",
+      "peak_share": 0.375,
+      "weekly_demand_verdict": "below-threshold",
+      "daily": [
+        {
+          "downloads": 1,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 6,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 1,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 3,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 2,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 3,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-lint": {
+      "category": "diagnostics",
+      "week_downloads": 7,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "3/7 天有下载，最大单日占比 42.9%",
+      "days_with_downloads": 3,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.4286,
+      "weekly_demand_verdict": "below-threshold",
+      "daily": [
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 1,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 3,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 3,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-diagnose": {
+      "category": "diagnostics",
+      "week_downloads": 5,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "3/7 天有下载，最大单日占比 60.0%",
+      "days_with_downloads": 3,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.6,
+      "weekly_demand_verdict": "below-threshold",
+      "daily": [
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 1,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 3,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 1,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-triage": {
+      "category": "diagnostics",
+      "week_downloads": 634,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "single-day-burst",
+      "shape_reason": "只有 1 天有下载，全部 634 次都落在 2026-10-29",
+      "days_with_downloads": 1,
+      "peak_day": "2026-10-29",
+      "peak_share": 1,
+      "weekly_demand_verdict": "burst-not-demand",
+      "daily": [
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 634,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-preflight": {
+      "category": "diagnostics",
+      "week_downloads": null,
+      "downloads_state": "no-record",
+      "window": null,
+      "download_shape": "no-record",
+      "shape_reason": "the downloads API has no record for this package at all",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "no-demand-observed",
+      "daily": null
+    },
+    "dshmarket": {
+      "category": "marketplace",
+      "week_downloads": 361739,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 16.9%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-27",
+      "peak_share": 0.1687,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 43061,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 45087,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 44086,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 53026,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 61042,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 60374,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 55063,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-plugin-catalog": {
+      "category": "marketplace",
+      "week_downloads": 136941,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 27.8%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-29",
+      "peak_share": 0.2783,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 10527,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 12048,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 9941,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 13736,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 19054,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 33531,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 38104,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-plugin": {
+      "category": "marketplace",
+      "week_downloads": 14854,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 17.8%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.1785,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 2140,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 1775,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 1882,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 2651,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 2049,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 2274,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 2083,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-pet": {
+      "category": "decorative",
+      "week_downloads": 224840,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 20.0%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-28",
+      "peak_share": 0.1997,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 22628,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 26509,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 24062,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 29079,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 37153,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 44903,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 40506,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-whale-widget": {
+      "category": "decorative",
+      "week_downloads": 174422,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 19.7%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-28",
+      "peak_share": 0.1974,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 16397,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 20159,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 20457,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 21407,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 30904,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 34423,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 30675,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-plugin-wallpaper-engine": {
+      "category": "decorative",
+      "week_downloads": 54956,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 15.6%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-24",
+      "peak_share": 0.1559,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 6364,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 8566,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 8131,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 8003,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 7428,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 8408,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 8056,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-meme": {
+      "category": "decorative",
+      "week_downloads": 34025,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 15.4%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-25",
+      "peak_share": 0.1542,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 4919,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 4395,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 5246,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 4962,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 4696,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 4942,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 4865,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-dream-skin": {
+      "category": "decorative",
+      "week_downloads": 16420,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 18.0%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.1797,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 2076,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 1805,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 1761,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 2950,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 2685,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 2800,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 2343,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-dafeiyu": {
+      "category": "decorative",
+      "week_downloads": 48293,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 17.8%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-26",
+      "peak_share": 0.1778,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 4780,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 6839,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 7307,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 8588,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 7204,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 7452,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 6123,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-ops": {
+      "category": "capability",
+      "week_downloads": 66334,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "steady",
+      "shape_reason": "7/7 天有下载，最大单日占比 19.4%",
+      "days_with_downloads": 7,
+      "peak_day": "2026-10-28",
+      "peak_share": 0.194,
+      "weekly_demand_verdict": "threshold-met",
+      "daily": [
+        {
+          "downloads": 7702,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 7907,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 8115,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 9445,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 9473,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 12872,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 10820,
+          "day": "2026-10-29"
+        }
+      ]
+    },
+    "dsh-cost-meter": {
+      "category": "capability",
+      "week_downloads": 44084,
+      "downloads_state": "recorded",
+      "window": {
+        "from": "2026-10-23",
+        "to": "2026-10-29"
+      },
+      "download_shape": "unreadable",
+      "shape_reason": "没有日序列（下载 API 没给出按天的数据），因此不能判断形状",
+      "days_with_downloads": 0,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "@michengai/dsh-skills-manager": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "@xmanrui/dsh-im": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-free-search": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-mnemon": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-image-gen": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "@liustack/modsearch": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-connect-workbuddy": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-codex-subscription": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "dsh-bili-scroll": {
+      "category": "capability",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    },
+    "@deepseek-ai/dsh": {
+      "category": "harness",
+      "week_downloads": null,
+      "downloads_state": "error-429",
+      "window": null,
+      "download_shape": "unreadable",
+      "shape_reason": "the downloads API answered 429",
+      "days_with_downloads": null,
+      "peak_day": null,
+      "peak_share": null,
+      "weekly_demand_verdict": "unmeasurable",
+      "daily": null
+    }
+  },
+  "categories": {
+    "diagnostics": {
+      "members": [
+        "dsh-compat",
+        "dsh-diagnose",
+        "dsh-doctor",
+        "dsh-guard",
+        "dsh-lint",
+        "dsh-plugin-check",
+        "dsh-plugin-guard",
+        "dsh-preflight",
+        "dsh-triage",
+        "dsh-verify"
+      ],
+      "summed_members": 9,
+      "unrecorded_members": [
+        "dsh-preflight"
+      ],
+      "week_downloads_total": 3074,
+      "note": "total sums only the 9 member(s) with a recorded download count; 1 have no record"
+    },
+    "marketplace": {
+      "members": [
+        "dsh-plugin",
+        "dsh-plugin-catalog",
+        "dshmarket"
+      ],
+      "summed_members": 3,
+      "unrecorded_members": [],
+      "week_downloads_total": 513534,
+      "note": "total sums only the 3 member(s) with a recorded download count; 0 have no record"
+    },
+    "decorative": {
+      "members": [
+        "dsh-dafeiyu",
+        "dsh-dream-skin",
+        "dsh-meme",
+        "dsh-pet",
+        "dsh-plugin-wallpaper-engine",
+        "dsh-whale-widget"
+      ],
+      "summed_members": 6,
+      "unrecorded_members": [],
+      "week_downloads_total": 552956,
+      "note": "total sums only the 6 member(s) with a recorded download count; 0 have no record"
+    },
+    "capability": {
+      "members": [
+        "@liustack/modsearch",
+        "@michengai/dsh-skills-manager",
+        "@xmanrui/dsh-im",
+        "dsh-bili-scroll",
+        "dsh-codex-subscription",
+        "dsh-connect-workbuddy",
+        "dsh-cost-meter",
+        "dsh-free-search",
+        "dsh-image-gen",
+        "dsh-mnemon",
+        "dsh-ops"
+      ],
+      "summed_members": 2,
+      "unrecorded_members": [
+        "@liustack/modsearch",
+        "@michengai/dsh-skills-manager",
+        "@xmanrui/dsh-im",
+        "dsh-bili-scroll",
+        "dsh-codex-subscription",
+        "dsh-connect-workbuddy",
+        "dsh-free-search",
+        "dsh-image-gen",
+        "dsh-mnemon"
+      ],
+      "week_downloads_total": 110418,
+      "note": "total sums only the 2 member(s) with a recorded download count; 9 have no record"
+    },
+    "harness": {
+      "members": [
+        "@deepseek-ai/dsh"
+      ],
+      "summed_members": 0,
+      "unrecorded_members": [
+        "@deepseek-ai/dsh"
+      ],
+      "week_downloads_total": 0,
+      "note": "total sums only the 0 member(s) with a recorded download count; 1 have no record"
+    }
+  },
+  "downloads": {
+    "window": "last-week",
+    "daily_source": "api.npmjs.org/downloads/range (per UTC day)",
+    "shape_counts": {
+      "steady": 18,
+      "single-day-burst": 1,
+      "no-record": 1,
+      "unreadable": 11
+    },
+    "shape_rule": {
+      "steady": "at least 2 days with downloads and no single day above 80% of the window",
+      "single-day-burst": "at most 1 day with downloads, or one day above 80% of the window",
+      "no-downloads": "the window exists and sums to 0",
+      "unreadable": "no usable daily series was read; never treated as \"no demand\"",
+      "no-record": "the downloads API answered 404 for the package"
+    }
+  },
+  "d5": {
+    "gate": "D5",
+    "package": "dsh-triage",
+    "weekly_threshold": 20,
+    "week_downloads": 634,
+    "downloads_state": "recorded",
+    "download_shape": "single-day-burst",
+    "days_with_downloads": 1,
+    "peak_day": "2026-10-29",
+    "peak_share": 1,
+    "verdict": "burst-not-demand",
+    "counts_as_demand": false,
+    "detail": "单日爆发（全部落在 2026-10-29），按 D5 读数规则不计为需求",
+    "rule": "「周下载 ≥ 20」只在 download_shape=steady 时判定（≥2 天有下载且单日占比 ≤ 80%）；单日爆发不计为需求。口径 2026-10-31 批准，见 audit/SIGNOFF.md R52 与 docs/ROADMAP.md §2"
+  },
+  "triage": {
+    "registry_status": 200,
+    "versions": [
+      "0.0.0-stage",
+      "0.1.0",
+      "0.1.1",
+      "0.2.0",
+      "0.3.0"
+    ],
+    "dist_tags": {
+      "latest": "0.3.0"
+    }
+  },
+  "discussions": {
+    "upstream": "deepseek-ai/deepseek-harness",
+    "fetched": 852,
+    "page_numbers": [
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "newest_number": 11661,
+    "oldest_number": 10803,
+    "window": {
+      "from": "2026-10-31T14:43:11Z",
+      "to": "2026-10-23T15:37:16Z"
+    },
+    "clusters": {
+      "session-history": {
+        "threads": 40,
+        "comments_total": 26,
+        "unanswered": 22
+      },
+      "plugin-breakage": {
+        "threads": 37,
+        "comments_total": 24,
+        "unanswered": 23
+      },
+      "install-startup": {
+        "threads": 44,
+        "comments_total": 37,
+        "unanswered": 21
+      },
+      "windows-native": {
+        "threads": 62,
+        "comments_total": 79,
+        "unanswered": 33
+      },
+      "model-provider": {
+        "threads": 72,
+        "comments_total": 39,
+        "unanswered": 46
+      },
+      "ui-ux": {
+        "threads": 222,
+        "comments_total": 126,
+        "unanswered": 143
+      },
+      "plugin-authoring": {
+        "threads": 22,
+        "comments_total": 12,
+        "unanswered": 15
+      }
+    },
+    "pain_threads": 405,
+    "pain_share": 0.4754,
+    "unanswered_share": 0.6321
+  },
+  "claims": [
+    {
+      "id": "diagnostics-category-ceiling",
+      "statement": "the whole diagnostics category sums to 3074 weekly downloads across the 9 of 10 members with a record",
+      "recompute": "categories.diagnostics.week_downloads_total"
+    },
+    {
+      "id": "diagnostics-share-of-marketplace",
+      "statement": "diagnostics is 0.006 of the marketplace category",
+      "recompute": "compare categories.diagnostics / categories.marketplace"
+    },
+    {
+      "id": "this-package-weekly-downloads-are-not-demand",
+      "statement": "dsh-triage summed 634 weekly downloads with shape 'single-day-burst', so the D5 download verdict is 'burst-not-demand' (counts as demand: false)",
+      "recompute": "d5.verdict / packages[\"dsh-triage\"].download_shape"
+    },
+    {
+      "id": "decorative-outdraws-diagnostics",
+      "statement": "decorative members sum to 552956 weekly downloads, 179.8816x the whole diagnostics category",
+      "recompute": "categories.decorative.week_downloads_total"
+    },
+    {
+      "id": "pain-share-and-unanswered",
+      "statement": "of the 852 most recent discussions, 405 (0.4754) match a pain cluster and 256 of those have zero replies",
+      "recompute": "discussions.pain_threads / discussions.unanswered_share"
+    }
+  ],
+  "failures": [
+    "dsh-cost-meter: downloads range API 429",
+    "@michengai/dsh-skills-manager: downloads API 429",
+    "@xmanrui/dsh-im: downloads API 429",
+    "dsh-free-search: downloads API 429",
+    "dsh-mnemon: downloads API 429",
+    "dsh-image-gen: downloads API 429",
+    "@liustack/modsearch: downloads API 429",
+    "dsh-connect-workbuddy: downloads API 429",
+    "dsh-codex-subscription: downloads API 429",
+    "dsh-bili-scroll: downloads API 429",
+    "@deepseek-ai/dsh: downloads API 429"
+  ],
+  "limits": [
+    "the package list is hand-classified, not a census: npm keyword search is the only discovery channel this repo has (dsh-plugin-catalog advertises 7,557 entries; keyword search returns 1,584)",
+    "a 404 from the downloads API is recorded as `no-record`, never as 0 - the two are different claims",
+    "npm download counts are not people: they include CI runs, registry mirrors and security scanners. That is why the weekly total is paired with a shape, and why D5 counts only `steady` windows",
+    "the shape rule (steady needs >= 2 days with downloads and <= 80% of the window on any one day) is a decision-gate rule, not a measurement: it was approved on 2026-10-31 and lives in audit/SIGNOFF.md R52 and docs/ROADMAP.md §2",
+    "a daily series we could not read is `unreadable` with verdict `unmeasurable`; it is never reported as \"no demand\" and never as a burst",
+    "discussion threads are classified by a fixed regex table over title + a 240-character excerpt; long bodies are not retained, so a re-run classifies the same excerpt, not the whole thread",
+    "github discussion paging is not stable: new threads shift page boundaries, so `page_numbers` and the newest/oldest numbers are recorded for every run and runs are not byte-comparable across days",
+    "this measures the ecosystem, not users: it cannot tell whether the demand is absent or merely unavailable in this delivery form (that is D5)"
+  ]
+}

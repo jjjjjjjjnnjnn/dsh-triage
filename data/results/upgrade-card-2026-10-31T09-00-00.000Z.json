@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_card.mjs",
+  "generated_at": "2026-10-31T09:00:00.000Z",
+  "inputs": {
+    "target": "0.2.1-rc.5",
+    "profile": "upstream",
+    "dsh_home": "<dsh-home>",
+    "locale": "zh",
+    "counts": {
+      "bundles": 2,
+      "rows": 190,
+      "would_be_denied": 119,
+      "cannot_tell": 73,
+      "improved": 0,
+      "likely_fine": 0,
+      "total": 192
+    },
+    "card_sha256": "9673b4841e750388564736b0789f06653c9d3efe2711afee9a992be72495cb08",
+    "card_bytes": 5530,
+    "card_lines": 81
+  },
+  "card": "# 升级日 · 0.2.1-rc.5\n\n**upstream：192 个单元（2 bundle + 190 行）升到 0.2.1-rc.5 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**\n\n> profile `upstream`（live）· 当前 0.2.1-rc.4 · 目标比当前新\n> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。\n\n| 桶 | 数量 | 意思 |\n|---|---|---|\n| `would-be-denied` | 119 | 升上去会被摘掉 —— 目标版本的 admission 会拒绝这一行/包 |\n| `cannot-tell` | 73 | 判不了 —— 声明不足或目标还没发布，证据不够 |\n| `improved` | 0 | 今天被拒、目标放行 —— 今天是坏的，目标版本会放行它 |\n| `likely-fine` | 0 | 声明上不冲突 —— 不等于升级后能跑，只表示没有声明冲突 |\n\n## 升上去会被摘掉（119）\n\n- `bundle:@deepseek-ai/dsh-web-app` · @deepseek-ai/dsh-web-app@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-shell-env@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：降级或钉住插件版本：1 条要求排除了 0.2.1-rc.5\n- `row:agent` · @deepseek-ai/dsh-agent@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 原因：peer @deepseek-ai/dsh-scope@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-default-model` · @deepseek-ai/dsh-agent-default-model@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-default-model」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-instructions` · @deepseek-ai/dsh-agent-instructions@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 原因：peer @deepseek-ai/dsh-fs@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-instructions」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-loop` · @deepseek-ai/dsh-agent-loop@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-loop」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:preset-cordis` · @deepseek-ai/dsh-agent-preset@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent-preset-registry@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「preset-cordis」设为 disabled（占用方：bundle:@deepseek-ai/dsh-web-app/./presets/cordis.patch.yml）\n- `row:preset-minimal` · @deepseek-ai/dsh-agent-preset@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent-preset-registry@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「preset-minimal」设为 disabled（占用方：bundle:@deepseek-ai/dsh-web-app/./presets/minimal.patch.yml）\n- `row:preset-ptc` · @deepseek-ai/dsh-agent-preset@0.2.1-rc.4\n  - 原因：peer @deepseek-ai/dsh-agent-preset-registry@0.2.1-rc.4 不含 0.2.1-rc.5\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「preset-ptc」设为 disabled（占用方：bundle:@deepseek-ai/dsh-web-app/./presets/ptc.patch.yml）\n- … 另外 111 个\n\n## 判不了（73）\n\n- `bundle:@deepseek-ai/dsh-base` · @deepseek-ai/dsh-base@0.2.1-rc.4\n  - 修复：豁免只绕过声明；行为仍未实测\n- `row:timer` · @deepseek-ai/cordis-plugin-timer@1.1.7\n  - 修复：请作者补上 @deepseek-ai/cordis-plugin-timer 实际需要的 peer 区间，或做一次隔离实测\n- `row:typert-gateway` · @deepseek-ai/dsh-api-gateway@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-api-gateway 实际需要的 peer 区间，或做一次隔离实测\n- `row:job-controller` · @deepseek-ai/dsh-api-job-controller@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-api-job-controller 实际需要的 peer 区间，或做一次隔离实测\n- `row:remote-access` · @deepseek-ai/dsh-api-remote-access@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-api-remote-access 实际需要的 peer 区间，或做一次隔离实测\n- `row:workspace-files` · @deepseek-ai/dsh-api-workspace-files@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-api-workspace-files 实际需要的 peer 区间，或做一次隔离实测\n- `row:file-upload` · @deepseek-ai/dsh-client-file-upload@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-client-file-upload 实际需要的 peer 区间，或做一次隔离实测\n- `row:client-hmr` · @deepseek-ai/dsh-client-hmr@0.2.1-rc.4\n  - 修复：请作者补上 @deepseek-ai/dsh-client-hmr 实际需要的 peer 区间，或做一次隔离实测\n- … 另外 65 个\n\n## 边界（请一起读）\n\n- `improved` 只说明「**目标版本会放行它**」；今天没有「升到更新版本变好」的真实样本（`BS-42`）。\n- 声明层判不了运行期行为；`likely-fine` 不等于升级后能跑。\n\n**复算**：`dsh-triage upgrade --to 0.2.1-rc.5 --card`\n",
+  "checks": [
+    {
+      "id": "card-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "json-parses",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "card-titles-the-target",
+      "ok": true,
+      "detail": "# 升级日 · 0.2.1-rc.5"
+    },
+    {
+      "id": "card-first-line-is-conclusion",
+      "ok": true,
+      "detail": "**upstream：192 个单元（2 bundle + 190 行）升到 0.2.1-rc.5 → 119 会被拒 · 73 判不了 · 0 会变好 · 0"
+    },
+    {
+      "id": "card-repeats-the-json-counts",
+      "ok": true,
+      "detail": "json counts {\"bundles\":2,\"rows\":190,\"would_be_denied\":119,\"cannot_tell\":73,\"improved\":0,\"likely_fine\":0,\"total\":192}"
+    },
+    {
+      "id": "buckets-are-a-partition",
+      "ok": true,
+      "detail": "192 total"
+    },
+    {
+      "id": "card-table-matches-counts",
+      "ok": true,
+      "detail": "four bucket rows present"
+    },
+    {
+      "id": "card-keeps-boundary",
+      "ok": true,
+      "detail": "the BS-42 boundary sentence survives"
+    },
+    {
+      "id": "card-makes-no-promise",
+      "ok": true,
+      "detail": "no forbidden promise"
+    },
+    {
+      "id": "card-is-deterministic",
+      "ok": true,
+      "detail": "sha256 9673b4841e75…"
+    },
+    {
+      "id": "card-carries-no-home-path",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "id": "card-names-units",
+      "ok": true,
+      "detail": "at least one unit line"
+    },
+    {
+      "id": "json-wins-over-card",
+      "ok": true,
+      "detail": "json only on stdout"
+    },
+    {
+      "id": "json-says-card-was-ignored",
+      "ok": true,
+      "detail": "card: ignored because --json was given (one output per run)"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the card judges the declaration layer only: declared ranges against the target runtime, not runtime behaviour",
+    "`improved` is only witnessed in the downgrade geometry today (BS-42), so the card says \"the target admits it\"",
+    "the profile is the in-repo sandbox (0.2.1-rc.4), not a user machine",
+    "card text is the zh rendering; the en rendering is covered by tests/unit/upgrade-card.test.ts"
+  ]
+}

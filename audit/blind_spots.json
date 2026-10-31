@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R51 (2026-10-30)",
+  "stand": "R52 (2026-10-31)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -375,6 +375,15 @@
       "mitigation": "① 「会坏」屏由 `--extra-bundle` + `--fixture-range` + `--break-after-install` 覆盖，英文屏由 `--lang en` 覆盖，两条命令都写进 `docs/HANDOFF.md` §3 与报告 §6；② 中文轮点击未归因，先保 `method` 字段，别删真鼠标那一步；③ 覆盖「真·runtime 升级」要么找一个真实 9.x runtime，要么明确承认只有「声明变化」的见证；④ 复制按钮的可用性不再靠「按钮存在」推断，产物里有剪贴板内容与页面自报结果两路证据。",
       "owner": "packages/plugin/client.js + scripts/record_client_serve.mjs",
       "status": "mostly closed (R51): will-break screen (two sources), English screen and a real clipboard click are witnessed; still unseen: a true runtime upgrade, the zh mouse-click handler gap (unexplained), other browsers/DSH versions",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-48",
+      "area": "增长计量（D5 的 npm 周下载）",
+      "cannot_see": "npm 的周下载数**含机器**：CI、镜像站、安全扫描器都会计数，而 API 只在按天序列里露出形状。R52 实测 `dsh-triage` 窗口 2026-10-22..10-30 是 `0 0 0 0 0 0 0 / 634 / 0`——十天里只有一天有数，前后都是 0，所以它读不出需求（`download_shape=single-day-burst`、`d5.verdict=burst-not-demand`）。**仍然看不见的**：① 那一天是哪一个（或哪几个）抓取方，我们只有形状没有归属；② 镜像抓取不规律，一次爆发之后可能数月不再出现，也可能在新版本发布时再来一次，所以「爆发」也不能反过来当成「发版成功」；③ `steady` 只说明「不像单日爬虫」，不等于「是人」，把 ≥20 当需求证据仍是弱证据；④ 品类天花板（诊断 3,074 / 市场 513,534）同样只到「周合计 + 形状」，没有按来源拆分。",
+      "mitigation": "① 判据侧：D5 的 `周下载 ≥20` 只在 `download_shape=steady`（≥2 天有下载且单日占比 ≤80%）时判定，规则在 `scripts/lib/download-shape.mjs`，7 条单测（含「真实 634 序列必须判成 burst」的负对照）+ 4 条端到端测试（`tests/governance/market-baseline.test.ts`，含「steady 25 必须算通过」的反向对照，防止规则靠「永远说不」通过）；② 采证侧：每次采基线都记 `daily[]` / `peak_share`，429/403 一律进 `failures`、不进结论；③ 对外文案：不许把 634 说成下载量、不许把 burst 说成增长；④ 形状判不出（`unreadable`）时 D5 记 `unmeasurable`，不许折成「没有需求」。",
+      "owner": "scripts/lib/download-shape.mjs + scripts/record_market_baseline.mjs + docs/ROADMAP.md §2",
+      "status": "open (R52): the shape rule is executable and pinned by tests; which crawler caused the burst, and whether a steady 25 is 25 humans, both remain unseen",
       "resolved_by": null
     }
   ]
