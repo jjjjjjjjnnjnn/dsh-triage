@@ -7697,7 +7697,7 @@
     {
       "id": "R54-S1",
       "batch": "R54",
-      "step": "**给真机记录器加 `--screenshot`，并在真实 Host 上拍出第一张图**：Show Your Plugins 六条规则里明确要截图，而全仓 `*.png/gif` 一直是 0 —— 没有截图，这一篇帖子结构上发不出去",
+      "step": "**给真机记录器加 `--screenshot`，并在真实 Host 上拍出第一张图**：Show Your Plugins 六条规则里明确要截图，而全仓 `*.png/gif` 一直是 0 —— 没有截图，这一篇帖子结构上发不出去（**R54 复审后重拍**：第一版真实沙盒截图里，左侧还挂着一个「浏览更多插件 / 创建你的插件」的悬浮菜单，看起来像界面故障。修法是拍照前点一下页签正文空白处再把鼠标移开——Escape 会把整个设置对话框关掉，第一次尝试点对话框上沿也把它关掉了，两次都从截图里看见了。重拍后 `screenshot.bytes = 95061`，产物同 stamp 重录）",
       "changed": [
         "scripts/record_client_serve.mjs",
         "docs/market/screenshot-0.3.1-real.png",
@@ -7714,14 +7714,14 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png",
         "artifact": "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
-        "sha256": "3768526f417405ae8f4499e1458c6a31d41d6b4f7d3d31ff4cab7a14774d7832",
+        "sha256": "308dde47d4effac578d3a83c111ebbf96cc72c67c8ff7bd029d3427543a2d89e",
         "outcome": "11 passed / 2 unmeasured · `screenshot: passed`（98938 bytes）· `summary-visible: passed`（tone attention，3 条要看的地方）"
       }
     },
     {
       "id": "R54-S2",
       "batch": "R54",
-      "step": "**第二张截图：把「会坏」那一屏拍下来**（`--extra-bundle` + `--fixture-range` + `--break-after-install`），这张才是帖子里真正说明价值的图",
+      "step": "**第二张截图：把「会坏」那一屏拍下来**（`--extra-bundle` + `--fixture-range` + `--break-after-install`），这张才是帖子里真正说明价值的图（**R54 复审后同 stamp 重录**：与 S1 用同一套「先关浮层再拍」的代码路径；`screenshot.bytes = 89822` 不变，图的内容与计数一致）",
       "changed": [
         "docs/market/screenshot-0.3.1-breaking.png",
         "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
@@ -7737,7 +7737,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
         "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
-        "sha256": "3f7a1f3922d77913eab71038eebec632422b228e4509b593ba87153bfecb485c",
+        "sha256": "085542ed883bcd827395e7646fbf1e52a49d5fadc412226963ff26fb3388d789",
         "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（89822 bytes）· `break-after-install: passed` · `clipboard-copy: passed`"
       }
     },
@@ -7821,6 +7821,36 @@
         "artifact": "data/results/listing-2026-11-01T19-50-00.000Z.json",
         "sha256": "0075741b22fba79e15fbda73e6026d2a272cc0edc6a257ee7f72c63c166b76dd",
         "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿的引用全部可复算"
+      }
+    },
+    {
+      "id": "R54-S6",
+      "batch": "R54",
+      "step": "**复审：用户润色了投放稿，我按图核事实并修四处不一致**——① 图 2 原标题写「全部兼容通过」，而屏上是 `正常 0 · 会坏 0 · 判不了 184`（`正常 0` 意味着没有一行被确认为放行，这是「沉默≠通过」最危险的一种误读）；② 图 2 截图里挂着悬浮菜单（已重拍）；③ 图 1 的说明写「提供一键复制的豁免或降级建议」，屏上只有原因与「复制」按钮；④ 三篇草稿里都引了一句抬头日志 `dsh: disabling profile plugin row ... incompatible`，而在沙盒里 grep 不到这句话（上游只有 `incompatible-version` 这个 reason code）——换成真实输出里存在的 `engines.dsh ... does not include ...` 形态",
+      "changed": [
+        "docs/distribution/T-810/01-show-your-plugins.md",
+        "docs/distribution/T-810/04-zh-longform.md",
+        "docs/distribution/T-810/05-bili-script.md",
+        "docs/market/screenshot-0.3.1-real.png",
+        "docs/market/screenshot-0.3.1-breaking.png",
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
+        "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
+        "data/results/listing-2026-11-01T20-20-00.000Z.json",
+        "data/results/listing-2026-11-01T20-20-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：四处不一致全部按「图里有什么就写什么」改。① 图 2 的小标题改成「没有发现会被拦的行——但这不等于全部通过」，并解释 `正常 0`；② 两张图用同一条代码路径重拍（先关浮层再拍），重拍后计数与改前一致（220/185/0/1/184 与 219/184/0/0/184），说明改的只是画面整洁度不是数据；③ 图 1 的说明改成「原因 + 复制按钮，复制出来的是可以贴进终端的那条修复命令，建议文本本身不在屏上」；④ 三篇草稿里的伪造日志行全部替换，`docs/distribution/T-810` 全目录再 grep `disabling profile plugin row` 为 0",
+        "reproducibility": "PASS：`node scripts/record_client_serve.mjs … --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png`（与 18:50 那条同结构）；`node scripts/check_listing.mjs --stamp 2026-11-01T20:20:00.000Z --tests 542` 复验 12/12",
+        "licence": "PASS：只改自有文案与自有截图；替换掉的引用是**一句不存在的上游日志**，删掉它不涉及任何第三方素材或署名",
+        "ssot": "PASS：图与产物同 stamp 重录，产物里的 `screenshot.bytes/sha256` 指向的就是仓里这两个文件（真实图 95061 bytes / 夹具图 89822 bytes）；`check_listing` 12/12；两张图都不含用户目录路径（产物经 `clean()`）",
+        "adversary": "反例一：只改标题不改图——被拒（图 2 的 `正常 0` 与「全部兼容通过」直接冲突，这是数据与文字的矛盾，不是措辞问题）；反例二：把「判不了 184」写成「正常 184」让它好看——被拒：那会把「沉默」写成「通过」，是本仓铁律 1 的正面违反；反例三：保留那句伪造日志、只加一句「大概是」——被拒：编造引用比模糊更糟，实测 grep 为 0；反例四：为重拍而改夹具/改判定——被拒：重拍前后计数逐项相同"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T20:20:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T20-20-00.000Z.json",
+        "sha256": "b273ad1e97b85759d69f19cf205311ba99da8f96d632e0068b9d153c365c3535",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿引用可复算（伪造日志行已清零）"
       }
     }
   ]

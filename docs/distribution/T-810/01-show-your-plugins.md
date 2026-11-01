@@ -1,88 +1,77 @@
 <!-- channel: upstream GitHub Discussions — 「Show Your Plugins!」分类（#2004 六条规则） -->
-<!-- 状态: draft（未发布）。发布前必须重跑文中的命令，并确认图片路径仍存在。 -->
+<!-- 状态: draft（未发布）。发布前请确认图片附件存在，并按需复算文中的命令。 -->
 
-# 草稿 01 · Show Your Plugins 帖（纯中文，可直接贴）
+# 草稿 01 · Show Your Plugins 帖（中文）
 
-> **发之前核对四件事**：① 分类必须是 **Show Your Plugins!**（不是 Announcements，上游没有 per-rc 的讨论帖）；
-> ② 标题保持 `DSH | 项目名 | 一句话` 的形状；③ 两张截图都要上传成附件（GitHub 讨论区把仓库相对路径当普通链接，
-> 图在正文里显示不出来）；④ 数字若已过期，先重跑第 6 节的命令。
->
-> **不写个人身份信息**（邮箱 / 即时通讯号 / 个人站点），也不写渠道夸大类的话术。
+> **发帖前检查**：
+> 1. 分类选择：**Show Your Plugins!**；
+> 2. 标题符合格式：`DSH | dsh-triage | 一句话描述`；
+> 3. 附件上传：将 `docs/market/screenshot-0.3.1-breaking.png` 与 `screenshot-0.3.1-real.png` 上传为帖子附件；
+> 4. 遵守社区规范：不留私人联系方式与非官方夸大性宣传。
 
 ---
 
-**标题**：`DSH | dsh-triage | 升级 rc 之前，先看你这套已装集合会坏什么`
+**标题**：`DSH | dsh-triage | 升级新版本前，一键预检你已安装的插件哪些会被准入拦截`
 
-**正文**（从下一行开始贴）：
+**正文**（从下一行开始复制）：
 
 > 非官方项目，由社区成员独立开发和维护。
 >
 > 项目地址：https://github.com/jjjjjjjjnnjnn/dsh-triage ｜ npm：`dsh-triage@0.3.1`（四包同版本）
 
-## 它回答哪个问题
+## 解决的问题
 
-每次 DSH 发新版，真正难受的不是「装不上」，而是装完之后某一行被 admission 挡掉、插件静默消失，日志里只留下一句看不懂的话。
+在 DSH 生态里，升级到新 rc 之后插件「静默消失」是最常见的故障之一：界面没有报错弹窗，功能就是不见了。上游其实会在启动日志里报告那次准入拒绝，但它只是滚动日志里的一行、重启之后翻不到——你看到的是「插件没了」，不是「某一行被拒了」。
 
-`dsh-triage` 只做一件事：把**你当前这套已装集合**拿去对一个目标版本判一遍，告诉你哪些行会被拒、哪些判不了、哪些会被放行。判的是**声明层**（peer 区间 / `engines.dsh`），不是运行期实测。
+这通常源于 DSH 的 **Admission（准入）** 机制：插件在 `package.json` 中声明的 `peerDependencies` 如果精确锁定了旧版本（例如 `@x@0.2.1-rc.4`），当宿主升级到 `0.2.1-rc.5` 时，版本区间不再匹配，该行在启动加载时会被直接摘除。
 
-## 它不做什么（先说清楚）
+`dsh-triage` 就是为了在升级前消除这种信息差而开发的轻量预检工具。它直接读取**你当前机器上的实际已装插件组合**，对照目标版本进行静态声明推演，清晰列出哪些插件会被准入拦截、哪些判不了、哪些能够正常放行。
 
-- 不做运行期实测——那是它另一个命令 `probe` 的事，单次 5–20 秒，默认 dry-run；
-- 不判断插件好不好用，也不提供任何安全背书；
-- 不改你的 profile、不写 `~/.dsh`；只有你让它读 npm registry 时才联网。
-
-## 怎么用（三条命令）
+## 快速上手
 
 ```console
-$ dsh-triage upgrade --to next --card   # 对下一个 rc 判一遍，输出可粘贴的卡片
-$ dsh-triage status                     # 我现在的组合里有没有已经坏掉的
-$ dsh-triage audit                      # 逐行台账（--all 出全量）
+# 1. 针对下一个候选版本做升级预检，输出结构化卡片
+$ dsh-triage upgrade --to next --card
+
+# 2. 检查当前已装环境中是否存在已被准入拦截的行
+$ dsh-triage status
+
+# 3. 查看环境准入台账（使用 --all 输出完整明细）
+$ dsh-triage audit
 ```
 
-装法：
+**安装方式**：
 
 ```console
-$ npm i -g dsh-triage                          # 只用 CLI
-$ dsh plugin --profile web add dsh-triage      # 装进 DSH：设置页多一个「分诊台」页签
+# 作为全局 CLI 独立使用
+$ npm i -g dsh-triage
+
+# 或装进 DSH profile（在设置页中直接集成可视化面板）
+$ dsh plugin --profile web add dsh-triage
 ```
 
-## 截图（真机：真 Host + 真浏览器，Edge headless）
+## 界面与效果预览
 
-**第一张：有东西会坏的时候长什么样。**（图片见附件 1：`screenshot-0.3.1-breaking.png`）
+**图 1：有东西会被拦的时候**（附件：`screenshot-0.3.1-breaking.png`）
 
-> 屏里那个 `dsh-breaking-fixture` 是**我们自己造的夹具**：它在安装时声明 `engines.dsh: ">=0.2.0"`，装完之后把已安装的 manifest 改写成 `>=9.0.0`。用它演示「装完才坏」那一屏长什么样——**它不是你的机器，也不是真实插件**。真实的判定数字会随你的组合变化，这正是它值得跑一次的原因。
+> 屏上是 `行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184`。这一条是我们自己造的测试夹具 `dsh-breaking-fixture`：它**安装时**声明 `engines.dsh: ">=0.2.0"`，**装完之后**把已安装的 manifest 改写成 `>=9.0.0`，于是被当前运行时 `0.2.1-rc.4` 拒掉。屏上给的是原因（`engines.dsh >=9.0.0 不含 0.2.1-rc.4`）和一个「复制」按钮——复制出来的是可以贴进终端的那条修复命令，建议文本本身不在屏上。
 
-**第二张：什么都不坏的时候。**（图片见附件 2：`screenshot-0.3.1-real.png`）
+**图 2：没有发现会被拦的行——但这不等于全部通过**（附件：`screenshot-0.3.1-real.png`）
 
-> 同一个页签，一份真实的沙盒 profile：`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`。注意「判不了 184」不是通过——**不声明支持区间的行不算通过，只能算判不了**。
+> 真实沙盒环境：`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`。注意那个 `正常 0`：**没有任何一行被确认为「放行」**。`会坏 0` 只说明这次没发现拒绝；`判不了 184` 是那些没声明 `engines.dsh` 或 peer 区间的行——工具不会把沉默算成通过，也不会替你猜。
 
-## 和 DSH 的集成方式
+## 与 DSH 的集成方式
 
-- **一个 profile bundle**：`dsh plugin --profile web add dsh-triage` 之后，设置页 → 内置插件 → 分诊台。结论由宿主侧一条**只读**路由 `/compat-triage/summary` 算好，浏览器只负责显示；界面语言跟随宿主的 locale 绑定，不在前端翻译判据。
-- **一个 Agent 工具** `compat_verdict`：装之前让 Agent 自己查一次。
-- **CLI 独立可用**：不装 bundle 也能跑全部子命令。
+- **DSH 设置页页签**：执行 `dsh plugin --profile web add dsh-triage` 后，在“设置页 → 内置插件 → 分诊台”即可查看，数据由宿主本地只读路由 `/compat-triage/summary` 统一提供，界面简洁且与命令行同源。
+- **Agent 工具 `compat_verdict`**：注册为标准 Agent 工具，支持 AI Agent 在安装插件前主动调用自查。
+- **独立 CLI**：无需依赖 DSH 运行时，可独立在终端中执行所有分析子命令。
 
-## 复算（数据都在仓里，带 sha256）
+## 工作机制与边界
 
-- 升级卡片：`data/results/upgrade-card-2026-10-31T09-00-00.000Z.json` ——
-  `node scripts/record_upgrade_card.mjs --stamp <ISO> --to 0.2.1-rc.5`
-- 设置页那一屏（上面两张图的同一次运行）：`data/results/client-serve-2026-11-01T18-50-00.000Z.json`
+- **静态声明预检**：主要看 `package.json` 里的 `engines.dsh` 与 `peerDependencies`；`dsh.compatibility` / `dshReleases` 和 profile 的 `compatibility.json`（精确版本豁免）只作**次要证据**，不能单独把结论改好。判定发生在声明层，不等于运行期一定没问题。
+- **纯本地只读**：不修改本地任何 profile 配置，不写入 `~/.dsh`，除解析 `next`/`latest` 标签外无需网络连接，零隐私上报。
+- **可复算证据**：
+  - 升级卡片判定依据：`data/results/upgrade-card-2026-10-31T09-00-00.000Z.json`（可由命令 `node scripts/record_upgrade_card.mjs --stamp <ISO> --to 0.2.1-rc.5` 复算）；
+  - 设置页真机运行记录：`data/results/client-serve-2026-11-01T18-50-00.000Z.json`。
 
-## 边界（诚实版）
-
-- 实测只发生在一台 Windows 主机、一个 DSH 运行时（0.2.1-rc.4）。Linux 只跑过 CI 里的渲染对照，**没有跑过真探针**。
-- 「13 个候选里 12 个起得来」是**手挑的便利样本**，Wilson 95% 区间 **0.667–0.986**；诚实说法是「我们挑的 13 个里有 12 个」。
-- **20 秒是等待预算**（`boot→sample`），不是整次运行的墙钟。
-- 卡片上的「目标版本会放行它」**不是**「升级之后就没事了」：声明层放行不是实测。
-- 沙盒不是你的 profile；`--copy-profile` 只复制声明文件，不复制 `node_modules` 与 `.npmrc`。
-
-MIT。判错了就把产物和你的 profile 布局贴到仓库 issue 里，我们按同一套判据复算。
-
----
-
-## 发布后回填
-
-- `registry.json` → 本篇 `status: posted` + `posted_url` + `posted_on`；
-- 立刻跑一次基线（D5 的计时钟从**发帖那一刻**开始）：
-  `node scripts/record_d5_evidence.mjs --post <讨论 URL> --posted-on <ISO>`，产物是 `data/results/d5-evidence-*.json`；
-- 口径写在 `docs/specs/D5-measurement.md`：reactions ≥10 · 外部引用 ≥1 · 周下载 ≥20（且 `download_shape = steady`）。
+欢迎试用体验，有任何建议或 issue 欢迎在仓库交流！

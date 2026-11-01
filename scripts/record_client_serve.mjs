@@ -656,7 +656,18 @@ async function observePage(browser, pageUrl, cookie, screenshotTarget = null) {
     if (screenshotTarget !== null) {
       try {
         await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
-        await pause(300)
+        /*
+         * SETTLE THE SCREENSHOT (R54): the setting-up clicks leave a hover menu open — the first
+         * real-profile shot had the app's "browse more plugins / create your plugin" menu floating
+         * over the sidebar, which reads as a broken UI in a screenshot that is supposed to show a
+         * working one. Clicking the tab body (not a control) dismisses the menu; Escape would close
+         * the whole settings dialog, and clicking the dialog's top edge did exactly that on the
+         * first attempt. The pointer then leaves the sidebar so no hover menu can reopen.
+         */
+        await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 640, y: 250, button: 'left', clickCount: 1 })
+        await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 640, y: 250, button: 'left', clickCount: 1 })
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 1200, y: 150 })
+        await pause(500)
         const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
         const bytes = Buffer.from(String(shot?.data ?? ''), 'base64')
         if (bytes.length === 0) throw new Error('the browser returned an empty image')
