@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R54 (2026-11-01，交付轮：投放包就绪——D5 读数口径写死（`docs/specs/D5-measurement.md` + 8 条单测 + 计量脚本）、真机截图两张、草稿 01 按上游 Show Your Plugins 六条重写成中文)｜**下一件事：① HUMAN 给 D5 口径签字；② 把 `docs/distribution/T-810/01-show-your-plugins.md` 贴到 Show Your Plugins（不是 rc 讨论帖）；③ 贴完立刻跑 `record_d5_evidence --post … --posted-on …` 开表**｜上一轮 R53：0.3.1 发布（20/20）+ 一次部分发布事故与发布链改造。
+> **Stand**: R55 (2026-11-01，交付轮：设置页从「一串文字」改成**三张表**——计数 / 问题 / 下一步；判据与数字一个未动，改的只是呈现)｜**下一件事：① 把 `docs/distribution/T-810/01-show-your-plugins.md` 贴到 **Show Your Plugins!**（两张新图要上传成附件）；② 贴完立刻跑 `record_d5_evidence --post … --posted-on …` 开表**｜上一轮 R54：D5 口径（已签）+ 计量脚本 + 投放包。
 
 ## 🔍 按需求快速索引
 

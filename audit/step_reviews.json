@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R54 (2026-11-01)",
+  "stand": "R55 (2026-11-01)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -7697,7 +7697,7 @@
     {
       "id": "R54-S1",
       "batch": "R54",
-      "step": "**给真机记录器加 `--screenshot`，并在真实 Host 上拍出第一张图**：Show Your Plugins 六条规则里明确要截图，而全仓 `*.png/gif` 一直是 0 —— 没有截图，这一篇帖子结构上发不出去（**R54 复审后重拍**：第一版真实沙盒截图里，左侧还挂着一个「浏览更多插件 / 创建你的插件」的悬浮菜单，看起来像界面故障。修法是拍照前点一下页签正文空白处再把鼠标移开——Escape 会把整个设置对话框关掉，第一次尝试点对话框上沿也把它关掉了，两次都从截图里看见了。重拍后 `screenshot.bytes = 95061`，产物同 stamp 重录）",
+      "step": "**给真机记录器加 `--screenshot`，并在真实 Host 上拍出第一张图**：Show Your Plugins 六条规则里明确要截图，而全仓 `*.png/gif` 一直是 0 —— 没有截图，这一篇帖子结构上发不出去（**R54 复审后重拍**：第一版真实沙盒截图里，左侧还挂着一个「浏览更多插件 / 创建你的插件」的悬浮菜单，看起来像界面故障。修法是拍照前点一下页签正文空白处再把鼠标移开——Escape 会把整个设置对话框关掉，第一次尝试点对话框上沿也把它关掉了，两次都从截图里看见了。重拍后 `screenshot.bytes = 95061`，产物同 stamp 重录）（**R55 同 stamp 重录**：页签改成表格后这条记录被重拍一次，`screenshot.bytes` 83133；计数未变）",
       "changed": [
         "scripts/record_client_serve.mjs",
         "docs/market/screenshot-0.3.1-real.png",
@@ -7714,14 +7714,14 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png",
         "artifact": "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
-        "sha256": "308dde47d4effac578d3a83c111ebbf96cc72c67c8ff7bd029d3427543a2d89e",
+        "sha256": "a98403be267411c99a28fef1d28c8a465e352ee0690c668344edea0394027f4a",
         "outcome": "11 passed / 2 unmeasured · `screenshot: passed`（98938 bytes）· `summary-visible: passed`（tone attention，3 条要看的地方）"
       }
     },
     {
       "id": "R54-S2",
       "batch": "R54",
-      "step": "**第二张截图：把「会坏」那一屏拍下来**（`--extra-bundle` + `--fixture-range` + `--break-after-install`），这张才是帖子里真正说明价值的图（**R54 复审后同 stamp 重录**：与 S1 用同一套「先关浮层再拍」的代码路径；`screenshot.bytes = 89822` 不变，图的内容与计数一致）",
+      "step": "**第二张截图：把「会坏」那一屏拍下来**（`--extra-bundle` + `--fixture-range` + `--break-after-install`），这张才是帖子里真正说明价值的图（**R54 复审后同 stamp 重录**：与 S1 用同一套「先关浮层再拍」的代码路径；`screenshot.bytes = 89822` 不变，图的内容与计数一致）（**R55 同 stamp 重录**：表格版含「复制」按钮的那一行，`screenshot.bytes` 83633）",
       "changed": [
         "docs/market/screenshot-0.3.1-breaking.png",
         "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
@@ -7737,7 +7737,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
         "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
-        "sha256": "085542ed883bcd827395e7646fbf1e52a49d5fadc412226963ff26fb3388d789",
+        "sha256": "2c793e0891b53f0f815c1e935b55f74321e856fd144eadc8cef3e29d4808e658",
         "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（89822 bytes）· `break-after-install: passed` · `clipboard-copy: passed`"
       }
     },
@@ -7851,6 +7851,55 @@
         "artifact": "data/results/listing-2026-11-01T20-20-00.000Z.json",
         "sha256": "b273ad1e97b85759d69f19cf205311ba99da8f96d632e0068b9d153c365c3535",
         "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿引用可复算（伪造日志行已清零）"
+      }
+    },
+    {
+      "id": "R55-S1",
+      "batch": "R55",
+      "step": "**把页签从「一串文字」改成三张表**（用户要求：现在全是文字，不直观）：计数表（项目 / 数量 / 含义）、问题表（# / 插件 / 结论〔原因在第二行〕/ 修复）、下一步表（想做什么 / 命令）。**判据与数字一个字都没动**，改的只是呈现",
+      "changed": [
+        "packages/plugin/client.js",
+        "scripts/record_client_serve.mjs",
+        "tests/unit/client-tab.test.ts",
+        "docs/market/screenshot-0.3.1-real.png",
+        "docs/market/screenshot-0.3.1-breaking.png",
+        "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
+        "data/results/client-serve-2026-11-01T18-50-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：真机两次都 `screenshot: passed`，人工看图为三张对齐的表：计数 219/184/0/0/184 与 220/185/0/1/184（与改版前逐项相同）；问题表的第 1 行在夹具轮显示 `dsh-breaking-fixture` + 原因 + 「复制」，在真实轮显示三条「判不了」+ 「—」。**第一版是裸 `<table>`，宿主不给我们的标记加样式，列挤在一起（`行 219台账里声明过的行`）、表头「修复」被压成两行、按钮被压成「复/制」**——这些都是从截图里看出来的，靠内联 `padding` / `whiteSpace` 修好；如果 CSP 拦掉内联样式，表格仍成立只是难看，不会坏",
+        "reproducibility": "PASS：`node scripts/record_client_serve.mjs --dsh-main <sandbox>/…/lib/bin.js --install <sandbox>/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png`（夹具轮同结构）；单测 `tests/unit/client-tab.test.ts` 13/13；全量 `pnpm run test` 542/0",
+        "licence": "PASS：只改自己的组件与记录器；表格用原生 `table/thead/tbody/tr/th/td`，没有引入任何 UI 库或第三方样式表",
+        "ssot": "PASS：`data-triage-counts` 移到 `<table>`，每行的标签/数值另有 `data-count-label` / `data-count-value`；探针改为**按行读回配对**（`row timer · judged 184` 这种形状），并在产物里保留 `count_rows`；`issues` 计数兼容 `tbody tr` 与旧的 `li`。图与产物同 stamp 重录，bytes/sha256 对得上",
+        "adversary": "反例一：为了好看把「判不了」并进「正常」——被拒：两张图逐项数字与改版前完全相同，`判不了 184` 仍在；反例二：改用第三方 UI 库让表格好看——被拒：client.js 是 classic script、零打包器（`ADR-0010`），引库会破那条决定；反例三：表格化后让探针只能读整段文本——被拒：新增 `data-count-*` 让探针读得到「键 → 值」，`same-source` 仍逐项比对；反例四：删掉那条「标签与命令分开」的断言让它绿——被拒：断言改成检查两格结构（仍是同一个失败条件），没有消失"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
+        "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
+        "sha256": "2c793e0891b53f0f815c1e935b55f74321e856fd144eadc8cef3e29d4808e658",
+        "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（83633 bytes）· 三张表渲染且计数未变"
+      }
+    },
+    {
+      "id": "R55-S2",
+      "batch": "R55",
+      "step": "**改完表格后的文案一致性复跑**：两张截图同 stamp 重录（帖子引用不变），顺带确认 `check_listing` 的 12 条断言仍全绿——这一条不是为了改文案，是为了证明「重录证据」没有把引用链弄断",
+      "changed": [
+        "data/results/listing-2026-11-01T21-00-00.000Z.json",
+        "data/results/listing-2026-11-01T21-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：12/12，`version 0.3.1 · tests 542`；`drafts-cite-real-artifacts` 报「5 draft(s), every cited artifact hashes and every draft carries a recompute command」——两张图被引用的产物（`client-serve-2026-11-01T18-50-00` 与 `upgrade-card-2026-10-31T09-00-00`）sha256 全部复算通过",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T21:00:00.000Z --tests 542`；同一次会话里 `pnpm run test` 报 542/0",
+        "licence": "PASS：只读文档 + 复算 sha256；重录的两张图是我们自己的界面截图（PNG 进仓），无第三方素材",
+        "ssot": "PASS：产物 sha256 = `45ac333dec74…`（文件 3648 bytes），与帖子正文引用的路径一致；`registry.json` 的 `cites` 未改路径，所以引用链在重录后仍指向现存文件",
+        "adversary": "反例一：重录后只更新图、不更新台账 sha——被拒：`step-review` 门会当场红（这正是它存在的理由）；反例二：为了让检查器过而把 `cites` 换成别的产物——被拒：那会变成「引用一个和正文无关的文件」，第 9 条断言（正文必须提到该路径）会红；反例三：把 542 写成 534——被拒：`--tests` 与实跑比对"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T21:00:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T21-00-00.000Z.json",
+        "sha256": "45ac333dec749c308356721a23e9cad5b3359d249b2ba7b2f9a2308bd4a0723d",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿的引用在重录后仍可复算"
       }
     }
   ]

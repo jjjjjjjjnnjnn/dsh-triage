@@ -5,11 +5,11 @@
   "label": "client-serve",
   "outcome": {
     "served": true,
-    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cf373e901c59",
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cbdf8cdc9550",
     "tab_visible": "passed"
   },
   "sandbox": {
-    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy6oi4c\\home",
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy7ij9s\\home",
     "profile": "web",
     "bundle": "file:packages/* (workspace rewritten)"
   },
@@ -49,7 +49,7 @@
     {
       "id": "install",
       "status": "passed",
-      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 24.3s using pnpm v12.15.0"
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 21.1s using pnpm v12.15.0"
     },
     {
       "id": "exempt-revoke",
@@ -68,7 +68,7 @@
     {
       "id": "boot",
       "status": "passed",
-      "detail": "host printed http://127.0.0.1:60651/"
+      "detail": "host printed http://127.0.0.1:56865/"
     },
     {
       "id": "graph",
@@ -76,14 +76,14 @@
       "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
       "html_bytes": 38207,
       "client_module_listed": true,
-      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cf373e901c59"
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cbdf8cdc9550"
     },
     {
       "id": "client",
       "status": 200,
-      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2030974B · loader=true · id=true · tab=true",
-      "bytes": 2030974,
-      "sha256": "13a6db4605fc56ad0e3d7f849954e3410930eccc8b7026f67395649f34a63d33",
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2034597B · loader=true · id=true · tab=true",
+      "bytes": 2034597,
+      "sha256": "ffb98a232821c342a632bbef45820030bb6c4818fe517ea1290c7604c7ef2496",
       "has_loader": true,
       "declares_id": true,
       "mentions_tab_slot": true,
@@ -136,7 +136,7 @@
           "clicked": true
         }
       ],
-      "page_url": "http://127.0.0.1:60651/",
+      "page_url": "http://127.0.0.1:56865/",
       "controls_before": [
         "打开侧边栏",
         "新建会话",
@@ -196,16 +196,43 @@
         "插件列表",
         "分诊台"
       ],
-      "tab_ms": 924,
+      "tab_ms": 923,
       "tab_probe": {
         "present": true,
         "mode": "summary",
         "kind": null,
         "tone": "broken",
         "counts_text": "行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184",
+        "count_rows": [
+          {
+            "key": "rows",
+            "label": "行",
+            "value": "220"
+          },
+          {
+            "key": "judged",
+            "label": "有判定",
+            "value": "185"
+          },
+          {
+            "key": "go",
+            "label": "正常",
+            "value": "0"
+          },
+          {
+            "key": "denied",
+            "label": "会坏",
+            "value": "1"
+          },
+          {
+            "key": "unknown",
+            "label": "判不了",
+            "value": "184"
+          }
+        ],
         "issues": 3,
         "copy_fix_buttons": 1,
-        "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 1 个东西会出问题：DSH 启动后很可能直接不见。\n\n行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184\n\n要看的地方\ndsh-breaking-fixture — 它会被挡住，启动后可能直接不见。 · 原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4 · 复制\n@deepseek-ai/cordis-plugin-timer — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n@deepseek-ai/dsh-agent — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\n还有 180 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n逐行归因 — dsh-triage why\n升级前先看会坏什么 — dsh-triage upgrade --to next\n打开本地面板 — dsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+        "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 1 个东西会出问题：DSH 启动后很可能直接不见。\n\n项目\t数量\t含义\n行\t220\t声明过的行\n有判定\t185\t给出了结论\n正常\t0\t确认放行\n会坏\t1\t会被摘掉\n判不了\t184\t不算通过\n要看的地方\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t它会被挡住，启动后可能直接不见。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n3\t@deepseek-ai/dsh-agent\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\t—\n\n还有 180 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
       },
       "tab_body": "passed",
       "clipboard": {
@@ -254,10 +281,10 @@
     {
       "id": "screenshot",
       "status": "passed",
-      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-breaking.png (89822 bytes)",
+      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-breaking.png (83633 bytes)",
       "path": "docs/market/screenshot-0.3.1-breaking.png",
-      "bytes": 89822,
-      "sha256": "65345269e3dd85ec6e203148baee0f380cc6fe6eb6d7bd9e449157550077eaa5"
+      "bytes": 83633,
+      "sha256": "29b107cf0c9a3ee4517b63aafc703e762b993f5d6c42c7c6a13e85686e2a2d62"
     },
     {
       "id": "summary-visible",
@@ -268,21 +295,48 @@
       "kind": null,
       "tone": "broken",
       "counts_text": "行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184",
+      "count_rows": [
+        {
+          "key": "rows",
+          "label": "行",
+          "value": "220"
+        },
+        {
+          "key": "judged",
+          "label": "有判定",
+          "value": "185"
+        },
+        {
+          "key": "go",
+          "label": "正常",
+          "value": "0"
+        },
+        {
+          "key": "denied",
+          "label": "会坏",
+          "value": "1"
+        },
+        {
+          "key": "unknown",
+          "label": "判不了",
+          "value": "184"
+        }
+      ],
       "issues": 3,
       "copy_fix_buttons": 1,
-      "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 1 个东西会出问题：DSH 启动后很可能直接不见。\n\n行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184\n\n要看的地方\ndsh-breaking-fixture — 它会被挡住，启动后可能直接不见。 · 原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4 · 复制\n@deepseek-ai/cordis-plugin-timer — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n@deepseek-ai/dsh-agent — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\n还有 180 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n逐行归因 — dsh-triage why\n升级前先看会坏什么 — dsh-triage upgrade --to next\n打开本地面板 — dsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+      "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 1 个东西会出问题：DSH 启动后很可能直接不见。\n\n项目\t数量\t含义\n行\t220\t声明过的行\n有判定\t185\t给出了结论\n正常\t0\t确认放行\n会坏\t1\t会被摘掉\n判不了\t184\t不算通过\n要看的地方\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t它会被挡住，启动后可能直接不见。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n3\t@deepseek-ai/dsh-agent\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\t—\n\n还有 180 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
     },
     {
       "id": "user-answer",
       "status": "passed",
-      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 924ms",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 923ms",
       "answers": {
         "conclusion": true,
         "which_row": true,
         "what_to_type": true
       },
-      "ms_to_answer": 924,
-      "text_chars": 633
+      "ms_to_answer": 923,
+      "text_chars": 672
     },
     {
       "id": "english-screen",
@@ -347,7 +401,7 @@
     "dsh: skipping profile bundle \"dsh-breaking-fixture\": Error: Plugin dsh-breaking-fixture@1.0.0 is incompatible with dsh 0.2.1-rc.4: requirements {\"engines.dsh\":\">=9.0.0\"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-breaking-fixture@1.0.0 on dsh 0.2.1-rc.4 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.",
     "dsh-triage: compat_verdict tool registered (profile web)",
     "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary registered (profile web)",
-    "dsh web: http://127.0.0.1:60651/?token=<redacted>"
+    "dsh web: http://127.0.0.1:56865/?token=<redacted>"
   ],
   "limits": [
     "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",

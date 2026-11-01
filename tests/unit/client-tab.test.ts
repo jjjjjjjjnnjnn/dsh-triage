@@ -417,9 +417,10 @@ test('an empty profile is called out as a wrong home, not a clean one', () => {
 test('a rendered row separates the label from the command, and its reason from the conclusion', () => {
   /*
    * R51 user test, real DOM: "逐行归因dsh-triage why" — the label and the command rendered as one
-   * run-together string because the gap was left to the Host's CSS. A separator has to be written
-   * into the text. Same for the engine's reason, which a stranger could not tell apart from the
-   * conclusion ("…所以我们判断不了。 row timer 引入的 … 未安装").
+   * run-together string because the gap was left to the Host's CSS. Until R55 the fix was a literal
+   * " — " written into the text; the tab now renders tables, so the separation is structural: the
+   * label and the command are two cells of one row. The assertion moved with the fix — it did not go
+   * away — and it still fails if they are concatenated into a single string.
    */
   const { exports } = loadBundle()
   const fake = fakeContext()
@@ -434,10 +435,22 @@ test('a rendered row separates the label from the command, and its reason from t
     more: 0,
     next: [{ label: 'why', command: 'dsh-triage why' }],
   }
-  const text = JSON.stringify(views.summaryView(summary, injected.copy, () => {}))
+  const tree = views.summaryView(summary, injected.copy, () => {}) as {
+    props: { children: Array<{ type: string; props: Record<string, unknown> }> }
+  }
+  const text = JSON.stringify(tree)
   assert.match(text, /reason: declares no range/, 'the engine reason is labelled, not glued to the plain sentence')
-  assert.match(text, /"why — "/, 'label and command are separated inside the text itself')
-  assert.match(text, /"dsh-triage why"/, 'and the command is still copy-pasteable')
+
+  // Find the "next step" table and assert its single row is [label][command] in two cells.
+  const tables = tree.props.children.filter((node) => node.type === 'table')
+  const nextTable = tables.find((node) => JSON.stringify(node).includes('dsh-triage why'))
+  assert.ok(nextTable !== undefined, 'the next step is rendered in a table row')
+  const body = (nextTable!.props.children as Array<{ type: string; props: { children: unknown[] } }>).find((node) => node.type === 'tbody')!
+  const row = body.props.children[0] as { props: { children: Array<{ props: { children: unknown } }> } }
+  const cells = row.props.children.map((cell) => cell.props.children)
+  assert.equal(cells[0], 'why', 'the first cell is the label')
+  assert.equal(JSON.stringify(cells[1]), JSON.stringify({ type: 'code', props: { children: 'dsh-triage why' } }), 'the second cell is the command')
+  assert.doesNotMatch(text, /"why — "/, 'the old run-together form is gone with the list')
 })
 
 test('the manifest declares the browser half exactly the way the Host discovers it', () => {

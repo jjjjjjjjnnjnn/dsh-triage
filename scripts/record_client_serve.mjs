@@ -710,24 +710,37 @@ const INTRO_NAMES = ['继续', 'continue', '知道了', 'got it', '开始使用'
  * plugins" — the bare word 插件 is the plugin manager in the app chrome, a different surface.
  */
 const PLUGIN_SECTION_NAMES = ['内置插件', 'built-in plugins', '插件', 'plugins']
-/** Locale-independent marker of our tab body (R51): the view the component rendered. */
+/**
+ * Counts and issue rows are read structurally (R55): the tab renders tables now, so a probe that
+ * scrapes one sentence would report a run-on string ("行219有判定184…") and, worse, could not tell
+ * a table row from a paragraph. `data-count-label` / `data-count-value` make the pairs explicit;
+ * `[data-triage-issues]` rows are counted as `tbody tr` with `li` kept as a fallback for older
+ * bundles.
+ */
 const TAB_PROBE_EXPRESSION = `(() => {
   const el = document.querySelector('[data-triage-tab]')
   if (!el) return JSON.stringify({ present: false })
-  const counts = el.querySelector('[data-triage-counts]')
+  const countsEl = el.querySelector('[data-triage-counts]')
   const tone = el.querySelector('[data-triage-tone]')
+  const countRows = countsEl ? Array.from(countsEl.querySelectorAll('[data-count-label]')).map((label) => {
+    const key = label.getAttribute('data-count-label')
+    const value = el.querySelector('[data-count-value="' + key + '"]')
+    return { key: key, label: String(label.textContent || '').trim(), value: value ? String(value.textContent || '').trim() : null }
+  }) : []
+  const countsText = countRows.length > 0
+    ? countRows.map((row) => row.label + ' ' + String(row.value)).join(' · ')
+    : (countsEl ? String(countsEl.textContent || '') : null)
+  const issueRows = el.querySelectorAll('[data-triage-issues] tbody tr').length
+  const legacyRows = el.querySelectorAll('[data-triage-issues] li').length
   return JSON.stringify({
     present: true,
     mode: el.getAttribute('data-triage-tab'),
     kind: el.getAttribute('data-triage-kind'),
     tone: tone === null ? null : tone.getAttribute('data-triage-tone'),
-    counts_text: counts ? String(counts.textContent || '') : null,
-    issues: el.querySelectorAll('[data-triage-issues] li').length,
-    // Copy buttons are only rendered when the engine produced a command; counting them is how the
-    // user test can prove the "fix me" affordance actually appeared (BS-47).
+    counts_text: countsText,
+    count_rows: countRows,
+    issues: issueRows + legacyRows,
     copy_fix_buttons: el.querySelectorAll('[data-copy-fix]').length,
-    // The whole screen as a person reads it (R51 user test): analysis happens off-line, but the
-    // text is captured from the real DOM so it cannot drift from what a user saw.
     text: String(el.innerText || '').slice(0, 4000),
   })
 })()`

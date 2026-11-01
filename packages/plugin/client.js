@@ -52,6 +52,25 @@ window.__ModuleLoader__.load({
       title: '分诊台 · 这套装会不会坏',
       hint: '结论由命令行同一引擎在宿主侧算好，这里只负责显示。',
       counts: '行 {rows} · 有判定 {judged} · 正常 {go} · 会坏 {denied} · 判不了 {unknown}',
+      /** Count table (R55): one row per number, so a reader compares values instead of parsing a sentence. */
+      countColumns: ['项目', '数量', '含义'],
+      countLabels: {
+        rows: '行',
+        judged: '有判定',
+        go: '正常',
+        denied: '会坏',
+        unknown: '判不了',
+      },
+      countMeanings: {
+        rows: '声明过的行',
+        judged: '给出了结论',
+        go: '确认放行',
+        denied: '会被摘掉',
+        unknown: '不算通过',
+      },
+      issueColumns: ['#', '插件', '结论', '修复'],
+      nextColumns: ['想做什么', '命令'],
+      none: '—',
       issues: '要看的地方',
       noIssues: '没有需要你动手的行。',
       reason: '原因',
@@ -73,6 +92,24 @@ window.__ModuleLoader__.load({
       title: 'Triage · will this setup break?',
       hint: 'The conclusion is computed on the host by the same engine as the CLI; this tab only displays it.',
       counts: 'rows {rows} · judged {judged} · fine {go} · will break {denied} · cannot tell {unknown}',
+      countColumns: ['Item', 'Count', 'Meaning'],
+      countLabels: {
+        rows: 'rows',
+        judged: 'judged',
+        go: 'fine',
+        denied: 'will break',
+        unknown: 'cannot tell',
+      },
+      countMeanings: {
+        rows: 'declared',
+        judged: 'judged',
+        go: 'admitted',
+        denied: 'dropped at start-up',
+        unknown: 'not a pass',
+      },
+      issueColumns: ['#', 'Plugin', 'Conclusion', 'Fix'],
+      nextColumns: ['If you want', 'Run'],
+      none: '—',
       issues: 'What needs you',
       noIssues: 'Nothing here needs your hands.',
       reason: 'reason',
@@ -132,29 +169,93 @@ window.__ModuleLoader__.load({
       const jsx = jsxRuntime.jsx
       const jsxs = jsxRuntime.jsxs
 
-      /** One line per issue: what it is, in everyday words, plus the fix when the engine gave one. */
-      function issueRow(issue, copy, index) {
-        const children = [
-          jsx('code', { children: String(issue.id) }),
-          jsx('span', { children: ` — ${String(issue.plain)}` }),
-        ]
-        // The engine's own reason is subordinate to the plain sentence, and labelled as such: a
-        // reader must not have to guess which half of the line is the conclusion and which is detail.
-        if (typeof issue.line === 'string' && issue.line !== '') {
-          children.push(jsx('span', { children: ` · ${copy.reason}: ${issue.line}` }))
-        }
-        if (typeof issue.fix === 'string' && issue.fix !== '') {
-          children.push(jsx('span', { children: ' · ' }))
-          children.push(
-            jsx('button', {
-              type: 'button',
-              'data-copy-fix': String(issue.id),
-              onClick: () => copyText(issue.fix),
-              children: copy.copy,
+      /**
+       * ONE TABLE PRIMITIVE (R55). The Host's stylesheet does not style our markup, and a borderless
+       * table with no padding renders as run-together columns, so a minimal amount of layout is
+       * inlined here. Inline styles are presentation only: if the page's CSP drops them, the table
+       * is still a table (thead/tbody/tr/th/td) and every number is still in its own cell.
+       */
+      const CELL = { padding: '4px 10px 4px 0', textAlign: 'left', verticalAlign: 'top' }
+      const HEAD = { ...CELL, fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid rgba(127,127,127,0.35)' }
+
+      function matrix(headers, rows, attrs) {
+        return jsxs('table', {
+          ...(attrs || {}),
+          style: { borderCollapse: 'collapse', margin: '4px 0 10px', width: '100%' },
+          children: [
+            jsx('thead', {
+              children: jsx('tr', {
+                children: headers.map((label, column) =>
+                  jsx('th', { 'data-col': String(column), style: HEAD, children: String(label) }),
+                ),
+              }),
             }),
-          )
-        }
-        return jsxs('li', { 'data-issue-kind': String(issue.kind), 'data-issue-index': index, children })
+            jsx('tbody', {
+              children: rows.map((cells, index) =>
+                jsx('tr', {
+                  'data-row': String(index),
+                  children: cells.map((cell, column) => jsx('td', { 'data-col': String(column), style: CELL, children: cell })),
+                }),
+              ),
+            }),
+          ],
+        })
+      }
+
+      /**
+       * Counts as three columns. `data-count-label` / `data-count-value` let the recorder read the
+       * numbers back as pairs instead of scraping a sentence — the old single-line form is what made
+       * "行 219 · 有判定 184 · …" the only machine-readable shape.
+       */
+      function countsTable(counts, copy) {
+        const rows = ['rows', 'judged', 'go', 'denied', 'unknown']
+          .filter((key) => typeof counts[key] === 'number')
+          .map((key) => [
+            jsx('span', { 'data-count-label': key, children: copy.countLabels[key] }),
+            jsx('strong', { 'data-count-value': key, children: String(counts[key]) }),
+            jsx('span', { 'data-count-meaning': key, children: copy.countMeanings[key] }),
+          ])
+        return matrix(copy.countColumns, rows, { 'data-triage-counts': '1' })
+      }
+
+      /**
+       * One row per issue: what it is, then the engine's own reason on a second line inside the same
+       * cell. Five columns did not fit a settings dialog; the reason belongs under the conclusion it
+       * explains, not in a column of its own.
+       */
+      function issuesTable(issues, copy) {
+        const rows = issues.map((issue, index) => [
+          String(index + 1),
+          jsx('code', { children: String(issue.id) }),
+          jsxs('span', {
+            'data-issue-kind': String(issue.kind),
+            children: [
+              jsx('span', { children: String(issue.plain) }),
+              typeof issue.line === 'string' && issue.line !== ''
+                ? jsx('span', {
+                    style: { display: 'block', opacity: 0.75, fontSize: '0.9em' },
+                    children: `${copy.reason}: ${issue.line}`,
+                  })
+                : null,
+            ].filter((node) => node !== null),
+          }),
+          typeof issue.fix === 'string' && issue.fix !== ''
+            ? jsx('button', {
+                type: 'button',
+                'data-copy-fix': String(issue.id),
+                style: { whiteSpace: 'nowrap' },
+                onClick: () => copyText(issue.fix),
+                children: copy.copy,
+              })
+            : copy.none,
+        ])
+        return matrix(copy.issueColumns, rows, { 'data-triage-issues': String(issues.length) })
+      }
+
+      /** Two columns: what you want to do, and the command. No prose in between. */
+      function nextTable(steps, copy) {
+        const rows = steps.map((step) => [String(step.label), jsx('code', { children: String(step.command) })])
+        return matrix(copy.nextColumns, rows)
       }
 
       function summaryView(summary, copy, onRefresh) {
@@ -167,18 +268,7 @@ window.__ModuleLoader__.load({
           }),
         )
         if (counts !== null) {
-          children.push(
-            jsx('p', {
-              'data-triage-counts': '1',
-              children: fill(copy.counts, {
-                rows: counts.rows,
-                judged: counts.judged,
-                go: counts.go,
-                denied: counts.denied,
-                unknown: counts.unknown,
-              }),
-            }),
-          )
+          children.push(countsTable(counts, copy))
           // Zero rows is not a clean profile: it is usually the wrong home. Say so (R49's lesson).
           if (counts.rows === 0) children.push(jsx('p', { children: copy.empty }))
         }
@@ -186,28 +276,13 @@ window.__ModuleLoader__.load({
         if (issues.length === 0) children.push(jsx('p', { children: copy.noIssues }))
         else {
           children.push(jsx('h4', { children: copy.issues }))
-          children.push(
-            jsxs('ul', {
-              'data-triage-issues': String(issues.length),
-              children: issues.map((issue, index) => issueRow(issue, copy, index)),
-            }),
-          )
+          children.push(issuesTable(issues, copy))
           if (summary.more > 0) children.push(jsx('p', { children: fill(copy.more, { n: summary.more }) }))
         }
         if (counts !== null && counts.unknown > 0) children.push(jsx('p', { children: copy.unknownSuffix }))
         if (summary && Array.isArray(summary.next) && summary.next.length > 0) {
           children.push(jsx('h4', { children: copy.next }))
-          children.push(
-            jsxs('ul', {
-              children: summary.next.map((step) =>
-                jsxs('li', {
-                  // A separator is written INTO the line, not left to the Host's CSS: in the real
-                  // page the label and the command rendered as one run-together string ("逐行归因dsh-triage why").
-                  children: [jsx('span', { children: `${String(step.label)} — ` }), jsx('code', { children: String(step.command) })],
-                }),
-              ),
-            }),
-          )
+          children.push(nextTable(summary.next, copy))
         }
         children.push(jsx('p', { children: copy.source }))
         children.push(jsx('button', { type: 'button', onClick: onRefresh, children: copy.reload }))
@@ -332,6 +407,13 @@ window.__ModuleLoader__.load({
        * a test double) falls back to English, which is also what `summary.en` is for.
        */
       const activeLocale = t('tab') === zh.tab ? 'zh' : 'en'
+      /*
+       * STRUCTURED COPY COMES FROM THE DICTIONARY, NOT FROM `t()` (R55): `t()` is the Host's string
+       * binding — feeding it arrays and objects to get column labels back would be relying on
+       * behaviour nobody promised. Tables need labels, so they are read from the dictionary this
+       * plugin registered, for the same locale `t()` just reported.
+       */
+      const dict = activeLocale === 'zh' ? zh : en
       const injected = () => ({
         locale: activeLocale,
         copy: {
@@ -339,6 +421,12 @@ window.__ModuleLoader__.load({
           title: t('title'),
           hint: t('hint'),
           counts: t('counts'),
+          countColumns: dict.countColumns,
+          countLabels: dict.countLabels,
+          countMeanings: dict.countMeanings,
+          issueColumns: dict.issueColumns,
+          nextColumns: dict.nextColumns,
+          none: dict.none,
           issues: t('issues'),
           noIssues: t('noIssues'),
           reason: t('reason'),

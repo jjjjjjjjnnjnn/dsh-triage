@@ -5,11 +5,11 @@
   "label": "client-serve",
   "outcome": {
     "served": true,
-    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=201619cd2f8a",
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=250778d945a5",
     "tab_visible": "passed"
   },
   "sandbox": {
-    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy6m0k6\\home",
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy7k1m5\\home",
     "profile": "web",
     "bundle": "file:packages/* (workspace rewritten)"
   },
@@ -27,12 +27,12 @@
     {
       "id": "install",
       "status": "passed",
-      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 24.5s using pnpm v12.15.0"
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 24.8s using pnpm v12.15.0"
     },
     {
       "id": "boot",
       "status": "passed",
-      "detail": "host printed http://127.0.0.1:64580/"
+      "detail": "host printed http://127.0.0.1:62647/"
     },
     {
       "id": "graph",
@@ -40,14 +40,14 @@
       "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
       "html_bytes": 38207,
       "client_module_listed": true,
-      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=201619cd2f8a"
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=250778d945a5"
     },
     {
       "id": "client",
       "status": 200,
-      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2030974B · loader=true · id=true · tab=true",
-      "bytes": 2030974,
-      "sha256": "6af13bab4d85de1f849da4bd0bf8c77e180b5fcfe58b4a6c31ca20559fce844c",
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2034597B · loader=true · id=true · tab=true",
+      "bytes": 2034597,
+      "sha256": "ea81eb024f07705e17db785c181963b77c5ec0087ed0e97fea6551720bc1c0a4",
       "has_loader": true,
       "declares_id": true,
       "mentions_tab_slot": true,
@@ -100,7 +100,7 @@
           "clicked": true
         }
       ],
-      "page_url": "http://127.0.0.1:64580/",
+      "page_url": "http://127.0.0.1:62647/",
       "controls_before": [
         "打开侧边栏",
         "新建会话",
@@ -160,16 +160,43 @@
         "插件列表",
         "分诊台"
       ],
-      "tab_ms": 936,
+      "tab_ms": 921,
       "tab_probe": {
         "present": true,
         "mode": "summary",
         "kind": null,
         "tone": "attention",
         "counts_text": "行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184",
+        "count_rows": [
+          {
+            "key": "rows",
+            "label": "行",
+            "value": "219"
+          },
+          {
+            "key": "judged",
+            "label": "有判定",
+            "value": "184"
+          },
+          {
+            "key": "go",
+            "label": "正常",
+            "value": "0"
+          },
+          {
+            "key": "denied",
+            "label": "会坏",
+            "value": "0"
+          },
+          {
+            "key": "unknown",
+            "label": "判不了",
+            "value": "184"
+          }
+        ],
         "issues": 3,
         "copy_fix_buttons": 0,
-        "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n没有会坏的东西，但有 184 项我们判断不了，通常不影响启动。\n\n行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184\n\n要看的地方\n@deepseek-ai/cordis-plugin-timer — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n@deepseek-ai/dsh-agent — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n@deepseek-ai/dsh-agent-default-model — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent-default-model 引入的 @deepseek-ai/dsh-agent-default-model 在本 profile 下未安装\n\n还有 179 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n逐行归因 — dsh-triage why\n升级前先看会坏什么 — dsh-triage upgrade --to next\n打开本地面板 — dsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+        "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n没有会坏的东西，但有 184 项我们判断不了，通常不影响启动。\n\n项目\t数量\t含义\n行\t219\t声明过的行\n有判定\t184\t给出了结论\n正常\t0\t确认放行\n会坏\t0\t会被摘掉\n判不了\t184\t不算通过\n要看的地方\n#\t插件\t结论\t修复\n1\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n2\t@deepseek-ai/dsh-agent\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\t—\n3\t@deepseek-ai/dsh-agent-default-model\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent-default-model 引入的 @deepseek-ai/dsh-agent-default-model 在本 profile 下未安装\n\t—\n\n还有 179 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
       },
       "tab_body": "passed",
       "clipboard": {
@@ -203,10 +230,10 @@
     {
       "id": "screenshot",
       "status": "passed",
-      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-real.png (95061 bytes)",
+      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-real.png (83133 bytes)",
       "path": "docs/market/screenshot-0.3.1-real.png",
-      "bytes": 95061,
-      "sha256": "d3db39730970dd31dda8f15a6896e546fb80fb20f97ef20e4bb66f0a912d5214"
+      "bytes": 83133,
+      "sha256": "482433e553e26211a9ed2cb983348496069d2bd07d59c9346f815346d705dd64"
     },
     {
       "id": "summary-visible",
@@ -217,21 +244,48 @@
       "kind": null,
       "tone": "attention",
       "counts_text": "行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184",
+      "count_rows": [
+        {
+          "key": "rows",
+          "label": "行",
+          "value": "219"
+        },
+        {
+          "key": "judged",
+          "label": "有判定",
+          "value": "184"
+        },
+        {
+          "key": "go",
+          "label": "正常",
+          "value": "0"
+        },
+        {
+          "key": "denied",
+          "label": "会坏",
+          "value": "0"
+        },
+        {
+          "key": "unknown",
+          "label": "判不了",
+          "value": "184"
+        }
+      ],
       "issues": 3,
       "copy_fix_buttons": 0,
-      "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n没有会坏的东西，但有 184 项我们判断不了，通常不影响启动。\n\n行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184\n\n要看的地方\n@deepseek-ai/cordis-plugin-timer — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n@deepseek-ai/dsh-agent — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n@deepseek-ai/dsh-agent-default-model — 它没说自己支持哪个版本，所以我们判断不了。 · 原因: row agent-default-model 引入的 @deepseek-ai/dsh-agent-default-model 在本 profile 下未安装\n\n还有 179 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n逐行归因 — dsh-triage why\n升级前先看会坏什么 — dsh-triage upgrade --to next\n打开本地面板 — dsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+      "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n没有会坏的东西，但有 184 项我们判断不了，通常不影响启动。\n\n项目\t数量\t含义\n行\t219\t声明过的行\n有判定\t184\t给出了结论\n正常\t0\t确认放行\n会坏\t0\t会被摘掉\n判不了\t184\t不算通过\n要看的地方\n#\t插件\t结论\t修复\n1\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n2\t@deepseek-ai/dsh-agent\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent 引入的 @deepseek-ai/dsh-agent 在本 profile 下未安装\n\t—\n3\t@deepseek-ai/dsh-agent-default-model\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row agent-default-model 引入的 @deepseek-ai/dsh-agent-default-model 在本 profile 下未安装\n\t—\n\n还有 179 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
     },
     {
       "id": "user-answer",
       "status": "passed",
-      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 936ms",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 921ms",
       "answers": {
         "conclusion": true,
         "which_row": true,
         "what_to_type": true
       },
-      "ms_to_answer": 936,
-      "text_chars": 700
+      "ms_to_answer": 921,
+      "text_chars": 743
     },
     {
       "id": "english-screen",
@@ -285,7 +339,7 @@
   "host_log": [
     "dsh-triage: compat_verdict tool registered (profile web)",
     "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary registered (profile web)",
-    "dsh web: http://127.0.0.1:64580/?token=<redacted>"
+    "dsh web: http://127.0.0.1:62647/?token=<redacted>"
   ],
   "limits": [
     "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
