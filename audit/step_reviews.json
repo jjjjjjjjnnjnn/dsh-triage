@@ -7507,6 +7507,72 @@
         "sha256": "30a998d9910200ba2b6d1173f4efef2fb3757f7b157620d345706760125399d2",
         "outcome": "红（如实）：`version 0.3.1 还没发过` ✅ · `workspace 5 dep 走 pnpm 改写` ✅ · `not-logged-in（真 E401）` ❌"
       }
+    },
+    {
+      "id": "R53-S6",
+      "batch": "R53",
+      "step": "**0.3.1 的发布前真机验证（第一跑，中文屏）**：在沙盒 `0.2.1-rc.4` 上把 0.3.1 的 bundle 真装进 profile、真启动 Host、用 Edge headless 打开 `设置 → 内置插件 → 分诊台`，确认「一屏答案」真的出现在真浏览器里（0.3.1 唯一的新内容就是这一屏）",
+      "changed": [
+        "data/results/client-serve-2026-11-01T11-00-00.000Z.json",
+        "data/results/client-serve-2026-11-01T11-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：`bundle / install / boot / graph / client(200) / mount / visible / summary-visible / user-answer / same-source / cleanup` 全部 `passed`；`same-source` 把页签与 CLI 摆在一起比：「the tab and the CLI agree on this profile: 220 declared rows (193 resolved), 0 go / 1 will break / 184 unknown」——**声明行 220 与解析行 193 分开写**，不再混用（R51 那个坑的延续）",
+        "reproducibility": "PASS：`node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T11:00:00.000Z`；产物自报 `outcome.served=true`、组合 URL 里含 `dsh-triage/client.js`（说明启动图真的把它组进去了，`BS-35` 的三条规则都满足）",
+        "licence": "PASS：只在本机沙盒（`%TEMP%` 下的一次性 profile）里真装真启动；`~/.dsh` 一个字节都没写；夹具 `tests/fixtures/client/breaking-plugin` 是仓内自有代码，无第三方产物进仓",
+        "ssot": "PASS：产物由记录器写出，带 `produced_by` / `generated_at` / `.sha256`；`english-screen` 与 `clipboard-copy` 如实记为 `unmeasured`（本轮没传 `--lang en`、也没有「会坏」行），**不当成通过**——这两项由 S7 / S8 两跑分别覆盖",
+        "adversary": "反例一：把 `unmeasured` 读成 `passed`（「三项没测＝三项没问题」）——被拒：报告里逐项列出，且三跑各自覆盖不同项；反例二：拿 `client: 200` 就说「页面能用」——被拒：`visible` / `summary-visible` 是 DOM 层的证据，HTTP 200 在 R49 已经被证明可以和「空壳页」同时成立（CSP 自伤）；反例三：把这次跑的结果说成「在你的机器上也没问题」——被拒：产物里写死 profile `web` 与沙盒运行时 `0.2.1-rc.4`"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T11:00:00.000Z",
+        "artifact": "data/results/client-serve-2026-11-01T11-00-00.000Z.json",
+        "sha256": "a33c8082e90c73a45ac1f382f45cc749db451b24a191577567b87de842d0c257",
+        "outcome": "11 passed / 2 unmeasured（`english-screen` / `clipboard-copy`，本轮未传参）· `same-source` 220 声明行 / 193 解析行"
+      }
+    },
+    {
+      "id": "R53-S7",
+      "batch": "R53",
+      "step": "**0.3.1 的发布前真机验证（第二跑，「会坏」那一屏）**：用 `--extra-bundle tests/fixtures/client/breaking-plugin` + `--fixture-range \">=0.2.0\"` + `--break-after-install \">=9.0.0\"` 造一个「装的时候合规、装完之后声明变窄」的行，验证页签真的把「会坏」摆出来，并顺手让复制按钮有一次真鼠标点击",
+      "changed": [
+        "data/results/client-serve-2026-11-01T11-20-00.000Z.json",
+        "data/results/client-serve-2026-11-01T11-20-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：**16 passed / 1 unmeasured**（只有 `english-screen`，本轮没传 `--lang en`）。`extra-bundles` 暂存夹具、`exempt-grant` 装前豁免、`break-after-install` 改写已安装 manifest 再重启、`exempt-revoke` 撤豁免，四步都 `passed`；`clipboard-copy` 拿到真鼠标路径；`same-source` 报「220 declared rows (193 resolved), 0 go / **1 will break** / 184 unknown」，页签 DOM 文案 `行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184` 与之一致",
+        "reproducibility": "PASS：同一条命令加三个参数即可复现（见 `real_test.command`）；夹具在仓内，`engines.dsh: \">=9.0.0\"` 是唯一让它「装完才坏」的条件",
+        "licence": "PASS：仍是一次性沙盒 profile；夹具是仓内自有代码（MIT），未引入任何外部产物；`~/.dsh` 未写",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；`english-screen` 如实 `unmeasured`（由 S8 覆盖）；「会坏 1」是**这个 profile 当前的拒绝**，不是升级预测——措辞与 `BS-42` 的口径一致",
+        "adversary": "反例一：用 mock 行冒充「会坏」——被拒：本轮是真装 + 真重启 + 真读 manifest；反例二：把「会坏 1」写成「升级会坏」——被拒：这是现行 admission 拒的行，四桶里没有任何一格被引用来支持它；反例三：只跑这一跑就说「全部见证」——被拒：`english-screen` 仍是 unmeasured，必须再跑一次"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T11:20:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\"",
+        "artifact": "data/results/client-serve-2026-11-01T11-20-00.000Z.json",
+        "sha256": "504b61b8ad4ee7480afe59fdeee7710ef605183dd449b44074082a1a272050e7",
+        "outcome": "16 passed / 1 unmeasured · `break-after-install` passed · `clipboard-copy` passed · `same-source` 0 go / 1 会坏 / 184 判不了"
+      }
+    },
+    {
+      "id": "R53-S8",
+      "batch": "R53",
+      "step": "**0.3.1 的发布前真机验证（第三跑，英文屏）**：`--lang en` 让浏览器声称英文，验证双语载荷的另一半——宿主侧同时下发 zh/en，页面只负责选，不负责翻译",
+      "changed": [
+        "data/results/client-serve-2026-11-01T11-40-00.000Z.json",
+        "data/results/client-serve-2026-11-01T11-40-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：`english-screen` `passed`（页签在英文环境下真的出英文句子），其余同 S6；`clipboard-copy` 本轮 `unmeasured`（没有「会坏」行 → 没有复制按钮可点），由 S7 覆盖",
+        "reproducibility": "PASS：`--lang en` 是唯一差异；同一 profile、同一沙盒运行时、同一 CLI",
+        "licence": "PASS：同 S6（一次性沙盒 profile，无外部产物，未写 `~/.dsh`）",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；**三跑拼起来才覆盖全部检查项**（S6 缺 en+clipboard、S7 缺 en、S8 缺 clipboard），任何单一产物都不能被读成「全部见证」",
+        "adversary": "反例一：让浏览器自己按 `navigator` 选语言、前端翻译判据——被拒：载荷里两个语言都在（`{env, summary:{zh,en}}`），页面只选不译；反例二：拿英文屏证明中文屏也可读——被拒：两件事分开跑，`user-answer` 各自独立；反例三：把 `--lang en` 当成「上游支持多语言」的证据——被拒：它只证明我们的页面跟随宿主 `locale.bind`"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T11:40:00.000Z --lang en",
+        "artifact": "data/results/client-serve-2026-11-01T11-40-00.000Z.json",
+        "sha256": "faa502bf5a39cf9acd34de597883b5d517f98f75673205e941bdb0b2a1c6ca3e",
+        "outcome": "12 passed / 1 unmeasured · `english-screen` passed（中文/英文/会坏三屏现在各有一份产物）"
+      }
     }
   ]
 }

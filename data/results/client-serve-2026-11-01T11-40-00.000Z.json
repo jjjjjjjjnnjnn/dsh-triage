@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_serve.mjs",
+  "generated_at": "2026-11-01T11:40:00.000Z",
+  "label": "client-serve",
+  "outcome": {
+    "served": true,
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=f3a046ea0380",
+    "tab_visible": "passed"
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy2acfa\\home",
+    "profile": "web",
+    "bundle": "file:packages/* (workspace rewritten)"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 19.7s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "host printed http://127.0.0.1:52792/"
+    },
+    {
+      "id": "graph",
+      "status": "passed",
+      "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
+      "html_bytes": 38207,
+      "client_module_listed": true,
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=f3a046ea0380"
+    },
+    {
+      "id": "client",
+      "status": 200,
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2030974B · loader=true · id=true · tab=true",
+      "bytes": 2030974,
+      "sha256": "5510908c1d227126248c52b5b8db2269d2ef5b03edd1bf22f1802cfc5e33e131",
+      "has_loader": true,
+      "declares_id": true,
+      "mentions_tab_slot": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "id": "mount",
+      "status": "passed",
+      "detail": "the client runner called apply and the settings slot accepted the tab",
+      "browser": "msedge.exe",
+      "registered": true,
+      "slot": "settings.plugins.tab",
+      "tab_id": "compat-triage",
+      "reason": null
+    },
+    {
+      "id": "visible",
+      "status": "passed",
+      "detail": "the settings page rendered \"Triage\" and the summary view (attention · 3 issue(s) shown)",
+      "tab_registered": true,
+      "hops": [
+        {
+          "action": "dismiss-intro",
+          "name": "Continue",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:more",
+          "name": "More",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:account menu",
+          "name": "Account menu",
+          "clicked": true
+        },
+        {
+          "action": "open-settings",
+          "name": "SettingsCtrl+Alt+,",
+          "clicked": true
+        },
+        {
+          "action": "open-plugin-settings-section:Built-in plugins",
+          "name": "Built-in plugins",
+          "clicked": true
+        },
+        {
+          "action": "open-tab",
+          "name": "Triage",
+          "clicked": true
+        }
+      ],
+      "page_url": "http://127.0.0.1:52792/",
+      "controls_before": [
+        "Open sidebar",
+        "New session",
+        "Global panels",
+        "Plugins",
+        "Automation tasks",
+        "More",
+        "Add workspace",
+        "Search sessions",
+        "Account menu",
+        "Choose workspace",
+        "Choose the agent preset for your new task",
+        "Choose workspace",
+        "Add files or run commands",
+        "Send message",
+        "Preview Notice",
+        "Continue"
+      ],
+      "text_head": "Into the Unknown Preview Choose workspace Standard mode Choose a workspace to start Preview Notice DeepSeek Harness 0.2 is still in preview, and many areas need continued improvement and refinement. W",
+      "intro_dismissed": "Continue",
+      "settings_entry": "SettingsCtrl+Alt+,",
+      "plugin_section": "Built-in plugins",
+      "controls_after": [
+        "Open sidebar",
+        "New session",
+        "Global panels",
+        "Plugins",
+        "Automation tasks",
+        "More",
+        "Add workspace",
+        "Search sessions",
+        "Account menu",
+        "Open right sidebar",
+        "Choose workspace",
+        "Choose the agent preset for your new task",
+        "Describe what you want to build, / commands, @ files or sessions",
+        "Add files or run commands",
+        "Access mode, current: Workspace Write",
+        "Select model",
+        "Send message",
+        "New tab",
+        "Split",
+        "Exit fullscreen",
+        "Collapse right sidebar",
+        "Get started",
+        "Close",
+        "Add API Key",
+        "Sign in",
+        "Browse other plugins",
+        "Create your plugin",
+        "General",
+        "Models",
+        "Built-in plugins",
+        "Agent presets",
+        "Open configuration file",
+        "Plugin views",
+        "Plugin list",
+        "Triage"
+      ],
+      "tab_ms": 921,
+      "tab_probe": {
+        "present": true,
+        "mode": "summary",
+        "kind": null,
+        "tone": "attention",
+        "counts_text": "rows 219 · judged 184 · fine 0 · will break 0 · cannot tell 184",
+        "issues": 3,
+        "copy_fix_buttons": 0,
+        "text": "Triage · will this setup break?\n\nThe conclusion is computed on the host by the same engine as the CLI; this tab only displays it.\n\nNothing is broken, but there is (are) 184 thing(s) we could not judge. It usually still starts.\n\nrows 219 · judged 184 · fine 0 · will break 0 · cannot tell 184\n\nWhat needs you\n@deepseek-ai/cordis-plugin-timer — It never says which versions it supports, so we cannot tell. · reason: row timer imports @deepseek-ai/cordis-plugin-timer, which is not installed under this profile\n@deepseek-ai/dsh-agent — It never says which versions it supports, so we cannot tell. · reason: row agent imports @deepseek-ai/dsh-agent, which is not installed under this profile\n@deepseek-ai/dsh-agent-default-model — It never says which versions it supports, so we cannot tell. · reason: row agent-default-model imports @deepseek-ai/dsh-agent-default-model, which is not installed under this profile\n\n179 more not listed here.\n\nRows that declare no version range are not a pass — they are \"cannot tell\".\n\nNext step\nrow-by-row attribution — dsh-triage why\nwhat the next dsh would deny — dsh-triage upgrade --to next\nopen the local panel — dsh-triage serve\n\nRead from the host route /compat-triage/summary, the same projection `dsh-triage status` prints.\n\nRefresh"
+      },
+      "tab_body": "passed",
+      "clipboard": {
+        "status": "unmeasured",
+        "detail": "no copy button rendered (the engine produced no command for these rows)",
+        "evidence": {}
+      },
+      "marker_after_tab": {
+        "registered": true,
+        "slot": "settings.plugins.tab",
+        "id": "compat-triage",
+        "route": "/compat-triage/summary",
+        "data": {
+          "ok": true,
+          "kind": null,
+          "tone": "attention",
+          "counts": {
+            "rows": 219,
+            "judged": 184,
+            "go": 0,
+            "denied": 0,
+            "unknown": 184,
+            "collisions": 0,
+            "duplicateCopies": 0,
+            "errors": 0
+          }
+        }
+      },
+      "tab_match": "Triage"
+    },
+    {
+      "id": "summary-visible",
+      "status": "passed",
+      "detail": "the tab rendered the summary: tone attention, 3 issue row(s) on screen, 0 copy-fix button(s)",
+      "present": true,
+      "mode": "summary",
+      "kind": null,
+      "tone": "attention",
+      "counts_text": "rows 219 · judged 184 · fine 0 · will break 0 · cannot tell 184",
+      "issues": 3,
+      "copy_fix_buttons": 0,
+      "text": "Triage · will this setup break?\n\nThe conclusion is computed on the host by the same engine as the CLI; this tab only displays it.\n\nNothing is broken, but there is (are) 184 thing(s) we could not judge. It usually still starts.\n\nrows 219 · judged 184 · fine 0 · will break 0 · cannot tell 184\n\nWhat needs you\n@deepseek-ai/cordis-plugin-timer — It never says which versions it supports, so we cannot tell. · reason: row timer imports @deepseek-ai/cordis-plugin-timer, which is not installed under this profile\n@deepseek-ai/dsh-agent — It never says which versions it supports, so we cannot tell. · reason: row agent imports @deepseek-ai/dsh-agent, which is not installed under this profile\n@deepseek-ai/dsh-agent-default-model — It never says which versions it supports, so we cannot tell. · reason: row agent-default-model imports @deepseek-ai/dsh-agent-default-model, which is not installed under this profile\n\n179 more not listed here.\n\nRows that declare no version range are not a pass — they are \"cannot tell\".\n\nNext step\nrow-by-row attribution — dsh-triage why\nwhat the next dsh would deny — dsh-triage upgrade --to next\nopen the local panel — dsh-triage serve\n\nRead from the host route /compat-triage/summary, the same projection `dsh-triage status` prints.\n\nRefresh"
+    },
+    {
+      "id": "user-answer",
+      "status": "passed",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 921ms",
+      "answers": {
+        "conclusion": true,
+        "which_row": true,
+        "what_to_type": true
+      },
+      "ms_to_answer": 921,
+      "text_chars": 1271
+    },
+    {
+      "id": "english-screen",
+      "status": "passed",
+      "detail": "the tab rendered its English dictionary (same code path, en sentences)"
+    },
+    {
+      "id": "clipboard-copy",
+      "status": "unmeasured",
+      "detail": "no copy button rendered (the engine produced no command for these rows)"
+    },
+    {
+      "id": "same-source",
+      "status": "passed",
+      "detail": "the tab and the CLI agree on this profile: 219 declared rows (192 resolved), 0 go / 0 will break / 184 unknown",
+      "tab_data": {
+        "ok": true,
+        "kind": null,
+        "tone": "attention",
+        "counts": {
+          "rows": 219,
+          "judged": 184,
+          "go": 0,
+          "denied": 0,
+          "unknown": 184,
+          "collisions": 0,
+          "duplicateCopies": 0,
+          "errors": 0
+        }
+      },
+      "cli_data": {
+        "rows": 192,
+        "declared": 219,
+        "judged": 184,
+        "verdicts": {
+          "go": 0,
+          "blocked": 0,
+          "risky": 0,
+          "unknown": 184
+        }
+      },
+      "tab_dom_counts": "rows 219 · judged 184 · fine 0 · will break 0 · cannot tell 184"
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "host_log": [
+    "dsh-triage: compat_verdict tool registered (profile web)",
+    "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary registered (profile web)",
+    "dsh web: http://127.0.0.1:52792/?token=<redacted>"
+  ],
+  "limits": [
+    "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
+    "this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)",
+    "the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine"
+  ]
+}
