@@ -5,11 +5,11 @@
   "label": "client-serve",
   "outcome": {
     "served": true,
-    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cbdf8cdc9550",
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=433b9bdecbf2",
     "tab_visible": "passed"
   },
   "sandbox": {
-    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy7ij9s\\home",
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy81lsf\\home",
     "profile": "web",
     "bundle": "file:packages/* (workspace rewritten)"
   },
@@ -49,7 +49,7 @@
     {
       "id": "install",
       "status": "passed",
-      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 21.1s using pnpm v12.15.0"
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 16.3s using pnpm v12.15.0"
     },
     {
       "id": "exempt-revoke",
@@ -63,12 +63,15 @@
       "files": [
         "<profile>\\web\\.extra-breaking-plugin\\package.json",
         "<profile>\\web\\node_modules\\dsh-breaking-fixture\\package.json"
+      ],
+      "targets": [
+        "dsh-breaking-fixture"
       ]
     },
     {
       "id": "boot",
       "status": "passed",
-      "detail": "host printed http://127.0.0.1:56865/"
+      "detail": "host printed http://127.0.0.1:56403/"
     },
     {
       "id": "graph",
@@ -76,14 +79,14 @@
       "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
       "html_bytes": 38207,
       "client_module_listed": true,
-      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=cbdf8cdc9550"
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=433b9bdecbf2"
     },
     {
       "id": "client",
       "status": 200,
-      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2034597B · loader=true · id=true · tab=true",
-      "bytes": 2034597,
-      "sha256": "ffb98a232821c342a632bbef45820030bb6c4818fe517ea1290c7604c7ef2496",
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2035452B · loader=true · id=true · tab=true",
+      "bytes": 2035452,
+      "sha256": "85fce9801e8228056b7f83ac5a2e6db000f22fb02e443305562c76b00a993696",
       "has_loader": true,
       "declares_id": true,
       "mentions_tab_slot": true,
@@ -136,7 +139,7 @@
           "clicked": true
         }
       ],
-      "page_url": "http://127.0.0.1:56865/",
+      "page_url": "http://127.0.0.1:56403/",
       "controls_before": [
         "打开侧边栏",
         "新建会话",
@@ -194,9 +197,34 @@
         "打开配置文件",
         "插件视图",
         "插件列表",
-        "分诊台"
+        "分诊台",
+        "搜索插件",
+        "会话插件",
+        "选择要查看的 Agent 预设",
+        "智能体角色设定, persona, 已启用",
+        "@deepseek-ai/dsh-persona",
+        "persona",
+        "工作区指令加载, agent-instructions, 已启用",
+        "@deepseek-ai/dsh-agent-instructions",
+        "agent-instructions",
+        "时间感知, time-context, 已启用",
+        "@deepseek-ai/dsh-time-context",
+        "time-context",
+        "Bash 命令工具, tool-bash, 已停用",
+        "@deepseek-ai/dsh-tool-bash",
+        "tool-bash",
+        "PowerShell 命令工具, tool-pwsh, 已启用",
+        "@deepseek-ai/dsh-tool-pwsh",
+        "tool-pwsh",
+        "文件读写工具, tool-fs, 已启用",
+        "@deepseek-ai/dsh-tool-fs",
+        "tool-fs",
+        "文件搜索工具, tool-fs-search, 已启用",
+        "@deepseek-ai/dsh-tool-fs-search",
+        "tool-fs-search",
+        "后台任务工具, tool-jobs, 已启用"
       ],
-      "tab_ms": 923,
+      "tab_ms": 922,
       "tab_probe": {
         "present": true,
         "mode": "summary",
@@ -281,10 +309,10 @@
     {
       "id": "screenshot",
       "status": "passed",
-      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-breaking.png (83633 bytes)",
+      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-breaking.png (83039 bytes)",
       "path": "docs/market/screenshot-0.3.1-breaking.png",
-      "bytes": 83633,
-      "sha256": "29b107cf0c9a3ee4517b63aafc703e762b993f5d6c42c7c6a13e85686e2a2d62"
+      "bytes": 83039,
+      "sha256": "0b3c40e81f5a51793a2da642c0d73d7d3e4d4d7e5f5e97b18a1e00a0f617cdcd"
     },
     {
       "id": "summary-visible",
@@ -329,13 +357,13 @@
     {
       "id": "user-answer",
       "status": "passed",
-      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 923ms",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 922ms",
       "answers": {
         "conclusion": true,
         "which_row": true,
         "what_to_type": true
       },
-      "ms_to_answer": 923,
+      "ms_to_answer": 922,
       "text_chars": 672
     },
     {
@@ -401,7 +429,7 @@
     "dsh: skipping profile bundle \"dsh-breaking-fixture\": Error: Plugin dsh-breaking-fixture@1.0.0 is incompatible with dsh 0.2.1-rc.4: requirements {\"engines.dsh\":\">=9.0.0\"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-breaking-fixture@1.0.0 on dsh 0.2.1-rc.4 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.",
     "dsh-triage: compat_verdict tool registered (profile web)",
     "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary registered (profile web)",
-    "dsh web: http://127.0.0.1:56865/?token=<redacted>"
+    "dsh web: http://127.0.0.1:56403/?token=<redacted>"
   ],
   "limits": [
     "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",

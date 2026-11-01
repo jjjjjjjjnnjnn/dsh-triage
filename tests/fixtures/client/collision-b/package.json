@@ -1,0 +1,17 @@
+{
+  "name": "dsh-collide-fixture-b",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test fixture: claims the same loader entry id as dsh-collide-fixture-a but names a different module, which is what makes the ledger call it a conflicting-definitions collision.",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

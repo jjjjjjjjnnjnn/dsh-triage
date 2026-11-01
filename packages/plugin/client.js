@@ -60,6 +60,8 @@ window.__ModuleLoader__.load({
         go: '正常',
         denied: '会坏',
         unknown: '判不了',
+        collisions: '撞车',
+        duplicates: '重复副本',
       },
       countMeanings: {
         rows: '声明过的行',
@@ -67,6 +69,8 @@ window.__ModuleLoader__.load({
         go: '确认放行',
         denied: '会被摘掉',
         unknown: '不算通过',
+        collisions: '两个插件抢同一个位置',
+        duplicates: '同一个包装了两个版本',
       },
       issueColumns: ['#', '插件', '结论', '修复'],
       nextColumns: ['想做什么', '命令'],
@@ -99,6 +103,8 @@ window.__ModuleLoader__.load({
         go: 'fine',
         denied: 'will break',
         unknown: 'cannot tell',
+        collisions: 'collisions',
+        duplicates: 'duplicates',
       },
       countMeanings: {
         rows: 'declared',
@@ -106,6 +112,8 @@ window.__ModuleLoader__.load({
         go: 'admitted',
         denied: 'dropped at start-up',
         unknown: 'not a pass',
+        collisions: 'two plugins claim one row id',
+        duplicates: 'the same package installed twice',
       },
       issueColumns: ['#', 'Plugin', 'Conclusion', 'Fix'],
       nextColumns: ['If you want', 'Run'],
@@ -204,15 +212,27 @@ window.__ModuleLoader__.load({
 
       /**
        * Counts as three columns. `data-count-label` / `data-count-value` let the recorder read the
-       * numbers back as pairs instead of scraping a sentence — the old single-line form is what made
-       * "行 219 · 有判定 184 · …" the only machine-readable shape.
+       * numbers back as pairs instead of scraping a sentence.
+       *
+       * COLLISIONS AND DUPLICATES ONLY APPEAR WHEN THEY EXIST (R55): the headline counts them as
+       * "things that will go wrong" ("有 2 个东西会出问题"), so a table that only showed `会坏 1`
+       * contradicted the sentence above it — found by looking at the mixed demo, not by a test.
        */
       function countsTable(counts, copy) {
-        const rows = ['rows', 'judged', 'go', 'denied', 'unknown']
-          .filter((key) => typeof counts[key] === 'number')
-          .map((key) => [
+        const order = [
+          ['rows', counts.rows],
+          ['judged', counts.judged],
+          ['go', counts.go],
+          ['denied', counts.denied],
+          ['unknown', counts.unknown],
+          ['collisions', counts.collisions],
+          ['duplicates', counts.duplicateCopies],
+        ].filter(([, value]) => typeof value === 'number')
+        const rows = order
+          .filter(([key, value]) => (key === 'collisions' || key === 'duplicates') ? Number(value) > 0 : true)
+          .map(([key, value]) => [
             jsx('span', { 'data-count-label': key, children: copy.countLabels[key] }),
-            jsx('strong', { 'data-count-value': key, children: String(counts[key]) }),
+            jsx('strong', { 'data-count-value': key, children: String(value) }),
             jsx('span', { 'data-count-meaning': key, children: copy.countMeanings[key] }),
           ])
         return matrix(copy.countColumns, rows, { 'data-triage-counts': '1' })

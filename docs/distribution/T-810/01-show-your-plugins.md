@@ -6,7 +6,7 @@
 > **发帖前检查**：
 > 1. 分类选择：**Show Your Plugins!**；
 > 2. 标题符合格式：`DSH | dsh-triage | 一句话描述`；
-> 3. 附件上传：将 `docs/market/screenshot-0.3.1-breaking.png` 与 `screenshot-0.3.1-real.png` 上传为帖子附件；
+> 3. 附件上传：将 `docs/market/screenshot-0.3.1-mixed.png` 与 `screenshot-0.3.1-real.png` 上传为帖子附件；
 > 4. 遵守社区规范：不留私人联系方式与非官方夸大性宣传。
 
 ---
@@ -52,13 +52,19 @@ $ dsh plugin --profile web add dsh-triage
 
 ## 界面与效果预览
 
-**图 1：有东西会被拦的时候**（附件：`screenshot-0.3.1-breaking.png`）
+**图 1：三种典型问题同时出现时**（附件：`screenshot-0.3.1-mixed.png`）
 
-> 屏上是 `行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184`。这一条是我们自己造的测试夹具 `dsh-breaking-fixture`：它**安装时**声明 `engines.dsh: ">=0.2.0"`，**装完之后**把已安装的 manifest 改写成 `>=9.0.0`，于是被当前运行时 `0.2.1-rc.4` 拒掉。屏上给的是原因（`engines.dsh >=9.0.0 不含 0.2.1-rc.4`）和一个「复制」按钮——复制出来的是可以贴进终端的那条修复命令，建议文本本身不在屏上。
+> 屏上是 `行 222 · 有判定 185 · 会坏 1 · 撞车 1 · 判不了 184`，与上面那句「有 2 个东西会出问题」对上（1 个会坏 + 1 个撞车）。三行分别是三类最常见的形态：
+>
+> 1. **会被版本区间拒**——`dsh-breaking-fixture`（原因 `engines.dsh >=9.0.0 不含 0.2.1-rc.4`），这一行带「复制」，复制出来的是能贴进终端的修复命令；
+> 2. **两个插件抢同一个位置**——`compat-demo-shared`（原因：两行抢同一个 entry id，来自 `bundle:dsh-collide-fixture-a` 与 `bundle:dsh-collide-fixture-b`，profile 可能起不来）。这一类不带修复按钮：**要摘掉哪一个得你来定**，工具只负责把两个主人点出来；
+> 3. **判不了**——`@deepseek-ai/cordis-plugin-timer` 没声明支持区间，工具不猜。
+>
+> 诚实说明：**这三条都是我们自己的测试夹具**（`dsh-breaking-fixture` 装完之后把声明改写成 `>=9.0.0`；`dsh-collide-fixture-a/b` 故意抢同一个 entry id），用来演示「一屏里同时出现多类问题」长什么样。它们不是你的机器，也不是真实插件。
 
 **图 2：没有发现会被拦的行——但这不等于全部通过**（附件：`screenshot-0.3.1-real.png`）
 
-> 真实沙盒环境：`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`。注意那个 `正常 0`：**没有任何一行被确认为「放行」**。`会坏 0` 只说明这次没发现拒绝；`判不了 184` 是那些没声明 `engines.dsh` 或 peer 区间的行——工具不会把沉默算成通过，也不会替你猜。
+> 真实沙盒环境：`行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184`。注意那个 `正常 0`：**没有任何一行被确认为「放行」**。`会坏 0` 只说明这次没发现拒绝；`判不了 184` 是那些没声明 `engines.dsh` 或 peer 区间的行——工具不会把沉默算成通过，也不会替你猜。撞车与重复副本这两行**只在真的存在时才出现**，所以这张图里没有。
 
 ## 与 DSH 的集成方式
 
@@ -72,6 +78,7 @@ $ dsh plugin --profile web add dsh-triage
 - **纯本地只读**：不修改本地任何 profile 配置，不写入 `~/.dsh`，除解析 `next`/`latest` 标签外无需网络连接，零隐私上报。
 - **可复算证据**：
   - 升级卡片判定依据：`data/results/upgrade-card-2026-10-31T09-00-00.000Z.json`（可由命令 `node scripts/record_upgrade_card.mjs --stamp <ISO> --to 0.2.1-rc.5` 复算）；
-  - 设置页真机运行记录：`data/results/client-serve-2026-11-01T18-50-00.000Z.json`。
+  - 图 1 那次真机运行（三类问题混合的演示）：`data/results/client-serve-2026-11-01T21-30-00.000Z.json`；
+  - 图 2 那次真机运行（真实沙盒）：`data/results/client-serve-2026-11-01T18-30-00.000Z.json`。
 
 欢迎试用体验，有任何建议或 issue 欢迎在仓库交流！

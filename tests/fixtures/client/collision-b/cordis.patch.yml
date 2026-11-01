@@ -1,0 +1,8 @@
+# dsh-collide-fixture-b — the other half of the conflicted entry id.
+#
+# Same `id`, different module: `findEntryIdCollisions()` reports `conflicting-definitions` with both
+# owners named. Same id + same module would be a legitimate restatement instead, which is why the
+# pair is deliberately different modules (see the collision rule in packages/core).
+- insert:
+    - id: compat-demo-shared
+      name: dsh-collide-fixture-b

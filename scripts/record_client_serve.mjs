@@ -224,8 +224,18 @@ async function main() {
   if (breakAfterInstall !== null && extraBundles.length > 0) {
     // What a plugin update does: the same row, a narrower claim. The installed copy is what the
     // audit reads, so both the staged source and the installed copy are rewritten.
+    /*
+     * `--break-only <name>` (R55): a mixed demo needs ONE denied row next to a collision, so the
+     * rewrite has to be scoped. Without it every staged fixture would become denied and the
+     * collision would never be seen — the demo would be four copies of the same problem.
+     */
+    const breakOnly = argOf('--break-only', null)
+    const targets = breakOnly === null ? extraBundles : extraBundles.filter((entry) => entry.name === String(breakOnly))
+    if (breakOnly !== null && targets.length === 0) {
+      throw new Error(`--break-only "${String(breakOnly)}" matches none of: ${extraBundles.map((entry) => entry.name).join(', ')}`)
+    }
     const rewritten = []
-    for (const extra of extraBundles) {
+    for (const extra of targets) {
       const candidates = [
         join(extra.staged, 'package.json'),
         join(profileDir, 'node_modules', ...extra.name.split('/'), 'package.json'),
@@ -241,8 +251,8 @@ async function main() {
       }
     }
     record('break-after-install', rewritten.length > 0 ? 'passed' : 'failed', rewritten.length > 0
-      ? `rewrote ${rewritten.length} installed manifest(s) so ${extraBundles.map((entry) => entry.name).join(', ')} now declares engines.dsh ${String(breakAfterInstall)} — a row that passed at install time and is denied afterwards`
-      : 'could not find the installed manifest to rewrite, so nothing was made to break', { files: rewritten })
+      ? `rewrote ${rewritten.length} installed manifest(s) so ${targets.map((entry) => entry.name).join(', ')} now declares engines.dsh ${String(breakAfterInstall)} — a row that passed at install time and is denied afterwards`
+      : 'could not find the installed manifest to rewrite, so nothing was made to break', { files: rewritten, targets: targets.map((entry) => entry.name) })
   }
 
   const port = Number(argOf('--port', '0'))

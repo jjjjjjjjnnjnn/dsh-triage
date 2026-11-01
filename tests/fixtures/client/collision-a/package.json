@@ -1,0 +1,17 @@
+{
+  "name": "dsh-collide-fixture-a",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test fixture: claims the shared loader entry id `compat-demo-shared` with its own module. Paired with dsh-collide-fixture-b, it makes the static ledger report a conflicting-definitions collision — a common real failure (two plugins claiming one row id).",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

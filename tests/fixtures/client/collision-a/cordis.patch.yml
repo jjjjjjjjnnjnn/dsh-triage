@@ -1,0 +1,11 @@
+# dsh-collide-fixture-a — one half of a deliberately conflicted entry id.
+#
+# WHY: the most common "plugin disappeared" shape after an admission denial is two plugins claiming
+# the same loader row id: the later definition wins (or the boot fails), and nothing in the UI says
+# which plugin lost. The static ledger can name both owners, so the settings tab's "things to look
+# at" table can show it — but only if a profile really contains that shape (R55 demo).
+#
+# The id is `compat-` prefixed as always: never reuse an upstream row id.
+- insert:
+    - id: compat-demo-shared
+      name: dsh-collide-fixture-a

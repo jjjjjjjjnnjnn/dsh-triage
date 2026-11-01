@@ -7714,7 +7714,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png",
         "artifact": "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
-        "sha256": "a98403be267411c99a28fef1d28c8a465e352ee0690c668344edea0394027f4a",
+        "sha256": "921f5ba77a8b5a1d4298c3a4dd623e15d349659b9d39aed400d58ee2cba95250",
         "outcome": "11 passed / 2 unmeasured · `screenshot: passed`（98938 bytes）· `summary-visible: passed`（tone attention，3 条要看的地方）"
       }
     },
@@ -7737,7 +7737,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
         "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
-        "sha256": "2c793e0891b53f0f815c1e935b55f74321e856fd144eadc8cef3e29d4808e658",
+        "sha256": "4079d2bc95d80ef1b8dd0ab602056d8f70070fb1e842a3036ba2bf14275ce209",
         "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（89822 bytes）· `break-after-install: passed` · `clipboard-copy: passed`"
       }
     },
@@ -7876,7 +7876,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
         "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
-        "sha256": "2c793e0891b53f0f815c1e935b55f74321e856fd144eadc8cef3e29d4808e658",
+        "sha256": "4079d2bc95d80ef1b8dd0ab602056d8f70070fb1e842a3036ba2bf14275ce209",
         "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（83633 bytes）· 三张表渲染且计数未变"
       }
     },
@@ -7900,6 +7900,61 @@
         "artifact": "data/results/listing-2026-11-01T21-00-00.000Z.json",
         "sha256": "45ac333dec749c308356721a23e9cad5b3359d249b2ba7b2f9a2308bd4a0723d",
         "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿的引用在重录后仍可复算"
+      }
+    },
+    {
+      "id": "R55-S4",
+      "batch": "R55",
+      "step": "**「典型」不是一种问题，是几种同时出现**：造了 `collision-a` / `collision-b` 两个夹具（同一个 entry id、不同模块 → `conflicting-definitions`），给记录器加 `--break-only <name>` 让「装完才坏」只作用于一个 bundle，跑出一屏**三类问题并存**的演示（被版本区间拒 / 撞车 / 判不了）",
+      "changed": [
+        "tests/fixtures/client/collision-a/package.json",
+        "tests/fixtures/client/collision-a/cordis.patch.yml",
+        "tests/fixtures/client/collision-a/index.js",
+        "tests/fixtures/client/collision-b/package.json",
+        "tests/fixtures/client/collision-b/cordis.patch.yml",
+        "tests/fixtures/client/collision-b/index.js",
+        "scripts/record_client_serve.mjs",
+        "packages/plugin/client.js",
+        "docs/market/screenshot-0.3.1-mixed.png",
+        "docs/distribution/T-810/01-show-your-plugins.md",
+        "docs/distribution/T-810/registry.json",
+        "data/results/client-serve-2026-11-01T21-30-00.000Z.json",
+        "data/results/client-serve-2026-11-01T21-30-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：真机 16 passed / 1 unmeasured（只有 `english-screen`）；屏上 `行 222 · 有判定 185 · 正常 0 · 会坏 1 · 撞车 1 · 判不了 184`，问题表三行分别是 `dsh-breaking-fixture`（denied，带「复制」）、`compat-demo-shared`（collision，原因点名两个 owner bundle）、`@deepseek-ai/cordis-plugin-timer`（unknown）。**这一跑抓到一个真缺陷**：标题说「有 2 个东西会出问题」（denied + collisions），而计数表只列了 `会坏 1` —— 表和标题自相矛盾；补了「撞车 / 重复副本」两行（**只 >0 时出现**），改完重拍，表与标题对上",
+        "reproducibility": "PASS：`node scripts/record_client_serve.mjs --dsh-main <sandbox>/…/lib/bin.js --install <sandbox>/install --stamp 2026-11-01T21:30:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin,tests/fixtures/client/collision-a,tests/fixtures/client/collision-b --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --break-only dsh-breaking-fixture --screenshot docs/market/screenshot-0.3.1-mixed.png`；另两张图用同一版代码同 stamp 重录（18:30 / 18:50）",
+        "licence": "PASS：两个新夹具是仓内自有代码（MIT、private:true、不发布）；撞车靠 patch 文件声明，不含任何第三方内容",
+        "ssot": "PASS：三张图的 bytes/sha256 与各自产物一致；帖子的 `cites` 改成「图 1 → 21:30、图 2 → 18:30、卡片 → 10-31」，正文逐字写了这三个路径；`check_listing` 12/12",
+        "adversary": "反例一：只加夹具不改 `--break-after-install` 的作用范围——被拒：它会把三个夹具全改成 `>=9.0.0`，撞车那一行永远不会出现，演示退化成「三个同款」；反例二：为了凑满三行而把 unknown 行换成造出来的「安全」——被拒：unknown 来自真实沙盒的 184 行，造一个 `go` 反而违反「沉默≠通过」；反例三：让「撞车」并入「会坏」凑数——被拒：它们是两种处置动作（前者要你决定摘谁，后者给一条修复命令），合并会把可操作信息弄没；反例四：图注不写「这是夹具」——被拒：三行里两行是夹具，图注逐条写明构造方式与「不是你的机器」"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T21:30:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin,tests/fixtures/client/collision-a,tests/fixtures/client/collision-b --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --break-only dsh-breaking-fixture --screenshot docs/market/screenshot-0.3.1-mixed.png",
+        "artifact": "data/results/client-serve-2026-11-01T21-30-00.000Z.json",
+        "sha256": "e2623dd6b40eab1eface005f4ca41a939682750d85ca55d68219be8873741719",
+        "outcome": "16 passed / 1 unmeasured · 三类问题同屏（denied / collision / unknown）· `screenshot` 84615 bytes"
+      }
+    },
+    {
+      "id": "R55-S3",
+      "batch": "R55",
+      "step": "**换图之后的一致性复跑**：帖子从「一张只有 denied 的图」换成「三类问题混合的图」，`cites` 改成 21:30（图 1）/ 18:30（图 2）/ 升级卡片，正文逐字写出三个路径",
+      "changed": [
+        "data/results/listing-2026-11-01T21-40-00.000Z.json",
+        "data/results/listing-2026-11-01T21-40-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：12/12，`version 0.3.1 · tests 542`；`drafts-cite-real-artifacts` 报「5 draft(s), every cited artifact hashes and every draft carries a recompute command」——三处引用（含新换的 21:30）sha256 全部复算通过，且正文真的提到了它们",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T21:40:00.000Z --tests 542`；同一次 `pnpm run test` 报 542/0",
+        "licence": "PASS：文案与 JSON 改动；图 1 换成本仓自有夹具的界面截图（PNG 进仓），无第三方素材",
+        "ssot": "PASS：产物 sha256 `0f15793c…`；`registry.json` 的 `cites` 与正文路径逐条一致；旧的 `screenshot-0.3.1-breaking.png` 保留（它是「只有一类问题」的最小复现），但不再被帖子引用",
+        "adversary": "反例一：换图不换 `cites`——被拒：第 9 条断言要求被引用的产物在正文里出现，正文写了 21:30 而 registry 仍是 18:50 就会红；反例二：把图注里的数字改成与截图不符——被拒：`same-source` 那一跑的数字（222/185/1/1/184）与图注逐项对应；反例三：删掉旧图——被拒：它仍是「单一问题」的最小证据，留着不引用即可"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T21:40:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T21-40-00.000Z.json",
+        "sha256": "0f15793c3b94c3996fb1120884be18368433b6a5187538912f41e80907062f54",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 三处引用（含新图 21:30）全部可复算"
       }
     }
   ]
