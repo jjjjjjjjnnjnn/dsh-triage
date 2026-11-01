@@ -5,13 +5,14 @@
   "rule": "每篇草稿只能引用这里登记过的真机产物；被引用产物的 sha256 由检查器复算，改数不重跑即红",
   "drafts": [
     {
-      "file": "01-rc5-discussion-reply.md",
-      "channel": "upstream GitHub Discussions · reply under the rc.5 release thread",
+      "file": "01-show-your-plugins.md",
+      "channel": "upstream GitHub Discussions · 「Show Your Plugins!」分类（#2004 六条：标题模板 / 项目地址 / 介绍 / 截图 / 集成方式 / 非官方声明）",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,
       "cites": [
-        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
+        "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json",
+        "data/results/client-serve-2026-11-01T18-50-00.000Z.json"
       ]
     },
     {

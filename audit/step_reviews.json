@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R53 (2026-11-01)",
+  "stand": "R54 (2026-11-01)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -7302,10 +7302,10 @@
     {
       "id": "R52-S6",
       "batch": "R52",
-      "step": "**`T-810` 五篇草稿 + 机器可查的登记表**：`docs/distribution/T-810/`（上游 rc.5 Discussion 回复 / GitHub 故障帖诊断 / X 英文 4 条 / 中文长文 / B 站脚本）；`scripts/check_listing.mjs` 新增第 9 条断言 `drafts-cite-real-artifacts`（引用的产物必须存在、sha256 复算一致、正文真的写了那个路径、必须有可跑命令、禁用话术与个人身份）",
+      "step": "**`T-810` 五篇草稿 + 机器可查的登记表**：`docs/distribution/T-810/`（上游 rc.5 Discussion 回复 / GitHub 故障帖诊断 / X 英文 4 条 / 中文长文 / B 站脚本）；`scripts/check_listing.mjs` 新增第 9 条断言 `drafts-cite-real-artifacts`（引用的产物必须存在、sha256 复算一致、正文真的写了那个路径、必须有可跑命令、禁用话术与个人身份） （R54 改名：原名 `01-rc5-discussion-reply.md`；上游没有 per-rc 的讨论帖，原渠道假设不成立，内容已按 Show Your Plugins 六条重写）",
       "changed": [
         "docs/distribution/T-810/00-README.md",
-        "docs/distribution/T-810/01-rc5-discussion-reply.md",
+        "docs/distribution/T-810/01-show-your-plugins.md",
         "docs/distribution/T-810/02-github-fault-diagnosis.md",
         "docs/distribution/T-810/03-x-en.md",
         "docs/distribution/T-810/04-zh-longform.md",
@@ -7330,11 +7330,11 @@
     {
       "id": "R52-S7",
       "batch": "R52",
-      "step": "**保留的红产物（新断言第一次跑就抓到两类真问题）**：`test-count-matches` 抓到两份 README 的「500 tests」已僵（真实是 529）；`drafts-cite-real-artifacts` 抓到我自己的草稿把禁用话术写进了正文（04 的「全网」「已收录」、01 的 `upgrade fixes`）。产物不改、不删",
+      "step": "**保留的红产物（新断言第一次跑就抓到两类真问题）**：`test-count-matches` 抓到两份 README 的「500 tests」已僵（真实是 529）；`drafts-cite-real-artifacts` 抓到我自己的草稿把禁用话术写进了正文（04 的「全网」「已收录」、01 的 `upgrade fixes`）。产物不改、不删 （R54 改名：原名 `01-rc5-discussion-reply.md`；上游没有 per-rc 的讨论帖，原渠道假设不成立，内容已按 Show Your Plugins 六条重写）",
       "changed": [
         "README.md",
         "README.zh-CN.md",
-        "docs/distribution/T-810/01-rc5-discussion-reply.md",
+        "docs/distribution/T-810/01-show-your-plugins.md",
         "docs/distribution/T-810/04-zh-longform.md",
         "scripts/check_listing.mjs",
         "data/results/listing-2026-10-31T10-00-00.000Z.json"
@@ -7692,6 +7692,135 @@
         "artifact": "data/results/publish-2026-11-01T18-00-00.000Z.json",
         "sha256": "d1749abcddffa9e907ca2b59534ea22124951845f8f06cd0695d80706b1539cd",
         "outcome": "20/20 PASS · version 0.3.1 · version_source=manifest · git_dirty=false · head a5506e0"
+      }
+    },
+    {
+      "id": "R54-S1",
+      "batch": "R54",
+      "step": "**给真机记录器加 `--screenshot`，并在真实 Host 上拍出第一张图**：Show Your Plugins 六条规则里明确要截图，而全仓 `*.png/gif` 一直是 0 —— 没有截图，这一篇帖子结构上发不出去",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "docs/market/screenshot-0.3.1-real.png",
+        "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
+        "data/results/client-serve-2026-11-01T18-30-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：新增步骤 `screenshot: passed`，明细带 `path / bytes / sha256`（`docs/market/screenshot-0.3.1-real.png`，98938 bytes）。截图在 `visible` 之后才拍——**先确认页签真的渲染出答案，再照片**，否则拍到的是一张空壳（R49 的 CSP 事故就是「HTTP 200 + 空壳」）。图像经人工查看：设置页 → 内置插件 → 分诊台，首屏是「分诊台 · 这套装会不会坏」+ `行 219 · 有判定 184 · 正常 0 · 会坏 0 · 判不了 184` + 三条「要看的地方」+ 下一步",
+        "reproducibility": "PASS：`node scripts/record_client_serve.mjs --dsh-main <sandbox>/…/lib/bin.js --install <sandbox>/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png`；截图目标按 cwd 解析，产物里只记仓库相对路径（不写绝对路径，`results-privacy` 安全）",
+        "licence": "PASS：截的是我们自己的插件在我们自己的沙盒 Host 里的界面；镜头里的 DSH 界面属于运行时截图的使用，不引入第三方素材文件；PNG 进仓（MIT 仓库）",
+        "ssot": "PASS：图的 sha256 与字节数写进产物，图本身进 `docs/market/`；`summary-visible` 与图来自**同一个** `observed` 对象，不是两次运行拼出来的",
+        "adversary": "反例一：在 `visible` 之前截图——被拒（代码顺序与步骤明细都能看出来）；反例二：用 mock/手绘图标冒充——被拒（图里的计数与 `same-source` 的 220/193 一致，且来自同一次运行）；反例三：截图成功但 `summary-visible: failed` 仍宣称有图——被拒：两个步骤分别记录，任何一项红都会让整份产物 `outcome` 可见"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png",
+        "artifact": "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
+        "sha256": "3768526f417405ae8f4499e1458c6a31d41d6b4f7d3d31ff4cab7a14774d7832",
+        "outcome": "11 passed / 2 unmeasured · `screenshot: passed`（98938 bytes）· `summary-visible: passed`（tone attention，3 条要看的地方）"
+      }
+    },
+    {
+      "id": "R54-S2",
+      "batch": "R54",
+      "step": "**第二张截图：把「会坏」那一屏拍下来**（`--extra-bundle` + `--fixture-range` + `--break-after-install`），这张才是帖子里真正说明价值的图",
+      "changed": [
+        "docs/market/screenshot-0.3.1-breaking.png",
+        "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
+        "data/results/client-serve-2026-11-01T18-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：**16 passed / 1 unmeasured**（只有 `english-screen`，本轮没传 `--lang en`）。`screenshot: passed`（89822 bytes），人工查看确认屏上写着「有 1 个东西会出问题：DSH 启动后很可能直接不见」+ `行 220 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184` + 那一条 `dsh-breaking-fixture` 与 `原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4` + 复制按钮",
+        "reproducibility": "PASS：同一条命令加三个夹具参数（见 `real_test.command`）；夹具在 `tests/fixtures/client/breaking-plugin`，`engines.dsh: \">=9.0.0\"` 是唯一让它「装完才坏」的条件",
+        "licence": "PASS：夹具是仓内自有代码（MIT）；界面截图同上；未引入任何外部素材",
+        "ssot": "PASS：图与产物一一对应（`screenshot.path = docs/market/screenshot-0.3.1-breaking.png`），帖子引用的是这一份产物（`registry.json` 的 `cites`）",
+        "adversary": "反例一：把这张图当成「真实插件会坏」的证据——被拒：帖子正文明确写「这是我们自己造的夹具，装完之后声明被改写」；反例二：只发这张图、不提它是夹具——被拒：`docs/distribution/T-810/01-show-your-plugins.md` 的图注里写死；反例三：为了好看把计数改成「会坏 12」——被拒：图和产物同一来源，改数字就与 `same-source` 冲突"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:50:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --screenshot docs/market/screenshot-0.3.1-breaking.png",
+        "artifact": "data/results/client-serve-2026-11-01T18-50-00.000Z.json",
+        "sha256": "3f7a1f3922d77913eab71038eebec632422b228e4509b593ba87153bfecb485c",
+        "outcome": "16 passed / 1 unmeasured · `screenshot: passed`（89822 bytes）· `break-after-install: passed` · `clipboard-copy: passed`"
+      }
+    },
+    {
+      "id": "R54-S3",
+      "batch": "R54",
+      "step": "**D5 的读数做成可执行的口径 + 一个只读计量脚本**：`docs/specs/D5-measurement.md`（三数算法 / 窗口 / 判定表 / 排除项 / N1–N7）+ `scripts/lib/d5-score.mjs`（纯函数）+ `scripts/record_d5_evidence.mjs`（live / fixtures 双模）（字段名用 `d5_verdict` 而不是 `verdict`：后者归 `verdict-contract` 门管，R54 第一次跑就被它拦下——D5 的判定不是 go/risky/blocked/unknown，不该借那个字段名）",
+      "changed": [
+        "docs/specs/D5-measurement.md",
+        "scripts/lib/d5-score.mjs",
+        "scripts/lib/d5-score.d.mts",
+        "scripts/record_d5_evidence.mjs",
+        "tests/unit/d5-score.test.ts",
+        "tests/fixtures/d5/self-test/reactions.json",
+        "tests/fixtures/d5/self-test/references.json",
+        "data/results/d5-selftest-2026-11-01T19-00-00-000Z.json",
+        "data/results/d5-selftest-2026-11-01T19-00-00-000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：口径表里的五种结论（`no-post` / `unmeasurable` / `pending` / `pass` / `fail`）在 `judgeD5` 里是**按顺序的穷举**，8 条单测逐条钉住（含 N1 burst 634 不算需求、N2 三绿但无发帖日期 = `no-post`、N3 读不到 = `unmeasurable` 而不是 `fail`、N4 我们自己的三条 PR 与本仓 issue 全部排除、N5 第 14 天整点关窗、N7 三数达标不必等窗口）。fixtures 真跑产物 `d5-selftest-…19-00`：`verdict = pending`、reactions 12/10 ✅、references 1/1（**3 条里恰好 1 条是陌生人的**，另外两条是我们自己的 PR 与本仓 issue）、downloads 634 `single-day-burst` ❌",
+        "reproducibility": "PASS：`node scripts/record_d5_evidence.mjs --post … --posted-on … --fixtures tests/fixtures/d5/self-test --baseline data/results/market-baseline-2026-10-31T06-40-00.000Z.json`；**live 路径也用真 API 验过**：`--dry-read` 读 upstream #2004 得 `reactions 16`（分类型 4/8/2/2）、`references 0`（`seen 3`，全部是我们自己的 PR）、downloads 634 burst —— 这一步抓到并修掉了自己的两个 GraphQL 错误（`content` 是枚举、花括号层数）",
+        "licence": "PASS：只读 GitHub API（`gh api graphql` / `search/issues`），零新依赖；fixtures 是手写的小样本，不含任何第三方数据",
+        "ssot": "PASS：`produced_by` / `generated_at` / `.sha256` 齐全；**fixtures 模式的产物命名强制为 `d5-selftest-*` 且 `self_test: true`**，绝不可能被当成样本判定；`no-post` 与「三个源全读不到」都**不落产物**（exit 2），避免生成一份看起来像证据的空文件",
+        "adversary": "反例一：把「读不到」写成 0 —— 被拒：`state: unreadable` + 整体 `unmeasurable`，且 N3 单测钉住；反例二：把 634 的 burst 当需求 —— 被拒：`met` 要求 `shape === steady`，且 downloads 会拿基线自己的日序列用同一个 `classifyDownloadShape` 复算，手改 `download_shape` 也翻不了；反例三：把三条自己的投稿 PR 记成「外部引用」—— 被拒：`isExternalReference` 三重排除（账号 / 自家仓库 / 自有 PR 列表），N4 钉住；反例四：先跑再补口径 —— 被拒：spec 先写、脚本只实现 spec，且节点上写死「签字前不得用于判定」"
+      },
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-01T19:00:00.000Z --post \"https://github.com/jjjjjjjjnnjnn/dsh-triage/discussions/1\" --posted-on \"2026-11-01T09:00:00.000Z\" --fixtures tests/fixtures/d5/self-test --baseline data/results/market-baseline-2026-10-31T06-40-00.000Z.json",
+        "artifact": "data/results/d5-selftest-2026-11-01T19-00-00-000Z.json",
+        "sha256": "6bf0edd14684a2d58753e2e5c2209fb6f8491f8a5fe44773aa657d85b2327261",
+        "outcome": "pending · reactions 12/10 · references 1/1（seen 3，排除 2）· downloads 634 single-day-burst（不算需求）"
+      }
+    },
+    {
+      "id": "R54-S4",
+      "batch": "R54",
+      "step": "**投放稿改写 + 一次真红**：`01-rc5-discussion-reply.md`（回复 rc.5 thread）→ `01-show-your-plugins.md`（纯中文，按 #2004 六条）；检查器当场抓到两类问题：测试数已僵（534 vs 实跑 542）和我自己在图注/边界段里写进了禁用话术",
+      "changed": [
+        "docs/distribution/T-810/01-show-your-plugins.md",
+        "docs/distribution/T-810/registry.json",
+        "docs/distribution/T-810/00-README.md",
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-01T19-30-00.000Z.json",
+        "data/results/listing-2026-11-01T19-30-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：`test-count-matches` 报 `README.md:534`（实跑 542），`drafts-cite-real-artifacts` 报 `forbidden claim \"升级会修好\" / \"全网\" / \"已收录\"` 与 `personal identity (个人主页)` —— **四条里有三条是我写在「不含这些」那句里的**，规则不认意图，只认字符串",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T19:30:00.000Z --tests 542`；修法是改写法（「不写个人身份信息」「不是升级之后就没事了」），不是放宽禁用词表",
+        "licence": "PASS：纯文案与 JSON；帖子正文不含任何第三方素材；截图为自有界面",
+        "ssot": "PASS：`registry.json` 的 `cites` 两件都真实存在（`upgrade-card-2026-10-31T09-00-00` / `client-serve-2026-11-01T18-50-00`），且正文逐字写了这两个路径；改名后 `changed[]` 里的旧路径全部改指现存文件（`tests/governance/ledgers.test.ts` 要求路径存在），旧名以「R54 改名」注记保留在文字里",
+        "adversary": "反例一：把「不含 X」当成免死金牌继续写 X —— 被拒：禁用词表按字符串扫描，只能改写法；反例二：把测试数写成 534 蒙过去 —— 被拒：`--tests` 与实跑比对；反例三：保留旧稿两份让人选 —— 被拒：旧渠道结构上不存在（上游没有 per-rc 讨论帖），留着只会让下一位再踩一次"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T19:30:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T19-30-00.000Z.json",
+        "sha256": "f70b22ced4e3e7a2724b757a44e896492faac761783c5cc9704d90b8f9792ea6",
+        "outcome": "红：10/12（`test-count-matches` + `drafts-cite-real-artifacts` 四条禁用话术，其中三条写在我自己的「不含」句里）"
+      }
+    },
+    {
+      "id": "R54-S5",
+      "batch": "R54",
+      "step": "**投放包与口径收口复跑**：改写法、同步测试数 542、更新 `00-README.md` 的投稿顺序后，检查器转绿——这一份才是可以拿去发的那一版",
+      "changed": [
+        "docs/distribution/T-810/01-show-your-plugins.md",
+        "docs/distribution/T-810/00-README.md",
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-01T19-50-00.000Z.json",
+        "data/results/listing-2026-11-01T19-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：12/12，`version 0.3.1 · tests 542`；`drafts-cite-real-artifacts` 报「5 draft(s), every cited artifact hashes and every draft carries a recompute command」",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T19:50:00.000Z --tests 542`；`--tests` 与 `pnpm run test`（542/0）一致",
+        "licence": "PASS：文案 + 两端一短的截图引用；帖子中明确「非官方项目，由社区成员独立开发和维护」，符合 #2004 第 5 条",
+        "ssot": "PASS：投稿顺序表、`registry.json`、帖子正文三处的渠道说法一致（Show Your Plugins）；D5 的计时钟起点在帖子里写明是 `posted_on`，与 `docs/specs/D5-measurement.md` §2 一致",
+        "adversary": "反例一：把帖子写成「已收录 / 全网 / 升级会修好」—— 被拒（本步的绿是**改写法**换来的，不是放宽）；反例二：发帖前不重跑文中命令 —— 被拒：文首核对清单第 ④ 条写死「数字过期先重跑」；反例三：把 `d5-selftest` 当 D5 结果引用 —— 被拒：文件名与 `self_test: true` 双保险"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T19:50:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T19-50-00.000Z.json",
+        "sha256": "0075741b22fba79e15fbda73e6026d2a272cc0edc6a257ee7f72c63c166b76dd",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 五篇草稿的引用全部可复算"
       }
     }
   ]

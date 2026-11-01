@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R53 (2026-11-01)",
+  "stand": "R54 (2026-11-01)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -402,6 +402,15 @@
       "mitigation": "① **发布链自动取证**（本轮已改）：`pnpm run release:publish` = `release_preflight → pnpm -r publish → record_publish`，最后一步跑 `anonymous-install` 与三个 `dependency:*`，**部分成功会在同一条命令里变红**；② `record_publish` 的版本不再默认 `0.1.0`，默认从 `packages/plugin/package.json` 读（`scripts/lib/publish-target.mjs` + 5 条单测，含「不得回到 0.1.0」的回归断言）；③ 判定口径：**只有 `anonymous-install` 与 `dependency:*` 全绿才算发布成功**，`latest:*` 单项绿不算；④ 破损窗口内做**最小回滚**（把 `latest` 指回上一个可用版本）比解释更快，但 dist-tag 写操作要 OTP，是 HUMAN 动作；⑤ 事故现场固定写进 `audit/INCIDENT_<date>_*.md`，并把红产物留在 `data/results/`。",
       "owner": "package.json（release:publish）· scripts/record_publish.mjs · scripts/lib/publish-target.mjs · audit/INCIDENT_2026-11-01_partial-publish.md",
       "status": "open (R53): the chain now catches it after the fact; npm still has no cross-package transaction, so the failure can happen again — it just cannot stay invisible",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-51",
+      "area": "D5 计量（外部引用 / reactions）",
+      "cannot_see": "D5 的「外部引用 ≥1」只数 **GitHub 上能被搜索 API 看见**的 issue/PR：`search/issues` **不索引 discussions**，所以别人在讨论区评论里提到我们、在博客里写、在 X 上转发、在视频里念出来——这些**全都不算**，也不可能被这个数看见。同理 `reactions` 只数那条帖子上的 GitHub 反应，数不到阅读量、转载量、装了多少次。R54 的真读数已经证明这条缝是真的：搜索 `github.com/jjjjjjjjnnjnn/dsh-triage` 只回来 **3 条，全部是我们自己的投稿 PR**（外部引用 0），但「没人引用」这句话**不能**由这个 0 推出来。",
+      "mitigation": "① 口径里写死「只数 GitHub 搜索可见的 issue/PR」，并把这条限制写进每份 `d5-evidence` 产物的 `limits[]`（不是写在文档里就算了）；② 产物同时记 `references_seen`（搜索回来多少条）与被排除的每一条，读者能自己看穿「0 是因为没有，还是因为全被排除」；③ 判定表里 `unmeasurable` 与 `0` 严格分开，读不到不许折成没达标；④ 若窗口结束时引用仍为 0，结论只能是「在 GitHub 上没看到引用」，**不许**扩展成「产品没人用」——那三个数一起看（`BS-48` 说下载也一样）。",
+      "owner": "scripts/record_d5_evidence.mjs + docs/specs/D5-measurement.md §1/§4",
+      "status": "open (R54): the number is honest about what it counts, and counts only a slice of the possible references",
       "resolved_by": null
     }
   ]

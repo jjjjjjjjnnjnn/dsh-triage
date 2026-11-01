@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R53 (2026-11-01，交付轮：0.3.1 的票做好——四包同升 + CHANGELOG + 两份 README/两份上架文案对齐，`check_listing` 12/12；发布预检查如实报 `E401`（本机 npm 凭据失效）；顺带核实 **dsh.so 已收录**（`listed`，L5 · Run tested / security low），并发现 **#65 变成 `DIRTY`**（需 rebase）)｜**下一件事：`npm login` 后发 0.3.1 → `record_publish`；然后按上游 **Show Your Plugins!** 官方六条发帖（不是 rc Discussion，那里没有 rc 帖）**（两件都是 HUMAN 动作），然后判 D5｜上一轮 R52：D5 下载口径（`download_shape`）+ rc.5 卡片 + `T-810` 五篇草稿。
+> **Stand**: R54 (2026-11-01，交付轮：投放包就绪——D5 读数口径写死（`docs/specs/D5-measurement.md` + 8 条单测 + 计量脚本）、真机截图两张、草稿 01 按上游 Show Your Plugins 六条重写成中文)｜**下一件事：① HUMAN 给 D5 口径签字；② 把 `docs/distribution/T-810/01-show-your-plugins.md` 贴到 Show Your Plugins（不是 rc 讨论帖）；③ 贴完立刻跑 `record_d5_evidence --post … --posted-on …` 开表**｜上一轮 R53：0.3.1 发布（20/20）+ 一次部分发布事故与发布链改造。
 
 ## 🔍 按需求快速索引
 

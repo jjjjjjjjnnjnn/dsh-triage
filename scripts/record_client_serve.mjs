@@ -24,7 +24,7 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { basename, isAbsolute, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { findBrowser } from '../packages/probe/dist/render.js'
 import { SANDBOX_PNPM_WORKSPACE, buildWorkspaceBundle, sandboxProfileManifest } from './lib/bundle.mjs'
@@ -46,6 +46,12 @@ const bootTimeoutMs = Number(argOf('--boot-timeout-ms', '120000'))
 const label = String(argOf('--label', 'client-serve')).replace(/[^a-zA-Z0-9._-]+/g, '-')
 /** `--lang en` makes the browser claim English, which is how the en half of the tab is witnessed. */
 const uiLang = String(argOf('--lang', '')).toLowerCase()
+/**
+ * `--screenshot <file>` captures the screen the tab actually rendered (R54). The Show Your Plugins
+ * category requires screenshots, and a mock-up would be a picture of something nobody can install:
+ * this one is taken from the same real Host + real browser as `visible`/`summary-visible`.
+ */
+const screenshotRequest = argOf('--screenshot', null)
 /** `--fixture-range` / `--break-after-install` stage a row that is fine at install and denied afterwards. */
 const fixtureRange = argOf('--fixture-range', null)
 const breakAfterInstall = argOf('--break-after-install', null)
@@ -332,8 +338,15 @@ async function main() {
     if (browser === null) {
       record('mount', 'unmeasured', 'no browser found: the tab registration was not observed')
       record('visible', 'unmeasured', 'no browser found: the settings page was never opened')
+      record('screenshot', 'unmeasured', 'no browser found: there was no screen to photograph')
     } else {
-      const observed = await observePage(browser, `${base}`, page.cookie)
+      const screenshotTarget =
+        screenshotRequest === null
+          ? null
+          : isAbsolute(String(screenshotRequest))
+            ? String(screenshotRequest)
+            : resolve(abs('.'), String(screenshotRequest))
+      const observed = await observePage(browser, `${base}`, page.cookie, screenshotTarget)
       const mount = observed.marker
       record('mount', mount.registered === true ? 'passed' : mount.registered === false ? 'failed' : 'unmeasured', mount.detail, {
         browser: basename(browser),
@@ -344,6 +357,17 @@ async function main() {
       })
       visibleStatus = observed.visible.status
       record('visible', observed.visible.status, observed.visible.detail, observed.visible.evidence)
+      /*
+       * SCREENSHOT (R54): the file is a deliverable (the upstream plugin category requires one), so its
+       * size and sha256 go into the artifact — a screenshot that is not pinned to a run is decoration.
+       */
+      if (screenshotRequest === null) {
+        record('screenshot', 'unmeasured', 'no --screenshot was passed, so no image is claimed by this run', {})
+      } else if (observed.screenshot?.path) {
+        record('screenshot', 'passed', `captured the same screen as summary-visible: ${observed.screenshot.path} (${observed.screenshot.bytes} bytes)`, observed.screenshot)
+      } else {
+        record('screenshot', 'failed', `the browser did not return an image: ${String(observed.screenshot?.error ?? 'no image')}`, {})
+      }
       /*
        * SUMMARY VISIBLE (R51): the tab must render the ANSWER, not merely exist. The DOM probe
        * reports which view it rendered and how many issue rows it showed; the counts line is what
@@ -476,7 +500,7 @@ async function main() {
  * page actually offered, then clicks what it found; a miss is a readable "here is what the page
  * showed", never "my selector did not match".
  */
-async function observePage(browser, pageUrl, cookie) {
+async function observePage(browser, pageUrl, cookie, screenshotTarget = null) {
   const userDataDir = join(root, 'cdp-user-data')
   mkdirSync(userDataDir, { recursive: true })
   const chrome = spawn(
@@ -622,9 +646,34 @@ async function observePage(browser, pageUrl, cookie) {
         evidence: { tab_registered: mount.registered === true },
       })) }
     }
+    /*
+     * SCREENSHOT (R54): only after the visibility probe finished, because the picture has to show the
+     * answer — a settings page screenshot taken before the tab opened would be a picture of an empty
+     * shell. Failure to capture is reported, never silently skipped: a missing image is a missing
+     * deliverable for the post, not a cosmetic detail.
+     */
+    let screenshot = null
+    if (screenshotTarget !== null) {
+      try {
+        await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+        await pause(300)
+        const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+        const bytes = Buffer.from(String(shot?.data ?? ''), 'base64')
+        if (bytes.length === 0) throw new Error('the browser returned an empty image')
+        mkdirSync(dirname(screenshotTarget), { recursive: true })
+        writeFileSync(screenshotTarget, bytes)
+        screenshot = {
+          path: relative(abs('.'), screenshotTarget).split('\\').join('/'),
+          bytes: bytes.length,
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+        }
+      } catch (error) {
+        screenshot = { error: String(error && error.message ? error.message : error) }
+      }
+    }
     // Close only after BOTH questions are answered: the visibility probe drives the same page.
     socket.close()
-    return observed
+    return { ...observed, screenshot }
   } finally {
     await killTree(chrome.pid)
   }

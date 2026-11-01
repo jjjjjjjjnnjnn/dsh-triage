@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_d5_evidence.mjs",
+  "generated_at": "2026-11-01T19:00:00.000Z",
+  "spec": "docs/specs/D5-measurement.md",
+  "mode": "fixtures",
+  "self_test": true,
+  "d5_verdict": "pending",
+  "counts_as_demand": false,
+  "window": {
+    "posted_on": "2026-11-01T09:00:00.000Z",
+    "ends_at": "2026-11-15T09:00:00.000Z",
+    "closed": false,
+    "days_left": 14
+  },
+  "numbers": {
+    "reactions": {
+      "value": 12,
+      "state": "measured",
+      "threshold": 10,
+      "met": true
+    },
+    "external_references": {
+      "value": 1,
+      "state": "measured",
+      "threshold": 1,
+      "entries": [
+        {
+          "url": "https://github.com/someone-else/notes/issues/7",
+          "author": "someone-else",
+          "repository": "someone-else/notes",
+          "kind": "issue",
+          "title": "trying dsh-triage on my upgraded profile"
+        }
+      ],
+      "met": true
+    },
+    "weekly_downloads": {
+      "value": 634,
+      "state": "measured",
+      "shape": "single-day-burst",
+      "threshold": 20,
+      "met": false
+    }
+  },
+  "post": {
+    "url": "https://github.com/jjjjjjjjnnjnn/dsh-triage/discussions/1",
+    "number": 1,
+    "author": ""
+  },
+  "sources": {
+    "reactions": "fixtures:tests/fixtures/d5/self-test",
+    "references": "fixtures:tests/fixtures/d5/self-test",
+    "downloads": "market-baseline-2026-10-31T06-40-00.000Z.json"
+  },
+  "inputs": {
+    "fixtures": "self-test",
+    "baseline": "market-baseline-2026-10-31T06-40-00.000Z.json",
+    "reaction_types": {
+      "THUMBS_UP": 9,
+      "HEART": 2,
+      "ROCKET": 1
+    },
+    "references_seen": 3
+  },
+  "limits": [
+    "reactions is totalCount: every reaction type counts 1, the breakdown is recorded but not weighted",
+    "the search API does not index discussions, so a reference written inside a discussion comment is invisible to this number",
+    "weekly downloads is read from a market-baseline artifact and re-checked against its own daily series; it is not fetched here",
+    "this artifact answers \"did the three numbers reach their thresholds by the window\", not \"is the product good\""
+  ]
+}

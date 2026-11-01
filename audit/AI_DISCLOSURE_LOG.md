@@ -669,3 +669,13 @@
 - 结果：① 发布后自动取证**第一次跑就红**（8/20，同一根因）：`core@0.3.1` 不在 registry，`latest` 指向装不上的版本；② HUMAN 侧 `17:10:45Z` 补发后 **20/20**（匿名安装 exit 0 / 三个 `dependency:*` 解析 / CLI 15 命令 / `import()` 成功）；③ **破损窗口 2 分 47 秒**，如实写进事故文档；④ **改造**：`release:publish` = `preflight → publish → record_publish`，`--version` 默认从 `packages/plugin/package.json` 读（单测钉住「不得回到 `0.1.0`」，且 `v0.3.1` / `^0.3.1` / `0.3` / `latest` 一律拒绝而非归一化）；⑤ 又撞了一次隐私门（`npm` 报错里的用户目录路径）→ 事后脱敏 + 重算 sha256 + `clean()` 扩 `homedir()`
 - 实测：**534 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` **9/9** · `record_publish` **20/20** · `check_listing` **12/12**
 - 反思：这次最值得记的不是「少发了一个包」，而是**所有内部信号当时都是绿的**——预检查说「0.3.1 还没发过」（当时为真）、pnpm 的失败发生在最后一个包、`check_listing` 只查文案。**唯一能说真话的是「匿名装一次」**，而那个检查当时还没接在发布命令上。所以修法不是「下次小心点」，是让那条命令自己喊。
+
+### 2026-11-01 R54｜交付：把「投放」做成一套可执行的东西（口径先写死、脚本只按口径说话、截图来自真机）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话；台账 `R54-S1` … `R54-S5`；口径 `docs/specs/D5-measurement.md`
+- 范围：`docs/specs/D5-measurement.md`（新）· `scripts/lib/d5-score.mjs` + `.d.mts`（新）· `scripts/record_d5_evidence.mjs`（新）· `tests/unit/d5-score.test.ts`（新，8）· `tests/fixtures/d5/self-test/`（新）· `scripts/record_client_serve.mjs`（`--screenshot`）· `docs/market/screenshot-0.3.1-{real,breaking}.png`（新）· `docs/distribution/T-810/01-show-your-plugins.md`（新，替换旧稿）· `T-810/{registry.json,00-README.md}` · `README(.zh-CN).md`（测试数）· `docs/{HANDOFF,BACKLOG,ROADMAP}.md` · `AGENTS.md` / `INDEX.md` · `audit/{blind_spots.json,step_reviews.json}`
+- 人工决策：承接上轮的渠道更正（上游没有 per-rc 讨论帖）与语言选择（**纯中文**）
+- 结果：① **口径先写死**：三数算法、排除项、窗口、五种结论的穷举表、N1–N7 负对照，全部写在投放之前；② **口径做成可执行**：`judgeD5` 纯函数 + 8 条单测逐条对应 N1–N7（含「634 burst 不算需求」「读不到 ≠ fail」「我们自己的 PR 不算外部引用」「第 14 天整点关窗」「三数达标不必等」）；③ **计量脚本**：GraphQL 读 reactions（分类型）、`search/issues` 读外部引用（三重排除）、下载从基线读并用同一个 `classifyDownloadShape` **复算日序列**；**两个 GraphQL 错误是用 `--dry-read` 对 upstream #2004 真读才发现的**（`content` 是枚举、花括号层数）；④ **截图**：`--screenshot` 只在 `visible` 之后拍，两张进仓（真实沙盒 `会坏 0` / 夹具屏 `会坏 1`），图的 bytes+sha256 进产物；⑤ **帖子**：按 #2004 六条改写成中文，图注明确「那张会坏的屏是夹具」；⑥ 检查器抓到 4 条我自己写的禁用话术（写在「不含这些」那句里），改写法而**不是放宽词表**；⑦ 改名不留断链：R52 台账两处 `changed[]` 改指新文件并加注记
+- 实测：**542 测试 / 0 fail**（534 → 542）· 9 门 ALL GREEN · `--mutate` **9/9** · `check_listing` **12/12** · 真机截图两次 `screenshot: passed`（98938 / 89822 bytes）· `d5-selftest` 产物 `pending`（12/10 · 1/1 · 634 burst）
+- 反思：这轮没有一行判据改动，但它比改判据更接近产品——**因为「怎么算数」本身就是一个判据**。最有用的一条经验是 `--dry-read`：真接口的形状不能靠记忆，第一次写出来的 GraphQL 是错的，而错的读数会安静地变成 0。另外，检查器连续两轮抓到我自己的话术，说明「写清楚边界」这句话本身也要机器看一遍。
