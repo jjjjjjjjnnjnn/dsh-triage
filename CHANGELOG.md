@@ -6,6 +6,35 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.1] — 2026-11-01
+
+> The release that puts the one-screen answer **inside DSH**. `0.3.0` shipped it in the CLI and in the
+> local panel; `0.3.1` puts the same answer on the settings page — `Settings → Plugins → 分诊台`.
+> **No judgement changed**: the four buckets, the `improved` evidence thresholds, every admission rule,
+> every threshold, every exit code and `audit --json` are what `0.3.0` shipped. All four packages move
+> together again (a plugin that imports something a newer core exports fails at load).
+
+- **The settings tab answers in one screen.** A new read-only route `GET /compat-triage/summary` carries
+  a host-computed projection — `buildProfileSummary()`, the same function `dsh-triage status` and the
+  panel's `/api/summary` call — so the tab cannot drift from the CLI. It prints the verdict, the counts,
+  at most three "things to look at" with a copy button, and what to run next. Both locales travel in the
+  payload: the browser half must not translate judgement language itself, because the wording of a
+  conclusion is part of the conclusion.
+- **A row that breaks *after* install now has a screen.** Staged with a real fixture
+  (`engines.dsh: ">=9.0.0"`), not a mock: the tab shows it as `would-be-denied` with the reason and the
+  remediation command.
+- **Four failures get four different sentences**: route missing (404), profile unreadable (409), a
+  payload without `summary` (version skew), and a dead process (fetch threw). An empty composition says
+  out loud that `--dsh-home` / `--profile` is usually pointing at the wrong place — a zero-filled table
+  reads as "nothing is wrong", which is the one mistake this product must not make.
+- **Six wording fixes** found by reading the screen the way a stranger would: the subordinate `原因:`
+  marker, the `—` separator, a duplicated line, a stray `messageId`, `· 复制` in front of the copy
+  button, and a plural pronoun used for a single row.
+
+The download-shape rule landed in the same window (`scripts/lib/download-shape.mjs`, plus tests) but it
+is a measurement tool for this repository: nothing in the published packages reads it, and no package
+behaviour depends on it.
+
 ## [0.3.0] — 2026-10-29
 
 > The "stranger in 60 seconds" release: the upgrade-day card becomes reachable from a shell without

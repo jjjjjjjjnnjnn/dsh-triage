@@ -1,6 +1,6 @@
 # Listing copy (English, ready to paste)
 
-> **Stand**: R48 (2026-10-29). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
+> **Stand**: R53 (2026-11-01). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
 > against the repo (version, DSH range, evidence paths, and the README upgrade card). Chinese counterpart: `docs/market/listing_zh.md`.
 > Channel status lives in `docs/market/submissions/README.md`; long-form posts in `docs/posts/`.
 
@@ -85,10 +85,11 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 
 ## Current status
 
-`0.3.0` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
-requests are open (#65 awaiting review, #193 approved but unmerged, walkinglabs #140 just opened), `merged: 0`, and
-the dsh.so form was **submitted by a human** — but its three per-plugin JSON endpoints still return 404, so the status
-is `submitted`, **not** `listed`.
+`0.3.1` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
+requests are open (#65 now conflicts with `main` and needs a rebase from us, #193 approved and clean, walkinglabs
+#140 clean and unreviewed), `merged: 0` — but **dsh.so lists the plugin**: `L5 · Run tested` against `0.2.1-rc.5`,
+security tier `low`, first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
+machine; a listing is not usage.
 
 - format-1 index source (public URL, byte-verified): `https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - Badge: `dsh-triage badge <pkg>` renders an SVG from recorded measurements; no measurement renders `not measured`.

@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R52 (2026-10-31，采证轮 + 交付轮：D5 的下载口径不再能被单日爆发骗过；升级日卡片换成真实存在的 `0.2.1-rc.5`；`T-810` 五篇草稿可发)｜**下一件事：发 0.3.1 并把 `docs/distribution/T-810/01` 贴到 rc.5 的 Discussion 下**（两件都是 HUMAN 动作，见 §3），然后判 D5｜上一轮 R51：设置页一屏答案 + 模拟用户测试两轮 + 0.3.0 收口。
+> **Stand**: R53 (2026-11-01，交付轮：0.3.1 发版票做好 + 渠道复核——`check_listing` 12/12；预检查如实报 `E401`（本机 npm 凭据失效）；**dsh.so 已收录**、**#65 变成 `DIRTY`**）｜**下一件事：`npm login` → 发 0.3.1 → `record_publish`；然后按 **Show Your Plugins!** 官方六条发帖（rc Discussion 不存在）**（都是 HUMAN 动作，见 §3），再判 D5｜上一轮 R52：D5 下载口径（`download_shape`）+ rc.5 卡片 + `T-810` 五篇草稿。
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交付（R53，2026-11-01） | **把 0.3.1 的票做好 + 核实渠道；判据/阈值一字未动（交付轮）**。① **四包同升 0.3.0 → 0.3.1**（core/signals/probe/plugin 一起，R42 的教训：只升插件会让用户装到旧 core 并在启动时 `SyntaxError`）。② **CHANGELOG 新增 `[0.3.1]` 节**，只写用户能感知的三类事（设置页一屏答案 / 「装完才坏」的那一屏 / 六处文案修复），并明写**判定与 0.3.0 完全相同**（四桶 / `improved` 五门槛 / `admission` / 阈值 / 退出码 / `audit --json` 都不动）；R52 的 `download_shape` 是仓内测量工具，**不在发布包里**。③ **文案与证据指针一起对齐**（10 份文档 + CHANGELOG）：两份 README 的中英版本串、把「npm 包真的装得上」引的证据从 0.1.0 的产物改到 0.3.0 的 20/20 产物（`publish-2026-10-30T14-40-00`）、补上漏写的 walkinglabs #140、dsh.so 那句旧状态（「尚未提交」）改掉；两份上架文案的 Stand 与当前状态、提交包的 PR 状态一并刷新。④ **`check_listing` 第一次跑就抓到两处真漂移，而且第二处是我自己写的**：`docs/market/submissions/README.md` 一边说「0.3.0 已发布」一边把证据指向 **0.2.0** 那次的产物（红产物 `listing-2026-11-01T09-00-00` 保留）；修完后我又在正文里补了「它页面上的安装行仍写着 `dsh-triage@0.3.0`」，同一断言**立刻把这句话判红**（红产物 `…T09-50-00` 保留）——结论：那条规则对新文本一样生效，修法是改写法（「仍是上一个版本」），**不是放宽正则**。⑤ **渠道复核有新事实**：**dsh.so 已收录**——三个 per-plugin JSON 端点全部 200 且正文是真数据（`id=dsh-triage`、`indexedAt=2026-10-29T09:49Z`、`verification.level 5 · L5 · Run tested`（`0.2.1-rc.5` passed / `0.2.1-rc.3` unknown）、`security.audited` + `riskLevel low`、0 Critical / 0 Warning），所以状态从 `submitted` 改成 **`listed`**（`data/results/market-channels-2026-11-01T09-40-00.000Z.json`）；**同时发现唯一变坏的一条**：**#65 从 `BLOCKED` 变成 `DIRTY`**（与上游 `main` 冲突，冲突不解就永远合不了 → 新任务 `T-821` rebase）；#193 `APPROVED` + `CLEAN`、#140 `CLEAN` 无 review、`merged 0`。**两条边界写进所有对外文档**：L5 是 dsh.so 在自己干净沙盒里跑的一次结果（`BS-06`），且**收录不产生下载**——D5 判据里没有这一项。⑥ **一个读数陷阱被当场抓住**：`record_market_channels` 不传 `--pr` 时仍 exit 0，但 `summary.live = 0`——那不是「PR 全没了」，是「没问」；那份产物**被主动删除**（`market-channels-2026-11-01T09-20-00`），理由写进 `R53-S1` 台账。⑦ **发布预检查如实判红**：`version 0.3.1 还没发过` ✅、`workspace 5 dep 走 pnpm 改写` ✅、**`not-logged-in`（真 `E401`）** ❌——`npm whoami` 在同一 shell 独立复现 401，所以这是**真凭据失效**，不是 R50 那种「检查没跑起来却报你没登录」（红产物 `release-preflight-2026-11-01T10-20-00` 保留）。⑧ **测试 529 不变 / 9 门 ALL GREEN / `--mutate` 9-9**；`check_listing` **12/12**。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R52，2026-10-31） | **先让 D5 能被诚实判定，再把「升级日」样本做到能发；判据/阈值一字未动（采证轮 + 交付轮）**。① **一个假通过被拦下来了**：`npm` 上 `dsh-triage` 的周下载是 **634**（D5 门槛的 30 倍），但按天序列是 `0 0 0 0 0 0 0 / 634 / 0`——**十天里只有一天有数**，发布前一天与后一天都是 0，那是镜像/扫描器抓新包。直接读周合计就会让 D5 判「通过」，而这是全仓最禁忌的那类错误（R50 把没跑起来的检查报成 401、R51 把 `pending` 当答案）。② **口径由 HUMAN 批准后落地**（`SIGNOFF` R52）：`周下载 ≥20` **只在 `download_shape = steady` 时判定**（≥2 天有下载且无单日占比 >80%）；`burst`/`no-record`/`no-downloads` 记「未观测到需求」，`unreadable` 记 `unmeasurable`——**不是**「没有需求」。规则做成可执行纯函数 `scripts/lib/download-shape.mjs`（7 条单测，含「真实 634 序列必须判成 burst」的负对照）+ 4 条端到端测试（`tests/governance/market-baseline.test.ts`，含「steady 25 必须算通过」的**反向对照**，防止规则靠「永远说不」通过）。③ **采集器被自己的产物抓到三次**：requests 太密 → npm `429`（11 个包变 `unreadable`，红产物 `05-30` 保留）→ 实测出「批量查询不吃 scoped 包，但把 62 次请求降成 10 次」；GitHub 匿名额度耗尽 → `threads: 0` 会被写成「没人有问题」（红产物 `06-20` 保留）→ 改成**读不到讨论就 exit 2、零产物**，离线空 projection 同样拒绝；`inputs.fixtures` 曾把绝对路径写进 `data/results`（`results-privacy` 真的红了）→ `portablePath()`。④ **真跑 + 离线复算**：`market-baseline-2026-10-31T06-40-00.000Z.json`（`failures: []`；诊断 3,074 / 市场 513,534 / 装饰 552,956；形状 29 `steady` + 1 `single-day-burst`（就是我们）+ 1 `no-record`；854 条讨论 / 405 故障 / 256 零回复）与 `07-10` 离线复算（归一化三个「怎么跑出来的」字段后**逐字节相同**）。⑤ **上游已经动了**：`latest` 与 `next` 都是 **`0.2.1-rc.5`**（沙盒仍 rc.4），而 README 首屏的卡片还指着从未发布过的 `0.3.0` → 用 `--to 0.2.1-rc.5` 重录 **14/14**、两份 README 一起改指向。**诚实说明**：四桶数字与旧卡完全相同（两个目标都在 rc.4 的精确钉定区间外），草稿里不许把它包装成新发现。⑥ **`T-810` 五篇草稿**（上游 rc.5 Discussion 回复 / GitHub 故障帖诊断 / X 英文 4 条 / 中文长文 / B 站脚本）+ `registry.json`；`check_listing` 新增第 9 条断言 `drafts-cite-real-artifacts`（引用的产物必须存在、sha256 复算一致、正文真的写了那个路径、必须有可跑命令、禁用话术与个人身份）。**它第一次跑就抓到两类真问题**：两份 README 的「500 tests」已僵（真实 529）、我自己的草稿把「全网」「已收录」「upgrade fixes」写进了正文（红产物 `10-00` 保留）；定向负对照（登记一个正文没提到的产物）也红的干净（`10-50` 保留）。⑦ **测试 518 → 529**、9 门 ALL GREEN；`BS-48` 新增（形状能排除单日爬虫，但排除不了「稳态的 20 次也是机器」）。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R51，2026-10-30） | **把「一屏答案」搬进 DSH 设置页：一条只读路由 + 重写页签；判据/阈值一字未动（交付轮）**。① **先确认边界再动手**：DSH 里可注册的位置**只有** `settings.plugins.tab` 有真机证据（R33 实测），行级徽章 / 应用级横幅**没有任何 slot 证据**——所以这轮只做该做的，不做承诺不了的。② **host 侧**：新增 `GET /compat-triage/summary`，载荷 `{ env, summary: { zh, en }, ms }`，由 `buildProfileSummary()`（`status` / `serve` / CLI 同一个纯投影）在**宿主侧算好**；`/compat-triage/audit` **一字未改**（它的契约是「逐字节等于 `audit --json`」）。两语言一起下发，因为浏览器不许自己翻译判据语言——措辞是结论的一部分。③ **浏览器侧**：`client.js` 从「宿主报告 N 行 + 三个计数 + 请去终端」改成**一屏答案**（人话结论 / 计数行 / 最多 3 条「要看的地方」带「复制修复命令」/ 下一步 / 刷新），语言跟随宿主 `locale.bind` 的实际绑定（`t('tab') === zh.tab ? 'zh' : 'en'`），不嗅 `navigator`。④ **四种失败四种句子**（profile 没 web 面 → 404 `route-missing`；读不到 → 409 原文；200 但无 `summary` → 版本错位；fetch 抛 → 进程死），并且**零行组合**单独提示「通常是 `--dsh-home`/`--profile` 指错了」——零填充表格读起来就是「没问题」，那正是这个产品最不该犯的错。⑤ **真机三次跑，抓到自己两个缺陷**：第一次 `same-source` 红——记录器把 `summary.rows`（**声明行数** 219）与 `audit --json` 的 `rows`（**解析后** 192）当同一件事比，产物 `client-serve-2026-10-30T17-00-00.000Z.json` 保留；第二次 `visible:unmeasured`——DOM 探针读到 `data-triage-tab="error" / kind="pending"` 就收工，等于把「还没回答」当成结论，`client-serve-2026-10-30T17-30-00.000Z.json` 保留；修成「等到 summary 或终态 error」后第三次 **10/10**：`client-serve-2026-10-30T18-00-00.000Z.json`（`mount` / `visible` / **`summary-visible`** / `same-source` 全绿，`same-source` 同时报「219 声明行（192 解析）」）。⑥ **测试 510 → 517**（+5 路由守卫 / 409 / 500 / 载荷不重排；客户端 +2：四种失败各自成句、零行提示 `--dsh-home`），`docs/specs/M4-surface.md` 新增 §3.4 记录这条契约。⑦ **对已发布版本的影响要说清楚**：registry 上的 `0.3.0` **不含**这块 UI（`client.js` 是包内文件），要等下一次发版（0.3.1）才到用户手里；沙盒里的 10/10 是仓内代码。⑧ **模拟用户测试（真机 + 只读这一屏）**：`record_client_serve` 增加 `user-answer`（第一屏是否回答「会不会坏 / 哪一条 / 敲什么」，并用 `tab_probe.text` 把屏幕原文取回）→ 六跳到达、**925ms** 出答案；人工阅读抓到 8 处问题，**F1–F4、F7、F8 已修并逐次真机复测**（`原因:` 从属标注、`—` 分隔符、删重复行、去掉 `messageId`、复制按钮前的 `· 复制`、单数不再用「它们」）。⑨ **补上唯一没被看见的「会坏」屏**：新增夹具 `tests/fixtures/client/breaking-plugin`（`engines.dsh: ">=9.0.0"`）与记录器开关 `--extra-bundle`；**第一次直接 `install: failed`——上游在安装阶段就拒绝**这类 bundle（原文提示 `dsh plugin allow-version … --accept-risk`），于是改成「**授予精确豁免 → 安装 → 撤销豁免**」，屏幕出现 `会坏 1` / tone `broken` / 1 个复制按钮，`same-source` 一致（220 声明 / 193 解析 / 1 会坏 / 184 判不了）。⑩ **收口（同轮尾部）**：`BS-47` 的两块空白都补上了——**英文屏**（`--lang en`，`Triage · will this setup break?`）与**复制按钮**（真鼠标点击 + 读回剪贴板，内容与引擎命令逐字相同），并新增 `--fixture-range` / `--break-after-install` 造出「**装完之后才变坏**」的第二种来源（`会坏 1`，`same-source` 220 声明 / 193 解析 / 1 会坏 / 184 判不了）；**仍未见证**：真·runtime 升级、中文轮鼠标点击没触发 handler（未归因，探针回落 `dom-click` 并标 `method`）、其它浏览器与 DSH 版本——`BS-47` 因此是 **mostly closed**，不是 closed。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 / 十铁律 |
 | 交付（R50，2026-10-30） | **0.3.0 发出去 + 修掉「检查没跑起来却报你没登录」；判据/阈值一字未动（交付轮）**。① **发布**：HUMAN 在自己的终端跑 `pnpm -r publish`（agent shell 拿不到 6 位 OTP），四包 0.3.0 全部上架；随后真跑 `record_publish` 全链，**20/20**——`latest=0.3.0`、registry 上无残留 `workspace:`、四个 tarball 的 sha512 与 `dist.integrity` **逐字节相同**、**匿名**（`npm_config_userconfig` 指向空文件）装得上、CLI 15 行命令、`import()` 可解析（`data/results/publish-2026-10-30T14-40-00.000Z.json`）。② **一个真 bug，而且是「把工具坏了说成你的凭据坏了」**：`pnpm run release:publish` 报 `not-logged-in: npm 不认这个 token（npm whoami 返回 401）`，可同一台机器 `npm whoami` 打印 `jjjjjjjjnnjnn`。根因是检查**从没跑起来**——Windows 上 `npm` 是 `npm.cmd`，Node 拒绝无 shell 直接 spawn（`spawnSync npm ENOENT`），而任何失败都被硬编码成「401」。用户因此去重登了一个本来正常的账号，发布一次都没开始。③ **修法**：新增 `scripts/lib/npm-auth.mjs`（`npmInvocation` 走 `ComSpec /d /s /c`，`classifyWhoami` 三态 `logged-in` / `not-logged-in` / **`could-not-run`**，只有 stderr 真含 `E401`/`ENEEDAUTH` 才算没登录，其余原样引用观测到的首行并明说「这不等于没登录」）。④ **顺手补两项真会挡住发布的检查**：`workspace:` 是否还有依赖没被改写（只有走 pnpm 才改写，R40 的坑）、**目标版本是否已经在 registry 上**（重发会 403 且不好懂）；registry 连不上只记 note「没能确认……不等于还没发」。⑤ **预检查可落盘**：`--out` 写出带 `schema_version` / `produced_by` / `generated_at` 的产物 + `.sha256`（这个仓库的规矩：没产物不算一步）。⑥ **测试 500 → 510**（+10，含一条**红对照**：直接按老写法 `spawnSync('npm')` 断言 `error.code === ENOENT`，把根因钉成测量值）；`pnpm run verify` 9 门 ALL GREEN、`--mutate` 9/9。⑦ **`<ISO>` 那个坑也记进坑表**：`--stamp` 在 `record_publish` 里可省略（默认当前时间），把占位符原样粘进 PowerShell 会撞上保留的 `<` 运算符。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 / 十铁律 |
@@ -87,10 +88,47 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **还要确认 CI 是绿的**（这是本机看不见的一层）：
 
 ```powershell
-$env:HTTPS_PROXY="http://127.0.0.1:19828"; gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
+gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 ```
+> **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R53 交接（2026-11-01，最后一个动作就是写这段）
+
+**交接时的真实状态**：**529 测试 / 9 门 ALL GREEN / `--mutate` 9/9**，工作区干净，四包都是 `0.3.1`（**未发布**）。
+
+**这一轮做了什么**（两句话）：① 把 0.3.1 的票做好——四包同升、CHANGELOG、两份 README/两份上架文案/提交包全部对齐，
+`check_listing` **12/12**，发布预检查如实报 **`E401`**（本机 npm 凭据失效，**发布前要 `npm login`**）；
+② 顺手把渠道复核了一遍，拿到一条**真事实**：**dsh.so 已经收录我们**（`listed`，L5 · Run tested / security low），
+以及一条**坏消息**：**#65 已经 `DIRTY`**（与上游 `main` 冲突，不 rebase 就永远合不了）。
+
+**下一位的第一件事（按价值排序，选一个）**：
+
+| 顺序 | 任务 | 为什么是它 | 起点 |
+|---|---|---|---|
+| 1 | **发 0.3.1（HUMAN）** | 设置页那一屏是包内文件，registry 上的 0.3.0 不含它；不发用户永远看不到 | 你终端：`npm login` → `pnpm -r publish`（OTP）→ 我跑 `node scripts/record_publish.mjs --version 0.3.1` |
+| 2 | **按 Show Your Plugins 发帖（HUMAN 发，agent 备料）** | D5 的另外两个数（reactions / 外部引用）**结构性地是 0**，因为一份样本都没发过 | 见下面的「R54 待办」+ `docs/BACKLOG.md` `T-810` |
+| 3 | **`T-821` rebase #65** | 它是进 dsh-market（最大那条路）的唯一入口，`DIRTY` 等于死信 | fork `jjjjjjjjnnjnn/dsh-community-plugins`，分支 `feat/community-plugins-dsh-triage` |
+| 4 | **`T-818`「四桶」进页签** | 正门能力还没进 UI；0.3.2 的票 | `packages/plugin/src/host-*.ts` + `client.js` 第二个按钮 |
+
+**R54 待办（投放前必须先有的三件，缺一不可）**：
+1. **写死 D5 读数口径**（`docs/specs/D5-measurement.md`，需 HUMAN 签字）：reactions = 帖子的 `reactions.totalCount`；
+   外部引用 = **非本项目账号**发出的、指向我们仓库/产物的公开链接（排除我们自己的三条 PR）；downloads 复用 R52 的
+   `download_shape`；窗口 = `posted_on + 14d`；**读不到就记 `unmeasurable`，不许记 0**。**先定口径再看数据**。
+2. **`scripts/record_d5_evidence.mjs`**：GraphQL 读 reactions + Search API 读外部引用 + 引下载产物；
+   429/403 → **exit 2 零产物**；`--fixtures` 离线逐字节复算；带「读不到 ≠ 0」与「burst ≠ 需求」两条负对照。
+3. **真机截图**：官方六条**明确要求截图**，而全仓 `*.png/gif` = 0。给 `record_client_serve` 加 `--screenshot`，
+   必须截到「人话结论 + 计数 + 要看的地方」，PNG 进 `docs/market/` 并在产物里记 bytes + sha256。
+   帖子正文按 #2004 改写（**纯中文**，标题 `DSH | dsh-triage | …`，含项目地址 / 介绍 / 截图 / 集成方式 / **非官方声明**）。
+
+**四条不许踩的坑（本轮新增）**：
+1. **上游没有 per-rc 的 Discussion**——Announcements 只有 #1797 欢迎帖。唯一被官方承认的插件渠道是 **Show Your Plugins!**（#2004 六条：标题模板、项目地址、介绍、**截图**、集成方式、非官方声明、一项目一帖、按 upvote 排序）。草稿 01 的「回复在 rc.5 release thread 下」**结构上发不出去**，投放前必须改写；
+2. **`record_market_channels` 不传 `--pr` 会得到 `live 0`**——那是「没问」，不是「PR 全没了」。同样地，`--site` 不传就没有 `site_submissions`；
+3. **npm 凭据会过期**：`E401` 是**真结论**（`npm whoami` 同秒复现），不是 `could-not-run`。发布前 `npm login`，别把 401 改写成「检查没跑起来」——那是 R50 的反向错误；
+4. **对外文档里出现 `包名@旧版本` 会被 `check_listing` 判红**，即使你是在引用别人的旧值。改写法（「仍是上一个版本」），**不许放宽正则**。
+
+**`BS-48` 的剩余（写在这里，别当成已完成）**：形状能排除「单日爬虫」，排除不了「稳态的 20 次也是机器」；那一天的抓取方我们只有形状、没有归属；品类天花板同样只到「周合计 + 形状」。**新增一条读法**：dsh.so 收录**不产生下载**，别把它算进 D5。
 
 ## R52 交接（2026-10-31，最后一个动作就是写这段）
 

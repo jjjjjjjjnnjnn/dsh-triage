@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R52 (2026-10-31)",
+  "stand": "R53 (2026-11-01)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -7374,6 +7374,138 @@
         "artifact": "data/results/listing-2026-10-31T10-50-00.000Z.json",
         "sha256": "9843a7ca1375b5b0ba343d9502a735fc900bce5c6eb7c89c80f1c840393d4489",
         "outcome": "红（负对照）：`drafts-cite-real-artifacts` 失败并要求正文出现该路径；registry 已还原"
+      }
+    },
+    {
+      "id": "R53-S1",
+      "batch": "R53",
+      "step": "**发布前的渠道复核**：用实时 PR 状态重录三条 PR，并用 `--site dsh.so=human` 重探 dsh.so 的三个 per-plugin JSON 端点。结果里有一条**真变化**：dsh.so 已经收录（三个端点全部 200，正文是真数据），而三条 PR 里有一条从 `BLOCKED` 变成 `DIRTY`（与上游 `main` 冲突）",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "data/results/market-channels-2026-11-01T09-40-00.000Z.json",
+        "data/results/market-channels-2026-11-01T09-40-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：`live 3` 且三条都是 `open`（#65 `mergeable_state=dirty` / `merge_state_status=DIRTY`；#193 `review_decision=APPROVED` + `CLEAN`；#140 `CLEAN` 无 review），`merged_at` 全为 null → 仍是 `merged 0`。dsh.so 侧三个端点 `http_status: 200` + `content_type: application/json`，正文逐字段核对：`id=dsh-triage`、`registry.indexedAt=2026-10-29T09:49Z`、`verification.level=5 / L5 · Run tested`、`0.2.1-rc.5 passed`（`2026-10-31T02:29Z`）、`0.2.1-rc.3 unknown`、`security.status=audited / riskLevel=low`（0 Critical / 0 Warning / 1 Info），因此 `indexed: true`，状态从 `submitted` 改成 `listed`",
+        "reproducibility": "PASS：`node scripts/record_market_channels.mjs --stamp 2026-11-01T09:40:00.000Z --pr \"dsh-community-plugins=<url>\" --pr \"awesome-deepseekharness=<url>\" --pr \"walkinglabs=<url>\" --site \"dsh.so=human (…)\"`（需要本机 `gh` 登录）。R53 顺手抓到这条命令的**读数陷阱**：不传 `--pr` 时脚本仍然 exit 0，但 `submitted[]` 是空的、`summary.live = 0`——那不是「PR 全没了」，是「没问」。那个 `live 0` 的产物被我主动删除（`market-channels-2026-11-01T09-20-00.000Z.json`），因为留在 SSOT 里会被下一位读成事实；这是本轮唯一删掉的产物，理由写在这里",
+        "licence": "PASS：只读公开 API（GitHub REST + 站点 JSON 端点），无新增依赖、无第三方代码进仓",
+        "ssot": "PASS：产物由 `scripts/record_market_channels.mjs` 写出，带 `produced_by` / `generated_at` / `.sha256`；R45 的旧快照 `market-channels-2026-10-29T10-00-00.000Z.json` 原样保留（`submitted` 是当时的事实）；README / 两份 listing / `submissions/README.md` 的渠道段落改写成**同一份产物**支持的句子，并把 `BS-06` 的边界（L5 是 dsh.so 自己的干净沙盒）与「收录 ≠ 有人用」一起写进去",
+        "adversary": "反例一：把端点 200 写成「已验证可用」——被拒：正文必须同时带 `BS-06`（它家沙盒的一次实测）与「收录也不产生下载」；反例二：不传 `--pr` 就把 `live 0` 写进文档——被拒：缺参数不是事实，产物已删；反例三：#65 沿用 R44 的 `BLOCKED`——被拒：实测是 `DIRTY`（上游 `main` 动过），文档改成「需要我们先 rebase」；反例四：拿 dsh.so 页面上的 `install` 行当「0.3.1 已被它确认」——被拒：那一行记的还是上一个版本，正文如实写「等它重新索引」"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-01T09:40:00.000Z --pr \"dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65\" --pr \"awesome-deepseekharness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193\" --pr \"walkinglabs=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140\" --site \"dsh.so=human (2026-10-29, reported in audit step reviews)\"",
+        "artifact": "data/results/market-channels-2026-11-01T09-40-00.000Z.json",
+        "sha256": "f992a0296368214a45060e4b629e60e56c58bb35029515386e661aea53905ef9",
+        "outcome": "`validated 1 · ready 3 · live 3 · site 1 · listed 1`：三条 PR 全 open 且 #65 为 DIRTY、#193 APPROVED+CLEAN、#140 CLEAN；dsh.so `indexed: true`（L5 · Run tested / 0.2.1-rc.5 passed / security low）"
+      }
+    },
+    {
+      "id": "R53-S2",
+      "batch": "R53",
+      "step": "**版本升到 0.3.1 后第一次跑文案检查器**：抓到一处我没预料到的旧漂移——`docs/market/submissions/README.md` 同时把「0.3.0 已发布」和它的证据写成了 0.2.0 那次的产物（`publish-2026-10-30T05-00-00.000Z.json`）",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "CHANGELOG.md",
+        "data/results/listing-2026-11-01T09-00-00.000Z.json",
+        "data/results/listing-2026-11-01T09-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：11/12，唯一失败是 `version-matches-manifest` → `stale: docs/market/submissions/README.md:dsh-triage@0.3.0`。顺带人工核对出**第二处更隐蔽的错**：那一行把 0.3.0 的发布取证指向 `publish-2026-10-30T05-00-00.000Z.json`（那是 0.2.0 的产物），0.3.0 的真产物是 `publish-2026-10-30T14-40-00.000Z.json`",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T09:00:00.000Z --tests 529` 一条命令复现；同一命令在修完后转绿（10:10 那份）",
+        "licence": "PASS：纯文档检查，零依赖",
+        "ssot": "PASS：红产物保留（它就是这条漂移的唯一见证）；产物自带 `produced_by` / `generated_at` / `.sha256`；旧产物（`publish-2026-10-29T01-40-00` / `publish-2026-10-30T05-00-00`）不动",
+        "adversary": "反例一：把检查器改成忽略 `docs/market/submissions/`——被拒（那正是它第一次抓到旧漂移的目录）；反例二：只改版本号、不修证据指针——被拒（同一行里的两件事都要对，改了版本却仍指向 0.2.0 的产物就是换一种假）；反例三：手改产物里的 `version` 字段——被拒（sha256 会变，`step-review` 门当场红）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T09:00:00.000Z --tests 529",
+        "artifact": "data/results/listing-2026-11-01T09-00-00.000Z.json",
+        "sha256": "e11d940333072d100a37a84c3a4afaf2deb2854e9dcc1b3fd2a5665b07929b8d",
+        "outcome": "红：11/12，`version-matches-manifest` 点名 `docs/market/submissions/README.md:dsh-triage@0.3.0`"
+      }
+    },
+    {
+      "id": "R53-S3",
+      "batch": "R53",
+      "step": "**同一条断言第二次红——这次是我自己新写的那句话**：修完之后我在 `submissions/README.md` 里补了一句「它页面上的安装行仍写着 `dsh-triage@0.3.0`」，检查器立刻把这句话也判成漂移",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "data/results/listing-2026-11-01T09-50-00.000Z.json",
+        "data/results/listing-2026-11-01T09-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：仍是 `version-matches-manifest` → `stale: docs/market/submissions/README.md:dsh-triage@0.3.0`，但这次命中的是**本轮新写的**那句，不是历史残留——说明规则对新文本一样生效，不是只在扫旧债",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T09:50:00.000Z --tests 529`；修法是把「引用别人的旧版本」写成不带包名前缀的说法（「仍是上一个版本」），而不是放宽正则",
+        "licence": "PASS：只改一处中文措辞（引用别人旧版本的说法），无代码、无依赖、无第三方素材进出，MIT 许可范围未变",
+        "ssot": "PASS：红产物保留；两次红分别对应「旧债」与「新债」，两件事都能在台账里读出来",
+        "adversary": "反例一：为了让它变绿把 `version-matches-manifest` 放宽成「只在 README 里查」——被拒（下一轮的真漂移会正好漏在这条缝里）；反例二：把整句删掉——被拒（dsh.so 页面确实还记着旧版本，删掉就变成「不说」，而不是「说清楚」；边界要留，只是不能带 token 写法）；反例三：把这句话改成「已同步」——被拒（那是假的）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T09:50:00.000Z --tests 529",
+        "artifact": "data/results/listing-2026-11-01T09-50-00.000Z.json",
+        "sha256": "e66b8c5e3c67b2f289b4a637a9758aca5098b9546822b756ae72be0584b376bb",
+        "outcome": "红：11/12，命中本轮**新写入**的那句话（不是历史残留）"
+      }
+    },
+    {
+      "id": "R53-S4",
+      "batch": "R53",
+      "step": "**文案与仓库一致性收口**：四包 `0.3.0 → 0.3.1`、CHANGELOG 新增 `[0.3.1]` 节、两份 README（中英）与两份上架文案的版本/证据指针/渠道状态按实测改完后复跑检查器",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md",
+        "data/results/listing-2026-11-01T10-10-00.000Z.json",
+        "data/results/listing-2026-11-01T10-10-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：12/12，检查器自报 `version 0.3.1 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 529`，其中 `version-matches-manifest` 说「every named version is 0.3.1」、`test-count-matches` 说 529（同一次 `pnpm run verify` 实测 `tests 529 / pass 529`）、`readme-shows-real-card` 仍从被引用的产物里读回 `inputs.counts` 逐项比对",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T10:10:00.000Z --tests 529`；版本串从四份 `package.json` 读，测试数从参数来（`--tests` 与实跑一致才能过）",
+        "licence": "PASS：纯文档 + 版本号，无新依赖、无许可变更（仍是 MIT）",
+        "ssot": "PASS：CHANGELOG 的 0.3.1 条目与 `git log --stat -- packages` 的实际改动**逐条对得上**（只有 R51 的设置页那一块：`client.js` / `host-summary-route.ts` / `host.ts` / `summary.ts` 文案），没有把 R52 的 `scripts/` 工作包装成包行为；「判定零变化」这句话是判据未动的直述，不是承诺",
+        "adversary": "反例一：只改 README 不改两份上架文案——被拒（10 份文档一起查）；反例二：把测试数写成 529 而实跑是别的——被拒（`--tests` 只是输入，`version-matches-manifest` 与 `test-count-matches` 会把它和实跑对齐）；反例三：在 CHANGELOG 里写「升级会修好」——被拒（`no-placeholders-or-claims` 的禁用话术表）；反例四：把 0.3.1 说成含新判据——被拒（条目里明写四桶/`improved`/`admission`/阈值/退出码/`audit --json` 与 0.3.0 相同）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T10:10:00.000Z --tests 529",
+        "artifact": "data/results/listing-2026-11-01T10-10-00.000Z.json",
+        "sha256": "237e80c0f99989c70496b340bb63842a9b6318f584d513feb60841b856eaef5f",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 529 · 14 条证据路径 sha256 全部复算通过"
+      }
+    },
+    {
+      "id": "R53-S5",
+      "batch": "R53",
+      "step": "**发布预检查（带 `--out`）**：它如实判红——`not-logged-in`，registry 回了真的 `E401`。这正是它该拦的东西，不是 R50 那种「检查没跑起来却报你没登录」",
+      "changed": [
+        "data/results/release-preflight-2026-11-01T10-20-00.000Z.json",
+        "data/results/release-preflight-2026-11-01T10-20-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：三项里两项绿——`version: 0.3.1`（「还没发过」）/ `workspace: protocol: 5 dep(s), publish goes through pnpm (rewritten)`；一项红——`not-logged-in: registry 拒绝了当前凭据（npm error code E401）`。**独立复现**：同一 shell 里 `npm whoami` 也回 `E401`，`npm config get userconfig` = `C:\\Users\\rongj\\.npmrc`，registry 可达（同一次会话里 `npm view` 读公开包成功）→ 这是**真的凭据失效**，不是「没跑起来」",
+        "reproducibility": "PASS：`node scripts/release_preflight.mjs --stamp 2026-11-01T10:20:00.000Z --out data/results/release-preflight-…json`；登录后重跑一份新的（新 stamp），本份不覆盖",
+        "licence": "PASS：只读检查 + 一次 `npm whoami`，不上传任何东西",
+        "ssot": "PASS：产物自带 `schema_version` / `produced_by` / `generated_at` / `.sha256`；`ok: false` 是如实结论，不是回归；发布动作本身仍由 HUMAN 执行",
+        "adversary": "反例一：把 `E401` 写成 `could-not-run`——被拒（三态分类里这是 `not-logged-in`；`could-not-run` 只用于 npm 根本没被调起来，如 Windows 的 `spawnSync npm ENOENT`）；反例二：跳过预检查直接 `pnpm -r publish`——被拒（HANDOFF 的红线，且 0.3.1 若已存在会 403）；反例三：把这份红产物删掉、只留登录后的绿产物——被拒（红产物是「发布前环境不可信」的见证，删了就变成假装一次过）"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --stamp 2026-11-01T10:20:00.000Z --out data/results/release-preflight-2026-11-01T10-20-00.000Z.json",
+        "artifact": "data/results/release-preflight-2026-11-01T10-20-00.000Z.json",
+        "sha256": "30a998d9910200ba2b6d1173f4efef2fb3757f7b157620d345706760125399d2",
+        "outcome": "红（如实）：`version 0.3.1 还没发过` ✅ · `workspace 5 dep 走 pnpm 改写` ✅ · `not-logged-in（真 E401）` ❌"
       }
     }
   ]

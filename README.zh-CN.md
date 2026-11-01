@@ -9,7 +9,7 @@ DeepSeek Harness（DSH）已经能告诉你插件**装不装得上**。没有人
 
 `dsh-triage` 回答用户真正在问的那句话：**「我的插件为什么不见了？」**；以及装之前那个问题：这个候选在你这套环境里活不活得下来。结论在本地算出，每条都带着它来自哪份证据；**没有证据就出 `unknown`**，不会编一个看起来专业的分数。
 
-npm 上 `dsh-triage@0.3.0` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
+npm 上 `dsh-triage@0.3.1` · 一个 CLI + 一个 profile bundle · 只读 · 只有你让它读 npm registry 时才联网。
 
 ---
 
@@ -194,7 +194,7 @@ note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
 | 这些门真的会红 | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission 语义与上游逐条对等 | `data/gold/admission-cases.json` —— 27 条人工签署金标，由 `admission-parity` 门锁死 |
 | `why` 在真实故障上点中根因 | `node scripts/d1_report.mjs --stamp <iso>` → 10 个真实案例、9 命中、1 条显式 `unknown`（`data/results/d1-*.json`） |
-| npm 包真的装得上 | `data/results/publish-2026-10-29T01-40-00.000Z.json` —— 空 userconfig 的匿名安装、六个包、CLI 可跑、registry 字节与本地 tarball 完全一致 |
+| npm 包真的装得上 | `data/results/publish-2026-10-30T14-40-00.000Z.json` —— 空 userconfig 的匿名安装、四包同版本发布、CLI 可跑、registry 字节与本地 tarball 完全一致 |
 | 每一步都被审过 | `audit/step_reviews.json` —— 四轴（正确性 / 可复现 / 合规许可 / SSOT 一致）+ 对抗性反例，由 `step-review` 门重算 sha256 |
 
 `data/results/` 是唯一真相源：每份产物都由 `scripts/` 下的脚本写出，带 `produced_by` 与 `generated_at`，并配 `.sha256`；手填的结果过不了 `ssot` 门。`dsh-triage serve` 在这个目录上开一个只读面板——只绑回环、URL 里一次性 token、拒绝跨源、默认 `POST` 回 403（加 `--allow-execute` 也只回 501，因为那个动作还不存在）。
@@ -212,9 +212,9 @@ CI 跑 Node 22 与 24 的 `verify`、一个 Windows 作业、一个 ubuntu 上�
 
 ## 当前状态与渠道
 
-- **npm** —— `dsh-triage@0.3.0` 已于 2026-10-29 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
-- **PR 开着，但没有合并** —— [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65)（合并状态 `BLOCKED`，等审）与 [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193)（`APPROVED`，未合并）。提交过 ≠ 被收录。
-- **dsh.so** —— 提交包已就绪，尚未提交。
+- **npm** —— `dsh-triage@0.3.1` 已于 2026-11-01 发布，同批还有 `@dsh-triage/core`、`@dsh-triage/signals`、`@dsh-triage/probe`。
+- **PR 开着，但没有合并** —— [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65)（现在是 `DIRTY`：与 `main` 冲突，需要我们先 rebase）、[awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193)（`APPROVED`、`CLEAN`，等维护者合并）与 walkinglabs #140（`CLEAN`，还没有 review）。提交过 ≠ 被收录。
+- **dsh.so** —— **已收录（`listed`）**。三个 per-plugin JSON 端点在 2026-11-01 全部返回 200（404 期间我们记的是 `submitted`）：`L5 · Run tested`（对 `0.2.1-rc.5`），安全档 `low`。两条边界：那个 L5 是 dsh.so 在**它自己的干净沙盒**里跑的一次结果，**不是**「你的机器上能用」（`BS-06`）；它页面上的安装行还要等重新索引才会到 `0.3.1`。
 - **除上面这些之外，没有别的渠道已收录本项目**（以上面那份快照为准）。如果某个目录说得更乐观，那是它比证据跑得快。
 
 ## 仓库结构

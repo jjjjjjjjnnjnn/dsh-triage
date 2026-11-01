@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R52 (2026-10-31)",
+  "stand": "R53 (2026-11-01)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -384,6 +384,15 @@
       "mitigation": "① 判据侧：D5 的 `周下载 ≥20` 只在 `download_shape=steady`（≥2 天有下载且单日占比 ≤80%）时判定，规则在 `scripts/lib/download-shape.mjs`，7 条单测（含「真实 634 序列必须判成 burst」的负对照）+ 4 条端到端测试（`tests/governance/market-baseline.test.ts`，含「steady 25 必须算通过」的反向对照，防止规则靠「永远说不」通过）；② 采证侧：每次采基线都记 `daily[]` / `peak_share`，429/403 一律进 `failures`、不进结论；③ 对外文案：不许把 634 说成下载量、不许把 burst 说成增长；④ 形状判不出（`unreadable`）时 D5 记 `unmeasurable`，不许折成「没有需求」。",
       "owner": "scripts/lib/download-shape.mjs + scripts/record_market_baseline.mjs + docs/ROADMAP.md §2",
       "status": "open (R52): the shape rule is executable and pinned by tests; which crawler caused the burst, and whether a steady 25 is 25 humans, both remain unseen",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-49",
+      "area": "分发渠道状态的时点性",
+      "cannot_see": "仓库里写下的渠道状态**只是那一刻的事实**，而上游会在我们不知情时改变它。R53 重读三条 PR 时同时遇到两件事：**#65 从 `BLOCKED` 变成 `DIRTY`**（上游 `main` 动过，我们的 `community.json` 那一块已经有冲突——它不会自己好，但也不会有人通知我们），以及 **dsh.so 从 404 变成 200**（收录发生在 `2026-10-29T09:49Z`，比 R45 那次探测只晚一点，于是文档多写了两周「未收录」）。**仍然看不见的**：① 维护者有没有在别处（Discord / issue / 私下）讨论过我们的 PR；② PR 被合并的时刻会不会先于我们的下一次重读；③ dsh.so 的索引什么时候刷新到新版本（它页面上的安装行还记着上一个版本）；④ 三家渠道之外，还有谁收录了我们而我们没去问。",
+      "mitigation": "① **每次发版或投放前，必须重跑** `node scripts/record_market_channels.mjs --stamp <ISO> --pr \"<channel>=<url>\" … --site \"dsh.so=human (…)\"`——**不传 `--pr` 会得到 `live 0`**，那不是「PR 全没了」而是「没问」，这种产物一律不留在 SSOT（R53 删过一份，理由记在 `R53-S1`）；② 文档只引用**当次**产物的字段（`mergeable_state` / `review_decision` / `site_submissions[].indexed`），不写「状态稳定」这类话；③ 承认 `check_listing` 的 12 条断言**不覆盖渠道状态**——它查版本/证据/话术，查不出「#65 已经冲突了」，所以 `docs/market/submissions/README.md` 的 Stand 行必须跟着轮次走；④ 「收录」与「被使用」分开写：收录不产生下载，D5 判据里没有这一项（`BS-06` 同时适用：L5 是对方沙盒里的一次实测）。",
+      "owner": "scripts/record_market_channels.mjs + docs/market/submissions/README.md + docs/ROADMAP.md §2（D3）",
+      "status": "open (R53): the two changes were caught by re-reading, not by any gate; nothing in the repo would have flagged them",
       "resolved_by": null
     }
   ]

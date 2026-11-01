@@ -9,7 +9,7 @@ DeepSeek Harness (DSH) already tells you whether a plugin *installs*. Nothing te
 
 `dsh-triage` answers the question users actually ask: **"why did my plugin disappear?"** — and, before you install, whether a candidate survives your exact environment. Conclusions are computed locally, derived from named evidence, and printed with the source of every claim. When there is no evidence, the answer is `unknown` instead of a score.
 
-`dsh-triage@0.3.0` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
+`dsh-triage@0.3.1` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
 
 ---
 
@@ -194,7 +194,7 @@ Nothing in this README is asserted without a producer in the repo.
 | the gates can actually fail | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
 | admission semantics match upstream | `data/gold/admission-cases.json` — 27 signed goldens, enforced by the `admission-parity` gate |
 | `why` finds the root cause in real failures | `node scripts/d1_report.mjs --stamp <iso>` → 10 real cases, 9 hits, 1 explicit `unknown` (`data/results/d1-*.json`) |
-| the npm package really installs | `data/results/publish-2026-10-29T01-40-00.000Z.json` — anonymous install with an empty userconfig, six packages, CLI runs, registry bytes identical to the local tarballs |
+| the npm package really installs | `data/results/publish-2026-10-30T14-40-00.000Z.json` — anonymous install with an empty userconfig, four packages released together, CLI runs, registry bytes identical to the local tarballs |
 | each step was reviewed | `audit/step_reviews.json` — four axes (correctness / reproducibility / licence / SSOT) plus an adversarial counter-example, sha256-recomputed by the `step-review` gate |
 
 `data/results/` is the single source of truth. Every artifact is written by a script under `scripts/`, records `produced_by` and `generated_at`, and ships with a `.sha256`; a hand-written result fails the `ssot` gate. `dsh-triage serve` opens a read-only panel over that directory — loopback only, one-time token in the URL, cross-origin refused, `POST` answered 403 unless started with `--allow-execute` (which itself answers 501, because the action does not exist yet).
@@ -212,10 +212,10 @@ CI runs `verify` on Node 22 and 24, a Windows job, a real-browser render-control
 
 ## Status and channels
 
-- **npm** — `dsh-triage@0.3.0` published 2026-10-29, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
-- **Pull requests are open, not merged** — [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65) (merge state `BLOCKED`, awaiting review) and [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193) (`APPROVED`, not merged). Submitted is not listed.
-- **dsh.so** — submission package is ready; it has not been submitted.
-- **No other channel has accepted this project** as of the snapshot above. If a directory claims otherwise, it is ahead of the evidence.
+- **npm** — `dsh-triage@0.3.1` published 2026-11-01, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
+- **Pull requests are open, not merged** — [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65) (now `DIRTY`: it conflicts with `main` and needs a rebase from us), [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193) (`APPROVED`, `CLEAN`, waiting on the maintainer) and walkinglabs #140 (`CLEAN`, no review yet). Submitted is not listed.
+- **dsh.so** — **listed**. The three per-plugin JSON endpoints answer 200 as of 2026-11-01 (recorded `submitted` while they were 404): `L5 · Run tested` against `0.2.1-rc.5`, security tier `low`. Two boundaries: that L5 is dsh.so's own clean-sandbox run, **not** a promise about your machine (`BS-06`), and its install line still names `0.3.0` until it re-indexes.
+- **No other channel lists this project** as of the snapshot above. If a directory claims otherwise, it is ahead of the evidence.
 
 ## Repository map
 
