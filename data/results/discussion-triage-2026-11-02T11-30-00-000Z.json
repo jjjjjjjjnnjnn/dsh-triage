@@ -1,0 +1,634 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_discussion_triage.mjs",
+  "generated_at": "2026-11-02T11:30:00.000Z",
+  "sample": {
+    "ids": [
+      11687,
+      10849,
+      8202,
+      7590,
+      11080,
+      10908,
+      11421,
+      10201,
+      10759,
+      7317,
+      10458,
+      11288
+    ],
+    "target_runtime": "0.2.1-rc.5",
+    "source": "graphql"
+  },
+  "counts": {
+    "answerable": 9,
+    "partially-answerable": 3
+  },
+  "answers": {
+    "rules-out-declaration": 1,
+    "declares-nothing": 3,
+    "names-a-denial": 7
+  },
+  "rows": [
+    {
+      "number": 11687,
+      "title": "[Bug] 升级至 0.2.1-rc.5 后，因第三方插件冲突导致启动崩溃 (1 required plugin did not activate)",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11687",
+      "created_at": "2026-10-31T17:39:38Z",
+      "category": "Q&A",
+      "comments": 1,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "rules-out-declaration",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-desktop",
+        "@linxin666/dsh-web-all",
+        "dsh-better-sidebar"
+      ],
+      "probes": [
+        {
+          "package": "@linxin666/dsh-web-all",
+          "version": "0.4.13",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "admitted",
+          "mode": "peers",
+          "admits_target": true,
+          "declared_range": "@deepseek-ai/dsh@>=0.2.1-rc.3",
+          "unmet": []
+        },
+        {
+          "package": "dsh-better-sidebar",
+          "version": "0.28.2",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "admitted",
+          "mode": "peers",
+          "admits_target": true,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.2.1-rc.1 , @deepseek-ai/dsh-agent@^0.2.1-rc.1 , @deepseek-ai/dsh-tools@^0.2.1-rc.1 , @deepseek-ai/dsh-session@^0.2.1-rc.1 , @deepseek-ai/dsh-settings@^0.2.1-rc.1 , @deepseek-ai/dsh-subagent@^0.2.1-rc.1 , @deepseek-ai/dsh-client-locale@^0.2.1-rc.1 , @deepseek-ai/dsh-host-webserver@^0.2.1-rc.1 , @deepseek-ai/dsh-client-ui-slots@^0.2.1-rc.1 , @deepseek-ai/dsh-client-ui-settings@^0.2.1-rc.1 , @deepseek-ai/dsh-client-ui-primitives@^0.2.1-rc.1 , @deepseek-ai/dsh-client-ui-conversation@^0.2.1-rc.1 , @deepseek-ai/dsh-client-ui-sidebar-right@^0.2.1-rc.1",
+          "unmet": []
+        },
+        {
+          "package": "@deepseek-ai/dsh-desktop",
+          "state": "unreadable",
+          "detail": "npm has no package @deepseek-ai/dsh-desktop",
+          "verdict": null
+        }
+      ]
+    },
+    {
+      "number": 11421,
+      "title": "[Bug] 社区插件带入的旧版 Web UI 组件抢先加载，导致 Desktop 图标按钮消失",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11421",
+      "created_at": "2026-10-29T07:22:33Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "composition",
+      "verdict": "partially-answerable",
+      "answer": "declares-nothing",
+      "reason": "duplicate copies and entry-id collisions are visible in the profile ledger, but only if we can read that profile; without it we can only describe the shape",
+      "answerable_with": "dsh-triage audit --all",
+      "packages": [
+        "@deepseek-ai/dsh-theme",
+        "@deepseek-ai/dsh-client-ui-theme",
+        "dsh-icon-sprite"
+      ],
+      "probes": [
+        {
+          "package": "dsh-icon-sprite",
+          "state": "unreadable",
+          "detail": "npm has no package dsh-icon-sprite",
+          "verdict": null
+        },
+        {
+          "package": "@deepseek-ai/dsh-theme",
+          "state": "unreadable",
+          "detail": "npm has no package @deepseek-ai/dsh-theme",
+          "verdict": null
+        },
+        {
+          "package": "@deepseek-ai/dsh-client-ui-theme",
+          "version": "0.2.1-rc.3",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        }
+      ]
+    },
+    {
+      "number": 11288,
+      "title": "[Bug] 会话目录残留一个明文世代文件 → workspaceController 不可用（工作区为空 / 卡在\"正在加载工作区\" / workspace/create service-unavailable）",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11288",
+      "created_at": "2026-10-28T05:24:25Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "runtime",
+      "verdict": "partially-answerable",
+      "answer": "declares-nothing",
+      "reason": "the symptom is runtime (a service/gateway/installer failure). We can rule the declaration layer in or out — if a row is denied, `why` names it — but a healthy row plus a missing service is upstream work, not ours",
+      "answerable_with": "dsh-triage why / dsh-triage audit",
+      "packages": [
+        "dsh-session-persistence-jsonl",
+        "dsh-workspace",
+        "dsh-api-workspace-controller"
+      ],
+      "probes": [
+        {
+          "package": "dsh-session-persistence-jsonl",
+          "state": "unreadable",
+          "detail": "npm has no package dsh-session-persistence-jsonl",
+          "verdict": null
+        },
+        {
+          "package": "dsh-workspace",
+          "version": "0.0.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        },
+        {
+          "package": "dsh-api-workspace-controller",
+          "state": "unreadable",
+          "detail": "npm has no package dsh-api-workspace-controller",
+          "verdict": null
+        }
+      ]
+    },
+    {
+      "number": 11080,
+      "title": "Upgrading DSH silently disables version-mismatched profile plugins; the reason lives only on stderr",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11080",
+      "created_at": "2026-10-26T09:23:34Z",
+      "category": "Ideas",
+      "comments": 0,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-hooks-claude-code"
+      ],
+      "probes": [
+        {
+          "package": "@deepseek-ai/dsh-hooks-claude-code",
+          "version": "0.0.1-rc.5",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.0.1-rc.5 , @deepseek-ai/dsh-agent@^0.0.1-rc.5 , @deepseek-ai/dsh-tools@^0.0.1-rc.5 , @deepseek-ai/dsh-session@^0.0.1-rc.5 , @deepseek-ai/dsh-subagent@^0.0.1-rc.5 , @deepseek-ai/dsh-invariants@^0.0.1-rc.5 , @deepseek-ai/dsh-hook-protocol@^0.0.1-rc.5 , @deepseek-ai/dsh-session-persistence@^0.0.1-rc.5",
+          "unmet": [
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 10908,
+      "title": "Windows 桌面版无法添加工作区：workspaceController is unavailable",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10908",
+      "created_at": "2026-10-24T16:40:56Z",
+      "category": "General",
+      "comments": 1,
+      "layer": "runtime",
+      "verdict": "partially-answerable",
+      "answer": null,
+      "reason": "the symptom is runtime (a service/gateway/installer failure). We can rule the declaration layer in or out — if a row is denied, `why` names it — but a healthy row plus a missing service is upstream work, not ours",
+      "answerable_with": "dsh-triage why / dsh-triage audit",
+      "packages": [],
+      "probes": []
+    },
+    {
+      "number": 10849,
+      "title": "@deepseek-ai/dsh-mcp-client npm `latest` tag points at 0.0.1-rc.1, so an unpinned `dsh plugin add` is rejected as incompatible",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10849",
+      "created_at": "2026-10-24T06:32:41Z",
+      "category": "Q&A",
+      "comments": 2,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-mcp-client",
+        "@deepseek-ai/dsh-llm",
+        "@deepseek-ai/dsh-tools",
+        "@deepseek-ai/dsh-invariants",
+        "@deepseek-ai/dsh-subprocess",
+        "@deepseek-ai/dsh"
+      ],
+      "probes": [
+        {
+          "package": "@deepseek-ai/dsh-mcp-client",
+          "version": "0.0.1-rc.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.0.1-rc.1 , @deepseek-ai/dsh-tools@^0.0.1-rc.1 , @deepseek-ai/dsh-invariants@^0.0.1-rc.1 , @deepseek-ai/dsh-subprocess@^0.0.1-rc.1",
+          "unmet": [
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1"
+          ]
+        },
+        {
+          "package": "@deepseek-ai/dsh-llm",
+          "version": "0.0.1-rc.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-brand@^0.0.1-rc.1 , @deepseek-ai/dsh-timeout@^0.0.1-rc.1 , @deepseek-ai/dsh-attachment@^0.0.1-rc.1 , @deepseek-ai/dsh-invariants@^0.0.1-rc.1",
+          "unmet": [
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1"
+          ]
+        },
+        {
+          "package": "@deepseek-ai/dsh-tools",
+          "version": "0.0.1-rc.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.0.1-rc.1 , @deepseek-ai/dsh-agent@^0.0.1-rc.1 , @deepseek-ai/dsh-scope@^0.0.1-rc.1 , @deepseek-ai/dsh-session@^0.0.1-rc.1 , @deepseek-ai/dsh-invariants@^0.0.1-rc.1 , @deepseek-ai/dsh-code-runtime@^0.0.1-rc.1 , @deepseek-ai/dsh-system-prompt@^0.0.1-rc.1 , @deepseek-ai/dsh-user-approval@^0.0.1-rc.1",
+          "unmet": [
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1",
+            "undefined@^0.0.1-rc.1"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 10759,
+      "title": "# Plugin install can shadow runtime packages; boot failure then resets the profile config",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10759",
+      "created_at": "2026-10-23T08:09:32Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-tools",
+        "dsh-livedocs",
+        "@deepseek-ai/dsh-agent",
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app"
+      ],
+      "probes": [
+        {
+          "package": "dsh-livedocs",
+          "version": "0.2.3",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "admitted",
+          "mode": "engines",
+          "admits_target": true,
+          "declared_range": "engines.dsh >=0.2.0-rc.1 <0.3.0",
+          "unmet": []
+        },
+        {
+          "package": "@deepseek-ai/dsh-tools",
+          "version": "0.2.0-rc.2",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@0.2.0-rc.2 , @deepseek-ai/dsh-agent@0.2.0-rc.2 , @deepseek-ai/dsh-scope@0.2.0-rc.2 , @deepseek-ai/dsh-sandbox@0.2.0-rc.2 , @deepseek-ai/dsh-session@0.2.0-rc.2 , @deepseek-ai/dsh-invariants@0.2.0-rc.2 , @deepseek-ai/dsh-ptc-runtime@0.2.0-rc.2 , @deepseek-ai/dsh-system-prompt@0.2.0-rc.2 , @deepseek-ai/dsh-user-approval@0.2.0-rc.2 , @deepseek-ai/dsh-sandbox-policy@0.2.0-rc.2",
+          "unmet": [
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2",
+            "undefined@0.2.0-rc.2"
+          ]
+        },
+        {
+          "package": "@deepseek-ai/dsh-agent",
+          "version": "0.1.0-rc.6",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.1.0-rc.6 , @deepseek-ai/dsh-scope@^0.1.0-rc.6 , @deepseek-ai/dsh-session@^0.1.0-rc.6 , @deepseek-ai/dsh-invariants@^0.1.0-rc.6 , @deepseek-ai/dsh-system-prompt@^0.1.0-rc.6 , @deepseek-ai/dsh-typert-protocol@^0.1.0-rc.6",
+          "unmet": [
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 10458,
+      "title": "[Bug] Nested dsh-app-boot copy checks plugin compatibility against its own version, not the running launcher",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458",
+      "created_at": "2026-10-20T20:18:27Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "dsh-app-boot",
+        "@deepseek-ai/dsh-app-boot",
+        "@deepseek-ai/dsh-agent-preset-registry",
+        "@sagmans/dsh-tui",
+        "@deepseek-ai/dsh-agent-tool-presentation",
+        "@deepseek-ai/dsh-tools",
+        "dsh-agent-tool-presentation",
+        "dsh-0.2.1-rc.2"
+      ],
+      "probes": [
+        {
+          "package": "@sagmans/dsh-tui",
+          "version": "0.16.0",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "admitted",
+          "mode": "peers",
+          "admits_target": true,
+          "declared_range": "@deepseek-ai/dsh-llm@* , @deepseek-ai/dsh-agent@* , @deepseek-ai/dsh-tools@* , @deepseek-ai/dsh-cmdline@* , @deepseek-ai/dsh-session@* , @deepseek-ai/dsh-commands@* , @deepseek-ai/dsh-agent-loop@* , @deepseek-ai/dsh-user-approval@* , @deepseek-ai/dsh-user-questions@* , @deepseek-ai/dsh-agent-default-model@*",
+          "unmet": []
+        },
+        {
+          "package": "dsh-0.2.1-rc.2",
+          "state": "unreadable",
+          "detail": "npm has no package dsh-0.2.1-rc.2",
+          "verdict": null
+        },
+        {
+          "package": "@deepseek-ai/dsh-app-boot",
+          "version": "0.1.0-rc.6",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-home-paths@^0.1.0-rc.6 , @deepseek-ai/dsh-invariants@^0.1.0-rc.6 , @deepseek-ai/dsh-system-prompt@^0.1.0-rc.6 , @deepseek-ai/dsh-launch-environment@^0.1.0-rc.6",
+          "unmet": [
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 10201,
+      "title": "0.2.1-rc.2 upgrade broke a working install: hooks dist-tags, destructive rollback, duplicate package resolution",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10201",
+      "created_at": "2026-10-19T01:03:37Z",
+      "category": "General",
+      "comments": 2,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-hooks-claude-code",
+        "dsh-llm",
+        "dsh-session",
+        "@deepseek-ai/dsh-llm"
+      ],
+      "probes": [
+        {
+          "package": "dsh-session",
+          "version": "0.0.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        },
+        {
+          "package": "@deepseek-ai/dsh-hooks-claude-code",
+          "version": "0.0.1-rc.5",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.0.1-rc.5 , @deepseek-ai/dsh-agent@^0.0.1-rc.5 , @deepseek-ai/dsh-tools@^0.0.1-rc.5 , @deepseek-ai/dsh-session@^0.0.1-rc.5 , @deepseek-ai/dsh-subagent@^0.0.1-rc.5 , @deepseek-ai/dsh-invariants@^0.0.1-rc.5 , @deepseek-ai/dsh-hook-protocol@^0.0.1-rc.5 , @deepseek-ai/dsh-session-persistence@^0.0.1-rc.5",
+          "unmet": [
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5"
+          ]
+        },
+        {
+          "package": "@deepseek-ai/dsh-llm",
+          "version": "0.0.1-rc.5",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-brand@^0.0.1-rc.5 , @deepseek-ai/dsh-timeout@^0.0.1-rc.5 , @deepseek-ai/dsh-attachment@^0.0.1-rc.5 , @deepseek-ai/dsh-invariants@^0.0.1-rc.5",
+          "unmet": [
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5",
+            "undefined@^0.0.1-rc.5"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 8202,
+      "title": "How to add MCP server? ( @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 is incompatible with dsh 0.2.0-rc.1 )",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/8202",
+      "created_at": "2026-09-29T03:58:26Z",
+      "category": "Q&A",
+      "comments": 1,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh-mcp-client"
+      ],
+      "probes": [
+        {
+          "package": "@deepseek-ai/dsh-mcp-client",
+          "version": "0.1.0-rc.7",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-llm@^0.1.0-rc.7 , @deepseek-ai/dsh-tools@^0.1.0-rc.7 , @deepseek-ai/dsh-timeout@^0.1.0-rc.7 , @deepseek-ai/dsh-attachment@^0.1.0-rc.7 , @deepseek-ai/dsh-invariants@^0.1.0-rc.7 , @deepseek-ai/dsh-subprocess@^0.1.0-rc.7",
+          "unmet": [
+            "undefined@^0.1.0-rc.7",
+            "undefined@^0.1.0-rc.7",
+            "undefined@^0.1.0-rc.7",
+            "undefined@^0.1.0-rc.7",
+            "undefined@^0.1.0-rc.7",
+            "undefined@^0.1.0-rc.7"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 7590,
+      "title": "Incompatibility of @xmanrui/dsh-im and @liustack/modlens with DSH 0.1.7-alpha.2",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/7590",
+      "created_at": "2026-09-23T06:34:09Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "declares-nothing",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@xmanrui/dsh-im",
+        "@liustack/modlens",
+        "dsh-im"
+      ],
+      "probes": [
+        {
+          "package": "@xmanrui/dsh-im",
+          "version": "5.9.1",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        },
+        {
+          "package": "@liustack/modlens",
+          "version": "3.27.2",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        }
+      ]
+    },
+    {
+      "number": 7317,
+      "title": "harness升级之后插件不兼容会导致无法启动",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/7317",
+      "created_at": "2026-09-21T00:46:51Z",
+      "category": "General",
+      "comments": 0,
+      "layer": "admission",
+      "verdict": "answerable",
+      "answer": "names-a-denial",
+      "reason": "declaration-layer question with a named package: fetch its published manifest and evaluate the range against the target runtime — no profile needed",
+      "answerable_with": "dsh-triage check <pkg>",
+      "packages": [
+        "@deepseek-ai/dsh",
+        "@deepseek-ai/dsh-app-boot",
+        "dsh-tui-code-runtime",
+        "@deepseek-ai/dsh-code-runtime-worker-thread",
+        "@deepseek-ai/cordis-plugin-loader"
+      ],
+      "probes": [
+        {
+          "package": "dsh-tui-code-runtime",
+          "state": "unreadable",
+          "detail": "npm has no package dsh-tui-code-runtime",
+          "verdict": null
+        },
+        {
+          "package": "@deepseek-ai/dsh",
+          "version": "0.2.1-rc.5",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "unconstrained",
+          "mode": "none",
+          "admits_target": false,
+          "declared_range": null,
+          "unmet": []
+        },
+        {
+          "package": "@deepseek-ai/dsh-app-boot",
+          "version": "0.1.0-rc.6",
+          "state": "measured",
+          "target": "0.2.1-rc.5",
+          "admission_status": "denied",
+          "mode": "peers",
+          "admits_target": false,
+          "declared_range": "@deepseek-ai/dsh-home-paths@^0.1.0-rc.6 , @deepseek-ai/dsh-invariants@^0.1.0-rc.6 , @deepseek-ai/dsh-system-prompt@^0.1.0-rc.6 , @deepseek-ai/dsh-launch-environment@^0.1.0-rc.6",
+          "unmet": [
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6",
+            "undefined@^0.1.0-rc.6"
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "classification reads the thread text only; it does not run the reporter's profile",
+    "a probe judges the **latest published** version unless the thread named one explicitly (the version used is recorded per probe)",
+    "answerable means \"we can produce a declaration-layer answer\", not \"we solved their problem\"",
+    "runtime threads are partially answerable at best: we can rule the declaration layer in or out, nothing more"
+  ]
+}

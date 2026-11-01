@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R56 (2026-11-01)",
+  "stand": "R57 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8033,6 +8033,58 @@
         "artifact": "data/results/listing-2026-11-01T23-30-00.000Z.json",
         "sha256": "ccfb394b66910ad127567b54fc3c8150e19b4f5a9af98b3f7764cfc4f46f8876",
         "outcome": "13/13 PASS · version 0.3.1 · tests 542"
+      }
+    },
+    {
+      "id": "R57-S1",
+      "batch": "R57",
+      "step": "**采证：上游 12 条求助帖，逐条判「我们能不能答」**——纯函数分类（层：admission / upgrade / composition / runtime / unknown）+ 对点到包名的帖子**真算一次准入**（拉 registry 的已发布 manifest，用同一个 `evaluateAdmission` 对目标运行时求值）",
+      "changed": [
+        "scripts/lib/discussion-triage.mjs",
+        "scripts/lib/discussion-triage.d.mts",
+        "scripts/record_discussion_triage.mjs",
+        "tests/unit/discussion-triage.test.ts",
+        "data/fixtures/discussions/2026-11-02T11-30-00-000Z.json",
+        "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json",
+        "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json.sha256",
+        "audit/RECON_2026-11-02_upstream-help.md"
+      ],
+      "review": {
+        "correctness": "PASS：12 条 → `answerable 9 / partially-answerable 3`；按「我们实际能说什么」再分：**names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3**。关键读数：`#11687`（升级 rc.5 后启动崩溃）点名的两个第三方插件 **admits rc.5** → 声明层不是凶手（`rules-out-declaration`）；`#10849` 的 `@deepseek-ai/dsh-mcp-client@0.0.1-rc.1` 与 `#8202` 帖内点名的 `@1.0-rc.7` 都 **denies**；`#7590` 两个包 **declares nothing**，与既有 CASE-7590 的标签一致。**两个错误是自己抓的**：把「不是 admitted」一律写成「denies」（于是出现 `@deepseek-ai/dsh@0.2.1-rc.5 denies 0.2.1-rc.5` —— 应用不可能拒自己）→ 改用 `admission.status` 四态；以及裸名 `dsh-im` 被当成另一个包探针 → 加「作用域名已覆盖时丢弃裸名」",
+        "reproducibility": "PASS：`node scripts/record_discussion_triage.mjs --stamp 2026-11-02T11:30:00.000Z --ids 11687,10849,8202,7590,11080,10908,11421,10201,10759,7317,10458,11288`；原始快照落 `data/fixtures/discussions/2026-11-02T11-30-00-000Z.json`，`--fixtures` 离线复算 rows/counts/answers **逐项相同**（另跑一次到 `%TEMP%` 比对，未污染 SSOT）",
+        "licence": "PASS：只读公开 Discussions + npm registry；报告里引用的是帖子标题与我们的读数，不复制他人长文；无个人身份信息",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；样本 id、目标运行时（`0.2.1-rc.5`）、每条探针用的版本都写进产物；`limits[]` 写明「只判已发布最新版（除非帖子点名）」「没有他们的 profile」「文本分类会错」",
+        "adversary": "反例一：把运行期崩溃算成 answerable——被拒：`runtime` 层最高只给 `partially-answerable`，单测钉住；反例二：拿 `latest` 去判一个点名了版本的帖子——被拒：加了 `pkg@ver` 解析，`#8202` 现在按 `0.1.0-rc.7` 判；反例三：把「没声明」说成「被拒」或「兼容」——被拒：`declares-nothing` 是独立的一档，既不 `admits` 也不 `denies`；反例四：把文本分类当成结论——被拒：每行都带 `reason` 与 `answer`，`#11421` 明明偏运行期却被判 `composition`，报告里点出这条会错；反例五：把 7 条 `names-a-denial` 说成「解决了他们的问题」——被拒：报告第 5 节写明我们判的是**包**，不是**他们那台机器**"
+      },
+      "real_test": {
+        "command": "node scripts/record_discussion_triage.mjs --stamp 2026-11-02T11:30:00.000Z --ids 11687,10849,8202,7590,11080,10908,11421,10201,10759,7317,10458,11288",
+        "artifact": "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json",
+        "sha256": "5485b24095a55fa408b583e1fed3d733600b1001d0c82a3605c558720ce0798a",
+        "outcome": "sample 12 · names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3"
+      }
+    },
+    {
+      "id": "R57-S2",
+      "batch": "R57",
+      "step": "**测试 542 → 548 后的一次文案复跑**（新增 6 条分类单测），确认版本/测试数仍一致",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-02T11-50-00.000Z.json",
+        "data/results/listing-2026-11-02T11-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：13/13，`version 0.3.1 · tests 548`；`test-count-matches` 与同一次 `pnpm run test`（548/0）一致",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-02T11:50:00.000Z --tests 548`",
+        "licence": "PASS：只改测试数与产物，无第三方素材",
+        "ssot": "PASS：产物 `be879f56…`；README 两份的数字与实跑一致",
+        "adversary": "反例一：把测试数写成 542（不更新）——被拒：`--tests` 与文档比对会红；反例二：只改一份 README——被拒：两份都在检查范围内"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T11:50:00.000Z --tests 548",
+        "artifact": "data/results/listing-2026-11-02T11-50-00.000Z.json",
+        "sha256": "be879f56fee8d4c7af93392f75ed65eac36c199ac861c8b2ca4050bf4e0ba5e1",
+        "outcome": "13/13 PASS · version 0.3.1 · tests 548"
       }
     }
   ]
