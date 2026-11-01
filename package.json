@@ -17,7 +17,7 @@
     "gate:fast": "node scripts/gate.mjs --fast",
     "release:check": "node scripts/gate_release_pack.mjs",
     "release:preflight": "node scripts/release_preflight.mjs",
-    "release:publish": "node scripts/release_preflight.mjs && pnpm -r publish",
+    "release:publish": "node scripts/release_preflight.mjs && pnpm -r publish && node scripts/record_publish.mjs",
     "scan:env": "node scripts/scan_env.mjs",
     "verify": "pnpm run build && pnpm run typecheck && pnpm run test && pnpm run gate",
     "cli": "node packages/plugin/dist/cli.js"

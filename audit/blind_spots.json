@@ -394,6 +394,15 @@
       "owner": "scripts/record_market_channels.mjs + docs/market/submissions/README.md + docs/ROADMAP.md §2（D3）",
       "status": "open (R53): the two changes were caught by re-reading, not by any gate; nothing in the repo would have flagged them",
       "resolved_by": null
+    },
+    {
+      "id": "BS-50",
+      "area": "发布 / 部分成功",
+      "cannot_see": "`pnpm -r publish` 是**四次独立的 registry 写**，npm 没有跨包事务；而「四个包同版本」只在命令**开始**时是真的。2026-11-01 的现场：`dsh-triage` / `probe` / `signals` 的 0.3.1 上线，`@dsh-triage/core@0.3.1` 卡在 registry 的暂存里（`409 Cannot publish over previously staged version`），于是 `latest` 指向一个**依赖解析不了**的版本，`npm install dsh-triage` 直接 `notarget`。**这期间所有内部信号都是绿的**：`release_preflight` 说「0.3.1 还没发过」（当时为真）、`pnpm -r publish` 的失败发生在最后、`check_listing` 只查文案。**仍然看不见的**：① registry 的「暂存」什么时候过期（没有公开 API，只能反复试）；② 在破损窗口里到底有没有人装（npm 不提供按版本的安装失败率）；③ 若把 0.3.1 判定为不可修复而改发 0.3.2，0.3.1 会永久留在 registry 上（只能 deprecate，不能删已发布的版本）。",
+      "mitigation": "① **发布链自动取证**（本轮已改）：`pnpm run release:publish` = `release_preflight → pnpm -r publish → record_publish`，最后一步跑 `anonymous-install` 与三个 `dependency:*`，**部分成功会在同一条命令里变红**；② `record_publish` 的版本不再默认 `0.1.0`，默认从 `packages/plugin/package.json` 读（`scripts/lib/publish-target.mjs` + 5 条单测，含「不得回到 0.1.0」的回归断言）；③ 判定口径：**只有 `anonymous-install` 与 `dependency:*` 全绿才算发布成功**，`latest:*` 单项绿不算；④ 破损窗口内做**最小回滚**（把 `latest` 指回上一个可用版本）比解释更快，但 dist-tag 写操作要 OTP，是 HUMAN 动作；⑤ 事故现场固定写进 `audit/INCIDENT_<date>_*.md`，并把红产物留在 `data/results/`。",
+      "owner": "package.json（release:publish）· scripts/record_publish.mjs · scripts/lib/publish-target.mjs · audit/INCIDENT_2026-11-01_partial-publish.md",
+      "status": "open (R53): the chain now catches it after the fact; npm still has no cross-package transaction, so the failure can happen again — it just cannot stay invisible",
+      "resolved_by": null
     }
   ]
 }

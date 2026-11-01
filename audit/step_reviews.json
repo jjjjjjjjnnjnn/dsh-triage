@@ -7573,6 +7573,104 @@
         "sha256": "faa502bf5a39cf9acd34de597883b5d517f98f75673205e941bdb0b2a1c6ca3e",
         "outcome": "12 passed / 1 unmeasured · `english-screen` passed（中文/英文/会坏三屏现在各有一份产物）"
       }
+    },
+    {
+      "id": "R53-S9",
+      "batch": "R53",
+      "step": "**发布后自动取证第一次跑就判红——0.3.1 只上去了三个包**：`@dsh-triage/core@0.3.1` 被 registry 的暂存挡着（`409 Cannot publish over previously staged version`），于是 `latest` 指向一个依赖解析不了的版本",
+      "changed": [
+        "data/results/publish-2026-11-01T17-15-00.000Z.json",
+        "data/results/publish-2026-11-01T17-15-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：20 项里 8 项失败，且**全部指向同一个根因**——`version:@dsh-triage/core :: 0.3.1 absent (latest=0.3.0)`、`anonymous-install :: npm install dsh-triage@0.3.1 exit 1 · notarget No matching version found for @dsh-triage/core@0.3.1`、`installed-tree`、三个 `dependency:*`（`null (declared 0.3.1)`）、`cli-runs`、`module-resolves`。`rewritten:*` 与 `latest:*` 对三个已上线的包是绿的——**这正是「部分成功」的形状：单项全绿，合起来装不上**",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --version 0.3.1 --stamp 2026-11-01T17:15:00.000Z`；同一命令在补发 `core` 之后（17:30）转 20/20，说明差别只在 registry 状态，不在检查器",
+        "licence": "PASS：只读 registry + 一次匿名 `npm install`（空 userconfig）到临时目录，不涉及任何凭据外发",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`，`ok:false` 是如实结论；现场与时间线写进 `audit/INCIDENT_2026-11-01_partial-publish.md`；**红产物不删**——它是「部分成功」这一类事故在 SSOT 里唯一的见证。**事后脱敏一次并重算 sha256**（`c5021370…` → `05976eaa…`）：npm 的报错原文带着用户目录下的 npm-cache 日志路径，`results-privacy` 门当场判红；`record_publish` 的 `clean()` 已把 `homedir()` 加进脱敏根，后续不会再写出去",
+        "adversary": "反例一：把 `latest:*` 三项绿读成「发布成功」——被拒：判据是 `anonymous-install` + 三个 `dependency:*`，两者都红；反例二：把失败归因成「我们的 tarball 有问题」——被拒：`rewritten:*` 与 `bytes:*` 全绿，桶里的字节是对的，缺的是另一个包；反例三：删掉这份红产物、只留 17:30 的绿——被拒：那样就没有任何证据说明「我们的发布链现在能抓到它」"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 0.3.1 --stamp 2026-11-01T17:15:00.000Z",
+        "artifact": "data/results/publish-2026-11-01T17-15-00.000Z.json",
+        "sha256": "05976eaa2e6f07dcf630404368241fa30b71a4ccd429ba51bfd2320b3bfc91aa",
+        "outcome": "红（如实）：8/20 失败，同一根因 = `@dsh-triage/core@0.3.1` 不在 registry 上"
+      }
+    },
+    {
+      "id": "R53-S10",
+      "batch": "R53",
+      "step": "**发布链改造后的真机见证**：不给 `--version`、只跑 `record_publish`，版本必须从 `packages/plugin/package.json` 读出来（不是 `0.1.0`），而这次四个包已经齐了 → **20/20**",
+      "changed": [
+        "scripts/lib/publish-target.mjs",
+        "tests/unit/publish-target.test.ts",
+        "scripts/record_publish.mjs",
+        "package.json",
+        "data/results/publish-2026-11-01T17-30-00.000Z.json",
+        "data/results/publish-2026-11-01T17-30-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：**20/20**——`version` 四项全绿、`rewritten:*` 四项、`bytes:*`、`anonymous-install`（exit 0）、`installed-tree`、`dependency:{core,signals,probe}`（全部解析到 0.3.1）、`cli-runs`（15 行命令）、`module-resolves`（导出 `apply,default,loadBundleLayers,loadComposition,loadPatchText,name`）。产物新增 `release.version_source`，这份是 `\"manifest\"`、`release.version = \"0.3.1\"`——旧默认 `0.1.0` 的坑有机器可读的回归见证",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --stamp 2026-11-01T17:30:00.000Z`（**不带** `--version`）。单测 5 条钉住规则：显式版本逐字、prerelease 不改写、无参必须取 manifest 且**不得等于 0.1.0**、非精确版本（`v0.3.1`/`^0.3.1`/`0.3`/`latest`）拒绝、manifest 版本不可用时**报错而不猜**",
+        "licence": "PASS：新增 `scripts/lib/publish-target.mjs` 是零依赖纯函数（只用一条正则），未引入任何第三方代码；测试只用 `node:test` 与 `node:assert`",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；`release.git_head = 54e1a7f` 且 `git_dirty = true`（这份跑在提交之前，如实记录）；提交后会再跑一份干净的。`scripts/lib/publish-target.mjs` 与 `tests/unit/publish-target.test.ts` 都由 `pnpm run verify` 覆盖（534 测试）",
+        "adversary": "反例一：让默认值继续是 `0.1.0`——被拒：单测直接断言「不得等于 0.1.0」；反例二：把 `v0.3.1` 归一化成 `0.3.1`——被拒：显式版本必须逐字，否则检查的是另一个版本；反例三：manifest 读不到就退回硬编码——被拒：`resolvePublishVersion` 对非精确 manifest 版本返回 `{ok:false}`，调用方 exit 2；反例四：把这份 `git_dirty=true` 的产物当最终发布证据——被拒：HANDOFF 里写明提交后要再跑一份干净的"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --stamp 2026-11-01T17:30:00.000Z",
+        "artifact": "data/results/publish-2026-11-01T17-30-00.000Z.json",
+        "sha256": "92883643bff0966ee1f6ca73dff9ef5877ff03d63d8b4bbc74662d6e329c2711",
+        "outcome": "20/20 PASS · version 0.3.1 · version_source=manifest · 匿名安装 exit 0 · 三个依赖全部解析"
+      }
+    },
+    {
+      "id": "R53-S11",
+      "batch": "R53",
+      "step": "**发布链改造 + 事故文档落地后，文案检查器复跑**：测试数从 529 变 534（新增 5 条 `publish-target` 单测），四份对外文档的版本/测试数必须跟着走",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/INCIDENT_2026-11-01_partial-publish.md",
+        "data/results/listing-2026-11-01T17-40-00.000Z.json",
+        "data/results/listing-2026-11-01T17-40-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：12/12，检查器自报 `version 0.3.1 · tests 534`；`test-count-matches` 与同一次 `pnpm run test`（534 / 0 fail）一致；`evidence-paths-exist` 的 14 条路径全部 sha256 复算通过（含本轮新增的 `publish-2026-11-01T17-30-00` 与 `market-channels-2026-11-01T09-40-00`）",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T17:40:00.000Z --tests 534`；`--tests` 不是摆设——写成 529 会红",
+        "licence": "PASS：纯文档与数字同步；新增的 `audit/INCIDENT_2026-11-01_partial-publish.md` 是本仓自有文本，无第三方素材",
+        "ssot": "PASS：`BS-50` 记进盲区（部分成功、暂存不可观测、0.3.1 只能 deprecate 不能删）；`T-822` 在 BACKLOG 标成交付；HANDOFF 的「规模 / 证据 / 交接」三处数字（534 测试 / 290 产物 / 310 步 / 49→50 盲区）与本轮产物一致",
+        "adversary": "反例一：把测试数写成 534 但实跑没加测试——被拒：`publish-target.test.ts` 真的存在且 `pnpm run test` 报 534；反例二：事故文档只写「已修复」不写窗口与根因——被拒：文件里有 2 分 47 秒的窗口、时间线与两层根因；反例三：把 `BS-50` 标成 resolved——被拒：npm 仍然没有跨包事务，这条盲区是「现在不会隐形」，不是「不会再发生」"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T17:40:00.000Z --tests 534",
+        "artifact": "data/results/listing-2026-11-01T17-40-00.000Z.json",
+        "sha256": "a02b5729c33250d0557e18aeaa1e08a59f168cf731c84e168884eebd2193fbc5",
+        "outcome": "12/12 PASS · version 0.3.1 · tests 534"
+      }
+    },
+    {
+      "id": "R53-S12",
+      "batch": "R53",
+      "step": "**登录后重跑发布预检查——它成了「部分发布」的报警器**：预检查报 `version-already-published`，点名 `dsh-triage@0.3.1` 与 `@dsh-triage/probe@0.3.1` 已经在 registry 上，而 `@dsh-triage/core` / `signals` 还没有",
+      "changed": [
+        "data/results/release-preflight-2026-11-01T12-00-00.000Z.json",
+        "data/results/release-preflight-2026-11-01T12-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为红产物）：三项里两项绿（`npm user: jjjjjjjjnnjnn` —— 证明检查真的跑起来了；`version: 0.3.1`、`workspace: 5 dep(s) 走 pnpm 改写`），一项红：`version-already-published: dsh-triage@0.3.1, @dsh-triage/probe@0.3.1 已经在 registry 上了`。**这条红不是在抱怨重复发布，而是在报告「四个包里已经上去了两个」**——顺着它才查到 `core` 被暂存挡住",
+        "reproducibility": "PASS：`node scripts/release_preflight.mjs --stamp 2026-11-01T12:00:00.000Z --out data/results/release-preflight-2026-11-01T12-00-00.000Z.json`；同一命令在两小时前（未登录）报的是 `not-logged-in`，所以「登录了」这件事本身也有产物见证",
+        "licence": "PASS：只读检查（`npm whoami` + registry 查询），不上传任何东西、不写 registry",
+        "ssot": "PASS：产物带 `schema_version` / `produced_by` / `generated_at` / `.sha256`；`ok:false` 是如实结论；它和 `publish-2026-11-01T17-15-00`（八项失败）一起构成同一次事故的两个视角——预检查看「哪些版本已经存在」，record_publish 看「用户能不能装上」",
+        "adversary": "反例一：把 `version-already-published` 当成「上次真的发完了」——被拒：它只证明**这两个**版本存在，不证明四个都存在；反例二：为了让预检查变绿而 bump 到 0.3.2——被拒：那会留下三个依赖 0.3.1 的包指向不存在的 core@0.3.1，问题更大；反例三：删掉这份红产物——被拒：它是「预检查确实跑起来了、并且报的是真话」的唯一见证"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --stamp 2026-11-01T12:00:00.000Z --out data/results/release-preflight-2026-11-01T12-00-00.000Z.json",
+        "artifact": "data/results/release-preflight-2026-11-01T12-00-00.000Z.json",
+        "sha256": "249be1aa2a9bf333dc573c97dd9c4d0fa262803fcad72115e85f17dc8e41be63",
+        "outcome": "红（如实）：`version-already-published` 点名 `dsh-triage@0.3.1` 与 `@dsh-triage/probe@0.3.1` 已存在 → 顺着查出 core 缺位"
+      }
     }
   ]
 }

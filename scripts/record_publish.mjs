@@ -26,10 +26,11 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { tmpdir, homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { resolvePublishVersion } from './lib/publish-target.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -41,7 +42,13 @@ const pathFor = (value) => (isAbsolute(value) ? value : resolve(abs('.'), value)
 const rawStamp = String(argOf('--stamp', new Date().toISOString()))
 const stamp = isoStamp(rawStamp)
 const registry = String(argOf('--registry', 'https://registry.npmjs.org')).replace(/\/+$/, '')
-const version = String(argOf('--version', '0.1.0'))
+const pluginManifest = JSON.parse(readFileSync(abs('packages/plugin/package.json'), 'utf8'))
+const publishTarget = resolvePublishVersion({ requested: argOf('--version', null), manifestVersion: pluginManifest?.version })
+if (!publishTarget.ok) {
+  process.stderr.write(`${publishTarget.error}\n`)
+  process.exit(2)
+}
+const version = publishTarget.version
 const rootPackage = 'dsh-triage'
 const packages = ['@dsh-triage/core', '@dsh-triage/signals', '@dsh-triage/probe', rootPackage]
 const tarballDir = argv.includes('--tarball-dir') ? pathFor(String(argOf('--tarball-dir', ''))) : null
@@ -55,10 +62,20 @@ if (stamp === null) {
 
 const scratchRoot = join(tmpdir(), 'dsh-triage-publish', `verify-${Date.now().toString(36)}`)
 const projectDir = join(scratchRoot, 'project')
+/**
+ * R53: npm's own error output names the cache directory under the user profile
+ * (`C:\Users\<name>\AppData\Local\npm-cache\_logs\...`), and that path used to land in
+ * `data/results` — `results-privacy` caught it. Everything that reaches an artifact goes
+ * through this, and the home directory is scrubbed exactly like the scratch and temp roots.
+ */
+const redactRoots = [scratchRoot, tmpdir(), homedir()]
 const clean = (value) => {
   let text = String(value ?? '')
-  for (const prefix of [scratchRoot, tmpdir()]) {
-    for (const variant of [prefix, prefix.replaceAll('\\', '/')]) text = text.split(variant).join('<tmp>')
+  for (const prefix of redactRoots) {
+    if (prefix === '') continue
+    for (const variant of [prefix, prefix.replaceAll('\\', '/'), prefix.replaceAll('/', '\\')]) {
+      text = text.split(variant).join('<path>')
+    }
   }
   return text
 }
@@ -279,6 +296,8 @@ async function main() {
     release: {
       package: rootPackage,
       version,
+      /** Where the version came from: an explicit flag, or the manifest users install. */
+      version_source: publishTarget.source,
       git_head: String(gitHead.stdout ?? '').trim() || null,
       git_dirty: String(gitStatus.stdout ?? '').trim().length > 0,
     },

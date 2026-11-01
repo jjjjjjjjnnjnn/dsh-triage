@@ -654,9 +654,18 @@
 ### 2026-11-01 R53｜交付：把 0.3.1 的票做好，顺手核实两件渠道事实（一条好、一条坏）
 
 - 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
-- SessionID：主会话；台账 `R53-S1` … `R53-S5`
+- SessionID：主会话；台账 `R53-S1` … `R53-S12`
 - 范围：`packages/{core,signals,probe,plugin}/package.json`（四包 `0.3.1`）· `CHANGELOG.md`（`[0.3.1]` 节）· `README.md` / `README.zh-CN.md` · `docs/market/{listing_zh,listing_en}.md` · `docs/market/submissions/README.md` · `docs/{HANDOFF,ROADMAP,BACKLOG}.md` · `AGENTS.md` / `INDEX.md` · `audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}` · `data/results/{market-channels-2026-11-01T09-40-00,listing-2026-11-01T09-00-00,listing-2026-11-01T09-50-00,listing-2026-11-01T10-10-00,release-preflight-2026-11-01T10-20-00}.json`
 - 人工决策：二问二答（Plan 模式）——**「R53 按哪个范围做？」→ 只做 0.3.1 发版准备（推荐）**；**「Show Your Plugins 帖子用什么语言？」→ 纯中文**
 - 结果：① 四包同升 `0.3.1`（一起升，R42 的教训）；② CHANGELOG 新节只写用户能感知的三类事，并明写**判定与 0.3.0 完全相同**；③ 10 份对外文档 + 证据指针一起对齐（含把「npm 包真的装得上」从 0.1.0 的产物改到 0.3.0 的 20/20 产物、补上漏写的 #140、改掉 dsh.so 那句旧状态）；④ `check_listing` **第一次跑抓到的两处漂移都是真的**（`submissions/README.md` 把 0.3.0 引到 0.2.0 的产物；以及**我自己新写的那句话**把旧版本号写回正文）——两份红产物保留，修法是改写法而**不是**放宽正则；⑤ **渠道复核拿到一条真事实**：**dsh.so 已收录**（三端点 200、`L5 · Run tested`、security `low`）→ `listed`，并在所有对外文档里带上 `BS-06` 与「收录不产生下载」两条边界；⑥ **同时抓到唯一变坏的一条**：**#65 从 `BLOCKED` 变成 `DIRTY`**（与上游 `main` 冲突）→ 新任务 `T-821`；⑦ 发布预检查**如实报 `E401`**（`npm whoami` 同秒复现），这是**真凭据失效**、不是「检查没跑起来」，发布前需要 `npm login`
 - 实测：**529 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` **9/9** · `check_listing` **12/12**（`listing-2026-11-01T10-10-00.000Z.json`）· 渠道产物 `validated 1 · ready 3 · live 3 · site 1 · listed 1`
 - 反思：这一轮唯一的「产出」是**一张票**（版本 + 文案 + 证据指针），但两处真问题都不是靠读文档读出来的：一处是检查器抓的，一处是**主动去问上游要实时状态**才发现的。反过来说，如果我照抄 R45 的快照写文档，就会同时写错三件事——dsh.so 其实已收录、#65 其实已冲突、0.3.0 的发布证据其实指错了产物。**「上一轮写的」不是证据，「这一轮问到的」才是。**
+
+### 2026-11-01 R53 事故｜0.3.1 部分发布（`core` 缺位 2 分 47 秒）与发布链改造
+
+- 生成者：DeepSeek V4.1 Flash（主会话；发现、取证、事故记录、发布链改造；**发布与补发是 HUMAN 动作**）
+- SessionID：主会话；台账 `R53-S9` … `R53-S12`；报告 `audit/INCIDENT_2026-11-01_partial-publish.md`
+- 范围：`scripts/lib/publish-target.mjs`（新）· `tests/unit/publish-target.test.ts`（新，5）· `scripts/record_publish.mjs`（版本默认取 manifest、新增 `release.version_source`、`clean()` 扩到 `homedir()`）· `package.json`（`release:publish` 串上 `record_publish`）· `audit/blind_spots.json`（`BS-50`）· `docs/{HANDOFF,BACKLOG}.md`（`T-820` 收口 / `T-822`）· `data/results/publish-2026-11-01T{17-15,17-30}-00.000Z.json`（红 / 绿）· `release-preflight-2026-11-01T12-00-00`（发现入口）· `listing-2026-11-01T17-40-00`
+- 结果：① 发布后自动取证**第一次跑就红**（8/20，同一根因）：`core@0.3.1` 不在 registry，`latest` 指向装不上的版本；② HUMAN 侧 `17:10:45Z` 补发后 **20/20**（匿名安装 exit 0 / 三个 `dependency:*` 解析 / CLI 15 命令 / `import()` 成功）；③ **破损窗口 2 分 47 秒**，如实写进事故文档；④ **改造**：`release:publish` = `preflight → publish → record_publish`，`--version` 默认从 `packages/plugin/package.json` 读（单测钉住「不得回到 `0.1.0`」，且 `v0.3.1` / `^0.3.1` / `0.3` / `latest` 一律拒绝而非归一化）；⑤ 又撞了一次隐私门（`npm` 报错里的用户目录路径）→ 事后脱敏 + 重算 sha256 + `clean()` 扩 `homedir()`
+- 实测：**534 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` **9/9** · `record_publish` **20/20** · `check_listing` **12/12**
+- 反思：这次最值得记的不是「少发了一个包」，而是**所有内部信号当时都是绿的**——预检查说「0.3.1 还没发过」（当时为真）、pnpm 的失败发生在最后一个包、`check_listing` 只查文案。**唯一能说真话的是「匿名装一次」**，而那个检查当时还没接在发布命令上。所以修法不是「下次小心点」，是让那条命令自己喊。
