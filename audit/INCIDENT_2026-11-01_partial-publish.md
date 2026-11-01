@@ -1,7 +1,7 @@
 # 事故 · 2026-11-01 · 0.3.1 部分发布，`latest` 一度指向装不上的版本
 
 > **状态**：**已修复**。`@dsh-triage/core@0.3.1` 于 `2026-11-01T17:10:45Z` 上线，四个包现在都是
-> `latest=0.3.1`；`data/results/publish-2026-11-01T17-30-00.000Z.json` 起 `record_publish` **20/20**
+> `latest=0.3.1`；`data/results/publish-2026-11-01T18-00-00.000Z.json`（`git_dirty=false`）起 `record_publish` **20/20**
 > （匿名安装 exit 0、`dependency:*` 三项全部解析、CLI 15 行命令、`import()` 成功）。
 > **破损窗口约 2 分 47 秒**（`17:07:58` → `17:10:45`）。**修复不是我们做的诊断，是补发**；下面记的是
 > 现场、根因与「让它不再隐形」的改造。
@@ -51,7 +51,7 @@ npm error notarget No matching version found for @dsh-triage/core@0.3.1.
 ## 4. 修复路径（按顺序）
 
 1. ~~**补发 `core@0.3.1`**~~ —— **已完成**（`17:10:45Z` 上线，HUMAN 侧执行）。四个包现在都是 `latest=0.3.1`。
-2. ~~**`record_publish` 复跑**~~ —— **已完成**：`publish-2026-11-01T17-30-00.000Z.json` **20/20**，含 `anonymous-install`（exit 0）与三个 `dependency:*`（全部解析到 0.3.1）。
+2. ~~**`record_publish` 复跑**~~ —— **已完成**：`publish-2026-11-01T17-30-00.000Z.json` **20/20**（带 `git_dirty=true`，证明默认版本取 manifest）；提交后再跑一份干净的 `publish-2026-11-01T18-00-00.000Z.json`（`git_dirty=false`、`head a5506e0`，同样是 **20/20**），后者才是对外引用的那一份。
 3. **备用路径（未触发）**：若暂存 1 小时不清，改走 **0.3.2**（四包一起）并把 0.3.1 `npm deprecate` 成「uninstallable partial publish」——**不许**把 0.3.1 留在 `latest` 上装作没事。这条留着，因为同类事故还可能再来。
 4. **发布链改造（本轮已做）**：`release:publish` 变成
    `release_preflight → pnpm -r publish → record_publish`，且 `record_publish` 的版本默认从

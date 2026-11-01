@@ -7671,6 +7671,28 @@
         "sha256": "249be1aa2a9bf333dc573c97dd9c4d0fa262803fcad72115e85f17dc8e41be63",
         "outcome": "红（如实）：`version-already-published` 点名 `dsh-triage@0.3.1` 与 `@dsh-triage/probe@0.3.1` 已存在 → 顺着查出 core 缺位"
       }
+    },
+    {
+      "id": "R53-S13",
+      "batch": "R53",
+      "step": "**发布链改造提交后，再跑一次干净的取证**：`git_dirty = false`、`git_head = a5506e0`，且不带 `--version`（版本从 manifest 读）→ 这一份才是 0.3.1 的最终发布证据",
+      "changed": [
+        "data/results/publish-2026-11-01T18-00-00.000Z.json",
+        "data/results/publish-2026-11-01T18-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：**20/20**（`checks` 里失败 0 项）。`release = { version: 0.3.1, version_source: \"manifest\", git_dirty: false, git_head: \"a5506e0\" }`——比 17:30 那份只差「工作区干净」，而这正是发布证据需要的性质：registry 上的字节对应一个**可指认的提交**",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --stamp 2026-11-01T18:00:00.000Z`（不带 `--version`）。任何人 checkout `a5506e0` 后跑同一条命令都应得到同样的 20 项；`bytes:*` 与 `anonymous-install` 依赖网络，其余只依赖本仓",
+        "licence": "PASS：只读 registry + 一次匿名安装；产物经 `clean()` 脱敏（`homedir()` 已纳入脱敏根，stdout 里的路径也成了 `<path>`）",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；这是 HANDOFF / AGENTS / BACKLOG 里引用为「0.3.1 发布取证」的那一份；17:30 那份保留作「默认版本取 manifest」的见证（`git_dirty = true` 如实记录），两份不互相替代",
+        "adversary": "反例一：拿 17:30 那份当最终证据——被拒：它自报 `git_dirty = true`，说不清对应哪个提交；反例二：把 `git_dirty=false` 读成「字节一定等于 registry」——被拒：字节相等由 `bytes:*` 四项证明，`git_dirty` 只说明工作区干净；反例三：为了让 `git_dirty` 变 false 而把改动提交进发布包——被拒：这次提交只动 `scripts/` 与文档，`packages/*/dist` 未变，`bytes:*` 仍逐字节相同"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --stamp 2026-11-01T18:00:00.000Z",
+        "artifact": "data/results/publish-2026-11-01T18-00-00.000Z.json",
+        "sha256": "d1749abcddffa9e907ca2b59534ea22124951845f8f06cd0695d80706b1539cd",
+        "outcome": "20/20 PASS · version 0.3.1 · version_source=manifest · git_dirty=false · head a5506e0"
+      }
     }
   ]
 }
