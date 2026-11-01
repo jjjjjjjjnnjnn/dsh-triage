@@ -7,9 +7,9 @@
     {
       "file": "01-show-your-plugins.md",
       "channel": "upstream GitHub Discussions · 「Show Your Plugins!」分类（#2004 六条：标题模板 / 项目地址 / 介绍 / 截图 / 集成方式 / 非官方声明）",
-      "status": "draft",
-      "posted_url": null,
-      "posted_on": null,
+      "status": "posted",
+      "posted_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11813",
+      "posted_on": "2026-11-01T20:24:37.000Z",
       "cites": [
         "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json",
         "data/results/client-serve-2026-11-01T21-30-00.000Z.json",

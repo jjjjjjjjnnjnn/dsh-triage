@@ -324,6 +324,44 @@ check(
   draftProblems.slice(0, 4).join('; ') || `${draftCount} draft(s), every cited artifact hashes and every draft carries a recompute command`,
 )
 
+/*
+ * 13th assertion (R56): a `posted` draft must carry a usable discussion URL and an ISO `posted_on`.
+ * WHY IT MATTERS: D5's window is `posted_on + 14 days` (`docs/specs/D5-measurement.md` §2), so a
+ * typo or a `null` here does not fail loudly — it silently moves the deadline and hands the verdict
+ * a different window. The registry is hand-written; this is the only thing that reads it.
+ */
+const postingProblems = []
+const postedRegistry = (() => {
+  try {
+    return JSON.parse(readFileSync(abs(`${DRAFTS_DIR}/registry.json`), 'utf8'))
+  } catch {
+    return null
+  }
+})()
+if (postedRegistry === null || !Array.isArray(postedRegistry.drafts) || postedRegistry.drafts.length === 0) {
+  postingProblems.push('registry.json does not parse or lists no drafts — this assertion would be vacuous')
+}
+for (const draft of Array.isArray(postedRegistry?.drafts) ? postedRegistry.drafts : []) {
+  const name = String(draft?.file ?? '?')
+  const status = String(draft?.status ?? '')
+  if (status === 'posted') {
+    if (!/^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+$/.test(String(draft?.posted_url ?? ''))) {
+      postingProblems.push(`${name}: status=posted but posted_url is not a discussion URL`)
+    }
+    const postedOn = Date.parse(String(draft?.posted_on ?? ''))
+    if (Number.isNaN(postedOn)) postingProblems.push(`${name}: status=posted but posted_on is not an ISO timestamp`)
+    else if (postedOn > Date.parse(stamp)) postingProblems.push(`${name}: posted_on is in the future (${String(draft.posted_on)})`)
+  }
+  if (status === 'draft' && draft?.posted_url !== null) {
+    postingProblems.push(`${name}: status=draft but posted_url is set — post the draft or clear the field`)
+  }
+}
+check(
+  'posted-drafts-carry-a-date',
+  postingProblems.length === 0,
+  postingProblems.slice(0, 4).join('; ') || 'every posted draft has a discussion URL and a past ISO date; drafts carry no URL',
+)
+
 const passed = checks.every((entry) => entry.ok)
 const artifact = {
   schema_version: 1,

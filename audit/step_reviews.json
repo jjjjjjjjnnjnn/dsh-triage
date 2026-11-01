@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R55 (2026-11-01)",
+  "stand": "R56 (2026-11-01)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -7714,7 +7714,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T18:30:00.000Z --screenshot docs/market/screenshot-0.3.1-real.png",
         "artifact": "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
-        "sha256": "921f5ba77a8b5a1d4298c3a4dd623e15d349659b9d39aed400d58ee2cba95250",
+        "sha256": "42eeb496855c5fa6acf1b9d12f0031eb853b547daf919f0672f45066bb37f09c",
         "outcome": "11 passed / 2 unmeasured · `screenshot: passed`（98938 bytes）· `summary-visible: passed`（tone attention，3 条要看的地方）"
       }
     },
@@ -7931,7 +7931,7 @@
       "real_test": {
         "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-01T21:30:00.000Z --extra-bundle tests/fixtures/client/breaking-plugin,tests/fixtures/client/collision-a,tests/fixtures/client/collision-b --fixture-range \">=0.2.0\" --break-after-install \">=9.0.0\" --break-only dsh-breaking-fixture --screenshot docs/market/screenshot-0.3.1-mixed.png",
         "artifact": "data/results/client-serve-2026-11-01T21-30-00.000Z.json",
-        "sha256": "e2623dd6b40eab1eface005f4ca41a939682750d85ca55d68219be8873741719",
+        "sha256": "b76440057aac1facf193295699e71c2a25ed06c5141df04d90b1d93834fb8242",
         "outcome": "16 passed / 1 unmeasured · 三类问题同屏（denied / collision / unknown）· `screenshot` 84615 bytes"
       }
     },
@@ -7955,6 +7955,84 @@
         "artifact": "data/results/listing-2026-11-01T21-40-00.000Z.json",
         "sha256": "0f15793c3b94c3996fb1120884be18368433b6a5187538912f41e80907062f54",
         "outcome": "12/12 PASS · version 0.3.1 · tests 542 · 三处引用（含新图 21:30）全部可复算"
+      }
+    },
+    {
+      "id": "R56-S1",
+      "batch": "R56",
+      "step": "**用户重写中文文案后，真机重录 + 发布 + 开 D5 的表**：`summary.ts` / `client.js` 的词典换成工程化措辞（不再有「宿主 / 会坏 / 撞车 / 判不了」），两张截图同 stamp 重录使产物与图重新一致；帖子已发到 **Show Your Plugins!（#11813，`createdAt 2026-11-01T20:24:37Z`）**，`registry.json` 回填 `status: posted` + URL + 时间，`record_d5_evidence` 首跑落 `pending`",
+      "changed": [
+        "packages/plugin/src/summary.ts",
+        "packages/plugin/client.js",
+        "tests/unit/summary.test.ts",
+        "docs/distribution/T-810/01-show-your-plugins.md",
+        "docs/distribution/T-810/04-zh-longform.md",
+        "docs/distribution/T-810/05-bili-script.md",
+        "docs/distribution/T-810/registry.json",
+        "docs/market/screenshot-0.3.1-real.png",
+        "docs/market/screenshot-0.3.1-mixed.png",
+        "data/results/client-serve-2026-11-01T18-30-00.000Z.json",
+        "data/results/client-serve-2026-11-01T21-30-00.000Z.json",
+        "data/results/d5-evidence-2026-11-01T22-00-00-000Z.json",
+        "data/results/d5-evidence-2026-11-01T22-00-00-000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：新文案与原意逐条对应——`配置项总数 / 已分析 / 正常 / 存在异常 / 未明确 / 标识冲突` 对应 `rows / judged / go / denied / unknown / collisions`；`未声明依赖区间（不作盲目推断）` 保留了「沉默 ≠ 通过」的判断而不再用口语。真机两次 16 passed / 1 unmeasured，屏上 `222/185/0/1/184 + 标识冲突 1` 与 `219/184/0/0/184` 与图注逐项对上。**D5 首跑如实为 `pending`**：reactions 0/10 · 外部引用 0/1 · 周下载 634 但 `single-day-burst`（按 R52 口径不算需求），窗口到 `2026-11-15T20:24:37Z`",
+        "reproducibility": "PASS：`node scripts/record_d5_evidence.mjs --stamp 2026-11-01T22:00:00.000Z --post https://github.com/deepseek-ai/deepseek-harness/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z`（live 模式，读 GraphQL + search + 基线产物）；两张图 `--stamp 18:30 / 21:30` 同 stamp 重录",
+        "licence": "PASS：只改自有文案、自有截图与登记表；D5 只读公开 API；未引入第三方素材",
+        "ssot": "PASS：重录后产物里的 `screenshot.sha256` 与仓内 PNG 逐字节一致（这一步之前是**不一致**的：图被重拍而产物没重录）；`registry.json` 的 `posted_url` / `posted_on` 与 GitHub 上的讨论逐字一致；D5 产物带 `produced_by` / `generated_at` / `.sha256`",
+        "adversary": "反例一：把 `posted_on` 写成发版日或写今天——被拒：窗口由帖子自己的 `createdAt` 决定，写错就等于挪动判定窗口（这就是下一步加第 13 条断言的原因）；反例二：把 634 的 `single-day-burst` 当成「已有 30 倍下载」——被拒：`met` 要求 `steady`；反例三：图重拍后不重录产物——被拒：`screenshot.sha256` 会对不上文件，这次就是这样被抓到的；反例四：把 D5 首跑的 `pending` 说成「开始了就算数」——被拒：`counts_as_demand = false`，窗口没结束前它就是 `pending`"
+      },
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-01T22:00:00.000Z --post https://github.com/deepseek-ai/deepseek-harness/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z",
+        "artifact": "data/results/d5-evidence-2026-11-01T22-00-00-000Z.json",
+        "sha256": "2923ac0e0897100f032c45f5c07a8b022792d0b87f67a691de16dc66dc659553",
+        "outcome": "pending · reactions 0/10 · 外部引用 0/1 · 周下载 634（single-day-burst，不算需求）· 窗口到 2026-11-15T20:24:37Z"
+      }
+    },
+    {
+      "id": "R56-S2",
+      "batch": "R56",
+      "step": "**第 13 条文案断言 + 一次真负对照**：`posted` 的草稿必须带 discussion URL 与过去的 ISO `posted_on`；并且**registry 读不到时要判红**（否则这条断言是空转）。反例构造：把 URL 改成 `issues/11813` → 必须红",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "data/results/listing-2026-11-01T23-00-00.000Z.json",
+        "data/results/listing-2026-11-01T23-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS（作为负对照）：`BROKEN exit 1 | FAIL posted-drafts-carry-a-date — 01-show-your-plugins.md: status=posted but posted_url is not a discussion URL`；恢复后 `exit 0 | PASS`；再把 registry 写成不可解析 → `exit 1 | FAIL … this assertion would be vacuous`。**第一次做这个负对照时它假绿了**：文件被 PowerShell `Set-Content` 按 GBK 写坏、registry 解析失败、循环零次 → PASS。后来用 node 重做并加了空转守卫，才拿到真读数",
+        "reproducibility": "PASS：改 `posted_url` → `node scripts/check_listing.mjs --stamp <ISO> --tests 542` → 红；恢复 → 绿。脚本化的一次性负对照（node 写文件，不用 PowerShell 回写 UTF-8）",
+        "licence": "PASS：只改检查器与登记表；无外部依赖",
+        "ssot": "PASS：红产物 `listing-2026-11-01T23-00-00` 保留作见证；负对照的绿跑与空转跑写到 `%TEMP%` 不入 SSOT（最终绿跑是 `23:30` 那份）",
+        "adversary": "反例一：让断言在 registry 缺失时静默通过——被拒：加了显式空转守卫并负对照验证；反例二：只校验 URL 形状不校验时间——被拒：`posted_on` 必须是可解析且不在未来的 ISO；反例三：`status: draft` 却留着 URL——被拒：这条也判红（防止「发了但忘了改状态」）；反例四：用 PowerShell 回写 UTF-8 文件——被拒：那正是本轮把 registry 写坏的原因，写进坑表"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T23:00:00.000Z --tests 542   # posted_url 被改成 /issues/11813",
+        "artifact": "data/results/listing-2026-11-01T23-00-00.000Z.json",
+        "sha256": "648cbc02d207499d2d5e6ac49e7897138008c44840ab1f2dd2c5144b8d6df89d",
+        "outcome": "红（负对照）：第 13 条断言点名 `posted_url is not a discussion URL`；恢复后转绿，registry 不可解析时也判红"
+      }
+    },
+    {
+      "id": "R56-S3",
+      "batch": "R56",
+      "step": "**收口复跑**：文案、图、登记表、D5 首跑全部落定后复查 13 条断言",
+      "changed": [
+        "data/results/listing-2026-11-01T23-30-00.000Z.json",
+        "data/results/listing-2026-11-01T23-30-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：13/13，`version 0.3.1 · tests 542`；新增的 `posted-drafts-carry-a-date` 报告「every posted draft has a discussion URL and a past ISO date; drafts carry no URL」",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-01T23:30:00.000Z --tests 542`；`pnpm run test` 542/0",
+        "licence": "PASS：只读检查 + sha256 复算",
+        "ssot": "PASS：产物 `ccfb394b…`；`registry.json` 与 GitHub 上的讨论一一对应；三张图与各自产物 sha 一致",
+        "adversary": "反例一：把 13 条说成 12 条——被拒：产物里逐条列出；反例二：把负对照的红产物删掉只留绿——被拒：红产物是这条断言能红的唯一见证"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-01T23:30:00.000Z --tests 542",
+        "artifact": "data/results/listing-2026-11-01T23-30-00.000Z.json",
+        "sha256": "ccfb394b66910ad127567b54fc3c8150e19b4f5a9af98b3f7764cfc4f46f8876",
+        "outcome": "13/13 PASS · version 0.3.1 · tests 542"
       }
     }
   ]

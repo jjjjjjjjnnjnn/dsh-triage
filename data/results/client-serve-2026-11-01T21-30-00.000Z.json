@@ -5,11 +5,11 @@
   "label": "client-serve",
   "outcome": {
     "served": true,
-    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=b3e095896495",
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=b7dc137b5cb6",
     "tab_visible": "passed"
   },
   "sandbox": {
-    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvy7z3z2\\home",
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mvya807m\\home",
     "profile": "web",
     "bundle": "file:packages/* (workspace rewritten)"
   },
@@ -65,7 +65,7 @@
     {
       "id": "install",
       "status": "passed",
-      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 18.3s using pnpm v12.15.0"
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 24.5s using pnpm v12.15.0"
     },
     {
       "id": "exempt-revoke",
@@ -87,7 +87,7 @@
     {
       "id": "boot",
       "status": "passed",
-      "detail": "host printed http://127.0.0.1:51487/"
+      "detail": "host printed http://127.0.0.1:60321/"
     },
     {
       "id": "graph",
@@ -95,14 +95,14 @@
       "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
       "html_bytes": 38207,
       "client_module_listed": true,
-      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=b3e095896495"
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=b7dc137b5cb6"
     },
     {
       "id": "client",
       "status": 200,
-      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2035452B · loader=true · id=true · tab=true",
-      "bytes": 2035452,
-      "sha256": "ae3b250eee3fb2201cc7b9634884a5c9aa2ccf2c61b6c41b69f8b039572d3c9f",
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2035534B · loader=true · id=true · tab=true",
+      "bytes": 2035534,
+      "sha256": "830ad373c0e689e1299321e5573cc879399e0099a52c18a6a8c01c02530654b7",
       "has_loader": true,
       "declares_id": true,
       "mentions_tab_slot": true,
@@ -155,7 +155,7 @@
           "clicked": true
         }
       ],
-      "page_url": "http://127.0.0.1:51487/",
+      "page_url": "http://127.0.0.1:60321/",
       "controls_before": [
         "打开侧边栏",
         "新建会话",
@@ -215,22 +215,22 @@
         "插件列表",
         "分诊台"
       ],
-      "tab_ms": 914,
+      "tab_ms": 2458,
       "tab_probe": {
         "present": true,
         "mode": "summary",
         "kind": null,
         "tone": "broken",
-        "counts_text": "行 222 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184 · 撞车 1",
+        "counts_text": "配置项总数 222 · 已分析 185 · 正常 0 · 存在异常 1 · 未明确 184 · 标识冲突 1",
         "count_rows": [
           {
             "key": "rows",
-            "label": "行",
+            "label": "配置项总数",
             "value": "222"
           },
           {
             "key": "judged",
-            "label": "有判定",
+            "label": "已分析",
             "value": "185"
           },
           {
@@ -240,23 +240,23 @@
           },
           {
             "key": "denied",
-            "label": "会坏",
+            "label": "存在异常",
             "value": "1"
           },
           {
             "key": "unknown",
-            "label": "判不了",
+            "label": "未明确",
             "value": "184"
           },
           {
             "key": "collisions",
-            "label": "撞车",
+            "label": "标识冲突",
             "value": "1"
           }
         ],
         "issues": 3,
         "copy_fix_buttons": 1,
-        "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 2 个东西会出问题：DSH 启动后很可能直接不见。\n\n项目\t数量\t含义\n行\t222\t声明过的行\n有判定\t185\t给出了结论\n正常\t0\t确认放行\n会坏\t1\t会被摘掉\n判不了\t184\t不算通过\n撞车\t1\t两个插件抢同一个位置\n要看的地方\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t它会被挡住，启动后可能直接不见。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\tcompat-demo-shared\t两个插件抢同一个位置，可能有一个不生效。\n原因: 两行抢同一个 entry id（来自 bundle:dsh-collide-fixture-a, bundle:dsh-collide-fixture-b），profile 可能起不来\n\t—\n3\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n\n还有 181 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+        "text": "插件分诊台 · 本地兼容性诊断\n\n由本地诊断引擎提供分析结果，与终端 CLI 输出保持同源。\n\n检测到 2 项兼容异常：启动后相关功能可能无法正常加载。\n\n诊断项\t数量\t说明\n配置项总数\t222\t已在 Profile 中声明的插件配置条目\n已分析\t185\t具备依赖声明并已完成推演的条目\n正常\t0\t版本规则匹配正常，可正常加载\n存在异常\t1\t依赖版本不满足，启动加载时将被拦截\n未明确\t184\t未显式声明依赖区间（不作盲目推断）\n标识冲突\t1\t多个插件争抢同一 Entry ID\n待处理问题\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t依赖版本不满足，启动加载时将被拦截。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\tcompat-demo-shared\t多个插件声明了相同的标识符，可能导致加载冲突。\n原因: Entry ID 标识冲突（涉及 bundle:dsh-collide-fixture-a, bundle:dsh-collide-fixture-b），可能导致启动失败\n\t—\n3\t@deepseek-ai/cordis-plugin-timer\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n\n另有 181 项未在当前摘要中显示。\n\n注：未显式声明依赖区间的插件按规则归入“未明确”，不盲目推定为兼容。\n\n下一步建议\n操作项\t执行命令\n逐项排查原因\tdsh-triage why\n预检新版本兼容性\tdsh-triage upgrade --to next\n启动本地可视化面板\tdsh-triage serve\n\n数据来源于本地只读接口 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
       },
       "tab_body": "passed",
       "clipboard": {
@@ -266,7 +266,7 @@
           "button_id": "dsh-breaking-fixture",
           "wanted": "dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk",
           "got": "dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk",
-          "method": "dom-click",
+          "method": "mouse",
           "on_button": true,
           "page_reported": {
             "ok": true,
@@ -305,10 +305,10 @@
     {
       "id": "screenshot",
       "status": "passed",
-      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-mixed.png (84615 bytes)",
+      "detail": "captured the same screen as summary-visible: docs/market/screenshot-0.3.1-mixed.png (95671 bytes)",
       "path": "docs/market/screenshot-0.3.1-mixed.png",
-      "bytes": 84615,
-      "sha256": "8528aaa342c36b1345c6d5f1a784f084a795d244d3a0bfd8f1b0831631067e6f"
+      "bytes": 95671,
+      "sha256": "f264a97a41230352c71fbe5cc3ba5acb863c33242594979ccb84889d73e033a3"
     },
     {
       "id": "summary-visible",
@@ -318,16 +318,16 @@
       "mode": "summary",
       "kind": null,
       "tone": "broken",
-      "counts_text": "行 222 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184 · 撞车 1",
+      "counts_text": "配置项总数 222 · 已分析 185 · 正常 0 · 存在异常 1 · 未明确 184 · 标识冲突 1",
       "count_rows": [
         {
           "key": "rows",
-          "label": "行",
+          "label": "配置项总数",
           "value": "222"
         },
         {
           "key": "judged",
-          "label": "有判定",
+          "label": "已分析",
           "value": "185"
         },
         {
@@ -337,35 +337,35 @@
         },
         {
           "key": "denied",
-          "label": "会坏",
+          "label": "存在异常",
           "value": "1"
         },
         {
           "key": "unknown",
-          "label": "判不了",
+          "label": "未明确",
           "value": "184"
         },
         {
           "key": "collisions",
-          "label": "撞车",
+          "label": "标识冲突",
           "value": "1"
         }
       ],
       "issues": 3,
       "copy_fix_buttons": 1,
-      "text": "分诊台 · 这套装会不会坏\n\n结论由命令行同一引擎在宿主侧算好，这里只负责显示。\n\n有 2 个东西会出问题：DSH 启动后很可能直接不见。\n\n项目\t数量\t含义\n行\t222\t声明过的行\n有判定\t185\t给出了结论\n正常\t0\t确认放行\n会坏\t1\t会被摘掉\n判不了\t184\t不算通过\n撞车\t1\t两个插件抢同一个位置\n要看的地方\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t它会被挡住，启动后可能直接不见。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\tcompat-demo-shared\t两个插件抢同一个位置，可能有一个不生效。\n原因: 两行抢同一个 entry id（来自 bundle:dsh-collide-fixture-a, bundle:dsh-collide-fixture-b），profile 可能起不来\n\t—\n3\t@deepseek-ai/cordis-plugin-timer\t它没说自己支持哪个版本，所以我们判断不了。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n\n还有 181 条没在这里列出。\n\n不声明支持区间的行不算通过，只能算判不了。\n\n下一步\n想做什么\t命令\n逐行归因\tdsh-triage why\n升级前先看会坏什么\tdsh-triage upgrade --to next\n打开本地面板\tdsh-triage serve\n\n数据来自宿主只读路由 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
+      "text": "插件分诊台 · 本地兼容性诊断\n\n由本地诊断引擎提供分析结果，与终端 CLI 输出保持同源。\n\n检测到 2 项兼容异常：启动后相关功能可能无法正常加载。\n\n诊断项\t数量\t说明\n配置项总数\t222\t已在 Profile 中声明的插件配置条目\n已分析\t185\t具备依赖声明并已完成推演的条目\n正常\t0\t版本规则匹配正常，可正常加载\n存在异常\t1\t依赖版本不满足，启动加载时将被拦截\n未明确\t184\t未显式声明依赖区间（不作盲目推断）\n标识冲突\t1\t多个插件争抢同一 Entry ID\n待处理问题\n#\t插件\t结论\t修复\n1\tdsh-breaking-fixture\t依赖版本不满足，启动加载时将被拦截。\n原因: engines.dsh >=9.0.0 不含 0.2.1-rc.4\n\t复制\n2\tcompat-demo-shared\t多个插件声明了相同的标识符，可能导致加载冲突。\n原因: Entry ID 标识冲突（涉及 bundle:dsh-collide-fixture-a, bundle:dsh-collide-fixture-b），可能导致启动失败\n\t—\n3\t@deepseek-ai/cordis-plugin-timer\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 在本 profile 下未安装\n\t—\n\n另有 181 项未在当前摘要中显示。\n\n注：未显式声明依赖区间的插件按规则归入“未明确”，不盲目推定为兼容。\n\n下一步建议\n操作项\t执行命令\n逐项排查原因\tdsh-triage why\n预检新版本兼容性\tdsh-triage upgrade --to next\n启动本地可视化面板\tdsh-triage serve\n\n数据来源于本地只读接口 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n刷新"
     },
     {
       "id": "user-answer",
       "status": "passed",
-      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 914ms",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 2458ms",
       "answers": {
         "conclusion": true,
         "which_row": true,
         "what_to_type": true
       },
-      "ms_to_answer": 914,
-      "text_chars": 723
+      "ms_to_answer": 2458,
+      "text_chars": 835
     },
     {
       "id": "english-screen",
@@ -379,7 +379,7 @@
       "button_id": "dsh-breaking-fixture",
       "wanted": "dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk",
       "got": "dsh plugin --profile web allow-version dsh-breaking-fixture@1.0.0 --dsh-version 0.2.1-rc.4 --accept-risk",
-      "method": "dom-click",
+      "method": "mouse",
       "on_button": true,
       "page_reported": {
         "ok": true,
@@ -417,7 +417,7 @@
           "unknown": 184
         }
       },
-      "tab_dom_counts": "行 222 · 有判定 185 · 正常 0 · 会坏 1 · 判不了 184 · 撞车 1"
+      "tab_dom_counts": "配置项总数 222 · 已分析 185 · 正常 0 · 存在异常 1 · 未明确 184 · 标识冲突 1"
     },
     {
       "id": "cleanup",
@@ -430,7 +430,7 @@
     "dsh: skipping profile bundle \"dsh-breaking-fixture\": Error: Plugin dsh-breaking-fixture@1.0.0 is incompatible with dsh 0.2.1-rc.4: requirements {\"engines.dsh\":\">=9.0.0\"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-breaking-fixture@1.0.0 on dsh 0.2.1-rc.4 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.",
     "dsh-triage: compat_verdict tool registered (profile web)",
     "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary registered (profile web)",
-    "dsh web: http://127.0.0.1:51487/?token=<redacted>"
+    "dsh web: http://127.0.0.1:60321/?token=<redacted>"
   ],
   "limits": [
     "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",

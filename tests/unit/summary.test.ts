@@ -72,7 +72,7 @@ function data(overrides: Partial<AuditData> = {}): AuditData {
 test('an empty composition is not a clean one', () => {
   const summary = buildProfileSummary(data(), { locale: 'zh' })
   assert.equal(summary.tone, 'attention', 'zero rows must never render as "ok"')
-  assert.match(summary.headline, /没有读到任何行/)
+  assert.match(summary.headline, /未检索到任何插件配置/)
   assert.equal(summary.counts.rows, 0)
 })
 
@@ -88,8 +88,8 @@ test('rows and judged are different numbers, and the summary says which is which
   assert.equal(summary.counts.rows, 156, 'the denominator a user expects')
   assert.equal(summary.counts.judged, 1, 'only rows that declared a DSH range were judged')
   const text = formatProfileSummary(summary, { locale: 'zh', env: ENV })
-  assert.match(text, /156 行（1 行有判定）/)
-  assert.match(text, /其余 155 行不声明任何 DSH 区间/, 'silence is not a pass, and the text says so')
+  assert.match(text, /156 项配置（1 项已分析）/)
+  assert.match(text, /其余 155 项未声明任何 DSH 依赖区间/, 'silence is not a pass, and the text says so')
 })
 
 /* --------------------------------- tones ---------------------------------- */
@@ -108,7 +108,7 @@ test('a denied row is "broken", and its remediation command is carried verbatim'
     { locale: 'zh' },
   )
   assert.equal(summary.tone, 'broken')
-  assert.match(summary.headline, /有 1 处真的坏了/)
+  assert.match(summary.headline, /检测到 1 项兼容性异常/)
   assert.equal(summary.issues[0]?.kind, 'denied')
   assert.equal(summary.issues[0]?.fix, 'dsh plugin allow llm-pi-ai')
   assert.match(summary.issues[0]?.line ?? '', /0\.1\.0-rc\.6/, 'the localized reason is rendered, not the code')
@@ -139,7 +139,7 @@ test('an entry-id collision outranks a duplicate copy, which outranks "cannot te
 test('unknown rows alone are "attention", not "broken"', () => {
   const summary = buildProfileSummary(data({ claims: [claim('hmr')], rowVerdicts: [verdict('hmr', 'unknown')] }), { locale: 'zh' })
   assert.equal(summary.tone, 'attention')
-  assert.match(summary.headline, /缺少证据/)
+  assert.match(summary.headline, /未明确/)
   assert.equal(summary.issues[0]?.kind, 'unknown')
 })
 

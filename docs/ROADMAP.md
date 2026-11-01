@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）
 
-> **Stand**: R55 (2026-11-01) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.5（npm `latest` = `next`；仓内沙盒仍停在 0.2.1-rc.4）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R56 (2026-11-01) | 上游基线 `@deepseek-ai/dsh` 0.2.1-rc.5（npm `latest` = `next`；仓内沙盒仍停在 0.2.1-rc.4）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 > **R47 重定向**：正门从「通用检查器」改为「**升级日**」。依据是外部取证（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）：诊断类目周下载天花板 **1,988**（市场类 380,240 / 装饰类 411,844）；同时上游最近 842 条 Discussions 里故障帖 **49.2%**、其中 **67.2% 零回复**。痛点真、形态错 → 换触发时刻，不换判据。
 
@@ -96,11 +96,11 @@
 
 > **D3 现状（R53，2026-11-01）**：**1/2 家**。dsh.so **已收录**（三个 per-plugin JSON 端点 200，`indexedAt = 2026-10-29T09:49Z`，`L5 · Run tested`（`0.2.1-rc.5` passed）、security `audited` / `riskLevel: low`；`data/results/market-channels-2026-11-01T09-40-00.000Z.json`）——但**收录不等于有人用**，它不产生下载，D5 的判据里没有这一项。另外三家仍是 PR：**#65 现在 `DIRTY`**（与上游 `main` 冲突，`T-821` 要先 rebase，否则永远合不了）、#193 `APPROVED` + `CLEAN` 等维护者、#140 `CLEAN` 无 review。**读法边界**：L5 是 dsh.so 在它自己的干净沙盒里的一次实测，不能读成「在你的机器上能用」（`BS-06`）。
 
+> **D5 现状（R56，2026-11-01）**：**样本已投放，正在计时** —— 帖子 `https://github.com/deepseek-ai/deepseek-harness/discussions/11813`（Show Your Plugins!，`createdAt 2026-11-01T20:24:37Z`），窗口到 **`2026-11-15T20:24:37Z`**。首跑（`data/results/d5-evidence-2026-11-01T22-00-00.000Z.json`）**`pending`**：reactions **0/10** · 外部引用 **0/1** · 周下载 **634** 但 `download_shape = single-day-burst` → **不算需求**（`counts_as_demand = false`）。**读数口径已由 HUMAN 签字**（`audit/SIGNOFF.md` R54 行），窗口内任何一次重跑都用同一条命令、同一个口径。
+
 ---
 
 ## 3. 分发时间线（与产品并行，不等做完）
-
-| 周 | 动作 | 产出 |
 |---|---|---|
 | W1 | 注册 npm 名 `dsh-triage`；建立 GitHub private → **2026-10-29 已转 public（HUMAN 决定，见 `audit/AI_DISCLOSURE_LOG.md` R38 追加）** | 仓库公开可读；npm 发布仍未做（registry 404） |
 | W2 | 写 3 篇中文案例帖（消失的工具 / 白屏 / 升级后起不来） | 社区曝光第一批 |
