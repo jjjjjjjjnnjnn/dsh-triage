@@ -8489,6 +8489,77 @@
         "sha256": "a99b7481f6f454b261c263bd3e62dee9d8bf2a64ec08c9e590311d645b33198c",
         "outcome": "D5 · pending · reactions 0/10 · references 0/1 · downloads 634 (single-day-burst)/20"
       }
+    },
+    {
+      "id": "R60-S5",
+      "batch": "R60",
+      "step": "**T-821：#65 rebase 回可合并状态**：从 `upstream/main` 重建干净分支，只 cherry-pick 新增 `dsh-triage` 条目（**+12/-0**，151 entries），丢掉一个纯逗号格式化的提交；上游 `community-index.cjs --check` **OK** + `node --test` **9/9**；force-with-lease 推回；PR **`CONFLICTING/DIRTY` → `MERGEABLE/BLOCKED`**（`blocked` = 等 review，不是冲突）；`merged: 0` 未变",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "docs/market/submissions/README.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md"
+      ],
+      "review": {
+        "correctness": "PASS：干净分支只加 12 行；151 entries；`community-index.cjs --check` OK；`node --test` 9/9；PR `mergeable: MERGEABLE`、`mergeStateStatus: BLOCKED`",
+        "reproducibility": "PASS：`market-channels-2026-11-02T12-10-00.000Z.json` 带 sha256；记录 PR URL/分支/12-0/`mergeable_state`；重跑同命令可复读",
+        "licence": "PASS：只改 `community.json` 的条目；没有改他人条目内容，也没有改他们的代码",
+        "ssot": "PASS：渠道产物有 produced_by/generated_at/sha256；`merged_at: null` 与 `mergeable_state: blocked` 如实记录",
+        "adversary": "反例一：为了合并改条目内容/删别人条目——被拒：只加 12 行；反例二：把 `blocked` 写成 `clean` 或 `merged`——被拒：产物与文档都写 `blocked` + `merged 0`；反例三：把第二个逗号提交一起带上——被拒：丢弃它，diff 仍 +12/-0"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-02T12:10:00.000Z --pr 'community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65'",
+        "artifact": "data/results/market-channels-2026-11-02T12-10-00.000Z.json",
+        "sha256": "6134e6f75c8ce71e63435d172ff074198365f5ec29508752ebdf3e9a80a9febf",
+        "outcome": "open · changed_files 1 · +12/-0 · mergeable_state blocked · merged_at null (CONFLICTING/DIRTY resolved)"
+      }
+    },
+    {
+      "id": "R60-S6",
+      "batch": "R60",
+      "step": "**T-821 后的文案复跑**：`listing_zh` / `listing_en` 把 #65 从 `DIRTY` 改成 **`MERGEABLE/BLOCKED`**（`blocked` = 等 review，不是冲突），`submissions/README.md` 同步；`check_listing` 仍 **14/14**（tests 593）",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing` 14/14；版本/DSH 区间/Wilson/1584 限定都没被文案改动带偏；#65 的新状态与渠道产物一致",
+        "reproducibility": "PASS：`listing-2026-11-02T12-20-00.000Z.json` 带 sha256；同输入重跑同结果",
+        "licence": "PASS：只改仓内文案；没有引入外部内容",
+        "ssot": "PASS：第 14 条仍比对覆盖率三份产物；渠道状态以 `market-channels-2026-11-02T12-10-00.000Z.json` 为准",
+        "adversary": "反例一：把 `blocked` 写成 `clean`——被拒：文案与产物都写 `MERGEABLE/BLOCKED`；反例二：把 `merged 0` 删掉——被拒：三份文案都保留 `merged 0`；反例三：改完文案不跑检查器——被拒：本条就是复跑产物"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T12:20:00.000Z --tests 593",
+        "artifact": "data/results/listing-2026-11-02T12-20-00.000Z.json",
+        "sha256": "ec0528b7f9387926f0293329c38a65ff89e8c675c03c079b8c65382bfb0dd642",
+        "outcome": "14/14 PASS · tests 593 · #65 文案为 MERGEABLE/BLOCKED"
+      }
+    },
+    {
+      "id": "R60-S7",
+      "batch": "R60",
+      "step": "**R60 + T-821 收口门禁**：9 门 ALL GREEN（T-821 后的文案、渠道产物、无孤儿产物）；`--mutate` 9/9；593 测试 / 0 fail；`check_listing` 14/14",
+      "changed": [
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：9 门全绿；`--mutate` 9/9；593 测试；`check_listing` 14/14",
+        "reproducibility": "PASS：`gates-2026-11-02T12-30-00.000Z.json` 带 sha256；`--mutate` 是门禁自己的负对照",
+        "licence": "PASS：门禁只读仓内文件，不联网",
+        "ssot": "PASS：322 份产物全部被引用；T-821 的渠道产物与 R60 实验产物都有 sha256；无孤儿",
+        "adversary": "反例一：T-821 只改 PR 不落渠道产物——被拒：`market-channels-2026-11-02T12-10-00.000Z.json` 就是证据；反例二：把 `blocked` 说成 `clean`——被拒：产物与文案都写 `MERGEABLE/BLOCKED`；反例三：改完文案不跑检查器——被拒：S6 的 14/14 产物在"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T12:30:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T12-30-00.000Z.json",
+        "sha256": "08863d1e08d03036f44615e01b534da874d35d45d6186e0ea8093181d39922b1",
+        "outcome": "ALL GREEN · 9 gates · 593 tests · check_listing 14/14"
+      }
     }
   ]
 }

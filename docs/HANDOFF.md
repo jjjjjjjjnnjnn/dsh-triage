@@ -131,6 +131,8 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 **顺手（D5 窗口内重读）**：`data/results/d5-evidence-2026-11-02T12-00-00-000Z.json`（`a99b7481f6f4…`）——
 **`pending`**：reactions **0/10** · 外部引用 **0/1** · 周下载 **634** 但 `single-day-burst`（**不算需求**）；**没有新证据**，三个阈值未动，窗口到 `2026-11-15T20:24:37Z`。
 
+**顺手（T-821）**：#65 从 **`CONFLICTING/DIRTY`** rebase 成 **`MERGEABLE/BLOCKED`**（干净分支只 **+12/-0**、151 entries；上游 `community-index.cjs --check` **OK** + `node --test` **9/9**；`blocked` 是仓库要求 review，不是冲突）；`merged` 仍为 0。产物 `data/results/market-channels-2026-11-02T12-10-00.000Z.json`（`6134e6f75c8c…`）。
+
 ## R59 交接（2026-11-02，最后一个动作就是写这段）
 
 **交接时的真实状态**：**583 测试 / 9 门 ALL GREEN / `--mutate` 9/9 / `check_listing` **14/14**，工作区干净；

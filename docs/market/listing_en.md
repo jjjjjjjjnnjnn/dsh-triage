@@ -86,7 +86,7 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 ## Current status
 
 `0.3.1` is published on npm (four packages released together). Build side covers M0–M6. Distribution: three pull
-requests are open (#65 now conflicts with `main` and needs a rebase from us, #193 approved and clean, walkinglabs
+requests are open (#65 rebased and **`MERGEABLE`** — `blocked` means the repository wants a review, not a conflict; #193 approved and clean, walkinglabs
 #140 clean and unreviewed), `merged: 0` — but **dsh.so lists the plugin**: `L5 · Run tested` against `0.2.1-rc.5`,
 security tier `low`, first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
 machine; a listing is not usage.

@@ -9,11 +9,11 @@
 
 | 渠道 | PR | 状态 | diff |
 |---|---|---|---|
-| **dsh-community-plugins**（dsh-market Workshop 的唯一真相源） | https://github.com/zhu1090093659/dsh-community-plugins/pull/65 | **OPEN · DIRTY（与 main 冲突，需 rebase 才可能合并）** | `community.json` **+12 / -0**（149 entries，纯追加；他们的 gate 在我们推的字节上重跑过：`community-index: OK (149 entries)`） |
+| **dsh-community-plugins**（dsh-market Workshop 的唯一真相源） | https://github.com/zhu1090093659/dsh-community-plugins/pull/65 | **OPEN · MERGEABLE · BLOCKED（冲突已解，等 review）** | `community.json` **+12 / -0**（151 entries，纯追加；上游校验器在我们 rebase 后的字节上重跑过：`community-index: OK (151 entries)` + 9/9 tests） |
 | **awesome-deepseekharness/awesome-deepseek-harness** | https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 | **OPEN · APPROVED · CLEAN（等维护者合并）** | `README.md` **+1 / -0**（Tools, Workflows & Presets 表末行） |
 | **walkinglabs/awesome-deepseek-harness-plugins**（R45 新提） | https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 | **OPEN · CLEAN（无 review）** | `README.md` **+1 / -0**（Developer Tooling 段，字母序 `dsh-tool-approval` → `dsh-triage` → `dsh-verify`；纯追加） |
 
-> **R53 复核时唯一变坏的一条**：#65 从 R44 的 `BLOCKED` 变成 **`DIRTY`**——上游 `main` 在这两周里动过，我们的 `community.json` 那一块现在有冲突。**这不需要重新投稿**，只需要在 fork 上把分支 rebase 到最新 `main` 再 force-push（`docs/BACKLOG.md` `T-821`）。
+> **R60 已 rebase #65**：从 `upstream/main` 重建干净分支，只 cherry-pick 新增 `dsh-triage` 条目（**+12/-0**，别人的条目一个没动），丢掉一个纯逗号格式化的提交；上游 `community-index.cjs --check` **OK（151 entries）**、`node --test` **9/9**；force-with-lease 推回后 PR 从 **`CONFLICTING/DIRTY`** 变成 **`MERGEABLE/BLOCKED`**。`blocked` 是仓库要求 review，**不是冲突**；`merged: 0` 未变（合并仍由维护者决定）。
 
 **为什么这三条能提出来**：仓库在 2026-10-29 由 HUMAN 决定转 public（`gh repo edit --visibility public`），
 raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节一致）；R45 另给仓库补上 `dsh-plugin` 等 topics（该列表的 CONTRIBUTING 要求「plugin 仓库建议带这个 topic」）。
