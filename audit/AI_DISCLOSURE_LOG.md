@@ -798,3 +798,14 @@
 - 实测：**710 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **16/16** · step-review 441 步 / 419 产物全部被引用
 - 同轮续（`R72-S2`，关掉 `T-841`）：`scripts/lib/d5-baseline.mjs#pickBaselineArtifact`（8 条单测）——`--baseline` 缺省不再按文件名挑（那会挑中离线复算件），改为优先 `inputs.offline === false` 的现场件，产物新增 `inputs.baseline_kind`；只有复算件时**退回并在 stderr 明说**。真跑三条：默认选中 `06-40`（measured）/ 挪走四份现场件 → `recompute` + 警告句 / 四份逐字节还原。**718 测试**（+8）
 - 反思：这一轮的教训是**「口径写死」不等于「读数可复算」**。D5 的阈值、判定顺序、`unmeasurable` 语义都冻过，唯独采集侧从来没有产出过 fixtures——于是那个唯一决定产品生不生的数字，重新验证只能靠重跑联网。冻结判据的同时，也要问一句「这份产物别人能不能离线重推导」。
+
+### 2026-11-02 R73｜四个渠道的台账机器化 + 更正三处转述（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R73-S1` … `R73-S4`；无 subagent
+- 人工决策：HUMAN 转述「r/DeepSeek 与 r/DeepSeekHarness 已发布 + 门禁全绿（check_listing 16/16、gate 6/6、governance 56/56）」并要求「继续」；本轮按「转述不是证据」逐条核，**结论与决定都未改**
+- 范围：`docs/distribution/channels.json`（新）· `scripts/lib/channels.mjs` + `.d.mts`（新）· `tests/unit/channels.test.ts`（新，10 条）· `scripts/check_listing.mjs`（第 17 条）· `docs/distribution/T-810/00-README.md`（R58 注记更正 + 台账指针）· `docs/d5-close-runbook.md`（X/Reddit 不计入 D5 的边界）· `docs/{HANDOFF,BACKLOG,ROADMAP}.md` · `INDEX.md` / `AGENTS.md` / `README(.zh-CN).md`（718 → 728）· `audit/{step_reviews,blind_spots}.json` · 产物 `listing-2026-11-02T20-24-54 / 20-24-59 / 20-25-25 / 20-27-09`
+- 结果：① 四个渠道（GitHub #11813 / X / r/DeepSeek / r/DeepSeekHarness）从 prose 表格变成机器可查台账：**`d5_counts: true` 只允许一条**、其余必须写 `why_not_counted`、域必须与平台相符、计入那条与 `T-810/registry.json` 逐毫秒相同、表与台账双向对齐；三条负对照各自真红，终跑 **17/17**；② **更正三处转述**：`gate.mjs` 是 **9 门**（不是 6 门）；PR #65 实测 `MERGEABLE/BLOCKED`（R60 已解冲突，`BLOCKED` = 等 review）；`00-README` 的 R58 注记「帖子已经有人答过」与 R71 实测（三帖 `isAnswered: false`）矛盾 → 理由改成「已有人回复」
+- 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 446 步
+- 边界（如实写）：Reddit 的正文 / 作者 / 发布时间从本机读不到（`.json` 端点 403、页面是 JS 壳），所以那两条 `evidence` 只能是 `declared-url-reachable`、`posted_on` 留空（`T-842`）；四条链接的可达性是人手核过一次（全部 HTTP 200）
+- 反思：**推广和证据之间的距离，要用字段而不是段落来隔开**。四个渠道的热度在 11-15 那天一定会被拿来当理由，所以在判据之外先把「哪一条真的计数」写成机器可查的 `d5_counts`——判据没动，但「说错话」变成了会红的事。

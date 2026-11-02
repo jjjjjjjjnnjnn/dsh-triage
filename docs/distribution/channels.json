@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "produced_by": "hand-written ledger; scripts/check_listing.mjs recomputes the platform, the dates and the D5 participation",
+  "rule": "每条 = 一次发布 = 一个 URL。`d5_counts: true` 只允许**一条**，且必须与 `docs/distribution/T-810/registry.json` 的 `posted_url` / `posted_on` 指同一件事；其余条目必须写清 `why_not_counted`，否则「发了很多地方」会看起来像需求。",
+  "limits": [
+    "这份台账不抓取 URL：可达性是人手核过一次（2026-11-02，四条链接全部 HTTP 200）",
+    "Reddit 的正文 / 作者 / 时间从本机读不到（`/comments/<id>.json` 返回 403），所以那两条的 evidence 只能是 declared 级，posted_on 留空",
+    "`d5_counts` 的判据在 docs/specs/D5-measurement.md §1，不在这里；这份文件只做「不许说错」"
+  ],
+  "channels": [
+    {
+      "id": "github-11813",
+      "platform": "github-discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11813",
+      "label": "上游 Discussions · Show Your Plugins!",
+      "posted_on": "2026-11-01T20:24:37.000Z",
+      "d5_counts": true,
+      "evidence": "measured",
+      "note": "D5 的三个数只来自这一条（reactions 读它、周下载读基线）；R56 发布，R71 复读仍是 open（isAnswered=false）"
+    },
+    {
+      "id": "x-thread",
+      "platform": "x",
+      "url": "https://x.com/jjjj1955714/status/2117306628227940741",
+      "label": "X · 中文主选线程",
+      "posted_on": "2026-11-02T17:36:00.000Z",
+      "d5_counts": false,
+      "why_not_counted": "D5 的 reactions 只数 #11813 这一个 discussion；X 上的赞按口径不进任何一个数（R69 已把这条边界写进读数说明）",
+      "evidence": "declared-url-reachable"
+    },
+    {
+      "id": "reddit-deepseek",
+      "platform": "reddit",
+      "url": "https://www.reddit.com/r/DeepSeek/comments/1xm84py/understanding_deepseek_harness_plugin_admission/",
+      "label": "Reddit · r/DeepSeek（Resource 标签）",
+      "posted_on": null,
+      "date_note": "发布时间没有抓到：Reddit 的 JSON 端点从本机返回 403，页面是 JS 壳；不写一个猜的时刻（R64 的时区坑就是这么来的）",
+      "d5_counts": false,
+      "why_not_counted": "Reddit 的赞与评论不进 D5：reactions 只数 #11813，外部引用由 GitHub search 决定，周下载读市场基线。把 Reddit 的热度算进去等于改判据",
+      "evidence": "declared-url-reachable"
+    },
+    {
+      "id": "reddit-deepseekharness",
+      "platform": "reddit",
+      "url": "https://www.reddit.com/r/DeepSeekHarness/comments/1xm88ex/understanding_deepseek_harness_plugin_admission/",
+      "label": "Reddit · r/DeepSeekHarness（垂直圈子）",
+      "posted_on": null,
+      "date_note": "同上：读不到发布时间，留空而不是猜",
+      "d5_counts": false,
+      "why_not_counted": "同 r/DeepSeek：这一条的作用是接触面，不是需求证据。D5 只认那三个数，渠道数量不在里面",
+      "evidence": "declared-url-reachable"
+    }
+  ]
+}

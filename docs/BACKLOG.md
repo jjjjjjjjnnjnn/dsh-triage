@@ -107,6 +107,8 @@
 
 | T-841 | **`record_d5_evidence` 的默认基线会选中「离线复算件」**：`--baseline` 缺省取 `data/results` 里文件名排序最后的 `market-baseline-*`，而测量件与复算件同名同前缀，排序分不出来 | 增长 | implementer | — | 默认值要么排除复算件（按 `produced_by` 或 `inputs.fixtures`），要么在产物里明示「这份基线是复算件」；**D5 三个阈值不动** | ✅ **R72 完成**：`scripts/lib/d5-baseline.mjs#pickBaselineArtifact`（8 条单测）——优先 `inputs.offline === false`（现场测量）里最新的一份；只有复算件时**退回并说出来**（stderr 明写「这个下载数来自复算基线，关窗前请重跑市场基线」），产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。真跑三条：默认现在选中 `06-40`（**measured**，不是复算件）；把四份现场件临时挪走后 → `baseline_kind = recompute` + 警告句，四份**逐字节还原**（各 sha256 复算相同） |
 
+| T-842 | **渠道台账里的发布时间只能靠人手**：Reddit 的 `.json` 端点从本机返回 403、页面是 JS 壳，所以两条 Reddit 帖的 `posted_on` 只能留空并写 `date_note` | 增长 | implementer | — | 给渠道台账一条可复算的采集路径（浏览器/CDP 读发布时间，或人工录入时带来源），使 `posted_on` 能填上而不是留空；读不到仍记 `unknown`，禁猜 | ⬜ **可领（R73 发现）**：`docs/distribution/channels.json` 里两条 Reddit 的 `posted_on` 是 `null`；`evidence` 只能是 `declared-url-reachable`（HEAD 200 但正文读不到）。**当前无害**：D5 的窗口只从 `#11813` 起算 |
+
 ---
 
 ## 历史交付记录（R3–R16）

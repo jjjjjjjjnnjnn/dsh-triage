@@ -31,9 +31,26 @@
 | 7 | `07-reply-10849-dist-tag.md` | 上游 Discussion #10849 答疑回复 | 针对裸名安装时 `latest` 标签失步指向旧版本的归因，指明解决主体与显式安装建议 |
 | 8 | `08-reply-11687-not-declaration.md` | 上游 Discussion #11687 答疑回复 | 反向回答：两款第三方插件准入均通过，指明故障出在运行期导入/初始化而非准入拦截 |
 
+### 🌐 已发布的社区矩阵跟踪
+
+| 平台 | 目标板块 / 账号 | 帖子链接 | 发布状态 |
+|---|---|---|---|
+| **GitHub** | 上游官方 Discussions (`Show Your Plugins!`) | https://github.com/deepseek-ai/deepseek-harness/discussions/11813 | ✅ 已发布（D5 监测窗口中） |
+| **X (Twitter)** | 个人开发者账号 | https://x.com/jjjj1955714/status/2117306628227940741 | ✅ 已发布（4 连推线程） |
+| **Reddit** | `r/DeepSeek` | https://www.reddit.com/r/DeepSeek/comments/1xm84py/understanding_deepseek_harness_plugin_admission/ | ✅ 已发布（Resource 规范帖） |
+| **Reddit** | `r/DeepSeekHarness` | https://www.reddit.com/r/DeepSeekHarness/comments/1xm88ex/understanding_deepseek_harness_plugin_admission/ | ✅ 已发布（定向专属圈子） |
+
 > **R58 交接注记（HUMAN 决定）**：第 6/7/8 篇（三条回帖）**不发了**——对应帖子已经有人答过。
 > 三份文件**保留作样例**（它们演示了「按帖内点名版本判」与「反向排除声明层」两种回答形状），
 > `registry.json` 里仍是 `status: draft`、`posted_url: null`，**不再计入待发队列**；下一位不要把它们当待办。
+>
+> **R73 更正一处措辞**：上面那句「已经有人答过」不准确。R71 用 `record_discussion_state` 实测（`2026-11-02T19:13Z`）：
+> 三条帖子都是 `isAnswered: false`、`closed: false`，各有 1–2 条回复 —— 也就是说**没有人给出被接受的答案**，
+> 但已经有人回过。HUMAN 的决定（不发）不变，理由应读作「已有人回复，再贴一份只会稀释信息」，
+> 而不是「已经解决了」。两者的区别在 11-15 之后回看时会很重要。
+>
+> **R73 台账**：四个渠道的机器可查版本在 `docs/distribution/channels.json`（平台 / 链接 / 日期 / **是否计入 D5**），
+> 由 `check_listing` 第 17 条复算；本页那张表与它必须逐条对齐，否则检查器红。
 
 ---
 

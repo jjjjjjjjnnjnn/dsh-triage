@@ -79,6 +79,17 @@ R72 把选择器改成 `pickBaselineArtifact`：优先 `inputs.offline === false
 
 ---
 
+### 为什么 X / Reddit 的热度**不进** D5
+
+`docs/specs/D5-measurement.md` §1 定的三个数是：**`#11813` 这一个 discussion 的 reactions**、**GitHub search 找到的外部引用**、
+**市场基线里的周下载（且形状必须是 `steady`）**。Reddit 的赞、X 的赞、频道的数量都不是其中的任何一个 ——
+把它们算进来等于**改判据**，而判据是冻结的（`audit/SIGNOFF.md` R54）。
+
+`docs/distribution/channels.json` 把这条写成了可检查的字段：`d5_counts` 只允许**一条**为 `true`，
+其余每一条都必须写 `why_not_counted`；改台账而不改判据，检查器就会红。
+
+---
+
 ## 3. 怎么读结果（判定表照抄 spec，一字不改）
 
 | 条件 | `verdict` | 含义 |

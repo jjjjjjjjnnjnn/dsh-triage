@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R72 (2026-11-02，**交付轮**：D5 关窗 runbook（`docs/d5-close-runbook.md`）+ 关窗读数的可离线复算（`--fixtures-out`）+ 基线选择器（`T-841`：默认不再可能挑中离线复算件）；**718 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R73 (2026-11-02，**交付轮**：四个渠道的台账机器化（`docs/distribution/channels.json` + `check_listing` 第 17 条：**只有一条渠道计入 D5**）+ 更正两处转述（gate 是 9 门；PR #65 早已 `MERGEABLE/BLOCKED`）；**728 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交付（R73，2026-11-02） | **四个渠道的台账变成机器可查的，并当场更正两处转述（交付轮，判据/阈值一字未动）**。① **背景**：R56–R72 之间投放面从「一个 discussion」扩到四个渠道（GitHub `#11813` / X / `r/DeepSeek` / `r/DeepSeekHarness`），而只有 GitHub 那条被机器检查过（`T-810/registry.json`），其余活在 prose 表格里 —— 两种失败形状：**链接打错没人点**（R57 的「引用了不存在的产物」搬到 URL 上）与**推广悄悄变成证据**（11-15 最诱人的一句话是「我们发了四个地方，总该算吧」）。② **做法**：新增 `docs/distribution/channels.json`（平台 / 链接 / 日期 / `d5_counts` / `evidence` / `why_not_counted`）+ 纯函数 `scripts/lib/channels.mjs#judgeChannels`（10 条单测）+ `check_listing` **第 17 条** `channel-ledger-matches-reality`：**`d5_counts: true` 只允许一条**；其余每条必须写 `why_not_counted`（否则推广会看起来像需求）；URL 域必须与平台相符；计入 D5 的那条要与 `registry.json` 的 `posted_url` / `posted_on` **逐毫秒相同**；`00-README.md` 的表与台账**双向**对齐（表里有台账没有 = 无人检查的说法；台账有表里没有 = 读者看不见）。**三条定向负对照各自真红并保留产物**（把 Reddit 设成计入 `20-24-54` / 把 Reddit 域换成 x.com `20-24-59` / 删掉表里一行 `20-25-25`），终跑 **17/17**。③ **两处转述校正**（都不是我说的，但必须按证据记）：**(a)** 「`gate.mjs 6/6`」不成立 —— 仓里是 **9 门**（实测 `ALL GREEN · 9 gates`）；**(b)** 「PR #65 仍处于冲突状态」不成立 —— `gh pr view 65` 实测 `mergeable: MERGEABLE` / `mergeStateStatus: BLOCKED`，R60 已把冲突解掉，`BLOCKED` 的门槛是**等 review**，不是解冲突。④ **一处文档自相矛盾**：`00-README` 的 R58 注记写「三条回帖不发了——帖子已经有人答过」，而 R71 实测三条都 `isAnswered: false`（各有 1–2 条回复）；**决定不变**（不发），理由改成「已有人回复，再贴一份只会稀释信息」，并注明「没人接受答案 ≠ 没人回」。⑤ **718 → 728 测试**（+10 `channels`）；9 门 ALL GREEN；`--mutate` 9/9；`check_listing` **17/17**。**边界如实写**：Reddit 的正文与发布时间从本机读不到（`.json` 端点 403），那两条 `evidence` 只能是 `declared-url-reachable`、`posted_on` 留空（不猜时刻）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R72，2026-11-02） | **D5 关窗的「怎么跑」写成一页，并把「可离线复算」这条硬规则补到 D5 上（交付轮，判据/阈值一字未动）**。① **runbook**：`docs/d5-close-runbook.md` —— 关窗（`2026-11-15T20:24:37Z`）当天四条命令（**刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记**）、三个数各自的来源与陷阱、判定表照抄 spec、退出码含义（**`fail` 走 exit 1 是判定完成，不是脚本坏了**）、`pass` / `fail` / `unmeasurable` 三个分支各自做什么（`fail` → 执行 D，**禁止再加功能**）。② **写 runbook 的时候撞见两个真问题**：**(a) 下载那一项不是现场抓的** —— 它读最近一份 `market-baseline-*.json` 的 `d5` 块，不刷新就是拿 `10-31` 的数判 `11-15` 的窗；**(b) `--fixtures` 只读不写**，全仓没有任何东西会产出 D5 的 fixtures（R54 那份自检夹具是手写的）→ **关窗产物的离线复算是空路径**，而这正是仓规「进 `data/results` 的数必须可离线重算」要求的东西。补 `record_d5_evidence --fixtures-out <dir>`（抓 `reactions.json` / `references.json`）；`--dry-read` 与它同时给 → **exit 2 零文件**（预演不许留下证据）。真跑：capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**，复算件名字是 `d5-selftest-*` 且 `self_test: true`（不可能被当测量指针）。③ **顺带发现 `T-841`**：`--baseline` 的默认值是「文件名排序最后那件」，**分不出测量件与离线复算件**——今天实测选中的就是 R52 的复算件（两者数字相同所以无害，关窗必须点名）。④ **708 → 710 → 718 测试**（+2 `d5-fixtures-out` / +8 `d5-baseline`）；9 门 ALL GREEN；`check_listing` 16/16。⑤ **同轮关掉 `T-841`**：`--baseline` 缺省原本按**文件名排序**取最后一份，分不出测量件与离线复算件（实测会选中 R52 的复算件）。新纯函数 `pickBaselineArtifact`：优先 `inputs.offline === false` 的**现场件**里最新的一份；只有复算件时退回并在 **stderr 明说**，产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。三条真跑：默认现在选中 `06-40`（measured）/ 把四份现场件临时挪走 → `recompute` + 警告句 / 四份**逐字节还原**。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付 + 流程断言（R71，2026-11-02） | **窗口期只做两件事：把三条回帖变成「30 秒可发」，把「升级日」的触发接上电；判据/阈值/冻结项一字未动（交付轮）**。① **A · 接触面**：给 `06/07/08` 三条回帖各加一个 `<!-- paste:start/end -->` **粘贴块**（块内只放将粘贴的字）并对齐当天产物；新记录器 `scripts/record_discussion_state.mjs`（`gh api graphql` 只读 `isAnswered`/`closed`/`updatedAt`/最后一条评论）先回答「还值得回吗」——**三条都 `open`**（`data/results/discussion-state-2026-11-02T19-13-45-223Z.json`）；新记录器 `scripts/record_remedy_probe.mjs` 用**同一个** `evaluateAdmission` 把「建议装哪个构建」也算出来：`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5`（= 今天的 `next`）**admitted（8 项精确钉定）**，而 `0.1.0-rc.7` / `0.0.1-rc.1` 分别 `denied`（6 / 4 项）（`data/results/remedy-probe-2026-11-02T19-15-18-710Z.json`，同一次 registry 读里带 `dist_tags = latest 0.0.1-rc.1 / next 0.2.1-rc.5`）。**检查器第 16 条 `draft-claims-match-their-artifact`**：registry 每篇声明 `claims`（版本 / 桶 / 区间条数 / 标签值 / 粘贴块里必须出现的句子），由检查器**从被引产物复算**并**从粘贴块复算**两边对撞；**三条定向负对照各自真红且产物保留**（改版本 `19-18-22` / 改计数 `19-18-41` / 删边界句 `19-18-47`），终跑 **16/16**（`listing-2026-11-02T19-33-18.979Z.json`）。**这条断言第一次跑就抓到我自己三处漂移**（`^0.1.0-rc.7` 写了 7 次而产物是 6、`^0.0.1-rc.1` 5 次而产物 4、「等 13 项」对不上 13 行）——修法是改写法，不是放宽断言。**负对照还抓到一个真缺口**：把正文版本改错时断言**没红**（版本只被用来「找探针」，没被用来「验正文」），补「粘贴块必须写出 `pkg@version`」后才红。发帖 runbook 落 `docs/distribution/posting-runbook.md`（发前读什么 / 发后回填什么 / 不许做什么）。② **B · 触发**：`watch_next_release.mjs` 新增 `--baseline <dir,...>` + 纯函数 `pickNewestObservation`（+5 条单测）；**为什么必须有它**：CI 里 `--out` 只能是 `$RUNNER_TEMP`（CI 不许写 SSOT），旧实现只扫 `--out` → `previous` 恒 `null` → 永远报 `baseline`，**一个失忆的监听器**。新 workflow `.github/workflows/watch-upstream.yml`（每 6 小时 + 手动）：`--baseline data/results,.watch-state`，`.watch-state` 走 `actions/cache`（缓存不是提交）；**`unmeasured` → job 失败**（看不见 npm 不许报平安），`changed` → `::warning::` + step summary，**CI 里不跑卡片**（runner 没有 profile，那样生成的卡片会长得像对所有人说的话）。四条分支本机真跑：无基线 → `baseline` / 仓库基线 → `unchanged` 零产物 / 伪造旧基线 → `changed` + 产物 / 死端口 → exit 2 **零产物**；顺手修掉「外部基线的绝对路径会进产物」（改成只写 `(external)/<dirname>`，R67 同族）。③ **顺手修两处文档漂移**：`PROJECT_RULES.md` 的 Stand 还停在 R49、M6 行还写「R48 待做 T-806…T-809」（四项 R48 已交付）；`ROADMAP.md` W11 还写「剩 `npm publish 0.3.0` + T-810 草稿」（0.3.3 已发、`#11813` 已发）。④ **696 → 708 测试**；9 门 ALL GREEN；`check_listing` **16/16**；新盲区 **`BS-56`**（workflow 本机跑不了 / schedule best-effort / 60 天无活动会停 / 缓存失效会重复报）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 判据 + 交付（R70，2026-11-02） | **A、B 两件都做完（HUMAN 原话「A，B，同意，开始进行。」）**。**B（判据轮）**：D5 判定表第一行原本是「没有 `posted_on` **或**没有贴子 URL → `no-post`」，当 URL 明明在手上时这句话是**假话**（工具宣称「没人发帖」而它正拿着链接）。现在拆成两行：**没有 URL** → `no-post`；**有 URL 但窗口起点读不出** → `unmeasurable` + `reason: window-start-unreadable`；数字读不到 → `reason: number-unreadable`。**三个阈值（10/1/20）与判定顺序一字未动**；spec §3/§5/§6、`SIGNOFF.md`（HUMAN 原话）、单测 N2 改期望 + 新增 N2b + N8 同步。**A（交付轮）**：新增 `scripts/lib/load-sample.mjs`（`os.cpus()` 累计时间差——**不用 `os.loadavg()`**，Windows 恒 0 是 R37 的学费）+ `record_client_serve` 在整轮首尾采样，产物新增 `conditions.cpu.observed_busy_percent` 与运行窗口。真机跑 **13/17 passed**（其余是未启用的可选项），`tab_ms 919ms`、`route_ms 464`、`waited_ms 505`，**负载 39.1% / 24 核**。据此重算分布（n=21 → **22**，median 921 / p90 2439 / max 5557，形状不变），并把「39% 负载下仍 919ms」写进 `BS-54` 当作**反例**：中等负载不足以解释长尾，高负载仍未测、历史 4 次慢跑**没有条件读数可回溯**。**顺手抓到的真缺陷**：`--dsh-main` 缺省时被解析成**仓库根目录**，守卫只 `existsSync` 就放行 → `node <repo> plugin install` 报 `Cannot find module` 并记成 `install: failed`（R50 同族：配置没给却像产品坏了）；现在要求**必须是文件**，否则 exit 2 打印期望路径，错误调用产生的红产物已删除。**691 → 696 测试**；9 门 ALL GREEN；`check_listing` **15/15**（`18-58`）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
@@ -114,6 +115,35 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R73（2026-11-02，交付轮）
+
+**状态**：**728 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；
+**D5 `pending`**（0/10 · 0/1 · 634 burst），窗口到 `2026-11-15T20:24:37Z`。
+
+**做了什么（两句话）**：
+
+1. 四个渠道（GitHub / X / 两个 subreddit）从「prose 表格」变成机器可查的台账：
+   `d5_counts: true` **只允许一条**，其余必须写 `why_not_counted` —— 推广不许悄悄变成证据。
+2. 更正两处转述 + 一处文档自相矛盾（见下表），**决定都没改**，改的是理由与证据。
+
+**下一位的第一件事**：仍是 **`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 跑四条命令。
+
+**本轮更正的两条转述**（记在这里，因为下一位也会听到它们）：
+
+| 听到的说法 | 实测 | 怎么读 |
+|---|---|---|
+| 「`gate.mjs 6/6` 通过」 | `ALL GREEN · **9 gates**` | 仓里是 9 门；「6/6」这个数不存在，别引它 |
+| 「PR #65 仍处于冲突状态，需要解冲突」 | `mergeable: MERGEABLE` / `mergeStateStatus: BLOCKED` | R60 已解冲突；`BLOCKED` = **等 review**，不是冲突。再多 rebase 一次不会让它合并 |
+
+**本轮新增的坑**：
+
+1. **推广与证据的门是可被写坏的，所以要做成字段**：`why_not_counted` 让「不计数」变成必须解释的动作。
+   没有这个字段，11-15 那天最省力的读法就是把四个渠道的热度当成需求。
+2. **读不到的东西要留空，不要填一个像样的值**：Reddit 的发布时间本机读不到（403），`posted_on` 就留 `null`
+   并写 `date_note`。R64 的时区坑就是从「填一个看起来对的时间」开始的。
+3. **`node -e` 里不要出现反引号**：PowerShell 会把 `` ` `` 当转义符吃掉，报错位置还指向字符串中间的 `:`，
+   看起来像 JS 语法错、其实是 shell 吃字符。负对照里用 edit 工具改文件更稳。
 
 ## R72（2026-11-02，交付轮）
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R72 (2026-11-02)",
+  "stand": "R73 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10687,6 +10687,96 @@
         "artifact": "data/results/listing-2026-11-02T20-00-50.615Z.json",
         "outcome": "GREEN：16/16（含第 16 条 3 drafts）；同轮 `node --test` 718/718，含 `d5-baseline` 8 条与 `d5-fixtures-out` 2 条",
         "sha256": "131198b5b8aba879be9f3d97647e37cfe6be9063fc8fd3d370cb6f6a7fa36b92"
+      }
+    },
+    {
+      "id": "R73-S1",
+      "batch": "R73",
+      "step": "四个渠道的台账机器化：`channels.json` + 第 17 条断言（只有一条渠道计入 D5）",
+      "changed": [
+        "docs/distribution/channels.json",
+        "scripts/lib/channels.mjs",
+        "scripts/lib/channels.d.mts",
+        "scripts/check_listing.mjs",
+        "tests/unit/channels.test.ts",
+        "docs/distribution/T-810/00-README.md",
+        "docs/d5-close-runbook.md"
+      ],
+      "review": {
+        "correctness": "PASS：`d5_counts: true` 只允许一条，且必须与 `T-810/registry.json` 的 `posted_url` 逐字、`posted_on` 逐毫秒相同；其余条目必须写 `why_not_counted`；平台与 URL 域必须相符；`00-README` 的表与台账**双向**对齐。真跑 17/17。",
+        "reproducibility": "PASS：判定是纯函数（10 条单测），台账是手写 JSON 由检查器复算；三条定向负对照各自真红并保留产物，终跑 `20-27-09` 全绿。",
+        "licence": "PASS：只读仓内文件与公开 URL 形态；没有抓取 Reddit 正文，也没有把用户数据写进产物。",
+        "ssot": "PASS：台账本身不是产物（手写、被检查器复算），新增的只有检查器产物；`00-README` 的 R58 注记按 R71 的实测更正了理由、**决定未改**。",
+        "adversary": "反例：把 Reddit 记成「也计入 D5」——被拒（两条 counted + 与 registry 的 URL/时间都不符）；反例二：把 Reddit 链接写在 x.com 域下——被拒（平台与域不符 + 表/台账/物料三处不一致）；反例三：删掉表里一行——被拒（台账有、表里没有）。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:30:42.050Z --tests 728",
+        "artifact": "data/results/listing-2026-11-02T20-30-42.050Z.json",
+        "outcome": "GREEN：17/17（`channel-ledger-matches-reality`：4 channel(s)，一条计入 D5、三条写明为何不计）",
+        "sha256": "63cb36b9dbfff0aeeafcb7f5c4980ae9e87fb6cbab8386bc1a2b24049b188950"
+      }
+    },
+    {
+      "id": "R73-S2",
+      "batch": "R73",
+      "step": "定向负对照 ①：把 Reddit 帖设成「计入 D5」→ 必红",
+      "changed": [
+        "docs/distribution/channels.json"
+      ],
+      "review": {
+        "correctness": "PASS：断言同时点三件事——「计数的渠道是 reddit 链接而 D5 registry 指向 #11813」「两条时间差 84923000ms」「只允许一条 counted，找到 2」。这正是「推广变证据」的形状。",
+        "reproducibility": "PASS：改 → 跑 → 还原；还原后与备份逐字节比对相同（`bf7ca71df61f…`）。",
+        "licence": "PASS：只改仓内台账，未触碰任何外部资源。",
+        "ssot": "PASS：红产物保留为见证；台账没有被留在改动状态。",
+        "adversary": "反例：只把 `d5_counts` 改成 true 而补上日期就以为能过——被拒，URL 与 registry 不符这一条独立触发。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:24:54.620Z --tests 728",
+        "artifact": "data/results/listing-2026-11-02T20-24-54.620Z.json",
+        "outcome": "RED（预期）：counted 渠道与 D5 registry 不符 + 时间差 84923000ms + counted 有 2 条",
+        "sha256": "73a0e7dffc67196e92ec04df45ec6f6b0b4a41a27c25e1ce404528ab0042ee30"
+      }
+    },
+    {
+      "id": "R73-S3",
+      "batch": "R73",
+      "step": "定向负对照 ②：把 Reddit 链接换到 x.com 域 → 必红（平台与域不符）",
+      "changed": [
+        "docs/distribution/channels.json"
+      ],
+      "review": {
+        "correctness": "PASS：断言报「url does not look like a reddit link」，并连带报出表 / 台账 / 物料三处链接不一致——说明它不是只查一个字段。",
+        "reproducibility": "PASS：改 → 跑 → 还原，还原后 sha256 与备份相同。",
+        "licence": "PASS：只改仓内台账文件，没有引入外部素材或第三方数据。",
+        "ssot": "PASS：红产物保留为见证；台账已逐字节还原（sha256 与备份相同），没有留下半改状态。",
+        "adversary": "反例：只改平台的字符串（reddit → x）而不改 URL——同样红：域不匹配与表/台账不一致会各自触发。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:24:59.841Z --tests 728",
+        "artifact": "data/results/listing-2026-11-02T20-24-59.841Z.json",
+        "outcome": "RED（预期）：`url does not look like a reddit link` + 表里没有该链接 + 物料文件没有该链接",
+        "sha256": "e0e69d4a32214dcfa7db2f34fa970a82b958e45b5c14e13ce524f5c4c7d45dcb"
+      }
+    },
+    {
+      "id": "R73-S4",
+      "batch": "R73",
+      "step": "定向负对照 ③：删掉 `00-README` 表里一行 Reddit → 必红（台账有、读者看不见）",
+      "changed": [
+        "docs/distribution/T-810/00-README.md"
+      ],
+      "review": {
+        "correctness": "PASS：断言点名「the table never lists <url>」——这正是 R73 要防的方向：机器知道、文档不说，读者就以为只有两个渠道。",
+        "reproducibility": "PASS：删行 → 跑 → 用 edit 逐字还原（node -e 里带反引号会被 PowerShell 吃掉，见 HANDOFF R73 坑表）。",
+        "licence": "PASS：只改仓内文档文件，没有引入外部素材或第三方数据。",
+        "ssot": "PASS：红产物保留；文档已恢复到含两行 Reddit 的状态。",
+        "adversary": "反例：反过来只在表里加一行、台账不加——同一断言的反方向，已在单测里以「台账有表没有」的形式钉住。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:25:25.113Z --tests 728",
+        "artifact": "data/results/listing-2026-11-02T20-25-25.113Z.json",
+        "outcome": "RED（预期）：`the table never lists https://www.reddit.com/r/DeepSeekHarness/…`",
+        "sha256": "9574034ac8ce003074bffb7440170b6232f27acd35d42ff550dfa92e018a1784"
       }
     }
   ]

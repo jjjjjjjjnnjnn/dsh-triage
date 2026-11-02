@@ -30,6 +30,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { judgeChannels } from './lib/channels.mjs'
 import { judgePosting } from './lib/posting.mjs'
 import { formatInterval, formatPercent, TIERS } from './lib/question-coverage.mjs'
 
@@ -719,6 +720,95 @@ check(
     (claimCount === 0
       ? 'no draft declares claims (nothing was checked — not the same as everything checked out)'
       : `${claimCount} draft(s): every claimed version, bucket, range count and tag value equals the cited artifact`),
+)
+
+/*
+ * 17th assertion (R73): the multi-channel ledger is real, and exactly one channel feeds D5.
+ *
+ * WHY: distribution went from one discussion to four channels (GitHub / X / two subreddits) in eleven days,
+ * and only the GitHub one was machine-checked. The two failure modes are symmetric and both happened to
+ * other projects: a mistyped link nobody clicks, and promotion slowly reading as evidence. So the ledger
+ * (`docs/distribution/channels.json`) is checked for platform/host/date coherence, for "exactly one channel
+ * counts toward D5", and for agreement with the human-facing table in `00-README.md`.
+ */
+const channelProblems = []
+let channelDetail = ''
+const CHANNEL_LEDGER = 'docs/distribution/channels.json'
+const CHANNEL_TABLE_DOC = 'docs/distribution/T-810/00-README.md'
+const channelLedger = (() => {
+  try {
+    return JSON.parse(readFileSync(abs(CHANNEL_LEDGER), 'utf8'))
+  } catch (error) {
+    channelProblems.push(`${CHANNEL_LEDGER} does not parse: ${String(error?.message ?? error)}`)
+    return null
+  }
+})()
+if (channelLedger !== null) {
+  const registry = postedRegistry
+  const posted = Array.isArray(registry?.drafts)
+    ? registry.drafts.filter((entry) => entry?.status === 'posted' && typeof entry?.posted_url === 'string')
+    : []
+  const d5Post = posted.find((entry) => /discussions\/\d+/.test(String(entry.posted_url))) ?? null
+  const verdict = judgeChannels({
+    channels: channelLedger.channels,
+    now: stamp,
+    registryUrl: d5Post === null ? null : String(d5Post.posted_url),
+    registryPostedOn: d5Post === null ? null : String(d5Post.posted_on),
+  })
+  channelProblems.push(...verdict.problems)
+
+  /*
+   * The table and the ledger must name the same links. Both directions matter: a ledger entry missing from
+   * the document is invisible to a human reader, and a document row missing from the ledger is a claim no
+   * machine checks — that is how the Reddit posts lived in prose only.
+   */
+  const ledgerUrls = new Set(
+    (Array.isArray(channelLedger.channels) ? channelLedger.channels : [])
+      .map((entry) => (entry !== null && typeof entry === 'object' ? String(entry.url ?? '') : ''))
+      .filter((url) => url.length > 0),
+  )
+  /*
+   * Read the two human-facing files directly instead of adding them to DOCUMENTS: `DOCUMENTS` runs the
+   * forbidden-phrase check over marketing copy, and that copy is HUMAN-owned (R73: the Reddit/HN draft is a
+   * promo asset, not a project claim). Here we only need the link sets.
+   */
+  const readIfPresent = (path) => (existsSync(abs(path)) ? readFileSync(abs(path), 'utf8') : null)
+  const doc = readIfPresent(CHANNEL_TABLE_DOC)
+  const sectionStart = doc === null ? -1 : doc.indexOf('已发布的社区矩阵跟踪')
+  if (doc === null) {
+    channelProblems.push(`${CHANNEL_TABLE_DOC}: missing`)
+  } else if (sectionStart === -1) {
+    channelProblems.push(`${CHANNEL_TABLE_DOC}: no 已发布的社区矩阵跟踪 section`)
+  } else {
+    const rest = doc.slice(sectionStart)
+    const stop = rest.slice(1).search(/\n(?:>|##)/)
+    const section = stop === -1 ? rest : rest.slice(0, stop + 1)
+    const tableUrls = new Set((section.match(/https:\/\/[^\s|)]+/g) ?? []).map((url) => url.replace(/[.,;]+$/, '')))
+    for (const url of ledgerUrls) if (!tableUrls.has(url)) channelProblems.push(`${CHANNEL_TABLE_DOC}: the table never lists ${url}`)
+    for (const url of tableUrls) if (!ledgerUrls.has(url)) channelProblems.push(`${CHANNEL_LEDGER}: ${url} is in the table but not in the ledger`)
+  }
+
+  // The Reddit links also live in the campaign file a human copies from; a typo there is the lived risk.
+  const campaign = readIfPresent('docs/distribution/reddit-and-hn-posts.md')
+  let campaignChecked = false
+  if (campaign !== undefined && campaign !== null) {
+    campaignChecked = true
+    for (const entry of Array.isArray(channelLedger.channels) ? channelLedger.channels : []) {
+      if (entry?.platform !== 'reddit') continue
+      if (!campaign.includes(String(entry.url))) channelProblems.push(`docs/distribution/reddit-and-hn-posts.md: does not mention ${String(entry.url)}`)
+    }
+  }
+  /*
+   * Say when a cross-check did not run. The campaign file is HUMAN-owned and may be absent from a given
+   * checkout; a skip that looks identical to a pass is the R51 `pending`-as-answer shape.
+   */
+  channelDetail = campaignChecked ? '' : ' (reddit campaign file absent: its link cross-check did not run)'
+}
+check(
+  'channel-ledger-matches-reality',
+  channelProblems.length === 0,
+  channelProblems.slice(0, 4).join('; ') ||
+    `${Array.isArray(channelLedger?.channels) ? channelLedger.channels.length : 0} channel(s): one feeds D5, the rest say why they do not, and the table names the same links${channelDetail}`,
 )
 
 const passed = checks.every((entry) => entry.ok)
