@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "produced_by": "manual review (agent, R60 holdout)",
+  "reviewer": "agent:deepseek-v4.1-flash",
+  "seed": 20261103,
+  "method": "read title + bodyText only; exclude the 20 threads used to design v2; label from the same taxonomy before looking at the v2 output",
+  "reviews": [
+    { "number": 6065, "layer": "runtime", "verdict": "partially-answerable", "why": "zero-argument PTC binding fails in the code-runtime worker; runtime/tool bug" },
+    { "number": 10030, "layer": "runtime", "verdict": "partially-answerable", "why": "desktop update failure and a sandbox Low-integrity label; runtime/ACL issue" },
+    { "number": 7759, "layer": "runtime", "verdict": "partially-answerable", "why": "schedule waits for sessionController outside the web bundle; a missing service, not a declaration" },
+    { "number": 2641, "layer": "runtime", "verdict": "partially-answerable", "why": "Pwsh/Glob crash with 'reading prepare'; Windows tool runtime bug" },
+    { "number": 3475, "layer": "runtime", "verdict": "partially-answerable", "why": "build script feeds a native pnpm.exe to node; runtime/tooling bug" },
+    { "number": 6429, "layer": "runtime", "verdict": "partially-answerable", "why": "cannot switch sandbox mode; runtime/permission UI bug" },
+    { "number": 264, "layer": "runtime", "verdict": "partially-answerable", "why": "the question UI hangs; runtime/UI issue" },
+    { "number": 2898, "layer": "runtime", "verdict": "partially-answerable", "why": "headless silently exits 1 on max-tokens and swallows boot errors; runtime/CLI diagnostics" },
+    { "number": 540, "layer": "runtime", "verdict": "partially-answerable", "why": "pasting a long text makes the composer lag; runtime/UI performance" },
+    { "number": 4452, "layer": "unknown", "verdict": "not-ours", "why": "asks why edits require a read first; a workflow/product question, not a compatibility failure" },
+    { "number": 7316, "layer": "runtime", "verdict": "partially-answerable", "why": "pi-ai stream idle timeout; runtime/provider timeout" },
+    { "number": 5439, "layer": "composition", "verdict": "partially-answerable", "why": "a stale broken fallback symlink in the profile module tree breaks requests; composition/dependency" },
+    { "number": 653, "layer": "runtime", "verdict": "partially-answerable", "why": "reverse-proxy access returns 403 for most APIs; runtime/auth" },
+    { "number": 6509, "layer": "unknown", "verdict": "not-ours", "why": "a model-behaviour / prompt-identity study, not a plugin compatibility question" },
+    { "number": 5445, "layer": "runtime", "verdict": "partially-answerable", "why": "a corrupted session log makes every request return 400; runtime/session persistence" },
+    { "number": 11338, "layer": "runtime", "verdict": "partially-answerable", "why": "a turn ends with only reasoning + tool-call; runtime/event contract" },
+    { "number": 6902, "layer": "unknown", "verdict": "not-ours", "why": "asks how to use web search with a local model; a usage/config question" },
+    { "number": 11717, "layer": "runtime", "verdict": "partially-answerable", "why": "desktop startup crashes with 'Web authentication failed'; runtime/auth" },
+    { "number": 5116, "layer": "runtime", "verdict": "partially-answerable", "why": "pre-existing TS errors block the build; runtime/tooling" },
+    { "number": 10057, "layer": "runtime", "verdict": "partially-answerable", "why": "after updating, Office writes need elevation; runtime/permission" }
+  ]
+}

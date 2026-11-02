@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R59 (2026-11-02)",
+  "stand": "R60 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8387,6 +8387,85 @@
         "artifact": "data/results/gates-2026-11-02T11-10-00.000Z.json",
         "sha256": "7628cf1c6392300b1e7a414c6c91475f2c241a54bc58a111c0f7946d20d9a749",
         "outcome": "ALL GREEN · 9 gates · 同一次 verify 584 测试 / 0 fail"
+      }
+    },
+    {
+      "id": "R60-S1",
+      "batch": "R60",
+      "step": "**分类器 v2 实验（判据轮，未采用）**：从 R59 的 20 条开发集分歧设计 `SIGNALS_V2` / `classifyThreadV2`（通用失败动词 + 运行期/组合形状）；开发集 **20/20**，互斥留出集 **12/20**（v1 7/20），低于 spec §8 的 80% → **不采用**；生产仍 v1，覆盖率 4.8% 与 README 9/20 不变。新增 `record_classifier_v2.mjs`、留出集 20 条盲标、9 条 v2 单测、`BS-53`",
+      "changed": [
+        "scripts/lib/discussion-triage.mjs",
+        "scripts/lib/discussion-triage.d.mts",
+        "tests/unit/discussion-triage.test.ts",
+        "scripts/record_classifier_v2.mjs",
+        "data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/holdout-review.json",
+        "audit/RECON_2026-11-02_classifier-v2.md",
+        "audit/blind_spots.json",
+        "audit/SIGNOFF.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：v1 测试未改；新增 9 条 v2 单测；开发集 20/20、留出集 12/20 与 v1 7/20 由 `record_classifier_v2.mjs` 复算；生产 `classifyThread` 仍用 `SIGNALS_V1`",
+        "reproducibility": "PASS：脚本只读 QA 快照 + 两份标签，不联网；产物带 sha256；复算命令写进报告 §5",
+        "licence": "PASS：只用公开帖子的标题/正文与人工标签；没有引入外部模型、数据或代码",
+        "ssot": "PASS：`classifier-v2-2026-11-02T11-20-00-000Z.json` 有 produced_by/generated_at/schema_version/sha256；`decision: not-adopted`；R59 覆盖率产物与 README 未改",
+        "adversary": "反例一：拿开发集 20/20 当准确率——被拒：留出集只有 12/20；反例二：在已看过的留出集上继续加词——被拒：报告写明会把它变成第二个开发集；反例三：悄悄把生产分类器换成 v2——被拒：`classifyThread` 仍用 v1，覆盖率/README 一字未动；反例四：把实验产物写成 adopted——被拒：产物与报告都写死 not-adopted"
+      },
+      "real_test": {
+        "command": "node scripts/record_classifier_v2.mjs --stamp 2026-11-02T11:20:00.000Z",
+        "artifact": "data/results/classifier-v2-2026-11-02T11-20-00-000Z.json",
+        "sha256": "3e357e063cfeb3e12442a5546093a33cb11b7c65a73596c8e99425ee1efc2289",
+        "outcome": "dev v1 9/20 / v2 20/20 · holdout v1 7/20 / v2 12/20 · verdict not-adopted"
+      }
+    },
+    {
+      "id": "R60-S2",
+      "batch": "R60",
+      "step": "**R60 收口复跑**：分类器 v2 实验 + 文档 R60 之后，`check_listing` 仍 **14/14**（tests 593）；R59 的覆盖率块（4.8% / 9/20）与外部文案改动同时成立；生产分类器未变",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing` 14/14；R59 覆盖率块与 11:00 的最终读数一致；R60 的文档改动没有改任何数字",
+        "reproducibility": "PASS：`listing-2026-11-02T11-30-00.000Z.json` 带 sha256；同输入重跑同结果",
+        "licence": "PASS：只读仓内文档与产物",
+        "ssot": "PASS：第 14 条仍比对测量/复算/抽检三份产物；R60 只加了实验产物与文档，未改覆盖率产物",
+        "adversary": "反例一：把 R60 的实验当成覆盖率新读数——被拒：README 仍指 R59 的 4.8%；反例二：为了让 gates 绿而删掉 R60 的产物——被拒：实验产物与留出集标签都保留"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T11:30:00.000Z --tests 593",
+        "artifact": "data/results/listing-2026-11-02T11-30-00.000Z.json",
+        "sha256": "51ea9ae599db326be1bde3d89354d57fc1c690f3638cf9a9addfd05958ecef7f",
+        "outcome": "14/14 PASS · tests 593"
+      }
+    },
+    {
+      "id": "R60-S3",
+      "batch": "R60",
+      "step": "**R60 门禁收口**：9 门 ALL GREEN（`verdict-contract` 不再把实验产物的 `decision` 当 verdict、`governance` 的 HANDOFF/INDEX/ROADMAP/台账 stand 全部 R60、`step-review` 322 份产物全部被引用）；`--mutate` 9/9",
+      "changed": [
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：9 门全绿；`--mutate` 9/9；593 测试 / 0 fail；`check_listing` 14/14",
+        "reproducibility": "PASS：`gates-2026-11-02T11:45-00.000Z.json` 带 sha256；`--mutate` 是门禁自己的负对照",
+        "licence": "PASS：门禁只读仓内文件，不联网",
+        "ssot": "PASS：322 份产物全部被引用；R60 的实验产物有 produced_by/generated_at/sha256；无孤儿",
+        "adversary": "反例一：把 `classifier-v2` 的 `decision: not-adopted` 改名回 `verdict`——被拒：verdict-contract 会把它当 verdict 并红；反例二：R60 只改 HANDOFF 不改 INDEX/ROADMAP——被拒：doc-stand 会红；反例三：把实验产物删掉让树干净——被拒：它是 R60 的唯一证据"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T11:45:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T11-45-00.000Z.json",
+        "sha256": "271dd56af6980a63c34d1cad851575bfb81bf1d7126f199aa39a3c20af8b95e0",
+        "outcome": "ALL GREEN · 9 gates · 593 tests · check_listing 14/14"
       }
     }
   ]

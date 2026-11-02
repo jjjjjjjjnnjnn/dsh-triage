@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R59 (2026-11-02)",
+  "stand": "R60 (2026-11-02)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -418,8 +418,17 @@
       "area": "Question 覆盖率 / 分类器",
       "cannot_see": "R59 的头条（74/1544 = 4.8%）与 tier 拆分都建立在**只读文本的分类器**上，而 20 条盲标抽检只有 **9/20 = 45%** 一致：9 条运行期/UI 报告（`fails` / `cannot` / `TRANSPORT` / 沙箱 ACL / 浏览器 API）没有命中关键词表，被读成 `unknown / not-ours`，人工读成 `runtime / partially-answerable`。头条**不受这类误读影响**（`unknown` 不探针、分子不进；正确读成 runtime 最多变成 `rules-out-declaration`，只会把头条抬高），所以 4.8% 是保守下界；但 **tier 拆分与「相关问题 594 / 12.5%」会把运行期报告算进 `not-relevant`**，目前只能当粗略分布看。仍然看不见的：① 如果分类器 v2 把 950 条 `not-relevant` 里的运行期帖正确分出来，会有多少条新增 tier2（可能把 4.8% 抬高，但抬多少未知）；② General 是投影快照（无全文进仓），它的率不能像 Q&A 那样逐字复算；③ 一个目标运行时（rc.5）判全部帖子，帖子说的是旧运行时也不改目标；④ 每帖最多 3 个包，Q&A 138 条 / General 677 条被截断。",
       "mitigation": "① README 与产物同屏写「分类器辅助，一致率 9/20」，不写「覆盖率 100%」；② 头条分母固定为**全部 Q&A**，相关/可判口径只作上下文，且用 `shareOf` 纯函数算 Wilson；③ 抽检用固定种子盲标（先读 title+body，再看分类器），`question-review-*` 产物带 `measurement.sha256`，改过的测量产物拒绝复核；④ 分类器 v2 另开**判据轮**（改规则 + 重跑 20 条 + 负对照），不许在覆盖率轮里顺手调；⑤ `--fixtures` 复算必须 rows/counts/coverage 逐项相同（本轮修掉 `null`/`undefined` 两个假绿才做到）。",
-      "owner": "scripts/lib/discussion-triage.mjs · docs/specs/question-coverage.md · data/results/question-review-2026-11-02T09-55-00-000Z.json · audit/RECON_2026-11-02_question-coverage.md",
-      "status": "open (R59): the headline is a conservative lower bound; the tier split is classifier-dependent until v2",
+      "owner": "scripts/lib/discussion-triage.mjs · docs/specs/question-coverage.md · data/results/question-review-2026-11-02T10-10-00-000Z.json · audit/RECON_2026-11-02_question-coverage.md",
+      "status": "open (R59): the headline is a conservative lower bound; the tier split is classifier-dependent until v3",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-53",
+      "area": "分类器 / 覆盖率文本判定",
+      "cannot_see": "v2 是按 R59 的 20 条开发集错误设计的：在开发集上 20/20，但在**互斥留出集**（新种子 20261103、排除开发集）上只有 **12/20（60%）**，v1 同一留出集 7/20（35%）。纯关键词表到不了 `docs/specs/question-coverage.md` §8 的 80% 门槛。漏掉的形状包括：中文/日志词（`卡着`、`403`、`400`、`损坏`、`提权`、`symlink`）、没有失败动词的现象（`no text block` / `nothing to display`）、以及「问题 vs 故障」的区分（feature request / usage question 被 `不能` 等通用词误判）。仍然看不见的：① 如果 v3 修好这 8 条，会不会只是把留出集变成第二个开发集；② 纯关键词方法的上限到底是多少；③ 引入本地小模型做辅助判断的离线/许可边界（需要新 ADR）。",
+      "mitigation": "① **生产分类器仍是 v1**，R59 的覆盖率数字（74/1545 = 4.8%）与 README 的 9/20 一字未动；② v2 以 `classifyThreadV2` + `SIGNALS_V2` 保留，实验产物 `classifier-v2-2026-11-02T11-20-00-000Z.json` 写死 `decision: not-adopted`；③ 下一轮 v3 必须先写 spec + **第三个互斥留出集**，或用「问题 vs 故障」二分类 / 本地模型辅助；④ 覆盖率 README 的一致率必须用**留出集**，不许拿开发集 20/20 当准确率。",
+      "owner": "scripts/lib/discussion-triage.mjs · scripts/record_classifier_v2.mjs · audit/RECON_2026-11-02_classifier-v2.md · data/results/classifier-v2-2026-11-02T11-20-00-000Z.json",
+      "status": "open (R60): v2 is a real recall improvement but fails the 80% holdout bar; v1 stays production",
       "resolved_by": null
     }
   ]

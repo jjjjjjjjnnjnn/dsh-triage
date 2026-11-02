@@ -23,11 +23,19 @@ export const LAYERS = Object.freeze(['admission', 'upgrade', 'composition', 'run
 export const VERDICTS = Object.freeze(['answerable', 'partially-answerable', 'needs-their-profile', 'not-ours'])
 
 /*
- * SIGNAL TABLES. Each entry is [layer, regex, weight]; the classifier sums weights per layer and the
- * heaviest layer wins. Weights exist because a single word ("incompatible") shows up in runtime
+ * SIGNAL TABLES. Each entry is [layer, regex, weight]; the classifier sums weights per layer and
+ * the heaviest layer wins. Weights exist because a single word ("incompatible") shows up in runtime
  * reports too, while `service-unavailable` never shows up in a declaration problem.
+ *
+ * TWO TABLES, ONE PRODUCTION CLASSIFIER:
+ *   - `SIGNALS` / `classifyThread` is v1 and remains the production classifier. The R59 coverage
+ *     headline (74/1545 = 4.8%) was measured with it; changing it would silently change that number.
+ *   - `SIGNALS_V2` / `classifyThreadV2` is the R60 experiment. It was designed from the 20 v1 review
+ *     errors and reached 20/20 on that development set, but only 12/20 on a disjoint holdout
+ *     (v1: 7/20). That is below the 80% bar in `docs/specs/question-coverage.md` §8, so it is kept
+ *     as a reproducible experiment, not adopted. See `audit/RECON_2026-11-02_classifier-v2.md`.
  */
-export const SIGNALS = [
+const SIGNALS_V1 = [
   ['runtime', /service-unavailable|gateway\/|workspaceController|sessionController|typert/i, 5],
   ['runtime', /cookie|Web authentication|认证/i, 4],
   ['runtime', /写锁|write lock|bundle-in-use|安装器|installer|安装目录/i, 4],
@@ -40,6 +48,40 @@ export const SIGNALS = [
   ['upgrade', /升级.*(之后|后)|after (the )?upgrade|升到|updated? to|rc\.\d.*插件/i, 3],
   ['upgrade', /upgrade broke|升级破坏|回退/i, 2],
 ]
+
+/**
+ * v2 weights: a concrete runtime shape (5) > a declaration/composition statement (4) > a generic
+ * failure verb (3) > a weak lexical hint (2). Ties go to the layer order in `LAYERS` (admission
+ * first), which is why "install fails: peer ..." stays admission.
+ */
+export const SIGNALS_V2 = [
+  // runtime — concrete shapes
+  ['runtime', /service-unavailable|gateway\/|workspaceController|sessionController|typert/i, 5],
+  ['runtime', /0xC000|SEC_E_|TRANSPORT|ECONN|EACCES|EPERM|permission denied|access denied|沙箱|sandbox|ACL/i, 5],
+  ['runtime', /白屏|blank screen|\bfreeze\b|卡死|卡住|\bhang\b|\btimeout\b|超时|WebSocket|socket closed|502|503/i, 4],
+  ['runtime', /cookie|Web authentication|认证|登录|login|token|localStorage|certificate|证书/i, 4],
+  ['runtime', /写锁|write lock|bundle-in-use|安装器|installer|安装目录/i, 4],
+  // runtime — generic failure verbs (the class v1 missed)
+  ['runtime', /\bcrash\b|崩溃|闪退|\bexception\b|stack trace|\bpanic\b/i, 3],
+  ['runtime', /\bfail(?:s|ed|ure)?\b|\berror\b|报错|失败|异常|\bcannot\b|can't|does not work|not working|\bbroken\b|无法|不能|不可用/i, 3],
+  // admission
+  ['admission', /not activate|did not activate|未激活|\bpeer\b|peerDependencies|engines\.dsh/i, 4],
+  ['admission', /incompatible|不兼容|版本不符|版本区间|依赖版本/i, 4],
+  ['admission', /dist-tags?|latest tag|npm .*tag/i, 4],
+  ['admission', /被禁用|禁用.*插件|插件.*消失|silently disables|静默/i, 3],
+  ['admission', /\binstall(?:ed|ing)?\b|安装|dependency|依赖|\bversion\b|版本/i, 2],
+  // composition — overrides, duplicate copies, bundle/profile wiring
+  ['composition', /duplicate|重复|两份|shadow|抢先|覆盖|fork|same name|同名|entry id|标识冲突|命名冲突|slot|槽位/i, 4],
+  ['composition', /bundle patch|硬依赖|FIBER_PENDING|optional inject|inject.*optional|dsh\.bundle\.patch/i, 4],
+  ['composition', /link:|node_modules|inject|manifest|dsh\.profile\.bundles|prune/i, 3],
+  ['composition', /preset-(?:standard|ptc|minimal|cordis)|agent preset/i, 3],
+  // upgrade
+  ['upgrade', /升级.*(之后|后)|after (the )?upgrade|升到|updated? to|rc\.\d.*插件/i, 3],
+  ['upgrade', /upgrade broke|升级破坏|回退/i, 2],
+]
+
+/** Production table (v1). `signalSnippets()` and the coverage projection use this one. */
+export const SIGNALS = SIGNALS_V1
 
 /** Packages a reader could check with `dsh-triage check <pkg>`; `/`-scoped or `dsh-*` shaped. */
 const PACKAGE_PATTERN = /@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|\bdsh-[a-z0-9][a-z0-9._-]*\b/gi
@@ -85,6 +127,7 @@ export function extractPackages(text) {
 }
 
 /**
+ * @param {ReadonlyArray<readonly [string, RegExp, number]>} signalsTable
  * @param {{ title?: unknown, body?: unknown, category?: unknown }} thread
  * @returns {{
  *   layer: string,
@@ -95,11 +138,11 @@ export function extractPackages(text) {
  *   answerableWith: string | null,
  * }}
  */
-export function classifyThread({ title = '', body = '', category = '' }) {
+function classifyWith(signalsTable, { title = '', body = '', category = '' }) {
   const text = `${String(title)}\n${String(body)}`
   const scores = new Map(LAYERS.map((layer) => [layer, 0]))
   const signals = []
-  for (const [layer, pattern, weight] of SIGNALS) {
+  for (const [layer, pattern, weight] of signalsTable) {
     if (pattern.test(text)) {
       scores.set(layer, (scores.get(layer) ?? 0) + weight)
       signals.push(layer)
@@ -183,4 +226,14 @@ export function classifyThread({ title = '', body = '', category = '' }) {
     packages,
     answerableWith: null,
   }
+}
+
+/** Production classifier (v1): the table the R59 coverage headline was measured with. */
+export function classifyThread(input) {
+  return classifyWith(SIGNALS_V1, input)
+}
+
+/** R60 experiment (v2): not adopted — 12/20 on a disjoint holdout, below the 80% bar. */
+export function classifyThreadV2(input) {
+  return classifyWith(SIGNALS_V2, input)
 }

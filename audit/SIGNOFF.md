@@ -66,6 +66,8 @@
 
 | 2026-11-02 | **R59-S1 口径修正（决策门，非 verdict 判据）**：`docs/specs/question-coverage.md` §5/§6/§10 —— 头条只算 **actionable probe**（第三方包，或帖内点名了版本的上游包）；只涉及**未点名上游包**的帖子新记 `upstream-only`（留在分母、不进分子）；新增负对照 N13/N14。**判据/阈值一字未动** | 会话内原话：**「第三方 + 上游点名版本（推荐）」**（回应试点暴露的「上游过期 npm tag 被算成用户问题」） | DeepSeek V4.1 Flash：试点 50+50 条发现 Q&A 的 11 条 `names-a-denial` 里 8 条只涉及 `@deepseek-ai/*` 内部包（npm `latest` = `0.0.1-rc.1`），全包口径 12/50 vs 第三方口径 4/50；据此修正 `tierOfThread` 与 spec，**没有**改 `classifyThread`、`admission.ts`、四桶、`improved` 五门槛、`data/gold/`、20s/settle/readiness、9 门、D5 阈值 | HUMAN 未逐条复核：`@deepseek-ai/*` 作为「上游」的边界（依赖闭包 86 个包之外的上游插件也一律按未点名处理）、以及放弃把 #10849 这类未点名上游案例计入头条的代价 | `docs/specs/question-coverage.md` §5/§6 · `scripts/lib/question-coverage.mjs` · `tests/unit/question-coverage.test.ts` · pilot 产物（`%TEMP%`，非 SSOT） |
 
+| 2026-11-02 | **R60 分类器 v2 实验（判据轮，覆盖率的文本分类规则）**：在 `discussion-triage.mjs` 增加 `SIGNALS_V2` / `classifyThreadV2`（通用失败动词 + 运行期/组合形状）；**生产分类器仍为 v1**；开发集 20/20、互斥留出集 **12/20**（v1 7/20），未达 80%，**不采用**；覆盖率数字与 README 一字未动 | 会话内原话：**「继续依次进行」**（回应「分类器 v2 → D5 读数 → T-821」的顺序） | DeepSeek V4.1 Flash：v2 从 20 条开发集错误设计；新增 9 条 v2 单测 + 留出集 20 条盲标 + `scripts/record_classifier_v2.mjs` 产物；**没有**改 `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 阈值；**没有**替换生产分类器 | HUMAN 未逐条复核：v2 信号表的取舍与权重、留出集 20 条的人工标签、以及「不采用」这个决定；`BS-53` 记录纯关键词方法的天花板 | `scripts/lib/discussion-triage.mjs` · `data/results/classifier-v2-2026-11-02T11-20-00-000Z.json` · `audit/RECON_2026-11-02_classifier-v2.md` |
+
 ## 未决的授权项（尚未签，不要当成已签）
 
 | 项 | 需要谁 | 为什么不能由 agent 代办 |
