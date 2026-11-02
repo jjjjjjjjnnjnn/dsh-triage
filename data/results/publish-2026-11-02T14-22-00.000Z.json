@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-11-02T14:22:00.000Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "9.9.9",
+    "version_source": "argument",
+    "git_head": "4927ebdb467e4c8b37fb884b265dcee48687ac7a",
+    "git_dirty": true
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-11-02T14:22:00.000Z"
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": false,
+      "status": 200,
+      "detail": "version 9.9.9 is not published",
+      "latest": "0.3.2"
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": false,
+      "status": 200,
+      "detail": "version 9.9.9 is not published",
+      "latest": "0.3.2"
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": false,
+      "status": 200,
+      "detail": "version 9.9.9 is not published",
+      "latest": "0.3.2"
+    },
+    {
+      "name": "dsh-triage",
+      "ok": false,
+      "status": 200,
+      "detail": "version 9.9.9 is not published",
+      "latest": "0.3.2"
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@9.9.9",
+    "exit_code": 1,
+    "attempts": 2,
+    "waited_ms": 16969,
+    "wait_budget_ms": 3000,
+    "tail": "npm error notarget No matching version found for dsh-triage@9.9.9. · npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist. · npm error A complete log of this run can be found in: <path>\\AppData\\Local\\npm-cache\\_logs\\2026-11-02T14_21_03_714Z-debug-0.log",
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": false,
+        "version": null,
+        "expected": "9.9.9"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": false,
+        "version": null,
+        "expected": "9.9.9"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": false,
+        "version": null,
+        "expected": "9.9.9"
+      }
+    ],
+    "cli": {
+      "exit_code": null,
+      "first_lines": "",
+      "commands": ""
+    },
+    "module_exports": null,
+    "scratch": "<path>"
+  },
+  "checks": [
+    {
+      "id": "root-manifest",
+      "ok": false,
+      "detail": "dsh-triage@9.9.9 is not on the registry"
+    },
+    {
+      "id": "version:@dsh-triage/core",
+      "ok": false,
+      "detail": "9.9.9 absent (latest=0.3.2)"
+    },
+    {
+      "id": "version:@dsh-triage/signals",
+      "ok": false,
+      "detail": "9.9.9 absent (latest=0.3.2)"
+    },
+    {
+      "id": "version:@dsh-triage/probe",
+      "ok": false,
+      "detail": "9.9.9 absent (latest=0.3.2)"
+    },
+    {
+      "id": "version:dsh-triage",
+      "ok": false,
+      "detail": "9.9.9 absent (latest=0.3.2)"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": false,
+      "detail": "npm install dsh-triage@9.9.9 exit 1 · npm error notarget No matching version found for dsh-triage@9.9.9. · npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist. · npm error A complete log of this run can be found in: <path>\\AppData\\Local\\npm-cache\\_logs\\2026-11-02T14_21_03_714Z-debug-0.log · 2 attempt(s) over 16969ms"
+    },
+    {
+      "id": "registry-propagation",
+      "ok": true,
+      "detail": "the install answered \"not on the registry yet\" 1 time(s); after 16969ms it still did, so this is a real failure, not a wait"
+    },
+    {
+      "id": "installed-tree",
+      "ok": false,
+      "detail": "the package is absent after install"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": false,
+      "detail": "@dsh-triage/core@null (declared 9.9.9)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": false,
+      "detail": "@dsh-triage/signals@null (declared 9.9.9)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": false,
+      "detail": "@dsh-triage/probe@null (declared 9.9.9)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": false,
+      "detail": "dist/cli.js is missing from the installed package"
+    },
+    {
+      "id": "module-resolves",
+      "ok": false,
+      "detail": "import('dsh-triage') → node:internal/modules/package_json_reader:301\r\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);"
+    }
+  ],
+  "ok": false,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}

@@ -8965,6 +8965,155 @@
         "sha256": "b616cf635fd5e97705aa1f4dbc1bb6159e4de2efae1727cc199c7516f36db9cf"
       },
       "batch": "R62"
+    },
+    {
+      "id": "R62-S12",
+      "step": "**0.3.2 发布后的第一次取证（红产物保留）**：`release:publish` 链把 `record_publish` 卡在 publish 之后几秒，此刻四个包全部「absent / latest=0.3.1」——但同一次发布输出里四个包都是 `✅ Published`",
+      "changed": [
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "RED（见证）：与发布输出直接矛盾；疑点为 registry 读副本延迟，不是发布失败——下一步独立读 registry 判定",
+        "reproducibility": "PASS：`publish-2026-11-02T14-10-13.262Z.json` 原样保留，sha256 在台账里",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：这份红不被任何对外文档引用为「发布失败」；结论在没有独立读数之前不下",
+        "adversary": "反例：看到红就重发一次——被拒：重发会 403（版本已在 registry）且可能把「暂存」变成真事故（R53）；先独立读 registry 再动"
+      },
+      "real_test": {
+        "command": "pnpm run release:publish（HUMAN 执行；链内自动跑 record_publish）",
+        "artifact": "data/results/publish-2026-11-02T14-10-13.262Z.json",
+        "outcome": "RED · 16 checks + 4 published 全 fail · 与同一次发布的 4 个 ✅ Published 矛盾",
+        "sha256": "684ff92e9c6ca70116f1a0c7fcd9eb55eaaf44df2a95b986cdd90462e8be0a4d"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S13",
+      "step": "**第二次取证（红产物保留）**：`npm view` 已经能看到 0.3.2（`latest=0.3.2` 四项全绿），但**匿名安装**仍 `notarget` —— 把问题收窄到「安装用的那份文档副本更慢」",
+      "changed": [
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "RED（收窄）：读检查与安装检查在同一份产物里给出相反结论，这是「同一次发布、两条读路径」的直接证据",
+        "reproducibility": "PASS：产物保留；随后用 `install-v1` 的 `Accept` 头单独轮询，四包在 14:15:03 全部可读",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：仍不下「发布失败」的结论；此时证据只支持「匿名安装路径滞后」",
+        "adversary": "反例：把 `npm view` 成功当成「安装也会成功」——被拒：这正是第一次误判的形状；两条路径必须分开读"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（发布后约 4 分钟）",
+        "artifact": "data/results/publish-2026-11-02T14-14-43.635Z.json",
+        "outcome": "RED · latest=0.3.2 全绿，但 anonymous-install 仍 notarget",
+        "sha256": "eed5acfb25cfe8d2e0522dc7281a6bdc2d4b5c35f430bedce76455843e06064d"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S14",
+      "step": "**第三次取证（红产物保留）**：`install-v1` 文档已可读，匿名安装**仍然** `notarget` —— 三条红在五分钟内出现，说明「跟着 publish 立刻取证」这个链条本身会稳定假红",
+      "changed": [
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "RED（见证）：同一命令连续三次红、且每次的失败点逐渐后移（读→安装），指向传播延迟",
+        "reproducibility": "PASS：产物保留；三份红并列即为「这不是偶发」的论据",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：三份红都不被引用为「发布失败」；修的是链条，不是断言",
+        "adversary": "反例：把断言放宽成「读得到就算发布成功」——被拒：那会把「装不上」这件事藏起来（R53 的 `latest` 指向装不上的版本）；正确修法是**等**，等不到再红"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（install-v1 文档已可读之后）",
+        "artifact": "data/results/publish-2026-11-02T14-15-09.023Z.json",
+        "outcome": "RED · 仍是 anonymous-install notarget（代码未改）",
+        "sha256": "7dcd857f9aba93a4c3e8fd0c6a7429f50d4f0af0d693bb46f4dbe9c36118928e"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S15",
+      "step": "**同一命令、零代码改动，几分钟后 20/20**：这一份证明前面的红是传播延迟，而不是发布或代码的问题",
+      "changed": [
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：16 项检查 + 4 个包的 bytes/rewritten/latest 全绿；`latest=0.3.2`、匿名安装 `added 6 packages`、CLI 15 行命令、`import()` 可解析",
+        "reproducibility": "PASS：与 14:15:09 的命令逐字相同，只多了等待时间",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：这份是 0.3.2 的发布证据之一；最终权威指针用最终代码 + 干净树那一份",
+        "adversary": "反例：把「等一会儿就好了」写成结论——被拒：结论是「链条必须等」，并已做成 `registry-wait` 的纯函数与预算"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T14-15-36.899Z.json",
+        "outcome": "GREEN 20/20 · latest=0.3.2 · 匿名安装 exit 0 · 与三次红的命令逐字相同",
+        "sha256": "3422e1cd670637f5344fe6efa6b8493a4a144c27a9a33be20fec7d475cb3e0eb"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S16",
+      "step": "**重试策略的正对照（第一版，已取代）**：用一个不存在的版本 `9.9.9` + 3s 预算，让重试循环必须花掉预算再判红；这一版产物里的句子在失败分支说「got a real answer」，是错的",
+      "changed": [
+        "scripts/lib/registry-wait.mjs"
+      ],
+      "review": {
+        "correctness": "PARTIAL：循环行为正确（2 次尝试 / 16516ms / 判红），但生成的句子在「等完仍没答案」时说了「got a real answer」",
+        "reproducibility": "PASS（负对照）：产物保留，作为措辞缺陷的见证；它在同一轮被 14:22 那份取代",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：不被引用为通过；取代关系写在台账里，不删",
+        "adversary": "反例：留着这句错话让读者以为「等完就有答案」——被拒：加 `settled` 参数并补一条单测（「等完仍是同一答案 = 真失败，不是等待」）"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 9.9.9 --wait-registry-ms 3000 --stamp 2026-11-02T14:20:00.000Z",
+        "artifact": "data/results/publish-2026-11-02T14-20-00.000Z.json",
+        "outcome": "RED（预期）· 2 attempt(s) over 16516ms · 句子误称「got a real answer」（随后修掉）",
+        "sha256": "c4a79f4cb34bf1846b311c688d0c98edf195b06d957de11c43eba5fb45d017d6"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S17",
+      "step": "**重试策略的正对照（最终）**：同一构造复跑，句子改成「after 16969ms it still did, so this is a real failure, not a wait」；失败仍是失败，等待被如实记成一等事实",
+      "changed": [
+        "scripts/lib/registry-wait.mjs",
+        "scripts/record_publish.mjs",
+        "tests/unit/registry-wait.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：`anonymous-install` 红、`registry-propagation` 记录 2 次尝试与预算耗尽；9 条单测覆盖「成功不复试 / notarget 复试 / 预算耗尽停 / E401 立刻停 / 预算 0 / 无输出 / 次数上限」",
+        "reproducibility": "PASS：命令里带预算与 stamp，可逐字复跑",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：`--wait-registry-ms 0` 仍等于「只问一次」，默认 5 分钟，写进产物 `install.wait_budget_ms`",
+        "adversary": "反例：把 E401 也拿来重试五分钟——被拒：`shouldRetryInstall` 只认传播形状，凭据错误立刻出结论"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 9.9.9 --wait-registry-ms 3000 --stamp 2026-11-02T14:22:00.000Z",
+        "artifact": "data/results/publish-2026-11-02T14-22-00.000Z.json",
+        "outcome": "RED（预期）· 2 attempts / 16969ms · 句子明确写成「real failure, not a wait」",
+        "sha256": "69c8ce6f8291bd8c594731c89216919341eccc30b11d9c1074aa2e6fbf1e7c77"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S18",
+      "step": "**新代码下的 0.3.2 取证**：`attempts=1 / waited_ms=1137 / wait_budget_ms=300000`，20/20；`git_dirty=true` 只因为这一轮 7 份产物还没提交，最终指针改用干净树那一份",
+      "changed": [
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 20/20：latest=0.3.2 / 匿名安装 exit 0 / 三个内部包 0.3.2（声明 0.3.2）/ CLI 15 行 / `import()` 解析",
+        "reproducibility": "PASS：与 14:15:36 的数一致；新字段说明这次没有等待",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PARTIAL（如实）：`git_dirty=true` —— 因为 7 份产物尚未入库；不把它当权威指针，权威指针是干净树重跑的那份",
+        "adversary": "反例：把 `git_dirty=true` 的这一份当发布证据——被拒：它不能证明「发布字节来自已提交的树」"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T14-21-51.828Z.json",
+        "outcome": "GREEN 20/20 · attempts=1 · waited_ms=1137 · git_dirty=true（产物未提交）",
+        "sha256": "442418127d3959bd5d981b4a04075f8022fbbbb61d879b28484f3df3ac6c8dbb"
+      },
+      "batch": "R62"
     }
   ]
 }
