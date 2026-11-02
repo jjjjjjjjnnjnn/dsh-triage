@@ -128,6 +128,7 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
    （今天的 `next`）被判 `admitted`，而 `0.1.0-rc.7` / `0.0.1-rc.1` 是 `denied` —— 回帖从「你去查有没有新版本」
    变成「装这个，它放行」。
 3. **监听器接上电**：`--baseline` + 定时 workflow；`unmeasured` 让 job **失败**，CI 里**不跑卡片**（runner 没有 profile）。
+   **workflow 已真跑一次**（run `41511265795`：`unchanged` / 零产物 / job success）——所以「CI 里跑不起来」不再是猜测项。
 
 **下一位的第一件事**：仍是 **D5 关窗读数**（`2026-11-15T20:24:37Z`）。中间如果上游发了新 rc，
 `watch-upstream` 会给出 `changed` 与两条命令——**卡片必须在真机上重跑**再引用。

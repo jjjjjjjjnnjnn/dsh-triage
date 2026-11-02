@@ -10635,7 +10635,7 @@
       "real_test": {
         "command": "node scripts/watch_next_release.mjs --baseline data/results --out %TEMP%/watch-r71b",
         "artifact": "data/results/next-release-2026-11-02T17-40-00.322Z.json",
-        "outcome": "GREEN：`unchanged`（`next is still 0.2.1-rc.5`，读的就是这份基线）；另三条分支在 `%TEMP%` 真跑：伪造 `0.2.1-rc.4` → `changed` + 产物、死端口 → exit 2 零产物、空目录 → `baseline`",
+        "outcome": "GREEN：`unchanged`（`next is still 0.2.1-rc.5`，读的就是这份基线）；另三条分支在 `%TEMP%` 真跑：伪造 `0.2.1-rc.4` → `changed` + 产物、死端口 → exit 2 零产物、空目录 → `baseline`。**workflow 首次真跑**：run 41511265795（2026-11-02T19:34:59Z，workflow_dispatch）→ `unchanged` / 零产物 / job success",
         "sha256": "4471d331fb010d44a25cf9eb54750562e90cfd088d13f4717a941c623874fd7a"
       }
     }
