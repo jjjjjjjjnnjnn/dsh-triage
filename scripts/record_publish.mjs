@@ -31,6 +31,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { judgeClientBundle, resolveClientEntry } from './lib/client-bundle.mjs'
+import { judgeDistTags } from './lib/dist-tags.mjs'
 import { resolvePublishVersion } from './lib/publish-target.mjs'
 import { DEFAULT_REGISTRY_WAIT_MS, RETRY_INTERVAL_MS, describePropagationWait, shouldRetryInstall } from './lib/registry-wait.mjs'
 
@@ -154,16 +155,20 @@ async function main() {
   const expectedVersionOf = (name) => (name === rootPackage ? version : (declaredDependencies[name] ?? version))
 
   const published = []
+  /** What `judgeDistTags` needs, collected while the packuments are already in hand (R64). */
+  const tagInputs = []
   for (const name of packages) {
     const expected = expectedVersionOf(name)
     const encoded = name.replace('/', '%2f')
     const packument = await fetchJson(`${registry}/${encoded}`)
     if (!packument.ok) {
       published.push({ name, ok: false, status: packument.status, detail: 'the registry does not serve this package' })
+      tagInputs.push({ name, unreachable: true })
       check(`registry:${name}`, false, `HTTP ${packument.status}`)
       continue
     }
     const all = packument.value.versions ?? {}
+    tagInputs.push({ name, distTags: packument.value['dist-tags'] ?? {}, versions: Object.keys(all) })
     const manifest = all[expected]
     const latest = packument.value['dist-tags']?.latest ?? null
     if (manifest === undefined) {
@@ -224,6 +229,15 @@ async function main() {
 
     published.push(entry)
   }
+
+  /*
+   * CROSS-PACKAGE INVARIANT (R64). The per-package `latest:<name>` checks above compare each tag with the
+   * version this run expects; none of them states that the four agree with *each other*, and none notices
+   * a tag naming a version the registry never published. On 0.3.3 three packages rolled back to 0.3.2
+   * while `signals` stayed on 0.3.3 — a reader of four `latest=` lines had to spot that by eye.
+   */
+  const distTagVerdict = judgeDistTags({ expectedVersion: version, packages: tagInputs })
+  check('dist-tags-agree', distTagVerdict.ok, distTagVerdict.detail)
 
   /* ------------------------- anonymous install on a clean tree ------------------------- */
   rmSync(scratchRoot, { recursive: true, force: true })
@@ -371,6 +385,15 @@ async function main() {
       git_dirty: String(gitStatus.stdout ?? '').trim().length > 0,
     },
     registry: { url: registry, tier: 'measured-registry', fetched_at: stamp },
+    /** R64: the cross-package tag invariant, recorded as data and not only as a check line. */
+    dist_tags: {
+      expected: distTagVerdict.expectedVersion,
+      latest: distTagVerdict.latest,
+      agree: distTagVerdict.tagsAgree,
+      unreachable: distTagVerdict.unreachable,
+      dangling: distTagVerdict.dangling,
+      extra: distTagVerdict.extraTags,
+    },
     published,
     install: {
       anonymous: true,

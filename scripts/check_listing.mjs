@@ -341,11 +341,25 @@ check(
 )
 
 /*
- * 13th assertion (R56): a `posted` draft must carry a usable discussion URL and an ISO `posted_on`.
+ * 13th assertion (R56): a `posted` draft must carry a usable URL and an ISO `posted_on`.
  * WHY IT MATTERS: D5's window is `posted_on + 14 days` (`docs/specs/D5-measurement.md` §2), so a
  * typo or a `null` here does not fail loudly — it silently moves the deadline and hands the verdict
  * a different window. The registry is hand-written; this is the only thing that reads it.
+ *
+ * R64: the URL no longer has to be a GitHub discussion. Distribution happens on more than one platform,
+ * and while the rule accepted *only* discussion URLs, a post on X could not be recorded at all — so the
+ * registry stayed `draft` and drifted from what actually happened (exactly the R56 failure shape).
+ * The rule is now: the URL must be on a platform **the entry's own `channel` names**, and `posted_on`
+ * must be a timezone-qualified instant in the past. That is narrower in one place (a bare `2026-11-02`
+ * no longer passes: it would move the window by up to a day) and wider in exactly one place (X/Twitter).
  */
+const POSTING_PLATFORMS = [
+  { id: 'github-discussion', match: /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+(?:[#?].*)?$/, channel: /discussion/i },
+  { id: 'github-issue', match: /^https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/\d+(?:[#?].*)?$/, channel: /issue/i },
+  { id: 'x', match: /^https:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?.*)?$/, channel: /(?:^|[^A-Za-z])x(?:\s|\/|$)|twitter/i },
+]
+/** A date-only string passes `Date.parse` but shifts a 14-day window by up to 24h, so require the instant. */
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/
 const postingProblems = []
 const postedRegistry = (() => {
   try {
@@ -361,12 +375,20 @@ for (const draft of Array.isArray(postedRegistry?.drafts) ? postedRegistry.draft
   const name = String(draft?.file ?? '?')
   const status = String(draft?.status ?? '')
   if (status === 'posted') {
-    if (!/^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+$/.test(String(draft?.posted_url ?? ''))) {
-      postingProblems.push(`${name}: status=posted but posted_url is not a discussion URL`)
+    const url = String(draft?.posted_url ?? '')
+    const channel = String(draft?.channel ?? '')
+    const claimed = POSTING_PLATFORMS.find((platform) => platform.channel.test(channel)) ?? null
+    if (claimed === null) {
+      postingProblems.push(`${name}: status=posted but the channel names no platform this check can verify ("${channel}")`)
+    } else if (!claimed.match.test(url)) {
+      postingProblems.push(`${name}: status=posted but posted_url is not a ${claimed.id} URL (got "${url}")`)
     }
-    const postedOn = Date.parse(String(draft?.posted_on ?? ''))
-    if (Number.isNaN(postedOn)) postingProblems.push(`${name}: status=posted but posted_on is not an ISO timestamp`)
-    else if (postedOn > Date.parse(stamp)) postingProblems.push(`${name}: posted_on is in the future (${String(draft.posted_on)})`)
+    const postedOnRaw = String(draft?.posted_on ?? '')
+    if (!ISO_INSTANT.test(postedOnRaw)) {
+      postingProblems.push(`${name}: status=posted but posted_on is not a timezone-qualified ISO instant (got "${postedOnRaw}")`)
+    } else if (Date.parse(postedOnRaw) > Date.parse(stamp)) {
+      postingProblems.push(`${name}: posted_on is in the future (${postedOnRaw})`)
+    }
   }
   if (status === 'draft' && draft?.posted_url !== null) {
     postingProblems.push(`${name}: status=draft but posted_url is set — post the draft or clear the field`)
@@ -375,7 +397,7 @@ for (const draft of Array.isArray(postedRegistry?.drafts) ? postedRegistry.draft
 check(
   'posted-drafts-carry-a-date',
   postingProblems.length === 0,
-  postingProblems.slice(0, 4).join('; ') || 'every posted draft has a discussion URL and a past ISO date; drafts carry no URL',
+  postingProblems.slice(0, 4).join('; ') || 'every posted draft carries a URL on the platform its channel names, and a past ISO instant; drafts carry no URL',
 )
 
 /*

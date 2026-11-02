@@ -712,3 +712,13 @@
 - 结果：① `record_publish` 现在读装回来的包里的 `exports["./client"]`，要求文件存在 + 带 `__ModuleLoader__.load` + 点名 `settings.plugins.tab`（真机 **21/21**）；② 正对照把它指到不存在的文件 → 当场红并逐字节还原；③ **故意不验某一轮的功能名**，只验稳定契约；④ `0.3.3` 是**纯文档发布**（README 在包内，npm 页面印的就是它；测试数 633 → 643），`dist/` 与 `client.js` 一字未动；⑤ 预检查四项全绿、「可以发布」，发布仍是 HUMAN 动作
 - 实测：**643 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **15/15** · 发布前真机 **16/16**
 - 反思：这一轮修的三件事（loading 当失败、空转的断言、副本滞后）都是**「没看见」被当成「看见了好」**。T-829 是同一逻辑的正面版本：既然「功能是否到了用户手里」以前靠手读，那就把它变成装一次包就能回答的问题。
+
+### 2026-11-02 R64｜分发收口 + 下载链路体检 + 升级日监听（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R64-S1` … `R64-S6`；报告 `audit/AUDIT_2026-11-02_R64.md`
+- 范围：`scripts/check_listing.mjs`（第 13 条改成按 channel 验域 + 带时区 ISO instant）· `scripts/lib/dist-tags.mjs` + `.d.mts`（新）· `scripts/lib/next-release.mjs` + `.d.mts`（新）· `scripts/watch_next_release.mjs`（新）· `scripts/record_publish.mjs`（新增 `dist-tags-agree`）· `tests/unit/{dist-tags,next-release}.test.ts`（新，13 条）· `docs/distribution/T-810/{registry.json,00-README.md}` · `docs/{HANDOFF,BACKLOG}.md` · `INDEX.md` / `AGENTS.md` · `audit/SIGNOFF.md`
+- 结果：① X 线程已发布并登记（`posted_on 2026-11-02T17:36:00.000Z`，按**本机 UTC+1** 换算——按 +08 会写成 10:36Z，D5 窗口会挪早 7 小时）；② 第 13 条旧规则硬编码「只能是 discussion URL」，X 的帖子**根本无法登记**，台账会停在 `draft` 与事实不符（R56 同型）；改后三条定向负对照各自真红并保留产物；③ 四包 `latest` 一致性变成 `record_publish` 的一项（0.3.1 / 0.3.3 两次事故同形状）；④ 新增升级日监听，**读不到 registry 一律 `unmeasured` + exit 2 + 零产物**，`unchanged` 也零产物
+- 实测：**656 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15 · `record_publish` 22 项
+- 反思：这一轮自己抓到的三处问题（时区、`process.exit()` 紧跟 `fetch` 崩溃、`--stamp` 格式）属于同一族：**工具自己出错时的读数被当成结论**。所以监听脚本对「读不到」的处理不是记 0、不是记 `unchanged`，而是退出 2 且不落产物——宁可什么都没有，也不给一个假的安心。
+

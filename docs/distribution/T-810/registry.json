@@ -28,10 +28,11 @@
     },
     {
       "file": "03-x-en.md",
-      "channel": "X · 4-post English thread",
-      "status": "draft",
-      "posted_url": null,
-      "posted_on": null,
+      "channel": "X · 线程（中文主选 / 英文备选）",
+      "status": "posted",
+      "posted_url": "https://x.com/jjjj1955714/status/2117306628227940741",
+      "posted_on": "2026-11-02T17:36:00.000Z",
+      "note": "仓内的 03-x-en.md 是英文备选版；2026-11-02 实际发出的是中文主选版，那份稿子在 git stash（见 docs/HANDOFF.md 的 R64 行）。X 上的赞不进 D5：D5 的 reactions 只数 #11813。",
       "cites": [
         "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
       ]
@@ -59,7 +60,7 @@
     },
     {
       "file": "06-reply-8202-mcp-client.md",
-      "channel": "回复 upstream #8202（中文）：按帖内点名的版本判出 denies 与 peerDependencies 约束",
+      "channel": "GitHub Discussions · 回复 upstream #8202（中文）：按帖内点名的版本判出 denies 与 peerDependencies 约束",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,
@@ -69,7 +70,7 @@
     },
     {
       "file": "07-reply-10849-dist-tag.md",
-      "channel": "回复 upstream #10849（中文）：问题在 dist-tag 失步，不在使用者配置区间",
+      "channel": "GitHub Discussions · 回复 upstream #10849（中文）：问题在 dist-tag 失步，不在使用者配置区间",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,
@@ -79,7 +80,7 @@
     },
     {
       "file": "08-reply-11687-not-declaration.md",
-      "channel": "回复 upstream #11687（中文）：声明层不是凶手（反向回答）",
+      "channel": "GitHub Discussions · 回复 upstream #11687（中文）：声明层不是凶手（反向回答）",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,

@@ -1,12 +1,14 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R63 (2026-11-02，**交接轮**：R62 = T-818 收口（页面 fetch pending 查明是探针 ≈500ms 收工）+ T-829（`record_publish` 验浏览器半边）+ **0.3.3 四包已发布、`latest=0.3.3`**（21/21）；两次异步（读副本 4.5min / staged 提升 14min）写进 `BS-55`；v3 候选仍未采用；D5 窗口到 2026-11-15)｜**下一件事：读 `docs/HANDOFF.md` §3「R63 交接」**
+> **Stand**: R64 (2026-11-02，**交付轮**：X 线程已发并回填 registry；`check_listing` 第 13 条按 channel 验域（3 条负对照各自真红）；`record_publish` 新增 `dist-tags-agree`；新增 `watch_next_release.mjs`（升级日监听，读不到 ≠ 没更新）；D5 窗口到 2026-11-15)｜**下一件事：D5 关窗读数**
 
 ## 🔍 按需求快速索引
 
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
+| **升级日监听（R64）** | `scripts/watch_next_release.mjs` + `scripts/lib/next-release.mjs` + `tests/unit/next-release.test.ts` | 读上游 `dist-tags.next`，与前一次观测比对 → `baseline` / `changed` / `unchanged` / **`unmeasured`**（读不到就 exit 2 零产物，**不许写成「没更新」**）；`unchanged` 不落产物（不制造每日噪声）。只出产物 + 卡片命令，**不跑卡片、不发帖**（卡片数字来自本机 profile）。真机：首跑 `next=0.2.1-rc.5`（`data/results/next-release-2026-11-02T17-40-00.322Z.json`），再跑 `unchanged` 零产物；`changed` 与「死端口 exit 2」两条对照在 `%TEMP%` 跑过 |
+| **四包 `latest` 一致性（R64）** | `scripts/lib/dist-tags.mjs` + `tests/unit/dist-tags.test.ts` + `scripts/record_publish.mjs`（`dist-tags-agree`） | 四包 `latest` 必须彼此相同、等于本次发布版本、且不指向未发布版本；读不到记 `unmeasured` 而不是 agree。**0.3.1（暂存卡住）/ 0.3.3（三包回滚）是同一个形状**，当时只能靠人眼看四行 `latest=` |
 | **贡献指南** | `CONTRIBUTING.md` | 贡献流程、工程铁律（纯函数 / SSOT / 零门禁依赖）、本地测试与 PR 规范 |
 | **安全模型** | `docs/SECURITY.md` + `SECURITY.md` | 负责任披露机制、威胁模型、11 项对抗性防护与明确非防御边界 |
 | **定位（R47 重定向）** | `docs/00-vision.md` + `AGENTS.md` | 从「通用检查器」改为「**升级日**」正门：每次 rc 回答「**你这套已装集合**升上去会坏什么」。四条候选（进别人安装路径 / 升级日 / 作者侧 CI / 承认不是产品）中 HUMAN 选 **B**；出口门禁 **D5**（`docs/ROADMAP.md` §2） |
