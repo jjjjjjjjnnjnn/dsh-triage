@@ -9409,6 +9409,28 @@
         "sha256": "e5039f6e686db36d0996da6702def507450ce9c2a9a921c5398c1be8aba53bc5"
       },
       "batch": "R62"
+    },
+    {
+      "id": "R62-S32",
+      "batch": "R62",
+      "step": "**0.3.3 部分发布：`@dsh-triage/signals@0.3.3` 没到 registry（红产物保留）**：发布输出四个 ✅，registry 上只有三个；`dsh-triage@0.3.3` 钉死 `signals: 0.3.3`，所以「装最新版」对所有人失败。`record_publish` 重试 20 次 / 301 秒后如实判红",
+      "changed": [
+        "audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "RED（真实）：12 项失败，`anonymous-install` 报 `notarget No matching version found for @dsh-triage/signals@0.3.3`；独立探针确认 signals 的 version 文档与 tarball 都是 404",
+        "reproducibility": "PASS：三条探针（两个 packument 视图 / 版本 404 / tarball HEAD 404）都写进事故文档；`time.modified` 停在上一次发布是「从未落地」的直接证据",
+        "licence": "PASS：只读 registry 与本地 tarball，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PARTIAL（如实）：这份红**不能**被读成「0.3.3 发布失败」——另外三个包确实上去了；准确说法是「四个里缺一个，根包因此装不上」",
+        "adversary": "反例一：相信发布输出的四个 ✅ 并写进文档——被拒：`BS-55` 就是这条；反例二：把 301 秒的重试读成「还没传播」——被拒：`time.modified` 没动过，它永远等不到；反例三：删掉这份红产物——被拒：它是这次事故的机器见证"
+      },
+      "real_test": {
+        "command": "pnpm run release:publish（HUMAN 执行；链内自动 record_publish）",
+        "artifact": "data/results/publish-2026-11-02T15-29-45.020Z.json",
+        "sha256": "849dba540ca2750b9e407f7eb50edde39f44c07b9ef22d4ae0477408b680d230",
+        "outcome": "RED · 12 项失败 · 20 attempt(s) over 301516ms · signals@0.3.3 缺失"
+      }
     }
   ]
 }

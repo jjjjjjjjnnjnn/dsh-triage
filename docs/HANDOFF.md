@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（`latest=0.3.2`，取证 20/20），发布后修掉发布链的**传播延迟假红**；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
+> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 已发但 `@dsh-triage/signals@0.3.3` 缺位 → `latest` 暂时装不上，正在补发**（`audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -140,6 +140,13 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 **同轮准备 `0.3.3`**：**纯文档发布** —— README 在包内 `files` 里，npm 页面显示的是 README 里写的测试数，
 所以 633/543 那类漂移会直接印在 npm 上；`0.3.3` 只改文档（测试数 643、发布链与浏览器半边的说明），
 `dist/` 与 `client.js` 一字未动，判据/阈值/退出码全部与 `0.3.2` 相同。**发布仍需 HUMAN 跑 `pnpm run release:publish`**。
+
+**续 4 · 0.3.3 部分发布（未修复）**：发布输出四个 `✅ Published`，registry 上**只有三个** ——
+`@dsh-triage/signals@0.3.3` 的 version 文档与 tarball **都是 404**、`time.modified` 还停在 14:12 的 0.3.2。
+而 `dsh-triage@0.3.3` 钉死 `signals: 0.3.3` → **`npm install dsh-triage` 现在对所有人失败**（`latest` 已指向 0.3.3）。
+`record_publish` 重试 20 次 / 301 秒后如实判红（红是对的）。**补发一个包即可**：
+`pnpm --filter @dsh-triage/signals publish --access public --no-git-checks`，然后 `node scripts/record_publish.mjs` 要 21/21。
+现场、三条独立读数与兜底回滚命令见 `audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`；新盲区 **`BS-55`：发布输出不是证据**。
 
 **下一位的第一件事（按价值排序）**：
 

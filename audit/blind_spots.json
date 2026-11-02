@@ -437,6 +437,13 @@
       "cannot_see": "R62 第一次把「屏幕还没回答」和「屏幕坏了」分开之后，同一天四次真机跑里有一次 summary 那条 fetch 停在「正在加载诊断数据…」**9510ms**（其余三次都在 1 秒内）。一次观测分不清三种原因：冷启动（profile 首次扫描）、机器负载（同一时段还在跑另一次 Host + 安装）、或者那条路由真的会挂住。仍然看不见的：① `tab_ms` 的分布（现在每个产物只有一个数，没有 N 次重复）；② 慢的时候是 `/compat-triage/summary` 的扫描慢，还是浏览器侧排队（同一 Host 上并发的 CDN/插件请求）；③ 单飞扫描（`loadAuditData` 一次读）在 9 秒里到底卡在读目录还是读 yaml。",
       "mitigation": "① 面板侧不再把 `pending` 写成 `passed`：超过预算记 `unmeasured` 并写清等了多久（`describeNoAnswer`），所以「慢」不会伪装成「好」；② 本盲区不改判据、不加超时——要动路由预算就是判据轮，先要有分布；③ 下一步（未开工）：同一 profile 连跑 N≥10 次只测 `tab_ms`，出 min/median/p90/max，并单列「Nov 2 那次 9.5s 是否复现」；在此之前对外只能说「一次观测到 9.5 秒」，不许说「面板通常 1 秒」。",
       "owner": "scripts/record_client_serve.mjs（`tab_ms`）· packages/plugin/src/host.ts（summary 路由）· data/results/client-serve-nc-bucket-2026-11-02T12-49-11.027Z.json（唯一见证）· audit/AUDIT_2026-11-02_R62.md §5"
+    },
+    {
+      "id": "BS-55",
+      "area": "发布链 / 证据等级",
+      "cannot_see": "R53 与 R62 两次部分发布说明同一件事：**发布工具的输出不是 registry 的状态**。R53 那次 pnpm 至少报了错；R62 这次 pnpm 对 `@dsh-triage/signals@0.3.3` 打印了 `✅ Published`，而 version 文档与 tarball 都是 404、`time.modified` 还停在上一次发布。仍然看不见的：① 是 registry 侧丢弃了写入，还是 pnpm 的发布请求没有真正发出（输出里没有请求 id）；② 四个包发完后「全部落地」需要多久的窗口才算安全（这次 301 秒都没等到，因为它永远等不到）；③ `record_publish` 的重试分不清「还没传播」与「根本没写进去」，两者在 npm 眼里都是 `notarget`。",
+      "mitigation": "① 任何「已发布」的说法只能来自 registry 的独立读（version 文档 + tarball HEAD + dist-tags 三条），不许引用发布输出；② `record_publish` 的重试有 5 分钟上限，超时即红（红是对的），并把 `install.attempts` / `waited_ms` 写进产物；③ 补发前先确认版本号在 registry 上不存在（不会 409），补发后必须重新取证；④ 事故文档 `audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md` 记录两个读路径与 tarball HEAD 的读数；⑤ 兜底是 `dist-tag add … latest` 回滚（止血，不修复）。",
+      "owner": "scripts/release_preflight.mjs · scripts/lib/registry-wait.mjs · package.json（release:publish）· audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md · data/results/publish-2026-11-02T15-29-45.020Z.json"
     }
   ]
 }
