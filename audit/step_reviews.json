@@ -10344,6 +10344,27 @@
         "sha256": "a1cdada56972563f7a16dc37d4c81788b104ee8a01845a7e983bb66ab4dc14fc",
         "outcome": "GREEN（exit 0）：`pending` · 0/10 · 0/1 · 634 (single-day-burst)"
       }
+    },
+    {
+      "id": "R69-S2",
+      "batch": "R69",
+      "step": "**中文长文草稿按当前产物复核，并补齐发布前缺的三件事** —— 数字逐项对上（192/119/73/0/0、854/405/256、拦截原因逐字一致），但作为要发出去的帖子缺「怎么装」「判的是声明层」「不是你的机器」",
+      "changed": [
+        "docs/distribution/T-810/04-zh-longform.md"
+      ],
+      "review": {
+        "correctness": "PASS：`upgrade-card-2026-10-31T09-00-00` 的 `inputs.counts` 逐项等于 2 / 190 / 119 / 73 / 0 / 0；`market-baseline-2026-10-31T06-40-00` 的 `fetched=854` / `pain_threads=405` / `unanswered_share=0.632`（≈256）；被拦截原因与卡片原文逐字相同",
+        "reproducibility": "PASS：`check_listing --stamp 2026-11-02T18:52:00.000Z --tests 691` 复算 8 篇草稿引用的产物 sha256 与正文路径；两个被引用产物未改动",
+        "licence": "PASS：只改本仓文案；引用的都是本仓产物，无外部素材",
+        "ssot": "PASS：15/15 绿，第 9 条（引用产物可哈希）与第 13 条（已发布的才有 URL）都过；没有放宽任何断言",
+        "adversary": "反例：只核数字就发——被拒：原文没有安装命令（读者不知道从哪拿到工具）、也没写「判的是声明层」与「不是你的机器」，那两句正是这个产品最容易被误读成「升级会坏」的地方"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:52:00.000Z --tests 691",
+        "artifact": "data/results/listing-2026-11-02T18-52-00.000Z.json",
+        "sha256": "32a87fd10ffaab4b9b52acb1d5e851faa0194076ff8daf8c8abc87f37555faa6",
+        "outcome": "GREEN 15/15：8 篇草稿引用的产物全部可哈希，正文路径与注册表一致"
+      }
     }
   ]
 }
