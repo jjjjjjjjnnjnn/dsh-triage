@@ -679,3 +679,12 @@
 - 结果：① **口径先写死**：三数算法、排除项、窗口、五种结论的穷举表、N1–N7 负对照，全部写在投放之前；② **口径做成可执行**：`judgeD5` 纯函数 + 8 条单测逐条对应 N1–N7（含「634 burst 不算需求」「读不到 ≠ fail」「我们自己的 PR 不算外部引用」「第 14 天整点关窗」「三数达标不必等」）；③ **计量脚本**：GraphQL 读 reactions（分类型）、`search/issues` 读外部引用（三重排除）、下载从基线读并用同一个 `classifyDownloadShape` **复算日序列**；**两个 GraphQL 错误是用 `--dry-read` 对 upstream #2004 真读才发现的**（`content` 是枚举、花括号层数）；④ **截图**：`--screenshot` 只在 `visible` 之后拍，两张进仓（真实沙盒 `会坏 0` / 夹具屏 `会坏 1`），图的 bytes+sha256 进产物；⑤ **帖子**：按 #2004 六条改写成中文，图注明确「那张会坏的屏是夹具」；⑥ 检查器抓到 4 条我自己写的禁用话术（写在「不含这些」那句里），改写法而**不是放宽词表**；⑦ 改名不留断链：R52 台账两处 `changed[]` 改指新文件并加注记
 - 实测：**542 测试 / 0 fail**（534 → 542）· 9 门 ALL GREEN · `--mutate` **9/9** · `check_listing` **12/12** · 真机截图两次 `screenshot: passed`（98938 / 89822 bytes）· `d5-selftest` 产物 `pending`（12/10 · 1/1 · 634 burst）
 - 反思：这轮没有一行判据改动，但它比改判据更接近产品——**因为「怎么算数」本身就是一个判据**。最有用的一条经验是 `--dry-read`：真接口的形状不能靠记忆，第一次写出来的 GraphQL 是错的，而错的读数会安静地变成 0。另外，检查器连续两轮抓到我自己的话术，说明「写清楚边界」这句话本身也要机器看一遍。
+### 2026-11-02 R62｜交付：把「页面 fetch pending」查明是**度量**问题，而不是产品问题（T-818 收口）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary；未起 subagent）
+- SessionID：主会话；台账 `R62-S1` … `R62-S8`；报告 `audit/AUDIT_2026-11-02_R62.md`
+- 范围：`scripts/lib/ui-probe.mjs` + `.d.mts`（`judgeTabView` / `judgeUpgradeView` / `compareUpgradeBuckets` / `describeNoAnswer`）· `scripts/record_client_serve.mjs`（升级探针重写、页面内诊断返回 JSON、`visible` 的 pending 过度断言、marker 二次解析、步骤 status 被证据覆盖、`--upgrade-wait-ms`）· `packages/plugin/client.js`（加载态独立标记 `upgrade-loading`）· `packages/plugin/src/host.ts`（清掉悬挂的 10s 定时器）· `tests/unit/{ui-probe,client-tab}.test.ts`（+12）· `audit/{AUDIT_2026-11-02_R62.md,blind_spots.json(BS-54),step_reviews.json}` · `docs/{HANDOFF,BACKLOG}.md` · `INDEX.md` / `AGENTS.md`
+- 人工决策：本轮范围「只做 T-818 收口」+「T-818 绿了就备 0.3.2 的票」（会话内选择）
+- 结果：① 查明 R61 的 `upgrade-visible: failed` 来自探针在 **≈500ms** 就收工（加载态走失败视图、终止条件把 `error: true` 当判），而同一路由 Node 直连 815ms、页面内 fetch 也 200；② 修后真机 **16/16 全过**：`upgrade-visible: passed`（4 桶，1530ms）+ `upgrade-same-source: passed`（3/190/0/2 与 CLI 逐项相同）；③ 「什么算已经回答了」抽成纯函数，`loading`/`pending` 一律不算判——这是同类错误第三次出现（R50/R51/R61）后的机器强制；④ 四条负对照（两条单元、两条真机）各自真红并保留产物；⑤ **没做到的也写清楚**：registry 不可读那条只能在单测里证、一次 `--upgrade-wait-ms 0` 的运行无产物、300ms 预算第二次复跑没生效
+- 实测：**623 测试 / 0 fail**（611 → 623）· 9 门 ALL GREEN · `--mutate` 9/9 · 真机 16/16 · 判据/四桶/阈值一字未动
+- 反思：这轮最值得记的不是「修好了」，而是**上一轮的结论本身就是一条没被检查过的读数**。R61 把「页面 fetch pending」写进 HANDOFF 当事实，而产物里同时躺着「路由 815ms 就答了」和「探针 500ms 就收工了」——两个数放在一起就该发现矛盾。教训是：**凡是「没等到」的现象，先问「我们等了多久」，再问「产品为什么不答」。**

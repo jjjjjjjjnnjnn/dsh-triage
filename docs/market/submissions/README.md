@@ -2,7 +2,7 @@
 
 > **状态（R53，2026-11-01 实测）**：`validated 1 · ready 3 · live 3 · site 1（dsh.so 已收录 `listed`）· merged 0`。
 > 证据：`data/results/market-channels-2026-11-01T09-40-00.000Z.json`（`submitted[]` 是三条 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。R45 的旧快照 `data/results/market-channels-2026-10-29T10-00-00.000Z.json` 原样保留。
-> **npm 已发布**：`dsh-triage@0.3.1`（四包同版本），匿名安装验证见 `data/results/publish-2026-10-30T14-40-00.000Z.json`（0.3.0 那次 20/20；0.3.1 的取证产物在本轮发布后补）。
+> **npm**：`dsh-triage@0.3.2`（四包同版本，本次备票待发布；`0.3.1` 的匿名安装取证见 `data/results/publish-2026-11-01T18-00-00.000Z.json`，**20/20**；`0.3.2` 的取证在发布后补）。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
 ## 已提交的三条（`live: 3`）

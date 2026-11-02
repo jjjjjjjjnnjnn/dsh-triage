@@ -291,15 +291,23 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
            * Host-side fetch can still hang in ways that timer does not see; the route promises an
            * answer within its budget, and this race is how that promise is kept.
            */
+          let budgetTimer: ReturnType<typeof setTimeout> | null = null
           const packument = await Promise.race([
             fetchPackument('@deepseek-ai/dsh', { at: stamp, timeoutMs: 10_000 }),
-            new Promise<Awaited<ReturnType<typeof fetchPackument>>>((resolve) =>
-              setTimeout(
+            new Promise<Awaited<ReturnType<typeof fetchPackument>>>((resolve) => {
+              budgetTimer = setTimeout(
                 () => resolve({ ok: false, error: { code: 'network-error', detail: 'registry read exceeded 10s', source: 'timeout' } }),
                 10_000,
-              ),
-            ),
-          ])
+              )
+            }),
+          ]).finally(() => {
+            /*
+             * R62: `Promise.race` does not cancel the loser, so before this the Host kept a live 10s
+             * timer after every click — a tiny leak that also held the event loop open for 10s. The
+             * race is still the budget; the timer just no longer outlives its own answer.
+             */
+            if (budgetTimer !== null) clearTimeout(budgetTimer)
+          })
           if (!packument.ok) {
             return { ok: false, status: 502, message: `registry unavailable: ${packument.error.code} — ${packument.error.detail}` }
           }

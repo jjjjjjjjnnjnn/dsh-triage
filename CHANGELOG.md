@@ -6,6 +6,25 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.2] — 2026-11-02
+
+> The release that puts **升级预检** on the settings page: the same four buckets `dsh-triage upgrade --to next`
+> prints in a terminal, one click away, for the composition you actually have installed.
+> **No judgement changed**: the four buckets, the `improved` evidence thresholds, every admission rule, every
+> threshold, every exit code and `audit --json` are what `0.3.1` shipped. All four packages move together again.
+
+- **A second screen in the tab, on demand.** `分诊台` now has a **升级预检** button. Pressing it asks the
+  `next` dist-tag and shows `会被拒 / 判不了 / 会变好 / 像没事` with the count for each, plus the boundary
+  sentence — *declaration layer only; not a runtime measurement, and your profile is not touched*.
+- **Nothing is read from npm until you press it.** Opening the tab never contacts the registry. The click is
+  the only thing that does, the read is capped at 10 seconds, and an unreadable registry produces a sentence
+  instead of a zero-filled table (a zero table reads as "nothing will break").
+- **"Still reading" no longer looks like "it failed".** The loading sentence used to be rendered through the
+  failure view, so anything observing the screen — including our own test harness — could not tell a wait from
+  an error. Two states, two marks now.
+- **The four numbers on screen are the CLI's four numbers.** They come from the same `judgeUpgradeImpact` call
+  and are compared against `dsh-triage upgrade --to next` on the same profile before this release was recorded.
+
 ## [0.3.1] — 2026-11-01
 
 > The release that puts the one-screen answer **inside DSH**. `0.3.0` shipped it in the CLI and in the

@@ -418,12 +418,24 @@ window.__ModuleLoader__.load({
 
       /** Offline / unreadable is its own sentence, never a zero-filled bucket table. */
       function upgradeFailureView(status, result, copy, onBack) {
+        const loading = status === 'loading'
         const children = [jsx('h3', { children: copy.upgradeButton }), jsx('p', { children: copy.upgradeHint })]
-        if (status === 'loading') children.push(jsx('p', { children: copy.upgradePending }))
+        if (loading) children.push(jsx('p', { children: copy.upgradePending }))
         else children.push(jsx('p', { children: copy.upgradeOffline }))
         if (result && result.detail) children.push(jsx('p', { children: `${copy.failed}: ${String(result.detail)}` }))
         children.push(jsx('button', { type: 'button', onClick: onBack, children: copy.upgradeBack }))
-        return jsxs('div', { 'data-triage-tab': 'upgrade-error', 'data-triage-kind': String(result && result.kind ? result.kind : status), children })
+        /*
+         * R62: "still reading the registry" and "the read failed" used to share one mark
+         * (`data-triage-tab="upgrade-error"`), so any observer that asked "is there an error view?"
+         * answered yes while the answer was still on the wire — the R61 harness did exactly that and
+         * reported a hung fetch. Two states, two marks. The kind attribute keeps `loading` as well,
+         * so a probe that only reads `data-triage-kind` still cannot mistake it for a verdict.
+         */
+        return jsxs('div', {
+          'data-triage-tab': loading ? 'upgrade-loading' : 'upgrade-error',
+          'data-triage-kind': String(result && result.kind ? result.kind : status),
+          children,
+        })
       }
 
       return { summaryView, failureView, upgradeView, upgradeFailureView }

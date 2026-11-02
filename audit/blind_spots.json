@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R61 (2026-11-02)",
+  "stand": "R62 (2026-11-02)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -430,6 +430,13 @@
       "owner": "scripts/lib/discussion-triage.mjs · scripts/record_classifier_v2.mjs · scripts/record_classifier_v3.mjs · audit/RECON_2026-11-02_classifier-v2.md · audit/RECON_2026-11-02_classifier-v3.md · data/results/classifier-v2-2026-11-02T11-20-00-000Z.json · data/results/classifier-v3-2026-11-02T12-50-00-000Z.json",
       "status": "open (R60→R61): v2 failed the bar; v3 is a validated candidate (17/20 clean holdout) but not adopted; adoption needs a live re-measurement",
       "resolved_by": null
+    },
+    {
+      "id": "BS-54",
+      "area": "面板 / 设置页签的答案时延",
+      "cannot_see": "R62 第一次把「屏幕还没回答」和「屏幕坏了」分开之后，同一天四次真机跑里有一次 summary 那条 fetch 停在「正在加载诊断数据…」**9510ms**（其余三次都在 1 秒内）。一次观测分不清三种原因：冷启动（profile 首次扫描）、机器负载（同一时段还在跑另一次 Host + 安装）、或者那条路由真的会挂住。仍然看不见的：① `tab_ms` 的分布（现在每个产物只有一个数，没有 N 次重复）；② 慢的时候是 `/compat-triage/summary` 的扫描慢，还是浏览器侧排队（同一 Host 上并发的 CDN/插件请求）；③ 单飞扫描（`loadAuditData` 一次读）在 9 秒里到底卡在读目录还是读 yaml。",
+      "mitigation": "① 面板侧不再把 `pending` 写成 `passed`：超过预算记 `unmeasured` 并写清等了多久（`describeNoAnswer`），所以「慢」不会伪装成「好」；② 本盲区不改判据、不加超时——要动路由预算就是判据轮，先要有分布；③ 下一步（未开工）：同一 profile 连跑 N≥10 次只测 `tab_ms`，出 min/median/p90/max，并单列「Nov 2 那次 9.5s 是否复现」；在此之前对外只能说「一次观测到 9.5 秒」，不许说「面板通常 1 秒」。",
+      "owner": "scripts/record_client_serve.mjs（`tab_ms`）· packages/plugin/src/host.ts（summary 路由）· data/results/client-serve-nc-bucket-2026-11-02T12-49-11.027Z.json（唯一见证）· audit/AUDIT_2026-11-02_R62.md §5"
     }
   ]
 }

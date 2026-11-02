@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R61 (2026-11-02)",
+  "stand": "R62",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8712,6 +8712,259 @@
         "sha256": "fd72dfe156e89b09e051e3908977ec220e72e7ba0fa4112bb96ae54cef6cff68",
         "outcome": "ALL GREEN · 9 gates · 611 tests / 0 fail · stand R61"
       }
+    },
+    {
+      "id": "R62-S1",
+      "step": "**T-818 收口（核心）**：把「什么算已经回答了」抽成纯函数（`judgeTabView` / `judgeUpgradeView`），`loading`/`pending` 一律不算判；探针超预算记 `unmeasured` 并写清等了多久（`describeNoAnswer`）；同源比较抽成 `compareUpgradeBuckets`；加载态改用独立标记 `upgrade-loading`（旧 bundle 的 `upgrade-error`+`loading` 仍映射回 loading）；`host.ts` 的 10s `Promise.race` 定时器 `clearTimeout`",
+      "changed": [
+        "scripts/lib/ui-probe.mjs",
+        "scripts/lib/ui-probe.d.mts",
+        "scripts/record_client_serve.mjs",
+        "packages/plugin/client.js",
+        "packages/plugin/src/host.ts",
+        "tests/unit/ui-probe.test.ts",
+        "tests/unit/client-tab.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`upgrade-visible` 由 failed 变 passed（1530ms，四桶在屏），`upgrade-same-source` 由 unmeasured 变 passed（3/190/0/2 与 CLI 逐项相同）；`visible`/`summary-visible`/`same-source` 不回归",
+        "reproducibility": "PASS：同一命令连跑四次（12:39 / 12:41 / 13:33 + 两条负对照），产物带 sha256；`upgrade --to next` 在同一 profile 上给出同样四个数",
+        "licence": "PASS：只改本仓代码与测试，没有引入外部素材、数据或依赖",
+        "ssot": "PASS：623 测试 / 0 fail、9 门 ALL GREEN、`--mutate` 9/9；四桶计数与上游语义无关的部分一字未动（`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness）",
+        "adversary": "反例一：把 `loading` 也当结论（R61 的写法）——被 `ui-probe` 的单测当场判红；反例二：把「没等到」写成 `failed`——被 NC-A 的真机产物判红（`unmeasured`）；反例三：只修探针不改客户端标记——被拒：旧 bundle 仍会把 loading 渲染成错误视图，所以两侧都改；反例四：把 `direct: null` 读成「页面也超时」——被拒：那是 `evaluate()` 吞了字符串，现在返回 JSON"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install",
+        "artifact": "data/results/client-serve-2026-11-02T13-33-17.447Z.json",
+        "outcome": "served · 16/16 步全过（upgrade-route 200 / 616ms · upgrade-visible passed 4 桶 1530ms · upgrade-same-source passed）· exit 0",
+        "sha256": "773874f0a674bfa08e69ad1fda6c2ddd5d2180aa53c36b11721a72022c80ad40"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S2",
+      "step": "**修复后的第一次真机跑（中间产物，保留）**：四桶已经渲染（`upgrade-visible: passed`、1027ms），但 `upgrade-same-source` 仍 `unmeasured` —— 暴露第四处缺陷：marker 已经是对象，代码又 `JSON.parse(String(obj))` → `null`",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PARTIAL：`upgrade-visible` 首次 passed，证明「产品一直会回答、是探针提前收工」；同源比较仍不工作，原因已定位到 marker 解析",
+        "reproducibility": "PASS：产物保留，`waited_ms=1027` 与 `upgrade-route` 的 1107ms 同一量级，说明答案本来就在 1 秒左右到达",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：作为中间见证保留，不被任何对外文档当作「通过」引用",
+        "adversary": "反例：把这次 1027ms 写成「R61 的 fetch 本来没问题」——被拒：R61 的产物里探针只等了 ≈500ms，两次读的不是同一件事；这里能说的是「修好终止条件后答案到达所需的时间」"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install",
+        "artifact": "data/results/client-serve-2026-11-02T12-39-28.439Z.json",
+        "outcome": "served · upgrade-visible passed（4 桶 / 1027ms）· upgrade-same-source unmeasured（marker 对象被二次解析）",
+        "sha256": "3394af409ca0ff182c30719981aaf8a787fd708c5108800f16d244aa6edc8452"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S3",
+      "step": "**marker 解析修好后的第一次全绿**：`upgrade-same-source` 首次 passed（3/190/0/2）；此时代码里同源比较仍写在主流程内联，随后抽成 `compareUpgradeBuckets`",
+      "changed": [
+        "scripts/record_client_serve.mjs",
+        "scripts/lib/ui-probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：屏幕四桶与 CLI 四桶逐项相同，`comparison.pairs` 四对全 agree",
+        "reproducibility": "PASS：与 13:33 的终跑给出同一组数（190 vs 190），说明结论稳定",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：产物保留；终跑另有一份（13:33）作为权威指针",
+        "adversary": "反例：只留这一份当终跑——被拒：它产生于「比较逻辑还没抽成纯函数」的代码上，终跑必须来自最终代码"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install",
+        "artifact": "data/results/client-serve-2026-11-02T12-41-25.626Z.json",
+        "outcome": "served · upgrade-visible passed（1532ms）· upgrade-same-source passed（3/190/0/2）· exit 0",
+        "sha256": "0112235ddbeeee636cc6870fe14589e0af1db69e1ebb0d3ef97b3d0a090098b8"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S4",
+      "step": "**负对照 NC-A（真机）**：把探针的耐心调回 R61 的量级（`--upgrade-wait-ms 300`），必须得到 `unmeasured` 而不是 `failed`——这条正是 R61 写错的那一格",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：`upgrade-visible: unmeasured` + 「waited 512ms … nothing is claimed」；`upgrade-same-source` 也 unmeasured（没有四桶可比）",
+        "reproducibility": "PASS：`waited_ms=512`、`judged.state=loading` 都写在产物里，可复核",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：负对照产物保留，且不被任何对外文档引用为「通过」",
+        "adversary": "反例：把这个 unmeasured 读成「产品坏了」——被拒：同一分钟的全绿跑（12:41）证明答案会到；这里测的是「我们等了多久」，不是产品的健康"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --upgrade-wait-ms 300 --label client-serve-nc-shortwait",
+        "artifact": "data/results/client-serve-nc-shortwait-2026-11-02T12-47-01.886Z.json",
+        "outcome": "served · upgrade-visible unmeasured（probe waited 512ms，screen was still waiting）· exit 0",
+        "sha256": "6d3cfe738c3905bc86eee1b5d4592751d2259f2d9c67f2b31dc2371dd7e53d2f"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S5",
+      "step": "**一次环境抖动暴露了第六处缺陷（产物保留）**：那一轮 summary 的 fetch 在 9510ms 后仍是「正在加载诊断数据…」，而 `visible` 步骤却写着 `passed` + 「rendered the summary view」——`pending` 落到了 else 分支。据此把 `visible` 的 pending 改成 `unmeasured`",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（先红后绿）：这次产物是 `visible: passed` 与 `summary-visible: unmeasured` 自相矛盾的现场；修后同一分支输出 `unmeasured` + 「waited 9510ms」",
+        "reproducibility": "PASS：`tab_ms=9510`、`tab_probe.kind=pending`、`tab_judged.state=pending` 全在产物里",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：这次记成 `BS-54`（面板 summary 偶发 >9.5s），不写成「面板通常 1 秒」，也不写成「产品挂住」",
+        "adversary": "反例：把 9.5s 当一次性噪声删掉产物——被拒：它是 `BS-54` 的唯一见证；反例二：把 pending 继续记 `passed`——被拒：那正是 R51 修过一次的同类错误"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --label client-serve-nc-bucket（本轮第一次尝试）",
+        "artifact": "data/results/client-serve-nc-bucket-2026-11-02T12-49-11.027Z.json",
+        "outcome": "served · visible passed（但 tab 还在 pending，9510ms）· summary-visible unmeasured · 作为过度断言的见证保留",
+        "sha256": "744376965a5a28618f788bf870020807caa2de6b106c4b59a8db86e12f1e7829"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S6",
+      "step": "**负对照 NC-B（真机）**：把比较函数里 `cannot-tell` 的 CLI 侧 +1，`upgrade-same-source` 必须红并点名那个桶（改完逐字节还原 `ui-probe.mjs`）",
+      "changed": [
+        "scripts/lib/ui-probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：`upgrade-same-source: failed` + 「cannot-tell tab=190 cli=191」；其余步骤仍 passed",
+        "reproducibility": "PASS：`RESTORED: ui-probe.mjs byte-identical`；产物保留",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：注入只发生在比较函数，没有改任何产物里的数；负对照产物不被当通过引用",
+        "adversary": "反例：只改屏幕侧或只改 CLI 侧让两边「意外相等」——被拒：注入的是「差 1」，任何一侧的单向改动都不可能让 190==191 成立"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\opencode\\r62-nc-bucket.mjs（打补丁 → 真跑 → 还原 → 读产物）",
+        "artifact": "data/results/client-serve-nc-bucket-2026-11-02T12-54-33.384Z.json",
+        "outcome": "served · upgrade-visible passed · upgrade-same-source failed（cannot-tell tab=190 cli=191）· 文件已还原",
+        "sha256": "7d80f0f76bf7fda04a07aa91474b945e2d17522e8c9c9810e95182f49f37d76b"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S7",
+      "step": "**负对照 NC-A 的复跑（反向读数，保留）**：同一面 `--upgrade-wait-ms 300` 这一次没能生效——答案在 500ms 内就到了，于是 `upgrade-visible` 直接 passed。说明这个开关按 500ms 粒度采样，不是精确预算",
+      "changed": [
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（反向对照）：同一开关两个方向都留下产物——12:47 在 loading 处收工（unmeasured），12:57 在答案处收工（passed）；不许只说其中一次",
+        "reproducibility": "PASS：两次的 `waited_ms` 与 `judged.state` 都写在产物里，差异可解释",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：报告 §4 明写「300ms 不是精确预算」，不许把这条开关说成可复现的时序闸",
+        "adversary": "反例：删掉这次「没生效」的产物，只留 12:47 那条更好看的——被拒：那是选择性报告（同 R52 的 429 红产物逻辑）"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --upgrade-wait-ms 300 --label client-serve-nc-shortwait",
+        "artifact": "data/results/client-serve-nc-shortwait-2026-11-02T12-57-04.562Z.json",
+        "outcome": "served · 16/16 全过（300ms 预算没拦住 500ms 粒度的采样）· 作为开关的边界证据保留",
+        "sha256": "9a864b37f6529ce8de36d6736e9d141c410520d9310ff025f82065b51f77e6e9"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S8",
+      "step": "**台账登记前的红见证**：`gate --record` 在同一次运行里同时报 `step-review/no-orphan-results`（11 份新产物未入账）与 `governance/index-references`（INDEX 里把路由写成路径），先红后绿",
+      "changed": [
+        "audit/step_reviews.json",
+        "INDEX.md"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：红项点名具体产物；修法是把每份产物挂到步骤上、把 INDEX 里的路由写法改掉，**不是放宽门**",
+        "reproducibility": "PASS：`gates-2026-11-02T13-56-00.000Z.json` 与其 sha256 原样保留",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：红产物不被任何对外文档引用；绿产物另记（收口时用不带 `--record` 的 `gate.mjs` 复核）",
+        "adversary": "反例一：删掉这 11 份中间/负对照产物让树看起来干净——被拒：负对照产物本身就是证据；反例二：把路由写成 ``/compat-triage/summary`` 继续触发门——被拒：改成不带反引号的写法，判据不变"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T13:56:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T13-56-00.000Z.json",
+        "outcome": "RED · 2 gates（governance/index-references · step-review/no-orphan-results）· 保留为「先红后绿」见证",
+        "sha256": "1445585759224b384bde306291dae38e93fdf9174cfb17fc5d1e7f7f86dcc9ae"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S9",
+      "step": "**文档与盲区**：新增 `audit/AUDIT_2026-11-02_R62.md`；`BS-54`（面板 summary 偶发 9510ms，尚未有分布）；HANDOFF §3「R62 交接」+ 批次行；INDEX / AGENTS / BACKLOG 同步（T-818 ✅、新开 T-828）；AI 披露台账补本轮条目",
+      "changed": [
+        "audit/AUDIT_2026-11-02_R62.md",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS：对外说法与产物一致——「探针 ≈500ms 收工」有 512ms 产物、「四桶与 CLI 同源」有 3/190/0/2 比对、「9510ms」只写成一次观测",
+        "reproducibility": "PASS：报告里每条读数都指到 `data/results/` 的具体文件；`BS-54` 指到唯一见证产物",
+        "licence": "PASS：纯文档；引用的证据都在本仓",
+        "ssot": "PASS：stand 在 HANDOFF / INDEX / AGENTS / BACKLOG 统一为 R62；T-818 由 🟨 改 ✅ 只在真机全绿之后",
+        "adversary": "反例一：把「页面 fetch pending」写成「已修复」而不说清它本来是度量问题——被拒：报告 §2 逐条列出六处缺陷；反例二：把 9510ms 写成「面板平均 1 秒」——被拒：`BS-54` 明写没有分布；反例三：把 `--upgrade-wait-ms` 说成精确时序闸——被拒：§4 列了它没生效的那次"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T13:52:00.000Z --tests 623",
+        "artifact": "data/results/listing-2026-11-02T13-52-00.000Z.json",
+        "outcome": "14/14 PASS（version 0.3.2 · dsh 区间 4 处一致 · tests 623 · 10 份文档 · 17 条证据路径带 sha256）",
+        "sha256": "ba599ddc9167e276bf4d7405e3f9112688c43854d81d9765784d684cb9f4d891"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S10",
+      "step": "**文案检查器抓到的一处真漂移（红产物保留）**：升到 0.3.2 之后 `docs/market/submissions/README.md` 还写着 `dsh-triage@0.3.1`，`version-matches-manifest` 当场判红",
+      "changed": [
+        "docs/market/submissions/README.md"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：红项点名文件与版本串；修法是重写那句话并把取证指向 0.3.1 的 publish 产物，不是放宽断言",
+        "reproducibility": "PASS：红产物 `listing-2026-11-02T13-51-00.000Z.json` 保留，绿产物 13:52 另记",
+        "licence": "PASS：只改本仓代码 / 测试 / 文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：修复后 `dsh-triage@` 的每一处都等于 manifest 的 0.3.2",
+        "adversary": "反例：把 `submissions/README.md` 从 `DOCUMENTS` 列表里去掉让门变绿——被拒：那是提交包说明书，正好是提交前最该对齐的一份"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T13:51:00.000Z --tests 623",
+        "artifact": "data/results/listing-2026-11-02T13-51-00.000Z.json",
+        "outcome": "RED · version-matches-manifest（stale: docs/market/submissions/README.md:dsh-triage@0.3.1）· 保留",
+        "sha256": "7e4deb3dc0da5ccac485894caf916af01c8892bf260db32405783bba5c368d5f"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S11",
+      "step": "**0.3.2 备票（T-828）**：四包同升 0.3.2、CHANGELOG 新增 `[0.3.2]`（明写判定与 0.3.1 完全相同）、两份 README 与两份上架文案的版本串与测试数（542 → 623）对齐；发布预检查如实判红 `not-logged-in`",
+      "changed": [
+        "CHANGELOG.md",
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md"
+      ],
+      "review": {
+        "correctness": "PASS：预检查三项绿（version 0.3.2 / 5 个 workspace 依赖走 pnpm 改写 / registry 上还没发过），一项红（`not-logged-in`）**如实保留**",
+        "reproducibility": "PASS：`release-preflight-2026-11-02T13-54-00.000Z.json` 带 sha256；同一 shell 独立跑 `npm whoami` 也是 401，证明是真凭据失效而不是检查没跑起来",
+        "licence": "PASS：没有动任何依赖与许可",
+        "ssot": "PASS：`check_listing` 14/14（version 0.3.2 / tests 623）；`record_publish` 仍未跑（发布是 HUMAN 动作），不写成「已发布」",
+        "adversary": "反例一：把 `not-logged-in` 写成「token 过期请重登」而不复现——被拒：R50 的教训（检查没跑起来 ≠ 结论失败），所以独立跑了 `npm whoami` 并沿用三态口径；反例二：直接发 0.3.2 而不升 core/signals/probe——被拒：R42 的教训（只升插件会装到旧 core）；反例三：把 README 写成「0.3.2 已发布」——被拒：还没发，改写成「包版本」"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --out data/results/release-preflight-2026-11-02T13-54-00.000Z.json --stamp 2026-11-02T13:54:00.000Z",
+        "artifact": "data/results/release-preflight-2026-11-02T13-54-00.000Z.json",
+        "outcome": "RED (1/4) · version 0.3.2 ✅ · workspace ✅ · 「0.3.2 还没发过」✅ · not-logged-in（真 E401，`npm whoami` 独立复现 401）❌",
+        "sha256": "b616cf635fd5e97705aa1f4dbc1bb6159e4de2efae1727cc199c7516f36db9cf"
+      },
+      "batch": "R62"
     }
   ]
 }

@@ -29,7 +29,7 @@ import process from 'node:process'
 import { findBrowser } from '../packages/probe/dist/render.js'
 import { SANDBOX_PNPM_WORKSPACE, buildWorkspaceBundle, sandboxProfileManifest } from './lib/bundle.mjs'
 import { abs, isoStamp } from './lib/kit.mjs'
-import { controlNames, pickControl, tabMatch as matchTab } from './lib/ui-probe.mjs'
+import { compareUpgradeBuckets, controlNames, describeNoAnswer, judgeTabView, judgeUpgradeView, pickControl, tabMatch as matchTab } from './lib/ui-probe.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -52,6 +52,12 @@ const uiLang = String(argOf('--lang', '')).toLowerCase()
  * this one is taken from the same real Host + real browser as `visible`/`summary-visible`.
  */
 const screenshotRequest = argOf('--screenshot', null)
+/**
+ * `--upgrade-wait-ms <n>` is the PROBE's patience, not the product's budget: the route keeps its own
+ * 10s registry cap and 20s scan budget. It exists so a negative control can reproduce R61 exactly —
+ * give up after 300ms and the step must say `unmeasured` ("we stopped asking"), never `failed`.
+ */
+const upgradeWaitMs = Number(argOf('--upgrade-wait-ms', '30000'))
 /** `--fixture-range` / `--break-after-install` stage a row that is fine at install and denied afterwards. */
 const fixtureRange = argOf('--fixture-range', null)
 const breakAfterInstall = argOf('--break-after-install', null)
@@ -342,9 +348,19 @@ async function main() {
       'upgrade-route',
       upgradeDirect.status === 200 ? 'passed' : 'failed',
       upgradeDirect.status === null
-        ? `the upgrade route did not answer in ${upgradeDirect.ms}ms: ${String(upgradeDirect.error)}`
-        : `GET /compat-triage/upgrade -> ${upgradeDirect.status} in ${upgradeDirect.ms}ms`,
-      upgradeDirect,
+        ? `GET /compat-triage/summary?upgrade=1 did not answer in ${upgradeDirect.ms}ms: ${String(upgradeDirect.error)}`
+        : `GET /compat-triage/summary?upgrade=1 -> ${upgradeDirect.status} in ${upgradeDirect.ms}ms`,
+      {
+        /*
+         * R62: this used to be `...upgradeDirect`, whose own `status` (200) overwrote the step's
+         * `status` ('passed') — the artifact then carried `"status": 200` where every gate and reader
+         * expects one of passed/failed/unmeasured. The HTTP number is the evidence, not the verdict.
+         */
+        http_status: upgradeDirect.status,
+        ms: upgradeDirect.ms,
+        error: upgradeDirect.error ?? null,
+        body: upgradeDirect.body ?? null,
+      },
     )
     const body = asset.text
     const hasLoader = body.includes('__ModuleLoader__.load')
@@ -410,17 +426,32 @@ async function main() {
        * the same-source step below compares with the CLI.
        */
       const tabProbe = observed.visible.evidence?.tab_probe ?? null
+      // Older artifacts carry no `tab_judged`; the rule is cheap to re-derive from the same probe.
+      const tabJudged = observed.visible.evidence?.tab_judged ?? judgeTabView(tabProbe)
       if (browser === null || tabProbe === null) {
         record('summary-visible', 'unmeasured', 'the tab body was never probed (see the visible step)', {})
-      } else if (tabProbe.present !== true) {
-        record('summary-visible', 'failed', 'the tab mounted but no triage view appeared in the DOM', tabProbe)
-      } else if (tabProbe.mode !== 'summary') {
+      } else if (tabJudged.decided !== true && tabJudged.state === 'pending') {
+        /*
+         * R62: the loop now waits out `pending` instead of stopping on it, so reaching here means the
+         * fetch really had not answered after the full wait. That is `unmeasured` — "we never got an
+         * answer" — not a claim that the tab is broken.
+         */
+        record(
+          'summary-visible',
+          'unmeasured',
+          describeNoAnswer(String(tabJudged.state), Number(observed.visible.evidence?.tab_ms ?? 0)),
+          { tab_probe: tabProbe, tab_judged: tabJudged },
+        )
+      } else if (tabJudged.state === 'failed') {
         record(
           'summary-visible',
           'failed',
           `the tab rendered a degraded view (${String(tabProbe.kind)}) instead of the answer — on a readable profile that is a defect, not a degradation`,
           tabProbe,
         )
+      } else if (tabJudged.state !== 'answer') {
+        // The tab mounted but nothing triage-shaped ever appeared: that is a defect, not a wait.
+        record('summary-visible', 'failed', 'the tab mounted but no triage view appeared in the DOM', tabProbe)
       } else {
         record(
           'summary-visible',
@@ -435,20 +466,28 @@ async function main() {
        * four buckets are in the DOM.
        */
       const upgradeSeen = observed.visible.evidence?.upgrade_probe ?? null
+      const upgradeJudged = upgradeSeen?.judged ?? null
       if (upgradeSeen === null) {
         record('upgrade-visible', 'unmeasured', 'the upgrade screen was not opened (see summary-visible)', {})
-      } else if (upgradeSeen.probe?.present !== true) {
+      } else if (upgradeJudged === null || upgradeJudged.decided !== true) {
+        /*
+         * R62: "we stopped asking" is not "the screen is broken". The R61 artifact called this
+         * `failed` after ~500ms of waiting on a route that answered in 815ms; `unmeasured` plus the
+         * wait length is the honest reading, and the sentence says so out loud.
+         */
         record(
           'upgrade-visible',
-          'failed',
-          `the upgrade click produced no bucket table (kind ${String(upgradeSeen.probe?.kind)})`,
+          'unmeasured',
+          describeNoAnswer(String(upgradeJudged?.state ?? 'absent'), Number(upgradeSeen.waited_ms ?? 0)),
           upgradeSeen,
         )
+      } else if (upgradeJudged.state !== 'answer') {
+        record('upgrade-visible', 'failed', upgradeJudged.reason, upgradeSeen)
       } else {
         record(
           'upgrade-visible',
           'passed',
-          `the upgrade screen rendered ${Array.isArray(upgradeSeen.probe.counts) ? upgradeSeen.probe.counts.length : 0} bucket row(s)`,
+          `the upgrade screen rendered ${Array.isArray(upgradeSeen.probe?.counts) ? upgradeSeen.probe.counts.length : 0} bucket row(s) in ${Number(upgradeSeen.waited_ms ?? 0)}ms`,
           upgradeSeen,
         )
       }
@@ -541,32 +580,54 @@ async function main() {
        * the same target. The route and the CLI share `judgeUpgradeImpact`; this step proves it.
        */
       const upgradeProbe = observed.visible.evidence?.upgrade_probe?.probe ?? null
+      const upgradeJudgement = observed.visible.evidence?.upgrade_probe?.judged ?? null
+      /*
+       * `evaluate()` parses JSON, so the marker is already an OBJECT here — the old code ran it through
+       * `JSON.parse(String(marker))`, i.e. `JSON.parse('[object Object]')`, which threw and produced
+       * `null`. That is why `upgrade-same-source` could never pass, even when the screen was perfect
+       * (R62: the run that first rendered four buckets still said "no target to compare").
+       */
+      const rawMarker = observed.visible.evidence?.upgrade_probe?.marker ?? null
       let upgradeMarker = null
-      try {
-        upgradeMarker = JSON.parse(String(observed.visible.evidence?.upgrade_probe?.marker ?? 'null'))
-      } catch {
-        upgradeMarker = null
+      if (rawMarker !== null && typeof rawMarker === 'object') {
+        upgradeMarker = rawMarker
+      } else if (typeof rawMarker === 'string' && rawMarker !== '') {
+        try {
+          upgradeMarker = JSON.parse(rawMarker)
+        } catch {
+          upgradeMarker = null
+        }
       }
-      if (upgradeProbe === null || upgradeProbe.present !== true || !Array.isArray(upgradeProbe.counts) || upgradeMarker === null || typeof upgradeMarker.target !== 'string') {
-        record('upgrade-same-source', 'unmeasured', 'no four-bucket screen or no target to compare', {})
+      if (upgradeJudgement === null || upgradeJudgement.state !== 'answer' || !Array.isArray(upgradeProbe?.counts) || upgradeMarker === null || typeof upgradeMarker.target !== 'string') {
+        record(
+          'upgrade-same-source',
+          'unmeasured',
+          upgradeJudgement === null || upgradeJudgement.state !== 'answer'
+            ? `there was no four-bucket answer to compare (screen was "${String(upgradeJudgement?.state ?? 'not opened')}")`
+            : 'the screen rendered but published no target version, so there is nothing to compare against',
+          {},
+        )
       } else {
         const cliUpgrade = await readCliUpgrade(pathFor(String(argOf('--cli-home', home))), String(argOf('--cli-profile', 'web')), upgradeMarker.target, env)
         if (cliUpgrade === null || cliUpgrade.error !== undefined || cliUpgrade.counts === null) {
           record('upgrade-same-source', 'unmeasured', 'the CLI could not judge the same target', { cli_error: cliUpgrade?.error ?? null })
         } else {
-          const byBucket = Object.fromEntries(upgradeProbe.counts.map((row) => [row.bucket, row.count]))
-          const same =
-            byBucket['would-be-denied'] === cliUpgrade.counts.would_be_denied &&
-            byBucket['cannot-tell'] === cliUpgrade.counts.cannot_tell &&
-            byBucket.improved === cliUpgrade.counts.improved &&
-            byBucket['likely-fine'] === cliUpgrade.counts.likely_fine
+          /*
+           * The comparison itself is a pure function (R62): "the four numbers on screen are the four
+           * numbers the CLI prints" is a claim that can be decided without a browser, so it is pinned
+           * by unit tests instead of living inline where only a full run could exercise it.
+           */
+          const comparison = compareUpgradeBuckets(upgradeProbe.counts, cliUpgrade.counts)
+          const disagreeing = comparison.pairs.filter((pair) => !pair.agree)
           record(
             'upgrade-same-source',
-            same ? 'passed' : 'failed',
-            same
+            comparison.same ? 'passed' : 'failed',
+            comparison.same
               ? `the tab and the CLI agree on ${upgradeMarker.target}: ${cliUpgrade.counts.would_be_denied} denied / ${cliUpgrade.counts.cannot_tell} cannot tell / ${cliUpgrade.counts.improved} improved / ${cliUpgrade.counts.likely_fine} likely fine`
-              : 'the tab and the CLI disagree on the same upgrade target',
-            { tab_counts: upgradeProbe.counts, cli_counts: cliUpgrade.counts, target: upgradeMarker.target },
+              : `the tab and the CLI disagree on ${upgradeMarker.target}: ${disagreeing
+                  .map((pair) => `${pair.bucket} tab=${String(pair.tab)} cli=${String(pair.cli)}`)
+                  .join(' · ')}`,
+            { comparison },
           )
         }
       }
@@ -700,7 +761,12 @@ async function observePage(browser, pageUrl, cookie, screenshotTarget = null) {
       try {
         return JSON.parse(value)
       } catch {
-        return null
+        /*
+         * R62: a plain string is a reading, not a parse failure. Returning `null` here silently
+         * deleted the page-side upgrade probe's answer (`direct: null` in the R61 artifact) — the
+         * same "a check that did not run must not look like a result" mistake, in the harness.
+         */
+        return value
       }
     }
     let marker = null
@@ -846,16 +912,28 @@ const UPGRADE_CLICK_EXPRESSION = `(() => {
   return JSON.stringify({ clicked: true })
 })()`
 
-/** T-818: read the four buckets as attribute pairs, or the failure sentence. */
+/**
+ * T-818: read the four buckets, or say which *kind* of not-answer is on screen.
+ *
+ * The view is named, not inferred from "is there an error element": the loading sentence is rendered
+ * by the failure view, so `error === true` was true while the answer was still on the wire (R61 read
+ * that as "the page fetch is pending"). A stale bundle that still renders `kind="loading"` inside
+ * `upgrade-error` is mapped back to `loading` here, so the served 0.3.1 client cannot recreate the bug.
+ */
 const UPGRADE_PROBE_EXPRESSION = `(() => {
-  const el = document.querySelector('[data-triage-tab="upgrade"]')
-  const err = document.querySelector('[data-triage-tab="upgrade-error"]')
-  if (!el) return JSON.stringify({ present: false, error: err !== null, kind: err === null ? null : err.getAttribute('data-triage-kind') })
-  const counts = Array.from(el.querySelectorAll('[data-upgrade-count]')).map((node) => ({
+  const answer = document.querySelector('[data-triage-tab="upgrade"]')
+  const loading = document.querySelector('[data-triage-tab="upgrade-loading"]')
+  const failed = document.querySelector('[data-triage-tab="upgrade-error"]')
+  const screen = answer || loading || failed
+  if (!screen) return JSON.stringify({ view: null })
+  const kind = screen.getAttribute('data-triage-kind')
+  const view = answer ? 'answer' : loading ? 'loading' : (kind === 'loading' || kind === 'pending' ? 'loading' : 'error')
+  if (view !== 'answer') return JSON.stringify({ view, kind })
+  const counts = Array.from(answer.querySelectorAll('[data-upgrade-count]')).map((node) => ({
     bucket: node.getAttribute('data-upgrade-bucket'),
     count: Number(node.getAttribute('data-upgrade-count')),
   }))
-  return JSON.stringify({ present: true, counts, text: String(el.innerText || '').slice(0, 4000) })
+  return JSON.stringify({ view, kind, counts, text: String(answer.innerText || '').slice(0, 4000) })
 })()`
 
 
@@ -976,39 +1054,66 @@ async function probeVisibility(evaluate, mount, send) {
       snapshot = await hop('open-tab', tab)
       // The tab fills in asynchronously; wait until the DOM carries a decided view, or say it never did.
       // `pending` is a real state (the fetch has not answered yet) and must not be read as a verdict.
+      // The rule lives in `judgeTabView` (R62): R51 paid for this once, R61 paid again.
+      let judged = judgeTabView(null)
       for (let attempt = 0; attempt < 16; attempt += 1) {
         probe = await evaluate(TAB_PROBE_EXPRESSION)
-        const decided = probe !== null && probe.present === true && (probe.mode === 'summary' || (probe.mode === 'error' && probe.kind !== 'pending'))
-        if (decided) break
+        judged = judgeTabView(probe)
+        if (judged.decided) break
         await pause(500)
       }
       evidence.tab_ms = Date.now() - openedAt
       evidence.tab_probe = probe
+      evidence.tab_judged = judged
       /*
        * T-818: the upgrade screen is a SECOND question, asked by clicking the on-demand button. The
        * tab must not have read npm before this point; the click is the only thing that does.
        */
-      if (probe !== null && probe.present === true && probe.mode === 'summary') {
+      if (judged.state === 'answer') {
         const clicked = await evaluate(UPGRADE_CLICK_EXPRESSION)
+        const upgradeStarted = Date.now()
         let upgradeProbe = null
-        for (let attempt = 0; attempt < 60; attempt += 1) {
+        let upgradeJudged = judgeUpgradeView(null)
+        /*
+         * The ceiling is the probe's patience (`--upgrade-wait-ms`, 30s by default); the route answers
+         * in ~1s on this machine. What matters is the rule at the end — running out of patience is
+         * `unmeasured` (we stopped asking), never `failed` (the screen is broken). R61 confused the
+         * two by breaking at ~500ms on a screen that answered at ~1000ms.
+         */
+        for (let attempt = 0; attempt < 200; attempt += 1) {
           upgradeProbe = await evaluate(UPGRADE_PROBE_EXPRESSION)
-          if (upgradeProbe !== null && (upgradeProbe.present === true || upgradeProbe.error === true)) break
+          upgradeJudged = judgeUpgradeView(upgradeProbe)
+          if (upgradeJudged.decided) break
+          if (Date.now() - upgradeStarted >= upgradeWaitMs) break
           await pause(500)
         }
+        const upgradeWaitedMs = Date.now() - upgradeStarted
         const upgradeMarker = await evaluate('JSON.stringify((window.__dshTriage && window.__dshTriage.upgrade) || null)')
         /*
          * DIAGNOSTIC (T-818): ask the same URL from the PAGE, with the page's own CSP/cookies. If this
          * resolves while the component is still loading, the served client is stale; if it times out,
          * the route is blocking the browser rather than the Node probe.
+         *
+         * R62: this used to resolve to a bare string, which `evaluate()` fed through `JSON.parse` and
+         * turned into `null` — so the one measurement that could answer "is the browser blocked"
+         * recorded nothing at all. It returns JSON now, and `evaluate()` no longer swallows strings.
          */
         const directFromPage = await evaluate(`Promise.race([
-          fetch('/compat-triage/summary?upgrade=1', { credentials: 'include' }).then((r) => r.text()).then((t) => 'http:' + t.slice(0, 120)).catch((e) => 'err:' + String((e && e.message) || e)),
-          new Promise((r) => setTimeout(() => r('timeout'), 15000)),
-        ])`)
-        evidence.upgrade_probe = { clicked, probe: upgradeProbe, marker: upgradeMarker, direct: directFromPage }
+          fetch('/compat-triage/summary?upgrade=1', { credentials: 'include', headers: { accept: 'application/json' } })
+            .then((r) => r.text().then((t) => ({ status: r.status, body: t.slice(0, 160) })))
+            .catch((e) => ({ status: null, error: String((e && e.message) || e) })),
+          new Promise((r) => setTimeout(() => r({ status: 'timeout' }), 15000)),
+        ]).then((value) => JSON.stringify(value))`)
+        evidence.upgrade_probe = {
+          clicked,
+          probe: upgradeProbe,
+          judged: upgradeJudged,
+          waited_ms: upgradeWaitedMs,
+          marker: upgradeMarker,
+          direct: directFromPage,
+        }
       }
-      body = probe !== null && probe.present === true ? (probe.mode === 'summary' ? 'passed' : 'degraded') : 'failed'
+      body = judged.state === 'answer' ? 'passed' : judged.state === 'failed' ? 'degraded' : judged.state
       evidence.tab_body = body
       /*
        * A REAL CLICK ON THE COPY BUTTON (R51, BS-47): the button existing is not the same claim as
@@ -1109,13 +1214,20 @@ async function probeVisibility(evaluate, mount, send) {
       evidence.marker_after_tab = markerAfter
     }
     return {
-      status: body === 'failed' ? 'failed' : body === 'degraded' ? 'unmeasured' : 'passed',
+      /*
+       * R62: `pending` used to fall through to `passed` here, and its detail claimed "the summary view"
+       * was on screen while the tab was still showing 正在加载诊断数据… — the same overclaim that made
+       * R61's artifact unreadable, one step earlier. A wait is `unmeasured`, never `passed`.
+       */
+      status: body === 'failed' ? 'failed' : body === 'degraded' || body === 'pending' || body === 'loading' ? 'unmeasured' : 'passed',
       detail:
         body === 'failed'
           ? `the tab label ${JSON.stringify(match)} appeared, but clicking it rendered no tab body`
           : body === 'degraded'
             ? `the settings page rendered ${JSON.stringify(match)}, but the tab showed a degraded view (${String(evidence.tab_probe?.kind ?? 'unknown')}) instead of the summary`
-            : `the settings page rendered ${JSON.stringify(match)} and the summary view (${String(evidence.tab_probe?.tone ?? 'unknown')} · ${String(evidence.tab_probe?.issues ?? 0)} issue(s) shown)`,
+            : body === 'pending' || body === 'loading'
+              ? describeNoAnswer(String(body), Number(evidence.tab_ms ?? 0))
+              : `the settings page rendered ${JSON.stringify(match)} and the summary view (${String(evidence.tab_probe?.tone ?? 'unknown')} · ${String(evidence.tab_probe?.issues ?? 0)} issue(s) shown)`,
       evidence: { ...evidence, tab_match: match },
     }
   }

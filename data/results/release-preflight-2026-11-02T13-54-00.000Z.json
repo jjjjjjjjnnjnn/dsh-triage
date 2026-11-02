@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/release_preflight.mjs",
+  "generated_at": "2026-11-02T13:54:00.000Z",
+  "ok": false,
+  "target_version": "0.3.2",
+  "problems": [
+    {
+      "id": "not-logged-in",
+      "detail": "registry 拒绝了当前凭据（npm error code E401）。未登录时发布 scoped 包会报 404 Not found，看起来像「包不存在」。",
+      "observed": "npm error code E401",
+      "fix": "npm login        # 浏览器/终端交互登录，然后重跑 `pnpm run release:publish`"
+    }
+  ],
+  "notes": [
+    "version: 0.3.2",
+    "workspace: protocol: 5 dep(s), publish goes through pnpm (rewritten)",
+    "registry: 0.3.2 还没发过"
+  ],
+  "limits": [
+    "this is the pre-publish check, not the release: it says nothing about the bytes a registry would serve (that is `record_publish`)",
+    "a registry it could not reach is reported as a note, never as a pass"
+  ]
+}

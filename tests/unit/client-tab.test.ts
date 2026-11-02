@@ -576,3 +576,26 @@ test('T-818: an unreadable registry gets a sentence, not a zero-filled bucket ta
   assert.doesNotMatch(text, /data-upgrade-count/, 'no bucket table on a failed read')
   assert.match(text, /could not read/, 'the sentence says the read failed, not that nothing will break')
 })
+
+test('R62: "still reading" and "the read failed" are two different marks on screen', () => {
+  const { exports } = loadBundle({})
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  /*
+   * R61's harness asked "is there an element marked upgrade-error?" as a way of deciding whether the
+   * answer had arrived — and the loading screen answered yes, because it rendered through the failure
+   * view. The two states now carry two different marks, which is what lets the probe tell a wait from
+   * a verdict at all.
+   */
+  const loading = JSON.stringify(views.upgradeFailureView('loading', null, injected.copy, () => {}))
+  assert.match(loading, /"data-triage-tab":"upgrade-loading"/)
+  assert.match(loading, /"data-triage-kind":"loading"/)
+  assert.doesNotMatch(loading, /data-upgrade-count/, 'no bucket rows while the registry read is in flight')
+
+  const failed = JSON.stringify(
+    views.upgradeFailureView('failed', { ok: false, kind: 'http', upgrade: null, detail: 'HTTP 502' }, injected.copy, () => {}),
+  )
+  assert.match(failed, /"data-triage-tab":"upgrade-error"/, 'a real failure keeps the error mark')
+  assert.match(failed, /"data-triage-kind":"http"/)
+})

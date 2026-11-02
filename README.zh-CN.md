@@ -21,7 +21,7 @@ DeepSeek Harness（DSH）原生包管理器负责管理插件能否**成功下�
 
 结论完全基于本地分析，每条判定均绑定可追溯的证据来源；**缺少足够证据时如实判定为 `unknown`（未明确）**，绝不给出生造的模糊评分。
 
-全平台发布于 npm：`dsh-triage@0.3.1` · 独立 CLI + DSH 设置页插件包 · 本地只读 · 仅在主动请求 registry 时进行必要网络通信。
+全平台发布于 npm：`dsh-triage@0.3.2` · 独立 CLI + DSH 设置页插件包 · 本地只读 · 仅在主动请求 registry 时进行必要网络通信。
 
 ---
 
@@ -231,7 +231,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、542 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、623 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |

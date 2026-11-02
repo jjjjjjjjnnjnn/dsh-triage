@@ -22,7 +22,7 @@ DeepSeek Harness（DSH）原生管理插件能否**成功下载与安装**。然
 
 所有判定均在本地离线计算并输出证据链条；**证据不足时如实判定为 `unknown`（未明确）**，杜绝无事实依据的盲目评分。
 
-npm 现已发布：`dsh-triage@0.3.1` · 独立命令行 CLI + DSH 设置页集成 · 本地只读 · 零远程数据上报。
+npm 现已发布：`dsh-triage@0.3.2` · 独立命令行 CLI + DSH 设置页集成 · 本地只读 · 零远程数据上报。
 
 ---
 
@@ -226,7 +226,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、542 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、623 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |
