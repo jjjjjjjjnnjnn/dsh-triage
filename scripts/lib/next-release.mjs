@@ -68,14 +68,19 @@ export function judgeNextChange(input) {
      * An observation exists but carries no usable version. That is "I cannot tell what the baseline was",
      * which is not the same as "first observation" — reporting `baseline` here would let a corrupted
      * artifact pass as a clean start.
+     *
+     * The timestamp is only printed when it is actually a string: R66's first cut used
+     * `String(previous?.at ?? …)`, which on an array printed `function at() { [native code] }`
+     * (adversary N-4) — the state was right and the sentence was nonsense.
      */
+    const at = typeof previous?.at === 'string' && previous.at.length > 0 ? previous.at : 'no usable timestamp'
     return {
       state: 'unmeasured',
       changed: false,
       writesArtifact: false,
       from: null,
       to,
-      detail: `the previous observation carries no usable version (${String(previous?.at ?? 'no timestamp')}), so a change cannot be judged`,
+      detail: `the previous observation carries no usable version (${at}), so a change cannot be judged`,
     }
   }
   if (from === null) {

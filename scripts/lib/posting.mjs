@@ -16,13 +16,16 @@
  *     passed with zero signals — the same shape this repo keeps paying for.
  *
  * WHAT IT NOW DOES:
- *   1. the channel must name **exactly one** platform this check can verify (discussion / issue / X).
- *      Two names is an ambiguity, and `find()`-by-array-order let the *order of this file's array* decide
- *      the verdict — both a false reject and a false pass were one natural string away;
- *   2. `posted_url` must be on that platform;
- *   3. `posted_on` must be an instant that **actually exists**: the civil fields must survive a round trip
- *      through the epoch (so Feb 30, month 13, `99:99:99`, leap second `:60` and offsets like `+99:00` are
- *      all refused), it must carry an explicit zone (`Z` or `±hh:mm`), and it must not be in the future.
+ *   1. the URL must be on exactly one platform this check can verify (discussion / issue / X), and the
+ *      channel must name that platform. Naming *several* platforms is allowed as prose as long as the URL
+ *      is one of them — "X thread, not an issue" is a natural sentence, and treating it as ambiguity
+ *      (this rule's first cut) blocked true records. What stays forbidden is the silent case: a channel
+ *      that names no verifiable platform, or a URL on a platform the channel never mentions;
+ *   2. `posted_on` must be **written** as an ISO-8601 instant with an explicit zone, and that instant must
+ *      **exist**: the civil fields have to survive a round trip through the epoch (so Feb 30, month 13,
+ *      `99:99:99`, leap second `:60` and offsets like `+99:00` are refused), and it must not be in the
+ *      future. Shape and existence are reported separately, because saying "does not exist" about a real
+ *      instant in an unaccepted format is the same false-reason bug this rule was fixed for twice.
  *
  * WHAT IT STILL DOES NOT DO: it never fetches the URL (a 404 and a live post look identical here), it does
  * not check prose, and it says nothing about whether one entry records *all* the places a draft was posted
@@ -126,26 +129,34 @@ export function judgePosting(input) {
   const rawNow = input?.now
 
   const claimed = POSTING_PLATFORMS.filter((platform) => platform.channel.test(channel))
+  // Which platform(s) the URL itself is on. This — not the words in `channel` — decides whether the
+  // record is coherent: "X thread, not an issue" mentions two platforms to *exclude* one, and treating
+  // that as ambiguity (R66's first cut) blocked a true record (R66 adversary, N-2).
+  const matched = POSTING_PLATFORMS.filter((platform) => platform.match.test(url))
   const problems = []
 
-  if (claimed.length === 0) {
+  if (matched.length === 0) {
+    problems.push(`posted_url is not on a platform this check can verify (got "${url}") — expected a discussion, an issue, or an X/Twitter status link`)
+  } else if (matched.length > 1) {
+    problems.push(`posted_url matches more than one platform (${matched.map((platform) => platform.id).join(', ')}), so this record is ambiguous`)
+  } else if (claimed.length === 0) {
     // Named explicitly so the fix is "say which platform", not "fight the regex".
     problems.push(`the channel names no platform this check can verify ("${channel}") — name discussion / issue / X`)
-  } else if (claimed.length > 1) {
-    // One entry is one post with one URL. Resolving the ambiguity by array order is how a false reject and
-    // a false pass both become reachable from a natural string like "Discussion on X".
-    problems.push(
-      `the channel names more than one platform (${claimed.map((platform) => platform.id).join(', ')}) — one entry is one post; name the one this URL belongs to`,
-    )
-  } else {
-    const only = claimed[0]
-    if (!only.match.test(url)) problems.push(`posted_url is not a ${only.id} URL (got "${url}")`)
+  } else if (!claimed.some((platform) => platform.id === matched[0].id)) {
+    const only = matched[0]
+    problems.push(`posted_url is on ${only.id}, but the channel names ${claimed.map((platform) => platform.id).join(', ')} — one of them must be ${only.id}`)
   }
 
   const instant = parseInstant(postedOn)
-  if (instant === null) {
+  if (!ISO_INSTANT.test(postedOn)) {
+    // Shape first, existence second: saying "does not exist" about `…T18:36:00.1234Z` (a real instant in a
+    // format we do not accept) is the same false-reason bug R64 was fixed for (R66 adversary, N-3).
+    problems.push(`posted_on is not written as an ISO-8601 instant with an explicit zone (got "${postedOn}") — use YYYY-MM-DDTHH:MM:SS[.sss](Z|+hh:mm)`)
+  } else if (instant === null) {
+    // One sentence for "the date is not real" and "it is outside what this checker accepts": both are
+    // refusals, and claiming the first when the second is true would be another false reason.
     problems.push(
-      `posted_on is not an instant that exists, written with an explicit zone (got "${postedOn}") — use Z or ±hh:mm, and check the date`,
+      `posted_on names an instant this checker cannot accept (got "${postedOn}") — either the date does not exist, or it is outside the supported range (years 1000–9999, hours 00–23, no leap second)`,
     )
   } else {
     const nowMs =
@@ -163,7 +174,7 @@ export function judgePosting(input) {
 
   return {
     ok: problems.length === 0,
-    platform: claimed.length === 1 ? claimed[0].id : null,
+    platform: matched.length === 1 ? matched[0].id : null,
     problems,
     posted_at: instant === null ? null : instant.canonical,
   }

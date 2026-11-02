@@ -76,6 +76,15 @@ export function judgeDistTags(input) {
     }
     if (seen.has(name)) problems.push(`${name}: appears twice in one verdict, so the two readings cannot both be true`)
     seen.add(name)
+    if (!PUBLISHED_PACKAGES.includes(name)) {
+      /*
+       * R66 (adversary N-5): an extra packument used to inflate the green detail to "all 5 package(s)".
+       * The claim is about the four packages this project publishes; anything else is a caller mistake and
+       * must not make the sentence bigger than the fact.
+       */
+      problems.push(`${name}: is not one of the packages this project publishes (${PUBLISHED_PACKAGES.join(', ')})`)
+      continue
+    }
     if (entry?.unreachable === true) {
       unreachable.push(name)
       latest[name] = null
@@ -137,7 +146,7 @@ export function judgeDistTags(input) {
   const tagsAgree = measured.length > 0 && new Set(measured.map(([, value]) => value)).size === 1
   const detail =
     problems.length === 0
-      ? `all ${packages.length} package(s) point latest at ${expectedVersion}` +
+      ? `all ${PUBLISHED_PACKAGES.length} package(s) point latest at ${expectedVersion}` +
         (extraTags.length === 0 ? '' : ` · other tag(s): ${extraTags.map((item) => `${item.name}@${item.tag}=${item.version}`).join(', ')}`)
       : problems.slice(0, 4).join(' · ')
 

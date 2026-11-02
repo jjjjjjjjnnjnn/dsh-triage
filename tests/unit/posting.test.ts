@@ -47,11 +47,12 @@ test('a discussion post on a discussion channel passes', () => {
   assert.equal(verdict.platform, 'github-discussion')
 })
 
-test('an X URL recorded against a GitHub channel fails, and names the platform it expected', () => {
+test('an X URL recorded against a GitHub channel fails, and names both sides', () => {
   const verdict = judgePosting({ channel: 'GitHub Discussions · 分类', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
   assert.equal(verdict.ok, false)
-  assert.equal(verdict.platform, 'github-discussion')
-  assert.ok(verdict.problems.some((line) => line.includes('is not a github-discussion URL')))
+  // `platform` reports where the URL is (that is the fact); the problem names what the channel said.
+  assert.equal(verdict.platform, 'x')
+  assert.ok(verdict.problems.some((line) => line.includes('is on x, but the channel names github-discussion')))
 })
 
 test('an instant that does not exist is refused — a typo must not pass silently (R65 adversary)', () => {
@@ -69,7 +70,7 @@ test('an instant that does not exist is refused — a typo must not pass silentl
     assert.equal(verdict.ok, false, `${postedOn} must be refused`)
     assert.equal(verdict.posted_at, null, `${postedOn} must not produce a canonical instant`)
     assert.ok(
-      verdict.problems.some((line) => line.includes('is not an instant that exists')),
+      verdict.problems.some((line) => line.includes('cannot accept')),
       `${postedOn} must be refused for existing, got ${JSON.stringify(verdict.problems)}`,
     )
   }
@@ -90,7 +91,8 @@ test('parseInstant round-trips real instants and normalises offsets', () => {
 test('a bare date fails — it would move the 14-day window by up to a day', () => {
   const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02', now: NOW })
   assert.equal(verdict.ok, false)
-  assert.ok(verdict.problems.some((line) => line.includes('is not an instant that exists')))
+  // Shape, not existence: a date-only string is a real day but not an instant.
+  assert.ok(verdict.problems.some((line) => line.includes('not written as an ISO-8601 instant')))
 })
 
 test('an offset timestamp passes — +01:00 is timezone-qualified (the R64 bug)', () => {
@@ -123,27 +125,49 @@ test('the reference time may be a number of milliseconds', () => {
 
 test('a channel that names no verifiable platform fails instead of passing vacuously', () => {
   for (const channel of ['V2EX · 程序员节点', 'V2EX 分享发现', 'B 站 60–90 秒脚本', '中文社区长文（项目口吻，不露个人身份）', '']) {
-    const verdict = judgePosting({ channel, url: 'https://example.com/p/1', postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+    const verdict = judgePosting({ channel, url: 'https://github.com/deepseek-ai/deepseek-harness/discussions/11813', postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
     assert.equal(verdict.ok, false, `${channel} must not pass silently`)
     assert.ok(verdict.problems.some((line) => line.includes('names no platform')))
   }
 })
 
-test('two platform names are an ambiguity, not a coin flip (both directions refused)', () => {
-  // Before R66 the array order decided: "Discussion on X" + an X URL was refused as github-discussion…
-  const xUrl = judgePosting({ channel: 'Discussion on X', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
-  assert.equal(xUrl.ok, false)
-  assert.equal(xUrl.platform, null)
-  assert.ok(xUrl.problems.some((line) => line.includes('more than one platform')))
-  // …and the same channel with a GitHub URL passed, even though the entry says it was posted on X.
-  const githubUrl = judgePosting({ channel: 'Discussion on X', url: DISCUSSION_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
-  assert.equal(githubUrl.ok, false)
-  assert.ok(githubUrl.problems.some((line) => line.includes('more than one platform')))
-
-  for (const channel of ['X · GitHub Discussions', 'GitHub issue + X thread', 'GitHub Discussions · also on X']) {
-    const verdict = judgePosting({ channel, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
-    assert.equal(verdict.ok, false, `${channel} must be refused as ambiguous`)
+test('a channel may mention another platform to exclude it, as long as the URL is on one it names', () => {
+  /*
+   * R66's first cut refused any channel naming two platforms, which blocked true records: "X thread, not
+   * an issue" and "GitHub Discussions（不是 issue）" are natural ways to say what a post is NOT. An
+   * independent adversary flagged that as a new false-reject class (N-2), so the rule now lets the URL
+   * decide: it must be on exactly one verifiable platform, and the channel must name that platform.
+   */
+  const cases = [
+    ['X thread, not an issue', X_URL, 'x'],
+    ['GitHub Discussions（不是 issue）', DISCUSSION_URL, 'github-discussion'],
+    ['Discussion on X', X_URL, 'x'],
+    ['GitHub Discussions · also on X', DISCUSSION_URL, 'github-discussion'],
+  ] as const
+  for (const [channel, url, platform] of cases) {
+    const verdict = judgePosting({ channel, url, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+    assert.equal(verdict.ok, true, `${channel} + ${url} must be accepted`)
+    assert.equal(verdict.platform, platform)
   }
+})
+
+test('what stays forbidden: a URL on a platform the channel never names, or no platform at all', () => {
+  // The channel names X; the URL is a GitHub discussion → the record is incoherent, not merely verbose.
+  const wrongPlatform = judgePosting({ channel: X_CHANNEL, url: DISCUSSION_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+  assert.equal(wrongPlatform.ok, false)
+  assert.ok(wrongPlatform.problems.some((line) => line.includes('is on github-discussion, but the channel names x')))
+
+  // The channel says nothing this check can verify (V2EX / B 站 / 中文社区) → red, never vacuous green.
+  for (const channel of ['V2EX · 程序员节点', 'B 站 60–90 秒脚本', '', 'Discussion']) {
+    const verdict = judgePosting({ channel, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+    assert.equal(verdict.ok, false, `${channel || '(empty)'} must not pass silently`)
+    assert.ok(verdict.problems.some((line) => line.includes('names no platform') || line.includes('is on x, but the channel names')))
+  }
+
+  // A URL on nothing we recognise is refused regardless of the channel.
+  const unknownUrl = judgePosting({ channel: X_CHANNEL, url: 'https://example.com/p/1', postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+  assert.equal(unknownUrl.ok, false)
+  assert.ok(unknownUrl.problems.some((line) => line.includes('not on a platform')))
 })
 
 test('V2EX is not the platform X', () => {

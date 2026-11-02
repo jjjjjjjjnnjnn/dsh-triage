@@ -302,8 +302,15 @@ if (!existsSync(registryPath)) {
      * script — so all 15 assertions vanished and nothing was recorded. One bad row must fail the checks
      * it belongs to, not the run ("a check that did not run must not read as a pass", inverted).
      */
-    if (entry === null || typeof entry !== 'object') {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
       draftProblems.push('registry.json contains a draft entry that is not an object')
+      continue
+    }
+    if (typeof entry.file !== 'string' || entry.file.length === 0) {
+      // R66 (adversary N-1): `[{}]` used to reach `readFileSync(<drafts dir>)` and throw EISDIR, which
+      // killed all 15 assertions and produced no artifact. A row without a file name is a bad row, not a
+      // fatal error.
+      draftProblems.push('registry.json contains a draft entry without a file name')
       continue
     }
     const name = String(entry.file ?? '')

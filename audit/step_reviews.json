@@ -10051,6 +10051,179 @@
         "outcome": "RED 1/15：域与 channel 不符；还原校验通过",
         "sha256": "6e9d0338f3995fe8f7fa665e48e4cd357e4244f12d6fa8e4a906da270bf72285"
       }
+    },
+    {
+      "id": "R66-S9",
+      "batch": "R66",
+      "step": "**`drafts:[{}]` 不再打死整轮检查** —— R66 第一版只挡了 `null`，而数组与空对象都是 object，空文件名拼到目录上让 `readFileSync` 抛 EISDIR，15 条断言一条不产出（adversary N-1）",
+      "changed": [
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：exit 1 且**产物照常写出**（`b92f3b3d…`），stderr 里没有 EISDIR；断言 9 点名「draft entry without a file name」",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：坏行现在是「一条断言红」而不是「整轮没有产物」——后者才是本仓最忌讳的形状",
+        "adversary": "反例：只挡 `null` 就宣布修好（我第一版）——被拒：`{}` / `[]` 走的是同一条读目录路径"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:00:00.000Z，registry.drafts 追加一个 `{}`）",
+        "artifact": "data/results/listing-2026-11-02T20-00-00.000Z.json",
+        "outcome": "RED 1/15（断言 9 点名「条目没有文件名」）· 脚本没有崩、产物照常落盘",
+        "sha256": "b92f3b3dffc1eb4cd912a70487fb8cbb8cc83b8cec1805dae1d3ae7955c1eb5a"
+      }
+    },
+    {
+      "id": "R66-S10",
+      "batch": "R66",
+      "step": "**形状与存在性分开报** —— 裸日期是「形状不对」，不是「这个时刻不存在」；把两者混在一句话里就是 R64 那条「理由与事实不符」（adversary N-3）",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "tests/unit/posting.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：消息逐字为 `is not written as an ISO-8601 instant with an explicit zone`，并给出可抄的格式",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留，注册表摘要 `3a4798ae…`",
+        "adversary": "反例：用一句话覆盖两种拒因——被拒：`.1234Z` / `24:00` / 小写 `t` `z` 都是真实时刻，却会被说成「不存在」"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:05:00.000Z，posted_on=2026-11-02）",
+        "artifact": "data/results/listing-2026-11-02T20-05-00.000Z.json",
+        "outcome": "RED 1/15：`posted_on is not written as an ISO-8601 instant …`",
+        "sha256": "f050d5e50f28a816c7c293e4a8605bba3c241095cd9f61f39e41679ae5726060"
+      }
+    },
+    {
+      "id": "R66-S11",
+      "batch": "R66",
+      "step": "**不存在的日期必须红（第二轮）** —— 消息同时说明「日期不存在」与「超出支持范围」，不再断言一个可能为假的原因",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-02-30T12:00:00Z` → 红；`parseInstant` 往返校验：`Date.UTC` 把 2/30 挪到 3/2，`getUTCDate()` 不再等于 30",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留，注册表摘要 `5086383f…`",
+        "adversary": "反例：只挡住我上次给的那几种写法——被拒：独立 adversary 扫了 17,920 个组合，7,824 个被接受的值与 `Date.parse` 零分歧"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:10:00.000Z，posted_on=2026-02-30T12:00:00Z）",
+        "artifact": "data/results/listing-2026-11-02T20-10-00.000Z.json",
+        "outcome": "RED 1/15：`names an instant this checker cannot accept …`（修前是绿且零问题）",
+        "sha256": "b70af39fd8c33d8a5edee00558f3256dac06994eeb7b9e77fa400c45d2e3b5e8"
+      }
+    },
+    {
+      "id": "R66-S12",
+      "batch": "R66",
+      "step": "**为了排除而提到另一个平台，必须被接受** —— R66 第一版把「channel 里出现两个平台名」判成歧义，于是 `X thread, not an issue` 这种自然写法录不进去（adversary N-2）",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "tests/unit/posting.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：由 **URL** 决定平台（`matched`），channel 只需点名那个平台；`X thread, not an issue` + X URL → 绿，`platform=x`",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：绿产物保留，注册表摘要 `b1bc812f…`（与终跑不同，证明摘要有效）",
+        "adversary": "反例：认为「更严就等于更安全」——被拒：误拒会把人推去改 channel 措辞而不是改事实，账本反而更容易失真"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:15:00.000Z，channel=\"X thread, not an issue\"）",
+        "artifact": "data/results/listing-2026-11-02T20-15-00.000Z.json",
+        "outcome": "GREEN 15/15：`X thread, not an issue` 被接受",
+        "sha256": "7935a15b3a3df52aa7fc1b5a824df8f8b4f6fe63fe6950f2671ccd7dbbd11095"
+      }
+    },
+    {
+      "id": "R66-S13",
+      "batch": "R66",
+      "step": "**URL 落在 channel 没点名的平台上必须红** —— 这是「不多不少」的另一半：允许提到别的平台，但不允许对不上",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：消息同时说出两侧（URL 在哪、channel 说了什么）并给出改法",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留，注册表摘要 `8cc7e334…`",
+        "adversary": "反例：把「允许多平台」理解成「URL 随便」——被拒：URL 必须命中 channel 点名的集合之一"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:20:00.000Z，channel=GitHub Discussions，URL 仍是 X）",
+        "artifact": "data/results/listing-2026-11-02T20-20-00.000Z.json",
+        "outcome": "RED 1/15：`posted_url is on x, but the channel names github-discussion — one of them must be x`",
+        "sha256": "a845acf9384e80a4a5d21e5993bf78e587f83e9029ab53a98119a285f25452e1"
+      }
+    },
+    {
+      "id": "R66-S14",
+      "batch": "R66",
+      "step": "**回归：`+01:00` 仍然必须过** —— 两轮重写之后，R64 的修复不能被推翻",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-11-02T18:36:00+01:00` → 绿，`posted_at` 归一化为 `2026-11-02T17:36:00.000Z`",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：绿产物保留，注册表摘要 `12632ca8…`",
+        "adversary": "反例：把「严格」当成「只认 Z」——曾被拒过一次（R64），所以这条必须留在回归集里"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:25:00.000Z，posted_on 带 +01:00）",
+        "artifact": "data/results/listing-2026-11-02T20-25-00.000Z.json",
+        "outcome": "GREEN 15/15：`+01:00` 仍然通过",
+        "sha256": "f8da77e9fcc955462be5a65aab007cfbf36bcbecca1710cbd01632af0cf8f239"
+      }
+    },
+    {
+      "id": "R66-S15",
+      "batch": "R66",
+      "step": "**回归：未来时间仍然必须红**",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：参考时间来自 `--stamp`，不使用系统时钟",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留，注册表摘要 `7a028a19…`",
+        "adversary": "反例：把「未来」交给 `Date.parse` 相减而不检查参考时间是否可读——被拒：参考时间读不出时必须报错"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66b-controls.mjs（--stamp 2026-11-02T20:30:00.000Z，posted_on=2026-12-01）",
+        "artifact": "data/results/listing-2026-11-02T20-30-00.000Z.json",
+        "outcome": "RED 1/15：`posted_on is in the future`",
+        "sha256": "ae887625b1254576598564ced71fe1a1493d584730b0a49d3fd85dc679417022"
+      }
+    },
+    {
+      "id": "R66-S16",
+      "batch": "R66",
+      "step": "**第二轮收口：对外文档自洽且 15/15** —— 改完规则与消息之后，真实注册表必须再次全绿",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/check_listing.mjs",
+        "scripts/lib/dist-tags.mjs",
+        "scripts/lib/next-release.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 677（2 条声明）· 19 条证据路径 · 注册表摘要 `42ab4db9…`",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮七条全部 restored=true；`--stamp` / `--tests` 显式",
+        "licence": "PASS：只动仓内检查器与注册表；证据都在本仓 `data/results/`，未引入外部素材或第三方数据",
+        "ssot": "PASS：终跑摘要与七条控制各不相同，说明「当时检查的是哪个状态」可审计",
+        "adversary": "反例：控制全绿就收工——被拒：控制只证明「被构造的那些」，所以还要跑一次真实注册表"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:40:00.000Z --tests 677",
+        "artifact": "data/results/listing-2026-11-02T20-40-00.000Z.json",
+        "outcome": "GREEN 15/15 · 测试数 677 · 注册表摘要 42ab4db9…",
+        "sha256": "3bd581203953c9077f1c25925f6bc48cf6d0de44e20a39b05359f021d7efdb1e"
+      }
     }
   ]
 }
