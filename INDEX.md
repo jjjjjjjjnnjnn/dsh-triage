@@ -1,12 +1,14 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R57 (2026-11-02，采证轮：上游 12 条求助帖逐条判「我们能不能答」——7 条能点名被拒的包 / 1 条能排除声明层 / 3 条只能说「没声明」 / 3 条不是我们的层；报告 `audit/RECON_2026-11-02_upstream-help.md`)｜**下一件事：决定要不要按报告 §6 回帖（HUMAN）；继续盯 D5 窗口（到 `2026-11-15T20:24:37Z`）；`T-821` rebase #65**
+> **Stand**: R58 (2026-11-02，交接轮：**只交接 + 记录计划，不改行为**；下个会话主任务 = 大规模 Question 采证 → 覆盖率 → 写进 README（`T-826`/`T-827`），口径必须先写死)｜**下一件事：读 `docs/HANDOFF.md` §3「R58 交接」，先写 `docs/specs/question-coverage.md`**｜上一轮 R57：12 条求助帖分层采证。
 
 ## 🔍 按需求快速索引
 
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
+| **贡献指南** | `CONTRIBUTING.md` | 贡献流程、工程铁律（纯函数 / SSOT / 零门禁依赖）、本地测试与 PR 规范 |
+| **安全模型** | `docs/SECURITY.md` + `SECURITY.md` | 负责任披露机制、威胁模型、11 项对抗性防护与明确非防御边界 |
 | **定位（R47 重定向）** | `docs/00-vision.md` + `AGENTS.md` | 从「通用检查器」改为「**升级日**」正门：每次 rc 回答「**你这套已装集合**升上去会坏什么」。四条候选（进别人安装路径 / 升级日 / 作者侧 CI / 承认不是产品）中 HUMAN 选 **B**；出口门禁 **D5**（`docs/ROADMAP.md` §2） |
 | 市场基线（R47 采证 · R52 复测） | `scripts/record_market_baseline.mjs` → `data/results/market-baseline-2026-10-31T06-40-00.000Z.json` | npm 下载分品类 + **按天形状**（`steady` / `single-day-burst` / `no-record` / `unreadable`）+ 上游 Discussions 痛点聚类；快照进 `data/fixtures/`，`--fixtures` 可离线复算（R52 复算物 `data/results/market-baseline-2026-10-31T07-10-00.000Z.json`）。实测：诊断 **3,074** / 市场 513,534 / 装饰 552,956；`dsh-triage` 634 次全部落在一天 → `burst-not-demand`（D5 的下载项**未观测到需求**）；854 条讨论里 405 条故障（47.4%）、256 条零回复 |
 | **D5 下载形状判定（R52）** | `scripts/lib/download-shape.mjs` + `tests/unit/download-shape.test.ts` + `tests/governance/market-baseline.test.ts` | `classifyDownloadShape()` / `judgeWeeklyDemand()`：`steady`（≥2 天有下载且单日 ≤80%）才可能算需求；`single-day-burst` / `no-record` / `no-downloads` 记「未观测到需求」，`unreadable` 记 `unmeasurable`。口径 HUMAN 批准（`audit/SIGNOFF.md` R52），残留盲区 `BS-48` |

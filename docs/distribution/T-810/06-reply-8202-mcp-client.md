@@ -1,16 +1,15 @@
-<!-- channel: reply in upstream discussion #8202 (English) · draft -->
-<!-- 状态: draft（未发布）。贴之前确认：① 回的是 #8202；② 版本号与区间仍与 registry 一致；③ 只贴下面正文。 -->
+<!-- channel: reply in upstream discussion #8202 (Chinese) · draft -->
+<!-- 状态: draft（未发布）。回复场景：针对 #8202 点名 @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 无法在 0.2.x 下加载的问题进行技术归因与解决建议。 -->
 
-# 草稿 06 · 回复 #8202（`dsh-mcp-client@0.1.0-rc.7` 与 0.2.x 不兼容）
+# 草稿 06 · 回复 #8202（`@deepseek-ai/dsh-mcp-client@0.1.0-rc.7` 与 0.2.x 准入约束分析）
 
-> **为什么这条最干净**：帖子自己点名了版本，我们的判定就按它点名的版本算（不是 latest），
-> 区间是包自己声明的，与对方的配置无关。
+> **归因分析**：帖子明确指定了具体版本号（`0.1.0-rc.7`），因此无需推测。根据该版本已发布的元数据，其声明的 peerDependencies 严格锁定在 0.1 阶段，与 0.2.x 存在确定的版本冲突。
 
 ---
 
-Read the thread; the denial is in that build's own peers, not in your configuration.
+你好，针对帖子里提到的加载失败问题，其根本原因出在该构建版本自身声明的 peerDependencies 上，并非你的本地配置有误。
 
-`@deepseek-ai/dsh-mcp-client@0.1.0-rc.7` declares its peers on the **0.1 line**:
+通过分析 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.7` 发布的 manifest，它声明了 6 项针对 0.1 版本的依赖约束：
 
 ```text
 @deepseek-ai/dsh-llm@^0.1.0-rc.7          @deepseek-ai/dsh-tools@^0.1.0-rc.7
@@ -18,19 +17,24 @@ Read the thread; the denial is in that build's own peers, not in your configurat
 @deepseek-ai/dsh-invariants@^0.1.0-rc.7   @deepseek-ai/dsh-subprocess@^0.1.0-rc.7
 ```
 
-`^0.1.0-rc.7` cannot be satisfied by any `0.2.x` build, so admission drops the row before it can register. No flag widens a range: the only ways out are (a) a build whose peers admit `0.2.x`, or (b) an explicit pair exemption if you accept the risk:
+在语义化版本（SemVer）规则中，`^0.1.0-rc.7` 无法匹配任何 `0.2.x` 运行时版本。DSH 的 Loader 在启动准入（admission）阶段匹配失败，因而直接跳过了该行配置。
+
+DSH 当前并没有提供动态放宽版本约束的配置项，目前可行的解决路径主要有两条：
+
+1. **安装适配 0.2.x 的新构建版本**：检查官方或社区是否已发布依赖区间兼容 `0.2.x` 的新版本，指定具体版本号进行安装；
+2. **显式配置版本豁免（若接受潜在兼容风险）**：
+   在明确了解该版本可能存在 API 变动风险的前提下，可向 Profile 写入针对该版本对的显式放行规则：
+   ```console
+   $ dsh plugin --profile web allow-version @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 --dsh-version 0.2.1-rc.5 --accept-risk
+   ```
+
+若想在本地终端确认当前环境各插件的具体准入判定：
 
 ```console
-$ dsh plugin --profile web allow-version @deepseek-ai/dsh-mcp-client@0.1.0-rc.7 --dsh-version 0.2.1-rc.5 --accept-risk
+$ dsh-triage check @deepseek-ai/dsh-mcp-client@0.1.0-rc.7   # 预检指定版本在当前环境下的准入状态
+$ dsh-triage audit                                          # 全量扫描当前已安装插件的准入结果与拦截原因
 ```
 
-To see it on **your** profile instead of on a registry fact:
+**边界说明**：以上结论**判的是 npm 上已发布的版本，不是你那台机器**；若本地安装的代码经过修改，建议以本地 `package.json` 中的实际声明为准。此外，显式豁免仅绕过声明层的准入拦截，不代表运行期代码完全无故障。
 
-```console
-$ dsh-triage audit                              # one line per row, with what was denied and why
-$ dsh-triage check @deepseek-ai/dsh-mcp-client@0.1.0-rc.7
-```
-
-Two boundaries worth stating: this judges the **published package at that exact version**, not your machine — if your installed copy differs, compare its peers against the list above; and an exemption bypasses the declaration only, it does not make the plugin work.
-
-Evidence artifact (machine-readable, with sha256 in the repo): `data/results/discussion-triage-2026-11-02T12-10-00-000Z.json`
+完整评测证据产物（包含 SHA-256 签名）：`data/results/discussion-triage-2026-11-02T12-10-00-000Z.json`

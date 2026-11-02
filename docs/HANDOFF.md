@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R57 (2026-11-02，采证轮：把上游 12 条求助帖逐条判「我们能不能答」——`names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3`；报告 `audit/RECON_2026-11-02_upstream-help.md`)｜**下一件事：** ① 是否按报告 §6 回帖（HUMAN 决定，公开动作）；② 继续盯 D5 窗口（到 `2026-11-15T20:24:37Z`）；③ `T-821` rebase #65｜上一轮 R56：文案重写 + 发帖 + D5 开表。
+> **Stand**: R58 (2026-11-02，交接轮：**只交接 + 记录计划 + 归档，不改行为**。下个会话主任务 = 大规模 Question 采证 → 覆盖率 → README（`T-826`/`T-827`），口径必须先写死；三条回帖经 HUMAN 决定不发，草稿留作样例)｜**下一件事：`docs/HANDOFF.md` §3 的「R58 交接」**｜上一轮 R57：上游求助帖分层采证（12 条）。
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -51,7 +51,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15/R16/R17）** · **D2 ✅（R18 首判 / R19 复算 / R29 新口径两批 12/12）** · **M3 稳定性分布 ✅（R31，36 次观测）** · **M4 形态 A ✅（`serve` v1）** · **M3 真实组合复制 ✅（T-304，R22）** · **M3 不可判等待收敛 ✅（`ADR-0008` E，R26）** · **M3 两阶段取样 ✅（T-312，R28）** · **M4-a ✅ 收口（R31 真机注册 / R33 可见性 + 同源结论）**；`namespace-diff`（T-303）仍缺（需 T-202a，`ADR-0009` 已签 A） · **M4-b ✅ 三件齐（R34 徽章 + 索引源；R36 `compat_verdict`）+ 索引源已托管（R38）** · **M5-a 本地半边 ✅（R41）**，上传/聚合待 `ADR-0012` · **M5-b ✅ 双边（R42 `upgrade --to`；R44 `improved` 真机 + registry 成功分支）**，`improved` 只有降级几何（`BS-42`） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**public**（R38 由 HUMAN 决定），`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **548 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **311 份 SSOT 产物** · **331 步台账** · **51 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** |
+| 规模 | **548 测试** · **9 门禁** · 6 角色卡 · 3+1 模板 · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **312 份 SSOT 产物** · **332 步台账** · **51 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** |
 | 证据（R53） | `data/results/listing-2026-11-01T10-10-00.000Z.json`（`237e80c0…`，**12/12**，version 0.3.1 / tests 529）· **三条红产物各自保留**：`listing-…T09-00-00`（`e11d9403…`，`submissions/README.md` 把 0.3.0 引到 0.2.0 的产物）· `listing-…T09-50-00`（`e66b8c5e…`，**我自己新写的那句话**把旧版本号写回正文）· `release-preflight-2026-11-01T10-20-00.000Z.json`（`30a998d9…`，`not-logged-in` 真 `E401`：version/workspace 两项绿）· `market-channels-2026-11-01T09-40-00.000Z.json`（`f992a029…`，`live 3` + **`listed 1`**：dsh.so 端点 200 / L5 / low，`#65 = DIRTY`）· **真机三跑**：`client-serve-2026-11-01T11-00-00`（`a33c8082…`，11/2）· `…T11-20-00`（`504b61b8…`，16/1，含 `break-after-install` 与真鼠标 `clipboard-copy`）· `…T11-40-00`（`faa502bf…`，12/1，`english-screen`） |
 | 证据（R52） | `data/results/market-baseline-2026-10-31T06-40-00.000Z.json`（`fce85c32…`，`failures: []`：诊断 3,074 / 市场 513,534 / 装饰 552,956；形状 29 `steady` + 1 `single-day-burst` + 1 `no-record`；`d5.verdict = burst-not-demand`、`counts_as_demand = false`；854 条讨论 / 405 故障 / 256 零回复）· `market-baseline-2026-10-31T07-10-00.000Z.json`（`62080349…`，离线复算，归一化后逐字节相同）· **两条红产物各自保留**：`…T05-30-00`（`0a8cb7dd…`，npm 429 → 11 个包 `unreadable`）· `…T06-20-00`（`2403a632…`，GitHub 403 → `threads: 0`，促成「读不到就 exit 2、零产物」）· `upgrade-card-2026-10-31T09-00-00.000Z.json`（`809ba264…`，target `0.2.1-rc.5`，14/14，两次渲染同 sha256）· `listing-2026-10-31T10-40-00.000Z.json`（`9d5b8398…`，**12/12**，含 `drafts-cite-real-artifacts`）· `listing-2026-10-31T10-00-00.000Z.json`（`bcd265ba…`，**保留的红**：README「500 tests」已僵 + 我自己的草稿写了禁用话术）· `listing-2026-10-31T10-50-00.000Z.json`（`9843a7ca…`，**定向负对照**：登记了正文没提到的产物 → 红）· 草稿 `docs/distribution/T-810/`（5 篇 + `registry.json`，全部 `status: draft`，**一篇都没发**） |
 | 证据（R51，含模拟用户测试与「会坏」屏） | `data/results/client-serve-2026-10-30T18-00-00.000Z.json` （**10/10**：bundle / install / boot / graph / client 200 / mount / visible / **summary-visible** / **same-source** / cleanup） · **模拟用户测试三跑**：`…T18-30-00`（11/11 基线，屏幕原文第一次被取回，925ms）、`…T19-00-00`（F1–F3 修后 11/11）、`…T19-30-00`（F4 修后 11/11） · **「会坏」屏**：`…T20-00-00`（`install: failed`——上游在安装阶段就拒绝声明不含当前 runtime 的 bundle，红产物保留）、`…T20-30-00`（14/14，`会坏 1`，抓到 F7/F8）、`…T20-50-00`（14/14 收口：`会坏 1` / 1 个复制按钮 / `same-source` 220·193·1·184） · 夹具 `tests/fixtures/client/breaking-plugin`（`engines.dsh: ">=9.0.0"`） · 报告 `audit/USER-TEST_2026-10-30_R51.md`（协议 / 结果 / F1–F8 / 屏幕原文 / 边界） · 单测 518 |
@@ -98,6 +98,50 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R58 交接（2026-11-02，最后一个动作就是写这段）
+
+**交接时的真实状态**：**548 测试 / 9 门 ALL GREEN / `--mutate` 9/9 / `check_listing` 13/13（8 篇草稿）**，
+工作区干净，`main` = `origin/main`；0.3.1 四包在 npm 上（`latest=0.3.1`）；**D5 窗口计时中（到 `2026-11-15T20:24:37Z`）**。
+
+**这一轮（R57）交付了什么**：把 12 条上游求助帖分层判定 + 对点到包名的帖子真算准入 →
+`names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3`；报告 `audit/RECON_2026-11-02_upstream-help.md`；
+另写了三条回帖草稿（`06/07/08`），**HUMAN 判断后决定不发**（对应帖子别人已经答过），草稿保留作样例、不再进待发队列。
+
+### 下个会话的主任务：**大规模 Question 采证 → 覆盖率 → 写进 README**
+
+**目标（一句话）**：在 Discussions 的 Q&A（+ General 里的故障帖）**大样本**上统计「**我们这套判断层能覆盖多少**」，
+把结果写进 README，且**分母、区间、分类器误差都写清楚**。
+
+**开工前必须先定口径（照 D5 的做法：先写死再看数据）**，落 `docs/specs/question-coverage.md`：
+
+| 项 | 必须写死的内容 | 为什么 |
+|---|---|---|
+| 样本定义 | 分类（`Q&A`？`General`？两者？）、时间窗、抓取方式（GraphQL 分页、每页 100）、**总数 N 与抓取到的 M** | 没有分母的百分比就是口号 |
+| 「能覆盖」的三档 | `names-a-denial`（能点名被拒的包）/ `rules-out-declaration`（能排除声明层）/ `declares-nothing`（只能说明没声明） | 三者价值不同，混成一个「覆盖率」会夸大 |
+| 不可读 | 读不到 → 记 `unreadable`，**不进分母** | 读不到 ≠ 没有 |
+| 区间 | 百分比必须带 **Wilson 95%**（仓库已有先例） | 单点估计会被当成承诺 |
+| 分类器误差 | **人工抽检 ≥20 条**，记录一致率；错的样本要单独列出 | 分类器只读文本，R57 里 `#11421` 就判错过（运行期被读成组合问题） |
+| 外推边界 | 只对**样本**成立；README 里禁止写「全网 / 所有问题」 | `BS-43` 的教训 |
+
+**执行步骤**：
+1. 写 `docs/specs/question-coverage.md`（口径，需 HUMAN 签字——同 D5 的规矩）；
+2. `scripts/record_question_coverage.mjs`：GraphQL 分页抓 → 原始快照进 `data/fixtures/discussions/` → 复用 `scripts/lib/discussion-triage.mjs` 分类 →
+   对能判的帖子复用 R57 的 `probePackage`（**帖子点名版本就按点名版本**）→ 产物 `data/results/question-coverage-<stamp>.json`；
+   **403/429 一律 exit 2、零产物**（R52 的教训：读不到写成 0 会被读成「没人有问题」）；
+3. 人工抽检 20 条并记 `manual_review.agree/total` + 错例清单；
+4. README 加一节「这些问题里，我们这套能覆盖多少」：一句话 + 分母 + Wilson 区间 + 三档拆分 + 边界；
+5. `check_listing` 加一条断言：README 里的百分比必须与产物里的数字**逐项相同**（改数不重跑即红）。
+
+**验收**：产物带 `produced_by` / `generated_at` / `.sha256`；README 的每个数字都能指回产物；人工抽检一致率写在产物与 README 里；`--fixtures` 离线复算 rows/counts 逐项相同。
+
+**四条不许踩的坑（R57 新增，直接搬过来）**：
+1. **「不是 admitted」不等于「denies」**：`evaluateAdmission.status` 四态（`admitted / denied / unconstrained / indeterminate`），把后两者写成 denies 会造出「应用拒自己」；
+2. **探针要用帖子里点名的版本**（`pkg@ver`），否则 latest 会换一个问题来答；
+3. **裸名可能是另一个包**：`dsh-llm` ≠ `@deepseek-ai/dsh-llm`，同帖出现作用域名时裸名一律丢弃；
+4. **分类器只读文本**：运行期现象常被读成组合问题——所以**抽检**不是可选项。
+
+**顺手可做（不阻塞主任务）**：`T-821` rebase #65（还是 `DIRTY`）；D5 每日重跑一次读数。
 
 ## R57 交接（2026-11-02，最后一个动作就是写这段）
 

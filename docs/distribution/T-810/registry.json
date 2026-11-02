@@ -59,7 +59,7 @@
     },
     {
       "file": "06-reply-8202-mcp-client.md",
-      "channel": "回复 upstream #8202（英文）：按帖内点名的版本判出 denies",
+      "channel": "回复 upstream #8202（中文）：按帖内点名的版本判出 denies 与 peerDependencies 约束",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,
@@ -69,7 +69,7 @@
     },
     {
       "file": "07-reply-10849-dist-tag.md",
-      "channel": "回复 upstream #10849（英文）：问题在 dist-tag，不在区间",
+      "channel": "回复 upstream #10849（中文）：问题在 dist-tag 失步，不在使用者配置区间",
       "status": "draft",
       "posted_url": null,
       "posted_on": null,

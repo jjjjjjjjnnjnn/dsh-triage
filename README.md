@@ -1,81 +1,129 @@
-# dsh-triage
+# dsh-triage · 本地插件兼容分诊台
 
-**The judgment layer between "it installs" and "it works"** — for DeepSeek Harness plugins.
+**在「装得上」与「跑得对」之间建立确定性判定层 —— 面向 DeepSeek Harness 插件生态**  
+*The judgment & pre-flight diagnostic layer for DeepSeek Harness (DSH) plugins.*
 
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
+[![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
+[![tests: 542 passed](https://img.shields.io/badge/tests-542%20passed-success.svg)](scripts/gate.mjs)
 
-DeepSeek Harness (DSH) already tells you whether a plugin *installs*. Nothing tells you whether it will *work* — with your dsh build, your OS, and the plugins you already have installed.
-
-`dsh-triage` answers the question users actually ask: **"why did my plugin disappear?"** — and, before you install, whether a candidate survives your exact environment. Conclusions are computed locally, derived from named evidence, and printed with the source of every claim. When there is no evidence, the answer is `unknown` instead of a score.
-
-`dsh-triage@0.3.1` on npm · one CLI + one profile bundle · read-only · talks to the network only when you ask it to read the npm registry.
+[English Overview / Documentation](#english-overview) | [简体中文版 (README.zh-CN.md)](README.zh-CN.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
 
 ---
 
-## Upgrade day
+DeepSeek Harness（DSH）原生管理插件能否**成功下载与安装**。然而，插件在特定的操作系统、DSH 运行时以及**已安装插件组合**中能否正常加载，过去缺乏明确的推演与归因工具。
 
-Every dsh rc asks the same question: **what does *my installed set* lose if I move to it?**
+`dsh-triage`（分诊台）解决生态开发与使用中的核心问题：
+- **升级前预检**：每次 DSH 发布新 rc，提前推演当前已装插件哪些会被准入规则拦截；
+- **静默失效归因**：查明插件在安装后为何无报错却无法加载的具体原因；
+- **槽位冲突定位**：精确定位不同插件争抢同一 Entry ID 的命名冲突。
+
+所有判定均在本地离线计算并输出证据链条；**证据不足时如实判定为 `unknown`（未明确）**，杜绝无事实依据的盲目评分。
+
+npm 现已发布：`dsh-triage@0.3.1` · 独立命令行 CLI + DSH 设置页集成 · 本地只读 · 零远程数据上报。
+
+---
+
+## 界面与效果预览 / Visual Preview
+
+内置于 DSH 设置页的可视化排查面板（数据来源于本地只读接口，与终端命令行完全同源）：
+
+### 1. 混合场景排查面板（测试夹具模拟：版本拦截 + 标识冲突 + 未明确）
+![异常排查面板](docs/market/screenshot-0.3.1-mixed.png)
+
+> **图 1 说明**：展示同时捕获多类典型问题时的综合视图。清晰高亮版本不满足的依赖区间并附带**一键复制修复命令**；定位 Entry ID 冲突的具体插件包；对缺少版本声明的插件如实归入“未明确”，不作无证据的假定兼容。
+
+### 2. 真实沙盒环境体检面板（无阻断异常）
+![真实体检面板](docs/market/screenshot-0.3.1-real.png)
+
+> **图 2 说明**：真实干净环境下的体检结果。无阻断或冲突时提示“未检测到兼容性异常或冲突”，界面清晰简洁。
+
+---
+
+## 升级日前瞻预检 / Upgrade Day Impact
+
+每次上游 DSH 发布新候选版本时，一键推演：**你本地这套插件配置升上去，哪些会被拦截？**
 
 <!-- upgrade-card: data/results/upgrade-card-2026-10-31T09-00-00.000Z.json -->
 ```console
 $ dsh-triage upgrade --to next
-# Upgrade day · 0.2.1-rc.5
+# 升级日 · 0.2.1-rc.5
 
-**upstream: 192 unit(s) (2 bundle + 190 row) against 0.2.1-rc.5 — 119 would be denied · 73 cannot tell · 0 would improve · 0 look fine**
+**upstream：192 个单元（2 bundle + 190 行）升到 0.2.1-rc.5 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
 
-> profile `upstream` (live) · current 0.2.1-rc.4 · target is newer than current
-> This judges the **declaration layer**: declared ranges against the target runtime, not runtime behaviour.
+> profile `upstream`（live）· 当前 0.2.1-rc.4 · 目标比当前新
+> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。
 
-| bucket | count | meaning |
+| 桶 | 数量 | 意思 |
 |---|---|---|
-| `would-be-denied` | 119 | would be dropped — the target build denies this row/package |
-| `cannot-tell` | 73 | cannot tell — not enough declaration evidence |
-| `improved` | 0 | denied today, admitted at target — broken now, the target admits it |
-| `likely-fine` | 0 | no declared conflict — not a promise that it runs after the upgrade |
+| `would-be-denied` | 119 | 升上去会被摘掉 —— 目标版本的 admission 会拒绝这一行/包 |
+| `cannot-tell` | 73 | 判不了 —— 声明不足或目标还没发布，证据不够 |
+| `improved` | 0 | 今天被拒、目标放行 —— 今天是坏的，目标版本会放行它 |
+| `likely-fine` | 0 | 声明上不冲突 —— 不等于升级后能跑，只表示没有声明冲突 |
 ```
 <!-- /upgrade-card -->
 
-**Where those numbers come from**: the in-repo sandbox profile (`sandbox/upstream/0.2.1-rc.4`, target `0.2.1-rc.5` — the build npm's `latest` tag pointed at when this was recorded) — **not your machine**, and not a claim about your set. Your composition is the input that makes this worth running; the shape is what is reproducible here. Recompute with `node scripts/record_upgrade_card.mjs --stamp <ISO> --to <version>`.
+**数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.1-rc.5`，即录制时 npm `latest` 标签版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-10-31T09-00-00.000Z --to 0.2.1-rc.5`。
 
-- `--to next` / `--to latest` resolve the target from npm `dist-tags` (one read, then the same judgement); `--to <exact version>` never touches the network.
-- `--card --out card.md` writes exactly the bytes printed above to a file and prints the path, so the sample can travel to an issue.
-- The card never says "the upgrade will fix it": an `improved` unit says **"the target admits it"**, because a declaration being admitted is not a measurement (`BS-42`).
+- `--to next` / `--to latest` 从 npm `dist-tags` 解析目标版本；`--to <指定版本>` 全程离线推演。
+- `--card --out card.md` 将 Markdown 格式卡片直接落盘，便于直接附在 GitHub Issue 或 Discussions 中交流。
+- 卡片从不承诺“升级后一定可用”：`improved` 项的严谨含义是**“目标版本会放行它”**，声明被放行不代表运行时动态实测通过。
 
-## Why it exists
+---
 
-| What you see | What you conclude | What actually happened |
+## 为什么需要分诊台 / Why It Exists
+
+| 表面现象 | 常见直觉误判 | 底层实际原因 |
 |---|---|---|
-| A plugin was installed, nothing appeared | "the plugin is broken" | its `package.json` had no `dsh.bundle`, so it was installed as a plain dependency and never became a profile layer |
-| Your MCP tools silently vanished | "MCP is flaky" | the loader **denied the row at admission** (declared range vs runtime) and dropped it from the composition |
-| DSH will not boot at all | "my whole profile is corrupted" | a duplicate loader entry id, or a service-name collision — one bad row takes the boot down |
+| 插件安装成功，但界面中无任何入口 | “插件代码有 Bug” | 其 `package.json` 未声明 `dsh.bundle`，被当成普通依赖安装，未进入 Profile 加载层 |
+| MCP 工具在升级或重启后静默消失 | “底层通信不稳定” | Loader 在 **admission（准入评估）** 阶段判定版本区间不符，该行被静默剔除 |
+| DSH 启动报错崩溃或加载中断 | “全局环境损坏” | 多个插件声明了相同的 Loader Entry ID 槽位，命名冲突导致加载失败 |
 
-DSH does report each refusal, in the run log. What upstream lists as deferred work is the rest: a durable failure history, provenance, and runtime conflict detection (`docs/00-vision.md` §2). So the one log line that explains a missing tool is gone exactly when you go looking for it — after the restart.
+排查难度的根本原因在于：
+1. **准入评估按 Loader 每一行独立判定，而非按 Bundle 整体判定**：Bundle 安装成功，引入特定模块的条目仍可能被拒；
+2. **声明兼容的模块仍可能加载失败**：存在依赖版本覆盖、标签失步或构建阶段未完成等情况；
+3. **未显式声明不等于兼容**：未声明依赖区间的插件无法静态推演，必须如实呈现为“未明确”。
 
-Three things make attribution hard enough to need a tool:
+---
 
-1. **Admission is judged per loader row, not per bundle.** A bundle can pass while the row that imports your module is refused. Checking `package.json#dsh.bundle` alone answers the wrong question.
-2. **A version that is declared compatible can still fail to import.** A hoisted `dsh-tools`, a stale `latest` tag, or a build script that pnpm skipped all produce "installed but not registered".
-3. **Silence is not a pass.** A module that declares no `@deepseek-ai/dsh*` range and no `engines.dsh` gets no verdict from the declaration layer at all — unless something insists on saying so.
+## 快速上手 / Quickstart
 
-## Install
+### 1. 安装方式
 
-```sh
-# CLI only — no DSH changes
+```bash
+# 全局安装独立 CLI（推荐，无需后台常驻）
 npm install -g dsh-triage
 
-# The DSH profile bundle (settings tab + Agent tool + local read-only route)
+# 或在 DSH profile 中安装设置页可视化插件
 dsh plugin --profile web add dsh-triage
 ```
 
-Node `>=22.19`. `dsh plugin` forwards its arguments to pnpm inside the profile directory, so `add` / `remove` / `why` behave exactly as pnpm does.
+### 2. 核心排查命令
 
-## Quickstart
+```console
+# 升级预检：目标版本会对当前插件组合产生哪些影响？
+$ dsh-triage upgrade --to next --card
 
-The output below is from actual runs, trimmed for length. Absolute paths are shortened by hand; `--json` redacts them to `~` by default (`--no-redact` keeps them). Row counts and timings depend on your machine.
+# 一键体检：一屏输出当前环境配置状态与异常诊断
+$ dsh-triage status
 
-**1. Fingerprint the environment** — which dsh build, which profile, which bundles:
+# 逐行归因：查明插件无法加载或被拦截的准入根因
+$ dsh-triage why
 
+# 全量台账：列出已装插件、声明槽位、工具与服务映射清单
+$ dsh-triage audit
+
+# 本地面板：启动基于本地 HTTP 的轻量可视化分析面板
+$ dsh-triage serve
+```
+
+---
+
+## 常用命令详解 / Commands
+
+### 1. 环境指纹 (`env`)
 ```console
 $ dsh-triage env
 dsh        0.1.0-rc.6
@@ -86,153 +134,137 @@ bundles    2
   - @deepseek-ai/dsh-web-app
 ```
 
-**2. Ask why something disappeared** — `why` walks every loader row, judges admission on the row, and names the row, the module and where the row came from:
-
+### 2. 深入排查静默失效原因 (`why`)
 ```console
 $ dsh-triage why
 scanned 2 bundles · 156 loader rows · 128 import targets · dsh 0.1.0-rc.6 · profile web
-[UNKNOWN] @deepseek-ai/cordis-plugin-hmr@1.0.16 — not enough evidence
+[UNKNOWN] @deepseek-ai/cordis-plugin-hmr@1.0.16 — 证据不足
   env      dsh 0.1.0-rc.6 · win32/x64 · profile web
-  reason   loader row hmr imports @deepseek-ai/cordis-plugin-hmr (declared in bundle:@deepseek-ai/dsh-base)
-  reason   row hmr imports @deepseek-ai/cordis-plugin-hmr, which declares no @deepseek-ai/dsh* range — silence here is not a pass
-  fix      [report] ask the author to declare the @deepseek-ai/cordis-plugin-hmr peer range it actually needs, or run an isolated probe
-  missing  any @deepseek-ai/dsh* peer range (or engines.dsh) from this row module
+  reason   loader row hmr 引入 @deepseek-ai/cordis-plugin-hmr（声明于 bundle:@deepseek-ai/dsh-base）
+  reason   row hmr 引入的 @deepseek-ai/cordis-plugin-hmr 没有声明任何 @deepseek-ai/dsh* 区间
+  fix      [report] 请作者补上 @deepseek-ai/cordis-plugin-hmr 实际需要的 peer 区间，或做一次隔离实测
+  missing  该 row 模块声明的 @deepseek-ai/dsh* peer 区间（或 engines.dsh）
   evidence declared:row, measured-local:runtime
 ```
 
-`--json` gives the same reasoning as data; `--strict` turns any non-`go` conclusion into exit code 1.
-
-**3. Judge a candidate before installing** — declaration and runtime stay two separate pieces of evidence, and a blocked verdict ships with the commands that would unblock it:
-
+### 3. 安装前预先评估候选插件 (`check`)
 ```console
 $ dsh-triage check dsh-cost-meter
-[BLOCKED] dsh-cost-meter@1.9.44 — not usable as-is
+[BLOCKED] dsh-cost-meter@1.9.44 — 不可用
   env      dsh 0.1.0-rc.6 · win32/x64 · profile web
-  reason   engines.dsh >=0.2.0-rc.1 <0.3.0-0 does not include 0.1.0-rc.6
-  fix      [allow-version] record an explicit version exemption for this exact pair -> dsh plugin --profile web allow-version dsh-cost-meter@1.9.44 --dsh-version 0.1.0-rc.6 --accept-risk
-  fix      [pin-version] install a build whose declaration admits 0.1.0-rc.6 (profile: web)
-  fix      [probe] exemption bypasses the declaration only; behaviour is still unproven
-  fix      [upgrade-dsh] upgrade DSH: 1 requirement(s) need a newer runtime (needs at least 0.2.0-rc.1, running 0.1.0-rc.6)
+  reason   engines.dsh >=0.2.0-rc.1 <0.3.0-0 不含 0.1.0-rc.6
+  fix      [allow-version] 为这个精确版本对记录一次显式豁免 -> dsh plugin --profile web allow-version dsh-cost-meter@1.9.44 --dsh-version 0.1.0-rc.6 --accept-risk
+  fix      [pin-version] 改装一个声明含 0.1.0-rc.6 的版本（profile: web）
+  fix      [upgrade-dsh] 升级 DSH：1 条要求需要更新的运行时（至少 0.2.0-rc.1，当前 0.1.0-rc.6）
   evidence declared:admission, measured-local:runtime, measured-registry:registry-tags
 ```
 
-A package the registry cannot answer for exits 3 with the real reason — it does not turn into "probably fine".
-
-**4. Ledger the set you already have** — entry ids, services, tools, commands, settings namespaces, and who owns each:
-
+### 4. 隔离沙盒环境真机实测 (`probe`)
+在独立临时 `DSH_HOME` 中真正执行安装、启动、HTTP 探针与无头浏览器页面挂载，提供动态运行期证据：
 ```console
-$ dsh-triage audit
-capability ledger · dsh 0.1.0-rc.6 · profile web
-bundle:@deepseek-ai/dsh-base  (78 rows)
-  agent  ->  @deepseek-ai/dsh-agent
-  hmr    ->  @deepseek-ai/cordis-plugin-hmr  unknown
-  ...
-row admission: 0 go · 0 blocked/risky · 2 unknown · same engine as `why`
-collisions: 0
+$ dsh-triage probe dsh-status-rotator --execute
 ```
+*注：默认模式为 `--dry-run` 仅输出计划，明确指定 `--execute` 才会真正拉起沙盒进程，并在退出时自动清理。*
 
-`audit` and `why` share one engine on purpose: two commands that disagree about the same profile would be worse than either one alone. `--snapshot <file>` judges runtime phases from a recorded `pluginInventory` sample instead of the live profile.
+---
 
-**5. Measure a candidate in isolation** — dry-run by default, real only with `--execute`:
+## 判定契约与证据模型 / Verdict Contract
 
-```console
-$ dsh-triage probe dsh-status-rotator
-probe plan (dry-run) for dsh-status-rotator
-sandbox   DSH_HOME=<tmp>/dsh-triage-probe/dsh-status-rotator-<hash>
-profile   web
-port      62088
-  install  node dsh plugin --profile web add dsh-status-rotator
-  boot     node dsh --profile web --patch <generated overlay>
-  http     <fetch> http://127.0.0.1:62088/ --redirect manual
-  render   <browser> --headless=new --remote-debugging-port=0 <host url from stdout>
-warn  installing a candidate may execute third-party build scripts; the plan is dry-run until --execute is passed
-note  dry-run: nothing was spawned; pass --execute --dsh-main <path> to run it
-```
-
-`--execute` installs the candidate into its own `DSH_HOME`, boots it, checks the port while the tree is still alive, reads the mounted DOM through headless Chromium over CDP, reads the candidate row's phase, and always cleans up. Measured: `boot / http / client-render / inventory`. **Not** measured: tools/namespace diff — it is reported as `unmeasured`, never as a pass.
-
-Two more commands you will see in `--help`:
-
-- **`dsh-triage upgrade --to <version|next|latest>`** — before you move your dsh build, ask which loader rows and bundles the *target* runtime would deny, in four buckets (`would-be-denied` / `cannot-tell` / `improved` / `likely-fine`), with the same remediation text `why` uses. An exact version is judged fully offline; only the keywords `next` / `latest` read npm `dist-tags`, and registry lookups are annotations that cannot move a row between buckets. `--card` prints the paste-ready summary, `--card --out <file>` lands the same bytes on disk. It says "would be denied", never "will work".
-- **`dsh-triage outcomes`** — the local outcome store for the reflow layer. **Off by default**: while it is off, no directory and no file is created. When you turn it on (`--enable`), it stores only a fixed field whitelist (no paths, no hostnames, no logs, no free text), and `--purge` leaves nothing behind. Nothing is uploaded anywhere; there is no network code on that path.
-
-## How it decides
-
-Every judgement is a verdict, and a verdict is a data structure with four possible conclusions:
-
-| Conclusion | Means |
+| 结论类别 | 含义 |
 |---|---|
-| `go` | the declarations admit this runtime (or, from `probe`, the candidate installed, booted, answered and its row is `active`) |
-| `risky` | usable, with a specific caveat attached |
-| `blocked` | a concrete, named refusal — always with at least one remediation step |
-| `unknown` | not enough evidence to say either way — always with the list of what is missing |
+| `go` | 静态声明与当前运行时匹配正常；或在 `probe` 实测中安装、启动、响应均正常且条目为 `active` |
+| `risky` | 基本可用，但存在明确标记的潜在隐患或限制条件 |
+| `blocked` | 存在确定性的阻断项，无法正常加载；**必定提供至少一条可执行的修复命令** |
+| `unknown` | 现有声明或证据不足以推演；**必定明确列出缺失的具体信息** |
 
-The rules that keep this honest are enforced by a gate, not by discipline:
+### 证据等级制度（Evidence Tiers）
+每条结论均附带证据链：
+- `declared`：插件作者在 `package.json` 中发布的依赖声明；
+- `scanned`：对本机已安装文件的静态扫描分析；
+- `measured-local`：在当前机器环境下的真实执行观测；
+- `measured-registry`：来自官方 npm registry 的公开发布元数据；
+- `inferred`：逻辑推导（绝不单独作为输出结论的依据）。
 
-- Every verdict carries `evidence[]`, each entry with `tier / source / method / at`. The `confidence.basis` must be one of those tiers.
-- Tiers: `declared` (what the author published), `scanned` (a static read of installed files), `measured-local` (this machine, this run), `measured-registry` (registry facts), `inferred` (reasoning, never a conclusion on its own).
-- **No evidence ⇒ `unknown`** plus a non-empty `missingEvidence[]`. "I could not tell" is a first-class answer; it is not retried into a guess.
-- Secondary channels are kept in their lane: `dsh.compatibility` and registry tag facts may add `info` / `warn` reasons, and may never move a conclusion in either direction — not up to `go`, not down to `blocked`.
-- `go` from the declaration layer means "installable here", **not** "verified to run". Runtime evidence only comes from `probe`.
-- It never says a plugin is safe. Nothing in the verdict enum expresses safety.
+---
 
-## What it does not do
+## 设计边界与不做什么 / Honest Boundaries
 
-- **No install / uninstall / rollback.** Upstream's `plugin_manager` owns the lifecycle. Outside an isolated probe sandbox, nothing here writes to `~/.dsh`.
-- **No marketplace or catalog.** We can emit a format-1 index of versions measured `go` on this machine — that is a filter with a timestamp, not a ranking, and the format has no conclusion field to rank with.
-- **No security review.** Malware and supply-chain questions belong to `dsh-vet`, `dsh-plugin-security-review`, or dsh.so's security tier. A probe executes candidate code inside a throwaway sandbox; executing code is the opposite of auditing it. We do **not** provide security assurances — no verdict in this tool means "safe to run".
-- **No author-side lint.** Range-shape advice is shown to the person installing, as advice. It is not a report card filed against the author.
-- **No model of whether a feature works.** It can show that a plugin booted and painted a screen. It cannot know whether the feature behind that screen is correct, wired to the right tool, or any good. tools/namespace diff stays `unmeasured` for exactly that reason.
+1. **不接管插件生命周期**：不执行安装、卸载、更新或回滚，由 DSH 原生管理；除隔离沙盒测试外，绝不修改用户的 `~/.dsh` 配置。
+2. **不做集中式市场或排行榜**：仅输出针对当前机器环境的本地诊断结论，不做全网评分或排位。
+3. **不提供安全背书**：本工具不提供安全背书。分诊台聚焦于兼容性与启动加载可用性，不代表对插件源码的防恶意软件或供应链安全审计。
+4. **不作无证据的猜想**：未显式声明依赖区间的插件严格列入 `unknown`，绝不盲目归入正常。
 
-## Evidence you can re-run
+---
 
-Nothing in this README is asserted without a producer in the repo.
+## 严谨可复算的工程证据 / Evidence Matrix
 
-| Claim | Reproduce it |
-|---|---|
-| build, typecheck, 548 tests, 9 gates | `pnpm run verify` |
-| the gates can actually fail | `node scripts/gate.mjs --mutate` → `NEGATIVE CONTROL PASSED · 9/9` |
-| admission semantics match upstream | `data/gold/admission-cases.json` — 27 signed goldens, enforced by the `admission-parity` gate |
-| `why` finds the root cause in real failures | `node scripts/d1_report.mjs --stamp <iso>` → 10 real cases, 9 hits, 1 explicit `unknown` (`data/results/d1-*.json`) |
-| the npm package really installs | `data/results/publish-2026-10-30T14-40-00.000Z.json` — anonymous install with an empty userconfig, four packages released together, CLI runs, registry bytes identical to the local tarballs |
-| each step was reviewed | `audit/step_reviews.json` — four axes (correctness / reproducibility / licence / SSOT) plus an adversarial counter-example, sha256-recomputed by the `step-review` gate |
+本项目所有公开陈述与文档结论均有对应的工程脚本产物支持，全量存储于 `data/results/` 并配备 `.sha256` 校验：
 
-`data/results/` is the single source of truth. Every artifact is written by a script under `scripts/`, records `produced_by` and `generated_at`, and ships with a `.sha256`; a hand-written result fails the `ssot` gate. `dsh-triage serve` opens a read-only panel over that directory — loopback only, one-time token in the URL, cross-origin refused, `POST` answered 403 unless started with `--allow-execute` (which itself answers 501, because the action does not exist yet).
+| 验证项 | 复现命令 / 证据源 | 说明 |
+|---|---|---|
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、542 个测试、9 道零依赖门禁 |
+| 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
+| 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
+| 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |
+| 发布包真机安装验证 | `data/results/publish-*.json` | 干净环境匿名安装、四包对齐一致性校验 |
 
-CI runs `verify` on Node 22 and 24, a Windows job, a real-browser render-control job on ubuntu, a job that proves every gate catches its injected violation, and a release-readiness job.
+---
 
-## Honest limits
+## English Overview
 
-- **One machine.** Every real probe behind the numbers was measured on a Windows host against one dsh runtime. Linux has only ever run the render controls in CI — it has never run a real probe.
-- **12 of 13** real candidates started. That is a **convenience sample of hand-picked candidates**, not a success rate: Wilson 95% interval **0.667–0.986**. The honest sentence is "12 of 13 candidates we chose", never "92% of plugins work".
-- **The 20-second number is a waiting budget, not wall clock.** The promise is `boot→sample ≤ 20s` on the first usable sample. Across 95 loaded real observations the median is 12.3s and p90 16.0s (observed CPU busy 58–94%), and across 35 idle observations the median is 4.9s. None crossed 20s — but at ~90% CPU the worst run reached 19.8s, so the margin is thin. A whole run is longer: the boot step alone measures 15.7–16.2s for a normal candidate, and a tree that never settles still ends in `unknown` after roughly 29–30s (`ADR-0008` E removed 20s of waiting that bought nothing; before it, the same fixture took 48.4s).
-- **The sandbox is not your profile.** By default it is a template profile; `--copy-profile` copies your declarations only, never `node_modules` or `.npmrc`. It answers "does this boot and paint", not "does it fit my exact combination".
-- **Nothing is claimed about non-Windows runtime behaviour**, other pnpm settings, or the credentials a candidate might want: the sandbox gets none, so a plugin that needs a key reports a false negative.
-- The distribution status below describes one day's snapshot. It does not promise anything about tomorrow.
+**dsh-triage** is the judgment and diagnostic layer for DeepSeek Harness (DSH) plugins. It answers why plugins silently disappear after updates and pre-evaluates compatibility risks before upgrading.
 
-## Status and channels
+### Key Capabilities
+- **Upgrade-Day Impact Pre-flight**: Test your exact combination of installed plugins against incoming DSH release candidates before updating.
+- **Silent Failure Attribution**: Inspect loader rows to find exactly which admission rule or version constraint blocked a plugin from starting.
+- **Slot Collision Detection**: Detect when two distinct plugins contest the same Entry ID slot.
+- **Isolated Dynamic Probing**: Safely execute plugins in an ephemeral throwaway sandbox (`DSH_HOME`) with headless Chromium rendering verification.
 
-- **npm** — `dsh-triage@0.3.1` published 2026-11-01, alongside `@dsh-triage/core`, `@dsh-triage/signals`, `@dsh-triage/probe`.
-- **Pull requests are open, not merged** — [dsh-community-plugins #65](https://github.com/zhu1090093659/dsh-community-plugins/pull/65) (now `DIRTY`: it conflicts with `main` and needs a rebase from us), [awesome-deepseekharness #193](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193) (`APPROVED`, `CLEAN`, waiting on the maintainer) and walkinglabs #140 (`CLEAN`, no review yet). Submitted is not listed.
-- **dsh.so** — **listed**. The three per-plugin JSON endpoints answer 200 as of 2026-11-01 (recorded `submitted` while they were 404): `L5 · Run tested` against `0.2.1-rc.5`, security tier `low`. Two boundaries: that L5 is dsh.so's own clean-sandbox run, **not** a promise about your machine (`BS-06`), and its install line still names `0.3.0` until it re-indexes.
-- **No other channel lists this project** as of the snapshot above. If a directory claims otherwise, it is ahead of the evidence.
+### Installation & Commands
+```bash
+# Global CLI
+npm install -g dsh-triage
 
-## Repository map
+# Pre-evaluate upgrade to the next release candidate
+dsh-triage upgrade --to next --card
 
-```
-packages/core      admission semantics, env fingerprint, capability ledger, verdict  (pure, offline)
-packages/signals   npm registry / dsh.so / hub catalog / local artifacts, each tagged with a tier
-packages/probe     isolated probe plan + runner + render judgement over CDP
-packages/plugin    dsh-triage: profile bundle, CLI, settings tab, Agent tool, local panel
-scripts/           9 zero-dependency gates + the real-run producers behind data/results
-data/gold          signed admission goldens (upstream parity)
-data/results       SSOT artifacts + .sha256
+# One-screen instant health status
+dsh-triage status
+
+# In-depth attribution of why rows failed
+dsh-triage why
 ```
 
-## Contributing and handoff
+### Safety & Integrity Boundaries
+- **Local & Read-only**: Analyzes local configurations without mutating `~/.dsh` files.
+- **Explicit Unknowns**: Silence is not a pass. Undeclared ranges yield `unknown` instead of false positives.
+- **Security Boundary**: We do **not** provide security assurances — no verdict in this tool means "safe to run". (本工具不提供安全背书).
 
-Start at [`docs/HANDOFF.md`](docs/HANDOFF.md): five-minute baseline check, current batch, and the first thing to do next. The working rules are in [`PROJECT_RULES.md`](PROJECT_RULES.md), the role cards and task packets in [`.agents/README.md`](.agents/README.md). A step is not done until it has four-axis review **and** a re-runnable test whose artifact lands in `data/results/`.
+---
 
-## License
+## 仓库架构概览 / Repository Map
 
-MIT — see [LICENSE](LICENSE). Plugin registry facts sourced from [dsh.so](https://www.dsh.so) are CC BY 4.0 and attributed where they are used.
+```
+packages/core/       判断引擎：准入语义、环境指纹、能力台账、Verdict 组装（纯函数、离线）
+packages/signals/    信号适配器：npm registry、dsh.so、本地证据适配
+packages/probe/      隔离实测：沙盒计划、执行器、无头浏览器 CDP 渲染判定
+packages/plugin/     分发入口：dsh-triage CLI、DSH 设置页前端面板、Agent 工具
+scripts/             9 道零外部依赖门禁脚本与自动化取证流水线
+data/gold/           准入规则人工签署金标基准
+data/results/        唯一真相源（SSOT）真实评测 JSON 数据与 .sha256 签名
+```
+
+---
+
+## 参与贡献与交接 / Contributing
+
+欢迎参与完善分诊台！详细指南请参阅：
+- [参与贡献指南 (CONTRIBUTING.md)](CONTRIBUTING.md)
+- [快速上手与交接文档 (docs/HANDOFF.md)](docs/HANDOFF.md)
+- [项目规则与工程约束 (PROJECT_RULES.md)](PROJECT_RULES.md)
+
+---
+
+## 开源许可 / License
+
+本项目基于 [MIT License](LICENSE) 开源。引用自 [dsh.so](https://www.dsh.so) 的注册表事实数据遵循 CC BY 4.0 协议并已在引用处注明。

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R57 (2026-11-02)",
+  "stand": "R58 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8111,6 +8111,34 @@
         "artifact": "data/results/listing-2026-11-02T12-40-00.000Z.json",
         "sha256": "c13d2f81aa2e6543b0a9ac652bb383d12780027478cb40d0abf2d73169af3e0e",
         "outcome": "13/13 PASS · 8 草稿 · 三条新回复的引用与命令全部可复算"
+      }
+    },
+    {
+      "id": "R58-S1",
+      "batch": "R58",
+      "step": "**交接轮（只交接 + 记录计划，不改行为）**：把「下个会话要做的大样本 Question 采证 → 覆盖率 → README」写成可执行的任务（`T-826`/`T-827`），并写进 `docs/HANDOFF.md` §3 的「R58 交接」；三条回帖经 HUMAN 决定不发，登记表注记保留作样例",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "docs/distribution/T-810/00-README.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：本轮**没有改任何行为**——`packages/**`、`scripts/**` 一字未动（只有 docs/ 与台账）；交接内容逐条对应下一步要做的事：样本定义 / 分母 / 三档「能覆盖」/ 读不到不进分母 / Wilson 区间 / 分类器抽检 ≥20 条 / 禁止外推；`T-826` 与 `T-827` 有验收判据",
+        "reproducibility": "PASS：`node scripts/gate.mjs --record --stamp 2026-11-02T13:00:00.000Z` 落 `gates-2026-11-02T13-00-00.000Z.json`（9 门 ALL GREEN），同一次 `pnpm run verify` 报 548 测试 / 0 fail",
+        "licence": "PASS：纯文档与台账；`00-README.md` 只加了一条「这三篇不发」的注记，没有改草稿正文或他人内容",
+        "ssot": "PASS：`stand` 在四份入口文档与两份台账里一致（R58）；产物 `32a2dcaa…` 由 `gate.mjs --record` 写出，带 `produced_by` / `generated_at` / `.sha256`；三条草稿仍 `status: draft` + `posted_url: null`，第 13 条断言继续成立",
+        "adversary": "反例一：把「三条草稿不发」写成「已发布」——被拒：登记表没有 URL/时间，第 13 条断言会红；反例二：交接里写「覆盖率 90%」这种没有分母的口号——被拒：交接只写**口径要求**，一个百分数都没写；反例三：为了让下一位好看而删掉 R57 的错例（`#11421` 被误判）——被拒：报告与坑表都保留；反例四：交接轮顺手改代码——被拒：本轮 diff 只有 docs/ 与台账"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T13:00:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T13-00-00.000Z.json",
+        "sha256": "32a2dcaaf8c348c71af598f9f2b666986db3425c667bf65ddaf51e0f5d11081c",
+        "outcome": "ALL GREEN · 9 gates · 同一次 verify 548 测试 / 0 fail"
       }
     }
   ]
