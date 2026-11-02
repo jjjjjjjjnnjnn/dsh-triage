@@ -105,9 +105,11 @@
 
 | T-840 | **`probe-hook-error` 在 CI 上会抖**：`assert.ok(attempts.length === 1)` 依赖 hook 的重试时序，同一 commit 内容重跑即绿 | M3 | verifier + implementer | — | 让这条断言与时间无关（或明确它想钉的契约）；**不许**为了让 CI 变绿把它改成「≥1」了事——先判断「恰好 1 次」是不是真契约 | ⬜ **可领（R71 发现）**：run `41511239814`（node 22）红在 `tests/unit/probe-hook-error.test.ts:102`，同一内容的下一次运行 `41511687993` **全绿**；本机（Windows 24）一直绿。**未归因**：日志只打印「falsy」，实际 `attempts.length` 是 2 还是字段缺失没被记下来 |
 
+| T-843 | **三条渠道 PR 都卡在「没有人 review」**（#65 `BLOCKED` 零 review / #193 的 `APPROVED` 来自 bot / #140 `CLEAN` 零 review） | 分发 | arbiter | — | 每次只做一件事：留**一次**礼貌的 review 请求，之后等；**不要**为了「让它动起来」再 rebase（`MERGEABLE` 已成立），也不要改条目内容换合并（R60 口径） | 🟨 **R74 写清现状**：`docs/distribution/pr-65-status.md`（实测三条状态 + 为什么 `BLOCKED` 不是冲突 + 合并会改变什么、**不会**改变 D5 + 不许做的三件事 + 一次性的评论模板）。**放弃条件**：`2026-11-15` 之后仍无 review → 记成外部不可控，不再投入 |
+
 | T-841 | **`record_d5_evidence` 的默认基线会选中「离线复算件」**：`--baseline` 缺省取 `data/results` 里文件名排序最后的 `market-baseline-*`，而测量件与复算件同名同前缀，排序分不出来 | 增长 | implementer | — | 默认值要么排除复算件（按 `produced_by` 或 `inputs.fixtures`），要么在产物里明示「这份基线是复算件」；**D5 三个阈值不动** | ✅ **R72 完成**：`scripts/lib/d5-baseline.mjs#pickBaselineArtifact`（8 条单测）——优先 `inputs.offline === false`（现场测量）里最新的一份；只有复算件时**退回并说出来**（stderr 明写「这个下载数来自复算基线，关窗前请重跑市场基线」），产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。真跑三条：默认现在选中 `06-40`（**measured**，不是复算件）；把四份现场件临时挪走后 → `baseline_kind = recompute` + 警告句，四份**逐字节还原**（各 sha256 复算相同） |
 
-| T-842 | **渠道台账里的发布时间只能靠人手**：Reddit 的 `.json` 端点从本机返回 403、页面是 JS 壳，所以两条 Reddit 帖的 `posted_on` 只能留空并写 `date_note` | 增长 | implementer | — | 给渠道台账一条可复算的采集路径（浏览器/CDP 读发布时间，或人工录入时带来源），使 `posted_on` 能填上而不是留空；读不到仍记 `unknown`，禁猜 | ⬜ **可领（R73 发现）**：`docs/distribution/channels.json` 里两条 Reddit 的 `posted_on` 是 `null`；`evidence` 只能是 `declared-url-reachable`（HEAD 200 但正文读不到）。**当前无害**：D5 的窗口只从 `#11813` 起算 |
+| T-842 | **渠道台账里的发布时间只能靠人手**：Reddit 的 `.json` 端点从本机返回 403、页面是 JS 壳，所以两条 Reddit 帖的 `posted_on` 只能留空并写 `date_note` | 增长 | implementer | — | 给渠道台账一条可复算的采集路径（浏览器/CDP 读发布时间，或人工录入时带来源），使 `posted_on` 能填上而不是留空；读不到仍记 `unknown`，禁猜 | 🟨 **R74 试过两条路都堵死**：`.json` → **403**；`old.reddit.com`（服务端渲染的那版）→ **200 但内容是「Welcome to Reddit」拦截面**（340KB，`datetime=` 零命中，`title` 就是 Welcome to Reddit）。**剩下的只有 CDP**（真浏览器指纹），而 `packages/probe/src/render.ts` 的取值表达式是写死的，要做得先给它加一个「自定义 evaluate」入口——那会动 probe 包，属于要单独一轮的事。**当前无害**：D5 的窗口只从 `#11813` 起算 |
 
 ---
 

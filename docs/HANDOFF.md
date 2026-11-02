@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R73 (2026-11-02，**交付轮**：四个渠道的台账机器化（`docs/distribution/channels.json` + `check_listing` 第 17 条：**只有一条渠道计入 D5**）+ 更正两处转述（gate 是 9 门；PR #65 早已 `MERGEABLE/BLOCKED`）；**728 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R74 (2026-11-02，**交付 + 交接**：三条渠道 PR 的实测现状写成页（`#65` 是 **MERGEABLE/BLOCKED 零 review**，不是冲突）· Reddit 发布时间的两条采集路径都试过并堵死（记为 `T-842` 的现状）· D5 关窗唯一动作不变；**728 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交接（R74，2026-11-02） | **只交接 + 补一页实测现状，不改行为**。① **换会话可用性检查**：`pnpm run verify` **728 测试 / 9 门 ALL GREEN**、`--mutate` **9/9**、`check_listing` **17/17**、CI `success`（run `41520036285`）；工作区只剩两个**人类宣传物料**（`docs/distribution/T-810/03-x-en.md` 改动、`docs/distribution/reddit-and-hn-posts.md` 未跟踪）——HUMAN 明确「用于宣传，不要管」。② **新增 `docs/distribution/pr-65-status.md`**：三条渠道 PR 的实测状态（`#65` **MERGEABLE/BLOCKED、零 review**；`#193` 的 `APPROVED` 来自 **bot**（`authorAssociation: NONE`）；`#140` **CLEAN、零 review**），并写清「合并会改变什么 / **不会**改变 D5 / 不许做的三件事（再 rebase、改内容换合并、重复催） / 一次性的评论模板 / 放弃条件」。**这一页的存在理由**：外部转述说「#65 仍冲突需解冲突」，按错的原因去修会做无用功。③ **`T-842` 两条采集路径都试过并堵死**：Reddit `.json` → **403**；`old.reddit.com` → **200 但内容是「Welcome to Reddit」拦截面**（`datetime=` 零命中）。剩下只有 CDP 真浏览器一条路，而 `render.ts` 的取值表达式写死，要动 probe 包 → 单独一轮。**④ 本轮没有任何判据/阈值/代码行为改动**（只有 docs + BACKLOG 状态）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R73，2026-11-02） | **四个渠道的台账变成机器可查的，并当场更正两处转述（交付轮，判据/阈值一字未动）**。① **背景**：R56–R72 之间投放面从「一个 discussion」扩到四个渠道（GitHub `#11813` / X / `r/DeepSeek` / `r/DeepSeekHarness`），而只有 GitHub 那条被机器检查过（`T-810/registry.json`），其余活在 prose 表格里 —— 两种失败形状：**链接打错没人点**（R57 的「引用了不存在的产物」搬到 URL 上）与**推广悄悄变成证据**（11-15 最诱人的一句话是「我们发了四个地方，总该算吧」）。② **做法**：新增 `docs/distribution/channels.json`（平台 / 链接 / 日期 / `d5_counts` / `evidence` / `why_not_counted`）+ 纯函数 `scripts/lib/channels.mjs#judgeChannels`（10 条单测）+ `check_listing` **第 17 条** `channel-ledger-matches-reality`：**`d5_counts: true` 只允许一条**；其余每条必须写 `why_not_counted`（否则推广会看起来像需求）；URL 域必须与平台相符；计入 D5 的那条要与 `registry.json` 的 `posted_url` / `posted_on` **逐毫秒相同**；`00-README.md` 的表与台账**双向**对齐（表里有台账没有 = 无人检查的说法；台账有表里没有 = 读者看不见）。**三条定向负对照各自真红并保留产物**（把 Reddit 设成计入 `20-24-54` / 把 Reddit 域换成 x.com `20-24-59` / 删掉表里一行 `20-25-25`），终跑 **17/17**。③ **两处转述校正**（都不是我说的，但必须按证据记）：**(a)** 「`gate.mjs 6/6`」不成立 —— 仓里是 **9 门**（实测 `ALL GREEN · 9 gates`）；**(b)** 「PR #65 仍处于冲突状态」不成立 —— `gh pr view 65` 实测 `mergeable: MERGEABLE` / `mergeStateStatus: BLOCKED`，R60 已把冲突解掉，`BLOCKED` 的门槛是**等 review**，不是解冲突。④ **一处文档自相矛盾**：`00-README` 的 R58 注记写「三条回帖不发了——帖子已经有人答过」，而 R71 实测三条都 `isAnswered: false`（各有 1–2 条回复）；**决定不变**（不发），理由改成「已有人回复，再贴一份只会稀释信息」，并注明「没人接受答案 ≠ 没人回」。⑤ **718 → 728 测试**（+10 `channels`）；9 门 ALL GREEN；`--mutate` 9/9；`check_listing` **17/17**。**边界如实写**：Reddit 的正文与发布时间从本机读不到（`.json` 端点 403），那两条 `evidence` 只能是 `declared-url-reachable`、`posted_on` 留空（不猜时刻）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R72，2026-11-02） | **D5 关窗的「怎么跑」写成一页，并把「可离线复算」这条硬规则补到 D5 上（交付轮，判据/阈值一字未动）**。① **runbook**：`docs/d5-close-runbook.md` —— 关窗（`2026-11-15T20:24:37Z`）当天四条命令（**刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记**）、三个数各自的来源与陷阱、判定表照抄 spec、退出码含义（**`fail` 走 exit 1 是判定完成，不是脚本坏了**）、`pass` / `fail` / `unmeasurable` 三个分支各自做什么（`fail` → 执行 D，**禁止再加功能**）。② **写 runbook 的时候撞见两个真问题**：**(a) 下载那一项不是现场抓的** —— 它读最近一份 `market-baseline-*.json` 的 `d5` 块，不刷新就是拿 `10-31` 的数判 `11-15` 的窗；**(b) `--fixtures` 只读不写**，全仓没有任何东西会产出 D5 的 fixtures（R54 那份自检夹具是手写的）→ **关窗产物的离线复算是空路径**，而这正是仓规「进 `data/results` 的数必须可离线重算」要求的东西。补 `record_d5_evidence --fixtures-out <dir>`（抓 `reactions.json` / `references.json`）；`--dry-read` 与它同时给 → **exit 2 零文件**（预演不许留下证据）。真跑：capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**，复算件名字是 `d5-selftest-*` 且 `self_test: true`（不可能被当测量指针）。③ **顺带发现 `T-841`**：`--baseline` 的默认值是「文件名排序最后那件」，**分不出测量件与离线复算件**——今天实测选中的就是 R52 的复算件（两者数字相同所以无害，关窗必须点名）。④ **708 → 710 → 718 测试**（+2 `d5-fixtures-out` / +8 `d5-baseline`）；9 门 ALL GREEN；`check_listing` 16/16。⑤ **同轮关掉 `T-841`**：`--baseline` 缺省原本按**文件名排序**取最后一份，分不出测量件与离线复算件（实测会选中 R52 的复算件）。新纯函数 `pickBaselineArtifact`：优先 `inputs.offline === false` 的**现场件**里最新的一份；只有复算件时退回并在 **stderr 明说**，产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。三条真跑：默认现在选中 `06-40`（measured）/ 把四份现场件临时挪走 → `recompute` + 警告句 / 四份**逐字节还原**。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付 + 流程断言（R71，2026-11-02） | **窗口期只做两件事：把三条回帖变成「30 秒可发」，把「升级日」的触发接上电；判据/阈值/冻结项一字未动（交付轮）**。① **A · 接触面**：给 `06/07/08` 三条回帖各加一个 `<!-- paste:start/end -->` **粘贴块**（块内只放将粘贴的字）并对齐当天产物；新记录器 `scripts/record_discussion_state.mjs`（`gh api graphql` 只读 `isAnswered`/`closed`/`updatedAt`/最后一条评论）先回答「还值得回吗」——**三条都 `open`**（`data/results/discussion-state-2026-11-02T19-13-45-223Z.json`）；新记录器 `scripts/record_remedy_probe.mjs` 用**同一个** `evaluateAdmission` 把「建议装哪个构建」也算出来：`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5`（= 今天的 `next`）**admitted（8 项精确钉定）**，而 `0.1.0-rc.7` / `0.0.1-rc.1` 分别 `denied`（6 / 4 项）（`data/results/remedy-probe-2026-11-02T19-15-18-710Z.json`，同一次 registry 读里带 `dist_tags = latest 0.0.1-rc.1 / next 0.2.1-rc.5`）。**检查器第 16 条 `draft-claims-match-their-artifact`**：registry 每篇声明 `claims`（版本 / 桶 / 区间条数 / 标签值 / 粘贴块里必须出现的句子），由检查器**从被引产物复算**并**从粘贴块复算**两边对撞；**三条定向负对照各自真红且产物保留**（改版本 `19-18-22` / 改计数 `19-18-41` / 删边界句 `19-18-47`），终跑 **16/16**（`listing-2026-11-02T19-33-18.979Z.json`）。**这条断言第一次跑就抓到我自己三处漂移**（`^0.1.0-rc.7` 写了 7 次而产物是 6、`^0.0.1-rc.1` 5 次而产物 4、「等 13 项」对不上 13 行）——修法是改写法，不是放宽断言。**负对照还抓到一个真缺口**：把正文版本改错时断言**没红**（版本只被用来「找探针」，没被用来「验正文」），补「粘贴块必须写出 `pkg@version`」后才红。发帖 runbook 落 `docs/distribution/posting-runbook.md`（发前读什么 / 发后回填什么 / 不许做什么）。② **B · 触发**：`watch_next_release.mjs` 新增 `--baseline <dir,...>` + 纯函数 `pickNewestObservation`（+5 条单测）；**为什么必须有它**：CI 里 `--out` 只能是 `$RUNNER_TEMP`（CI 不许写 SSOT），旧实现只扫 `--out` → `previous` 恒 `null` → 永远报 `baseline`，**一个失忆的监听器**。新 workflow `.github/workflows/watch-upstream.yml`（每 6 小时 + 手动）：`--baseline data/results,.watch-state`，`.watch-state` 走 `actions/cache`（缓存不是提交）；**`unmeasured` → job 失败**（看不见 npm 不许报平安），`changed` → `::warning::` + step summary，**CI 里不跑卡片**（runner 没有 profile，那样生成的卡片会长得像对所有人说的话）。四条分支本机真跑：无基线 → `baseline` / 仓库基线 → `unchanged` 零产物 / 伪造旧基线 → `changed` + 产物 / 死端口 → exit 2 **零产物**；顺手修掉「外部基线的绝对路径会进产物」（改成只写 `(external)/<dirname>`，R67 同族）。③ **顺手修两处文档漂移**：`PROJECT_RULES.md` 的 Stand 还停在 R49、M6 行还写「R48 待做 T-806…T-809」（四项 R48 已交付）；`ROADMAP.md` W11 还写「剩 `npm publish 0.3.0` + T-810 草稿」（0.3.3 已发、`#11813` 已发）。④ **696 → 708 测试**；9 门 ALL GREEN；`check_listing` **16/16**；新盲区 **`BS-56`**（workflow 本机跑不了 / schedule best-effort / 60 天无活动会停 / 缓存失效会重复报）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
@@ -115,6 +116,40 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R74（2026-11-02，交接）
+
+**状态**：**728 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；CI `success`。
+**D5 `pending`**（0/10 · 0/1 · 634 burst），窗口到 **`2026-11-15T20:24:37Z`**。
+
+**换会话后从这里开始**：
+
+```powershell
+git status --short          # 预期：只剩两个宣传物料（03-x-en.md 改动 + reddit-and-hn-posts.md 未跟踪），不要动
+pnpm run verify             # 728 测试 / 9 门
+node scripts/gate.mjs --mutate
+```
+
+**唯一待办**（在此之前没有产品工作可做）：
+
+1. **`2026-11-15T20:24:37Z` 之后**，按 `docs/d5-close-runbook.md` §0 跑四条命令（刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记）。
+   **关窗前重跑只是 `pending`，不算新证据。**
+2. 上游若发新 rc：`watch-upstream`（每 6 小时）会给 `changed` + 两条命令；**卡片必须在真机上重跑**再引用。
+3. 渠道 PR 只有一个动作：**一次**礼貌的 review 请求，然后等（`docs/distribution/pr-65-status.md`）。别再 rebase。
+
+**不要做的事**（每一条都是已经付过学费的）：
+
+- 不要为了「让 D5 好看」加功能或改判据；`fail` 之后按 ROADMAP 走 D，**禁止「再加一个功能试试」**；
+- 不要动 `docs/distribution/T-810/03-x-en.md` 与 `docs/distribution/reddit-and-hn-posts.md`（人类宣传物料）；
+- 不要把 Reddit / X 的热度算进 D5（`channels.json` 的 `d5_counts` 只允许一条）。
+
+**本轮新增的坑**：
+
+1. **「冲突」和「等 review」是两件事**：`mergeable: MERGEABLE` + `mergeStateStatus: BLOCKED` 说的是后者。
+   外部转述把它们混在一起，会让人反复做无效的 rebase。判断依据只看这两个字段，不看别人怎么说。
+2. **`APPROVED` 要看是谁批的**：`#193` 的批准来自 `sourcery-ai`、`authorAssociation: NONE`——机器人批准不等于解锁。
+3. **Reddit 抓不到不是「没试」**：`.json` 403、`old.reddit.com` 返回「Welcome to Reddit」拦截面（340KB，`datetime=` 零命中）。
+   再试之前先读 `T-842`，别重复劳动。
 
 ## R73（2026-11-02，交付轮）
 

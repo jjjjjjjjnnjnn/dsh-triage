@@ -809,3 +809,13 @@
 - 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 446 步
 - 边界（如实写）：Reddit 的正文 / 作者 / 发布时间从本机读不到（`.json` 端点 403、页面是 JS 壳），所以那两条 `evidence` 只能是 `declared-url-reachable`、`posted_on` 留空（`T-842`）；四条链接的可达性是人手核过一次（全部 HTTP 200）
 - 反思：**推广和证据之间的距离，要用字段而不是段落来隔开**。四个渠道的热度在 11-15 那天一定会被拿来当理由，所以在判据之外先把「哪一条真的计数」写成机器可查的 `d5_counts`——判据没动，但「说错话」变成了会红的事。
+
+### 2026-11-02 R74｜交接 + 三条渠道 PR 的实测现状（交付 + 交接轮，无行为改动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R74-S1`；无 subagent
+- 人工决策：HUMAN「同意，继续，然后交接项目，即将切换会话」
+- 范围：`docs/distribution/pr-65-status.md`（新）· `docs/HANDOFF.md`（Stand R74 / R74 行 / R74 段 / 换会话开工清单）· `docs/BACKLOG.md`（`T-842` 状态更新、新增 `T-843`）· `docs/ROADMAP.md`（W11 剩项改写）· `INDEX.md` / `AGENTS.md`（Stand）· `audit/{step_reviews,blind_spots}.json` · 产物 `listing-2026-11-02T20-39-59.708Z.json`
+- 结果：① 三条渠道 PR 的实测现状写成页：`#65` **MERGEABLE/BLOCKED、零 review**（冲突早在 R60 解决，再 rebase 无效）、`#193` 的 `APPROVED` 来自 **bot**、`#140` CLEAN 零 review；并写清「合并改变渠道收录、**不改变 D5**」、三种不许做的动作、一次性评论模板、放弃条件；② `T-842` 记录 Reddit 两条采集路径都堵死（`.json` 403 / `old.reddit.com` 拦截面），剩下只有 CDP 一条且需要动 probe 包；③ 交接清单改成「换会话可直接开工」的三步 + 三条禁令
+- 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 447 步
+- 反思：这一轮唯一有价值的判断是**把「外部转述」与「实测字段」分开**。「#65 需解冲突」这句话若是真的，下一步就是 rebase；而实测说 `MERGEABLE/BLOCKED`，下一步只能是等 review。两条路差一整个动作，而唯一能区分它们的是 `gh pr view` 的两个字段——不是谁说得更有把握。
