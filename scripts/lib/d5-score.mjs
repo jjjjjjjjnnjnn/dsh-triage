@@ -15,6 +15,8 @@
  * what makes the fixtures round-trip possible.
  */
 
+import { parseInstant } from './posting.mjs'
+
 /** Frozen by R47. Changing any of these is a criteria change, not a code change. */
 export const D5_THRESHOLDS = Object.freeze({ reactions: 10, external_references: 1, weekly_downloads: 20 })
 
@@ -33,14 +35,21 @@ function reading(value, state) {
  * @returns {{ posted_on: string|null, ends_at: string|null, closed: boolean, days_left: number|null }}
  */
 export function windowOf({ postedOn, now }) {
-  const start = typeof postedOn === 'string' ? Date.parse(postedOn) : Number.NaN
+  /*
+   * R67 (T-836): `Date.parse` accepts strings that are not instants — it ROLLS `2026-02-30` into March 2
+   * and returns a perfectly finite epoch, so a typo would move the 14-day window by two days without a
+   * word. `parseInstant` round-trips the civil fields and refuses those. An unreadable start still yields
+   * `posted_on: null` (which `judgeD5` reports as `no-post`); that label is imprecise for "the date was
+   * garbage", but the CLI refuses such input before it gets here, and this stays a last line of defence.
+   */
+  const start = typeof postedOn === 'string' ? parseInstant(postedOn) : null
   const at = typeof now === 'string' ? Date.parse(now) : Number.NaN
-  if (Number.isNaN(start) || Number.isNaN(at)) {
+  if (start === null || Number.isNaN(at)) {
     return { posted_on: null, ends_at: null, closed: false, days_left: null }
   }
-  const end = start + D5_WINDOW_DAYS * DAY_MS
+  const end = start.epochMs + D5_WINDOW_DAYS * DAY_MS
   return {
-    posted_on: new Date(start).toISOString(),
+    posted_on: new Date(start.epochMs).toISOString(),
     ends_at: new Date(end).toISOString(),
     closed: at >= end,
     days_left: Math.max(0, Math.ceil((end - at) / DAY_MS)),

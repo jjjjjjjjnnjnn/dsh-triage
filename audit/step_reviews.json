@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R66 (2026-11-02)",
+  "stand": "R67 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10223,6 +10223,56 @@
         "artifact": "data/results/listing-2026-11-02T20-40-00.000Z.json",
         "outcome": "GREEN 15/15 · 测试数 677 · 注册表摘要 42ab4db9…",
         "sha256": "3bd581203953c9077f1c25925f6bc48cf6d0de44e20a39b05359f021d7efdb1e"
+      }
+    },
+    {
+      "id": "R67-S1",
+      "batch": "R67",
+      "step": "**D5 的日期与记录器的输出：三处「校验写错地方 / 打印错地方」一起修（T-836 / T-835 / 隐私）** —— `windowOf` 改用 `parseInstant`；记录器统一走 `writeEvidence()`（打印路径 = 实写路径）；顺带修掉 `--fixtures` 把绝对路径写进产物",
+      "changed": [
+        "scripts/lib/d5-score.mjs",
+        "scripts/lib/evidence.mjs",
+        "scripts/lib/evidence.d.mts",
+        "scripts/record_d5_evidence.mjs",
+        "tests/unit/d5-score.test.ts",
+        "tests/governance/evidence-and-dates.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-02-30` / `2026-13-01` / `2026-11-02` / `99:99:99` 全部不再产出窗口（修前 `2026-02-30` 被 `Date.parse` 滚成 3/2 并算出一个「看起来合法」的窗口）；`+01:00` 与 `Z` 两种拼法给出同一个窗口",
+        "reproducibility": "PASS：fixtures 模式 + `--stamp` 显式；产物 `self_test: true`、文件名强制 `d5-selftest-*`，不可能被当成样本判定",
+        "licence": "PASS：只动仓内纯函数与记录器；fixtures 是本地构造的最小 JSON，无外部素材",
+        "ssot": "PASS：产物由 `writeEvidence()` 写入并打印**同一个**路径（本轮 `%TEMP%` 对照证实打印路径随 `--out` 变化，修前硬编码 `data/results`）",
+        "adversary": "反例：认为「CLI 已经挡住了坏日期，纯函数不用改」——被拒：`judgeD5` 是导出函数，任何脚本都能直接调；护栏要在数据流上，不是只在一个入口上"
+      },
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-02T21:10:00.000Z --post …/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z --fixtures %TEMP%\\r67-d5-fixtures --baseline data/results/market-baseline-2026-10-31T06-40-00.000Z.json",
+        "artifact": "data/results/d5-selftest-2026-11-02T21-10-00-000Z.json",
+        "outcome": "GREEN：`pending` · reactions 3/10 · references 0/1 · downloads 634 (single-day-burst)/20；`sources` 只写 fixture 目录名（`results-privacy` 复绿）",
+        "sha256": "2f56c4862173c557dadc9043908fc9ec8a06fba5e549012b3f8443a7061e3c9d"
+      }
+    },
+    {
+      "id": "R67-S2",
+      "batch": "R67",
+      "step": "**收口：对外文档自洽且 15/15** —— 三处修复后重跑检查器（测试数 677 → 683）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/record_d5_evidence.mjs",
+        "scripts/lib/d5-score.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 683（2 条声明）· 19 条证据路径 · 注册表摘要 `42ab4db9…`",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出，产物带 sha256",
+        "licence": "PASS：纯文档与检查器，无外部素材",
+        "ssot": "PASS：测试数两处（徽章 + 正文）同时等于 `--tests`；本轮没有放宽任何断言",
+        "adversary": "反例：跳过这次复跑——被拒：本轮动了 README 与记录器，而 README 正是检查器的输入；R62 抓到过徽章与正文同时僵"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T21:20:00.000Z --tests 683",
+        "artifact": "data/results/listing-2026-11-02T21-20-00.000Z.json",
+        "outcome": "GREEN 15/15 · 测试数 683 · 注册表摘要 42ab4db9…",
+        "sha256": "d314690ce5fa451e04b5d3b47a1ede7a27da435dc95cf400a568551ed066fa4f"
       }
     }
   ]

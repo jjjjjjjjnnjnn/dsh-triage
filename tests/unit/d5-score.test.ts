@@ -151,3 +151,27 @@ test('pending is its own answer: the window is open and not everything is met', 
   assert.equal(evidence.verdict, 'pending')
   assert.equal(evidence.counts_as_demand, false)
 })
+
+test('N8: a start date that does not exist yields no window at all, not a rolled one', () => {
+  /*
+   * R67 (T-836). `Date.parse('2026-02-30T12:00:00Z')` returns a finite epoch (March 2) — so before this,
+   * a typo produced a *valid-looking* 14-day window two days late, and the verdict was computed from it.
+   * Now the window refuses the start instead of silently moving it.
+   */
+  for (const postedOn of ['2026-02-30T12:00:00Z', '2026-13-01T00:00:00Z', '2026-11-02', '2026-11-02T99:99:99Z']) {
+    const window = windowOf({ postedOn, now: '2026-11-05T00:00:00.000Z' })
+    assert.equal(window.posted_on, null, `${postedOn} must not produce a window`)
+    assert.equal(window.ends_at, null)
+    assert.equal(window.days_left, null)
+  }
+  // And the judge turns that into no-post rather than computing a verdict from a wrong window.
+  const evidence = judgeD5({ post, postedOn: '2026-02-30T12:00:00Z', now: '2026-11-05T00:00:00.000Z', readings: {} })
+  assert.equal(evidence.verdict, 'no-post')
+})
+
+test('N9: an offset start date is the same window as its UTC spelling', () => {
+  const offset = windowOf({ postedOn: '2026-11-02T18:36:00+01:00', now: '2026-11-05T00:00:00.000Z' })
+  const utc = windowOf({ postedOn: '2026-11-02T17:36:00.000Z', now: '2026-11-05T00:00:00.000Z' })
+  assert.deepEqual(offset, utc)
+  assert.equal(offset.posted_on, '2026-11-02T17:36:00.000Z')
+})

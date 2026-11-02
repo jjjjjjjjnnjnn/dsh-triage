@@ -36,6 +36,7 @@ import { classifyDownloadShape } from './lib/download-shape.mjs'
 import { judgeD5, isExternalReference, SELF_REFERENCES } from './lib/d5-score.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { parseInstant } from './lib/posting.mjs'
+import { writeEvidence } from './lib/evidence.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -269,8 +270,13 @@ const payload = {
   numbers: evidence.numbers,
   post: evidence.post,
   sources: {
-    reactions: fixturesDir === null ? 'graphql' : `fixtures:${String(fixturesDir)}`,
-    references: fixturesDir === null ? 'search-api' : `fixtures:${String(fixturesDir)}`,
+    /*
+     * R67: these two used to embed the raw `--fixtures` path, so a self-test run against a fixture set under
+     * `%TEMP%` wrote `C:\Users\<name>\…` into `data/results` and `results-privacy` (rightly) went red. The
+     * fixture directory is identified by its name, which is what a reader needs; the location is not.
+     */
+    reactions: fixturesDir === null ? 'graphql' : `fixtures:${String(fixturesDir).split(/[\\/]/).slice(-1)[0]}`,
+    references: fixturesDir === null ? 'search-api' : `fixtures:${String(fixturesDir).split(/[\\/]/).slice(-1)[0]}`,
     downloads: downloads.baseline ?? null,
   },
   inputs: {
@@ -295,9 +301,16 @@ const text = `${JSON.stringify(payload, null, 2)}\n`
  */
 const prefix = payload.mode === 'fixtures' ? 'd5-selftest' : 'd5-evidence'
 const fileName = `${prefix}-${stamp.replace(/[:.]/g, '-')}.json`
-const target = join(outDir, fileName)
-writeFileSync(target, text, 'utf8')
-writeFileSync(`${target}.sha256`, sha256(text), 'utf8')
+/*
+ * R67 (T-835): through R66 this wrote to `--out` and then printed a fixed `ssot data/results` prefix
+ * instead of the path it used — the bug class that was copied twice in one day. The shared writer derives
+ * the printed path from the path actually written.
+ */
+const written = writeEvidence({ outDir, fileName, text, root: abs('.') })
+if (written.ok === false) {
+  process.stderr.write(`refusing to overwrite existing evidence: ${fileName}\n`)
+  process.exit(2)
+}
 
 process.stdout.write(
   `D5 · ${evidence.verdict}${evidence.counts_as_demand ? ' (counts as demand)' : ''} · ` +
@@ -305,5 +318,5 @@ process.stdout.write(
     ` · references ${String(evidence.numbers.external_references.value)}/${evidence.numbers.external_references.threshold}` +
     ` · downloads ${String(evidence.numbers.weekly_downloads.value)} (${String(evidence.numbers.weekly_downloads.shape)})/${evidence.numbers.weekly_downloads.threshold}\n`,
 )
-process.stdout.write(`ssot data/results/${fileName} sha256=${sha256(text).slice(0, 12)}…\n`)
+process.stdout.write(`ssot ${written.display} sha256=${written.sha256.slice(0, 12)}…\n`)
 process.exit(evidence.verdict === 'fail' ? 1 : 0)

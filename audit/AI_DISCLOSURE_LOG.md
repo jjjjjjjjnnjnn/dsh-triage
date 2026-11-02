@@ -741,5 +741,15 @@
 - 反思：自审的半径很小。我自审抓到 1 条，独立 adversary 一小时给出 3 条高的，而且**都不需要恶意输入**——一个笔误、一个自然写法就够。以后凡新写一条判据，请一次 adversary 比自己再读三遍便宜；另外「护栏写在哪」和「护栏本身」同等重要：日期校验写在没人消费的字段上，等于没有。
 - **续（同一轮）**：把修完的代码**交回给同一个 adversary** 重放。它确认两个高「真修好」（17,920 个组合、7,824 个被接受值与 `Date.parse` 零分歧），但抓到第一版修法自己引入的三处——`drafts:[{}]` 仍以 EISDIR 崩掉整轮、`X thread, not an issue` 被误判歧义、消息把「形状不对」说成「不存在」。三处已修，七条控制 + 终跑全绿。**教训**：修一个匹配器之后，要请人打**新写的那段**，而不是只打它修的那个洞。
 
+### 2026-11-02 R67｜D5 日期与记录器输出（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R67-S1` … `R67-S2`；报告 `audit/AUDIT_2026-11-02_R67.md`
+- 范围：`scripts/lib/d5-score.mjs`（`windowOf` → `parseInstant`）· `scripts/lib/evidence.mjs` + `.d.mts`（新，`writeEvidence`）· `scripts/record_d5_evidence.mjs`（改用它 + `--fixtures` 路径脱敏）· `tests/unit/d5-score.test.ts`（+2）· `tests/governance/evidence-and-dates.test.ts`（新，3 条）· `README(.zh-CN).md`（677 → 683）· `docs/{HANDOFF,BACKLOG,ROADMAP}.md` · `INDEX.md` / `AGENTS.md` · `audit/{blind_spots,step_reviews}` · `data/results/{d5-selftest-2026-11-02T21-10-00-000Z,listing-2026-11-02T21-20-00.000Z}.json`
+- 结果：① `windowOf` 不再接受不存在的时刻（修前 `2026-02-30` 被 `Date.parse` 滚成 3/2 并算出一个「看起来合法」的窗口）；② 记录器统一 `writeEvidence()`，并把「收 `--out` 却硬编码打印」做成治理测试（45 个收 `--out` 的脚本里只有 1 个命中）；③ `registry.posted_on` 与 D5 产物的 `window.posted_on` 现在必须 `epochMs` 相等；④ `--fixtures` 曾把 `C:\Users\<name>\…` 写进产物，`results-privacy` **真红**过一次（红产物删除、未提交）
+- 实测：**683 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15
+- 反思：这一轮三件事的共同点是**「校验/输出写在了错的地方」**——日期校验在没人消费的字段上（R66）、打印路径与实际写入分离（记录器）、D5 的窗口起点用了一个会把 2 月 30 日滚成 3 月 2 日的解析器。功能写对了不等于位置写对了。
+
+
 
 
