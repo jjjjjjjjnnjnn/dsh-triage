@@ -31,6 +31,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { resolvePublishVersion } from './lib/publish-target.mjs'
+import { DEFAULT_REGISTRY_WAIT_MS, RETRY_INTERVAL_MS, describePropagationWait, shouldRetryInstall } from './lib/registry-wait.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -52,6 +53,16 @@ const version = publishTarget.version
 const rootPackage = 'dsh-triage'
 const packages = ['@dsh-triage/core', '@dsh-triage/signals', '@dsh-triage/probe', rootPackage]
 const tarballDir = argv.includes('--tarball-dir') ? pathFor(String(argOf('--tarball-dir', ''))) : null
+/**
+ * R62: how long to wait for the anonymous install path to see the version we just published. npm's
+ * read replicas lagged ~4.5 minutes on 0.3.2, and `release:publish` runs this script seconds after the
+ * write — so without a bounded wait the chain reports a red for a release that worked. 0 = ask once.
+ */
+const registryWaitMs = Number(argOf('--wait-registry-ms', String(DEFAULT_REGISTRY_WAIT_MS)))
+if (!Number.isFinite(registryWaitMs) || registryWaitMs < 0) {
+  process.stderr.write(`--wait-registry-ms must be a non-negative number of milliseconds (got "${String(argOf('--wait-registry-ms', ''))}")\n`)
+  process.exit(2)
+}
 const outDir = pathFor(String(argOf('--out', 'data/results')))
 const verbose = argv.includes('--verbose')
 
@@ -232,13 +243,49 @@ async function main() {
   const init = await npm(['init', '-y'], { cwd: projectDir, env, timeoutMs: 120_000 })
   check('scratch-init', init.code === 0, `npm init -y exit ${String(init.code)}`)
 
-  const install = await npm(['install', `${rootPackage}@${version}`, '--no-audit', '--no-fund', '--loglevel=error'], {
+  /*
+   * The install is retried ONLY when the failure is the "not on the registry yet" shape and there is
+   * budget left. Everything else fails at once: a broken token or a bad tarball must not be hidden
+   * behind five minutes of waiting (R62).
+   */
+  const installStarted = Date.now()
+  let install = await npm(['install', `${rootPackage}@${version}`, '--no-audit', '--no-fund', '--loglevel=error'], {
     cwd: projectDir,
     env,
     timeoutMs: 600_000,
   })
+  let attempts = 1
+  for (;;) {
+    const elapsedMs = Date.now() - installStarted
+    const retry = shouldRetryInstall({
+      code: install.code,
+      output: `${install.stdout}\n${install.stderr}`,
+      elapsedMs,
+      budgetMs: registryWaitMs,
+      attempt: attempts,
+    })
+    if (!retry) break
+    if (verbose) process.stderr.write(`  registry has not caught up yet (attempt ${attempts}); re-asking in ${RETRY_INTERVAL_MS}ms\n`)
+    await new Promise((resolveWait) => setTimeout(resolveWait, RETRY_INTERVAL_MS))
+    attempts += 1
+    install = await npm(['install', `${rootPackage}@${version}`, '--no-audit', '--no-fund', '--loglevel=error'], {
+      cwd: projectDir,
+      env,
+      timeoutMs: 600_000,
+    })
+  }
+  const installWaitedMs = Date.now() - installStarted
   const installTail = `${install.stdout}\n${install.stderr}`.trim().split('\n').slice(-3).join(' · ')
-  check('anonymous-install', install.code === 0, `npm install ${rootPackage}@${version} exit ${String(install.code)} · ${installTail}`)
+  check(
+    'anonymous-install',
+    install.code === 0,
+    `npm install ${rootPackage}@${version} exit ${String(install.code)} · ${installTail}` +
+      (attempts > 1 ? ` · ${attempts} attempt(s) over ${installWaitedMs}ms` : ''),
+  )
+  if (attempts > 1) {
+    // Only recorded when a wait happened, so the usual 20-item shape is unchanged.
+    check('registry-propagation', true, describePropagationWait({ attempts, waitedMs: installWaitedMs, settled: install.code === 0 }))
+  }
 
   const moduleDir = join(projectDir, 'node_modules', rootPackage)
   check('installed-tree', existsSync(moduleDir), existsSync(moduleDir) ? 'node_modules/dsh-triage exists' : 'the package is absent after install')
@@ -309,6 +356,10 @@ async function main() {
       npm_config_userconfig: '<empty file under the scratch dir>',
       command: `npm install ${rootPackage}@${version}`,
       exit_code: install.code,
+      /** R62: how many times the install had to ask before the replicas served the version. */
+      attempts,
+      waited_ms: installWaitedMs,
+      wait_budget_ms: registryWaitMs,
       tail: clean(installTail),
       dependency_trees: dependencyTrees,
       cli: {
