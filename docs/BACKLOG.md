@@ -95,7 +95,7 @@
 | T-306 | 非 web 表面的就绪判据 | M3 | implementer | T-301 | 用 host 自己打印的 URL/端口替代人工 `--no-http` 开关，覆盖 tui/headless profile | ✅ **R15 完成（web 面）**：`extractHostUrl` 从 stdout 取 URL，产物 `readiness.source=host-url`；`cleanup` 证明 Host 用过的**所有**端口都关；非 web 面仍用 `--no-http`，tui/headless 未测 |
 | T-832 | **升级日监听**：上游 `dist-tags.next` 一变就出产物 + 给出卡片命令，不再靠人记得去看 Discussions | M6 | implementer | T-806 ✅ | `changed` / `unchanged` / **`unmeasured`**（读不到 registry → exit 2 **零产物**，不许写成「没更新」）；`unchanged` 不落产物；不跑卡片、不发帖 | ✅ **R64 完成**：`scripts/lib/next-release.mjs`（6 条单测）+ `scripts/watch_next_release.mjs`；真机首跑 `baseline next=0.2.1-rc.5`（`data/results/next-release-2026-11-02T17-40-00.322Z.json`），再跑 `unchanged` 零产物；`changed` 与「死端口 exit 2」两条对照在 `%TEMP%` 跑过。**没做的**：cron、自动发帖（要 HUMAN 定） |
 | T-833 | **四包 `latest` 一致性断言**：0.3.1（暂存卡住）/ 0.3.3（三包回滚）同一个形状，当时只能靠人眼看四行 `latest=` | 流程 | implementer | — | 四包 `latest` 彼此相同 + 等于发布版本 + 不指向未发布版本；读不到记 `unmeasured` 而不是 agree | ✅ **R64 完成**：`scripts/lib/dist-tags.mjs`（7 条单测，含两条真实事故形状）+ `record_publish` 的 `dist-tags-agree` 一项；真跑 22 项全绿 |
-| T-831 | **对外草稿的字符预算断言**：中文线程自称「单推 ≤140 字、复制即发不被截断」，但没有任何机器在算 | 流程 | implementer | — | 从 ```` ```text ```` 块里抽每条并计数（280 字符 / 140 中日韩字符），超预算即红 + 一条定向负对照 | ⬜ **可领（R64 发现）**：中文主选稿目前在 `git stash`（`docs/HANDOFF.md` R64），等它进仓时一起做；否则断言的目标文件会变 |
+| T-831 | **对外草稿的字符预算断言**：中文线程自称「单推 ≤140 字、复制即发不被截断」，但没有任何机器在算 | 流程 | implementer | — | 从每篇草稿的 `text` 代码块里抽单条并计数（280 字符 / 140 中日韩字符），超预算即红 + 一条定向负对照 | ⬜ **可领（R64 发现）**：中文主选稿目前在 `git stash`（`docs/HANDOFF.md` R64），等它进仓时一起做；否则断言的目标文件会变 |
 
 ---
 
