@@ -1,38 +1,61 @@
 <!-- channel: reply in upstream discussion #11687 (Chinese) · draft -->
-<!-- 状态: draft（未发布）。回复场景：针对 #11687 误将运行期激活失败归因于版本准入拦截的问题提供反向排查与分诊说明。 -->
+<!-- 状态: draft（未发布）。回复场景：升级到 0.2.1-rc.5 后启动崩溃，帖子把原因猜成「插件版本不兼容」。 -->
+<!-- R71：这是**反向**回答（声明层不是凶手）。这条不许被误读成「升级会修好」，所以边界句必须留在粘贴块里。 -->
 
-# 草稿 08 · 回复 #11687（排查提示：当前故障并非版本声明层准入拦截）
+# 草稿 08 · 回复 #11687（声明层不是凶手）
 
-> **归因分析**：遇到启动异常时通常最容易怀疑“插件版本不兼容”。但对帖中点名的两款第三方插件进行准入推演，两者在 0.2.1-rc.5 上均符合版本规则。因此建议将排查重心转移到运行期加载或导入异常。
+> **给自己看的归因**：这不是「我们能修」，而是「这里可以排除」。两款被点名的第三方插件在 0.2.1-rc.5 上都被判 `admitted`，
+> 所以回帖的价值在于**把排查方向挪走**（去 import/apply），而不是给一个可能错误的修法。
+> 帖子里还提到 `@deepseek-ai/dsh-desktop`，npm 上没有这个包，我们**判不了**——这一条要一起说，否则读起来像我们全判过了。
 
----
+## 粘贴块
 
-你好，提供一个反向排查的信息供参考：**当前出现的加载失败，并不是声明层准入规则（admission）拦截所导致的。**
+从 `paste:start` 的下一行到 `paste:end` 的上一行，就是回复正文，原样粘贴。
 
-我们提取了帖中点名的两款第三方插件在 npm 上发布的 manifest 元数据，代入与 DSH 官方加载器一致的准入规则，对目标版本 `0.2.1-rc.5` 进行了求值匹配：
+<!-- paste:start -->
+提供一个反向的信息供参考：**这次的启动失败，不是声明层准入规则（admission）拦下来的。**
+
+我把帖子里点名的两款第三方插件在 npm 上发布的 manifest 取下来，用与官方加载器一致的准入规则，对目标运行时 `0.2.1-rc.5` 求值：
 
 ```text
-@linxin666/dsh-web-all@0.4.13   peers: @deepseek-ai/dsh@>=0.2.1-rc.3            → 正常放行 (admitted)
-dsh-better-sidebar@0.28.2       peers: @deepseek-ai/dsh-llm@^0.2.1-rc.1 等 13 项 → 正常放行 (admitted)
+@linxin666/dsh-web-all@0.4.13   peers: @deepseek-ai/dsh@>=0.2.1-rc.3            → admitted
+dsh-better-sidebar@0.28.2       peers: @deepseek-ai/dsh-llm@^0.2.1-rc.1 等 13 项 → admitted
 ```
 
-推演结果显示：**这两款插件声明的版本依赖区间均覆盖了 0.2.1-rc.5，不会被准入逻辑拦截。**
+也就是说，这两款插件声明的区间都覆盖了 `0.2.1-rc.5`，**准入阶段不该把它们判掉**。日志里的 `1 required plugin did not activate` 更可能发生在被放行之后的 import / apply / 上下文注入阶段——这两种故障表现相似，但排查方向完全不同：
 
-日志中出现的 `1 required plugin did not activate`，更大概率是发生在插件被放行之后的模块导入（import）、执行初始化（apply）或上下文注入阶段，而非被加载器直接剔除。这两种情况在表现上容易混淆，但排查方向截然不同：
-- 若为准入拦截：通常需要调整依赖声明区间或配置版本豁免；
-- 若为运行期异常：则属于插件代码内部的运行期报错或运行时环境不匹配，需要检查具体的 JS 异常堆栈。
+- 若真是准入拦截：通常有明确的「版本不满足」原文，或被判掉的那一行会消失；
+- 若是运行期异常：准入那一关是过的，需要在启动输出里找该模块 import 或 setup 时的具体报错与堆栈。
 
-### 如何在本地环境中明确区分这两类问题
+顺带一条**判不了**的：帖子里提到的 `@deepseek-ai/dsh-desktop`，npm 上没有这个包名，我们无法对它给出任何结论——它不在上面的结论里，请别把它当成「已放行」。
 
-建议使用只读诊断工具扫描本地配置（纯只读分析，不修改任何文件）：
+想在自己机器上把「准入」这一层单独排除掉：
 
 ```console
-$ dsh-triage audit                              # 扫描全量插件准入状态；若不存在 blocked 行，则可完全排除准入拦截
-$ dsh-triage upgrade --to 0.2.1-rc.5 --card    # 预检当前已装配置在目标版本下的整体准入卡片
+$ dsh-triage audit                            # 全量行级准入台账：没有 blocked 行，就说明声明层不是原因
+$ dsh-triage upgrade --to 0.2.1-rc.5 --card   # 目标版本下的四桶影响清单（只看声明层）
 ```
 
-若执行 `dsh-triage audit` 后**没有发现任何被标记为 `blocked` 的行**，则可以确定声明层没有冲突。建议直接翻阅启动控制台输出中该插件模块在 import 或 setup 时的具体报错堆栈进行代码级排查。
+**边界**：以上判的是 npm 上**已发布的版本**，不是你那台机器；声明层放行**不等于**运行期不会出错，也不代表这个故障有已知修法。如果你装的是自定义分支或历史构建，请以本地实际声明与堆栈为准。
 
-**边界说明**：以上结论**判的是 npm 上已发布的版本，不是你那台机器**；若本地安装的是其他自定义分支或历史构建，`dsh-triage audit` 会依据你本地实际安装的文件进行精确诊断。此外，声明层放行仅代表满足准入版本约束，不代表运行期代码 100% 不发生逻辑错误。
+复算证据（公开仓，带 sha256）：`https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/discussion-triage-2026-11-02T12-10-00-000Z.json`
+<!-- paste:end -->
 
-完整评测证据产物（包含 SHA-256 签名）：`data/results/discussion-triage-2026-11-02T12-10-00-000Z.json`
+## 数值来源（不粘贴）
+
+| 数字 | 来自哪里 |
+|---|---|
+| `@linxin666/dsh-web-all@0.4.13` → `admitted`，1 项 peer | `data/results/discussion-triage-2026-11-02T12-10-00-000Z.json` 的 `rows[number=11687].probes[0]` |
+| `dsh-better-sidebar@0.28.2` → `admitted`，13 项 peer | 同上 `probes[1]` |
+| `@deepseek-ai/dsh-desktop` → `unreadable`（npm 无此包） | 同上 `probes[2]` |
+
+复算命令：
+
+```console
+$ node scripts/record_discussion_triage.mjs --ids 11687 --target 0.2.1-rc.5
+```
+
+## 发之前要确认的三件事
+
+见 `docs/distribution/posting-runbook.md`。这篇特别要确认：**帖子还没有被解答**（`node scripts/record_discussion_state.mjs --ids 11687`）；
+如果维护者已经给出结论，这篇就不要发了——重复一个别人已给的答案只会稀释信息。

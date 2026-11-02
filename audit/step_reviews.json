@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R70 (2026-11-02)",
+  "stand": "R71 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10435,6 +10435,208 @@
         "artifact": "data/results/client-latency-2026-11-02T18-56-00.000Z.json",
         "outcome": "GREEN：四条序列 n=22 / 4 / 6 / 5；median 921 · p90 2439 · max 5557",
         "sha256": "49de8340a00503dcdf8633895521f2366c2821aae3de1b252a6aa43bb75328e1"
+      }
+    },
+    {
+      "id": "R71-S1",
+      "batch": "R71",
+      "step": "回帖前先读帖子状态：新纯函数 `judgeReplyGate` 四档 + 记录器（读不到不许写成 open）",
+      "changed": [
+        "scripts/lib/discussion-state.mjs",
+        "scripts/lib/discussion-state.d.mts",
+        "scripts/record_discussion_state.mjs",
+        "tests/unit/discussion-state.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`closed` 优先于 `answered`，两者都**观测到** false 才是 `open`；`\"false\"` / `0` / 缺字段一律 `unreadable`（沿用 R66 的 NaN 教训）。真机三条全部 `open`（`isAnswered:false` / `closed:false`），与 R57 的判定前提一致。",
+        "reproducibility": "PASS：`gh api graphql` 一次往返 + 原始快照落 `data/fixtures/discussions/state-*.json`，`--fixtures` 可离线复算；产物带 `produced_by` / `generated_at` / sha256，走 R67 的 `writeEvidence()`（打印路径 = 实写路径）。",
+        "licence": "PASS：只读上游 Discussions 的公开元数据（标题 / 状态 / 评论时间 / 作者登录名），不抓正文、不落个人身份；仓库 public，产物无 home 路径（实测 `Users|AppData` 为 false）。",
+        "ssot": "PASS：`data/results/discussion-state-2026-11-02T19-13-45-223Z.json` 由脚本产出；第一次跑（重构前）的产物已删除，只保留重构后的一份，避免同一轮两份同名证据。",
+        "adversary": "反例：把「读不到」写成 `open`——被拒，`judgeReplyGate(null/undefined/\"open\"/{})` 全是 `unreadable`；另一个反例：把 `isAnswered` 缺省当 `false`——被拒，`{closed:false}` 判 `unreadable`。"
+      },
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --ids 8202,10849,11687",
+        "artifact": "data/results/discussion-state-2026-11-02T19-13-45-223Z.json",
+        "outcome": "GREEN：3 条全部 `open`（#8202 / #10849 / #11687，均 `isAnswered:false`、`closed:false`），4 条 limits 写清「读不到 ≠ 已答」",
+        "sha256": "36c038fb235159faf94acb490391be82a4225bb5e9589ccc9373513069fef3f5"
+      }
+    },
+    {
+      "id": "R71-S2",
+      "batch": "R71",
+      "step": "「建议装哪个构建」也过同一个准入引擎（新记录器 `record_remedy_probe`）",
+      "changed": [
+        "scripts/record_remedy_probe.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5` 判 `admitted`（8 项 peer 精确钉在 `0.2.1-rc.5`），与 `0.1.0-rc.7`（6 项 `^0.1.0-rc.7`，`denied`）/ `0.0.1-rc.1`（4 项 `^0.0.1-rc.1`，`denied`）出自**同一个** `evaluateAdmission`；`dist_tags` 与判据同一次 registry 读。",
+        "reproducibility": "PASS：命令与 `--target` / `--pins` 都写进产物 `sample`；limits 明写「live registry 快照，不可逐字节离线复现」（与 `upgrade-registry-live` 同一口径）。",
+        "licence": "PASS：npm 公开元数据，按 registry 条款；无第三方代码进仓、无凭据。",
+        "ssot": "PASS：`remedy-probe-2026-11-02T19-15-18-710Z.json` 由脚本产出 + sha256；第一版（`19-14-55`）缺 `dist_tags` 已删除，不留下半份证据。",
+        "adversary": "反例：把 `admitted` 说成「装了就一定能跑」——被拒，产物 `limits` 与回帖边界句都写明「声明层放行 ≠ 运行期无故障」；另一个反例：拿 `latest` 当「最新可用」，产物里 `dist_tags.latest` 与 `next` 分列，不合并。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --target 0.2.1-rc.5 --pins \"@deepseek-ai/dsh-mcp-client@0.2.1-rc.5\"",
+        "artifact": "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json",
+        "outcome": "GREEN：admitted / 8 peer；`dist_tags = latest 0.0.1-rc.1 · next 0.2.1-rc.5`",
+        "sha256": "cd4836f83d814eb408180cdebf1ef6401598cf7f0a749a97ce33b6d7912d0694"
+      }
+    },
+    {
+      "id": "R71-S3",
+      "batch": "R71",
+      "step": "检查器第 16 条：草稿声明必须等于被引产物（第一次跑就抓到我自己的三处漂移）",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "docs/distribution/T-810/registry.json",
+        "docs/distribution/T-810/06-reply-8202-mcp-client.md",
+        "docs/distribution/T-810/07-reply-10849-dist-tag.md",
+        "docs/distribution/T-810/08-reply-11687-not-declaration.md"
+      ],
+      "review": {
+        "correctness": "PASS：新断言从**产物**复算（版本 / 桶 / 区间条数 / 标签值）再从**粘贴块**复算（必含句 / 计数），两边对撞；支持两种产物形状（`discussion-triage` 按 `number` 取 `probes`、`remedy-probe` 行即探针）。",
+        "reproducibility": "PASS：断言是纯文本 + 纯 JSON 比较，`--stamp` 决定文件名；红/绿结论可由任意人复跑同一命令得到。",
+        "licence": "PASS：只读仓内文件；产物里的上游版本号来自 npm 公开元数据。",
+        "ssot": "PASS：这份红产物保留为见证（断言对**我自己刚写的正文**成立），修法是改写法而不是放宽断言；随后 `19-18-56` 全绿。",
+        "adversary": "反例：这一条本身就是反例机器——三处真实漂移（`^0.1.0-rc.7` 写了 7 次而产物 6 次、`^0.0.1-rc.1` 5 次而 4 次、「等 13 项」对不上 13 行）全部被抓；没有一处是靠「我觉得对」通过的。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:16:50.661Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T19-16-50.661Z.json",
+        "outcome": "RED（这是想要的）：`draft-claims-match-their-artifact` 点名三处正文与产物不一致；另有 `drafts-cite-real-artifacts` 两条（缺复算命令 / 禁用话术）同轮修掉",
+        "sha256": "6dbd027b6357aff220f0a9858d18d3589be3f214c3e9f7fed2c99195f11c5881"
+      }
+    },
+    {
+      "id": "R71-S4",
+      "batch": "R71",
+      "step": "负对照第一次没红：证明断言只验产物、不验正文；补「粘贴块必须写出 pkg@version」",
+      "changed": [
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：把正文里两处 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.7` 之一改错时**全绿**——查明版本只被用来「找探针」，从没被用来「验正文」；补规则后同一改动立即红。",
+        "reproducibility": "PASS：改动用 node 写入（不用 PowerShell，避免 R56 的 GBK 事故）；每次还原后复算 sha256 与原文逐字节相同（`c5e8d1e7…`）。",
+        "licence": "PASS：只改仓内检查器与草稿。",
+        "ssot": "PASS：这份「假绿」产物保留——它是「控制没红 ≠ 断言够严」的唯一见证，删掉它就只剩一句自述。",
+        "adversary": "反例：把「控制没红」解释成「控制选错位置」就收工——被拒；真正的缺口在生成侧（正文明明可以写错版本），所以补的是断言而不是换个控制。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:17:51.810Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T19-17-51.810Z.json",
+        "outcome": "GREEN（**假绿**，正是要记录的现象）：正文版本被改错而 16 条断言全过 → 补 `pkg@version` 规则后再改即红",
+        "sha256": "960a5c15134ccca771013190b0e26d15072825b18cb797b7b4cbdd3d255d7c58"
+      }
+    },
+    {
+      "id": "R71-S5",
+      "batch": "R71",
+      "step": "定向负对照 ①：把粘贴块里的版本整体改错 → 必红",
+      "changed": [
+        "docs/distribution/T-810/06-reply-8202-mcp-client.md"
+      ],
+      "review": {
+        "correctness": "PASS：`0.1.0-rc.7` → `0.1.0-rc.6` 后断言点名两处（「粘贴块从未写出该版本」「`^0.1.0-rc.7` 出现 0 次而声明 6 次」）。",
+        "reproducibility": "PASS：改 → 跑 → 还原用 node 完成，还原后 sha256 `c5e8d1e7…` 与改前逐字节相同。",
+        "licence": "PASS：只改仓内草稿与检查器，没有引入外部素材或第三方代码。",
+        "ssot": "PASS：红产物 `19-18-22` 保留；原稿逐字节还原。",
+        "adversary": "反例：只改一处（另一处仍正确）→ 断言不红；这说明它验的是「回复里有没有写出被判的构建」，不是「每一句都对」——边界写在报告里，不夸大。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:18:22.527Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T19-18-22.527Z.json",
+        "outcome": "RED（预期）：`the paste block never names @deepseek-ai/dsh-mcp-client@0.1.0-rc.7` + `^0.1.0-rc.7 0 time(s), the claim says 6`",
+        "sha256": "d8342bfa629c3eaaf9c76405cc57108c653509ee40eacfba4d512f02e9c853ee"
+      }
+    },
+    {
+      "id": "R71-S6",
+      "batch": "R71",
+      "step": "定向负对照 ②：把「等 13 项」改成「等 12 项」→ 必红（正文计数 vs 产物 `range_items`）",
+      "changed": [
+        "docs/distribution/T-810/08-reply-11687-not-declaration.md"
+      ],
+      "review": {
+        "correctness": "PASS：`listing.token` 命中 0 次而声明 1 次，断言点名；产物侧 `range_items: 13` 由 `declared_range` 分段数复算。",
+        "reproducibility": "PASS：改 → 跑 → 还原（sha256 `717abe2a…` 与改前一致）。",
+        "licence": "PASS：只改仓内草稿与检查器，没有引入外部素材或第三方代码。",
+        "ssot": "PASS：红产物 `19-18-41` 保留。",
+        "adversary": "反例：把 `range_items` 与 `listing.times` 强制相等——被拒：回帖允许「等 13 项」这种概括式写法，强行相等会把合理文本判红；两个方向分别由产物侧与正文侧覆盖。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:18:41.815Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T19-18-41.815Z.json",
+        "outcome": "RED（预期）：`the paste block contains \"等 13 项\" 0 time(s), the claim says 1`",
+        "sha256": "cd1ce30ab814068002c091ca796dde225653c6e7be845d2ddca66ee2d4fec61d"
+      }
+    },
+    {
+      "id": "R71-S7",
+      "batch": "R71",
+      "step": "定向负对照 ③：删掉粘贴块里的边界句「不是你那台机器」→ 必红",
+      "changed": [
+        "docs/distribution/T-810/07-reply-10849-dist-tag.md"
+      ],
+      "review": {
+        "correctness": "PASS：`paste_must_contain` 未命中，断言点名整句丢失——边界句是「判的是已发布版本，不是你的机器」这条纪律的可执行形式。",
+        "reproducibility": "PASS：改 → 跑 → 还原（sha256 `50563f05…` 与改前一致）。",
+        "licence": "PASS：只改仓内草稿与检查器，没有引入外部素材或第三方代码。",
+        "ssot": "PASS：红产物 `19-18-47` 保留。",
+        "adversary": "反例：把边界句留在粘贴块外面（只在「数值来源」段里）——被拒，断言只认粘贴块内部，因为读者复制的就是那一块。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:18:47.493Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T19-18-47.493Z.json",
+        "outcome": "RED（预期）：`the paste block lost the required phrase \"不是你那台机器\"`",
+        "sha256": "f7e18a72cd8a627447eff590579581217d0f5707d449b2dd1e62ad12c161e0c7"
+      }
+    },
+    {
+      "id": "R71-S8",
+      "batch": "R71",
+      "step": "三条负对照还原后终跑：16/16（含新断言与旧的 15 条，测试数 708）",
+      "changed": [
+        "docs/distribution/T-810/registry.json",
+        "docs/distribution/posting-runbook.md"
+      ],
+      "review": {
+        "correctness": "PASS：16 条全绿，其中第 16 条报「3 draft(s)：每个被声明的版本 / 桶 / 区间条数 / 标签值都等于被引产物」。",
+        "reproducibility": "PASS：`--stamp` / `--tests` 写了；三份草稿的 sha256 与负对照还原后一致。",
+        "licence": "PASS：只改仓内草稿、registry 与 runbook，没有引入外部素材。",
+        "ssot": "PASS：这份是终跑；被取代的三份中间绿产物（`19-17-29` / `19-17-38` / `19-18-09`）已删除，避免「哪份才算数」的歧义。",
+        "adversary": "反例：用「16/16」证明「回帖内容正确」——被拒：断言只证明**数字与产物一致**，不证明措辞、时机或必要性；发帖仍要人按 runbook 判状态。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:33:18.979Z --tests 708",
+        "artifact": "data/results/listing-2026-11-02T19-33-18.979Z.json",
+        "outcome": "GREEN：16/16（`draft-claims-match-their-artifact` · 3 drafts）；测试数按终值 708 复核",
+        "sha256": "71ea69cccca6aea5e033f872304d0615904f1d37dc054ce46cd92a561db40eac"
+      }
+    },
+    {
+      "id": "R71-S9",
+      "batch": "R71",
+      "step": "升级日触发接上电：`--baseline` + 纯函数 `pickNewestObservation` + 定时 workflow",
+      "changed": [
+        "scripts/watch_next_release.mjs",
+        "scripts/lib/next-release.mjs",
+        "scripts/lib/next-release.d.mts",
+        "tests/unit/next-release.test.ts",
+        ".github/workflows/watch-upstream.yml",
+        ".gitignore"
+      ],
+      "review": {
+        "correctness": "PASS：`--baseline data/results` 读到已提交基线判 `unchanged`（零产物）；伪造旧基线判 `changed`；死端口 exit 2 **零产物**；无基线判 `baseline`。四条分支本机真跑。",
+        "reproducibility": "PASS：选择规则是纯函数（5 条单测：最新胜出 / 坏时间戳忽略 / 无版本不算基线 / 空与非法输入 / 同时刻取第一条）；YAML 用 js-yaml 离线解析过一次（未进仓）。",
+        "licence": "PASS：只读 npm registry 的 dist-tags；workflow 不写仓库、不提交、不发帖。",
+        "ssot": "PASS：**没有**新增 SSOT 产物——`unchanged` 按设计不落产物，`changed` 的样本只落在 `%TEMP%`（把伪造基线写进 `data/results` 会让下一次运行把它当基线，永久假红）。本步 cite 的是被读取的那份真基线。",
+        "adversary": "反例：`unmeasured` 也 exit 0 —— 被拒，job 必须失败（看不见 npm 不许报平安）；反例：让 CI 顺手跑卡片 —— 被拒，runner 没有 profile，那张卡片会长得像对所有人说的话；反例：把 `--baseline` 指到 `%TEMP%` 后绝对路径进产物 —— 已修成 `(external)/<dirname>`。"
+      },
+      "real_test": {
+        "command": "node scripts/watch_next_release.mjs --baseline data/results --out %TEMP%/watch-r71b",
+        "artifact": "data/results/next-release-2026-11-02T17-40-00.322Z.json",
+        "outcome": "GREEN：`unchanged`（`next is still 0.2.1-rc.5`，读的就是这份基线）；另三条分支在 `%TEMP%` 真跑：伪造 `0.2.1-rc.4` → `changed` + 产物、死端口 → exit 2 零产物、空目录 → `baseline`",
+        "sha256": "4471d331fb010d44a25cf9eb54750562e90cfd088d13f4717a941c623874fd7a"
       }
     }
   ]

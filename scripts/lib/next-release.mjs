@@ -113,3 +113,36 @@ export function judgeNextChange(input) {
     detail: `next moved ${from} → ${to}; this includes a rollback, which changes what the card would say`,
   }
 }
+
+/**
+ * Which observation is "the previous one"? (R71)
+ *
+ * WHY THIS IS A FUNCTION AND NOT THREE LINES IN THE SCRIPT: until R71 the watcher only looked in its own
+ * `--out` directory. Locally that works because the artifacts are committed next to it. In CI the runner
+ * starts from a fresh checkout and `--out` points at `$RUNNER_TEMP`, so `previous` was always `null`, the
+ * verdict was always `baseline`, and **the scheduled watcher could never report `changed`** — a watcher
+ * that cannot see the past is not a watcher.
+ *
+ * The rule: the newest **parseable** timestamp wins; an entry whose `at` cannot be parsed is ignored
+ * rather than being treated as newest or oldest (both would be an invention). Ties keep the first entry,
+ * so the same input always picks the same observation.
+ *
+ * @param {Array<{ version?: unknown, at?: unknown }>} candidates
+ * @returns {{ version: string, at: string } | null}
+ */
+export function pickNewestObservation(candidates) {
+  if (!Array.isArray(candidates)) return null
+  const dated = []
+  for (const entry of candidates) {
+    if (entry === null || typeof entry !== 'object') continue
+    if (typeof entry.version !== 'string' || entry.version.trim().length === 0) continue
+    if (typeof entry.at !== 'string') continue
+    const epoch = Date.parse(entry.at)
+    if (!Number.isFinite(epoch)) continue
+    dated.push({ version: entry.version, at: entry.at, epoch })
+  }
+  if (dated.length === 0) return null
+  let newest = dated[0]
+  for (const entry of dated.slice(1)) if (entry.epoch > newest.epoch) newest = entry
+  return { version: newest.version, at: newest.at }
+}

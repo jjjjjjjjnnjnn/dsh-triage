@@ -555,6 +555,172 @@ check(
   coverageProblems.slice(0, 4).join('; ') || 'both READMEs quote the live measurement, and its review/recompute artifacts agree',
 )
 
+/*
+ * 16th assertion (R71): a paste-ready draft's numbers must equal the artifact it cites.
+ *
+ * WHY IT EXISTS: R57 wrote the three reply drafts and `drafts-cite-real-artifacts` checked that the cited
+ * file exists, hashes correctly and is mentioned in the text. That is a **file** check, not a **number**
+ * check: the draft could say "6 peerDependencies" while the artifact recorded 4 and both assertions stayed
+ * green. R52 and R53 both lost a round to exactly that shape (a number that drifted from its evidence).
+ *
+ * HOW: the registry declares what the draft claims (`claims.packages[].version` / `admission_status` /
+ * `range_items`) and how many times the paste block lists it (`claims.listing.token` x `times`). The checker
+ * recomputes each of those **from the artifact** — and separately from the paste block — so the two have to
+ * agree with each other and with the evidence. Two artifact shapes are supported, and both are named:
+ *   - discussion-triage  → `rows[]` keyed by `number`, probes under `row.probes`
+ *   - remedy-probe       → `rows[]` keyed by `package` + `version` (a probe IS the row)
+ */
+const claimProblems = []
+const PASTE_BLOCK = /<!--\s*paste:start\s*-->([\s\S]*?)<!--\s*paste:end\s*-->/
+const countOf = (haystack, needle) => {
+  if (needle.length === 0) return 0
+  let count = 0
+  let at = haystack.indexOf(needle)
+  while (at !== -1) {
+    count += 1
+    at = haystack.indexOf(needle, at + needle.length)
+  }
+  return count
+}
+const claimRegistry = (() => {
+  try {
+    return JSON.parse(readFileSync(abs(`${DRAFTS_DIR}/registry.json`), 'utf8'))
+  } catch {
+    return null
+  }
+})()
+const claimDrafts = Array.isArray(claimRegistry?.drafts) ? claimRegistry.drafts : []
+let claimCount = 0
+for (const entry of claimDrafts) {
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) continue
+  const name = String(entry.file ?? '')
+  const claims = entry.claims
+  if (claims === undefined || claims === null) continue // only drafts that declare claims are checked
+  claimCount += 1
+  if (typeof name !== 'string' || name.length === 0) {
+    claimProblems.push('a draft declares claims but has no file name')
+    continue
+  }
+  if (!existsSync(abs(`${DRAFTS_DIR}/${name}`))) {
+    claimProblems.push(`${name}: declares claims but the file is missing`)
+    continue
+  }
+  const text = readFileSync(abs(`${DRAFTS_DIR}/${name}`), 'utf8')
+  const paste = text.match(PASTE_BLOCK)
+  if (paste === null) {
+    claimProblems.push(`${name}: declares claims but has no <!-- paste:start -->…<!-- paste:end --> block`)
+    continue
+  }
+  const body = paste[1]
+  if (typeof claims.target !== 'string' || !body.includes(claims.target)) {
+    claimProblems.push(`${name}: the paste block never names the target runtime ${String(claims.target)}`)
+  }
+  for (const phrase of Array.isArray(claims.paste_must_contain) ? claims.paste_must_contain : []) {
+    if (!body.includes(String(phrase))) claimProblems.push(`${name}: the paste block lost the required phrase "${String(phrase)}"`)
+  }
+
+  // The tag claim is its own fact: a `latest` reading is a timestamped snapshot, not a property of the package.
+  if (claims.dist_tags !== undefined && claims.dist_tags !== null) {
+    const tagCite = String(claims.dist_tags.cite ?? '')
+    if (!existsSync(abs(tagCite))) {
+      claimProblems.push(`${name}: dist_tags cite is missing ${tagCite}`)
+    } else {
+      const tags = readArtifact(tagCite)?.rows?.find((row) => row?.dist_tags !== null && row?.dist_tags !== undefined)?.dist_tags
+      if (tags === null || tags === undefined) {
+        claimProblems.push(`${name}: ${tagCite} records no dist_tags, so the tag claim cannot be checked`)
+      } else {
+        for (const tag of ['latest', 'next']) {
+          const claimed = claims.dist_tags[tag]
+          if (claimed === undefined) continue
+          if (tags[tag] !== claimed) claimProblems.push(`${name}: says ${tag}=${String(claimed)}, the artifact recorded ${String(tags[tag])}`)
+        }
+      }
+    }
+  }
+
+  const packages = Array.isArray(claims.packages) ? claims.packages : []
+  if (packages.length === 0) claimProblems.push(`${name}: declares claims but lists no packages`)
+  for (const claim of packages) {
+    if (claim === null || typeof claim !== 'object') {
+      claimProblems.push(`${name}: a package claim is not an object`)
+      continue
+    }
+    const cite = String(claim.cite ?? '')
+    if (!existsSync(abs(cite))) {
+      claimProblems.push(`${name}: cites a missing artifact ${cite}`)
+      continue
+    }
+    const artifact = readArtifact(cite)
+    const rows = Array.isArray(artifact?.rows) ? artifact.rows : []
+    const byNumber = rows.find((row) => row?.number === claims.discussion)
+    const probes = byNumber === undefined ? rows : (Array.isArray(byNumber.probes) ? byNumber.probes : [])
+    const probe = probes.find(
+      (candidate) =>
+        candidate?.package === claim.package &&
+        (claim.version === null || claim.version === undefined || candidate?.version === claim.version),
+    )
+    if (probe === undefined) {
+      claimProblems.push(`${name}: ${String(claim.package)}${claim.version ? `@${String(claim.version)}` : ''} is not in ${cite}`)
+      continue
+    }
+    if (claim.state !== undefined && probe.state !== claim.state) {
+      claimProblems.push(`${name}: ${String(claim.package)} state is ${String(probe.state)} in the artifact, draft claims ${String(claim.state)}`)
+    }
+    if (claim.admission_status !== undefined && (probe.admission_status ?? null) !== claim.admission_status) {
+      claimProblems.push(
+        `${name}: ${String(claim.package)} is ${String(probe.admission_status)} in the artifact, draft claims ${String(claim.admission_status)}`,
+      )
+    }
+    if (claim.state === 'measured' && claims.target !== undefined && probe.target !== claims.target) {
+      claimProblems.push(`${name}: ${String(claim.package)} was judged against ${String(probe.target)}, draft claims ${String(claims.target)}`)
+    }
+    /*
+     * R71's own first negative control failed to fail: editing `…@0.1.0-rc.7` to `…@0.1.0-rc.6` in the
+     * paste block stayed green, because the claimed version was only used to *find* the probe, never to
+     * check that the prose printed it. Requiring the literal `pkg@version` closes that hole — a reply that
+     * names the wrong build is the most damaging thing this draft can do.
+     */
+    if (claim.state === 'measured' && typeof claim.version === 'string' && claim.version.length > 0) {
+      const pair = `${String(claim.package)}@${claim.version}`
+      if (!body.includes(pair)) claimProblems.push(`${name}: the paste block never names ${pair}`)
+    }
+    if (claim.range_items !== undefined) {
+      const declared = typeof probe.declared_range === 'string' ? probe.declared_range.split(' , ').filter((item) => item.length > 0).length : 0
+      if (declared !== claim.range_items) {
+        claimProblems.push(`${name}: ${String(claim.package)} declares ${declared} range item(s) in the artifact, draft claims ${String(claim.range_items)}`)
+      }
+      if (Array.isArray(probe.unmet) && claim.admission_status === 'denied' && probe.unmet.length === 0) {
+        claimProblems.push(`${name}: ${String(claim.package)} is claimed denied but the artifact records no unmet range`)
+      }
+    }
+    if (claim.listing !== undefined && claim.listing !== null) {
+      /*
+       * `listing` is about the TEXT: the paste block states this phrase this many times. It is deliberately
+       * not required to equal `range_items` — a block may summarise ("… 等 13 项") instead of listing every
+       * peer. The two directions of drift are still covered, because `range_items` is recomputed from the
+       * artifact and `listing` is recomputed from the block: change the evidence and the first fails, change
+       * the number in the prose and the second fails.
+       */
+      const token = String(claim.listing.token ?? '')
+      const times = Number(claim.listing.times ?? -1)
+      if (token.length === 0 || !Number.isInteger(times) || times < 1) {
+        claimProblems.push(`${name}: listing needs a non-empty token and a positive integer count`)
+        continue
+      }
+      const seen = countOf(body, token)
+      if (seen !== times) claimProblems.push(`${name}: the paste block contains "${token}" ${seen} time(s), the claim says ${times}`)
+    }
+  }
+}
+check(
+  'draft-claims-match-their-artifact',
+  claimProblems.length === 0,
+  claimProblems.slice(0, 4).join('; ') ||
+    (claimCount === 0
+      ? 'no draft declares claims (nothing was checked — not the same as everything checked out)'
+      : `${claimCount} draft(s): every claimed version, bucket, range count and tag value equals the cited artifact`),
+)
+
 const passed = checks.every((entry) => entry.ok)
 const artifact = {
   schema_version: 1,

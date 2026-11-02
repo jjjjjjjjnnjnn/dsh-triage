@@ -14,6 +14,9 @@ coverage/
 .tmp/
 probe-work/
 local/
+# R71: the CI watcher's rolling state (cache-only, never a commit). Present so a local run does not
+# accidentally stage it; the same directory name is what `.github/workflows/watch-upstream.yml` caches.
+.watch-state/
 # Repo-internal DSH sandbox (upstream runtime + profile deps for live testing).
 sandbox/
 

@@ -778,8 +778,12 @@
 - 实测：**696 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15
 - 反思：这一轮两半的教训是同一个——**「读不出」和「没发生」必须能分开**。B 把它做进判定表，A 把它做进测量条件（`loadavg_usable: false` 就是在说「这个读数在 Windows 上不存在」）。而那个 `--dsh-main` 缺陷则是反例：一个不存在的配置被解析成了存在的目录，于是「没配好」变成了「装不上」。
 
+### 2026-11-02 R71｜三条回帖变成「可发」+ 升级日触发接上电（交付轮 + 流程断言）
 
-
-
-
-
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R71-S1` … `R71-S9`；报告 `audit/AUDIT_2026-11-02_R71.md`；无 subagent
+- 人工决策：**本轮不发帖**（HUMAN：「这轮不发帖」）+ 方向 A+B 同轮（HUMAN：「A+B 一起做」）
+- 范围：`scripts/lib/discussion-state.mjs` + `.d.mts`（新）· `scripts/record_discussion_state.mjs`（新）· `scripts/record_remedy_probe.mjs`（新）· `tests/unit/discussion-state.test.ts`（新，7 条）· `scripts/check_listing.mjs`（第 16 条 + `pkg@version` 规则）· `docs/distribution/T-810/{06,07,08}.md`（改写成粘贴块 + 数值来源）· `docs/distribution/T-810/registry.json`（`claims`）· `docs/distribution/posting-runbook.md`（新）· `scripts/watch_next_release.mjs`（`--baseline`）· `scripts/lib/next-release.mjs` + `.d.mts`（`pickNewestObservation`）· `tests/unit/next-release.test.ts`（+5 条）· `.github/workflows/watch-upstream.yml`（新）· `.gitignore` · `audit/blind_spots.json`（`BS-56`）· `docs/{HANDOFF,ROADMAP,BACKLOG}.md` · `PROJECT_RULES.md` · `INDEX.md` / `AGENTS.md` / `README(.zh-CN).md`（696 → 708）· `data/results/{discussion-state-2026-11-02T19-13-45-223Z,remedy-probe-2026-11-02T19-15-18-710Z,listing-2026-11-02T19-16-50.661Z,listing-2026-11-02T19-17-51.810Z,listing-2026-11-02T19-18-22.527Z,listing-2026-11-02T19-18-41.815Z,listing-2026-11-02T19-18-47.493Z,listing-2026-11-02T19-33-18.979Z}.json`
+- 结果：① 三条回帖各加 `paste:start/end` 块并让第 16 条断言**从产物与粘贴块两边复算**（三条负对照各自真红）；② `record_remedy_probe` 把「建议装哪个构建」也过同一个 `evaluateAdmission`（`mcp-client@0.2.1-rc.5` admitted / 8 peer）；③ `watch_next_release --baseline` + 定时 workflow，修掉「CI 里永远报 `baseline`」的失忆
+- 实测：**708 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **16/16** · step-review 440 步 / 418 产物全部被引用
+- 反思：这一轮两次被自己的控制打脸——第一次负对照**没红**，查明是断言只验产物不验正文（补的是生成侧规则，不是控制的强度）；第二次「假绿」产物留着当见证（`19-17-51`），因为「控制没红 ≠ 断言够严」。另一半的教训是 **CI 里的「看不见」会伪装成「没有变化」**：`--out` 只能指临时目录，于是旧实现 `previous` 恒空、永远 `baseline`——任何只在自己输出目录里找基线的监听器，在 CI 里都等于失忆。

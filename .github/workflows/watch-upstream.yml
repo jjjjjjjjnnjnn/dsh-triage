@@ -1,0 +1,82 @@
+# "Upstream published a new rc" is the one signal the upgrade-day front door cannot afford to miss.
+#
+# Until R71 the watcher (`scripts/watch_next_release.mjs`) was a command someone had to remember to run,
+# and its baseline lived next to its output. That works locally and is *structurally broken* in CI: the
+# runner starts from a fresh checkout, `--out` must not be `data/results` (CI never writes SSOT), so
+# `previous` was always null and the verdict was always `baseline` — a scheduled watcher with amnesia.
+# `--baseline data/results,.watch-state` fixes the amnesia: the committed artifact is the long-term memory
+# and `.watch-state` (a cache, never a commit) dedupes between runs.
+#
+# WHAT THIS JOB DELIBERATELY DOES NOT DO:
+#   - it does not run the upgrade card: the card's numbers come from *this machine's* profile, and a
+#     runner has no DSH profile — a card produced here would look like a statement about everyone;
+#   - it does not post anywhere (deciding to post is a human act, see `docs/distribution/posting-runbook.md`);
+#   - it does not commit anything. `data/results/` stays SSOT, written only by recorders run on a real machine.
+#
+# THE EXIT-CODE RULE mirrors the rest of the repo: an unreadable registry FAILS the job. A watcher that
+# reports calm when it could not reach npm is a machine for producing false calm (R51 `pending`, R52
+# `threads: 0`). A quiet week is a green run with `unchanged` in the summary, not a silent one.
+
+name: watch-upstream
+
+on:
+  schedule:
+    # Every 6 hours at :17. GitHub's scheduler is best-effort and can be delayed; see BS-56.
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    name: upstream dist-tags.next
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # No pnpm install: the watcher is a plain Node script (zero dependencies) by design, so this job
+      # keeps working even if the workspace's dependency graph is broken.
+      - name: restore the rolling watcher state (a cache, not a commit)
+        uses: actions/cache@v4
+        with:
+          path: .watch-state
+          key: watch-state-${{ github.run_id }}
+          restore-keys: |
+            watch-state-
+
+      - name: read dist-tags.next and compare with the last observation
+        id: watch
+        shell: bash
+        run: |
+          set +e
+          node scripts/watch_next_release.mjs --baseline data/results,.watch-state --out .watch-state > "$RUNNER_TEMP/watch.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/watch.log"
+          {
+            echo "### upstream \`next\` at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo '```'
+            cat "$RUNNER_TEMP/watch.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -eq 2 ]; then
+            echo "::error::the watcher could not read the registry — that is not 'no update'"
+            exit 1
+          fi
+          if grep -q "next moved" "$RUNNER_TEMP/watch.log"; then
+            echo "::warning::upstream \`next\` moved — re-run the upgrade-day card on a real machine before quoting anything"
+          fi
+
+      - name: keep the observation (only a changed run writes one)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: watch-state-${{ github.run_id }}
+          path: .watch-state/next-release-*.json
+          if-no-files-found: ignore
+          retention-days: 30

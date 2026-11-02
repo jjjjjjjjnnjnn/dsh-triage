@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { NEXT_RELEASE_STATES, judgeNextChange } from '../../scripts/lib/next-release.mjs'
+import { NEXT_RELEASE_STATES, judgeNextChange, pickNewestObservation } from '../../scripts/lib/next-release.mjs'
 
 test('a readable registry with no history is a baseline, not a discovery', () => {
   const verdict = judgeNextChange({ previous: null, current: { ok: true, version: '0.2.1-rc.5' } })
@@ -104,4 +104,53 @@ test('a previous observation with no usable version is unmeasured, not "first ob
     assert.equal(verdict.state, 'unmeasured')
     assert.equal(verdict.writesArtifact, false)
   }
+})
+
+/*
+ * R71: which observation is "the previous one"?
+ *
+ * This became a function because the watcher only looked in its own `--out` directory. In CI `--out` is
+ * `$RUNNER_TEMP`, so `previous` was always null and the verdict was always `baseline` — a scheduled
+ * watcher that can never say `changed`. These cases pin the selection rule itself.
+ */
+
+test('the newest parseable observation wins, whatever order the files came back in', () => {
+  const older = { version: '0.2.1-rc.4', at: '2026-10-29T09:00:00.000Z' }
+  const newer = { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' }
+  for (const candidates of [
+    [older, newer],
+    [newer, older],
+  ]) {
+    assert.deepEqual(pickNewestObservation(candidates), { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' })
+  }
+})
+
+test('an unparseable timestamp is ignored, not treated as newest or oldest', () => {
+  const picked = pickNewestObservation([
+    { version: '0.2.1-rc.4', at: 'not a date' },
+    { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' },
+  ])
+  assert.deepEqual(picked, { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' })
+  // Only junk on disk: we did not read a baseline, so nothing may be reported as one.
+  assert.equal(pickNewestObservation([{ version: '0.2.1-rc.5', at: 'soon' }]), null)
+})
+
+test('an observation without a usable version is not a baseline', () => {
+  assert.equal(pickNewestObservation([{ at: '2026-11-02T17:40:00.322Z' }]), null)
+  assert.equal(pickNewestObservation([{ version: '   ', at: '2026-11-02T17:40:00.322Z' }]), null)
+})
+
+test('nothing to read is null, and so is a non-array', () => {
+  assert.equal(pickNewestObservation([]), null)
+  assert.equal(pickNewestObservation(null), null)
+  assert.equal(pickNewestObservation(undefined), null)
+})
+
+test('a timestamp tie keeps the first entry, so the same disk state always picks the same baseline', () => {
+  const at = '2026-11-02T17:40:00.322Z'
+  const picked = pickNewestObservation([
+    { version: '0.2.1-rc.5', at },
+    { version: '0.2.1-rc.6', at },
+  ])
+  assert.deepEqual(picked, { version: '0.2.1-rc.5', at })
 })

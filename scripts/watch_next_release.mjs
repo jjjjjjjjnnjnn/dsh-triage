@@ -29,10 +29,10 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
+import { isAbsolute, basename, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
-import { judgeNextChange } from './lib/next-release.mjs'
+import { judgeNextChange, pickNewestObservation } from './lib/next-release.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -55,7 +55,21 @@ async function main() {
   const upstream = String(argOf('--package', '@deepseek-ai/dsh'))
   const tag = String(argOf('--tag', 'next'))
 
-  const previous = lastObservation(outDir)
+  /*
+   * Where else may the previous observation live? (R71)
+   *
+   * Locally the artifacts sit in `data/results` and `--out` is that same directory, so this is invisible.
+   * In CI `--out` has to be `$RUNNER_TEMP` (CI must never write SSOT), and without `--baseline` every run
+   * would answer `baseline` — a watcher that has amnesia, reported as calm.
+   */
+  const baselineDirs = String(argOf('--baseline', ''))
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .map(pathFor)
+  const scanDirs = [outDir, ...baselineDirs.filter((dir) => dir !== outDir)]
+  const { previous, ignored } = collectObservations(scanDirs)
+  if (ignored > 0) process.stderr.write(`watch-next: ignored ${ignored} unparseable observation(s)\n`)
   const current = await readNextTag({ registry, upstream, tag })
   const verdict = judgeNextChange({
     previous: previous === null ? null : { version: previous.version, at: previous.at },
@@ -80,7 +94,7 @@ async function main() {
     produced_by: 'scripts/watch_next_release.mjs',
     generated_at: stamp,
     upstream: { package: upstream, registry, tag, http_status: current.status, dist_tags: current.distTags },
-    previous: previous === null ? null : { version: previous.version, at: previous.at, artifact: previous.file },
+    previous: previous === null ? null : { version: previous.version, at: previous.at, artifact: previous.file, source: displayPath(previous.dir) },
     next: { version: verdict.to },
     change: {
       state: verdict.state,
@@ -116,6 +130,7 @@ async function main() {
   writeFileSync(`${target}.sha256`, sha256(text), 'utf8')
 
   process.stdout.write(`watch-next: ${verdict.detail}\n`)
+  if (previous !== null) process.stdout.write(`watch-next: baseline ${previous.version} from ${displayPath(previous.dir) ?? 'unknown'}/${previous.file ?? 'unknown'}\n`)
   // Print the path that was actually written: the first version of this line hard-coded `data/results`
   // while honouring `--out`, so a control run pointed at a temp dir reported the wrong file (R64).
   const root = abs('.')
@@ -125,25 +140,52 @@ async function main() {
   process.stdout.write("  note: the card reads THIS machine's profile — re-run it before quoting it\n")
 }
 
-/** The newest observation this script itself wrote. Other artifacts are not a baseline. */
-function lastObservation(outDir) {
-  if (!existsSync(outDir)) return null
-  return (
-    readdirSync(outDir)
-      .filter((name) => name.startsWith('next-release-') && name.endsWith('.json'))
-      .map((name) => {
-        try {
-          const value = JSON.parse(readFileSync(join(outDir, name), 'utf8'))
-          return value?.produced_by === 'scripts/watch_next_release.mjs' && typeof value?.generated_at === 'string' && typeof value?.next?.version === 'string'
-            ? { file: name, at: value.generated_at, version: value.next.version }
-            : null
-        } catch {
-          return null
-        }
-      })
-      .filter((entry) => entry !== null)
-      .sort((left, right) => (left.at < right.at ? 1 : left.at > right.at ? -1 : 0))[0] ?? null
-  )
+/**
+ * Every observation this script itself wrote, across the directories we were told to look in (R71).
+ * Other artifacts are not a baseline: `produced_by` is checked, not assumed from the file name.
+ */
+function collectObservations(dirs) {
+  const candidates = []
+  let ignoredCount = 0
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue
+    for (const name of readdirSync(dir).filter((entry) => entry.startsWith('next-release-') && entry.endsWith('.json'))) {
+      let value = null
+      try {
+        value = JSON.parse(readFileSync(join(dir, name), 'utf8'))
+      } catch {
+        ignoredCount += 1
+        continue
+      }
+      if (value?.produced_by !== 'scripts/watch_next_release.mjs') continue
+      if (typeof value?.generated_at !== 'string' || typeof value?.next?.version !== 'string') {
+        ignoredCount += 1
+        continue
+      }
+      candidates.push({ file: name, dir, at: value.generated_at, version: value.next.version })
+    }
+  }
+  return { previous: withSource(candidates, pickNewestObservation(candidates)), ignored: ignoredCount }
+}
+
+/** Keep the file (and the directory it came from) attached: a baseline you cannot locate is not auditable. */
+function withSource(candidates, picked) {
+  if (picked === null) return null
+  const match = candidates.find((entry) => entry.version === picked.version && entry.at === picked.at) ?? null
+  return { version: picked.version, at: picked.at, file: match?.file ?? null, dir: match?.dir ?? null }
+}
+
+/**
+ * Repo-relative when inside the repo, and **only the directory name** when a control run pointed outside
+ * it. R67 already paid for this: a `%TEMP%` path in an artifact put `C:\Users\<name>` into a public repo
+ * (`results-privacy` failed on it). A path that is useful for debugging and a path that leaks the user
+ * name are the same string unless you cut it here.
+ */
+function displayPath(target) {
+  if (target === null) return null
+  const root = abs('.')
+  if (target.startsWith(root)) return target.slice(root.length + 1).replaceAll('\\', '/')
+  return `(external)/${basename(target)}`
 }
 
 async function readNextTag({ registry, upstream, tag }) {

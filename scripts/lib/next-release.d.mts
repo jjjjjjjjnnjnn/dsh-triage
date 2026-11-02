@@ -32,3 +32,12 @@ export function judgeNextChange(input: {
   previous: PreviousObservation | null,
   current: CurrentReading,
 }): NextChangeVerdict
+
+/**
+ * Picks the most recent observation a watcher run can see (R71). The watcher needs this to read a
+ * baseline from a directory other than its `--out` — otherwise a CI run, which starts from a fresh
+ * checkout, would report `baseline` on every run and could never report `changed`.
+ *
+ * Entries with an unparseable `at` are ignored, not treated as newest or oldest.
+ */
+export function pickNewestObservation(candidates: unknown): PreviousObservation | null

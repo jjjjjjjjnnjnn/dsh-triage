@@ -65,8 +65,33 @@
       "posted_url": null,
       "posted_on": null,
       "cites": [
-        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
-      ]
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json",
+        "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json"
+      ],
+      "claims": {
+        "discussion": 8202,
+        "target": "0.2.1-rc.5",
+        "paste_must_contain": ["不是你那台机器"],
+        "packages": [
+          {
+            "package": "@deepseek-ai/dsh-mcp-client",
+            "version": "0.1.0-rc.7",
+            "state": "measured",
+            "admission_status": "denied",
+            "range_items": 6,
+            "listing": { "token": "^0.1.0-rc.7", "times": 6 },
+            "cite": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+          },
+          {
+            "package": "@deepseek-ai/dsh-mcp-client",
+            "version": "0.2.1-rc.5",
+            "state": "measured",
+            "admission_status": "admitted",
+            "range_items": 8,
+            "cite": "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json"
+          }
+        ]
+      }
     },
     {
       "file": "07-reply-10849-dist-tag.md",
@@ -75,8 +100,34 @@
       "posted_url": null,
       "posted_on": null,
       "cites": [
-        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
-      ]
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json",
+        "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json"
+      ],
+      "claims": {
+        "discussion": 10849,
+        "target": "0.2.1-rc.5",
+        "paste_must_contain": ["不是你那台机器", "dist-tag"],
+        "dist_tags": { "cite": "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json", "latest": "0.0.1-rc.1", "next": "0.2.1-rc.5" },
+        "packages": [
+          {
+            "package": "@deepseek-ai/dsh-mcp-client",
+            "version": "0.0.1-rc.1",
+            "state": "measured",
+            "admission_status": "denied",
+            "range_items": 4,
+            "listing": { "token": "^0.0.1-rc.1", "times": 4 },
+            "cite": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+          },
+          {
+            "package": "@deepseek-ai/dsh-mcp-client",
+            "version": "0.2.1-rc.5",
+            "state": "measured",
+            "admission_status": "admitted",
+            "range_items": 8,
+            "cite": "data/results/remedy-probe-2026-11-02T19-15-18-710Z.json"
+          }
+        ]
+      }
     },
     {
       "file": "08-reply-11687-not-declaration.md",
@@ -86,7 +137,38 @@
       "posted_on": null,
       "cites": [
         "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
-      ]
+      ],
+      "claims": {
+        "discussion": 11687,
+        "target": "0.2.1-rc.5",
+        "paste_must_contain": ["不是你那台机器", "不等于"],
+        "packages": [
+          {
+            "package": "@linxin666/dsh-web-all",
+            "version": "0.4.13",
+            "state": "measured",
+            "admission_status": "admitted",
+            "range_items": 1,
+            "cite": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+          },
+          {
+            "package": "dsh-better-sidebar",
+            "version": "0.28.2",
+            "state": "measured",
+            "admission_status": "admitted",
+            "range_items": 13,
+            "listing": { "token": "等 13 项", "times": 1 },
+            "cite": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+          },
+          {
+            "package": "@deepseek-ai/dsh-desktop",
+            "version": null,
+            "state": "unreadable",
+            "admission_status": null,
+            "cite": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+          }
+        ]
+      }
     }
   ]
 }
