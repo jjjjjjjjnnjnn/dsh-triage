@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R60 (2026-11-02)",
+  "stand": "R61 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8663,6 +8663,54 @@
         "artifact": "data/results/client-serve-2026-11-02T14-40-00.000Z.json",
         "sha256": "3940b6d56cc8adab1820be4ce9cdf16b5e75041133d676db42c6d74d3e09fa3b",
         "outcome": "upgrade-route 200 · upgrade-visible failed (loading) · upgrade-same-source unmeasured · 611 tests / 0 fail"
+      }
+    },
+    {
+      "id": "R61-S1",
+      "batch": "R61",
+      "step": "**交接轮的红见证**：第一次 `gate --record` 时 `governance/index-references` 判 INDEX 里的 `host.ts` / 路由字符串像路径（但它们不是仓内路径）；同一轮修正为完整路径并且**不删红产物**。这份 15:00 产物就是「先红后绿」的见证",
+      "changed": [
+        "INDEX.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：错误信息点名两个字符串；修法是改 INDEX 的写法（完整路径 / 去掉反引号），不是放宽门",
+        "reproducibility": "PASS：`gates-2026-11-02T15-00-00.000Z.json` 与其 sha256 原样保留",
+        "licence": "PASS：纯文档与台账，没有引入外部素材或代码",
+        "ssot": "PASS：红产物不被任何对外文档引用；15:10 的绿产物另记",
+        "adversary": "反例一：删掉红产物让树看起来干净——被拒：它证明交接时先红后绿；反例二：放宽 `index-references` 让它接受非路径字符串——被拒：修的是 INDEX 的写法"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T15:00:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T15-00-00.000Z.json",
+        "sha256": "b677a194cb7d80b868dbbde2d1080af6610b65233bd5469963ef0912993400b4",
+        "outcome": "RED (governance/index-references) · kept as the before-fix witness"
+      }
+    },
+    {
+      "id": "R61-S2",
+      "batch": "R61",
+      "step": "**交接轮（只交接 + 记录计划，不改行为）**：stand 统一到 R61；`docs/HANDOFF.md` §3 新增 R61 交接（T-818 🟨 的精确卡点、v3 候选、D5/#65 状态）；INDEX/AGENTS/ROADMAP/台账同步；611 测试 / 9 门 / `--mutate` 9/9",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：只改文档/台账；611 测试 / 9 门全绿；`--mutate` 9/9；没有改代码、判据或阈值",
+        "reproducibility": "PASS：`gates-2026-11-02T15-10-00.000Z.json` 带 sha256；同一次 verify 611 测试 / 0 fail",
+        "licence": "PASS：纯文档与台账，没有引入外部素材或代码",
+        "ssot": "PASS：`stand` 在 HANDOFF/INDEX/ROADMAP/两个台账里统一为 R61；T-818 红产物与 15:00 红产物都被引用；没有把 🟨 写成 ✅",
+        "adversary": "反例一：把 T-818 标成 ✅——被拒：`upgrade-visible: failed` 与 BACKLOG 🟨 都在；反例二：把 v3 写成 adopted——被拒：产物 `decision: candidate-validated`，生产 v1；反例三：把页面 fetch 写成「离线降级」——被拒：离线会显示一句失败话，不会 loading；反例四：只改 HANDOFF 不改 INDEX/ROADMAP——被拒：doc-stand 会红"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T15:10:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T15-10-00.000Z.json",
+        "sha256": "fd72dfe156e89b09e051e3908977ec220e72e7ba0fa4112bb96ae54cef6cff68",
+        "outcome": "ALL GREEN · 9 gates · 611 tests / 0 fail · stand R61"
       }
     }
   ]
