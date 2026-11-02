@@ -30,6 +30,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { judgePosting } from './lib/posting.mjs'
 import { formatInterval, formatPercent, TIERS } from './lib/question-coverage.mjs'
 
 const argv = process.argv.slice(2)
@@ -349,17 +350,12 @@ check(
  * R64: the URL no longer has to be a GitHub discussion. Distribution happens on more than one platform,
  * and while the rule accepted *only* discussion URLs, a post on X could not be recorded at all — so the
  * registry stayed `draft` and drifted from what actually happened (exactly the R56 failure shape).
- * The rule is now: the URL must be on a platform **the entry's own `channel` names**, and `posted_on`
- * must be a timezone-qualified instant in the past. That is narrower in one place (a bare `2026-11-02`
- * no longer passes: it would move the window by up to a day) and wider in exactly one place (X/Twitter).
+ *
+ * R65: the matcher itself moved to `scripts/lib/posting.mjs` and became unit-tested, because it had been
+ * wrong twice. The second time was this round's own work: it demanded a trailing `Z`, so the perfectly
+ * valid `2026-11-02T18:36:00+01:00` — the spelling a human on a UTC+1 machine writes first — was refused
+ * with a message claiming it was "not timezone-qualified". `tests/unit/posting.test.ts` now pins that.
  */
-const POSTING_PLATFORMS = [
-  { id: 'github-discussion', match: /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+(?:[#?].*)?$/, channel: /discussion/i },
-  { id: 'github-issue', match: /^https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/\d+(?:[#?].*)?$/, channel: /issue/i },
-  { id: 'x', match: /^https:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d+(?:\?.*)?$/, channel: /(?:^|[^A-Za-z])x(?:\s|\/|$)|twitter/i },
-]
-/** A date-only string passes `Date.parse` but shifts a 14-day window by up to 24h, so require the instant. */
-const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/
 const postingProblems = []
 const postedRegistry = (() => {
   try {
@@ -375,20 +371,13 @@ for (const draft of Array.isArray(postedRegistry?.drafts) ? postedRegistry.draft
   const name = String(draft?.file ?? '?')
   const status = String(draft?.status ?? '')
   if (status === 'posted') {
-    const url = String(draft?.posted_url ?? '')
-    const channel = String(draft?.channel ?? '')
-    const claimed = POSTING_PLATFORMS.find((platform) => platform.channel.test(channel)) ?? null
-    if (claimed === null) {
-      postingProblems.push(`${name}: status=posted but the channel names no platform this check can verify ("${channel}")`)
-    } else if (!claimed.match.test(url)) {
-      postingProblems.push(`${name}: status=posted but posted_url is not a ${claimed.id} URL (got "${url}")`)
-    }
-    const postedOnRaw = String(draft?.posted_on ?? '')
-    if (!ISO_INSTANT.test(postedOnRaw)) {
-      postingProblems.push(`${name}: status=posted but posted_on is not a timezone-qualified ISO instant (got "${postedOnRaw}")`)
-    } else if (Date.parse(postedOnRaw) > Date.parse(stamp)) {
-      postingProblems.push(`${name}: posted_on is in the future (${postedOnRaw})`)
-    }
+    const verdict = judgePosting({
+      channel: draft?.channel,
+      url: draft?.posted_url,
+      postedOn: draft?.posted_on,
+      now: stamp,
+    })
+    for (const problem of verdict.problems) postingProblems.push(`${name}: status=posted but ${problem}`)
   }
   if (status === 'draft' && draft?.posted_url !== null) {
     postingProblems.push(`${name}: status=draft but posted_url is set — post the draft or clear the field`)
@@ -553,6 +542,12 @@ const artifact = {
     engines_dsh: dshRange,
     tests: testCount,
     documents: [...texts.keys()].sort(),
+    /**
+     * R65: which registry state produced this verdict. The posting controls mutate the registry and
+     * restore it byte for byte, so without this digest every control artifact would look identical to the
+     * final green run — the audit trail would say "15/15" and nothing about *what* was checked.
+     */
+    drafts_registry_sha256: existsSync(registryPath) ? sha256(readFileSync(registryPath, 'utf8')) : null,
   },
   referenced_evidence: [...referenced].sort(),
   checks,

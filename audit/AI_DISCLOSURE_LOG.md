@@ -722,3 +722,13 @@
 - 实测：**656 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15 · `record_publish` 22 项
 - 反思：这一轮自己抓到的三处问题（时区、`process.exit()` 紧跟 `fetch` 崩溃、`--stamp` 格式）属于同一族：**工具自己出错时的读数被当成结论**。所以监听脚本对「读不到」的处理不是记 0、不是记 `unchanged`，而是退出 2 且不落产物——宁可什么都没有，也不给一个假的安心。
 
+### 2026-11-02 R65｜复审 R64 + 可用性实测（复审 / 交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R65-S1` … `R65-S7`；报告 `audit/AUDIT_2026-11-02_R65.md`
+- 范围：`scripts/lib/posting.mjs` + `.d.mts`（新）· `tests/unit/posting.test.ts`（新，10 条）· `scripts/check_listing.mjs`（第 13 条改用纯函数 + 产物加 `drafts_registry_sha256`）· `scripts/record_usability_smoke.mjs`（新）· `README(.zh-CN).md`（测试数 656 → 666）· `docs/{HANDOFF,BACKLOG,ROADMAP}.md` · `INDEX.md` / `AGENTS.md` · `audit/{SIGNOFF,blind_spots,step_reviews}` · `data/results/{listing-2026-11-02T18-{20,25,30,35,40}-00,usability-2026-11-02T18-50-00,usability-2026-11-02T19-00-00}.json`
+- 结果：① **真缺陷**：R64 只认 `Z`，把本机 UTC+1 最自然的 `+01:00` 判成「不是带时区」——那是假话，`Date.parse` 与 `Z` 写法同值；已修并抽成纯函数（这条规则三轮错两次，两次都错在匹配器）；② **假缺陷**：怀疑 `V2EX` 会被误判成平台 X，实测不成立，**保留成回归测试**；③ 四条控制真跑（偏移量→绿 / 裸日期→红 / 未来→红 / 域不符→红），产物新增 `inputs.drafts_registry_sha256` 让「改→跑→还原」可审计；④ **可用性 smoke**：匿名装已发布包 → 临时目录跑 `--help` / 无参 `status` / `audit` / `upgrade --to next --card` **6/6**，负对照 `9.9.9` 双红
+- 实测：**666 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15 · 可用性 6/6
+- 反思：这一轮最值得记的不是修了什么，而是**两次「先测再改」救回来的东西**：`V2EX` 那个 bug 如果直接按推理去「修」，会把一条正确的规则改坏；而 `+01:00` 那个如果只看代码不动手，会一直是个「看起来更严格」的错误。
+
+

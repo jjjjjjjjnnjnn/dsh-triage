@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R64 (2026-11-02)",
+  "stand": "R65 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -9693,6 +9693,188 @@
         "artifact": "data/results/listing-2026-11-02T18-05-00.000Z.json",
         "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 656 · 0 失败",
         "sha256": "a947a2a5b6344ab8c42e0ba4fc814038d2cd818facd0b81d32355688c0a2e9e4"
+      }
+    },
+    {
+      "id": "R65-S1",
+      "batch": "R65",
+      "step": "**被拒的合法输入：`+01:00` 必须被接受** —— R64 只认 `Z`，于是这台 UTC+1 机器上最自然的写法被判「不是带时区」，而那句话是假的",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/lib/posting.d.mts",
+        "tests/unit/posting.test.ts",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-11-02T18:36:00+01:00` 与 `2026-11-02T17:36:00.000Z` 的 `Date.parse` 同值，规则现在两者都收，且裸日期仍然拒",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：产物记 `inputs.drafts_registry_sha256`，正面控制 `12632ca8…` 与终跑 `42ab4db9…` 不同——「当时检查的是哪个注册表状态」可审计",
+        "adversary": "反例：以为「只认 Z 更严格所以更安全」——被拒：它把合法输入拒了并给了一个错误原因，人会被引去改时间而不是改格式；严格不等于正确"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:20:00.000Z --tests 666（注册表临时改成 +01:00 后跑，跑完还原）",
+        "artifact": "data/results/listing-2026-11-02T18-20-00.000Z.json",
+        "outcome": "GREEN 15/15：偏移量写法通过；还原后注册表字节与原文相同",
+        "sha256": "de2645e6a01199be9dc977db9be9c940e8eb5dcd259d43e8e6f545961d066bb8"
+      }
+    },
+    {
+      "id": "R65-S2",
+      "batch": "R65",
+      "step": "**控制：裸日期仍然必须红** —— 修偏移量的时候很容易把「必须带时区」一起放宽掉",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`posted_on is not an ISO-8601 instant with an explicit zone (got \"2026-11-02\") — use Z or ±hh:mm`",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：红产物保留；注册表摘要随产物记录",
+        "adversary": "反例：只测「偏移量现在过了」就宣布修好——被拒：相同的正则放松会同时放过裸日期，所以两个方向都要跑"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:25:00.000Z --tests 666（注册表临时改成裸日期）",
+        "artifact": "data/results/listing-2026-11-02T18-25-00.000Z.json",
+        "outcome": "RED 1/15：点名裸日期不满足「显式时区」；还原校验通过",
+        "sha256": "7a509d58a38bc4178f1c58fff835b645a2f9d38bc5dc76bf7f551395fac234f3"
+      }
+    },
+    {
+      "id": "R65-S3",
+      "batch": "R65",
+      "step": "**控制：未来时间仍然必须红** —— 窗口还没开始就当成已开",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`posted_on is in the future (2026-12-01T00:00:00.000Z)`",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：红产物保留；`now` 由 `--stamp` 显式给出，不用系统时钟",
+        "adversary": "反例：用系统时间做参照——被拒：产物必须可由 stamp 复算，否则「未来」这个判断会随运行时间漂移"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:30:00.000Z --tests 666（注册表临时改成未来时间）",
+        "artifact": "data/results/listing-2026-11-02T18-30-00.000Z.json",
+        "outcome": "RED 1/15：点名未来时间；还原校验通过",
+        "sha256": "aae0a6275931e6f7329eea3c3086e69eabe2059de4e2f51a28780376417eb643"
+      }
+    },
+    {
+      "id": "R65-S4",
+      "batch": "R65",
+      "step": "**控制：域与 channel 不符仍然必须红** —— R64 的主规则不能在重构里丢掉",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`posted_url is not a github-discussion URL (got \"https://x.com/…\")`",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：红产物保留，注册表摘要与终跑不同",
+        "adversary": "反例：信任「只加了 10 条单测，规则没动」——被拒：本轮把匹配器整段搬了家，搬家本身就是回归风险"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:35:00.000Z --tests 666（注册表临时把 channel 改成 GitHub Discussions）",
+        "artifact": "data/results/listing-2026-11-02T18-35-00.000Z.json",
+        "outcome": "RED 1/15：域与 channel 不符；还原校验通过",
+        "sha256": "f52ec3338ca74aa6e93a1446c807d9a75f8234ad42064f96b9d5bc0033de2208"
+      }
+    },
+    {
+      "id": "R65-S5",
+      "batch": "R65",
+      "step": "**复审后的收口：对外文档自洽且 15/15，产物带注册表摘要** —— 十条新单测让测试数从 656 变 666",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 666（2 条声明）· 19 条证据路径 · `drafts_registry_sha256 = 42ab4db9…`",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：`inputs.drafts_registry_sha256` 让「这份 verdict 检查的是哪个注册表状态」可复算",
+        "adversary": "反例：把测试数改完就发——被拒：`test-count-matches` 的 2 条声明必须同时等于 `--tests`，徽章与正文都算"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:40:00.000Z --tests 666",
+        "artifact": "data/results/listing-2026-11-02T18-40-00.000Z.json",
+        "outcome": "GREEN 15/15 · 测试数 666 · 注册表摘要 42ab4db9…",
+        "sha256": "79384aa960fb64d8cd697ca58c7498ffc73fcdb40c033d97d481ef7ad1e7c4d8"
+      }
+    },
+    {
+      "id": "R65-S6",
+      "batch": "R65",
+      "step": "**可用性：已发布包上的四条命令真跑** —— 「装得上」不等于「敲下去有答案」，而后者才是正门承诺的东西",
+      "changed": [
+        "scripts/record_usability_smoke.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 6/6：匿名装 `dsh-triage@0.3.3` exit 0；`--help` / 无参 status（16 行）/ `audit`（18 行）/ `upgrade --to next --card`（有分桶表 + 边界句）全部 exit 0",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：四条命令都记了 exit code、行数与首行；`limits[]` 写明「第 4 步读的是这台机器的 profile」",
+        "adversary": "反例：在仓库目录里跑这些命令——被拒：cwd 设成临时项目目录，因为「只有在自己 checkout 里才跑得起来」正是这个脚本要排除的故障"
+      },
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-02T18:50:00.000Z",
+        "artifact": "data/results/usability-2026-11-02T18-50-00.000Z.json",
+        "outcome": "GREEN 6/6 · install / cli-present / help / status-no-arguments / audit-summary / upgrade-card",
+        "sha256": "a4d674c7831eb5ee2bb5d9a5572996c325413f672ac1c8397b33c4e3ef754651"
+      }
+    },
+    {
+      "id": "R65-S7",
+      "batch": "R65",
+      "step": "**可用性脚本的负对照：不存在的版本必须红** —— 否则「6/6 全绿」可能只是脚本从不判红",
+      "changed": [
+        "scripts/record_usability_smoke.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`--version 9.9.9` → npm `notarget` → `install` 与 `cli-present` 双红、exit 1",
+        "reproducibility": "PASS：命令与 stamp 都写在产物里，重跑同一条得到同一形状；控制类产物标明了「改 → 跑 → 还原并校验字节」",
+        "licence": "PASS：只动仓内文件与公开 registry 元数据；可用性 smoke 装的是我们自己发布的包，按 MIT 分发，没有引入他人素材",
+        "ssot": "PASS：红产物与其 sha256 一起落盘，和绿产物同目录、同命名规则",
+        "adversary": "反例：用「死版本」证明红就够了——被拒：它只证明安装那一步会红；`upgrade-card` 的边界句缺失时是否红，目前仍只有代码路径、没有构造证据（写进报告 §6）"
+      },
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-02T19:00:00.000Z --version 9.9.9",
+        "artifact": "data/results/usability-2026-11-02T19-00-00.000Z.json",
+        "outcome": "RED 2/6：install 与 cli-present 失败，exit 1（构造的红，保留作见证）",
+        "sha256": "6b75b201e16a78897a0dfec896b038ba279eec4633665fae29aad838354f86d0"
+      }
+    },
+    {
+      "id": "R65-S8",
+      "batch": "R65",
+      "step": "**改完文档再跑一次对外检查器** —— HANDOFF / INDEX / AGENTS / BACKLOG / SIGNOFF 都改过，其中 README 是 `check_listing` 的输入；改完不复跑就等于假设没影响",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md",
+        "audit/SIGNOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：与 18:40 那次逐项相同（版本 0.3.3 · 测试数 666 · 注册表摘要 42ab4db9…），说明文档改动没有带偏任何对外数字",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出，产物带 sha256",
+        "licence": "PASS：纯文档与台账，没有引入外部素材或第三方数据；被引用的 19 条证据路径都在本仓 `data/results/` 内",
+        "ssot": "PASS：两次跑出同一组数字，正是「文档漂移会被抓到」的反向证明",
+        "adversary": "反例：认为「只改了 HANDOFF 这种没人读的文件」——被拒：README 与 INDEX 都在检查器视野里，而 R62 抓到过徽章与正文同时僵"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:10:00.000Z --tests 666",
+        "artifact": "data/results/listing-2026-11-02T19-10-00.000Z.json",
+        "sha256": "5d8fbfe5250cf326e3d70cb635d8f7244c439360b52e9d9671fa46e47767f485",
+        "outcome": "GREEN 15/15 · 与 18:40 逐项相同 · 注册表摘要 42ab4db9…"
       }
     }
   ]

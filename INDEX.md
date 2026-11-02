@@ -1,12 +1,14 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R64 (2026-11-02，**交付轮**：X 线程已发并回填 registry；`check_listing` 第 13 条按 channel 验域（3 条负对照各自真红）；`record_publish` 新增 `dist-tags-agree`；新增 `watch_next_release.mjs`（升级日监听，读不到 ≠ 没更新）；D5 窗口到 2026-11-15)｜**下一件事：D5 关窗读数**
+> **Stand**: R65 (2026-11-02，**复审 + 交付轮**：R64 推送后又审了自己一遍——`+01:00` 被 R64 判成「不是带时区」（假话）已修，规则抽成 `scripts/lib/posting.mjs`（+10 单测）；新增可用性 smoke（匿名装已发布包 → 四条命令 6/6，负对照双红）；`check_listing` 产物记 `drafts_registry_sha256`)｜**下一件事：D5 关窗读数（2026-11-15）**
 
 ## 🔍 按需求快速索引
 
 | 需求 | 路径 | 内容/状态 |
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
+| **可用性 smoke（R65）** | `scripts/record_usability_smoke.mjs` | 匿名装**已发布**的 `dsh-triage` → 在**临时项目目录**（cwd 不是仓库）跑 `--help` / 无参 `status` / `audit` / `upgrade --to next --card`，断言 exit code、行数、卡片分桶与**边界句**。真机 **6/6**（`data/results/usability-2026-11-02T18-50-00.000Z.json`）；负对照 `--version 9.9.9` → `notarget` 双红、exit 1（`…T19-00-00`）。**边界**：第 4 步读本机 profile，卡片数字只描述这台机器 |
+| **上架登记规则（R56→R64→R65）** | `scripts/lib/posting.mjs` + `tests/unit/posting.test.ts` + `scripts/check_listing.mjs`（第 13 条） | `posted` 的草稿必须有平台可验的 URL（discussion / issue / X）+ **带显式时区的 ISO instant**（`Z` 或 `±hh:mm`；裸日期拒，因为会被当 UTC 零点挪 14 天窗口）。规则三轮错两次（R56 只认 discussion / R64 只认 `Z`），所以现在是纯函数 + **10 条单测**；产物记 `inputs.drafts_registry_sha256` 以便审计「当时检查的是哪个状态」 |
 | **升级日监听（R64）** | `scripts/watch_next_release.mjs` + `scripts/lib/next-release.mjs` + `tests/unit/next-release.test.ts` | 读上游 `dist-tags.next`，与前一次观测比对 → `baseline` / `changed` / `unchanged` / **`unmeasured`**（读不到就 exit 2 零产物，**不许写成「没更新」**）；`unchanged` 不落产物（不制造每日噪声）。只出产物 + 卡片命令，**不跑卡片、不发帖**（卡片数字来自本机 profile）。真机：首跑 `next=0.2.1-rc.5`（`data/results/next-release-2026-11-02T17-40-00.322Z.json`），再跑 `unchanged` 零产物；`changed` 与「死端口 exit 2」两条对照在 `%TEMP%` 跑过 |
 | **四包 `latest` 一致性（R64）** | `scripts/lib/dist-tags.mjs` + `tests/unit/dist-tags.test.ts` + `scripts/record_publish.mjs`（`dist-tags-agree`） | 四包 `latest` 必须彼此相同、等于本次发布版本、且不指向未发布版本；读不到记 `unmeasured` 而不是 agree。**0.3.1（暂存卡住）/ 0.3.3（三包回滚）是同一个形状**，当时只能靠人眼看四行 `latest=` |
 | **贡献指南** | `CONTRIBUTING.md` | 贡献流程、工程铁律（纯函数 / SSOT / 零门禁依赖）、本地测试与 PR 规范 |

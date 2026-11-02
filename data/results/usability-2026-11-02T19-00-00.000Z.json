@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_usability_smoke.mjs",
+  "generated_at": "2026-11-02T19:00:00.000Z",
+  "subject": {
+    "package": "dsh-triage",
+    "version": "9.9.9",
+    "registry": "https://registry.npmjs.org",
+    "anonymous": true
+  },
+  "environment": {
+    "platform": "win32",
+    "node": "24.15.0",
+    "cwd": "<a scratch project, not the repository>"
+  },
+  "checks": [
+    {
+      "id": "install",
+      "ok": false,
+      "detail": "exit 1: npm error code ETARGET\nnpm error notarget No matching version found for dsh-triage@9.9.9.\nnpm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't"
+    },
+    {
+      "id": "cli-present",
+      "ok": false,
+      "detail": "dist/cli.js is missing from the installed package"
+    }
+  ],
+  "ok": false,
+  "limits": [
+    "the last command reads THIS machine's default DSH profile, so the card's numbers describe this machine and nobody else's",
+    "this proves the four commands a new user types: it does not prove the Host loads the bundle (record_client_serve) nor the probe path (record_probe)",
+    "the install is anonymous, but the network path is whatever this machine has — a proxy that hides failures is not covered",
+    "exit codes and output shape are asserted, not the wording of every sentence"
+  ]
+}

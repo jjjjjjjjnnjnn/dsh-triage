@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R64 (2026-11-02，**交付轮**：X 线程已发（`posted_on 2026-11-02T17:36:00.000Z`）并回填 registry；`check_listing` 第 13 条改成「URL 的域必须与 channel 声明一致」（三条定向负对照各自真红）；`record_publish` 新增 `dist-tags-agree`（四包 `latest` 互相同意 + 不指向未发布版本）；新增 `watch_next_release.mjs`（升级日监听：`changed`/`unchanged`/`unmeasured`，读不到不许当「没更新」）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R65 (2026-11-02，**复审 + 交付轮**：R64 已推送（`dbb7d71..0c58555`）之后又审了自己一遍——`+01:00` 这种合法 instant 被 R64 判成「不是带时区」（**假话**），规则已抽成可单测的 `scripts/lib/posting.mjs`（+10 测试）；新增**可用性 smoke**（匿名装已发布包 → `status`/`audit`/`upgrade --card` 四条命令真跑 6/6，负对照 `9.9.9` 双红）；`check_listing` 产物开始记 `drafts_registry_sha256`｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 复审 + 交付（R65，2026-11-02） | **审 R64 自己写的东西：一个真缺陷、一个假缺陷、一个新脚本（复审轮）**。① **真缺陷**：R64 要求 `posted_on` 以 `Z` 结尾，于是**本机（UTC+1）最自然的写法** `2026-11-02T18:36:00+01:00` 被拒，报错还说「不是带时区」——**那是假话**（`Date.parse` 与 `…17:36:00.000Z` 同值）。规则已抽成纯函数 `scripts/lib/posting.mjs#judgePosting()`（`Z` 与 `±hh:mm` 都收、裸日期与未来仍拒）+ **10 条单测**；抽出来是因为**这条规则三轮错两次**（R56 只认 discussion / R64 只认 `Z`），两次都错在匹配器。② **假缺陷**：怀疑 `V2EX` 会被误判成平台 X——实测不成立（`X` 前面是字母 `E`），**保留成回归测试**而不是删掉。③ **四条控制全部真跑**：`+01:00` → **绿**（修复的正面证明，`18-20`）· 裸日期 → 红（`18-25`）· 未来 → 红（`18-30`）· 域不符 → 红（`18-35`）；每次改完立刻还原并复算字节。④ **产物新增 `inputs.drafts_registry_sha256`**：控制是「改→跑→还原」，没有这个摘要，五份产物看起来都只是「15/15」，审计时无法知道检查的是哪个状态（正面控制 `12632ca8…` ≠ 终跑 `42ab4db9…`）。⑤ **可用性 smoke**（`scripts/record_usability_smoke.mjs`，新）：匿名装**已发布**的 `dsh-triage@0.3.3` → 在**临时项目目录**（cwd 不是仓库）跑 `--help` / 无参 `status`（16 行）/ `audit`（18 行）/ `upgrade --to next --card`（分桶表 + **边界句**）→ **6/6**（`usability-2026-11-02T18-50-00.000Z.json`）；负对照 `--version 9.9.9` → `notarget` 双红、exit 1（红产物 `19-00-00` 保留）。⑥ **同一族 bug 一天内抄了两次**：新脚本的输出又把 `ssot data/results/…` 写死（文件其实落在 `--out`）——R64 在 `watch_next_release.mjs` 刚修过；已修，并把「记录器打印路径需要断言」记成 `T-835`。⑦ 测试 **656 → 666**；README 两份同步；`check_listing` 终跑 **15/15**；复审报告 `audit/AUDIT_2026-11-02_R65.md`。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交付（R64，2026-11-02） | **分发收口 + 下载链路体检 + 升级日监听；判据/阈值一字未动（交付轮）**。① **X 线程已发布**（`https://x.com/jjjj1955714/status/2117306628227940741`，`posted_on 2026-11-02T17:36:00.000Z`）→ `registry.json` 的 `03-x-en.md` 从 `draft` 变 `posted`；**时区是坑**：本机是 **UTC+1**，用户报的 18:36 若按 +08 记会写成 10:36Z（差 7 小时），D5 的 14 天窗口会被悄悄挪早。仓内 `03-x-en.md` 仍是英文备选版，中文主选稿在 `git stash`（`stash@{0}`）。② **`check_listing` 第 13 条改成「域必须与 channel 声明一致」**：原来硬编码「只能是 discussion URL」，于是 X 的帖子**根本无法登记**（台账会停在 `draft`，与事实不符——R56 同型缺陷）。现在平台由条目自己的 `channel` 声明（discussion / issue / X），并且 `posted_on` 必须是**带时区的 ISO instant**（裸日期会被 `Date.parse` 接受，却把窗口挪最多 24 小时）。**三条定向负对照各自真红并保留产物**：`17-50`（X URL 配 GitHub channel）· `17-55`（裸日期）· `18-00`（未来时间），每次改完立刻还原并校验字节。③ **`record_publish` 新增 `dist-tags-agree`**（`scripts/lib/dist-tags.mjs` + 7 条单测）：四包 `latest` 必须彼此相同、等于本次发布版本、且不指向未发布版本；读不到 → `unmeasured` 而不是「agree」。**为什么是它**：0.3.1（暂存卡住 → `latest` 指向装不上的版本）与 0.3.3（三包回滚到 0.3.2）是同一个形状，而当时只能靠人眼看四行 `latest=`。④ **新增 `scripts/watch_next_release.mjs`**（`scripts/lib/next-release.mjs` + 6 条单测）：读上游 `dist-tags.next`，与前一次观测比对 → `baseline` / `changed` / `unchanged` / **`unmeasured`（读不到就退出 2、零产物，不许写成「没更新」）**；`unchanged` 不落产物（否则每天一份噪声）。真机：首跑 `baseline next=0.2.1-rc.5`（产物 `next-release-2026-11-02T17-40-00.322Z.json`），再跑 `unchanged` 且零产物；`changed` 与「死端口 → exit 2 零产物」两条对照在 `%TEMP%` 真跑过。**它不跑卡片、不发帖**：卡片数字来自本机 profile，发之前必须重跑。⑤ **643 → 656 测试**（+7 dist-tags / +6 next-release）；型检查要的是**手写 `.d.mts`**（`dist-tags.d.mts` / `next-release.d.mts`），这是本仓 `.mjs` + TS 测试的既有约定。⑥ **顺手核实**：四包 `latest` 全部 `0.3.3`（`T-830` 里「剩余：`dist-tag add` 三条」实测不成立，已关）；`BACKLOG` 的 `T-824` 仍写「待签」而 `SIGNOFF` 2026-11-01 已签 → 已改正。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交接（R63，2026-11-02） | **只交接 + 记录计划，不改行为**。① 交接时：**643 测试 / 9 门 ALL GREEN / `--mutate` 9/9 / `check_listing` 15/15**、工作区干净、CI `success`；npm 四包 `0.3.3`（`latest=0.3.3`）取证 **21/21**（`data/results/publish-2026-11-02T15-54-38.303Z.json`，`git_dirty=false`、`head 0ad06c7`）；D5 `pending`（0/10 · 0/1 · 634 burst，窗口到 `2026-11-15T20:24:37Z`）；#65 `MERGEABLE/BLOCKED`（`merged 0`）。② 上一轮（R62）连起来读：T-818 收口（「页面 fetch pending」是**探针 ≈500ms 收工**，不是产品不答；真机 16/16、四桶 3/190/0/2 与 CLI 逐项相同）→ 0.3.2 发布 → **T-829**（`record_publish` 验 `client-bundle`：`dsh.client` / `exports["./client"]` / `__ModuleLoader__.load` / `settings.plugins.tab` 四点）→ **0.3.3 纯文档发布**（README 在包内，npm 页面印的就是它）→ 两次异步（读副本 4.5min、staged 提升 14min；`409` **不等于**版本号废了）。③ 与 R62 的差别只在文档与两条事故记录，`packages/` 的代码与 0.3.2 逐字节相同。④ 新盲区：`BS-54`（面板时延只有一次观测）、`BS-55`（发布输出不是证据）。⑤ 下一位第一件事：**R63 采用分类器 v3**（判据轮；需 HUMAN 5 条盲标 + 第三组互斥留出集 + 覆盖率与 README 同轮）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交付（R62，2026-11-02） | **T-818 收口：R61 的「页面 fetch pending」是度量缺陷，不是产品缺陷（交付轮，判据/阈值一字未动）**。① **先证伪**：R61 的产物里同时躺着「路由 Node 直连 **200 / 815ms**」和「探针第二轮采样（≈500ms）就 break」——加载态走的是**失败视图**（`data-triage-tab="upgrade-error"`, `kind="loading"`），而终止条件是 `present === true \|\| error === true`，于是「还没回答」被读成「答错了」。② **把规则变成机器强制**：`scripts/lib/ui-probe.mjs` 新增 `judgeTabView` / `judgeUpgradeView`（`loading` / `pending` 一律**不算判**）+ `describeNoAnswer`（超预算只写「等了 Nms 没等到，什么都不声明」）+ `compareUpgradeBuckets`（同源比较抽成纯函数，差的桶点名）；**这是同类错误第三次**（R50 检查没跑起来、R51 `pending` 当结论、R61 `loading` 当失败）。③ **顺手抓到四处半**：页面内诊断返回裸字符串被 `evaluate()` 的 `JSON.parse` 吞成 `null`（R61 产物 `direct: null` **不是**页面超时）、marker 已经是对象却又 `JSON.parse(String(obj))` 恒 `null`（所以 `upgrade-same-source` 从来不可能通过）、`record('upgrade-route', …, evidence)` 的 `status: 200` **覆盖了步骤自己的 `passed`**、`visible` 把 `pending` 写成 `passed`（detail 还写「rendered the summary view」）。④ **产品侧两处**：加载态改用独立标记 `upgrade-loading`（旧 bundle 的 `upgrade-error`+`loading` 仍映射回 loading，升级期不重现）、`host.ts` 的 10s `Promise.race` 定时器 `clearTimeout`（每次点击不再漏一个活到 10 秒的定时器）。⑤ **真机**：**16/16 全过**，`upgrade-visible: passed`（4 桶 / 1530ms）+ **`upgrade-same-source: passed`**（`3 denied / 190 cannot tell / 0 improved / 2 likely fine` 与 `upgrade --to next` 逐项相同，`comparison.pairs` 四对全 agree）。⑥ **四条负对照各自真红**：单元把 loading 改回「算结论」→ 只有 R61 那条红；真机 `--upgrade-wait-ms 300` → `unmeasured`（「waited 512ms… nothing is claimed」，**不是 failed**）；真机把 `cannot-tell` CLI 侧 +1 → `failed` 并点名 `tab=190 cli=191`；单元少一个桶 / `NaN` / `null` 载荷 → 一律判不同源。**没做到的也写了**：registry 不可读那条只能在单测里证（registry 硬编码），一次 `--upgrade-wait-ms 0` 的运行挂住无产物（记成「没跑出来」）。⑦ **新盲区 `BS-54`**：面板 summary 一次观测 **9510ms**（`pending` 现在记 `unmeasured` 不再伪装成 `passed`，但「慢」还没有分布）。⑧ **测试 611 → 623**；9 门 ALL GREEN · `--mutate` 9/9。⑨ **0.3.2 四包已发布**（`latest=0.3.2`，`record_publish` **20/20**，`publish-2026-11-02T14-24-39.944Z`：`git_dirty=false` / `head 6fde8da`）；**发布链的假红同轮修掉**：`release:publish` 紧跟 publish 取证，而 npm 的匿名/安装文档副本滞后约 **4.5 分钟** → 五分钟内三份红（14:10 / 14:14 / 14:15:09）后零代码改动变 20/20；修法 `scripts/lib/registry-wait.mjs`（默认 5 分钟预算，只对 `notarget`/`ETARGET` 重试，E401 立刻出结论）+ 9 条单测 + 1 次真机正对照（`9.9.9` + 3s 预算 → 2 次尝试 / 16969ms / 「real failure, not a wait」）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
@@ -106,6 +107,32 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R65（2026-11-02，复审 + 交付轮）
+
+**这一轮审的是 R64 自己写的规则**，因为 R64 的推送之后用户要求「再次审核，测试项目，确保项目可用性」。
+
+**真实状态**：**666 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **15/15**（终跑 `18-40`，
+`drafts_registry_sha256 = 42ab4db9…`）；可用性 smoke **6/6**（已发布包 `0.3.3`）；npm 四包 `latest=0.3.3`；
+**D5 `pending`**，窗口到 `2026-11-15T20:24:37Z`。
+
+**做了什么（三句话）**：
+1. **修掉一个假话**：R64 只认 `Z` 结尾的 `posted_on`，于是本机（UTC+1）最自然的 `+01:00` 被拒，
+   报错还说「不是带时区」——它明确指定了时区，`Date.parse` 与 UTC 写法同值。规则抽成
+   `scripts/lib/posting.mjs`（+10 单测，`Z`/`±hh:mm` 都收，裸日期与未来仍拒）。
+2. **四条控制真跑**：偏移量写法 → 绿（修复的正面证明）· 裸日期 → 红 · 未来 → 红 · 域不符 → 红；
+   产物新增 `inputs.drafts_registry_sha256`，因为「改→跑→还原」的控制没有这个摘要就全都长成「15/15」。
+3. **可用性 smoke**（`scripts/record_usability_smoke.mjs`）：匿名装已发布包，在临时目录里跑
+   `--help` / 无参 `status` / `audit` / `upgrade --to next --card`，6/6；负对照 `9.9.9` 双红。
+
+**下一位的第一件事**：不变——**D5 关窗读数**（`2026-11-15T20:24:37Z`）。关窗前重跑都是 `pending`。
+
+**本轮新增的坑**：
+1. **「更严格」也可能是错的**：只认 `Z` 看起来更安全，实际拒掉合法输入并给出错误原因。规则要按定义写，
+   不是按「最紧」写。
+2. **记录器的打印路径一天内抄错两次**：`watch_next_release.mjs`（R64 已修）→ `record_usability_smoke.mjs`（R65 又抄）。
+   负对照用 `--out %TEMP%` 才看出来。已记 `T-835`。
+3. **怀疑的正则 bug 要先跑再改**：`V2EX` 那次如果直接「修」，会把一条正确的规则改坏。
 
 ## R64（2026-11-02，交付轮）
 
