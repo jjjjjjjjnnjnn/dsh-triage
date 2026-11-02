@@ -34,6 +34,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 
 import { classifyDownloadShape } from './lib/download-shape.mjs'
+import { pickBaselineArtifact } from './lib/d5-baseline.mjs'
 import { judgeD5, isExternalReference, SELF_REFERENCES } from './lib/d5-score.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { parseInstant } from './lib/posting.mjs'
@@ -57,14 +58,36 @@ const postedOn = argOf('--posted-on', null)
 const fixturesDir = argOf('--fixtures', null)
 const fixturesOutDir = argOf('--fixtures-out', null)
 const outDir = pathFor(String(argOf('--out', 'data/results')))
+/**
+ * How the download number's baseline was chosen (`measured` / `recompute` / `unproven`). Filled in when the
+ * default selection runs; an explicit `--baseline` is reported as `explicit` because then the operator chose.
+ */
+let baselineKind = argOf('--baseline', null) === null ? null : 'explicit'
 const baselinePath = (() => {
   const explicit = argOf('--baseline', null)
   if (explicit !== null) return pathFor(String(explicit))
   const results = pathFor('data/results')
+  /*
+   * R72 (`T-841`): until now this took the newest `market-baseline-*.json` **by file name**, and a recompute
+   * artifact has the same prefix with a later stamp than the measurement it re-derives — so the default could
+   * read a recompute of an older window and look ordinary. `pickBaselineArtifact` prefers artifacts that prove
+   * a live collection (`inputs.offline === false`) and says which kind it fell back to.
+   */
   const candidates = readdirSync(results)
     .filter((name) => /^market-baseline-.*\.json$/.test(name))
-    .sort()
-  return candidates.length === 0 ? null : join(results, candidates.at(-1))
+    .map((name) => {
+      try {
+        const payload = JSON.parse(readFileSync(join(results, name), 'utf8'))
+        return { file: name, produced_by: payload?.produced_by, generated_at: payload?.generated_at, offline: payload?.inputs?.offline }
+      } catch {
+        return null
+      }
+    })
+    .filter((entry) => entry !== null)
+  const picked = pickBaselineArtifact(candidates)
+  if (picked === null) return null
+  baselineKind = picked.kind
+  return join(results, picked.file)
 })()
 
 /** A URL shape we can address; anything else is a usage error, not a silent no-post. */
@@ -333,6 +356,12 @@ const payload = {
   inputs: {
     fixtures: fixturesDir === null ? null : String(fixturesDir).split(/[\\/]/).slice(-1)[0],
     baseline: downloads.baseline ?? null,
+    /*
+     * R72 (`T-841`): which kind of baseline the download number came from. `measured` proves a live
+     * collection, `recompute` re-derives some older window, `explicit` means the operator named the file
+     * (then the provenance is their claim, not ours).
+     */
+    baseline_kind: baselineKind,
     reaction_types: reactions.byType ?? null,
     references_seen: references.seen ?? null,
   },
@@ -370,4 +399,14 @@ process.stdout.write(
     ` · downloads ${String(evidence.numbers.weekly_downloads.value)} (${String(evidence.numbers.weekly_downloads.shape)})/${evidence.numbers.weekly_downloads.threshold}\n`,
 )
 process.stdout.write(`ssot ${written.display} sha256=${written.sha256.slice(0, 12)}…\n`)
+/*
+ * Say out loud which baseline the download number came from (T-841). A recompute is a legitimate reading of
+ * *some* window; the danger is that it looks exactly like a fresh measurement in a one-line summary.
+ */
+if (baselineKind === 'recompute' || baselineKind === 'unproven') {
+  process.stderr.write(
+    `note: weekly downloads came from a ${String(baselineKind)} baseline (${String(downloads.baseline)}) — re-run ` +
+      'scripts/record_market_baseline.mjs for a live window before treating this as the close-window number\n',
+  )
+}
 process.exit(evidence.verdict === 'fail' ? 1 : 0)

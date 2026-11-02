@@ -105,7 +105,7 @@
 
 | T-840 | **`probe-hook-error` 在 CI 上会抖**：`assert.ok(attempts.length === 1)` 依赖 hook 的重试时序，同一 commit 内容重跑即绿 | M3 | verifier + implementer | — | 让这条断言与时间无关（或明确它想钉的契约）；**不许**为了让 CI 变绿把它改成「≥1」了事——先判断「恰好 1 次」是不是真契约 | ⬜ **可领（R71 发现）**：run `41511239814`（node 22）红在 `tests/unit/probe-hook-error.test.ts:102`，同一内容的下一次运行 `41511687993` **全绿**；本机（Windows 24）一直绿。**未归因**：日志只打印「falsy」，实际 `attempts.length` 是 2 还是字段缺失没被记下来 |
 
-| T-841 | **`record_d5_evidence` 的默认基线会选中「离线复算件」**：`--baseline` 缺省取 `data/results` 里文件名排序最后的 `market-baseline-*`，而测量件与复算件同名同前缀，排序分不出来 | 增长 | implementer | — | 默认值要么排除复算件（按 `produced_by` 或 `inputs.fixtures`），要么在产物里明示「这份基线是复算件」；**D5 三个阈值不动** | ⬜ **可领（R72 发现）**：`--dry-read` 实测选中的是 `market-baseline-2026-10-31T07-10-00.000Z.json`（R52 的**离线复算**）；今天两者数字相同所以无害，关窗时必须靠 `--baseline` 点名（已写进 `docs/d5-close-runbook.md` §2） |
+| T-841 | **`record_d5_evidence` 的默认基线会选中「离线复算件」**：`--baseline` 缺省取 `data/results` 里文件名排序最后的 `market-baseline-*`，而测量件与复算件同名同前缀，排序分不出来 | 增长 | implementer | — | 默认值要么排除复算件（按 `produced_by` 或 `inputs.fixtures`），要么在产物里明示「这份基线是复算件」；**D5 三个阈值不动** | ✅ **R72 完成**：`scripts/lib/d5-baseline.mjs#pickBaselineArtifact`（8 条单测）——优先 `inputs.offline === false`（现场测量）里最新的一份；只有复算件时**退回并说出来**（stderr 明写「这个下载数来自复算基线，关窗前请重跑市场基线」），产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。真跑三条：默认现在选中 `06-40`（**measured**，不是复算件）；把四份现场件临时挪走后 → `baseline_kind = recompute` + 警告句，四份**逐字节还原**（各 sha256 复算相同） |
 
 ---
 

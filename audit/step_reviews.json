@@ -10663,6 +10663,31 @@
         "outcome": "GREEN：16/16（含第 16 条 3 drafts）；同轮 `d5-fixtures-out` 2 条单测、`node --test` 710/710",
         "sha256": "878bc11bd14a6e6ed934af703a4d4f3e04ff74adfecb12118be709d414d36abf"
       }
+    },
+    {
+      "id": "R72-S2",
+      "batch": "R72",
+      "step": "关掉 T-841：D5 的下载基线改成「优先现场件」，并把基线来源写进产物",
+      "changed": [
+        "scripts/lib/d5-baseline.mjs",
+        "scripts/lib/d5-baseline.d.mts",
+        "scripts/record_d5_evidence.mjs",
+        "tests/unit/d5-baseline.test.ts",
+        "docs/d5-close-runbook.md"
+      ],
+      "review": {
+        "correctness": "PASS：`--baseline` 缺省原本按文件名取最后一份，而离线复算件（`inputs.offline === true`）的名字总是排在它所复算的测量件之后 → 默认会挑中复算件。新选择器先按 `inputs.offline === false` 取现场件里最新的一份；真跑确认默认选中 `market-baseline-2026-10-31T06-40-00.000Z.json`（measured）。",
+        "reproducibility": "PASS：选择规则是纯函数（8 条单测：复算件不得压过现场件 / 现场件取最新 / 只有复算件时要退回并标注 / 无来源证明的排在最后 / 别的脚本的产物不算 / 空输入 / 坏时间戳不丢件 / 三种 kind）。",
+        "licence": "PASS：只改仓内脚本与文档；读取的是仓内已提交的产物，没有新增外部数据。",
+        "ssot": "PASS：产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`），读的人不必再猜这个数来自哪种件；本轮**没有**往 `data/results` 写 D5 产物（三条真跑都 `--out %TEMP%`）。本步 cite 的是 `check_listing` 的全文档一致性真跑。",
+        "adversary": "反例：把「只有复算件时」写成拒绝执行——被拒，读不到是 `unmeasurable`，但「只有旧窗的复算件」仍然是一个可读的数，只是必须说出来；所以分支是「退回 + stderr 明说」而不是「不读」。这条分支真跑到：把四份现场件临时挪走后 `baseline_kind = recompute` 且警告句打出，四份**逐字节还原**（sha256 逐个复算相同）。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T20:00:50.615Z --tests 718",
+        "artifact": "data/results/listing-2026-11-02T20-00-50.615Z.json",
+        "outcome": "GREEN：16/16（含第 16 条 3 drafts）；同轮 `node --test` 718/718，含 `d5-baseline` 8 条与 `d5-fixtures-out` 2 条",
+        "sha256": "131198b5b8aba879be9f3d97647e37cfe6be9063fc8fd3d370cb6f6a7fa36b92"
+      }
     }
   ]
 }

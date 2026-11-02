@@ -63,12 +63,19 @@ node scripts/record_d5_evidence.mjs --stamp <ISO+10min> --out %TEMP%/d5-recomput
 | 外部引用 | `search/issues` 提到本仓 URL 的条目，经三重排除（自己的登录名 / 本仓自己 / 我们那三条投稿 PR） | **≥1** | `seen` 是"查到了几条候选"，`value` 才是"其中有多少条算外部"。`seen: 3 / value: 0` 不是矛盾，是三条都被排除了 |
 | 周下载 | **最近一份 `market-baseline-*.json` 的 `d5` 块**（`week_downloads` + `download_shape`） | **≥20 且 `shape = steady`** | ① 这一项**不是现场抓的**——不刷新基线就是拿旧窗的数列；② `single-day-burst` **不算需求**（2026-10-29 那次 634 全落在一天）；③ 读不到记 `unreadable`，不记 0 |
 
-### 为什么 `--baseline` 必须显式给
+### 为什么 `--baseline` 仍然要显式给
 
-`record_d5_evidence` 的默认值是「`data/results` 里文件名排序最后的那份 `market-baseline-*`」。
-排序**分不出**测量件与离线复算件（两者都叫 `market-baseline-<stamp>.json`）——今天默认选中的正是
-`market-baseline-2026-10-31T07-10-00.000Z.json`（**复算件**）。两者数字相同所以今天无害，
-但关窗那天必须点名：`--baseline <第 1 步刚写的那份>`。这个选择器的盲区记在 `T-841`。
+R72 之前，默认值是「`data/results` 里文件名排序最后的那份 `market-baseline-*`」——排序**分不出**测量件与离线复算件
+（两者同名同前缀），于是默认会选中 `market-baseline-2026-10-31T07-10-00.000Z.json`（**复算件**）。
+R72 把选择器改成 `pickBaselineArtifact`：优先 `inputs.offline === false`（现场测量）里最新的一份；
+只有复算件时才退回并**在 stderr 明说**「这个下载数来自复算基线」，产物里新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。
+
+所以关窗那天：
+
+- 默认现在会选中 `market-baseline-2026-10-31T06-40-00.000Z.json`（**measured**）——但那是 **10-31** 的窗口；
+- 仍然**必须**显式 `--baseline <第 1 步刚写的那份>`，否则你拿到的是一个**旧窗**的 634；
+- 产物里的 `inputs.baseline_kind` 与 `inputs.baseline` 要一起看：`explicit` 只说明「这文件是操作者点名的」，
+  **不说明**它覆盖了 D5 的窗口。
 
 ---
 
@@ -151,6 +158,8 @@ downloads  : 634 （measured，shape = single-day-burst，days_with_downloads 1�
 1. 三条采集路径**今天都读得到**（不是 `unmeasurable`），所以关窗那天失败只会是网络/凭据问题；
 2. **下载这一项确实来自旧基线**——它和今天（11-02）无关，这正好证明 §0 第 1 步不能省；
 3. 默认基线选中的是**复算件**，所以关窗时要用 `--baseline` 点名测量件。
+   （**R72 同轮已修**：选择器改为优先 `inputs.offline === false` 的现场件，并在产物里写 `baseline_kind`；
+   这条预演记录保留原样，因为它是修复前的读数。）
 
 ### 6.2 抓取 → 复算：改前跑不通，补了 `--fixtures-out` 之后逐项相同
 
