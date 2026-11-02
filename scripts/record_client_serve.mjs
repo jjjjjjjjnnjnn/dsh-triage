@@ -320,6 +320,32 @@ async function main() {
     if (listed === null) return await finish({ served: false, reason: 'client module not composed' })
 
     const asset = await fetchPage(`${base}`, `${base}${listed.replace(/^\//, '')}`, page.cookie)
+    /*
+     * T-818 DIRECT ROUTE PROBE: ask the route from Node before the browser does. This separates
+     * "the route is not registered or its handler hangs" from "the click did not reach the route",
+     * which the DOM probe alone cannot tell apart.
+     */
+    const upgradeDirect = await (async () => {
+      const started = Date.now()
+      try {
+        const response = await fetch(`${base.replace(/\/+$/, '')}/compat-triage/summary?upgrade=1`, {
+          headers: { cookie: page.cookie, accept: 'application/json', 'sec-fetch-site': 'same-origin' },
+          signal: AbortSignal.timeout(30_000),
+        })
+        const text = await response.text()
+        return { status: response.status, ms: Date.now() - started, body: text.slice(0, 400) }
+      } catch (error) {
+        return { status: null, ms: Date.now() - started, error: String(error && error.message ? error.message : error) }
+      }
+    })()
+    record(
+      'upgrade-route',
+      upgradeDirect.status === 200 ? 'passed' : 'failed',
+      upgradeDirect.status === null
+        ? `the upgrade route did not answer in ${upgradeDirect.ms}ms: ${String(upgradeDirect.error)}`
+        : `GET /compat-triage/upgrade -> ${upgradeDirect.status} in ${upgradeDirect.ms}ms`,
+      upgradeDirect,
+    )
     const body = asset.text
     const hasLoader = body.includes('__ModuleLoader__.load')
     const declaresId = /id:\s*['"]dsh-triage['"]/.test(body)
@@ -401,6 +427,29 @@ async function main() {
           'passed',
           `the tab rendered the summary: tone ${String(tabProbe.tone)}, ${String(tabProbe.issues)} issue row(s) on screen, ${String(tabProbe.copy_fix_buttons ?? 0)} copy-fix button(s)`,
           tabProbe,
+        )
+      }
+      /*
+       * UPGRADE VISIBLE (T-818): a second screen, opened by a click. `unmeasured` when there was no
+       * button to click; `failed` when the click produced no bucket table; `passed` only when the
+       * four buckets are in the DOM.
+       */
+      const upgradeSeen = observed.visible.evidence?.upgrade_probe ?? null
+      if (upgradeSeen === null) {
+        record('upgrade-visible', 'unmeasured', 'the upgrade screen was not opened (see summary-visible)', {})
+      } else if (upgradeSeen.probe?.present !== true) {
+        record(
+          'upgrade-visible',
+          'failed',
+          `the upgrade click produced no bucket table (kind ${String(upgradeSeen.probe?.kind)})`,
+          upgradeSeen,
+        )
+      } else {
+        record(
+          'upgrade-visible',
+          'passed',
+          `the upgrade screen rendered ${Array.isArray(upgradeSeen.probe.counts) ? upgradeSeen.probe.counts.length : 0} bucket row(s)`,
+          upgradeSeen,
         )
       }
       /*
@@ -486,6 +535,40 @@ async function main() {
             : 'the tab and the CLI disagree on the same profile',
           { tab_data: fromTab, cli_data: cli, tab_dom_counts: tabProbe?.counts_text ?? null },
         )
+      }
+      /*
+       * UPGRADE SAME SOURCE (T-818): the four buckets on screen must be the CLI's four buckets for
+       * the same target. The route and the CLI share `judgeUpgradeImpact`; this step proves it.
+       */
+      const upgradeProbe = observed.visible.evidence?.upgrade_probe?.probe ?? null
+      let upgradeMarker = null
+      try {
+        upgradeMarker = JSON.parse(String(observed.visible.evidence?.upgrade_probe?.marker ?? 'null'))
+      } catch {
+        upgradeMarker = null
+      }
+      if (upgradeProbe === null || upgradeProbe.present !== true || !Array.isArray(upgradeProbe.counts) || upgradeMarker === null || typeof upgradeMarker.target !== 'string') {
+        record('upgrade-same-source', 'unmeasured', 'no four-bucket screen or no target to compare', {})
+      } else {
+        const cliUpgrade = await readCliUpgrade(pathFor(String(argOf('--cli-home', home))), String(argOf('--cli-profile', 'web')), upgradeMarker.target, env)
+        if (cliUpgrade === null || cliUpgrade.error !== undefined || cliUpgrade.counts === null) {
+          record('upgrade-same-source', 'unmeasured', 'the CLI could not judge the same target', { cli_error: cliUpgrade?.error ?? null })
+        } else {
+          const byBucket = Object.fromEntries(upgradeProbe.counts.map((row) => [row.bucket, row.count]))
+          const same =
+            byBucket['would-be-denied'] === cliUpgrade.counts.would_be_denied &&
+            byBucket['cannot-tell'] === cliUpgrade.counts.cannot_tell &&
+            byBucket.improved === cliUpgrade.counts.improved &&
+            byBucket['likely-fine'] === cliUpgrade.counts.likely_fine
+          record(
+            'upgrade-same-source',
+            same ? 'passed' : 'failed',
+            same
+              ? `the tab and the CLI agree on ${upgradeMarker.target}: ${cliUpgrade.counts.would_be_denied} denied / ${cliUpgrade.counts.cannot_tell} cannot tell / ${cliUpgrade.counts.improved} improved / ${cliUpgrade.counts.likely_fine} likely fine`
+              : 'the tab and the CLI disagree on the same upgrade target',
+            { tab_counts: upgradeProbe.counts, cli_counts: cliUpgrade.counts, target: upgradeMarker.target },
+          )
+        }
       }
     }
     return await finish({ served: asset.status === 200 && hasLoader && declaresId, composed_url: listed, tab_visible: visibleStatus }, output)
@@ -755,6 +838,26 @@ const TAB_PROBE_EXPRESSION = `(() => {
   })
 })()`
 
+/** T-818: click the on-demand upgrade button inside the already-open tab. */
+const UPGRADE_CLICK_EXPRESSION = `(() => {
+  const button = document.querySelector('[data-triage-action="upgrade"]')
+  if (!button) return JSON.stringify({ clicked: false, reason: 'no upgrade button' })
+  button.click()
+  return JSON.stringify({ clicked: true })
+})()`
+
+/** T-818: read the four buckets as attribute pairs, or the failure sentence. */
+const UPGRADE_PROBE_EXPRESSION = `(() => {
+  const el = document.querySelector('[data-triage-tab="upgrade"]')
+  const err = document.querySelector('[data-triage-tab="upgrade-error"]')
+  if (!el) return JSON.stringify({ present: false, error: err !== null, kind: err === null ? null : err.getAttribute('data-triage-kind') })
+  const counts = Array.from(el.querySelectorAll('[data-upgrade-count]')).map((node) => ({
+    bucket: node.getAttribute('data-upgrade-bucket'),
+    count: Number(node.getAttribute('data-upgrade-count')),
+  }))
+  return JSON.stringify({ present: true, counts, text: String(el.innerText || '').slice(0, 4000) })
+})()`
+
 
 /**
  * Click into Settings and look for our tab. Three outcomes, and only one of them is a claim:
@@ -881,6 +984,30 @@ async function probeVisibility(evaluate, mount, send) {
       }
       evidence.tab_ms = Date.now() - openedAt
       evidence.tab_probe = probe
+      /*
+       * T-818: the upgrade screen is a SECOND question, asked by clicking the on-demand button. The
+       * tab must not have read npm before this point; the click is the only thing that does.
+       */
+      if (probe !== null && probe.present === true && probe.mode === 'summary') {
+        const clicked = await evaluate(UPGRADE_CLICK_EXPRESSION)
+        let upgradeProbe = null
+        for (let attempt = 0; attempt < 60; attempt += 1) {
+          upgradeProbe = await evaluate(UPGRADE_PROBE_EXPRESSION)
+          if (upgradeProbe !== null && (upgradeProbe.present === true || upgradeProbe.error === true)) break
+          await pause(500)
+        }
+        const upgradeMarker = await evaluate('JSON.stringify((window.__dshTriage && window.__dshTriage.upgrade) || null)')
+        /*
+         * DIAGNOSTIC (T-818): ask the same URL from the PAGE, with the page's own CSP/cookies. If this
+         * resolves while the component is still loading, the served client is stale; if it times out,
+         * the route is blocking the browser rather than the Node probe.
+         */
+        const directFromPage = await evaluate(`Promise.race([
+          fetch('/compat-triage/summary?upgrade=1', { credentials: 'include' }).then((r) => r.text()).then((t) => 'http:' + t.slice(0, 120)).catch((e) => 'err:' + String((e && e.message) || e)),
+          new Promise((r) => setTimeout(() => r('timeout'), 15000)),
+        ])`)
+        evidence.upgrade_probe = { clicked, probe: upgradeProbe, marker: upgradeMarker, direct: directFromPage }
+      }
       body = probe !== null && probe.present === true ? (probe.mode === 'summary' ? 'passed' : 'degraded') : 'failed'
       evidence.tab_body = body
       /*
@@ -1106,6 +1233,25 @@ async function readCliAudit(home, profile, env) {
     }
   } catch {
     return null
+  }
+}
+
+/** T-818: run the real CLI `upgrade --to <target> --json` against the same sandbox profile. */
+async function readCliUpgrade(home, profile, target, env) {
+  const cli = pathFor('packages/plugin/dist/cli.js')
+  const result = await run(process.execPath, [cli, 'upgrade', '--to', target, '--json', '--dsh-home', home, '--profile', profile], {
+    cwd: abs('.'),
+    env,
+    timeoutMs: 180_000,
+  })
+  if (result.code !== 0) return { error: { exit: result.code, stderr: clean(result.stderr).slice(-400) } }
+  try {
+    const payload = JSON.parse(result.stdout)
+    const counts = payload.counts ?? payload.impact?.counts ?? null
+    if (counts === null) return { error: { parse: 'no counts in the upgrade payload' } }
+    return { counts, target: payload.target ?? payload.impact?.target ?? target }
+  } catch (error) {
+    return { error: { parse: String(error) } }
   }
 }
 

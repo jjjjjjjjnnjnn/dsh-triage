@@ -29,9 +29,11 @@ import { fileURLToPath } from 'node:url'
 import { auditJsonPayload, auditRedactRoots, loadAuditData } from './audit-data.js'
 import { AUDIT_ROUTE_PATH, createAuditRouteHandler } from './host-audit-route.js'
 import { SUMMARY_ROUTE_PATH, createSummaryRouteHandler } from './host-summary-route.js'
+import { createUpgradeRouteHandler } from './host-upgrade-route.js'
 import { buildProfileSummary } from './summary.js'
 import { createCompatVerdictTool, type CompatVerdictTool, type ToolsRegistryLike } from './host-tool.js'
-import { loadEnv } from '@dsh-triage/core'
+import { judgeUpgradeImpact, loadEnv, resolveDistTagTarget } from '@dsh-triage/core'
+import { fetchPackument } from '@dsh-triage/signals'
 
 export interface HostConfig {
   readonly locale?: 'auto' | 'en' | 'zh'
@@ -268,17 +270,117 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
           }
         },
       })
+      const COUNT_KEY: Record<string, 'would_be_denied' | 'cannot_tell' | 'improved' | 'likely_fine'> = {
+        'would-be-denied': 'would_be_denied',
+        'cannot-tell': 'cannot_tell',
+        improved: 'improved',
+        'likely-fine': 'likely_fine',
+      }
+      /**
+       * The upgrade answer is ON DEMAND and reuses the same scan as the summary. It asks npm only
+       * for the two keyword tags (`next` / `latest`), never for an arbitrary version: a settings tab
+       * must not become a general-purpose registry client (T-818).
+       */
+      const upgradeHandler = createUpgradeRouteHandler({
+        read: async (tag) => {
+          const startedAt = Date.now()
+          const stamp = new Date().toISOString()
+          /*
+           * HARD CAP (T-818): the tab shows a loading sentence, so a registry read that never settles
+           * is a red screen with no conclusion. `fetchPackument` has its own abort timer, but a
+           * Host-side fetch can still hang in ways that timer does not see; the route promises an
+           * answer within its budget, and this race is how that promise is kept.
+           */
+          const packument = await Promise.race([
+            fetchPackument('@deepseek-ai/dsh', { at: stamp, timeoutMs: 10_000 }),
+            new Promise<Awaited<ReturnType<typeof fetchPackument>>>((resolve) =>
+              setTimeout(
+                () => resolve({ ok: false, error: { code: 'network-error', detail: 'registry read exceeded 10s', source: 'timeout' } }),
+                10_000,
+              ),
+            ),
+          ])
+          if (!packument.ok) {
+            return { ok: false, status: 502, message: `registry unavailable: ${packument.error.code} — ${packument.error.detail}` }
+          }
+          const resolved = resolveDistTagTarget({ requested: tag, distTags: packument.value.distTags })
+          if (!resolved.ok) {
+            return { ok: false, status: 502, message: 'detail' in resolved ? String(resolved.detail) : 'the dist-tag could not be resolved' }
+          }
+          const scanned = await scan()
+          if (!scanned.ok) return { ok: false, status: 409, message: scanned.message }
+          const judged = judgeUpgradeImpact({
+            env: scanned.data.env,
+            target: resolved.version,
+            bundles: scanned.data.bundles,
+            rows: scanned.data.rows,
+            generatedAt: stamp,
+            profileSource: 'live',
+          })
+          if (!judged.ok) return { ok: false, status: 400, message: judged.detail }
+          const ms = Date.now() - startedAt
+          if (ms > 20_000) {
+            return { ok: false, status: 504, message: `the scan took ${ms}ms, over the 20s budget; no bucket list is shown` }
+          }
+          const impact = judged.impact
+          return {
+            ok: true,
+            body: {
+              target: { tag, version: impact.target, relation: impact.target_relation },
+              profile: impact.profile,
+              current: impact.current,
+              counts: impact.counts,
+              buckets: impact.buckets.map((bucket) => {
+                const key = COUNT_KEY[bucket]
+                return { bucket, count: key === undefined ? 0 : impact.counts[key] }
+              }),
+              units: impact.units.slice(0, 20).map((unit) => ({
+                bucket: unit.bucket,
+                kind: unit.kind,
+                name: unit.name,
+                version: unit.version,
+                id: unit.id,
+              })),
+              more: Math.max(0, impact.units.length - 20),
+              registry: impact.registry,
+              ms,
+              limits: [
+                'declaration layer only: this is not a runtime measurement',
+                'the target is the npm dist-tag at click time, not your machine\'s future',
+                'no profile is modified and no package is installed',
+              ],
+            },
+          }
+        },
+      })
+      /*
+       * ONE EXACT ROUTE, TWO ANSWERS (T-818). A third exact route was registered and logged, but the
+       * real Host answered 404 for it while `/compat-triage/summary` worked — the route table serves
+       * two, not three, on this build. The upgrade answer is therefore selected by an explicit query
+       * on the route that already works; a plain `/compat-triage/summary` keeps its exact contract.
+       */
+      const combinedSummary = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
+        const wantsUpgrade = typeof request.url === 'string' && /[?&]upgrade=/.test(request.url)
+        return wantsUpgrade ? upgradeHandler(request, response) : summaryHandler(request, response)
+      }
       const register = (): (() => void) => {
-        const disposers = [
-          webServer.register({ kind: 'exact', path: AUDIT_ROUTE_PATH, handler }),
-          webServer.register({ kind: 'exact', path: SUMMARY_ROUTE_PATH, handler: summaryHandler }),
-        ]
+        const disposers: Array<() => void> = []
+        for (const [label, mount] of [
+          ['audit', () => webServer.register({ kind: 'exact' as const, path: AUDIT_ROUTE_PATH, handler })],
+          ['summary', () => webServer.register({ kind: 'exact' as const, path: SUMMARY_ROUTE_PATH, handler: combinedSummary })],
+        ] as const) {
+          try {
+            disposers.push(mount())
+          } catch (error) {
+            announce(ctx, `${label} route failed to register: ${error instanceof Error ? error.message : String(error)}`)
+          }
+        }
         return () => {
           for (const dispose of disposers) dispose()
         }
       }
       const dispose = typeof scope.effect === 'function' ? scope.effect(register, 'compat-triage: audit routes') : register()
-      announce(ctx, `read-only ${AUDIT_ROUTE_PATH} + ${SUMMARY_ROUTE_PATH} registered (profile ${bound.profile})`)
+      announce(ctx, `read-only ${AUDIT_ROUTE_PATH} + ${SUMMARY_ROUTE_PATH} (with ?upgrade=1) registered (profile ${bound.profile})`)
       void dispose
     })
   }

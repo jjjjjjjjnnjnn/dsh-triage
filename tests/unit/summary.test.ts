@@ -56,6 +56,7 @@ function data(overrides: Partial<AuditData> = {}): AuditData {
     duplicates: [],
     duplicateFindings: [],
     rows: [],
+    bundles: [],
     rowVerdicts: [],
     presetDeclarations: [],
     snapshot: null,

@@ -8632,6 +8632,38 @@
         "sha256": "d6081c39c9e2039e7a264c28949c7bb430e7361a566c22cfbfa8d63f45a3be7c",
         "outcome": "ALL GREEN · 9 gates · 602 tests · check_listing 14/14"
       }
+    },
+    {
+      "id": "R60-S11",
+      "batch": "R60",
+      "step": "**T-818 四桶进页签（🟨 未完成）**：新增 host 四桶 handler（与 `upgrade --to` 同一个 `judgeUpgradeImpact`）、页签第二个按钮（`/compat-triage/summary?upgrade=1`，默认不联网，点击才读 npm，10s 硬上限）、client/route 单测 9 条；真机 **`upgrade-route` 200**（Node 直连），但页面 fetch 一直 `loading` → **`upgrade-visible: failed`**、`upgrade-same-source: unmeasured`。红产物保留作见证，功能不算完成",
+      "changed": [
+        "packages/plugin/src/host.ts",
+        "packages/plugin/src/host-upgrade-route.ts",
+        "packages/plugin/src/audit-data.ts",
+        "packages/plugin/client.js",
+        "tests/unit/host-upgrade-route.test.ts",
+        "tests/unit/client-tab.test.ts",
+        "tests/unit/fix.test.ts",
+        "tests/unit/summary.test.ts",
+        "scripts/record_client_serve.mjs",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS（部分）：四桶 handler 与 payload 由单测覆盖；真机 `upgrade-route` 200；但 `upgrade-visible` 未绿——**不能**把这说成功能完成",
+        "reproducibility": "PASS：`client-serve-2026-11-02T14-40-00.000Z.json` 带 sha256；命令可复跑；红步原样保留",
+        "licence": "PASS：只读；不改 profile、不安装包、不读凭据",
+        "ssot": "PASS：611 测试 / 0 fail；新增 client-serve 产物被本条引用；README 与覆盖率产物未动",
+        "adversary": "反例一：把 `upgrade-route:200` 当成「点击后出四桶」——被拒：`upgrade-visible:failed` 就是反例；反例二：把页面 fetch 的 pending 写成「离线降级」——被拒：离线会显示一句失败话，不会永远 loading；反例三：删掉红产物让树干净——被拒：它是唯一见证；反例四：把 T-818 标成 ✅——被拒：真机出口没达成"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-02T14:40:00.000Z --lang zh",
+        "artifact": "data/results/client-serve-2026-11-02T14-40-00.000Z.json",
+        "sha256": "3940b6d56cc8adab1820be4ce9cdf16b5e75041133d676db42c6d74d3e09fa3b",
+        "outcome": "upgrade-route 200 · upgrade-visible failed (loading) · upgrade-same-source unmeasured · 611 tests / 0 fail"
+      }
     }
   ]
 }

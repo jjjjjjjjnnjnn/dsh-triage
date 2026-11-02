@@ -38,8 +38,17 @@ window.__ModuleLoader__.load({
     const inject = ['slots', 'locale', 'modules']
     /** The read-only route built in R51. One place, so a rename cannot drift between halves. */
     const SUMMARY_URL = '/compat-triage/summary'
+    /** T-818: the on-demand four-bucket answer, selected by a query on the route that works. */
+    const UPGRADE_URL = '/compat-triage/summary?upgrade=1'
     /** How many issues a settings tab may show before it stops being a settings tab. */
     const ISSUES_SHOWN = 3
+    /** T-818: the four buckets and the count field each one reads. */
+    const UPGRADE_COUNT_KEY = {
+      'would-be-denied': 'would_be_denied',
+      'cannot-tell': 'cannot_tell',
+      improved: 'improved',
+      'likely-fine': 'likely_fine',
+    }
     /**
      * The pure views, kept so the vm test can render them without a React runtime (see
      * `views()` at the bottom). They are NOT part of the Host contract: the Host only calls
@@ -90,6 +99,28 @@ window.__ModuleLoader__.load({
       noWeb: '当前环境未启用 Web 模块，请在终端执行 `dsh-triage status`。',
       empty: '未检测到已安装插件，通常是主目录或 Profile 路径指定有误。',
       errorEmpty: '诊断接口未返回 summary 数据，暂无法展示指标。',
+      upgradeButton: '升级预检',
+      upgradeTitle: '升级预检 · 目标 {version}',
+      upgradeHint: '点击后才读取 npm 的 next 标签；只判声明层，不是运行期实测。',
+      upgradePending: '正在读取 npm 并推演…',
+      upgradeOffline: '读取 npm 失败（离线或网络不可用）——不显示任何桶，避免把“读不到”当成“不会坏”。',
+      upgradeBucketColumns: ['桶', '数量', '意思'],
+      upgradeBucketLabels: {
+        'would-be-denied': '会被拒',
+        'cannot-tell': '判不了',
+        improved: '会变好',
+        'likely-fine': '像没事',
+      },
+      upgradeBucketMeanings: {
+        'would-be-denied': '目标版本的准入规则会拒绝这一行/包',
+        'cannot-tell': '声明不足或目标还没发布，证据不够',
+        improved: '今天被拒、目标放行——目标版本会放行它',
+        'likely-fine': '声明上不冲突——不等于升级后能跑',
+      },
+      upgradeMore: '另有 {n} 个单元未列出。',
+      upgradeBoundary: '只判声明层；不是运行期实测，也不改你的 profile。',
+      upgradeSource: '数据来源于本地只读接口 /compat-triage/upgrade（点击后读取 npm next）。',
+      upgradeBack: '返回现状',
     }
     const en = {
       tab: 'Triage',
@@ -133,6 +164,28 @@ window.__ModuleLoader__.load({
       noWeb: 'This profile serves no web surface, so the route does not exist. Use `dsh-triage status` in a terminal.',
       empty: 'This home/profile yields zero plugin rows — usually --dsh-home / --profile points somewhere else.',
       errorEmpty: 'The route returned no summary field, so no numbers are shown.',
+      upgradeButton: 'Upgrade check',
+      upgradeTitle: 'Upgrade check · target {version}',
+      upgradeHint: 'The npm next tag is read only after you click; this judges the declaration layer, not a runtime measurement.',
+      upgradePending: 'Reading npm and judging the target…',
+      upgradeOffline: 'The npm read failed (offline or unreachable). No buckets are shown: "could not read" is not "nothing will break".',
+      upgradeBucketColumns: ['Bucket', 'Count', 'Meaning'],
+      upgradeBucketLabels: {
+        'would-be-denied': 'will be denied',
+        'cannot-tell': 'cannot tell',
+        improved: 'improved',
+        'likely-fine': 'likely fine',
+      },
+      upgradeBucketMeanings: {
+        'would-be-denied': 'the target runtime would deny this row/package',
+        'cannot-tell': 'not enough declaration or the target is unpublished',
+        improved: 'denied today, admitted at the target — the target would let it through',
+        'likely-fine': 'no declaration conflict — not a promise that it runs',
+      },
+      upgradeMore: '{n} more units not listed.',
+      upgradeBoundary: 'Declaration layer only; not a runtime measurement, and it does not touch your profile.',
+      upgradeSource: 'Read from /compat-triage/upgrade after a click; the host reads the npm next tag.',
+      upgradeBack: 'Back to status',
     }
 
     /** Fill `{name}` placeholders. A missing value becomes `?`, never `0`. */
@@ -278,7 +331,7 @@ window.__ModuleLoader__.load({
         return matrix(copy.nextColumns, rows)
       }
 
-      function summaryView(summary, copy, onRefresh) {
+      function summaryView(summary, copy, onRefresh, onUpgrade) {
         const counts = summary && summary.counts ? summary.counts : null
         const children = [jsx('h3', { children: copy.title }), jsx('p', { children: copy.hint })]
         children.push(
@@ -305,6 +358,15 @@ window.__ModuleLoader__.load({
           children.push(nextTable(summary.next, copy))
         }
         children.push(jsx('p', { children: copy.source }))
+        // T-818: the second screen is on demand. This button is the only thing that reads npm.
+        children.push(
+          jsx('button', {
+            type: 'button',
+            'data-triage-action': 'upgrade',
+            onClick: onUpgrade,
+            children: copy.upgradeButton,
+          }),
+        )
         children.push(jsx('button', { type: 'button', onClick: onRefresh, children: copy.reload }))
         return jsxs('div', { 'data-triage-tab': 'summary', children })
       }
@@ -328,7 +390,43 @@ window.__ModuleLoader__.load({
         return jsxs('div', { 'data-triage-tab': 'error', 'data-triage-kind': String(kind), children })
       }
 
-      return { summaryView, failureView }
+      /**
+       * T-818: four buckets, each with `data-upgrade-bucket` / `data-upgrade-count` so the recorder
+       * can read them as pairs. The words come from the Host's copy; nothing is counted here.
+       */
+      function upgradeView(result, copy, onBack) {
+        const upgrade = result && result.upgrade ? result.upgrade : null
+        const target = upgrade && upgrade.target && upgrade.target.version ? String(upgrade.target.version) : '?'
+        const children = [jsx('h3', { children: fill(copy.upgradeTitle, { version: target }) }), jsx('p', { children: copy.upgradeHint })]
+        if (upgrade && upgrade.counts) {
+          const rows = ['would-be-denied', 'cannot-tell', 'improved', 'likely-fine'].map((bucket) => {
+            const count = upgrade.counts[UPGRADE_COUNT_KEY[bucket]] ?? 0
+            return [
+              jsx('span', { 'data-upgrade-label': bucket, children: copy.upgradeBucketLabels[bucket] }),
+              jsx('strong', { 'data-upgrade-bucket': bucket, 'data-upgrade-count': String(count), children: String(count) }),
+              jsx('span', { children: copy.upgradeBucketMeanings[bucket] }),
+            ]
+          })
+          children.push(matrix(copy.upgradeBucketColumns, rows, { 'data-triage-upgrade': '1' }))
+          if (upgrade.more > 0) children.push(jsx('p', { children: fill(copy.upgradeMore, { n: upgrade.more }) }))
+        }
+        children.push(jsx('p', { children: copy.upgradeBoundary }))
+        children.push(jsx('p', { children: copy.upgradeSource }))
+        children.push(jsx('button', { type: 'button', onClick: onBack, children: copy.upgradeBack }))
+        return jsxs('div', { 'data-triage-tab': 'upgrade', children })
+      }
+
+      /** Offline / unreadable is its own sentence, never a zero-filled bucket table. */
+      function upgradeFailureView(status, result, copy, onBack) {
+        const children = [jsx('h3', { children: copy.upgradeButton }), jsx('p', { children: copy.upgradeHint })]
+        if (status === 'loading') children.push(jsx('p', { children: copy.upgradePending }))
+        else children.push(jsx('p', { children: copy.upgradeOffline }))
+        if (result && result.detail) children.push(jsx('p', { children: `${copy.failed}: ${String(result.detail)}` }))
+        children.push(jsx('button', { type: 'button', onClick: onBack, children: copy.upgradeBack }))
+        return jsxs('div', { 'data-triage-tab': 'upgrade-error', 'data-triage-kind': String(result && result.kind ? result.kind : status), children })
+      }
+
+      return { summaryView, failureView, upgradeView, upgradeFailureView }
     }
 
     /**
@@ -343,6 +441,8 @@ window.__ModuleLoader__.load({
       return function CompatTriageTab(props) {
         const copy = props.copy
         const [state, setState] = useState({ status: 'idle', result: null })
+        const [screen, setScreen] = useState('summary')
+        const [upgrade, setUpgrade] = useState({ status: 'idle', result: null })
         const load = useCallback(() => {
           let cancelled = false
           setState((previous) => ({ ...previous, status: 'loading' }))
@@ -363,12 +463,40 @@ window.__ModuleLoader__.load({
             cancelled = true
           }
         }, [props])
+        /*
+         * T-818: the upgrade screen is opened by the button, never by mount. Calling this function is
+         * the only thing in the tab that causes an npm read.
+         */
+        const loadUpgrade = useCallback(() => {
+          let cancelled = false
+          setScreen('upgrade')
+          setUpgrade({ status: 'loading', result: null })
+          Promise.resolve()
+            .then(() => props.loadUpgrade())
+            .then((result) => {
+              if (cancelled) return
+              setUpgrade({ status: result && result.ok ? 'ready' : 'failed', result })
+            })
+            .catch((error) => {
+              if (cancelled) return
+              setUpgrade({ status: 'failed', result: { ok: false, kind: 'thrown', detail: String((error && error.message) || error) } })
+            })
+          return () => {
+            cancelled = true
+          }
+        }, [props])
         useEffect(() => load(), [load])
+        if (screen === 'upgrade') {
+          if (upgrade.status !== 'ready' || upgrade.result === null || upgrade.result.ok !== true || !upgrade.result.upgrade) {
+            return views.upgradeFailureView(upgrade.status, upgrade.result, copy, () => setScreen('summary'))
+          }
+          return views.upgradeView(upgrade.result, copy, () => setScreen('summary'))
+        }
         const result = state.result
         if (state.status !== 'ready' || result === null || result.ok !== true || result.summary === null) {
           return views.failureView(state.status === 'idle' ? null : result, copy, load)
         }
-        return views.summaryView(result.summary, copy, load)
+        return views.summaryView(result.summary, copy, load, loadUpgrade)
       }
     }
 
@@ -462,6 +590,18 @@ window.__ModuleLoader__.load({
           noWeb: t('noWeb'),
           empty: t('empty'),
           errorEmpty: t('errorEmpty'),
+          upgradeButton: t('upgradeButton'),
+          upgradeTitle: t('upgradeTitle'),
+          upgradeHint: t('upgradeHint'),
+          upgradePending: t('upgradePending'),
+          upgradeOffline: t('upgradeOffline'),
+          upgradeBucketColumns: dict.upgradeBucketColumns,
+          upgradeBucketLabels: dict.upgradeBucketLabels,
+          upgradeBucketMeanings: dict.upgradeBucketMeanings,
+          upgradeMore: t('upgradeMore'),
+          upgradeBoundary: t('upgradeBoundary'),
+          upgradeSource: t('upgradeSource'),
+          upgradeBack: t('upgradeBack'),
         },
         /*
          * FACTS FROM THE HOST, NOT JUDGEMENTS MADE HERE (铁律 1). The route answers with the
@@ -518,6 +658,55 @@ window.__ModuleLoader__.load({
           }
           return publishData({ ok: true, kind: null, summary, detail: null })
         },
+        /*
+         * T-818: fetched only when the person clicks "升级预检". A route that is missing (404) or a
+         * registry that cannot be read (502/504) produces a sentence, never a zero-filled bucket table.
+         */
+        loadUpgrade: async () => {
+          const publishUpgrade = (result) => {
+            try {
+              if (typeof window === 'object' && window !== null) {
+                window.__dshTriage = {
+                  ...(window.__dshTriage || {}),
+                  upgrade: {
+                    ok: result.ok,
+                    kind: result.kind ?? null,
+                    target: result.upgrade && result.upgrade.target ? result.upgrade.target.version : null,
+                    counts: result.upgrade && result.upgrade.counts ? result.upgrade.counts : null,
+                  },
+                }
+              }
+            } catch {
+              // The marker is diagnostic only; the screen still works without it.
+            }
+            return result
+          }
+          let response
+          try {
+            response = await fetch(UPGRADE_URL, {
+              credentials: 'include',
+              headers: { accept: 'application/json' },
+            })
+          } catch (error) {
+            return publishUpgrade({ ok: false, kind: 'thrown', upgrade: null, detail: String((error && error.message) || error) })
+          }
+          if (!response.ok) {
+            const kind = response.status === 404 ? 'route-missing' : 'http'
+            let detail = `HTTP ${response.status}`
+            try {
+              const body = await response.json()
+              if (body && typeof body.error === 'string') detail = `${response.status}: ${body.error}`
+            } catch {
+              // A non-JSON error body is still an error; the status is the fact we have.
+            }
+            return publishUpgrade({ ok: false, kind, upgrade: null, detail })
+          }
+          const payload = await response.json()
+          if (!payload || !payload.counts || !payload.target) {
+            return publishUpgrade({ ok: false, kind: 'no-upgrade', upgrade: null, detail: null })
+          }
+          return publishUpgrade({ ok: true, kind: null, upgrade: payload, detail: null })
+        },
       })
       slots.inject('settings.plugins.tab', () =>
         slots.register(
@@ -540,7 +729,7 @@ window.__ModuleLoader__.load({
         const registered = register(ctx, require)
         publishMarker(
           registered
-            ? { registered: true, slot: 'settings.plugins.tab', id: NS, route: SUMMARY_URL }
+            ? { registered: true, slot: 'settings.plugins.tab', id: NS, route: SUMMARY_URL, upgrade: UPGRADE_URL }
             : { registered: false, reason: 'contract-missing', id: NS },
         )
         return registered

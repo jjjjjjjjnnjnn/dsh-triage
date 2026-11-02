@@ -55,6 +55,8 @@ export interface AuditData {
   readonly duplicates: readonly DuplicateCopy[]
   readonly duplicateFindings: readonly DuplicateCopy[]
   readonly rows: Awaited<ReturnType<typeof resolveRows>>
+  /** Bundle layers as the composition loader read them (R61: the upgrade route reuses this scan). */
+  readonly bundles: readonly { readonly name: string; readonly version: string | null; readonly manifest: unknown | null }[]
   readonly rowVerdicts: readonly Verdict[]
   readonly presetDeclarations: readonly PresetDeclaration[]
   readonly snapshot: InventorySnapshot | null
@@ -140,6 +142,7 @@ export async function loadAuditData(input: AuditLoadInput): Promise<AuditLoad> {
       duplicates,
       duplicateFindings,
       rows,
+      bundles: composition.layers.map((layer) => ({ name: layer.name, version: layer.version ?? null, manifest: layer.manifest ?? null })),
       rowVerdicts,
       presetDeclarations,
       snapshot,

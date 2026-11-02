@@ -73,6 +73,7 @@ function data(options: { profileDir: string; verdicts: readonly Verdict[] }): Au
     duplicates: [],
     duplicateFindings: [],
     rows: [],
+    bundles: [],
     rowVerdicts: options.verdicts,
     presetDeclarations: [],
     snapshot: null,

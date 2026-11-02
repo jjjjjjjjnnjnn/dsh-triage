@@ -27,8 +27,10 @@ const SOURCE_PATH = join(repoRoot, 'packages', 'plugin', 'client.js')
 const MANIFEST_PATH = join(repoRoot, 'packages', 'plugin', 'package.json')
 
 interface Views {
-  readonly summaryView: (summary: unknown, copy: Record<string, string>, onRefresh: () => void) => Record<string, unknown>
+  readonly summaryView: (summary: unknown, copy: Record<string, string>, onRefresh: () => void, onUpgrade?: () => void) => Record<string, unknown>
   readonly failureView: (result: unknown, copy: Record<string, string>, onRefresh: () => void) => Record<string, unknown>
+  readonly upgradeView: (result: unknown, copy: Record<string, string>, onBack: () => void) => Record<string, unknown>
+  readonly upgradeFailureView: (status: string, result: unknown, copy: Record<string, string>, onBack: () => void) => Record<string, unknown>
 }
 
 interface Exports {
@@ -241,6 +243,7 @@ interface InjectedTab {
   readonly locale: string
   readonly copy: Record<string, string>
   readonly load: () => Promise<{ ok: boolean; kind: string | null; detail: string | null; summary: LoadedSummary | null }>
+  readonly loadUpgrade: () => Promise<{ ok: boolean; kind: string | null; detail: string | null; upgrade: unknown }>
 }
 
 /** Mount the tab the way the Host does: invoke the lazy injection, then read its props. */
@@ -475,4 +478,101 @@ test('the manifest declares the browser half exactly the way the Host discovers 
    */
   assert.equal(manifest.exports['./client'], './client.js', 'the Host finds the bundle through exports["./client"]')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml', 'the host half is unchanged')
+})
+
+/*
+ * T-818: the four buckets are a SECOND SCREEN, opened on demand. The tab must not read npm on mount,
+ * and an unreadable registry must never render as a zero-filled bucket table.
+ */
+
+test('T-818: the summary screen offers an on-demand upgrade button, and nothing reads npm on mount', () => {
+  const { exports } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  let clicked = 0
+  const summary = {
+    tone: 'attention',
+    headline: 'h',
+    plain: 'p',
+    counts: { rows: 3, judged: 1, go: 0, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [],
+    more: 0,
+    next: [],
+  }
+  const tree = views.summaryView(summary, injected.copy, () => {}, () => {
+    clicked += 1
+  }) as { props: { children: Array<{ type: string; props: Record<string, unknown> }> } }
+  const button = tree.props.children.find((node) => node.props['data-triage-action'] === 'upgrade')
+  assert.ok(button, 'the summary screen has an upgrade button')
+  assert.equal(button!.type, 'button')
+  ;(button!.props.onClick as () => void)()
+  assert.equal(clicked, 1, 'the button only calls the loader; it does not fetch by itself')
+})
+
+test('T-818: the upgrade screen renders four buckets from the payload, never an invented count', () => {
+  const { exports } = loadBundle()
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  const result = {
+    ok: true,
+    upgrade: {
+      target: { tag: 'next', version: '0.2.1-rc.5' },
+      counts: { would_be_denied: 2, cannot_tell: 3, improved: 1, likely_fine: 4 },
+      more: 0,
+    },
+  }
+  const tree = views.upgradeView(result, injected.copy, () => {})
+  const text = JSON.stringify(tree)
+  for (const [bucket, count] of [
+    ['would-be-denied', '2'],
+    ['cannot-tell', '3'],
+    ['improved', '1'],
+    ['likely-fine', '4'],
+  ]) {
+    assert.match(text, new RegExp(`"data-upgrade-bucket":"${bucket}"`), `${bucket} is rendered as a bucket`)
+    assert.match(text, new RegExp(`"data-upgrade-count":"${count}"`), `${bucket} carries its count`)
+  }
+  assert.match(text, /0\.2\.1-rc\.5/, 'the target version is the payload target')
+  assert.match(text, /Declaration layer only/, 'the boundary sentence is present')
+})
+
+test('T-818: loadUpgrade asks the route only when called, and the URL is the fixed next tag', async () => {
+  const urls: string[] = []
+  const payload = {
+    target: { tag: 'next', version: '0.2.1-rc.5' },
+    counts: { would_be_denied: 2, cannot_tell: 3, improved: 1, likely_fine: 4 },
+    more: 0,
+  }
+  const { exports } = loadBundle({
+    fetch: async (url: string) => {
+      urls.push(url)
+      return { ok: true, status: 200, json: async () => payload }
+    },
+  })
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected } = mountTab(fake, exports)
+  assert.deepEqual(urls, [], 'mounting the tab reads nothing from npm')
+  const loaded = await injected.loadUpgrade()
+  assert.equal(loaded.ok, true)
+  assert.deepEqual(urls, ['/compat-triage/summary?upgrade=1'])
+  assert.deepEqual({ ...(loaded.upgrade as typeof payload).counts }, payload.counts)
+})
+
+test('T-818: an unreadable registry gets a sentence, not a zero-filled bucket table', async () => {
+  const { exports } = loadBundle({
+    fetch: async () => ({ ok: false, status: 502, json: async () => ({ error: 'registry unavailable: network-error' }) }),
+  })
+  const fake = fakeContext()
+  exports.apply(fake.ctx)
+  const { injected, views } = mountTab(fake, exports)
+  const loaded = await injected.loadUpgrade()
+  assert.equal(loaded.ok, false)
+  assert.equal(loaded.kind, 'http')
+  assert.match(String(loaded.detail), /registry unavailable/)
+  const text = JSON.stringify(views.upgradeFailureView('failed', loaded, injected.copy, () => {}))
+  assert.doesNotMatch(text, /data-upgrade-count/, 'no bucket table on a failed read')
+  assert.match(text, /could not read/, 'the sentence says the read failed, not that nothing will break')
 })
