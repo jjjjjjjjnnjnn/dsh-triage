@@ -121,7 +121,7 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 
 | 顺序 | 任务 | 为什么是它 | 起点 |
 |---|---|---|---|
-| 1 | **发 0.3.2**（T-828，HUMAN） | 页签是包内文件，`0.3.1` 不含本轮的 `upgrade-loading` 与四桶页签；票已备好，只差 OTP | `pnpm -r publish` → `node scripts/record_publish.mjs` |
+| 1 | **发 0.3.2**（T-828，HUMAN） | 页签是包内文件，`0.3.1` 不含本轮的 `upgrade-loading` 与四桶页签；票已备好，**先 `npm login`**（本机凭据真 `E401`，`npm whoami` 独立复现） | `npm login` → `pnpm run release:publish`（自动跑 preflight → publish → record_publish） |
 | 2 | **R63 采用分类器 v3**（判据轮） | 干净留出集 17/20 已过门槛，但换生产会改头条 4.8% → 必须 live 重测 + 新种子 + HUMAN 5 条 + README/`check_listing` #14 同轮 | `audit/RECON_2026-11-02_classifier-v3.md` |
 | 3 | **D5 关窗读数** | 窗口 `2026-11-15T20:24:37Z`；关窗前再读都是 `pending` | `node scripts/record_d5_evidence.mjs ...` |
 | 4 | **`BS-54` 的时延分布**（新） | 面板 summary 一次观测到 **9510ms**；先要 N≥10 次的 `tab_ms` 分布，才谈得上改预算 | `scripts/record_client_serve.mjs` · `client-serve-nc-bucket-…T12-49-11` |
