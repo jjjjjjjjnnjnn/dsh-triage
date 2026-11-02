@@ -103,6 +103,8 @@
 | T-838 | **回帖的「可发」状态 + 粘贴块 + 数字对账**：R57 写了三条回帖，但没有任何机器知道「帖子是不是已经被人答了」，也没有任何断言核对正文里的版本/条数 | 增长 | implementer + verifier | — | ① `judgeReplyGate` 四档（`open`/`answered`/`closed`/`unreadable`，**读不到不许写成 open**）；② 每条草稿有 `<!-- paste:start/end -->` 块，块里只放将粘贴的字；③ `check_listing` 新断言：registry 声明 `claims`，检查器从**被引产物**与**粘贴块**两边复算；三条定向负对照各自红 | ✅ **R71 完成**：`scripts/lib/discussion-state.mjs` + `scripts/record_discussion_state.mjs`（7 条单测；真机三条都 `open`）；`06/07/08` 重写为粘贴块；第 16 条 `draft-claims-match-their-artifact`；三条负对照（改版本 / 改计数 / 删边界句）各自真红并保留产物；终跑 **16/16**。**顺带**：`record_remedy_probe.mjs` 把「建议装哪个构建」也过同一个引擎（`mcp-client@0.2.1-rc.5` admitted / 8 peer）。**未做的**：一篇都没发（HUMAN 决定），runbook 落在 `docs/distribution/posting-runbook.md` |
 | T-839 | **升级日触发不可靠**：`watch_next_release` 得靠人记得跑，而且它只看自己的 `--out` 目录——CI 里 `--out` 是临时目录，于是 `previous` 恒空、永远报 `baseline` | M6 | implementer | T-832 ✅ | `--baseline <dir,...>` 能读到仓库里已提交的基线；定时 workflow；`unmeasured` 必须让 job 失败；**CI 里不跑卡片**（runner 没有 profile） | ✅ **R71 完成**：`pickNewestObservation`（+5 条单测）+ `--baseline`；`.github/workflows/watch-upstream.yml`（每 6 小时 + 手动，`.watch-state` 走 `actions/cache`）；四条分支本机真跑（`baseline` / `unchanged` 零产物 / `changed` + 产物 / 死端口 exit 2 零产物）。**没做到的**：workflow 的真跑要等它进 `main` 后的第一次 schedule → `BS-56` |
 
+| T-840 | **`probe-hook-error` 在 CI 上会抖**：`assert.ok(attempts.length === 1)` 依赖 hook 的重试时序，同一 commit 内容重跑即绿 | M3 | verifier + implementer | — | 让这条断言与时间无关（或明确它想钉的契约）；**不许**为了让 CI 变绿把它改成「≥1」了事——先判断「恰好 1 次」是不是真契约 | ⬜ **可领（R71 发现）**：run `41511239814`（node 22）红在 `tests/unit/probe-hook-error.test.ts:102`，同一内容的下一次运行 `41511687993` **全绿**；本机（Windows 24）一直绿。**未归因**：日志只打印「falsy」，实际 `attempts.length` 是 2 还是字段缺失没被记下来 |
+
 ---
 
 ## 历史交付记录（R3–R16）

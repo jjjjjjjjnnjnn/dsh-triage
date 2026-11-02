@@ -142,6 +142,9 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
    任何「只在自己输出目录里找基线」的监听器，在 CI 里都等于失忆。
 3. **外部路径要在这里就砍掉**：`--baseline` 指到 `%TEMP%` 时，绝对路径差点写进产物（`C:\Users\<name>`）；
    改成只写 `(external)/<dirname>`。R67 已经教过一次，同一个形状会换一个参数再来。
+4. **CI 红不一定是你的改动**：这一轮第一个提交的 `verify (node 22)` 红在 `probe-hook-error` 的
+   `attempts.length === 1`（时序断言），**同一内容的下一次运行全绿**，本机一直绿 → 记成 `T-840`。
+   别为了让它变绿先把断言改松：先判断「恰好 1 次」是不是真契约。
 
 ## R70（2026-11-02，判据轮 + 交付轮）
 
