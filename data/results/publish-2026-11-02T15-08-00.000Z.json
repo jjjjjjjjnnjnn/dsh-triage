@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-11-02T15:08:00.000Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "0.3.2",
+    "version_source": "manifest",
+    "git_head": "92284654d34eb84d39394e6ace1769cc9e089632",
+    "git_dirty": true
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-11-02T15:08:00.000Z"
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": true,
+      "version": "0.3.2",
+      "latest": "0.3.2",
+      "published_at": "2026-11-02T14:11:24.184Z",
+      "integrity": "sha512-5qnmk6nck3j0GmV/o7Wkv8ZhhI7kFL+l2x0kvvIzbDdvxrjf/N6yOsK8M9vJL7GUPSI4qKALwb6V1qZhYRTyrw==",
+      "shasum": "14619632fe36d198e128063ab9d7aa3d34509fc2",
+      "file_count": 79,
+      "unpacked_size": 449565,
+      "dependencies": {
+        "yaml": "^2.8.1",
+        "semver": "^7.7.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.2"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": true,
+      "version": "0.3.2",
+      "latest": "0.3.2",
+      "published_at": "2026-11-02T14:12:17.889Z",
+      "integrity": "sha512-JT0o34BGJrueQSBXbAbwHWet4cMqnrf2yj19gP2/iwYSIfp6sb4KZpelm2lBCpxFZvxCYii9UkwQNwhn0DcMaQ==",
+      "shasum": "3228e495d863ffa089addd508ad6c82ae93ef2d3",
+      "file_count": 19,
+      "unpacked_size": 37167,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.2"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.2"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": true,
+      "version": "0.3.2",
+      "latest": "0.3.2",
+      "published_at": "2026-11-02T14:14:17.924Z",
+      "integrity": "sha512-nmTQjQAr5a19GvM+pH/gW3m2SL4CwhMONkY6gRFlqMIH74iMtiYo7dSU9jZh98OANgBv9y0NMyJ2cLjIcdPivQ==",
+      "shasum": "9debb935d47bb5f4074980b4567954c04fffe030",
+      "file_count": 27,
+      "unpacked_size": 335698,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.2"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.2"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "dsh-triage",
+      "ok": true,
+      "version": "0.3.2",
+      "latest": "0.3.2",
+      "published_at": "2026-11-02T14:13:21.669Z",
+      "integrity": "sha512-nF8TMgzvKDtL/dseTodchCqw80EophZbw1lW0VQvAWYbBMMHDeTc6TYSTW+yM6TTmU3nGo4OdGe8Vbdx95R6eA==",
+      "shasum": "49ac5dcd2dedcb0edd6816f093c93c94adae513a",
+      "file_count": 85,
+      "unpacked_size": 654487,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.2",
+        "@dsh-triage/probe": "0.3.2",
+        "@dsh-triage/signals": "0.3.2"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.1 <0.3.0-0",
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.2"
+      },
+      "local_tarball": null
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@0.3.2",
+    "exit_code": 0,
+    "attempts": 1,
+    "waited_ms": 912,
+    "wait_budget_ms": 300000,
+    "tail": "added 6 packages in 617ms",
+    "client_bundle": {
+      "entry": "./client-does-not-exist.js",
+      "bytes": 0,
+      "facts": {
+        "declared": true,
+        "platform": "web",
+        "present": false,
+        "loader": false,
+        "slot": false
+      },
+      "ok": false
+    },
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": true,
+        "version": "0.3.2",
+        "expected": "0.3.2"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": true,
+        "version": "0.3.2",
+        "expected": "0.3.2"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": true,
+        "version": "0.3.2",
+        "expected": "0.3.2"
+      }
+    ],
+    "cli": {
+      "exit_code": 0,
+      "first_lines": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n\n用法 (Usage)",
+      "commands": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n  dsh-triage                         一屏速览：当前配置是否存在异常、受影响条目及修复建议\n  dsh-triage status                  输出与无参相同的一屏诊断结论\n  dsh-triage env                     查看当前环境指纹（DSH 版本、Profile、已装 Bundle）\n  dsh-triage why                     排查插件静默失效根因，进行逐行准入归因\n  dsh-triage check <包名[@版本]>      在安装前预检候选插件是否满足当前环境准入\n  dsh-triage audit                   全量兼容性台账（配合 --all 查看完整清单）\n  dsh-triage probe <包名[@版本]>      生成隔离沙盒实测方案（默认 dry-run，--execute 真跑）\n  dsh-triage serve                   启动本地可视化诊断面板（127.0.0.1，Token 鉴权）\n  dsh-triage badge <包名[@版本]>      基于真实证据生成 shields 风格 SVG 状态徽章\n  dsh-triage index                   导出本地实测为 \"go\" 的格式 1 兼容索引\n  dsh-triage outcomes                回流层本地存储：status / --enable / --disable / --purge\n  dsh-triage upgrade --to <目标版本>  预检目标 DSH 版本会拦截当前哪些插件，并输出修复建议\n  dsh-triage upgrade --to next|latest 预检升级至 npm 远端 next/latest 版本的兼容影响\n  dsh-triage fix                     自动修复计划；--apply 实际写入，--undo 依日志撤销"
+    },
+    "module_exports": "apply,default,loadBundleLayers,loadComposition,loadPatchText,name",
+    "scratch": "<path>"
+  },
+  "checks": [
+    {
+      "id": "rewritten:@dsh-triage/core",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/core",
+      "ok": true,
+      "detail": "latest=0.3.2"
+    },
+    {
+      "id": "rewritten:@dsh-triage/signals",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/signals",
+      "ok": true,
+      "detail": "latest=0.3.2"
+    },
+    {
+      "id": "rewritten:@dsh-triage/probe",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/probe",
+      "ok": true,
+      "detail": "latest=0.3.2"
+    },
+    {
+      "id": "rewritten:dsh-triage",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:dsh-triage",
+      "ok": true,
+      "detail": "latest=0.3.2"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": true,
+      "detail": "npm install dsh-triage@0.3.2 exit 0 · added 6 packages in 617ms"
+    },
+    {
+      "id": "installed-tree",
+      "ok": true,
+      "detail": "node_modules/dsh-triage exists"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": true,
+      "detail": "@dsh-triage/core@0.3.2 (declared 0.3.2)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": true,
+      "detail": "@dsh-triage/signals@0.3.2 (declared 0.3.2)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": true,
+      "detail": "@dsh-triage/probe@0.3.2 (declared 0.3.2)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": true,
+      "detail": "exit 0 · 15 command line(s) · dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层"
+    },
+    {
+      "id": "module-resolves",
+      "ok": true,
+      "detail": "import('dsh-triage') → apply,default,loadBundleLayers,loadComposition,loadPatchText,name"
+    },
+    {
+      "id": "client-bundle",
+      "ok": false,
+      "detail": "./client-does-not-exist.js is not in the installed package"
+    }
+  ],
+  "ok": false,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}

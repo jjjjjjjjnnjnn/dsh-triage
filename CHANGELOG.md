@@ -6,6 +6,24 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.3] — 2026-11-02
+
+> **Documentation-only.** Nothing in `dist/` or `client.js` changed; every judgement, threshold, exit
+> code and payload is what `0.3.2` shipped. This release exists because `README.md` is inside the
+> package's `files`, so the npm page shows whatever test count the README claims — and that number had
+> drifted (633 on the page, 643 in the suite) while a checker that was supposed to catch it had never
+> matched a single claim.
+
+- **The npm page's test count is now the measured one** (643), badge and prose together.
+- **The release evidence now checks the browser half.** `record_publish` installs the package and, in
+  addition to running the CLI and `import()`, resolves `exports["./client"]` inside the installed tree
+  and requires the file to exist, carry the client-runner contract, and name `settings.plugins.tab`.
+  Until this, "the four-bucket screen reached users" was confirmed by hand (`npm pack` + grep).
+- **The release chain waits for the registry instead of calling a successful publish red.** 0.3.2's
+  publish produced three red artifacts in five minutes because npm's anonymous/install document lagged
+  ~4.5 minutes behind the write; the fourth run, with no code change, was green. The chain now retries
+  only that failure shape within a budget and records how long it waited.
+
 ## [0.3.2] — 2026-11-02
 
 > The release that puts **升级预检** on the settings page: the same four buckets `dsh-triage upgrade --to next`

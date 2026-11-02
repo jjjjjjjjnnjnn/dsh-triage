@@ -30,6 +30,7 @@ import { tmpdir, homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { judgeClientBundle, resolveClientEntry } from './lib/client-bundle.mjs'
 import { resolvePublishVersion } from './lib/publish-target.mjs'
 import { DEFAULT_REGISTRY_WAIT_MS, RETRY_INTERVAL_MS, describePropagationWait, shouldRetryInstall } from './lib/registry-wait.mjs'
 
@@ -335,6 +336,27 @@ async function main() {
   const exported = imported.stdout.trim()
   check('module-resolves', imported.code === 0 && exported.length > 0, `import('${rootPackage}') → ${exported || imported.stderr.trim().slice(0, 120)}`)
 
+  /*
+   * BROWSER HALF (R62 / T-829): until this existed, "the four-bucket screen reached users" was a hand
+   * check (`npm pack` + grep). The CLI and the module entry were verified; `client.js` was not, so a
+   * `files:` field dropping it, or a bundle that lost its `settings.plugins.tab` registration, would
+   * have shipped green.
+   */
+  let installedManifest = null
+  try {
+    installedManifest = JSON.parse(readFileSync(join(moduleDir, 'package.json'), 'utf8'))
+  } catch {
+    installedManifest = null
+  }
+  const clientEntry = resolveClientEntry(installedManifest)
+  const clientPath = clientEntry === null ? null : join(moduleDir, clientEntry.replace(/^\.\//, ''))
+  const clientSource = clientPath !== null && existsSync(clientPath) ? readFileSync(clientPath, 'utf8') : null
+  const clientBundle = judgeClientBundle({
+    manifest: installedManifest,
+    file: { exists: clientPath !== null && existsSync(clientPath), source: clientSource },
+  })
+  check('client-bundle', clientBundle.ok, clientBundle.detail)
+
   const failed = checks.filter((entry) => entry.ok === false)
   const payload = {
     schema_version: 1,
@@ -361,6 +383,13 @@ async function main() {
       waited_ms: installWaitedMs,
       wait_budget_ms: registryWaitMs,
       tail: clean(installTail),
+      /** R62 / T-829: what the installed package says about its browser half, and whether it holds. */
+      client_bundle: {
+        entry: clientBundle.entry,
+        bytes: clientBundle.bytes,
+        facts: clientBundle.facts,
+        ok: clientBundle.ok,
+      },
       dependency_trees: dependencyTrees,
       cli: {
         exit_code: cli.code,

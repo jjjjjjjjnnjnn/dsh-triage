@@ -704,3 +704,11 @@
 - 结果：① `test-count-matches` 一直报 `0 claim(s)`——`\b` 是 ASCII 词边界，跟在中文「测试」后面永不成立，所以这条断言**从来没检查过任何东西**；② README 徽章里的 `tests: 542` 因此僵了三轮，直到本轮传 `--tests` 才暴露；③ 修好后同一条断言依次点名徽章与正文，两次红都保留；④ 新增守卫「传了数字却找到 0 条声明 → 红」，`check_listing` 14 → 15 条
 - 实测：**633 测试 / 0 fail** · 9 门 ALL GREEN · `check_listing` **15/15** · `record_publish` 20/20（`git_dirty=false`）
 - 反思：这是同一主题的第四次——R50「检查没跑起来」、R51「`pending` 当结论」、R61「`loading` 当失败」、本轮「空转的断言」。四次都是**「没有观测」被当成「观测结果是好的」**。所以这次除了改正则，还加了一条专门盯「空转」的守卫：门可以绿，但必须先证明它看见过东西。
+### 2026-11-02 R62 续 3｜发布证据开始验浏览器半边（T-829）+ 0.3.3 纯文档票
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R62-S26` … `R62-S31`；报告 `audit/AUDIT_2026-11-02_R62.md` §11
+- 范围：`scripts/lib/client-bundle.mjs` + `.d.mts`（新）· `tests/unit/client-bundle.test.ts`（新，10）· `scripts/record_publish.mjs`（新增 `client-bundle` 检查 + `install.client_bundle`）· `CHANGELOG.md`（`[0.3.3]` documentation-only）· `packages/*/package.json`（0.3.2 → 0.3.3）· `README(.zh-CN).md` / `docs/market/{listing_zh,listing_en,submissions/README}.md`（版本串 + 测试数 633 → 643）· `docs/{HANDOFF,BACKLOG}.md` · `INDEX.md` / `AGENTS.md` · `data/results/{publish-…T15-05-57,publish-…T15-08-00,client-serve-…T15-09-39,listing-…T15-12-00,release-preflight-…T15-14-00,listing-…T15-16-00}`
+- 结果：① `record_publish` 现在读装回来的包里的 `exports["./client"]`，要求文件存在 + 带 `__ModuleLoader__.load` + 点名 `settings.plugins.tab`（真机 **21/21**）；② 正对照把它指到不存在的文件 → 当场红并逐字节还原；③ **故意不验某一轮的功能名**，只验稳定契约；④ `0.3.3` 是**纯文档发布**（README 在包内，npm 页面印的就是它；测试数 633 → 643），`dist/` 与 `client.js` 一字未动；⑤ 预检查四项全绿、「可以发布」，发布仍是 HUMAN 动作
+- 实测：**643 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **15/15** · 发布前真机 **16/16**
+- 反思：这一轮修的三件事（loading 当失败、空转的断言、副本滞后）都是**「没看见」被当成「看见了好」**。T-829 是同一逻辑的正面版本：既然「功能是否到了用户手里」以前靠手读，那就把它变成装一次包就能回答的问题。

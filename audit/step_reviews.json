@@ -9270,6 +9270,145 @@
         "sha256": "2c209b0d855f092cbe31d1012e0c78412514be05e3256df984f44736c6aa43bf",
         "outcome": "GREEN 15/15 · version 0.3.2 · 测试数 2 条声明均为 633 · 18 条证据路径带 sha256"
       }
+    },
+    {
+      "id": "R62-S26",
+      "step": "**`T-829` 接线：`record_publish` 开始验浏览器半边**：装回来的包里读 `exports[\"./client\"]`，要求文件存在、带 `__ModuleLoader__.load`、点名 `settings.plugins.tab`；真机 **21/21**（新增 `client-bundle`）",
+      "changed": [
+        "scripts/lib/client-bundle.mjs",
+        "scripts/lib/client-bundle.d.mts",
+        "scripts/record_publish.mjs",
+        "tests/unit/client-bundle.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS 21/21：`client-bundle — ./client.js resolves (35944B) · loader=yes · slot=settings.plugins.tab`；其余 20 项（含匿名安装与三个依赖）不变",
+        "reproducibility": "PASS：纯函数 `judgeClientBundle` 的 10 条单测覆盖正反两面；真机跑装的是 registry 上的 0.3.2，命令可逐字复跑",
+        "licence": "PASS：只改本仓脚本与测试，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：`install.client_bundle` 进产物（entry / bytes / facts / ok）；「功能到了用户手里」不再靠手读",
+        "adversary": "反例一：硬编码本轮的功能名（如 `data-triage-action`）当基线——被拒：下一轮改 UI 就会误报，所以只验**稳定契约**（slot 与 loader）；反例二：只验文件存在不验内容——被拒：`files:` 里丢了 client.js 与「文件在但注册不到 slot」是两种不同的事故"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T15-05-57.139Z.json",
+        "outcome": "GREEN 21/21 · `client-bundle` 首次绿 · attempts=1",
+        "sha256": "d7cd06eace4c363e86eabd1b4de5c236b2d72c1b195948cc5f21d885f8a4081a"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S27",
+      "step": "**`client-bundle` 的正对照**：把 `exports[\"./client\"]` 指到一个不在 tarball 里的文件，`record_publish` 必须红；跑完逐字节还原",
+      "changed": [
+        "scripts/lib/client-bundle.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：`FAIL client-bundle — ./client-does-not-exist.js is not in the installed package`，其余 20 项仍绿（说明它只盯这一件事）",
+        "reproducibility": "PASS：`RESTORED: client-bundle.mjs byte-identical`；产物保留",
+        "licence": "PASS：只改本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：注入发生在「解析入口」这一个点，没有伪造安装树或产物数字",
+        "adversary": "反例：只跑单测就说「接线也验过了」——被拒：单测证明纯函数，正对照证明 `record_publish` 真的把它接上了（这条就是为此而跑）"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\opencode\\r62-nc-client-bundle.mjs（打补丁 → 真跑 → 还原）",
+        "artifact": "data/results/publish-2026-11-02T15-08-00.000Z.json",
+        "outcome": "RED（预期）· client-bundle 点名缺文件 · 其余 20 项绿 · 文件已还原",
+        "sha256": "d2c8b1481c7096ec34ea9acee6456f05932a7b37bb3940f4f6e7bc83ebbaba87"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S28",
+      "step": "**发布前真机复测（0.3.3 构建 + 最终代码）**：四桶页签仍然在屏，且与 CLI 逐项相同 —— 证明文档版本号变动没有碰运行时",
+      "changed": [
+        "packages/plugin/client.js",
+        "scripts/record_client_serve.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 16/16：`upgrade-visible: passed`（4 桶）+ `upgrade-same-source: passed`；`summary-visible` / `same-source` / `user-answer` 全绿",
+        "reproducibility": "PASS：与 13:33 那次同一命令、同一沙盒运行时；结果一致",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：这是「发布前测试」的产物指针；0.3.3 的 `dist/` 与 `client.js` 与 0.3.2 相同，所以这次绿也是 0.3.2 的复核",
+        "adversary": "反例：把「文档版本号变了」当成需要重跑全部运行时测试——被拒：`client.js` 一个字节没变；但**跑一次**仍然值得，因为发布前的主张就是「没变」"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install",
+        "artifact": "data/results/client-serve-2026-11-02T15-09-39.248Z.json",
+        "outcome": "served · 16/16 全过 · exit 0",
+        "sha256": "d15ea21a6e04f884ef0cdf0882e88cd48e8a5f072f70cfd3b170270662ed3088"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S29",
+      "step": "**0.3.3 公开文案对齐（第一次）**：四包升到 0.3.3、CHANGELOG 写明 documentation-only、两份 README 与两份上架文案 + 提交包 README 的版本串与测试数（633 → 643）逐处对齐；`check_listing` **15/15**",
+      "changed": [
+        "CHANGELOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：version 0.3.3 / 测试数 2 条声明均为 643 / 证据路径带 sha256",
+        "reproducibility": "PASS：`--stamp` 与 `--tests` 显式给出，产物带 sha256",
+        "licence": "PASS：只改本仓文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：`dist/` 与 `client.js` 一字未动（`package.json` 只改 version），CHANGELOG 明写「判据与阈值与 0.3.2 相同」",
+        "adversary": "反例：把 0.3.3 写成「修了 bug」——被拒：唯一的产品行为变化为零，写「documentation-only」才是真的；反例二：只改 README 不改上架文案——被拒：版本串断言会红"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T15:12:00.000Z --tests 643",
+        "artifact": "data/results/listing-2026-11-02T15-12-00.000Z.json",
+        "outcome": "GREEN 15/15（此后 BACKLOG/CHANGELOG 再动，故以 15:16 那份为终跑）",
+        "sha256": "20c103f76caa925e9342bd09cb80ebd99d276ff91b7d1134f6a078efd3039c74"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S30",
+      "step": "**发布前预检查：可以发布**：登录态 / 四包同版本 0.3.3 / 5 个 `workspace:` 依赖会被 pnpm 改写 / registry 上还没发过 —— 四项全绿",
+      "changed": [
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS 4/4：`npm user: jjjjjjjjnnjnn`（真跑起来了）、`version: 0.3.3`、`workspace: 5 dep(s)`、`registry: 0.3.3 还没发过`",
+        "reproducibility": "PASS：`--out` + `--stamp` 落盘，sha256 在台账里；同一命令可复跑",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：预检查的绿只说明「可以发」，不说明「已经发了」；发布仍是 HUMAN 动作（OTP）",
+        "adversary": "反例：把预检查绿写成「已发布」——被拒：`record_publish` 还没跑，`latest` 仍是 0.3.2（见 R62-S26）"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --out data/results/release-preflight-2026-11-02T15-14-00.000Z.json --stamp 2026-11-02T15:14:00.000Z",
+        "artifact": "data/results/release-preflight-2026-11-02T15-14-00.000Z.json",
+        "outcome": "GREEN 4/4 · 「可以发布：pnpm run release:publish（会提示输入 npm 的 6 位 OTP）」",
+        "sha256": "3e1969005d65ac375d8feeb4f6cab3140bcdf5092417479118ddbcc5638fb666"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S31",
+      "step": "**`0.3.3` 的权威文案终跑（15/15）**：BACKLOG（T-829 ✅ / 新开 T-830）与 HANDOFF 的续 3 段写完之后重跑，确认公开文档里没有一个数字、版本串或证据路径是旧的",
+      "changed": [
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3、测试数 643（2 条声明）、证据路径全部带 sha256",
+        "reproducibility": "PASS：产物带 sha256，命令可逐字复跑",
+        "licence": "PASS：只改本仓文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：三份入口文档（HANDOFF / INDEX / AGENTS）的 stand 与版本说法一致；BACKLOG 里 T-828 ✅ / T-829 ✅ / T-830 🟨 三种状态各就其位",
+        "adversary": "反例一：沿用 15:12 那份当终跑——被拒：之后又改了 BACKLOG/CHANGELOG，文档可能再次漂移；反例二：把 T-830 标成 ✅——被拒：还没发（预检查只说「可以发」）"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T15:16:00.000Z --tests 643",
+        "artifact": "data/results/listing-2026-11-02T15-16-00.000Z.json",
+        "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 643 · 0 failed",
+        "sha256": "e5039f6e686db36d0996da6702def507450ce9c2a9a921c5398c1be8aba53bc5"
+      },
+      "batch": "R62"
     }
   ]
 }

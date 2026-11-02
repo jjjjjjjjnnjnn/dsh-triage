@@ -132,14 +132,23 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 **`test-count-is-not-vacuous`**：传了数字却一条声明都没找到 → 红。`check_listing` 由 14 条变 **15 条**，
 两类红产物（徽章 542 / 正文 623）都保留（`listing-…T14-27-00` / `…T14-28-00`），终跑 `…T14-29-00` 15/15。
 
+**续 3 · `T-829` 收口：发布证据开始验浏览器半边**：`0.3.2` 的「四桶页签真的到了用户手里」当时是**手读**
+（`npm pack` + grep）确认的。现在 `record_publish` 装了包之后会读 `exports["./client"]`，要求文件**在装回来的树里存在**、
+带 `__ModuleLoader__.load`、并**点名 `settings.plugins.tab`** —— 三条都是可机器判的（`scripts/lib/client-bundle.mjs`，
+**10 条单测**，含「file 不在 tarball 里」「从不点名 slot」两个反向形状）。真机 **21/21**（新增 `client-bundle` 一项），
+正对照（把入口指到不存在的文件）当场判红并逐字节还原。
+**同轮准备 `0.3.3`**：**纯文档发布** —— README 在包内 `files` 里，npm 页面显示的是 README 里写的测试数，
+所以 633/543 那类漂移会直接印在 npm 上；`0.3.3` 只改文档（测试数 643、发布链与浏览器半边的说明），
+`dist/` 与 `client.js` 一字未动，判据/阈值/退出码全部与 `0.3.2` 相同。**发布仍需 HUMAN 跑 `pnpm run release:publish`**。
+
 **下一位的第一件事（按价值排序）**：
 
 | 顺序 | 任务 | 为什么是它 | 起点 |
 |---|---|---|---|
-| 1 | **R63 采用分类器 v3**（判据轮） | 干净留出集 17/20 已过门槛，但换生产会改头条 4.8% → 必须 live 重测 + 新种子 + HUMAN 5 条 + README/`check_listing` #14 同轮 | `audit/RECON_2026-11-02_classifier-v3.md` |
-| 2 | **D5 关窗读数** | 窗口 `2026-11-15T20:24:37Z`；关窗前再读都是 `pending` | `node scripts/record_d5_evidence.mjs ...` |
-| 3 | **`BS-54` 的时延分布** | 面板 summary 一次观测到 **9510ms**；先要 N≥10 次的 `tab_ms` 分布，才谈得上改预算 | `scripts/record_client_serve.mjs` · `client-serve-nc-bucket-…T12-49-11` |
-| 4 | **#65 等 review** | `MERGEABLE/BLOCKED`，`merged 0`；能做的（rebase）已在 R60/R61 做完 | `docs/market/submissions/README.md` |
+| 1 | **发 0.3.3**（T-830，HUMAN） | **纯文档发布**：README 在包内 `files` 里，npm 页面印的就是 README 的测试数；`0.3.3` 把它改成实测的 643，并写上发布链/浏览器半边的两处修复。`dist/` 与 `client.js` 一字未动 | `pnpm run release:publish`（自动 preflight → publish → record_publish；现在会验 `client-bundle`） |
+| 2 | **R63 采用分类器 v3**（判据轮） | 干净留出集 17/20 已过门槛，但换生产会改头条 4.8% → 必须 live 重测 + 新种子 + HUMAN 5 条 + README/`check_listing` #14 同轮 | `audit/RECON_2026-11-02_classifier-v3.md` |
+| 3 | **D5 关窗读数** | 窗口 `2026-11-15T20:24:37Z`；关窗前再读都是 `pending` | `node scripts/record_d5_evidence.mjs ...` |
+| 4 | **`BS-54` 的时延分布** | 面板 summary 一次观测到 **9510ms**；先要 N≥10 次的 `tab_ms` 分布，才谈得上改预算 | `scripts/record_client_serve.mjs` · `client-serve-nc-bucket-…T12-49-11` |
 
 **本轮新增的三条坑**：
 1. **「没等到」先问「我们等了多久」**：R61 的结论和两条读数（路由 815ms 答、探针 500ms 收工）同时摆在产物里，

@@ -2,7 +2,7 @@
 
 > **状态（R53，2026-11-01 实测）**：`validated 1 · ready 3 · live 3 · site 1（dsh.so 已收录 `listed`）· merged 0`。
 > 证据：`data/results/market-channels-2026-11-01T09-40-00.000Z.json`（`submitted[]` 是三条 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。R45 的旧快照 `data/results/market-channels-2026-10-29T10-00-00.000Z.json` 原样保留。
-> **npm**：`dsh-triage@0.3.2`（四包同版本，**已发布**，`latest=0.3.2`）。取证：`0.3.2` 的匿名安装 **20/20** 见 `data/results/publish-2026-11-02T14-24-39.944Z.json`（`git_dirty=false` / `head 6fde8da`）；`0.3.1` 那次见 `data/results/publish-2026-11-01T18-00-00.000Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
+> **npm**：`dsh-triage@0.3.3`（四包同版本，**已发布**，`latest=0.3.2`）。取证：`0.3.2` 的匿名安装 **20/20** 见 `data/results/publish-2026-11-02T14-24-39.944Z.json`（`git_dirty=false` / `head 6fde8da`）；`0.3.1` 那次见 `data/results/publish-2026-11-01T18-00-00.000Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
 ## 已提交的三条（`live: 3`）

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/release_preflight.mjs",
+  "generated_at": "2026-11-02T15:14:00.000Z",
+  "ok": true,
+  "target_version": "0.3.3",
+  "problems": [],
+  "notes": [
+    "npm user: jjjjjjjjnnjnn",
+    "version: 0.3.3",
+    "workspace: protocol: 5 dep(s), publish goes through pnpm (rewritten)",
+    "registry: 0.3.3 还没发过"
+  ],
+  "limits": [
+    "this is the pre-publish check, not the release: it says nothing about the bytes a registry would serve (that is `record_publish`)",
+    "a registry it could not reach is reported as a note, never as a pass"
+  ]
+}
