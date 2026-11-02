@@ -787,3 +787,13 @@
 - 结果：① 三条回帖各加 `paste:start/end` 块并让第 16 条断言**从产物与粘贴块两边复算**（三条负对照各自真红）；② `record_remedy_probe` 把「建议装哪个构建」也过同一个 `evaluateAdmission`（`mcp-client@0.2.1-rc.5` admitted / 8 peer）；③ `watch_next_release --baseline` + 定时 workflow，修掉「CI 里永远报 `baseline`」的失忆；**workflow 已真跑一次**（`2026-11-02T19:34:59Z` 手动触发，run 41511265795：`unchanged` / 零产物 / job success）
 - 实测：**708 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **16/16** · step-review 440 步 / 418 产物全部被引用
 - 反思：这一轮两次被自己的控制打脸——第一次负对照**没红**，查明是断言只验产物不验正文（补的是生成侧规则，不是控制的强度）；第二次「假绿」产物留着当见证（`19-17-51`），因为「控制没红 ≠ 断言够严」。另一半的教训是 **CI 里的「看不见」会伪装成「没有变化」**：`--out` 只能指临时目录，于是旧实现 `previous` 恒空、永远 `baseline`——任何只在自己输出目录里找基线的监听器，在 CI 里都等于失忆。
+
+### 2026-11-02 R72｜D5 关窗 runbook + 补上关窗读数的可离线复算（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R72-S1`；无 subagent
+- 人工决策：HUMAN「下一步：仍是 D5 关窗读数…继续」+「`03-x-en.md` 那个用于宣传的文件夹豁免，不要管」
+- 范围：`docs/d5-close-runbook.md`（新）· `scripts/record_d5_evidence.mjs`（`--fixtures-out`，与 `--dry-read` 互斥）· `tests/unit/d5-fixtures-out.test.ts`（新，2 条）· `docs/BACKLOG.md` · `docs/HANDOFF.md` · `INDEX.md` / `AGENTS.md` / `README(.zh-CN).md`（708 → 710）· `audit/step_reviews.json` / `audit/blind_spots.json` · `data/results/listing-2026-11-02T19-52-56.419Z.json`
+- 结果：① 关窗当天四条命令写死（刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记），并点名三个数各自的陷阱；② **发现两处真问题**：下载项不是现场抓的（读基线里的 `d5` 块）、`--fixtures` 只读不写 → 关窗产物的离线复算路径是空的；补 `--fixtures-out` 后真跑 capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**；③ 顺带发现默认基线会选中**复算件** → `T-841`
+- 实测：**710 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **16/16** · step-review 441 步 / 419 产物全部被引用
+- 反思：这一轮的教训是**「口径写死」不等于「读数可复算」**。D5 的阈值、判定顺序、`unmeasurable` 语义都冻过，唯独采集侧从来没有产出过 fixtures——于是那个唯一决定产品生不生的数字，重新验证只能靠重跑联网。冻结判据的同时，也要问一句「这份产物别人能不能离线重推导」。

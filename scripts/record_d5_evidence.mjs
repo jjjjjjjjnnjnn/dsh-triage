@@ -20,7 +20,8 @@
  *
  *   node scripts/record_d5_evidence.mjs --stamp 2026-11-03T10:00:00.000Z \
  *     --post https://github.com/deepseek-ai/deepseek-harness/discussions/12000 \
- *     --posted-on 2026-11-03T09:00:00.000Z [--baseline data/results/market-baseline-*.json]
+ *     --posted-on 2026-11-03T09:00:00.000Z [--baseline data/results/market-baseline-*.json] \
+ *     [--fixtures-out data/fixtures/d5/2026-11-03T10:00:00.000Z]
  *
  *   # offline recompute from recorded answers (byte-identical after normalising generated_at)
  *   node scripts/record_d5_evidence.mjs --stamp ... --post ... --posted-on ... \
@@ -28,7 +29,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 
@@ -54,6 +55,7 @@ if (stamp === null) {
 const postUrl = argOf('--post', null)
 const postedOn = argOf('--posted-on', null)
 const fixturesDir = argOf('--fixtures', null)
+const fixturesOutDir = argOf('--fixtures-out', null)
 const outDir = pathFor(String(argOf('--out', 'data/results')))
 const baselinePath = (() => {
   const explicit = argOf('--baseline', null)
@@ -112,6 +114,12 @@ if (windowStart === null) {
 const gh = (args) => spawnSync('gh', args, { encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 })
 
 /** Read the three sources. Each returns either a reading or an explicit `unreadable`. */
+/*
+ * The raw search items, kept so `--fixtures-out` can persist exactly what was excluded and why (R72).
+ * Populated by both the live and the fixtures branch, so a re-capture from a fixture set is faithful too.
+ */
+let capturedReferenceItems = []
+
 function readReactions() {
   if (fixturesDir !== null) {
     const file = join(pathFor(String(fixturesDir)), 'reactions.json')
@@ -155,6 +163,7 @@ function readReferences() {
     if (!existsSync(file)) return { state: 'unreadable', detail: `fixture missing: ${file}` }
     const payload = JSON.parse(readFileSync(file, 'utf8'))
     const items = Array.isArray(payload?.items) ? payload.items : []
+    capturedReferenceItems = items
     return finishReferences(items)
   }
   const result = gh(['api', '-X', 'GET', 'search/issues', '-f', `q="${SELF_REFERENCES.repository}"`, '-f', 'per_page=50'])
@@ -163,7 +172,8 @@ function readReferences() {
   }
   try {
     const payload = JSON.parse(String(result.stdout))
-    return finishReferences(Array.isArray(payload?.items) ? payload.items : [])
+    capturedReferenceItems = Array.isArray(payload?.items) ? payload.items : []
+    return finishReferences(capturedReferenceItems)
   } catch (error) {
     return { state: 'unreadable', detail: `unreadable search payload: ${String(error?.message ?? error)}` }
   }
@@ -235,10 +245,51 @@ if (reactions.state === 'unreadable' && references.state === 'unreadable') {
  * `--dry-read` prints what the three sources said and writes nothing. It exists because the live
  * path cannot be exercised before a sample is posted — and an untested reader is how "we could not
  * read it" becomes "the number is zero" on the day it matters.
+ *
+ * It stays a *nothing is written* guarantee in R72 too: `--fixtures-out` is honoured below this line,
+ * so a rehearsal with both flags still leaves no file behind (the flag combination is a usage error
+ * instead of a silent write — see the guard right after).
  */
+if (argv.includes('--dry-read') && fixturesOutDir !== null) {
+  process.stderr.write('--dry-read writes nothing, so it cannot be combined with --fixtures-out\n')
+  process.exit(2)
+}
 if (argv.includes('--dry-read')) {
   process.stdout.write(`${JSON.stringify({ reactions, references, downloads }, null, 2)}\n`)
   process.exit(0)
+}
+
+/*
+ * R72: capture the raw reads so the close-window verdict can be recomputed offline.
+ *
+ * WHY: the repository's rule is that any number entering `data/results` must be recomputable without the
+ * network. For every other recorder the raw snapshot is written at collection time (market baseline, question
+ * coverage, discussion triage). D5 was the exception: `--fixtures` only *read* a directory that nobody wrote,
+ * so the one measurement that decides whether this product continues had no offline path — a close-window
+ * artifact could only ever be re-read, never re-derived.
+ *
+ * It is opt-in (`--fixtures-out <dir>`) so a rehearsal does not litter `data/fixtures/`.
+ */
+if (fixturesOutDir !== null) {
+  const target = pathFor(fixturesOutDir)
+  mkdirSync(target, { recursive: true })
+  const captured = {
+    reactions: {
+      captured_at: stamp,
+      source: fixturesDir === null ? 'graphql' : 'fixtures',
+      totalCount: reactions.value ?? null,
+      byType: reactions.byType ?? null,
+      title: reactions.title ?? null,
+    },
+    references: {
+      captured_at: stamp,
+      source: fixturesDir === null ? 'search/issues' : 'fixtures',
+      items: capturedReferenceItems,
+    },
+  }
+  writeFileSync(join(target, 'reactions.json'), `${JSON.stringify(captured.reactions, null, 2)}\n`, 'utf8')
+  writeFileSync(join(target, 'references.json'), `${JSON.stringify(captured.references, null, 2)}\n`, 'utf8')
+  process.stdout.write(`fixtures written to ${target.replaceAll('\\', '/')}\n`)
 }
 
 const evidence = judgeD5({

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R71 (2026-11-02)",
+  "stand": "R72 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10637,6 +10637,31 @@
         "artifact": "data/results/next-release-2026-11-02T17-40-00.322Z.json",
         "outcome": "GREEN：`unchanged`（`next is still 0.2.1-rc.5`，读的就是这份基线）；另三条分支在 `%TEMP%` 真跑：伪造 `0.2.1-rc.4` → `changed` + 产物、死端口 → exit 2 零产物、空目录 → `baseline`。**workflow 首次真跑**：run 41511265795（2026-11-02T19:34:59Z，workflow_dispatch）→ `unchanged` / 零产物 / job success",
         "sha256": "4471d331fb010d44a25cf9eb54750562e90cfd088d13f4717a941c623874fd7a"
+      }
+    },
+    {
+      "id": "R72-S1",
+      "batch": "R72",
+      "step": "D5 关窗 runbook + 补上关窗读数的可离线复算（`--fixtures-out` 与它的互斥）",
+      "changed": [
+        "docs/d5-close-runbook.md",
+        "scripts/record_d5_evidence.mjs",
+        "tests/unit/d5-fixtures-out.test.ts",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：runbook 的四条命令逐条对着代码核过（`--baseline` 缺省选的是**复算件**、下载项来自基线而不是现场、`fail` 走 exit 1）；`--fixtures-out` 抓的两个文件正是 `--fixtures` 读的那两个，真跑 capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**。",
+        "reproducibility": "PASS：复算只读 `tests/fixtures/d5/self-test` 与临时基线，断网可跑（2 条单测）；复算产物名为 `d5-selftest-*` 且 `self_test: true`，不会被当成测量指针。",
+        "licence": "PASS：只改仓内脚本 / 文档 / 测试；抓取内容只有公开的 reactions 计数与 search 结果条目，无凭据、无个人身份。",
+        "ssot": "PASS：本轮**没有**往 `data/results` 写 D5 产物（`pending` 会变成「看起来像证据」的东西，预演一律落 `%TEMP%`）；本步 cite 的 `check_listing` 产物是全文档一致性的真跑，也是 step-review 的 no-orphan 需要的那一份。",
+        "adversary": "反例：把「`--fixtures` 能读」当成「读数可复算」——被拒：全仓没有任何东西**写** fixture，所以关窗产物无法离线重推导，这正是补 `--fixtures-out` 的理由；反例二：让 `--dry-read` 顺手写抓取——被拒，两参数同时给即 exit 2、零文件（单测钉死）。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:52:56.419Z --tests 710",
+        "artifact": "data/results/listing-2026-11-02T19-52-56.419Z.json",
+        "outcome": "GREEN：16/16（含第 16 条 3 drafts）；同轮 `d5-fixtures-out` 2 条单测、`node --test` 710/710",
+        "sha256": "878bc11bd14a6e6ed934af703a4d4f3e04ff74adfecb12118be709d414d36abf"
       }
     }
   ]

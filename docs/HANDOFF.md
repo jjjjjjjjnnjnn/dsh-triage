@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R71 (2026-11-02，**交付轮 + 流程断言**：三条回帖改成「粘贴块 + 可复算声明」（检查器第 16 条，3 条负对照各自真红）+ 升级日触发接上定时 workflow（`--baseline` 修掉「CI 永远报 baseline」的失忆）；**708 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R72 (2026-11-02，**交付轮**：D5 关窗 runbook（`docs/d5-close-runbook.md`）+ 补上关窗读数的可离线复算（`--fixtures-out`：抓取 → 复算逐项相同，`--dry-read` 与它互斥）；**710 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交付（R72，2026-11-02） | **D5 关窗的「怎么跑」写成一页，并把「可离线复算」这条硬规则补到 D5 上（交付轮，判据/阈值一字未动）**。① **runbook**：`docs/d5-close-runbook.md` —— 关窗（`2026-11-15T20:24:37Z`）当天四条命令（**刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记**）、三个数各自的来源与陷阱、判定表照抄 spec、退出码含义（**`fail` 走 exit 1 是判定完成，不是脚本坏了**）、`pass` / `fail` / `unmeasurable` 三个分支各自做什么（`fail` → 执行 D，**禁止再加功能**）。② **写 runbook 的时候撞见两个真问题**：**(a) 下载那一项不是现场抓的** —— 它读最近一份 `market-baseline-*.json` 的 `d5` 块，不刷新就是拿 `10-31` 的数判 `11-15` 的窗；**(b) `--fixtures` 只读不写**，全仓没有任何东西会产出 D5 的 fixtures（R54 那份自检夹具是手写的）→ **关窗产物的离线复算是空路径**，而这正是仓规「进 `data/results` 的数必须可离线重算」要求的东西。补 `record_d5_evidence --fixtures-out <dir>`（抓 `reactions.json` / `references.json`）；`--dry-read` 与它同时给 → **exit 2 零文件**（预演不许留下证据）。真跑：capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**，复算件名字是 `d5-selftest-*` 且 `self_test: true`（不可能被当测量指针）。③ **顺带发现 `T-841`**：`--baseline` 的默认值是「文件名排序最后那件」，**分不出测量件与离线复算件**——今天实测选中的就是 R52 的复算件（两者数字相同所以无害，关窗必须点名）。④ **708 → 710 测试**（+2 条 `d5-fixtures-out`）；9 门 ALL GREEN；`check_listing` 16/16。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付 + 流程断言（R71，2026-11-02） | **窗口期只做两件事：把三条回帖变成「30 秒可发」，把「升级日」的触发接上电；判据/阈值/冻结项一字未动（交付轮）**。① **A · 接触面**：给 `06/07/08` 三条回帖各加一个 `<!-- paste:start/end -->` **粘贴块**（块内只放将粘贴的字）并对齐当天产物；新记录器 `scripts/record_discussion_state.mjs`（`gh api graphql` 只读 `isAnswered`/`closed`/`updatedAt`/最后一条评论）先回答「还值得回吗」——**三条都 `open`**（`data/results/discussion-state-2026-11-02T19-13-45-223Z.json`）；新记录器 `scripts/record_remedy_probe.mjs` 用**同一个** `evaluateAdmission` 把「建议装哪个构建」也算出来：`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5`（= 今天的 `next`）**admitted（8 项精确钉定）**，而 `0.1.0-rc.7` / `0.0.1-rc.1` 分别 `denied`（6 / 4 项）（`data/results/remedy-probe-2026-11-02T19-15-18-710Z.json`，同一次 registry 读里带 `dist_tags = latest 0.0.1-rc.1 / next 0.2.1-rc.5`）。**检查器第 16 条 `draft-claims-match-their-artifact`**：registry 每篇声明 `claims`（版本 / 桶 / 区间条数 / 标签值 / 粘贴块里必须出现的句子），由检查器**从被引产物复算**并**从粘贴块复算**两边对撞；**三条定向负对照各自真红且产物保留**（改版本 `19-18-22` / 改计数 `19-18-41` / 删边界句 `19-18-47`），终跑 **16/16**（`listing-2026-11-02T19-33-18.979Z.json`）。**这条断言第一次跑就抓到我自己三处漂移**（`^0.1.0-rc.7` 写了 7 次而产物是 6、`^0.0.1-rc.1` 5 次而产物 4、「等 13 项」对不上 13 行）——修法是改写法，不是放宽断言。**负对照还抓到一个真缺口**：把正文版本改错时断言**没红**（版本只被用来「找探针」，没被用来「验正文」），补「粘贴块必须写出 `pkg@version`」后才红。发帖 runbook 落 `docs/distribution/posting-runbook.md`（发前读什么 / 发后回填什么 / 不许做什么）。② **B · 触发**：`watch_next_release.mjs` 新增 `--baseline <dir,...>` + 纯函数 `pickNewestObservation`（+5 条单测）；**为什么必须有它**：CI 里 `--out` 只能是 `$RUNNER_TEMP`（CI 不许写 SSOT），旧实现只扫 `--out` → `previous` 恒 `null` → 永远报 `baseline`，**一个失忆的监听器**。新 workflow `.github/workflows/watch-upstream.yml`（每 6 小时 + 手动）：`--baseline data/results,.watch-state`，`.watch-state` 走 `actions/cache`（缓存不是提交）；**`unmeasured` → job 失败**（看不见 npm 不许报平安），`changed` → `::warning::` + step summary，**CI 里不跑卡片**（runner 没有 profile，那样生成的卡片会长得像对所有人说的话）。四条分支本机真跑：无基线 → `baseline` / 仓库基线 → `unchanged` 零产物 / 伪造旧基线 → `changed` + 产物 / 死端口 → exit 2 **零产物**；顺手修掉「外部基线的绝对路径会进产物」（改成只写 `(external)/<dirname>`，R67 同族）。③ **顺手修两处文档漂移**：`PROJECT_RULES.md` 的 Stand 还停在 R49、M6 行还写「R48 待做 T-806…T-809」（四项 R48 已交付）；`ROADMAP.md` W11 还写「剩 `npm publish 0.3.0` + T-810 草稿」（0.3.3 已发、`#11813` 已发）。④ **696 → 708 测试**；9 门 ALL GREEN；`check_listing` **16/16**；新盲区 **`BS-56`**（workflow 本机跑不了 / schedule best-effort / 60 天无活动会停 / 缓存失效会重复报）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 判据 + 交付（R70，2026-11-02） | **A、B 两件都做完（HUMAN 原话「A，B，同意，开始进行。」）**。**B（判据轮）**：D5 判定表第一行原本是「没有 `posted_on` **或**没有贴子 URL → `no-post`」，当 URL 明明在手上时这句话是**假话**（工具宣称「没人发帖」而它正拿着链接）。现在拆成两行：**没有 URL** → `no-post`；**有 URL 但窗口起点读不出** → `unmeasurable` + `reason: window-start-unreadable`；数字读不到 → `reason: number-unreadable`。**三个阈值（10/1/20）与判定顺序一字未动**；spec §3/§5/§6、`SIGNOFF.md`（HUMAN 原话）、单测 N2 改期望 + 新增 N2b + N8 同步。**A（交付轮）**：新增 `scripts/lib/load-sample.mjs`（`os.cpus()` 累计时间差——**不用 `os.loadavg()`**，Windows 恒 0 是 R37 的学费）+ `record_client_serve` 在整轮首尾采样，产物新增 `conditions.cpu.observed_busy_percent` 与运行窗口。真机跑 **13/17 passed**（其余是未启用的可选项），`tab_ms 919ms`、`route_ms 464`、`waited_ms 505`，**负载 39.1% / 24 核**。据此重算分布（n=21 → **22**，median 921 / p90 2439 / max 5557，形状不变），并把「39% 负载下仍 919ms」写进 `BS-54` 当作**反例**：中等负载不足以解释长尾，高负载仍未测、历史 4 次慢跑**没有条件读数可回溯**。**顺手抓到的真缺陷**：`--dsh-main` 缺省时被解析成**仓库根目录**，守卫只 `existsSync` 就放行 → `node <repo> plugin install` 报 `Cannot find module` 并记成 `install: failed`（R50 同族：配置没给却像产品坏了）；现在要求**必须是文件**，否则 exit 2 打印期望路径，错误调用产生的红产物已删除。**691 → 696 测试**；9 门 ALL GREEN；`check_listing` **15/15**（`18-58`）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 采证（R69，2026-11-02） | **X 线程发出 9 小时后重读 D5：仍是 0/10 · 0/1 · 634 burst（采证轮）**。① **为什么要重读**：`T-802` 的窗口还在走，而上一次读数是 R64 之前；「帖子发了会不会有人反应」只能靠重读。② **live 读取**（`gh api graphql` + `search/issues` + 基线日序列）：`pending` · reactions **0/10** · 外部引用 **0/1** · 周下载 634 且 `single-day-burst`（按 R52 口径**不算需求**）；窗口 `2026-11-01T20:24:37Z → 2026-11-15T20:24:37Z`。③ **必须一起说的边界**：D5 的 reactions 只数 **#11813 那个 discussion**，X 上的赞按口径不进这个数——所以这条只说明「跨平台没有回流到 discussion」，**不能**说明「没人看见」。④ **自查记一笔**：R65–R68 的部分产物 `generated_at` 用了递增的合成值（18:20 → 21:50），而真实 UTC 当时是 17:35 → 18:39，最多提前约 **3 小时**；没有任何判据比较 `generated_at` 与墙钟（正确，产物必须可复算），所以**读数不受影响**，但按时间排序时会显得靠后——从 R69 起改用真实时钟。⑤ 产物 `data/results/d5-evidence-2026-11-02T18-39-04-392Z.json`（`results-privacy` 复绿）。**冻结项一字未动**：D5 三个阈值 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
@@ -113,6 +114,30 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R72（2026-11-02，交付轮）
+
+**状态**：**710 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **16/16**；
+**D5 `pending`**（0/10 · 0/1 · 634 burst），窗口到 `2026-11-15T20:24:37Z`。
+
+**做了什么（两句话）**：
+
+1. 关窗那天怎么跑写成了一页：`docs/d5-close-runbook.md`（四条命令 + 三个数各自的陷阱 + 判定表 + 三分支）。
+2. 写它的时候发现**关窗读数的离线复算路径是空的**（`--fixtures` 只读不写）→ 补 `--fixtures-out`，
+   真跑 capture → recompute **逐项相同**，+2 条单测。
+
+**下一位的第一件事**：**`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 跑四条命令。
+关窗前跑仍然只是 `pending`。中间上游若发新 rc，`watch-upstream` 会给出 `changed` 与两条命令。
+
+**本轮新增的坑**：
+
+1. **「读数口径写死了」不等于「读数可复算」**：D5 的阈值、判定顺序、`unmeasurable` 语义都冻结了，
+   但采集侧只**读** fixtures、从不**写**——于是唯一决定产品生死的那个数，重新验证只能靠重跑联网。
+2. **同一份数字有两个来源时，默认值会替你选**：`--baseline` 缺省按文件名排序，**分不出测量件与离线复算件**
+   （`T-841`）。今天两者数字相同所以无害，换一天就是拿旧窗的数判新窗。
+3. **`docs/distribution/T-810/03-x-en.md` 可能被人工改成宣传稿且未提交**——HUMAN 2026-11-02 明确
+   「那个是用于宣传的，不要管」。**不要**把它当成 stray work 提交、还原或 `git stash`；
+   交接时看到它脏着是常态，`check_listing` 在它脏着时仍应 16/16。
 
 ## R71（2026-11-02，交付轮 + 流程断言）
 
