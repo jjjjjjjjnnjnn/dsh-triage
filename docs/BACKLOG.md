@@ -98,6 +98,7 @@
 | T-831 | **对外草稿的字符预算断言**：中文线程自称「单推 ≤140 字、复制即发不被截断」，但没有任何机器在算 | 流程 | implementer | — | 从每篇草稿的 `text` 代码块里抽单条并计数（280 字符 / 140 中日韩字符），超预算即红 + 一条定向负对照 | ⬜ **可领（R64 发现）**：中文主选稿目前在 `git stash`（`docs/HANDOFF.md` R64/R65），等它进仓时一起做；否则断言的目标文件会变 |
 | T-834 | **可用性 smoke**：「装得上」不等于「敲下去有答案」——`record_publish` 只验 `--help`，`record_upgrade_entry` 只在仓库里跑 | 分发 | implementer | — | 匿名装**已发布的包**，在**临时目录**（cwd 不是仓库）跑 `--help` / 无参 `status` / `audit` / `upgrade --to next --card`，断言 exit code、行数、分桶与**边界句**；负对照必须红 | ✅ **R65 完成**：`scripts/record_usability_smoke.mjs`；真机 **6/6**（`data/results/usability-2026-11-02T18-50-00.000Z.json`，已发布 `0.3.3`）；负对照 `--version 9.9.9` → `notarget` 双红、exit 1（红产物 `…T19-00-00` 保留）。**未做的**：卡片边界句缺失时的红只有代码路径，没有构造证据 |
 | T-835 | **记录器的「已写出路径」需要断言**：同一个 bug 一天内抄了两次（`watch_next_release` → `record_usability_smoke`），都是打印 `data/results/…` 而文件其实落在 `--out` | 流程 | implementer | — | 所有记录器的 `ssot <path>` 必须等于实际写入路径；抽一个共用写出函数 + 一条测试；当 `--out` 不是默认目录时尤其要红 | ⬜ **可领（R65 发现）**：两次都是负对照用 `--out %TEMP%` 才暴露的——默认路径下这个 bug 完全隐形 |
+| T-836 | **`judgeD5` 内部的 `windowOf` 仍用 `Date.parse`**：入口（`record_d5_evidence`）现在会挡住坏日期，但**直接调纯函数**时 `2026-02-30` 仍会算成 03-02 | 增长 | implementer + verifier | — | `windowOf` 改用 `parseInstant`（或拒绝无法往返的值）；`2026-02-30` / `2026-13-01` / `:60` 各自有一条单测；**D5 三个阈值一字不动** | ⬜ **可领（R66 发现，adversary 指出）**：属 D5 口径相邻，需与 `docs/specs/D5-measurement.md` 同轮改并登记 `SIGNOFF`——关窗（2026-11-15）前做掉，否则关窗那天的读数仍可能被一个笔误挪走 |
 
 ---
 

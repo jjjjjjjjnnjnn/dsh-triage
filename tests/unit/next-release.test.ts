@@ -79,3 +79,29 @@ test('the state list is what the script switches on', () => {
   )
   assert.deepEqual([...seen].sort(), [...NEXT_RELEASE_STATES].sort())
 })
+
+test('a trailing space is not a new release (R65 adversary)', () => {
+  // Before R66 this reported `changed` and wrote an artifact, printing `upgrade --to " "` as the next step.
+  for (const version of ['0.2.1-rc.5 ', ' 0.2.1-rc.5', '\t0.2.1-rc.5\n']) {
+    const verdict = judgeNextChange({ previous: { version: '0.2.1-rc.5', at: null }, current: { ok: true, version } })
+    assert.equal(verdict.state, 'unchanged', `${JSON.stringify(version)} must read as unchanged`)
+    assert.equal(verdict.writesArtifact, false)
+  }
+})
+
+test('a whitespace-only version is unreadable, not a change', () => {
+  for (const version of [' ', '\n', '\u0000']) {
+    const verdict = judgeNextChange({ previous: { version: '0.2.1-rc.5', at: null }, current: { ok: true, version } })
+    assert.equal(verdict.state, 'unmeasured')
+    assert.equal(verdict.writesArtifact, false)
+  }
+})
+
+test('a previous observation with no usable version is unmeasured, not "first observation"', () => {
+  // Reporting `baseline` here would let a corrupted artifact pass as a clean start.
+  for (const version of ['', '   ']) {
+    const verdict = judgeNextChange({ previous: { version, at: '2026-11-02T09:00:00.000Z' }, current: { ok: true, version: '0.2.1-rc.6' } })
+    assert.equal(verdict.state, 'unmeasured')
+    assert.equal(verdict.writesArtifact, false)
+  }
+})

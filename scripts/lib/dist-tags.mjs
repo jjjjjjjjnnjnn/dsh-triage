@@ -49,7 +49,7 @@ export const PUBLISHED_PACKAGES = ['@dsh-triage/core', '@dsh-triage/signals', '@
  * }}
  */
 export function judgeDistTags(input) {
-  const expectedVersion = String(input?.expectedVersion ?? '')
+  const expectedVersion = String(input?.expectedVersion ?? '').trim()
   const packages = Array.isArray(input?.packages) ? input.packages : []
   const latest = {}
   const unreachable = []
@@ -57,8 +57,25 @@ export function judgeDistTags(input) {
   const extraTags = []
   const problems = []
 
+  if (expectedVersion.length === 0) {
+    // An empty expectation would make "they all agree with the release" true of nothing (R66).
+    problems.push('the expected version is empty, so this verdict would be vacuous')
+  }
+
+  const seen = new Set()
   for (const entry of packages) {
-    const name = String(entry?.name ?? '?')
+    const name = String(entry?.name ?? '')
+    /*
+     * The claim is about THE FOUR PACKAGES (R66). Before this, passing one packument — any packument —
+     * produced "all 1 package(s) point latest at X" and a green. `PUBLISHED_PACKAGES` was exported and
+     * never consulted, which is a trap for the next caller.
+     */
+    if (name.length === 0) {
+      problems.push('a packument arrived without a name, so which package it describes is unknown')
+      continue
+    }
+    if (seen.has(name)) problems.push(`${name}: appears twice in one verdict, so the two readings cannot both be true`)
+    seen.add(name)
     if (entry?.unreachable === true) {
       unreachable.push(name)
       latest[name] = null
@@ -70,7 +87,16 @@ export function judgeDistTags(input) {
     const current = typeof tags.latest === 'string' ? tags.latest : null
     latest[name] = current
     if (current === null) problems.push(`${name}: no latest tag at all`)
-    else if (current !== expectedVersion) problems.push(`${name}: latest=${current}, expected ${expectedVersion}`)
+    else if (expectedVersion.length > 0 && current !== expectedVersion) problems.push(`${name}: latest=${current}, expected ${expectedVersion}`)
+
+    /*
+     * Without the version list a tag cannot be checked for dangling, so the honest verdict is
+     * "unmeasured" — not "no dangling tags found" (which is what `versions: null` used to mean, while
+     * `versions: []` turned every tag into a false red; the unreadable case was the *more* lenient one).
+     */
+    if (versions === null && Object.keys(tags).length > 0) {
+      problems.push(`${name}: the version list is unreadable, so its tags cannot be checked against published versions`)
+    }
 
     for (const [tag, version] of Object.entries(tags).sort(([left], [right]) => (left < right ? -1 : 1))) {
       if (typeof version !== 'string') continue
@@ -84,7 +110,13 @@ export function judgeDistTags(input) {
     }
   }
 
-  if (packages.length === 0) problems.push('no packument was read — this verdict would be vacuous')
+  for (const name of PUBLISHED_PACKAGES) {
+    if (seen.has(name)) continue
+    latest[name] = null
+    problems.push(`${name}: no packument in this run, so its tags are unmeasured (not verified)`)
+  }
+
+  if (packages.length === 0 && problems.length === 0) problems.push('no packument was read — this verdict would be vacuous')
 
   /*
    * The cross-package invariant. Reported separately from the per-package mismatch so the detail line

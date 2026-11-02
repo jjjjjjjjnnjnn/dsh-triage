@@ -287,7 +287,7 @@ if (!existsSync(registryPath)) {
   const onDisk = readdirSync(abs(DRAFTS_DIR))
     .filter((name) => name.endsWith('.md') && name !== '00-README.md')
     .sort()
-  const listed = drafts.map((entry) => String(entry.file ?? '')).sort()
+  const listed = drafts.map((entry) => String(entry?.file ?? '')).sort()
   for (const name of onDisk) if (!listed.includes(name)) draftProblems.push(`${name}: on disk but not in registry.json`)
   for (const name of listed) if (!onDisk.includes(name)) draftProblems.push(`${name}: in registry.json but not on disk`)
 
@@ -297,6 +297,15 @@ if (!existsSync(registryPath)) {
   const IDENTITY = [/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, /我的微信|个人微信|加我微信/, /个人主页/]
 
   for (const entry of drafts) {
+    /*
+     * R66: a `null` inside a hand-written array used to throw on `entry.file`, which killed the whole
+     * script — so all 15 assertions vanished and nothing was recorded. One bad row must fail the checks
+     * it belongs to, not the run ("a check that did not run must not read as a pass", inverted).
+     */
+    if (entry === null || typeof entry !== 'object') {
+      draftProblems.push('registry.json contains a draft entry that is not an object')
+      continue
+    }
     const name = String(entry.file ?? '')
     const status = String(entry.status ?? '')
     if (!['draft', 'posted'].includes(status)) draftProblems.push(`${name}: status must be draft|posted (got "${status}")`)
@@ -379,8 +388,15 @@ for (const draft of Array.isArray(postedRegistry?.drafts) ? postedRegistry.draft
     })
     for (const problem of verdict.problems) postingProblems.push(`${name}: status=posted but ${problem}`)
   }
-  if (status === 'draft' && draft?.posted_url !== null) {
-    postingProblems.push(`${name}: status=draft but posted_url is set — post the draft or clear the field`)
+  if (status === 'draft') {
+    /*
+     * R66: `""` and a missing key both mean "no URL", but only `null` was accepted — so a draft with
+     * `"posted_url": ""` was reported as "posted_url is set", which was a false statement about a field
+     * that was never set.
+     */
+    const url = draft?.posted_url
+    const hasUrl = url !== null && url !== undefined && String(url).length > 0
+    if (hasUrl) postingProblems.push(`${name}: status=draft but posted_url is set — post the draft or clear the field`)
   }
 }
 check(

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R65 (2026-11-02)",
+  "stand": "R66 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -9875,6 +9875,181 @@
         "artifact": "data/results/listing-2026-11-02T19-10-00.000Z.json",
         "sha256": "5d8fbfe5250cf326e3d70cb635d8f7244c439360b52e9d9671fa46e47767f485",
         "outcome": "GREEN 15/15 · 与 18:40 逐项相同 · 注册表摘要 42ab4db9…"
+      }
+    },
+    {
+      "id": "R66-S1",
+      "batch": "R66",
+      "step": "**控制：`+01:00` 仍然必须被接受** —— R66 重写了整个匹配器，R64 的修复不能因此回退",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/lib/posting.d.mts"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-11-02T18:36:00+01:00` → `ok: true`，`posted_at` 归一化为 `2026-11-02T17:36:00.000Z`，与 `Z` 写法同值",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：绿产物 `drafts_registry_sha256 = 12632ca8…`，与终跑 `42ab4db9…` 不同——证明摘要真的在区分被检查的状态",
+        "adversary": "反例：以为「重写了就顺带更严格更好」——被拒：更严格也可以是错的（R64 就是只认 `Z`），所以两个方向都必须有控制"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（内部跑 check_listing --stamp 2026-11-02T19:20:00.000Z --tests 677，注册表临时改成 +01:00）",
+        "artifact": "data/results/listing-2026-11-02T19-20-00.000Z.json",
+        "outcome": "GREEN 15/15：偏移量写法仍然通过；还原校验通过",
+        "sha256": "1162f6ab662d00bd161101d8fafe2a36e80b9503a162142adad7253e220c17ec"
+      }
+    },
+    {
+      "id": "R66-S2",
+      "batch": "R66",
+      "step": "**控制：不存在的日期必须红** —— 独立 adversary 找到：`2026-02-30T12:00:00Z` 在 R65 里返回 `ok:true, problems:[]`",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "tests/unit/posting.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`2026-02-30` → 红，原话 `is not an instant that exists, written with an explicit zone … check the date`（修前是绿且零问题）",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留；注册表摘要 `5086383f…`，与其它控制互不相同",
+        "adversary": "反例：拿「未来检查」当护栏——被拒：`2026-11-31` 只是碰巧被「未来」抓住；若参考时间晚于 12-01 就会放行，并以 12-01 记账，窗口整整推迟 29 天"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（--stamp 2026-11-02T19:40:00.000Z，posted_on 改成 2026-02-30T12:00:00Z）",
+        "artifact": "data/results/listing-2026-11-02T19-40-00.000Z.json",
+        "outcome": "RED 1/15：点名「不是存在的 instant」；还原校验通过",
+        "sha256": "a2a2cba92fc86e5fa000e08bbac842b3bf8e05aa0a2e7dfcb0a4ae099107e4b4"
+      }
+    },
+    {
+      "id": "R66-S3",
+      "batch": "R66",
+      "step": "**控制：一个 channel 说两个平台必须红** —— 旧实现用 `find()` 首匹配，误拒与误放各有构造（`Discussion on X`）",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "tests/unit/posting.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`names more than one platform (github-discussion, x) — one entry is one post`",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：红产物保留，注册表摘要 `dfeeeda8…`",
+        "adversary": "反例：把多平台当成「任一匹配即通过」——被拒：那样 `channel 说 X + URL 在 GitHub` 会绿，正是 adversary 给出的误放构造"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（--stamp 2026-11-02T19:45:00.000Z，channel 改成 \"Discussion on X\"）",
+        "artifact": "data/results/listing-2026-11-02T19-45-00.000Z.json",
+        "outcome": "RED 1/15：点名两个平台并说明「一个条目 = 一次发布」；还原校验通过",
+        "sha256": "cafc1930afa5e125a64844a462623d276b61c72fc08190c158552b4257eb0e38"
+      }
+    },
+    {
+      "id": "R66-S4",
+      "batch": "R66",
+      "step": "**控制：裸日期 / 未来 / 域不符三条旧控制仍要红** —— 重写匹配器后逐条回归，防止修 A 破 B",
+      "changed": [
+        "scripts/lib/posting.mjs",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：裸日期 `19-25` / 未来 `19-30` / 域不符 `19-35` 三条各自真红，原话见报告 §5",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：三份红产物各自保留，注册表摘要分别是 `3a4798ae…` / `7a028a19…` / `5b5c0714…`",
+        "adversary": "反例：只跑新增的两条控制——被拒：本轮重写了整个 `judgePosting`，旧断言全部是回归面"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（19:25 / 19:30 / 19:35 三条）",
+        "artifact": "data/results/listing-2026-11-02T19-25-00.000Z.json",
+        "outcome": "RED 1/15（裸日期）；另两份见 `19-30` / `19-35`，同批跑出、各自红",
+        "sha256": "24a8375b74909d6a6710ca18e79de520f75d5eef58ad3024ea27fbc946d5a080"
+      }
+    },
+    {
+      "id": "R66-S5",
+      "batch": "R66",
+      "step": "**收口：对外文档自洽且 15/15；测试 666 → 677** —— 11 条新回归单测让 README 的测试数再次过期",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs",
+        "scripts/record_d5_evidence.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 677（2 条声明）· 19 条证据路径 · 注册表摘要 `42ab4db9…`",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：本轮同时把「坏 `--posted-on` → exit 2 零产物」实测了一遍（`2026-02-30` 被拒），坏输入不再能写出一份看起来合法的窗口",
+        "adversary": "反例：认为「校验在 registry 上就够了」——被拒：adversary 指出该字段无测量读取，真正驱动 D5 的是 `--posted-on`，校验挪到了数据流上"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T19:50:00.000Z --tests 677",
+        "artifact": "data/results/listing-2026-11-02T19-50-00.000Z.json",
+        "outcome": "GREEN 15/15 · 测试数 677 · 注册表摘要 42ab4db9…",
+        "sha256": "e9e21aaf3c3255b69329c9b190783d493db97525467cbf3b99474d9ab1ab8c27"
+      }
+    },
+    {
+      "id": "R66-S6",
+      "batch": "R66",
+      "step": "**可用性 smoke 复跑** —— 脚本本身改过（打印路径修的是「输出说 data/results 而文件落在 --out」），发布包侧的读数要重取",
+      "changed": [
+        "scripts/record_usability_smoke.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 6/6：install / cli-present / help / status-no-arguments / audit-summary / upgrade-card 全绿，边界句与分桶都在",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出；控制类均为「改 → 跑 → 还原并复算 sha256」，六次全部 restored=true",
+        "licence": "PASS：只动仓内检查器与纯函数；被引用的证据都在本仓 `data/results/`，没有引入外部素材或第三方数据",
+        "ssot": "PASS：产物里的 `subject.version` 是 `0.3.3`，`environment.cwd` 明确写「临时项目目录，不是仓库」",
+        "adversary": "反例：用 R65 那份旧产物代替复跑——被拒：脚本改了，读数必须重新取；旧产物继续留在账上是因为它记录了当时的行为"
+      },
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-02T19:55:00.000Z",
+        "artifact": "data/results/usability-2026-11-02T19-55-00.000Z.json",
+        "outcome": "GREEN 6/6 · 已发布 `dsh-triage@0.3.3` · `upgrade --card` 有分桶与边界句",
+        "sha256": "f533088f001c72df374689ae0c569e4b42efe7c1e84ddeb75348af69c63e13b5"
+      }
+    },
+    {
+      "id": "R66-S7",
+      "batch": "R66",
+      "step": "**控制：未来时间仍然必须红** —— 重写匹配器后，「不在未来」这条不能顺手丢掉",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`posted_on is in the future (2026-12-01T00:00:00.000Z)`",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮六条全部 restored=true",
+        "licence": "PASS：只动仓内检查器与注册表；被引用的证据都在本仓 `data/results/`，无外部素材",
+        "ssot": "PASS：红产物保留，注册表摘要 `7a028a19…`；参考时间来自 `--stamp`，不用系统时钟",
+        "adversary": "反例：把「未来」交给 `Date.parse` 相减而不判参考时间是否可读——被拒：参考时间读不出时必须报错而不是当成「不在未来」"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（--stamp 2026-11-02T19:30:00.000Z，posted_on 改成 2026-12-01T00:00:00.000Z）",
+        "artifact": "data/results/listing-2026-11-02T19-30-00.000Z.json",
+        "outcome": "RED 1/15：点名未来时间；还原校验通过",
+        "sha256": "2bd6991c7a98e6dd5f528378e8bc08c6756759ef29d1726fd314309d9bef5b27"
+      }
+    },
+    {
+      "id": "R66-S8",
+      "batch": "R66",
+      "step": "**控制：域与 channel 不符仍然必须红** —— 这是 R64 的主规则，R66 重构后不能丢",
+      "changed": [
+        "scripts/lib/posting.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`posted_url is not a github-discussion URL (got \"https://x.com/…\")`",
+        "reproducibility": "PASS：控制脚本「改 → 跑 → 还原并复算 sha256」，本轮六条全部 restored=true",
+        "licence": "PASS：只动仓内检查器与注册表；被引用的证据都在本仓 `data/results/`，无外部素材",
+        "ssot": "PASS：红产物保留，注册表摘要 `5b5c0714…`，与终跑 `42ab4db9…` 不同",
+        "adversary": "反例：信任「单测里有这一条就够了」——被拒：单测证明函数行为，端到端证明整条链路（含注册表读取与断言拼装）"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r66-controls.mjs（--stamp 2026-11-02T19:35:00.000Z，channel 改成 GitHub Discussions）",
+        "artifact": "data/results/listing-2026-11-02T19-35-00.000Z.json",
+        "outcome": "RED 1/15：域与 channel 不符；还原校验通过",
+        "sha256": "6e9d0338f3995fe8f7fa665e48e4cd357e4244f12d6fa8e4a906da270bf72285"
       }
     }
   ]

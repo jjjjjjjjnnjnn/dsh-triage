@@ -35,6 +35,7 @@ import process from 'node:process'
 import { classifyDownloadShape } from './lib/download-shape.mjs'
 import { judgeD5, isExternalReference, SELF_REFERENCES } from './lib/d5-score.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { parseInstant } from './lib/posting.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -83,6 +84,26 @@ if (postTarget === null || typeof postedOn !== 'string' || postedOn === '') {
   process.stderr.write(
     'no sample is posted yet: pass --post <discussion url> and --posted-on <ISO> once the post exists\n' +
       '  (D5 counts from the post, not from a release; see docs/specs/D5-measurement.md §2)\n',
+  )
+  process.exit(2)
+}
+
+/*
+ * R66: THE DATE THAT DRIVES THE VERDICT WAS THE ONE THING NEVER CHECKED. `check_listing` validated
+ * `registry.posted_on` (a field no measurement reads), while D5's window comes from this flag. An
+ * independent adversary showed the consequence: `--posted-on 2026-02-30T12:00:00Z` is rolled by
+ * `Date.parse` to Mar 2, which turns a `pending` sample into `fail`; `2026-13-01T00:00:00Z` yields NaN,
+ * which `windowOf` reports as "no post" — the sample silently disappears.
+ *
+ * So the flag is now validated before anything is fetched: a typo must stop the run with no artifact,
+ * the same way an unreadable registry does.
+ */
+const windowStart = parseInstant(postedOn)
+if (windowStart === null) {
+  process.stderr.write(
+    `--posted-on is not an instant that exists: "${postedOn}"\n` +
+      '  expected an ISO-8601 instant with an explicit zone that actually exists, e.g. 2026-11-02T17:36:00.000Z\n' +
+      '  (2026-02-30 and 2026-13-01 are refused: Date.parse rolls or drops them, which moves the 14-day window)\n',
   )
   process.exit(2)
 }

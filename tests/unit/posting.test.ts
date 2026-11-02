@@ -1,40 +1,38 @@
 /**
- * "The posted-url rule says what it means" (R65).
+ * "The posted-url rule says what it means" (R65/R66).
  *
- * WHY THESE CASES: the rule has been wrong twice, and both mistakes were in the matcher. So the cases are
- * the mistakes themselves, in the order they cost something:
+ * WHY THESE CASES: the rule has been wrong three times, and every mistake was in the matcher. So the cases
+ * are the mistakes themselves, in the order they cost something:
  *
- *   1. an X post recorded against a channel that only says "GitHub Discussions" → must fail
- *   2. `2026-11-02` (bare date) → must fail, because `Date.parse` reads it as UTC midnight and moves a
- *      14-day window by up to a day
- *   3. `2026-11-02T18:36:00+01:00` → must PASS: it is timezone-qualified, and this machine runs at UTC+1.
- *      R64 rejected it with a message claiming it was not — that is the bug this file exists for.
- *   4. a future instant → must fail
- *   5. a channel that names no platform (`V2EX` / `B 站` / 中文社区) → must fail loudly rather than pass
- *      vacuously, and `V2EX` must not be read as the platform "X"
+ *   1. R56 — an X post could not be recorded at all (rule only accepted discussion URLs)
+ *   2. R64 — `2026-11-02T18:36:00+01:00` was refused with the false message "not timezone-qualified"
+ *   3. R65 — an independent adversary found a *nonexistent* instant passing: `2026-02-30T12:00:00Z`
+ *      returned `ok: true, problems: []` because the regex counted digits and `Date.parse` rolls Feb 30
+ *      into Mar 2; `2026-13-01T00:00:00Z` returned `NaN`, which the future-check read as "not in the
+ *      future". A one-character typo produced zero signals.
+ *
+ * The last group is the one that matters most: a checker that accepts a date which does not exist is worse
+ * than no checker, because it *looks* like the window is pinned down.
  */
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { POSTING_PLATFORMS, judgePosting } from '../../scripts/lib/posting.mjs'
+import { POSTING_PLATFORMS, judgePosting, parseInstant } from '../../scripts/lib/posting.mjs'
 
 const NOW = '2026-11-02T20:00:00.000Z'
 const X_URL = 'https://x.com/jjjj1955714/status/2117306628227940741'
 const DISCUSSION_URL = 'https://github.com/deepseek-ai/deepseek-harness/discussions/11813'
+const X_CHANNEL = 'X · 线程（中文主选 / 英文备选）'
 
 test('an X post on a channel that names X passes, including the share-link query', () => {
-  const verdict = judgePosting({ channel: 'X · 线程（中文主选 / 英文备选）', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+  const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
   assert.equal(verdict.ok, true)
   assert.equal(verdict.platform, 'x')
   assert.deepEqual(verdict.problems, [])
+  assert.equal(verdict.posted_at, '2026-11-02T17:36:00.000Z')
 
-  const shareLink = judgePosting({
-    channel: 'X · 线程',
-    url: `${X_URL}?s=46&t=abc`,
-    postedOn: '2026-11-02T17:36:00.000Z',
-    now: NOW,
-  })
+  const shareLink = judgePosting({ channel: X_CHANNEL, url: `${X_URL}?s=46&t=abc`, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
   assert.equal(shareLink.ok, true)
 })
 
@@ -50,58 +48,107 @@ test('a discussion post on a discussion channel passes', () => {
 })
 
 test('an X URL recorded against a GitHub channel fails, and names the platform it expected', () => {
-  const verdict = judgePosting({
-    channel: 'GitHub Discussions · 「Show Your Plugins!」分类',
-    url: X_URL,
-    postedOn: '2026-11-02T17:36:00.000Z',
-    now: NOW,
-  })
+  const verdict = judgePosting({ channel: 'GitHub Discussions · 分类', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
   assert.equal(verdict.ok, false)
   assert.equal(verdict.platform, 'github-discussion')
   assert.ok(verdict.problems.some((line) => line.includes('is not a github-discussion URL')))
 })
 
+test('an instant that does not exist is refused — a typo must not pass silently (R65 adversary)', () => {
+  for (const postedOn of [
+    '2026-02-30T12:00:00Z', // 2026 is not a leap year; Date.parse rolls this to Mar 2
+    '2026-04-31T00:00:00.000Z',
+    '2026-13-01T00:00:00Z', // month 13 → NaN
+    '2026-11-02T99:99:99Z', // → NaN
+    '2026-11-02T18:36:00+99:00', // not a zone
+    '2026-11-02T18:36:00+01:99', // not a zone
+    '2026-11-02T18:36:60Z', // leap second: not handled, so not accepted
+    '0000-01-01T00:00:00Z', // no plausible post lives here
+  ]) {
+    const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn, now: NOW })
+    assert.equal(verdict.ok, false, `${postedOn} must be refused`)
+    assert.equal(verdict.posted_at, null, `${postedOn} must not produce a canonical instant`)
+    assert.ok(
+      verdict.problems.some((line) => line.includes('is not an instant that exists')),
+      `${postedOn} must be refused for existing, got ${JSON.stringify(verdict.problems)}`,
+    )
+  }
+})
+
+test('parseInstant round-trips real instants and normalises offsets', () => {
+  assert.equal(parseInstant('2026-11-02T17:36:00.000Z')?.canonical, '2026-11-02T17:36:00.000Z')
+  assert.equal(parseInstant('2026-11-02T18:36:00+01:00')?.canonical, '2026-11-02T17:36:00.000Z')
+  assert.equal(parseInstant('2026-11-03T01:36:00+08:00')?.canonical, '2026-11-02T17:36:00.000Z')
+  assert.equal(parseInstant('2026-11-02T17:36:00-01:00')?.canonical, '2026-11-02T18:36:00.000Z')
+  // A fractional part shorter than 3 digits is still the same instant family.
+  assert.equal(parseInstant('2026-11-02T17:36:00.5Z')?.canonical, '2026-11-02T17:36:00.500Z')
+  for (const value of ['2026-11-02', '2026-11-02T17:36', '2026-02-30T00:00:00Z', '', null, 42]) {
+    assert.equal(parseInstant(value), null, `${String(value)} must not parse`)
+  }
+})
+
 test('a bare date fails — it would move the 14-day window by up to a day', () => {
-  const verdict = judgePosting({ channel: 'X · 线程', url: X_URL, postedOn: '2026-11-02', now: NOW })
+  const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02', now: NOW })
   assert.equal(verdict.ok, false)
-  assert.ok(verdict.problems.some((line) => line.includes('explicit zone')))
+  assert.ok(verdict.problems.some((line) => line.includes('is not an instant that exists')))
 })
 
 test('an offset timestamp passes — +01:00 is timezone-qualified (the R64 bug)', () => {
-  const verdict = judgePosting({ channel: 'X · 线程', url: X_URL, postedOn: '2026-11-02T18:36:00+01:00', now: NOW })
-  assert.equal(verdict.ok, true)
-  assert.deepEqual(verdict.problems, [])
-
-  // Same instant, two spellings: the rule must not care which one the human typed.
-  const utc = judgePosting({ channel: 'X · 线程', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
-  assert.equal(utc.ok, true)
-  assert.equal(Date.parse('2026-11-02T18:36:00+01:00'), Date.parse('2026-11-02T17:36:00.000Z'))
+  const offset = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02T18:36:00+01:00', now: NOW })
+  assert.equal(offset.ok, true)
+  assert.equal(offset.posted_at, '2026-11-02T17:36:00.000Z')
+  assert.equal(offset.posted_at, judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW }).posted_at)
 })
 
 test('an instant without seconds or zone fails', () => {
   for (const postedOn of ['2026-11-02T17:36', '2026-11-02 17:36:00Z', '2026-11-02T17:36:00']) {
-    const verdict = judgePosting({ channel: 'X · 线程', url: X_URL, postedOn, now: NOW })
+    const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn, now: NOW })
     assert.equal(verdict.ok, false, `${postedOn} must be refused`)
   }
 })
 
 test('a future instant fails', () => {
-  const verdict = judgePosting({ channel: 'X · 线程', url: X_URL, postedOn: '2026-12-01T00:00:00.000Z', now: NOW })
+  const verdict = judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-12-01T00:00:00.000Z', now: NOW })
   assert.equal(verdict.ok, false)
   assert.ok(verdict.problems.some((line) => line.includes('in the future')))
+  // The same instant seen from a later clock is fine: "future" is relative to the reference time.
+  assert.equal(judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-12-01T00:00:00.000Z', now: '2027-01-01T00:00:00.000Z' }).ok, true)
+})
+
+test('the reference time may be a number of milliseconds', () => {
+  const now = Date.parse(NOW)
+  assert.equal(judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now }).ok, true)
+  assert.equal(judgePosting({ channel: X_CHANNEL, url: X_URL, postedOn: '2026-12-01T00:00:00.000Z', now }).ok, false)
 })
 
 test('a channel that names no verifiable platform fails instead of passing vacuously', () => {
-  for (const channel of ['V2EX · 程序员节点', 'V2EX 分享发现', 'B 站 60–90 秒脚本', '中文社区长文（项目口吻，不露个人身份）']) {
+  for (const channel of ['V2EX · 程序员节点', 'V2EX 分享发现', 'B 站 60–90 秒脚本', '中文社区长文（项目口吻，不露个人身份）', '']) {
     const verdict = judgePosting({ channel, url: 'https://example.com/p/1', postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
     assert.equal(verdict.ok, false, `${channel} must not pass silently`)
     assert.ok(verdict.problems.some((line) => line.includes('names no platform')))
   }
 })
 
+test('two platform names are an ambiguity, not a coin flip (both directions refused)', () => {
+  // Before R66 the array order decided: "Discussion on X" + an X URL was refused as github-discussion…
+  const xUrl = judgePosting({ channel: 'Discussion on X', url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+  assert.equal(xUrl.ok, false)
+  assert.equal(xUrl.platform, null)
+  assert.ok(xUrl.problems.some((line) => line.includes('more than one platform')))
+  // …and the same channel with a GitHub URL passed, even though the entry says it was posted on X.
+  const githubUrl = judgePosting({ channel: 'Discussion on X', url: DISCUSSION_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+  assert.equal(githubUrl.ok, false)
+  assert.ok(githubUrl.problems.some((line) => line.includes('more than one platform')))
+
+  for (const channel of ['X · GitHub Discussions', 'GitHub issue + X thread', 'GitHub Discussions · also on X']) {
+    const verdict = judgePosting({ channel, url: X_URL, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
+    assert.equal(verdict.ok, false, `${channel} must be refused as ambiguous`)
+  }
+})
+
 test('V2EX is not the platform X', () => {
   const x = POSTING_PLATFORMS.find((platform) => platform.id === 'x')
-  assert.equal(x?.channel.test('X · 线程（中文主选 / 英文备选）'), true)
+  assert.equal(x?.channel.test(X_CHANNEL), true)
   // The `X` in `V2EX` is preceded by a letter, so it is not the word "X".
   assert.equal(x?.channel.test('V2EX · 程序员节点'), false)
   assert.equal(x?.channel.test('V2EX 分享发现'), false)
@@ -114,8 +161,10 @@ test('a URL on the wrong shape of the right platform still fails', () => {
     'https://x.com/jjjj1955714/status/',
     'https://x.com/jjjj1955714',
     'http://x.com/jjjj1955714/status/2117306628227940741',
+    'https://x.com.evil.example/jjjj1955714/status/2117306628227940741',
+    'https://evil.example/https://x.com/jjjj1955714/status/2117306628227940741',
   ]) {
-    const channel = url.includes('github') ? 'GitHub Discussions · 分类' : 'X · 线程'
+    const channel = url.includes('github') ? 'GitHub Discussions · 分类' : X_CHANNEL
     const verdict = judgePosting({ channel, url, postedOn: '2026-11-02T17:36:00.000Z', now: NOW })
     assert.equal(verdict.ok, false, `${url} must be refused`)
   }

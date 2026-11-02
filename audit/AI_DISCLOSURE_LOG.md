@@ -731,4 +731,14 @@
 - 实测：**666 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15 · 可用性 6/6
 - 反思：这一轮最值得记的不是修了什么，而是**两次「先测再改」救回来的东西**：`V2EX` 那个 bug 如果直接按推理去「修」，会把一条正确的规则改坏；而 `+01:00` 那个如果只看代码不动手，会一直是个「看起来更严格」的错误。
 
+### 2026-11-02 R66｜独立对抗性审核打穿规则后的修正（判据修复轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）+ **两个独立上下文的 subagent**（verifier / adversary，均只读）
+- SessionID：主会话；台账 `R66-S1` … `R66-S6`；报告 `audit/AUDIT_2026-11-02_R66.md`
+- 范围：`scripts/lib/posting.mjs`（`parseInstant` 往返校验 + 平台必须恰好一个）· `tests/unit/posting.test.ts`（10 → 14）· `scripts/lib/dist-tags.mjs`（`PUBLISHED_PACKAGES` 进判据 / `versions:null` 不再跳过 / 空期望 / 重名）· `tests/unit/dist-tags.test.ts`（7 → 11）· `scripts/lib/next-release.mjs`（trim + 版本形状 + 坏基线）· `tests/unit/next-release.test.ts`（6 → 9）· `scripts/check_listing.mjs`（`drafts:[null]` 不再崩、`draft`+`posted_url:""` 不再误报）· `scripts/record_d5_evidence.mjs`（**`--posted-on` 坏值 exit 2 零产物**）· `README(.zh-CN).md`（666 → 677）· `data/results/{listing-…T19-{20,25,30,35,40,45,50}-00,usability-…T19-55-00}.json`
+- 结果：① verifier **零不一致**（八条台账 sha256 用两套实现双算、`publish` 18 项 0 失败、`usability` 6/6）；② adversary **12 个缺陷 / 3 高**，三个高全部命中 R64/R65 的规则本体：不存在的日期零信号放行（`Date.parse` 把 `02-30` 滚成 `03-02`）、`NaN` 被写成「不在未来」（`Number.isNaN` 查错了变量）、双语 channel 由数组下标决定结论（误拒 + 误放各有构造）；③ 另修五处中低危，其中 `judgeDistTags` 的两个洞都是「看起来更严格其实更松」；④ **`--posted-on` 的校验挪到数据流上**——它才是 D5 窗口的来源，坏值实测会让 `judgeD5` 从 `pending` 变 `fail` 或 `no-post`
+- 实测：**677 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15 · 可用性 6/6 · 坏日期 `2026-02-30` → exit 2 零产物
+- 反思：自审的半径很小。我自审抓到 1 条，独立 adversary 一小时给出 3 条高的，而且**都不需要恶意输入**——一个笔误、一个自然写法就够。以后凡新写一条判据，请一次 adversary 比自己再读三遍便宜；另外「护栏写在哪」和「护栏本身」同等重要：日期校验写在没人消费的字段上，等于没有。
+
+
 

@@ -39,10 +39,21 @@ export const NEXT_RELEASE_STATES = ['baseline', 'changed', 'unchanged', 'unmeasu
 export function judgeNextChange(input) {
   const previous = input?.previous ?? null
   const current = input?.current ?? { ok: false, version: null }
-  const from = typeof previous?.version === 'string' ? previous.version : null
-  const to = typeof current?.version === 'string' ? current.version : null
+  /*
+   * Trim before comparing (R66): `'0.2.1-rc.5 '` and `'0.2.1-rc.5'` are the same version, and a version
+   * that is only whitespace is not a version. Before this, a trailing space read as "upstream moved",
+   * wrote an artifact, and printed `upgrade --to " "` as the next command.
+   *
+   * A version is printable ASCII without spaces (npm versions are semver); anything else — NUL, CJK
+   * digits, a newline — is a corrupted reading, not a release.
+   */
+  const isVersion = (value) => typeof value === 'string' && /^[!-~]+$/.test(value.trim())
+  const fromRaw = isVersion(previous?.version) ? String(previous?.version).trim() : ''
+  const from = fromRaw.length > 0 ? fromRaw : null
+  const toRaw = isVersion(current?.version) ? String(current?.version).trim() : ''
+  const to = toRaw.length > 0 ? toRaw : null
 
-  if (current?.ok !== true || typeof to !== 'string' || to.length === 0) {
+  if (current?.ok !== true || to === null) {
     return {
       state: 'unmeasured',
       changed: false,
@@ -50,6 +61,21 @@ export function judgeNextChange(input) {
       from,
       to: null,
       detail: `the registry could not be read (${String(current?.detail ?? 'no reason given')}) — this is not "no update"`,
+    }
+  }
+  if (previous !== null && from === null) {
+    /*
+     * An observation exists but carries no usable version. That is "I cannot tell what the baseline was",
+     * which is not the same as "first observation" — reporting `baseline` here would let a corrupted
+     * artifact pass as a clean start.
+     */
+    return {
+      state: 'unmeasured',
+      changed: false,
+      writesArtifact: false,
+      from: null,
+      to,
+      detail: `the previous observation carries no usable version (${String(previous?.at ?? 'no timestamp')}), so a change cannot be judged`,
     }
   }
   if (from === null) {

@@ -9,7 +9,8 @@
 export const PUBLISHED_PACKAGES: string[]
 
 export interface PackumentTags {
-  name: string
+  /** Optional on purpose: a nameless packument is a defect the verdict must report, not a type error. */
+  name?: string
   unreachable?: boolean
   distTags?: Record<string, string> | null
   versions?: string[] | null

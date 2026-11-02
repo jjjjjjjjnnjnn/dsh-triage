@@ -91,5 +91,49 @@ test('a leftover tag on a real version is reported but does not fail the release
 test('no packument at all is a vacuous verdict, not a pass', () => {
   const verdict = judgeDistTags({ expectedVersion: '0.3.3', packages: [] })
   assert.equal(verdict.ok, false)
-  assert.ok(verdict.problems.some((line) => line.includes('vacuous')))
+  // R66: the four packages are the claim, so a missing packument is named instead of silently absent.
+  assert.equal(verdict.problems.filter((line) => line.includes('no packument in this run')).length, PUBLISHED_PACKAGES.length)
+  assert.ok(verdict.problems.some((line) => line.includes('unmeasured')))
+})
+
+test('one packument is not "the four packages agree" (R65 adversary)', () => {
+  const verdict = judgeDistTags({
+    expectedVersion: '0.3.3',
+    packages: [{ name: 'left-pad', distTags: { latest: '0.3.3' }, versions: ['0.3.3'] }],
+  })
+  assert.equal(verdict.ok, false)
+  // The four real packages are reported as unmeasured, not quietly left out of the claim.
+  for (const name of PUBLISHED_PACKAGES) {
+    assert.ok(verdict.problems.some((line) => line.startsWith(`${name}: no packument in this run`)), `${name} must be named`)
+  }
+})
+
+test('a version list that cannot be read is unmeasured, not "no dangling tags"', () => {
+  const packages = healthy('0.3.3')
+  packages[3] = { name: 'dsh-triage', distTags: { latest: '0.3.3', next: '9.9.9' }, versions: null }
+  const verdict = judgeDistTags({ expectedVersion: '0.3.3', packages })
+  assert.equal(verdict.ok, false)
+  assert.ok(verdict.problems.some((line) => line.includes('version list is unreadable')))
+  // Before R66 this case was GREEN and printed `@next=9.9.9` inside the passing detail.
+  assert.equal(verdict.dangling.length, 0)
+})
+
+test('an empty expected version is vacuous, and so is a blanked one', () => {
+  for (const expectedVersion of ['', '   ']) {
+    const verdict = judgeDistTags({ expectedVersion, packages: healthy('0.3.3') })
+    assert.equal(verdict.ok, false)
+    assert.ok(verdict.problems.some((line) => line.includes('expected version is empty')))
+  }
+})
+
+test('a packument without a name, or the same name twice, is reported', () => {
+  const nameless = judgeDistTags({ expectedVersion: '0.3.3', packages: [{ distTags: { latest: '0.3.3' }, versions: VERSIONS }] })
+  assert.ok(nameless.problems.some((line) => line.includes('without a name')))
+
+  const duplicated = judgeDistTags({
+    expectedVersion: '0.3.3',
+    packages: [...healthy('0.3.3'), { name: 'dsh-triage', distTags: { latest: '0.3.2' }, versions: VERSIONS }],
+  })
+  assert.equal(duplicated.ok, false)
+  assert.ok(duplicated.problems.some((line) => line.includes('appears twice')))
 })
