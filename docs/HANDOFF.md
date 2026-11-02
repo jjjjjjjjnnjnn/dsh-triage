@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 已发但 `@dsh-triage/signals@0.3.3` 缺位 → `latest` 暂时装不上，正在补发**（`audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
+> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 四个包都已可安装**（staged 的 `signals@0.3.3` 异步转正；三包 `latest` 仍停在 0.3.2，待对齐，见事故文档 §7）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -141,12 +141,14 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 所以 633/543 那类漂移会直接印在 npm 上；`0.3.3` 只改文档（测试数 643、发布链与浏览器半边的说明），
 `dist/` 与 `client.js` 一字未动，判据/阈值/退出码全部与 `0.3.2` 相同。**发布仍需 HUMAN 跑 `pnpm run release:publish`**。
 
-**续 4 · 0.3.3 部分发布（未修复）**：发布输出四个 `✅ Published`，registry 上**只有三个** ——
-`@dsh-triage/signals@0.3.3` 的 version 文档与 tarball **都是 404**、`time.modified` 还停在 14:12 的 0.3.2。
-而 `dsh-triage@0.3.3` 钉死 `signals: 0.3.3` → **`npm install dsh-triage` 现在对所有人失败**（`latest` 已指向 0.3.3）。
-`record_publish` 重试 20 次 / 301 秒后如实判红（红是对的）。**补发一个包即可**：
-`pnpm --filter @dsh-triage/signals publish --access public --no-git-checks`，然后 `node scripts/record_publish.mjs` 要 21/21。
-现场、三条独立读数与兜底回滚命令见 `audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`；新盲区 **`BS-55`：发布输出不是证据**。
+**续 4 · 0.3.3 部分发布 → 已可安装**：发布输出四个 `✅ Published`，registry 上先只有三个 ——
+`@dsh-triage/signals@0.3.3` 的 version 与 tarball 都是 404，`record_publish` 重试 20 次 / 301 秒后判红。
+**那个红是真的，但结论是「还没到」，不是「坏了」**：npm 的发布是 **staged → 异步提升**，约 14 分钟后自己落地；
+期间重发会得到 `409 Cannot publish over previously staged version`（**不是「版本号废了」**）。
+现在 `npm install dsh-triage@0.3.3` 空 userconfig 匿名装验过 exit 0（四包全 0.3.3）。
+**剩余**：`dsh-triage` / `core` / `probe` 的 `latest` 在一次回滚里回到 0.3.2（signals 已是 0.3.3）→
+`npm dist-tag add <pkg>@0.3.3 latest` 三条，然后 `node scripts/record_publish.mjs` 应 21/21。
+现场与三条独立读数见 `audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`；新盲区 **`BS-55`：发布输出不是证据**。
 
 **下一位的第一件事（按价值排序）**：
 

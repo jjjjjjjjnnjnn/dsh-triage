@@ -90,7 +90,61 @@ npm dist-tag add @dsh-triage/probe@0.3.2 latest
 
 ## 6. 待办
 
-- [ ] HUMAN 补发 `@dsh-triage/signals@0.3.3`
-- [ ] `record_publish` 21/21 并把产物写进台账
-- [ ] 把 `docs/HANDOFF.md` / `AGENTS.md` / `docs/BACKLOG.md` 的 0.3.3 状态从「待发布」改成「已发布」
-- [ ] 新盲区：**发布输出不是证据**（与 `BS-49` 的「registry 是时点读数」相邻但不是同一条）
+- [x] ~~HUMAN 补发 `@dsh-triage/signals@0.3.3`~~ → 不需要补发：staged 的发布自己落地了（§7）
+- [ ] `latest` 对齐到 0.3.3（三包；signals 已是）+ `record_publish` 21/21
+- [ ] 把 `docs/HANDOFF.md` / `AGENTS.md` / `docs/BACKLOG.md` 的 0.3.3 状态改成「已可安装 / latest 待对齐」
+- [x] 新盲区 **`BS-55`：发布输出不是证据**（与 `BS-49` 的「registry 是时点读数」相邻但不是同一条）
+
+## 7. 结局：那个 409 不是死路，staged 的发布自己转正了
+
+补发命令返回的是
+
+```
+ERR_PNPM_FAILED_TO_PUBLISH
+  × Failed to publish package @dsh-triage/signals@0.3.3 (status 409 Conflict):
+    {"success":false,"error":"Cannot publish over previously staged version \"0.3.3\"."}
+```
+
+我当时的判断是「版本号被永久占用，只能换 0.3.4」——**这个判断是错的**。几分钟后再读 registry：
+
+| 时间 | `@dsh-triage/signals` 的 0.3.3 | `latest` | `time.modified` |
+|---|---|---|---|
+| 15:34（事故发现时） | version 404 / tarball 404 | 0.3.2 | 14:12（0.3.2 那次） |
+| 15:48 | **存在** | **0.3.3** | **15:48:59** |
+
+也就是说 npm 的发布有两段：**先 staged，再提升为可发布**。第一次 `pnpm -r publish` 的写入进了暂存区，
+提升是**异步**完成的；我们在这个窗口里既读不到（404）、又发不进去（409），而它自己在大约 **14 分钟后**落地。
+
+**决定性验证**（空 userconfig、干净目录、显式 registry）：
+
+```
+dsh-triage@0.3.3: exit 0
+  installed: {"dsh-triage":"0.3.3","@dsh-triage/core":"0.3.3","@dsh-triage/signals":"0.3.3","@dsh-triage/probe":"0.3.3"}
+dsh-triage@0.3.2: exit 0
+  installed: {…全部 0.3.2}
+```
+
+### 因此修正了三条判断
+
+1. **「409 Cannot publish over previously staged version」不等于「版本号废了」** —— 它常常意味着
+   *第一次发布还在暂存区里*。正确动作是**等并重读 registry**，不是换版本号。换 0.3.4 会让四个包里
+   多出一组没人用的版本，而且把「暂存会自己完成」这个事实藏起来。
+2. **`record_publish` 的 5 分钟预算不够覆盖这条路径**（这次约 14 分钟）。预算是为了不让发布链挂死，
+   所以**不提高默认值**；但红的时候要读产物里的 `install.attempts` / `waited_ms`，并**手工重读 registry**
+   再决定是「等」还是「真坏了」。
+3. **发布输出既不能说成功，也别说失败** —— 它说的是「请求被接受」。三个独立读数（两个 packument 视图、
+   版本 404、tarball HEAD）才是状态。
+
+### 剩余动作（HUMAN）
+
+三个包的 `latest` 在一次回滚里回到了 0.3.2（`@dsh-triage/signals` 已经是 0.3.3）。0.3.3 已验证可安装，
+所以对齐即可：
+
+```powershell
+npm dist-tag add dsh-triage@0.3.3 latest
+npm dist-tag add @dsh-triage/core@0.3.3 latest
+npm dist-tag add @dsh-triage/probe@0.3.3 latest
+```
+
+然后 `node scripts/record_publish.mjs`（期望 21/21）。如果更愿意停在 0.3.2 这个已知可用的版本，
+就**不做这一步**，并把 `docs/HANDOFF.md` 里的 0.3.3 状态写成「已发布但 latest 停在 0.3.2（有意）」。
