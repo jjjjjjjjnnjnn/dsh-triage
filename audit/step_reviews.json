@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R62",
+  "stand": "R63 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -9478,6 +9478,56 @@
         "command": "node scripts/check_listing.mjs --stamp 2026-11-02T15:59:00.000Z --tests 643",
         "artifact": "data/results/listing-2026-11-02T15-59-00.000Z.json",
         "sha256": "cb30d4de2fe36f33618199dcc2f8ecd55f5c8abca1a9f092f9433e6f613df7b2",
+        "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 643 · 0 失败"
+      }
+    },
+    {
+      "id": "R63-S1",
+      "batch": "R63",
+      "step": "**交接轮（只交接 + 记录计划，不改行为）**：stand 统一到 R63；§3 新增「R63 交接」（真实状态 / 上一轮连起来读 / 按价值排序的四件事 / 四条坑 / 仍然开着的盲区）；批次表新增 R63 行；INDEX / AGENTS / ROADMAP / 两个台账同步",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：只改文档与台账；643 测试 / 9 门全绿；`--mutate` 9/9；没有改代码、判据或阈值",
+        "reproducibility": "PASS：`gates-2026-11-02T16-05-00.000Z.json` 带 sha256（`ce84ec32…`），同一次 verify 643 测试 / 0 fail",
+        "licence": "PASS：纯文档与台账，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：stand 在 HANDOFF / INDEX / AGENTS / ROADMAP / `blind_spots` / `step_reviews` 六处统一为 R63；0.3.3 的证据指针指到 `publish-2026-11-02T15-54-38.303Z`（21/21）；`BS-54` / `BS-55` 都写成「仍然开着」",
+        "adversary": "反例一：把 0.3.3 写成「一切正常」——被拒：§3 明写它有过 15 分钟装不上的窗口，`CHANGELOG` 也写了；反例二：把 v3 写成「已采用」——被拒：生产仍是 v1，`BS-52`/`BS-53` 列在「仍然开着」；反例三：把 `BS-55` 写成已关闭——被拒：暂存提升没有时限承诺，这条永远只能说「这次是 14 分钟」"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T16:05:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T16-05-00.000Z.json",
+        "sha256": "ce84ec32708e311c50ecd6ddc29cd82878c8256a1cae5216dcf2bb8309d9f4dd",
+        "outcome": "ALL GREEN · 9 gates · 643 tests / 0 fail · stand R63"
+      }
+    },
+    {
+      "id": "R63-S2",
+      "batch": "R63",
+      "step": "**交接轮：改完 stand 之后公开文档仍然自洽（15/15）** —— 交接也会改 HANDOFF / INDEX / AGENTS / ROADMAP，所以「改完还过不过」要留一次读数，而不是假设它没过期",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3、测试数 643（2 条声明）、18 条证据路径带 sha256；与 15:59 那次逐项相同",
+        "reproducibility": "PASS：`--stamp` 与 `--tests` 显式给出，产物带 sha256",
+        "licence": "PASS：纯文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：与 15:59 的差异只可能来自 stand 文字；读数相同即证明「改 stand 不会带偏对外数字」",
+        "adversary": "反例：跳过这次而不解释——被拒：交接轮唯一会碰的就是这几份文档，而其中三份是 `check_listing` 的输入；不跑就等于假设"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T16:08:00.000Z --tests 643",
+        "artifact": "data/results/listing-2026-11-02T16-08-00.000Z.json",
+        "sha256": "f85e10c3f5160d51fb19e205e9be61d60a28f8d2eb3683ad3894d4912a44e12e",
         "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 643 · 0 失败"
       }
     }

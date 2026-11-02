@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 四个包已发布、`latest=0.3.3`**（21/21 取证，见 §3 续 5）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
+> **Stand**: R63 (2026-11-02，**交接轮**：R62 = T-818 收口（真机 16/16）+ 0.3.2 发布 + T-829（发布证据开始验浏览器半边）+ **0.3.3 四包已发布、`latest=0.3.3`**（21/21）；两次异步（读副本 ~4.5min / staged 提升 ~14min）都已查清并写进 `BS-55`；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R63 交接」**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 交接（R63，2026-11-02） | **只交接 + 记录计划，不改行为**。① 交接时：**643 测试 / 9 门 ALL GREEN / `--mutate` 9/9 / `check_listing` 15/15**、工作区干净、CI `success`；npm 四包 `0.3.3`（`latest=0.3.3`）取证 **21/21**（`data/results/publish-2026-11-02T15-54-38.303Z.json`，`git_dirty=false`、`head 0ad06c7`）；D5 `pending`（0/10 · 0/1 · 634 burst，窗口到 `2026-11-15T20:24:37Z`）；#65 `MERGEABLE/BLOCKED`（`merged 0`）。② 上一轮（R62）连起来读：T-818 收口（「页面 fetch pending」是**探针 ≈500ms 收工**，不是产品不答；真机 16/16、四桶 3/190/0/2 与 CLI 逐项相同）→ 0.3.2 发布 → **T-829**（`record_publish` 验 `client-bundle`：`dsh.client` / `exports["./client"]` / `__ModuleLoader__.load` / `settings.plugins.tab` 四点）→ **0.3.3 纯文档发布**（README 在包内，npm 页面印的就是它）→ 两次异步（读副本 4.5min、staged 提升 14min；`409` **不等于**版本号废了）。③ 与 R62 的差别只在文档与两条事故记录，`packages/` 的代码与 0.3.2 逐字节相同。④ 新盲区：`BS-54`（面板时延只有一次观测）、`BS-55`（发布输出不是证据）。⑤ 下一位第一件事：**R63 采用分类器 v3**（判据轮；需 HUMAN 5 条盲标 + 第三组互斥留出集 + 覆盖率与 README 同轮）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交付（R62，2026-11-02） | **T-818 收口：R61 的「页面 fetch pending」是度量缺陷，不是产品缺陷（交付轮，判据/阈值一字未动）**。① **先证伪**：R61 的产物里同时躺着「路由 Node 直连 **200 / 815ms**」和「探针第二轮采样（≈500ms）就 break」——加载态走的是**失败视图**（`data-triage-tab="upgrade-error"`, `kind="loading"`），而终止条件是 `present === true \|\| error === true`，于是「还没回答」被读成「答错了」。② **把规则变成机器强制**：`scripts/lib/ui-probe.mjs` 新增 `judgeTabView` / `judgeUpgradeView`（`loading` / `pending` 一律**不算判**）+ `describeNoAnswer`（超预算只写「等了 Nms 没等到，什么都不声明」）+ `compareUpgradeBuckets`（同源比较抽成纯函数，差的桶点名）；**这是同类错误第三次**（R50 检查没跑起来、R51 `pending` 当结论、R61 `loading` 当失败）。③ **顺手抓到四处半**：页面内诊断返回裸字符串被 `evaluate()` 的 `JSON.parse` 吞成 `null`（R61 产物 `direct: null` **不是**页面超时）、marker 已经是对象却又 `JSON.parse(String(obj))` 恒 `null`（所以 `upgrade-same-source` 从来不可能通过）、`record('upgrade-route', …, evidence)` 的 `status: 200` **覆盖了步骤自己的 `passed`**、`visible` 把 `pending` 写成 `passed`（detail 还写「rendered the summary view」）。④ **产品侧两处**：加载态改用独立标记 `upgrade-loading`（旧 bundle 的 `upgrade-error`+`loading` 仍映射回 loading，升级期不重现）、`host.ts` 的 10s `Promise.race` 定时器 `clearTimeout`（每次点击不再漏一个活到 10 秒的定时器）。⑤ **真机**：**16/16 全过**，`upgrade-visible: passed`（4 桶 / 1530ms）+ **`upgrade-same-source: passed`**（`3 denied / 190 cannot tell / 0 improved / 2 likely fine` 与 `upgrade --to next` 逐项相同，`comparison.pairs` 四对全 agree）。⑥ **四条负对照各自真红**：单元把 loading 改回「算结论」→ 只有 R61 那条红；真机 `--upgrade-wait-ms 300` → `unmeasured`（「waited 512ms… nothing is claimed」，**不是 failed**）；真机把 `cannot-tell` CLI 侧 +1 → `failed` 并点名 `tab=190 cli=191`；单元少一个桶 / `NaN` / `null` 载荷 → 一律判不同源。**没做到的也写了**：registry 不可读那条只能在单测里证（registry 硬编码），一次 `--upgrade-wait-ms 0` 的运行挂住无产物（记成「没跑出来」）。⑦ **新盲区 `BS-54`**：面板 summary 一次观测 **9510ms**（`pending` 现在记 `unmeasured` 不再伪装成 `passed`，但「慢」还没有分布）。⑧ **测试 611 → 623**；9 门 ALL GREEN · `--mutate` 9/9。⑨ **0.3.2 四包已发布**（`latest=0.3.2`，`record_publish` **20/20**，`publish-2026-11-02T14-24-39.944Z`：`git_dirty=false` / `head 6fde8da`）；**发布链的假红同轮修掉**：`release:publish` 紧跟 publish 取证，而 npm 的匿名/安装文档副本滞后约 **4.5 分钟** → 五分钟内三份红（14:10 / 14:14 / 14:15:09）后零代码改动变 20/20；修法 `scripts/lib/registry-wait.mjs`（默认 5 分钟预算，只对 `notarget`/`ETARGET` 重试，E401 立刻出结论）+ 9 条单测 + 1 次真机正对照（`9.9.9` + 3s 预算 → 2 次尝试 / 16969ms / 「real failure, not a wait」）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交接（R61，2026-11-02） | **只交接 + 记录计划，不改行为**。① 上一轮交付/进行中：**分类器 v3 候选**（开发集 20/20、留出集 1 17/20、干净留出集 2 **17/20 = 85%**；**未采用**，需 R62 live 重测 + HUMAN 5 条）与 **T-818 四桶页签 🟨**（host 四桶 handler + 页签第二屏 + 9 条单测；真机 **`upgrade-route` 200**，但页面 fetch 一直 `loading` → `upgrade-visible: failed`、`upgrade-same-source: unmeasured`；红产物 `client-serve-2026-11-02T14-40-00.000Z.json`）。② 状态：**611 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；0.3.1 四包在 npm；D5 **`pending`**（0/10 · 0/1 · 634 burst，窗口到 2026-11-15）；#65 **`MERGEABLE/BLOCKED`**（`merged 0`）。③ 下一位第一件事：**定位 T-818 的页面 fetch pending**（路由 Node 直连 200、summary 同源 fetch 正常；建议 CDP `Network.requestWillBeSent` / `responseReceived` + 读回 served composed client 的 `UPGRADE_URL`）。④ 本轮新增的坑：第三个 exact 路由在这版 Host 上 404（登记有、表里没有）→ 复用 summary 路由的 `?upgrade=1` 分流；**页面 fetch pending 不能写成「离线降级」**（离线会显示句子，不会 loading） | |
 | 实验（R60，2026-11-02） | **分类器 v2：开发集 20/20，留出集 12/20，未达 80%，不采用（判据轮）**。① 从 R59 的 20 条分歧（9 条运行期转述被读成 unknown）设计 v2：加通用失败动词、具体运行期形状（`0xC000` / `SEC_E_` / `TRANSPORT` / 沙箱 / 超时）、组合形状（`fork` / 同名 / `link:` / `inject` / `bundle patch` / 预设）。② **开发集 20/20**——但这是照着这 20 条设计的，**不能当准确率**。③ **互斥留出集**（新种子 `20261103`、排除开发集）**12/20（60%）**，v1 同一留出集 **7/20（35%）**：v2 是真实改进，但低于 spec §8 的 **80%**。④ **决定：不采用**。生产分类器仍是 v1；R59 的 **4.8%** 与 README 的 **9/20** 一字未动；v2 以 `SIGNALS_V2` / `classifyThreadV2` 保留，产物 `classifier-v2-2026-11-02T11-20-00-000Z.json` 写死 `decision: not-adopted`。⑤ **8 条留出集错例**：`卡着` / `403` / `400`+损坏 / `no text block` / `提权` / `symlink` / TS 构建错误 / 一篇模型研究被 `不能` 误触发；v3 必须先写 spec + **第三个互斥留出集**，不许在已看过的留出集上调。⑥ 新增 **`BS-53`**（纯关键词方法天花板）；测试 584 → **593**（+9 条 v2 单测，v1 测试未改）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
@@ -104,6 +105,47 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R63 交接（2026-11-02，最后一个动作就是写这段）
+
+**交接时的真实状态**：**643 测试 / 9 门 ALL GREEN / `--mutate` 9/9 / `check_listing` 15/15**，工作区干净，CI `success`；
+**npm 四包 `0.3.3` 全部发布、`latest=0.3.3`**，取证 **21/21**（`data/results/publish-2026-11-02T15-54-38.303Z.json`，
+`git_dirty=false`、`head 0ad06c7`）；**D5 `pending`**（0/10 · 0/1 · 634 burst），窗口到 `2026-11-15T20:24:37Z`；
+**#65 `MERGEABLE/BLOCKED`**（`merged 0`）。
+
+**这一轮做了什么**（三句话）：① R61 记的「页面 fetch 一直 loading」查明是**探针在 ≈500ms 就收工**（加载态走失败视图，
+终止条件把「有 error 元素」当判），修好后真机 **16/16**、四桶与 CLI 逐项相同；② 把「什么算已经回答了」抽成纯函数
+（`judgeTabView` / `judgeUpgradeView`），顺带修掉四处让「没观测」看起来像结论的度量缺陷，并让 `record_publish`
+开始验**浏览器半边**（`client-bundle`，T-829）；③ 0.3.2 / 0.3.3 两次发布各遇到一次**异步**（读副本滞后 ~4.5 分钟、
+staged 提升 ~14 分钟），两次都先红后查清，修法是**等 + 重读**，不是改断言。
+
+**下一位的第一件事（按价值排序）**：
+
+| 顺序 | 任务 | 为什么是它 | 起点 |
+|---|---|---|---|
+| 1 | **R63 采用分类器 v3**（判据轮） | 干净留出集 17/20 已过 80% 门槛；换生产会改头条 **4.8%** → 必须 live 重测 + **第三组**互斥留出集 + HUMAN 5 条盲标 + README/`check_listing` #14 同轮 | `audit/RECON_2026-11-02_classifier-v3.md` · `scripts/lib/discussion-triage.mjs` |
+| 2 | **D5 关窗读数**（`2026-11-15T20:24:37Z`） | 唯一的产品判断；关窗前再读都是 `pending`，不算新证据 | `node scripts/record_d5_evidence.mjs …` |
+| 3 | **`BS-54` 时延分布** | 面板 summary 一次观测 **9510ms**；先要 N≥10 次 `tab_ms` 的 min/median/p90/max 才谈得上改预算 | `scripts/record_client_serve.mjs` · `client-serve-nc-bucket-…T12-49-11` |
+| 4 | 可领取的小票 | T-811（`Host` 头白名单，要先出 ADR）/ T-814（面板速率上限）/ T-812 / T-813（浏览器见证）/ T-815（`fix --install`，HUMAN 已授权未动工）/ T-817（slot 枚举 spike） | `docs/BACKLOG.md` |
+
+**本轮新增的四条坑（直接搬）**：
+1. **「没等到」先问「我们等了多久」**：R61 的结论和两条读数（路由 815ms 就答、探针 500ms 收工）同时躺在产物里，
+   矛盾却没被发现。凡是「一直 loading / 一直没反应」，先看 `waited_ms`，再谈产品。
+2. **加载态不许借用失败态的 DOM 契约**：`data-triage-tab="upgrade-error"` + `kind="loading"` 让「有 error 元素」
+   和「已经答错」变成同一件事（R51 / R61 / R62 各踩一次）。两个视图两个标记，规则在 `scripts/lib/ui-probe.mjs`，单测钉死。
+3. **`evaluate()` 会吞掉非 JSON 字符串**：页面内诊断返回 `'http:…'` 被 `JSON.parse` 失败吞成 `null`，
+   产物里的 `direct: null` **不是**「页面也超时」，是「这条诊断什么都没测到」。
+4. **发布工具与 registry 之间有两层异步**：读副本（~4.5 分钟）与 staged→publish（~14 分钟）。
+   **发布输出 = 请求被接受**，不是状态；「发没发出去」只能靠三条独立读**重读**（两个 packument 视图 / 版本端点 / tarball HEAD）。
+   **`409 Cannot publish over previously staged version` ≠ 版本号废了** —— 先等 15 分钟再判断
+   （`BS-55`、`audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md` §7）。
+
+**仍然开着的（不许写成「已解决」）**：
+- `BS-52`（覆盖率建立在只读文本分类器上，抽检一致率 9/20）/ `BS-53`（纯关键词天花板约 60%）→ **v3 未采用**，生产仍是 v1
+- `BS-54`（面板时延只有一次 9510ms 的观测，没有分布）
+- `BS-55`（发布链分不清「还没传播」与「根本没写进去」；暂存提升没有时限承诺）
+- `T-303` / `T-202a` 的 `namespace-diff` 仍 `unmeasured`（`ADR-0009` A）
+- 0.3.3 的 `dsh-triage@0.3.3` 有过约 15 分钟装不上的窗口（已恢复；`CHANGELOG` 里有面向用户的说明）
 
 ## R62 交接（2026-11-02，最后一个动作就是写这段）
 
