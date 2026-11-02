@@ -132,10 +132,19 @@ check(
 )
 
 /* 4. Test count claims, when the caller knows the real number. */
-const COUNT = /(\d{2,4})\s*(?:个)?(?:测试|tests?)\b/g
+/*
+ * R62: this used to be `(\d{2,4})\s*(?:个)?(?:测试|tests?)\b`, and it found ZERO claims in a repo whose
+ * README says「623 个测试」— `\b` is an ASCII word boundary, so it can never match after a CJK
+ * character. The check was green because it was empty, and the README's test badge stayed at 542 for
+ * three rounds. Three shapes are counted now, including the badge, and "no claim found" is only
+ * allowed when the caller did not pass a number.
+ */
+const COUNT = [/(\d{2,4})\s*(?:个)?(?:测试|tests?)/g, /tests[:\-]\s*(\d{2,4})/g, /badge\/tests-(\d{2,4})/g]
 const countClaims = new Set()
 for (const [file, text] of texts) {
-  for (const match of text.matchAll(COUNT)) countClaims.add(`${file}:${match[1]}`)
+  for (const pattern of COUNT) {
+    for (const match of text.matchAll(pattern)) countClaims.add(`${file}:${match[1]}`)
+  }
 }
 const staleCounts = testCount === null ? [] : [...countClaims].filter((entry) => !entry.endsWith(`:${testCount}`))
 check(
@@ -146,6 +155,12 @@ check(
     : staleCounts.length === 0
       ? `${countClaims.size} claim(s) all equal ${testCount}`
       : `stale: ${staleCounts.slice(0, 4).join(', ')}`,
+)
+/* A checker that finds nothing must say so: "0 claims" with a number passed in is a broken pattern. */
+check(
+  'test-count-is-not-vacuous',
+  testCount === null ? true : countClaims.size > 0,
+  testCount === null ? 'skipped (no --tests passed)' : `${countClaims.size} claim(s) found across ${texts.size} document(s)`,
 )
 
 /* 5. Placeholders and unsupportable claims.

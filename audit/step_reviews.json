@@ -9114,6 +9114,162 @@
         "sha256": "442418127d3959bd5d981b4a04075f8022fbbbb61d879b28484f3df3ac6c8dbb"
       },
       "batch": "R62"
+    },
+    {
+      "id": "R62-S19",
+      "batch": "R62",
+      "step": "**0.3.2 的权威发布证据（干净树）**：`git_dirty=false`、`head 6fde8da`、`attempts=1 / waited_ms=1147`，20/20 —— 证明 registry 上的字节来自已提交的树，且这一次没有触发传播等待",
+      "changed": [
+        "scripts/record_publish.mjs",
+        "data/results/publish-2026-11-02T14-24-39.944Z.json"
+      ],
+      "review": {
+        "correctness": "PASS 20/20：latest=0.3.2 四包 / 匿名安装 exit 0（空 userconfig）/ 三个内部包 0.3.2 / CLI 15 行 / `import()` 解析",
+        "reproducibility": "PASS：`--stamp` 可省略（默认当前时间）；同一命令在干净树上重跑给出同一组检查项",
+        "licence": "PASS：只跑本仓脚本，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：`git_dirty=false` + `head` 可追溯；这份是本轮发布证据的唯一权威指针（14:21:51 那份 `git_dirty=true` 只作过程记录）",
+        "adversary": "反例一：用 14:21:51 那份当权威——被拒：它跑在产物未提交的树上，无法证明「发布字节来自已提交的树」；反例二：把 `attempts=1` 说成「传播问题不存在」——被拒：三份红产物与两次正对照都在同一轮"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T14-24-39.944Z.json",
+        "sha256": "4ba6e42c5d41dd583357f8f93d490dea4b9d7745d6efb3d8ac59a740f682e842",
+        "outcome": "GREEN 20/20 · git_dirty=false · head 6fde8da · attempts=1 · waited_ms=1147"
+      }
+    },
+    {
+      "id": "R62-S20",
+      "step": "**文案检查器抓到「永远通过的断言」（红产物保留）**：`test-count-matches` 一直报告 `0 claim(s)` —— 正则是 `(\\d{2,4})\\s*(?:个)?(?:测试|tests?)\\b`，`\\b` 是 ASCII 词边界，跟在中文「测试」后面永远不成立，于是这条断言从来没检查过任何东西",
+      "changed": [
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "RED（见证）：`0 claim(s) all equal 632` 而 README 同时写着「623 个测试」和徽章 `tests: 542 pass` —— 一条永远通过的门",
+        "reproducibility": "PASS：产物保留，`checks[]` 里能直接读到那行 `0 claim(s)`",
+        "licence": "PASS：只改本仓检查器，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PARTIAL（如实）：这份产物的绿色是假的，所以**不被引用为通过**；它是「空转断言」的唯一见证",
+        "adversary": "反例：让 `--tests` 不传就跳过——被拒：那正是这条断言今天的样子；修法是让正则真的匹配三种写法（中文 / `tests: N` / 徽章 `badge/tests-N`），并新增 `test-count-is-not-vacuous`：传了数字却找到 0 条声明即红"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:26:00.000Z --tests 632（修前）",
+        "artifact": "data/results/listing-2026-11-02T14-26-00.000Z.json",
+        "outcome": "GREEN（假的）· test-count-matches 0 claim(s) · 徽章 542 / 正文 623 都没被发现",
+        "sha256": "c98a0b95e242c2d3bc4a76d3cdf41a96e7f40f4fb92228d9f2980092540922b5"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S21",
+      "step": "**修好正则后的第一条红**：同一个 stamp 立刻点名四类声明 `README.md:623 / README.md:542 / README.zh-CN.md:623 / README.zh-CN.md:542` —— 徽章僵了三轮终于被看见",
+      "changed": [
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：红项逐字点名文件与数字；这正是「先让门能红」的证据",
+        "reproducibility": "PASS：产物保留；修好后同一命令应转绿",
+        "licence": "PASS：只改本仓检查器，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：红项与「徽章 542」直接对应，不是别的漂移",
+        "adversary": "反例：把 542 从文档里删掉让门变绿——被拒：徽章是 npm 页面首屏，删掉不是修好；改数是唯一正确的修法"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:27:00.000Z --tests 632",
+        "artifact": "data/results/listing-2026-11-02T14-27-00.000Z.json",
+        "outcome": "RED · test-count-matches（542 四处）· 保留",
+        "sha256": "a01003cbb5c3f04d4e6410b21d5081a36a337b8d23cbb9f952b4ef84b069aaa1"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S22",
+      "step": "**徽章改成 632 之后，正文的 623 立刻变红**：同一断言在两个位置轮流报，证明它现在真的在逐处检查，而不是只认一处",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：`stale: README.md:623, README.zh-CN.md:623` —— 改完徽章就把正文抓出来",
+        "reproducibility": "PASS：产物保留；下一次修改（正文）应转绿",
+        "licence": "PASS：只改本仓文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：数字追的是实跑（632 测试）；不是为了让门变绿而改门",
+        "adversary": "反例：把两处都写成「很多测试」——被拒：`test-count-is-not-vacuous` 会因为找不到声明而红"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:28:00.000Z --tests 632",
+        "artifact": "data/results/listing-2026-11-02T14-28-00.000Z.json",
+        "outcome": "RED · test-count-matches（正文 623 两处）· 保留并随后转绿",
+        "sha256": "67b876365aaf6b9f181a6df4d38d59bbba788221cc24fa5c110437a1c34cc282"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S23",
+      "step": "**文案检查器收口（15 条断言）**：徽章与正文都写成 632、`test-count-is-not-vacuous` 记下「10 份文档里找到 2 条声明」，版本 0.3.2、证据路径 18 条带 sha256",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：`test-count-matches` 与 `test-count-is-not-vacuous` 同时绿；版本/区间/证据/话术/文章登记/两条边界全过",
+        "reproducibility": "PASS：`--stamp` 显式给出，产物带 sha256，可逐字复跑",
+        "licence": "PASS：只改本仓检查器与文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：README 的数字（632）与 `pnpm run test` 的真实读数一致；`check_listing` 从 14 条变 15 条（新增的是「不许空转」）",
+        "adversary": "反例：以后把「空转守卫」删掉让 15 变 14——被拒：它正是本轮抓到的问题；反例二：`--tests` 不传时守卫仍绿——这是有意的（没给数字就无法判定），但此时 `test-count-matches` 也明写 `skipped`"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:29:00.000Z --tests 632",
+        "artifact": "data/results/listing-2026-11-02T14-29-00.000Z.json",
+        "outcome": "GREEN 15/15 · version 0.3.2 · dsh 区间 4 处 · 测试数 2 条声明均为 632 · 18 条证据路径",
+        "sha256": "568ca617f9ef106e1764777e8889328186e6834efb3a42db4ff1ae87a485ef1a"
+      },
+      "batch": "R62"
+    },
+    {
+      "id": "R62-S24",
+      "batch": "R62",
+      "step": "**「我以为的数字」被实测打回来的那一次**：同一条命令里 `pnpm run test` 报 **633**，而 `check_listing --tests 632` 仍然绿（因为文档也写着 632）——两份 632 互相作证，谁都没错，也谁都没看真数",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：`test-count-matches` 2 条声明均为 633、`test-count-is-not-vacuous` 在 10 份文档里找到 2 条；版本 0.3.2、DSH 区间 4 处、18 条证据路径全部带 sha256",
+        "reproducibility": "PASS：`--stamp` 显式、产物带 sha256；`pnpm run test` 的 633 与文档一致",
+        "licence": "PASS：只改本仓检查器与文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：14:29 那份（`--tests 632`）是**我以为的数量**，不是实测；权威指针用这一份。两份绿都保留，取代关系写在这里",
+        "adversary": "反例一：沿用 14:29 那份当终跑——被拒：它的输入（632）与实测（633）不一致，绿得没有意义；反例二：把 `--tests` 改成可选不传——被拒：不传就只能 `skipped`，那正是本轮抓到的问题形状"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:35:00.000Z --tests 632（同一命令里 pnpm run test 报 633）",
+        "artifact": "data/results/listing-2026-11-02T14-35-00.000Z.json",
+        "sha256": "2210bcbd3461c11ede6154c2a5875df5fb18742d14781638c7e1f8264d352c29",
+        "outcome": "GREEN 15/15（输入是 632，实测是 633）——这次绿证明的只是「文档与输入一致」，不是「数字对」"
+      }
+    },
+    {
+      "id": "R62-S25",
+      "batch": "R62",
+      "step": "**文案检查器的权威终跑（15/15）**：把测试数改成实测的 **633**（`registry-wait` 是 10 条，不是 9 条）后重跑，两条计数断言同时绿——这份才是「数字与实跑一致」的绿",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "audit/AUDIT_2026-11-02_R62.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：`test-count-matches` 2 条声明均为 633、`test-count-is-not-vacuous` 在 10 份文档里找到 2 条；版本 0.3.2、DSH 区间 4 处、18 条证据路径全部带 sha256",
+        "reproducibility": "PASS：`--stamp` 显式、产物带 sha256；`pnpm run test` 与文档同为 633",
+        "licence": "PASS：只改本仓检查器与文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：14:35 那份绿（输入 632）被这份取代；取代关系与理由写在这里，两份产物都保留",
+        "adversary": "反例一：沿用 14:35 那份——被拒：它的输入与实测差 1，绿的只是「文档自洽」；反例二：把 `--tests` 改成默认不传——被拒：不传就只能 `skipped`，正是本轮抓到的问题形状"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T14:36:00.000Z --tests 633",
+        "artifact": "data/results/listing-2026-11-02T14-36-00.000Z.json",
+        "sha256": "2c209b0d855f092cbe31d1012e0c78412514be05e3256df984f44736c6aa43bf",
+        "outcome": "GREEN 15/15 · version 0.3.2 · 测试数 2 条声明均为 633 · 18 条证据路径带 sha256"
+      }
     }
   ]
 }

@@ -688,3 +688,19 @@
 - 结果：① 查明 R61 的 `upgrade-visible: failed` 来自探针在 **≈500ms** 就收工（加载态走失败视图、终止条件把 `error: true` 当判），而同一路由 Node 直连 815ms、页面内 fetch 也 200；② 修后真机 **16/16 全过**：`upgrade-visible: passed`（4 桶，1530ms）+ `upgrade-same-source: passed`（3/190/0/2 与 CLI 逐项相同）；③ 「什么算已经回答了」抽成纯函数，`loading`/`pending` 一律不算判——这是同类错误第三次出现（R50/R51/R61）后的机器强制；④ 四条负对照（两条单元、两条真机）各自真红并保留产物；⑤ **没做到的也写清楚**：registry 不可读那条只能在单测里证、一次 `--upgrade-wait-ms 0` 的运行无产物、300ms 预算第二次复跑没生效
 - 实测：**623 测试 / 0 fail**（611 → 623）· 9 门 ALL GREEN · `--mutate` 9/9 · 真机 16/16 · 判据/四桶/阈值一字未动
 - 反思：这轮最值得记的不是「修好了」，而是**上一轮的结论本身就是一条没被检查过的读数**。R61 把「页面 fetch pending」写进 HANDOFF 当事实，而产物里同时躺着「路由 815ms 就答了」和「探针 500ms 就收工了」——两个数放在一起就该发现矛盾。教训是：**凡是「没等到」的现象，先问「我们等了多久」，再问「产品为什么不答」。**
+### 2026-11-02 R62 续｜0.3.2 发布 + 发布链的第二个假红（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话，兼 implementer / verifier / adversary）；**发布动作由 HUMAN 执行**
+- SessionID：主会话；台账 `R62-S12` … `R62-S19`；报告 `audit/AUDIT_2026-11-02_R62.md` §9
+- 范围：`scripts/lib/registry-wait.mjs` + `.d.mts`（新）· `tests/unit/registry-wait.test.ts`（新，9）· `scripts/record_publish.mjs`（重试循环 + `install.attempts/waited_ms/wait_budget_ms` + `registry-propagation`）· `data/results/publish-2026-11-02T{14-10-13,14-14-43,14-15-09,14-15-36,14-20-00,14-21-51,14-22-00,14-24-39}*.json`（三红 / 一绿 / 两次正对照 / 过程 / 权威）· `docs/{HANDOFF,BACKLOG}.md` · `INDEX.md` / `AGENTS.md` · `docs/market/{listing_zh,listing_en,submissions/README}.md` · `audit/{AUDIT_2026-11-02_R62.md,step_reviews.json}`
+- 结果：① 四包 `0.3.2` 全部上线（`latest=0.3.2`）；② **发布链在五分钟里产出三份假红**——不是发布失败，是 npm 的匿名/安装文档副本滞后约 4.5 分钟（`npm view` 早已 200，`npm install` 仍 `notarget`）；零代码改动的第四份就是 20/20；③ 修法是**等**：`registry-wait` 只对传播形状重试、默认 5 分钟预算、**E401 之类立刻出结论**；产物记录等待本身，预算耗尽仍是同一答案时明确写成「real failure, not a wait」；④ 第一版正对照的句子在失败分支说「got a real answer」，自己抓到并修掉，两份产物都保留
+- 实测：**623 → 633 测试 / 0 fail** · 9 门 ALL GREEN · `check_listing` 14/14 · `record_publish` **20/20**（`git_dirty=false` / `head 6fde8da`）· 真机正对照 `9.9.9` + 3s 预算 → 2 次尝试 / 16969ms
+- 反思：R53 把取证接到发布链上（对的），但**没有给「副本跟上」留时间**，于是链条稳定地说假话。这和 R50（检查没跑起来报 401）、R51（`pending` 当结论）、R61（`loading` 当失败）是同一个家族的错：**把「还没到时候」当成「结论」**。这已经是第四次，所以这次把它做成纯函数 + 预算，而不是记住「发布后等五分钟」。
+### 2026-11-02 R62 续 2｜文案检查器里一条「永远通过的断言」（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R62-S20` … `R62-S23`；报告 `audit/AUDIT_2026-11-02_R62.md` §10
+- 范围：`scripts/check_listing.mjs`（计数正则改成三种写法 + 新增 `test-count-is-not-vacuous`）· `README.md` / `README.zh-CN.md`（徽章与正文的测试数 542 / 623 → 633）· `data/results/listing-2026-11-02T{14-26,14-27,14-28,14-29}-00.000Z.json`（空转 / 两条红 / 终跑）
+- 结果：① `test-count-matches` 一直报 `0 claim(s)`——`\b` 是 ASCII 词边界，跟在中文「测试」后面永不成立，所以这条断言**从来没检查过任何东西**；② README 徽章里的 `tests: 542` 因此僵了三轮，直到本轮传 `--tests` 才暴露；③ 修好后同一条断言依次点名徽章与正文，两次红都保留；④ 新增守卫「传了数字却找到 0 条声明 → 红」，`check_listing` 14 → 15 条
+- 实测：**633 测试 / 0 fail** · 9 门 ALL GREEN · `check_listing` **15/15** · `record_publish` 20/20（`git_dirty=false`）
+- 反思：这是同一主题的第四次——R50「检查没跑起来」、R51「`pending` 当结论」、R61「`loading` 当失败」、本轮「空转的断言」。四次都是**「没有观测」被当成「观测结果是好的」**。所以这次除了改正则，还加了一条专门盯「空转」的守卫：门可以绿，但必须先证明它看见过东西。
