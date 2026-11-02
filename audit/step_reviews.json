@@ -8467,6 +8467,28 @@
         "sha256": "271dd56af6980a63c34d1cad851575bfb81bf1d7126f199aa39a3c20af8b95e0",
         "outcome": "ALL GREEN · 9 gates · 593 tests · check_listing 14/14"
       }
+    },
+    {
+      "id": "R60-S4",
+      "batch": "R60",
+      "step": "**D5 窗口内重读（采证）**：`#11813` 窗口 `2026-11-01T20:24:37Z → 2026-11-15T20:24:37Z` 内重读；reactions **0/10**、外部引用 **0/1**、周下载 **634** 但 `single-day-burst`（**不算需求**）→ **`pending`**；没有新证据，不改变 D5 判定",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：三源读数与 R56 首跑一致；burst 仍不算需求；窗口未关 → `pending`；三个阈值（≥10 / ≥1 / ≥20）一字未动",
+        "reproducibility": "PASS：`d5-evidence-2026-11-02T12-00-00-000Z.json` 带 sha256；同命令可复跑；下载从基线产物读取并用同一个 `classifyDownloadShape` 复算",
+        "licence": "PASS：只读 GitHub GraphQL / search 与 npm 公开数据",
+        "ssot": "PASS：产物有 produced_by/generated_at/schema_version/sha256；`d5_verdict: pending`；没有写成 pass/fail",
+        "adversary": "反例一：把 634 周下载当需求——被拒：`single-day-burst` 不算；反例二：窗口未关就写 pass/fail——被拒：`pending`；反例三：把一次重读当新证据——被拒：步骤与 HANDOFF 都写「没有新证据」"
+      },
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --post https://github.com/deepseek-ai/deepseek-harness/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z --stamp 2026-11-02T12:00:00.000Z",
+        "artifact": "data/results/d5-evidence-2026-11-02T12-00-00-000Z.json",
+        "sha256": "a99b7481f6f454b261c263bd3e62dee9d8bf2a64ec08c9e590311d645b33198c",
+        "outcome": "D5 · pending · reactions 0/10 · references 0/1 · downloads 634 (single-day-burst)/20"
+      }
     }
   ]
 }
