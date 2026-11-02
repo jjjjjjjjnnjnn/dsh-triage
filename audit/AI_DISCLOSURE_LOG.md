@@ -750,6 +750,16 @@
 - 实测：**683 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15
 - 反思：这一轮三件事的共同点是**「校验/输出写在了错的地方」**——日期校验在没人消费的字段上（R66）、打印路径与实际写入分离（记录器）、D5 的窗口起点用了一个会把 2 月 30 日滚成 3 月 2 日的解析器。功能写对了不等于位置写对了。
 
+### 2026-11-02 R68｜面板时延分布（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R68-S1` … `R68-S2`；报告 `audit/AUDIT_2026-11-02_R68.md`
+- 范围：`scripts/lib/latency-shape.mjs` + `.d.mts`（新，8 条单测）· `scripts/record_client_latency.mjs`（新）· `tests/unit/latency-shape.test.ts`（新）· `audit/blind_spots.json`（`BS-54` 收窄）· `README(.zh-CN).md`（683 → 691）· `docs/{HANDOFF,ROADMAP}.md` · `INDEX.md` / `AGENTS.md` · `data/results/client-latency-2026-11-02T21-40-00.000Z.json`
+- 结果：① `BS-54` 挂了六轮说「没有分布」，其实磁盘上已有 36 份产物、25 次 `tab_ms`——**缺的是加法不是测量**；② 真实运行 **n=21 · 中位 921ms · p90 2439ms · 最慢 5557ms**，而那个 **9510ms 出自 `nc-bucket` 负对照**；③ 把负对照混进去算，p90 会从 2.4s 变 **7.2s**（凭空多出 3 倍长尾），所以「必须分组」不是洁癖而是正确性；④ 长尾成因仍未答（产物不记录机器负载），**因此没动任何路由预算**
+- 实测：**691 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15
+- 反思：这一轮最值钱的动作是**先怀疑「盲区描述」本身**——`BS-54` 写的是「没有 N 次重复」，但真正缺的是「把已有的 N 次加起来」。以后写盲区时，先问一句「这个数据是不是其实已经在磁盘上了」。
+
+
 
 
 

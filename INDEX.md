@@ -1,6 +1,6 @@
 # 项目全局检索与知识索引中心
 
-> **Stand**: R67 (2026-11-02，**交付轮**：`windowOf` 改用 `parseInstant`（`2026-02-30` 不再被滚成 3/2 混进判定）；记录器统一 `writeEvidence()`（打印路径 = 实写路径）+ 治理测试盯「收 `--out` 却硬编码打印」；`registry.posted_on` 与 D5 产物 `window.posted_on` 必须指同一时刻；`--fixtures` 的绝对路径漏已修；683 测试)｜**下一件事：D5 关窗读数（2026-11-15）**
+> **Stand**: R68 (2026-11-02，**交付轮**：`BS-54` 收窄成分布——真实运行 n=21 · 中位 0.92s · p90 2.4s · 最慢 5.6s；那个 9510ms 是**负对照**；纯函数把「单次不算分布 / `unmeasured` 不是 0 / 负对照必须分组」钉成 8 条单测；691 测试)｜**下一件事：D5 关窗读数（2026-11-15）**
 
 ## 🔍 按需求快速索引
 
@@ -8,6 +8,7 @@
 | :--- | :--- | :--- |
 | **交接入口** | `docs/HANDOFF.md` | 五分钟检查 / 当前批次 / 下一位 agent 的第一件事 / 真实踩过的坑 |
 | **可用性 smoke（R65）** | `scripts/record_usability_smoke.mjs` | 匿名装**已发布**的 `dsh-triage` → 在**临时项目目录**（cwd 不是仓库）跑 `--help` / 无参 `status` / `audit` / `upgrade --to next --card`，断言 exit code、行数、卡片分桶与**边界句**。真机 **6/6**（`data/results/usability-2026-11-02T18-50-00.000Z.json`）；负对照 `--version 9.9.9` → `notarget` 双红、exit 1（`…T19-00-00`）。**边界**：第 4 步读本机 profile，卡片数字只描述这台机器 |
+| **面板时延分布（R68）** | `scripts/record_client_latency.mjs` + `scripts/lib/latency-shape.mjs` + `tests/unit/latency-shape.test.ts` | 汇总**既有**产物（36 份 `client-serve-*.json`，**不新跑**）：`summary.tab_ms` 真实运行 **n=21 · min 915 · median 921 · p90 2439 · max 5557**；负对照 **n=4 · median 7692.5 · max 9510**（那个 9510ms 属对照组）；`upgrade.route_ms`（引擎侧）n=5；`upgrade.waited_ms` n=4。三条声称钉死：单次观测不算分布 / `unmeasured` 不是 0 / **负对照必须分组**（混算会把 p90 从 2.4s 抬到 7.2s）；n<10 的 p90 标 `provisory`。**没有动任何路由预算**（属判据轮，判据要等长尾成因） |
 | **证据写出与日期一致性（R67）** | `scripts/lib/evidence.mjs` + `tests/governance/evidence-and-dates.test.ts` + `scripts/lib/d5-score.mjs#windowOf` | ① `writeEvidence()`：写入 + `.sha256`，**打印路径由同一变量派生**（仓内相对、仓外绝对），已存在拒覆盖；治理测试要求**任何收 `--out` 的脚本**不得把打印路径写死——`--out` 必须影响被打印的那个路径。② `windowOf` 改用 `parseInstant`：不存在的日期**不产出窗口**（修前 `2026-02-30` 被 `Date.parse` 滚成 3/2 并算出一个合法窗口），`+01:00` 与 `Z` 同窗口。③ `registry.posted_on` 与最新 `d5-evidence-*` 的 `window.posted_on` 必须 `epochMs` 相等（按 `post.url` 配对） |
 | **D5 读数口径（R54，R67 加固）** | `scripts/lib/d5-score.mjs` + `scripts/lib/download-shape.mjs` + `docs/specs/D5-measurement.md` | `judgeD5` / `windowOf` 纯函数；**三个阈值冻结**（10/1/20）；burst 不算需求；读不到记 `unmeasurable`。R67 只加固日期解析与入口校验，**判定顺序与阈值未动**；`no-post` 与「日期不可读」仍未分开（要改 spec） |
 | **上架登记规则（R56→R64→R66→R67）** | `scripts/lib/posting.mjs` + `tests/unit/posting.test.ts` + `scripts/check_listing.mjs`（第 13 条） | `posted` 的草稿必须有**恰好一个**可验平台的 URL（discussion / issue / X）+ **真实存在**且带显式时区的 instant（`Z` 或 `±hh:mm`）。**这条规则四轮错三次，每次都在匹配器**：R56 只认 discussion / R64 只认 `Z` / R65 放行了 `2026-02-30`（`Date.parse` 滚成 3/2）与 `NaN`。现在 `parseInstant()` 做**民用字段往返校验**，双语 channel 判歧义，14 条单测钉死；产物记 `inputs.drafts_registry_sha256` 供审计 |

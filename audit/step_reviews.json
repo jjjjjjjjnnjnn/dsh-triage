@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R67 (2026-11-02)",
+  "stand": "R68 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10273,6 +10273,55 @@
         "artifact": "data/results/listing-2026-11-02T21-20-00.000Z.json",
         "outcome": "GREEN 15/15 · 测试数 683 · 注册表摘要 42ab4db9…",
         "sha256": "d314690ce5fa451e04b5d3b47a1ede7a27da435dc95cf400a568551ed066fa4f"
+      }
+    },
+    {
+      "id": "R68-S1",
+      "batch": "R68",
+      "step": "**`BS-54` 收窄成分布：真实运行中位 921ms、p90 2439ms、最慢 5557ms；而那个 9510ms 是负对照** —— 36 份既有 `client-serve-*.json` 不新跑，只用纯函数汇总",
+      "changed": [
+        "scripts/lib/latency-shape.mjs",
+        "scripts/lib/latency-shape.d.mts",
+        "scripts/record_client_latency.mjs",
+        "tests/unit/latency-shape.test.ts",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`measurement` n=21 · min 915 · median 921 · p90 2439 · max 5557；`negative-control` n=4 · median 7692.5 · max 9510——**那个 9510ms 落在对照组**，而真实运行仍有 2.4s 长尾",
+        "reproducibility": "PASS：只读 `data/results/`，`--stamp` 显式，产物含 `sources.artifacts=36` 与每组的慢尾三例（含文件名），任何人可重算",
+        "licence": "PASS：只读本仓自己的产物；没有引入外部数据或第三方素材",
+        "ssot": "PASS：报告不被当成新测量——`limits[]` 写明「一次性便利样本、单机单运行时、负载未记录」，并说明它不归因长尾",
+        "adversary": "反例：把全部 25 次混在一起算出「p90 ≈ 7.2s」——被拒：其中 4 次是**故意缩短等待**的负对照，混进去等于用实验条件解释用户体验"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_latency.mjs --stamp 2026-11-02T21:40:00.000Z",
+        "artifact": "data/results/client-latency-2026-11-02T21-40-00.000Z.json",
+        "outcome": "GREEN：四组序列（summary 真实 21 / summary 对照 4 / route 引擎 5 / waited 4）；`ok: true`；p90 在 n<10 的组标 provisory",
+        "sha256": "039dbbd2d1df671019a687d55908220f8a2674bf36189b6e29d7fd0d824443ca"
+      }
+    },
+    {
+      "id": "R68-S2",
+      "batch": "R68",
+      "step": "**收口：对外文档自洽且 15/15** —— 延迟分布这轮把测试数从 683 推到 691",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "INDEX.md",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 691（2 条声明）· 19 条证据路径 · 注册表摘要 `42ab4db9…`",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式，产物带 sha256",
+        "licence": "PASS：纯文档与检查器，无外部素材",
+        "ssot": "PASS：徽章与正文两处测试数同时等于 `--tests`；没有放宽任何断言",
+        "adversary": "反例：认为延迟报告与对外文案无关所以不用复跑——被拒：`INDEX.md` 与 `HANDOFF.md` 都是治理门的输入，而 README 是 `check_listing` 的输入"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T21:50:00.000Z --tests 691",
+        "artifact": "data/results/listing-2026-11-02T21-50-00.000Z.json",
+        "outcome": "GREEN 15/15 · 测试数 691",
+        "sha256": "bf258da71b0b9321d08cc3ee6a07e89a52bfe1e7feb7304e535449280a870511"
       }
     }
   ]
