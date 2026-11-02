@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R69 (2026-11-02)",
+  "stand": "R70 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10364,6 +10364,77 @@
         "artifact": "data/results/listing-2026-11-02T18-52-00.000Z.json",
         "sha256": "32a87fd10ffaab4b9b52acb1d5e851faa0194076ff8daf8c8abc87f37555faa6",
         "outcome": "GREEN 15/15：8 篇草稿引用的产物全部可哈希，正文路径与注册表一致"
+      }
+    },
+    {
+      "id": "R70-S1",
+      "batch": "R70",
+      "step": "**判据改动（HUMAN 批准）：`no-post` 只表示「真的没发帖」** —— 有贴子 URL 但窗口起点读不出时，旧代码会宣称「没人发帖」；现在拆成 `unmeasurable` + `reason: window-start-unreadable`",
+      "changed": [
+        "scripts/lib/d5-score.mjs",
+        "scripts/lib/d5-score.d.mts",
+        "tests/unit/d5-score.test.ts",
+        "docs/specs/D5-measurement.md",
+        "audit/SIGNOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：N2（有 URL、缺 `posted_on`）→ `unmeasurable`；N2b（完全没帖子）→ 仍 `no-post`；N8（`2026-02-30`）→ `unmeasurable`；`tests/unit/d5-score.test.ts` **11 条全过**，阈值 10/1/20 与判定顺序未动",
+        "reproducibility": "PASS：命令与 `--stamp` 都在产物里；单测与真跑分离，纯函数可离线复算",
+        "licence": "PASS：只动仓内代码与产物；没有引入外部素材或第三方数据",
+        "ssot": "PASS：spec §3 表格拆行、§5 负对照改 N2 + 新增 N2b、§6 记「已签 2」；`SIGNOFF.md` 记 HUMAN 原话与未逐条复核的两点",
+        "adversary": "反例：把「日期读不出」也判 `fail`——被拒：`fail` 是关于产物的结论，而这里我们对产物一无所知；铁律是「读不到 ≠ 观察到没有」（`BS-48`）"
+      },
+      "real_test": {
+        "command": "node --test tests/unit/d5-score.test.ts（11 条）+ node scripts/check_listing.mjs --stamp 2026-11-02T18:58:00.000Z --tests 696",
+        "artifact": "data/results/listing-2026-11-02T18-58-00.000Z.json",
+        "outcome": "GREEN 15/15：改动之后对外文档仍然自洽（测试数 696）",
+        "sha256": "aaeb7de94c4c8e4bab39eef685ab938ebfa0abd85c1e6a9af9820a565e799505"
+      }
+    },
+    {
+      "id": "R70-S2",
+      "batch": "R70",
+      "step": "**A：`record_client_serve` 记录运行负载**（`BS-54` 的另一半）—— R68 有分布但无法归因长尾，因为产物记结果、不记条件",
+      "changed": [
+        "scripts/lib/load-sample.mjs",
+        "scripts/lib/load-sample.d.mts",
+        "scripts/record_client_serve.mjs",
+        "tests/unit/load-sample.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：真机跑 13/17 步 passed（其余 `screenshot` / `english-screen` / `clipboard-copy` 是未启用的可选项，`screenshot:unmeasured` 属设计），产物新增 `conditions.cpu.observed_busy_percent = 39.1`（24 核）与 `conditions.window` 起止",
+        "reproducibility": "PASS：命令与 `--stamp` 都在产物里；单测与真跑分离，纯函数可离线复算",
+        "licence": "PASS：只动仓内代码与产物；没有引入外部素材或第三方数据",
+        "ssot": "PASS：`loadavg_usable: false` 与 `limits` 一起写进产物，避免下一个人再试 `os.loadavg()`（Windows 恒 0，R37 已付学费）",
+        "adversary": "反例：用 `os.loadavg()` 当负载——被拒：Windows 上恒为 0，会得到一条「机器全程空闲」的假读数；改用 `os.cpus()` 累计时间差"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install",
+        "artifact": "data/results/client-serve-2026-11-02T18-53-48.472Z.json",
+        "outcome": "GREEN：served · tab_ms 919 · route_ms 464 · waited_ms 505 · busy 39.1% · 13 passed / 4 unmeasured-by-design",
+        "sha256": "d29e0802aa69f671fbf71c52b5a99cb01a8b4405aac9bd5aef7509ff874759a3"
+      }
+    },
+    {
+      "id": "R70-S3",
+      "batch": "R70",
+      "step": "**重算分布（n=21 → 22）并在 `BS-54` 里写进「39% 负载下仍然 919ms」这条反例**",
+      "changed": [
+        "audit/blind_spots.json",
+        "scripts/lib/load-sample.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：`summary.tab_ms` 真实运行 **n=22 · min 915 · median 921 · p90 2439 · max 5557**（与 n=21 时同形）；负对照 n=4 不变",
+        "reproducibility": "PASS：命令与 `--stamp` 都在产物里；单测与真跑分离，纯函数可离线复算",
+        "licence": "PASS：只动仓内代码与产物；没有引入外部素材或第三方数据",
+        "ssot": "PASS：新产物 `client-latency-2026-11-02T18-56-00.000Z.json` 与旧产物并存，可对比「加一次观测前后」的分布形状",
+        "adversary": "反例：把「39% 负载 + 919ms」读成「负载与长尾无关」——被拒：一次观测不能排除；它只说明**中等负载不足以造成长尾**，足够高的负载仍未测到"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_latency.mjs --stamp 2026-11-02T18:56:00.000Z",
+        "artifact": "data/results/client-latency-2026-11-02T18-56-00.000Z.json",
+        "outcome": "GREEN：四条序列 n=22 / 4 / 6 / 5；median 921 · p90 2439 · max 5557",
+        "sha256": "49de8340a00503dcdf8633895521f2366c2821aae3de1b252a6aa43bb75328e1"
       }
     }
   ]

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_latency.mjs",
+  "generated_at": "2026-11-02T18:56:00.000Z",
+  "sources": {
+    "artifacts": 37,
+    "unreadable": 0,
+    "measurement_runs": 22,
+    "negative_control_runs": 4
+  },
+  "series": [
+    {
+      "id": "summary.tab_ms",
+      "kind": "browser",
+      "group": "measurement",
+      "n": 22,
+      "min": 915,
+      "median": 921,
+      "p90": 2439,
+      "max": 5557,
+      "provisory": false,
+      "slowest": [
+        {
+          "ms": 5557,
+          "at": "2026-11-02T12:41:25.626Z",
+          "source": "client-serve-2026-11-02T12-41-25.626Z.json"
+        },
+        {
+          "ms": 2458,
+          "at": "2026-11-01T21:30:00.000Z",
+          "source": "client-serve-2026-11-01T21-30-00.000Z.json"
+        },
+        {
+          "ms": 2439,
+          "at": "2026-11-01T18:30:00.000Z",
+          "source": "client-serve-2026-11-01T18-30-00.000Z.json"
+        }
+      ]
+    },
+    {
+      "id": "summary.tab_ms",
+      "kind": "browser",
+      "group": "negative-control",
+      "n": 4,
+      "min": 920,
+      "median": 7692.5,
+      "p90": 9510,
+      "max": 9510,
+      "provisory": true,
+      "slowest": [
+        {
+          "ms": 9510,
+          "at": "2026-11-02T12:49:11.027Z",
+          "source": "client-serve-nc-bucket-2026-11-02T12-49-11.027Z.json"
+        },
+        {
+          "ms": 8228,
+          "at": "2026-11-02T12:57:04.562Z",
+          "source": "client-serve-nc-shortwait-2026-11-02T12-57-04.562Z.json"
+        },
+        {
+          "ms": 7157,
+          "at": "2026-11-02T12:54:33.384Z",
+          "source": "client-serve-nc-bucket-2026-11-02T12-54-33.384Z.json"
+        }
+      ]
+    },
+    {
+      "id": "upgrade.route_ms",
+      "kind": "engine",
+      "group": "measurement",
+      "n": 6,
+      "min": 464,
+      "median": 961,
+      "p90": 3349,
+      "max": 3349,
+      "provisory": true,
+      "slowest": [
+        {
+          "ms": 3349,
+          "at": "2026-11-02T15:09:39.248Z",
+          "source": "client-serve-2026-11-02T15-09-39.248Z.json"
+        },
+        {
+          "ms": 1171,
+          "at": "2026-11-02T12:41:25.626Z",
+          "source": "client-serve-2026-11-02T12-41-25.626Z.json"
+        },
+        {
+          "ms": 1107,
+          "at": "2026-11-02T12:39:28.439Z",
+          "source": "client-serve-2026-11-02T12-39-28.439Z.json"
+        }
+      ]
+    },
+    {
+      "id": "upgrade.waited_ms",
+      "kind": "browser",
+      "group": "measurement",
+      "n": 5,
+      "min": 505,
+      "median": 1530,
+      "p90": 2045,
+      "max": 2045,
+      "provisory": true,
+      "slowest": [
+        {
+          "ms": 2045,
+          "at": "2026-11-02T15:09:39.248Z",
+          "source": "client-serve-2026-11-02T15-09-39.248Z.json"
+        },
+        {
+          "ms": 1532,
+          "at": "2026-11-02T12:41:25.626Z",
+          "source": "client-serve-2026-11-02T12-41-25.626Z.json"
+        },
+        {
+          "ms": 1530,
+          "at": "2026-11-02T13:33:17.447Z",
+          "source": "client-serve-2026-11-02T13-33-17.447Z.json"
+        }
+      ]
+    }
+  ],
+  "ok": true,
+  "problems": [],
+  "reading": {
+    "typical": 921,
+    "tail": 2439,
+    "boundary": "tab_ms includes the settings navigation and clicks; it is not the engine cost. route timings are the engine side."
+  },
+  "limits": [
+    "one machine, one runtime (0.2.1-rc.4 sandbox), convenience sample: the runs were taken for other reasons",
+    "the four slowest first-screen runs cluster in one window; machine load was not recorded, so this does not attribute the tail",
+    "p90 below ten observations is flagged provisory and must not be quoted as a percentile",
+    "this report adds no new measurement: it sums up runs that already existed (that was the point)"
+  ]
+}

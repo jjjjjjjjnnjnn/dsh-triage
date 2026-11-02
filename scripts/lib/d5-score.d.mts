@@ -39,6 +39,11 @@ export interface D5Evidence {
     weekly_downloads: D5Number
   }
   post: { url: string; number: number; author: string } | null
+  /**
+   * Why `unmeasurable` (R70): `window-start-unreadable` when a post exists but its date cannot be read,
+   * `number-unreadable` when one of the three sources failed. Null for every other verdict.
+   */
+  reason: 'window-start-unreadable' | 'number-unreadable' | null
 }
 
 export declare function windowOf(input: { postedOn?: unknown; now?: unknown }): D5Window

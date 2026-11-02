@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R69 (2026-11-02)",
+  "stand": "R70 (2026-11-02)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -434,9 +434,9 @@
     {
       "id": "BS-54",
       "area": "面板 / 设置页签的答案时延",
-      "cannot_see": "R62 曾把「屏幕还没回答」和「屏幕坏了」分开之后，同一天四次真机跑里有一次 summary 那条 fetch 停在「正在加载诊断数据…」**9510ms**；当时只有一个数，分不清冷启动 / 机器负载 / 路由真的挂住。\n**R68 已把分布做出来**（`scripts/record_client_latency.mjs` 汇总 36 份既有产物，不新跑）：真实运行 **n=21 · min 915 · median 921 · p90 2439 · max 5557**；负对照 **n=4 · median 7692.5 · max 9510**。结论有两条：① **那个 9510ms 是负对照跑出来的**，不是真实运行的常态；② 真实运行也有长尾（p90 2.4s、最慢一次 5.6s）。\n仍然看不见的：① 长尾的**原因**——产物不记录机器负载，四次慢的真实运行里两次在 11-01 晚间、一次 11-02 中午，与「同时段还在跑另一个 Host + 安装」无法区分；② `tab_ms` 里浏览器导航与引擎各占多少（只有 9 次升级路由计时，且 n=5 属 provisional）；③ 冷启动 vs 热缓存没有分组（同一个 profile 每次都是新沙盒）。",
-      "mitigation": "① 面板侧不再把 `pending` 写成 `passed`：超预算记 `unmeasured` 并写清等了多久（`describeNoAnswer`），所以「慢」不会伪装成「好」。\n② **R68 用既有产物出了分布**（`data/results/client-latency-2026-11-02T21-40-00.000Z.json`），并把三条声称钉进纯函数与单测：单次观测不算分布、`unmeasured` 不是 0、负对照必须与真实运行分组。\n③ 对外口径随之更新：**可以说「真实运行中位 0.92s、p90 2.4s、最慢 5.6s」，不许说「面板通常 1 秒」**（那会隐掉长尾），也不许再说「一次观测到 9.5 秒」当作产品时延（那是对照组）。\n④ 仍未做：记录每次运行的机器负载（否则长尾仍不可归因）；改路由预算属判据轮，先要长尾的成因。",
-      "owner": "scripts/record_client_latency.mjs（汇总，读 `client-serve-*.json`）· scripts/lib/latency-shape.mjs（纯函数，8 条单测）· data/results/client-latency-2026-11-02T21-40-00.000Z.json · packages/plugin/src/host.ts（summary 路由）· audit/AUDIT_2026-11-02_R68.md"
+      "cannot_see": "R62 曾把「屏幕还没回答」和「屏幕坏了」分开之后，同一天四次真机跑里有一次 summary 那条 fetch 停在「正在加载诊断数据…」**9510ms**；当时只有一个数，分不清冷启动 / 机器负载 / 路由真的挂住。\n**R68 已把分布做出来**（`scripts/record_client_latency.mjs` 汇总 36 份既有产物，不新跑）：真实运行 **n=21 · min 915 · median 921 · p90 2439 · max 5557**；负对照 **n=4 · median 7692.5 · max 9510**。结论有两条：① **那个 9510ms 是负对照跑出来的**，不是真实运行的常态；② 真实运行也有长尾（p90 2.4s、最慢一次 5.6s）。\n**R70 补上了条件**：`record_client_serve` 现在记录整轮 CPU 占用（`conditions.cpu.observed_busy_percent`，来自 `os.cpus()` 累计时间差；不用 `os.loadavg()`，Windows 上恒 0）。第一次带条件的真机跑：**负载 39.1% / 24 核，`tab_ms` 仍是 919ms** —— 所以「中等负载」不足以解释长尾。\n仍然看不见的：① 长尾的**原因**——产物不记录机器负载，四次慢的真实运行里两次在 11-01 晚间、一次 11-02 中午，与「同时段还在跑另一个 Host + 安装」无法区分；② `tab_ms` 里浏览器导航与引擎各占多少（只有 9 次升级路由计时，且 n=5 属 provisional）；③ 冷启动 vs 热缓存没有分组（同一个 profile 每次都是新沙盒）；④ **长尾那几次跑没有负载读数**——条件记录是 R70 才加的，对历史 4 次慢跑无法回溯；⑤ 只有一个 39% 的样本，「高负载会不会造成长尾」仍未测。",
+      "mitigation": "① 面板侧不再把 `pending` 写成 `passed`：超预算记 `unmeasured` 并写清等了多久（`describeNoAnswer`），所以「慢」不会伪装成「好」。\n② **R68 用既有产物出了分布**（`data/results/client-latency-2026-11-02T21-40-00.000Z.json`），并把三条声称钉进纯函数与单测：单次观测不算分布、`unmeasured` 不是 0、负对照必须与真实运行分组。\n③ 对外口径随之更新：**可以说「真实运行中位 0.92s、p90 2.4s、最慢 5.6s」，不许说「面板通常 1 秒」**（那会隐掉长尾），也不许再说「一次观测到 9.5 秒」当作产品时延（那是对照组）。\n④ **R70 已做**：每次 `record_client_serve` 都记 CPU 占用与运行窗口；但历史慢跑没有条件读数，只能从下一次开始积累。⑤ 仍未做：主动施加可复现的负载（`record_probe_matrix --load` 那套）来测「高负载是否真的造成长尾」；改路由预算属判据轮。",
+      "owner": "scripts/record_client_latency.mjs（汇总，读 `client-serve-*.json`）· scripts/lib/latency-shape.mjs（纯函数，8 条单测）· data/results/client-latency-2026-11-02T21-40-00.000Z.json · packages/plugin/src/host.ts（summary 路由）· audit/AUDIT_2026-11-02_R68.md · scripts/lib/load-sample.mjs（负载采样，4 条单测）· data/results/client-serve-2026-11-02T18-53-48.472Z.json（首个带条件的真机跑）"
     },
     {
       "id": "BS-55",

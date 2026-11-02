@@ -769,6 +769,16 @@
 - 自查一条：R65–R68 的部分 `generated_at` 用了**递增的合成值**（最多比真实 UTC 提前约 3 小时）。没有判据比较 `generated_at` 与墙钟（正确：产物必须可复算），所以**读数不受影响**，只削弱了排序线索；从 R69 起改用真实时钟。
 - 反思：**「数字对得上」不等于「可以发」**。这篇长文的每个数都能在产物里找到，但它仍然缺三句话——而那三句恰好是这个产品最容易被误读的地方（怎么开始、判什么、判的是谁的机器）。
 
+### 2026-11-02 R70｜D5 判定表拆行（判据轮）+ 面板负载记录（交付轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；**判据改动经 HUMAN「A，B，同意，开始进行。」**
+- SessionID：主会话；台账 `R70-S1` … `R70-S3`；报告 `audit/AUDIT_2026-11-02_R70.md`
+- 范围：`scripts/lib/d5-score.mjs` + `.d.mts`（判定分支拆行 + `reason`）· `tests/unit/d5-score.test.ts`（N2 改期望 / 新增 N2b / N8 同步）· `docs/specs/D5-measurement.md`（§3 / §5 / §6）· `audit/SIGNOFF.md` · `scripts/lib/load-sample.mjs` + `.d.mts`（新）· `scripts/record_client_serve.mjs`（记录负载 + 校验 `--dsh-main` 必须是文件）· `tests/unit/load-sample.test.ts`（新，4 条）· `audit/blind_spots.json`（`BS-54` 收窄）· `README(.zh-CN).md`（691 → 696）· `docs/{HANDOFF,ROADMAP}.md` · `INDEX.md` / `AGENTS.md` · `data/results/{client-serve-2026-11-02T18-53-48.472Z,client-latency-2026-11-02T18-56-00.000Z,listing-2026-11-02T18-58-00.000Z}.json`
+- 结果：① **B**：`no-post` 从此只表示「真的没发帖」；有 URL 但窗口起点读不出 → `unmeasurable` + `reason`（阈值与判定顺序未动）；② **A**：`record_client_serve` 记录整轮 CPU 占用与运行窗口，首个带条件的真机跑 **39.1% / 919ms**，据此把分布更新到 n=22 并把「中等负载不足以解释长尾」写成 `BS-54` 的反例；③ **顺手抓到的真缺陷**：`--dsh-main` 缺省指向仓库根目录，守卫只 `existsSync` 就放行 → 安装报 `Cannot find module` 并被记成产品失败；现在要求必须是文件
+- 实测：**696 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 15/15
+- 反思：这一轮两半的教训是同一个——**「读不出」和「没发生」必须能分开**。B 把它做进判定表，A 把它做进测量条件（`loadavg_usable: false` 就是在说「这个读数在 Windows 上不存在」）。而那个 `--dsh-main` 缺陷则是反例：一个不存在的配置被解析成了存在的目录，于是「没配好」变成了「装不上」。
+
+
 
 
 

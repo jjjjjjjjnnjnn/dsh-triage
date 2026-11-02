@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R69 (2026-11-02，**采证轮**：X 线程发出 9 小时后重读 D5 —— 仍 `pending`：**0/10 · 0/1 · 634 burst**（live 读取，`d5-evidence-2026-11-02T18-39-04-392Z.json`）；顺带记下一条自查：R65–R68 的部分 `generated_at` 用了**递增的合成值**，比真实 UTC 最多提前约 3 小时，判据不读墙钟所以读数不受影响，但排序线索变弱）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R70 (2026-11-02，**判据轮 + 交付轮**（HUMAN 原话「A，B，同意，开始进行。」）：**B** 把 D5 判定表第一行拆两行——`no-post` 只表示「真的没发帖」，有 URL 但窗口起点读不出 → `unmeasurable` + `reason`；**A** 让 `record_client_serve` 记录运行负载（首个带条件的真机跑：**39.1% 负载下 `tab_ms` 仍 919ms**，所以中等负载不足以解释长尾）；**696 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 判据 + 交付（R70，2026-11-02） | **A、B 两件都做完（HUMAN 原话「A，B，同意，开始进行。」）**。**B（判据轮）**：D5 判定表第一行原本是「没有 `posted_on` **或**没有贴子 URL → `no-post`」，当 URL 明明在手上时这句话是**假话**（工具宣称「没人发帖」而它正拿着链接）。现在拆成两行：**没有 URL** → `no-post`；**有 URL 但窗口起点读不出** → `unmeasurable` + `reason: window-start-unreadable`；数字读不到 → `reason: number-unreadable`。**三个阈值（10/1/20）与判定顺序一字未动**；spec §3/§5/§6、`SIGNOFF.md`（HUMAN 原话）、单测 N2 改期望 + 新增 N2b + N8 同步。**A（交付轮）**：新增 `scripts/lib/load-sample.mjs`（`os.cpus()` 累计时间差——**不用 `os.loadavg()`**，Windows 恒 0 是 R37 的学费）+ `record_client_serve` 在整轮首尾采样，产物新增 `conditions.cpu.observed_busy_percent` 与运行窗口。真机跑 **13/17 passed**（其余是未启用的可选项），`tab_ms 919ms`、`route_ms 464`、`waited_ms 505`，**负载 39.1% / 24 核**。据此重算分布（n=21 → **22**，median 921 / p90 2439 / max 5557，形状不变），并把「39% 负载下仍 919ms」写进 `BS-54` 当作**反例**：中等负载不足以解释长尾，高负载仍未测、历史 4 次慢跑**没有条件读数可回溯**。**顺手抓到的真缺陷**：`--dsh-main` 缺省时被解析成**仓库根目录**，守卫只 `existsSync` 就放行 → `node <repo> plugin install` 报 `Cannot find module` 并记成 `install: failed`（R50 同族：配置没给却像产品坏了）；现在要求**必须是文件**，否则 exit 2 打印期望路径，错误调用产生的红产物已删除。**691 → 696 测试**；9 门 ALL GREEN；`check_listing` **15/15**（`18-58`）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 采证（R69，2026-11-02） | **X 线程发出 9 小时后重读 D5：仍是 0/10 · 0/1 · 634 burst（采证轮）**。① **为什么要重读**：`T-802` 的窗口还在走，而上一次读数是 R64 之前；「帖子发了会不会有人反应」只能靠重读。② **live 读取**（`gh api graphql` + `search/issues` + 基线日序列）：`pending` · reactions **0/10** · 外部引用 **0/1** · 周下载 634 且 `single-day-burst`（按 R52 口径**不算需求**）；窗口 `2026-11-01T20:24:37Z → 2026-11-15T20:24:37Z`。③ **必须一起说的边界**：D5 的 reactions 只数 **#11813 那个 discussion**，X 上的赞按口径不进这个数——所以这条只说明「跨平台没有回流到 discussion」，**不能**说明「没人看见」。④ **自查记一笔**：R65–R68 的部分产物 `generated_at` 用了递增的合成值（18:20 → 21:50），而真实 UTC 当时是 17:35 → 18:39，最多提前约 **3 小时**；没有任何判据比较 `generated_at` 与墙钟（正确，产物必须可复算），所以**读数不受影响**，但按时间排序时会显得靠后——从 R69 起改用真实时钟。⑤ 产物 `data/results/d5-evidence-2026-11-02T18-39-04-392Z.json`（`results-privacy` 复绿）。**冻结项一字未动**：D5 三个阈值 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R68，2026-11-02） | **`BS-54` 收窄成分布：那个 9510ms 是负对照，真实运行中位 921ms（交付轮）**。① **盲区「没有分布」其实是「没人加起来」**：磁盘上已有 **36 份** `client-serve-*.json`、**25 次** `tab_ms`，而 `BS-54` 一直拿一次观测说话。新纯函数 `scripts/lib/latency-shape.mjs` + `scripts/record_client_latency.mjs` 汇总它们（**不新跑**），四条序列分开报：`summary.tab_ms` 真实运行 **n=21 · min 915 · median 921 · p90 2439 · max 5557**；负对照 **n=4 · median 7692.5 · max 9510**；`upgrade.route_ms`（引擎侧）n=5 · median 1107；`upgrade.waited_ms` n=4 · median 1531。② **两条结论必须一起说**：那个 9510ms 出自 `nc-bucket` 负对照，**不是真实运行的常态**（中位 0.92s，所以「打开就有一屏答案」多数情况成立）；但真实运行**确实有长尾**（p90 2.4s、最慢 5.6s），所以对外**不许**写「面板通常 1 秒」，也**不许**再把 9.5s 当产品时延。③ **分组是这轮唯一的判断题**：把 4 次负对照混进去算，p90 会从 **2439ms 变成 7157ms**（凭空多出 3 倍长尾）；只盯中位数又会得出「负对照也只慢到 7.7s，说明是机器慢」的误判。三条声称钉成 8 条单测：**单次观测不算分布** / **`unmeasured` 不是 0** / **负对照必须与真实运行分组**，外加 `n<10` 的 p90 标 `provisory`。④ **`BS-54` 只是收窄、没有关掉**：长尾的**成因仍未答**——产物不记录机器负载，四次慢的真实运行跨两个下午，与「同段还在跑另一个 Host + 安装」无法区分；也没有冷启动/热缓存分组。**因此没有动任何路由预算**（属判据轮，判据要等成因）。⑤ **683 → 691 测试**；9 门 ALL GREEN；`check_listing` **15/15**（`21-50`，测试数 691）；产物 `client-latency-2026-11-02T21-40-00.000Z.json`（含每组慢尾三例与文件名，可逐条复核）；报告 `audit/AUDIT_2026-11-02_R68.md`。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
 | 交付（R67，2026-11-02） | **把 R66 adversary 留下的三条待办做掉；D5 三个阈值一字未动（交付轮）**。① **`T-836`：D5 窗口起点不再接受不存在的时刻** —— `windowOf()` 之前用 `Date.parse`，它把 `2026-02-30T12:00:00Z` **滚成 3 月 2 日**并返回有限 epoch，于是窗口整体推后两天、判定照样算得出来且看起来合法；现在改用 `parseInstant`：`2026-02-30` / `2026-13-01` / 裸日期 / `99:99:99` 一律**不产出窗口**，而 `+01:00` 与 `Z` 两种拼法给出**同一个**窗口（单测 `deepEqual` 钉死）。**残留如实写**：无窗口时 `judgeD5` 报 `no-post`，对「日期是垃圾」不准确——CLI 入口（R66）已先挡，这里是第二道；拆 `unmeasurable` 要改判定顺序 + spec + 签字，本轮没做。② **`T-835`：记录器的打印路径 = 实写路径** —— 一天内同一个 bug 被抄了两次，根因是每个记录器各自拼输出；抽出 `scripts/lib/evidence.mjs#writeEvidence()`（写入 + 同目录 `.sha256` + 打印值由同一变量派生；已存在则拒绝覆盖），`record_d5_evidence` 改用它，`%TEMP%` 对照实测打印出的是**真实落盘路径**。**并做成机器检查**：任何**收 `--out`** 的脚本不得出现 `ssot data/results/` 硬编码打印（45 个收 `--out` 的脚本里只有 1 个命中、已修；其余 5 处硬编码的文件都不收 `--out`，打印是对的）。③ **`T-837`：两份手写日期必须指同一时刻** —— 新增治理测试，按 `post.url` 把最新 `d5-evidence-*` 产物与 `registry.json` 的 `posted` 条目对上，比 `parseInstant().epochMs`（比时刻不比字符串）。④ **顺手修掉一个隐私漏**：`--fixtures` 指向 `%TEMP%` 时，产物 `sources.reactions` 写了 `fixtures:C:\Users\<name>\…` —— **`results-privacy` 当场红**（红产物删除、未提交）；改成只写 fixture 目录名，重跑后匹配 `Users|AppData` = **0**。⑤ **677 → 683 测试**；9 门 ALL GREEN；`check_listing` **15/15**（`21-20`，测试数 683）；自检产物 `d5-selftest-2026-11-02T21-10-00-000Z.json`（`pending` · 3/10 · 0/1 · 634 burst，**fixtures 构造值、不是新测量**）。**冻结项一字未动**：`admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
@@ -111,6 +112,24 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R70（2026-11-02，判据轮 + 交付轮）
+
+**状态**：**696 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **15/15**（`18-58`）；
+**D5 `pending`**（0/10 · 0/1 · 634 burst），窗口到 `2026-11-15T20:24:37Z`。
+
+**B（判据改动，已批）**：`no-post` 从此只表示「真的没发帖」。有 URL 但窗口起点读不出 → `unmeasurable`，
+理由先写在 `SIGNOFF.md` 里。阈值与判定顺序未动。
+
+**A（负载记录）**：`conditions.cpu.observed_busy_percent` 与运行窗口进了 `client-serve` 产物；
+首个带条件的真机跑是 **39.1% 负载 / 919ms**——中等负载不足以解释长尾，而历史 4 次慢跑无法回溯条件。
+
+**下一位的第一件事**：仍是 **D5 关窗读数**（`2026-11-15T20:24:37Z`）。**关窗前重跑都是 `pending`，不算新证据。**
+
+**本轮新增的坑**：
+1. **缺省值指向「看起来合理的地方」最危险**：`--dsh-main` 缺省 = 仓库根目录，`existsSync` 通过，于是错误调用被记成产品失败。
+2. **负载读数要写明它不是什么**：`os.loadavg()` 在 Windows 恒 0；产物里现在有 `loadavg_usable: false` 提醒下一个人。
+3. **条件记录只对未来的运行有效**：历史慢跑没有负载读数，不能假装能归因。
 
 ## R69（2026-11-02，采证轮）
 

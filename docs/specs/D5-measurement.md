@@ -30,11 +30,19 @@
 
 | 条件 | `verdict` | `counts_as_demand` |
 |---|---|---|
-| 没有 `posted_on` 或没有贴子 URL | `no-post` | ❌ |
-| 任一数为 `unreadable` | `unmeasurable` | ❌ |
+| **没有贴子 URL**（真的没发） | `no-post` | ❌ |
+| **有贴子 URL，但 `posted_on` 读不出**（缺失 / 不存在的日期 / 非 instant） | `unmeasurable`（`reason: window-start-unreadable`） | ❌ |
+| 任一数为 `unreadable` | `unmeasurable`（`reason: number-unreadable`） | ❌ |
 | 三个数都达标 | `pass` | ✅ |
 | 窗口未结束、未全部达标 | `pending` | ❌（未判定） |
 | 窗口已结束、至少一个未达标 | `fail` | ❌ |
+
+> **R70 改动（判据轮，HUMAN 2026-11-02 批准）**：第一行原本是「没有 `posted_on` **或**没有贴子 URL → `no-post`」。
+> 那句话在「URL 明明在手上」的时候是**假话**——工具会宣称「没人发帖」，而它正拿着那篇帖子的链接。
+> 现在把两种不可判分开：**没发帖**才是 `no-post`；**发了但窗口起点读不出**是 `unmeasurable`。
+> **阈值一字未动**（10 / 1 / 20），判定顺序也未变，只是第一行拆成两行、并给 `unmeasurable` 加了 `reason`。
+> 依据：R66 的独立 adversary 指出「仓内唯一的瞬时校验绑在没人消费的字段上」，R67 把校验挪到数据流上之后，
+> 剩下的语义错误就暴露在这里（`2026-02-30` 会算出窗口，`2026-13-01` 会读成「没发帖」）。
 
 **`fail` 之后做什么**（R47 已定，此处只复述）：执行 **D**——把仓库降级为作品集 + 给上游提 issue/PR，
 **禁止**「再加一个功能试试」。
@@ -68,7 +76,8 @@
 | 编号 | 构造 | 期望 |
 |---|---|---|
 | N1 | 周下载 634 但 `download_shape = single-day-burst` | `weekly_downloads.met = false`（**burst 不是需求**） |
-| N2 | 三个数都达标但缺 `posted_on` | `verdict = no-post`，不是 `pass` |
+| N2 | 三个数都达标但缺 `posted_on`（而贴子 URL 在） | `verdict = unmeasurable`（`window-start-unreadable`），不是 `pass`，**也不是 `no-post`**（R70 改） |
+| N2b | 三个数都达标、**完全没有贴子** | `verdict = no-post`，不是 `pass`（R70 新增：这才是「没发帖」） |
 | N3 | 反应数取不到（模拟 403） | `reactions.state = unreadable`，整体 `unmeasurable`（不是 `fail`） |
 | N4 | 「外部引用」只有我们自己的三条 PR 与本仓 issue | 计数 0，`met = false` |
 | N5 | 窗口刚好到第 14 天那一刻 | `closed = true`，进入 `pass`/`fail` 判定 |
@@ -79,6 +88,8 @@
 
 | 项 | 内容 |
 |---|---|
-| 待签 | 本文件的 §1–§5（三数算法 / 窗口 / 判定表 / 排除项 / 负对照） |
+| 已签 1 | **R54（2026-11-01）**：§1–§5（三数算法 / 窗口 / 判定表 / 排除项 / 负对照） |
+| 已签 2 | **R70（2026-11-02）**：§3 第一行拆成两行（`no-post` 只表示「真的没发帖」；有帖子但窗口起点读不出 → `unmeasurable` + `reason`）+ §5 的 N2 改期望与新增 N2b。**三个阈值（10 / 1 / 20）与判定顺序未动** |
 | 签字后写进 | `audit/SIGNOFF.md` 新行（日期 + 原话 + 是否逐条复核） |
 | 不签的后果 | D5 不能用于判定；只能继续报三个数，不给 verdict（**不许**先跑再补口径） |
+| 撤销 | 任何一次改动都可撤销；撤销时在 `SIGNOFF.md` 写清日期与范围，并把判定表改回上一版（历史产物不重写） |

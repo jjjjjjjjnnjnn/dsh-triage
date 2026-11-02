@@ -31,7 +31,12 @@ test('N1: 634 weekly downloads in a single-day burst is not demand', () => {
   assert.equal(evidence.verdict, 'fail')
 })
 
-test('N2: three green numbers without a post date is no-post, not pass', () => {
+test('N2: three green numbers without a post date is unmeasurable, not pass (R70: was no-post)', () => {
+  /*
+   * R70 changed the label, not the intent. The spec's first row used to be "no posted_on OR no post URL →
+   * no-post"; but when the URL is right there, saying "nothing was posted" is false. The honest answer is
+   * "I cannot read the window start" = unmeasurable. Still never `pass`.
+   */
   const evidence = judgeD5({
     post,
     postedOn: null,
@@ -42,8 +47,26 @@ test('N2: three green numbers without a post date is no-post, not pass', () => {
       weeklyDownloads: { value: 90, shape: 'steady' },
     },
   })
-  assert.equal(evidence.verdict, 'no-post')
+  assert.equal(evidence.verdict, 'unmeasurable')
+  assert.equal(evidence.reason, 'window-start-unreadable')
   assert.equal(evidence.counts_as_demand, false)
+  // The post itself is still reported: the tool must not claim there is no sample.
+  assert.equal(evidence.post?.url, post.url)
+})
+
+test('N2b: with no post at all the answer is still no-post', () => {
+  const evidence = judgeD5({
+    post: null,
+    postedOn: null,
+    now: AFTER_WINDOW,
+    readings: {
+      reactions: { value: 40 },
+      externalReferences: { value: 5, entries: [] },
+      weeklyDownloads: { value: 90, shape: 'steady' },
+    },
+  })
+  assert.equal(evidence.verdict, 'no-post')
+  assert.equal(evidence.post, null)
 })
 
 test('N3: an unreadable number is unmeasurable, never fail', () => {
@@ -164,9 +187,11 @@ test('N8: a start date that does not exist yields no window at all, not a rolled
     assert.equal(window.ends_at, null)
     assert.equal(window.days_left, null)
   }
-  // And the judge turns that into no-post rather than computing a verdict from a wrong window.
+  // And the judge refuses to compute a verdict from a missing window: since R70 that is `unmeasurable`
+  // (a post exists, the date is the problem), not `no-post`.
   const evidence = judgeD5({ post, postedOn: '2026-02-30T12:00:00Z', now: '2026-11-05T00:00:00.000Z', readings: {} })
-  assert.equal(evidence.verdict, 'no-post')
+  assert.equal(evidence.verdict, 'unmeasurable')
+  assert.equal(evidence.reason, 'window-start-unreadable')
 })
 
 test('N9: an offset start date is the same window as its UTC spelling', () => {

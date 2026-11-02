@@ -111,8 +111,25 @@ export function judgeD5({ post = null, postedOn = null, now, readings = {} }) {
   }
 
   /* The order below is the spec's table, in order. Reordering it changes a verdict. */
-  if (postUrl === null || window.posted_on === null) {
-    return { verdict: 'no-post', counts_as_demand: false, window, numbers, post: null }
+  if (postUrl === null) {
+    // Nothing was posted: there is no window and no sample. `no-post` is the honest answer here.
+    return { verdict: 'no-post', counts_as_demand: false, window, numbers, post: null, reason: null }
+  }
+  if (window.posted_on === null) {
+    /*
+     * R70 (spec §3, signed): a post URL exists, so "nothing was posted" would be a false statement. What we
+     * cannot read is the *date* the window starts from — and "could not read" is `unmeasurable`, never a
+     * verdict about the product. Before this, a post with an unreadable `posted_on` came out as `no-post`,
+     * i.e. the tool claimed nobody had posted while holding the post's URL.
+     */
+    return {
+      verdict: 'unmeasurable',
+      counts_as_demand: false,
+      window,
+      numbers,
+      post: { url: postUrl, number: Number(post?.number ?? 0), author: String(post?.author ?? '') },
+      reason: 'window-start-unreadable',
+    }
   }
   if (reactionsState === 'unreadable' || referencesState === 'unreadable' || downloadsState === 'unreadable') {
     return {
@@ -121,6 +138,7 @@ export function judgeD5({ post = null, postedOn = null, now, readings = {} }) {
       window,
       numbers,
       post: { url: postUrl, number: Number(post?.number ?? 0), author: String(post?.author ?? '') },
+      reason: 'number-unreadable',
     }
   }
   const allMet = numbers.reactions.met && numbers.external_references.met && numbers.weekly_downloads.met
@@ -131,6 +149,7 @@ export function judgeD5({ post = null, postedOn = null, now, readings = {} }) {
     window,
     numbers,
     post: { url: postUrl, number: Number(post?.number ?? 0), author: String(post?.author ?? '') },
+    reason: null,
   }
 }
 

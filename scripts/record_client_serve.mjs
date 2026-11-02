@@ -22,13 +22,14 @@
 
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { findBrowser } from '../packages/probe/dist/render.js'
 import { SANDBOX_PNPM_WORKSPACE, buildWorkspaceBundle, sandboxProfileManifest } from './lib/bundle.mjs'
 import { abs, isoStamp } from './lib/kit.mjs'
+import { cpuTimes, describeConditions } from './lib/load-sample.mjs'
 import { compareUpgradeBuckets, controlNames, describeNoAnswer, judgeTabView, judgeUpgradeView, pickControl, tabMatch as matchTab } from './lib/ui-probe.mjs'
 
 const argv = process.argv.slice(2)
@@ -39,6 +40,18 @@ const argOf = (name, fallback) => {
 const pathFor = (value) => (isAbsolute(value) ? value : resolve(abs('.'), value))
 
 const stamp = isoStamp(String(argOf('--stamp', new Date().toISOString())))
+
+/*
+ * R70 (the other half of BS-54): record what the machine was doing. R68's distribution has a 2.4s p90 tail
+ * and no way to attribute it, because artifacts recorded results and not conditions. CPU deltas around the
+ * whole run are coarse (one number per multi-minute run) but they turn "unknown" into "the machine was X%
+ * busy", which is the difference between a mystery and a hypothesis.
+ *
+ * Module-level on purpose: `finish()` builds the payload and cannot see `main()`'s locals — the first version
+ * of this recorded a ReferenceError instead of a condition block (R70, found by running it).
+ */
+const conditionsBefore = cpuTimes()
+const runStartedAt = new Date().toISOString()
 const dshMain = pathFor(String(argOf('--dsh-main', '')))
 const installDir = pathFor(String(argOf('--install', '')))
 const outDir = pathFor(argOf('--out', 'data/results'))
@@ -67,8 +80,18 @@ if (!Number.isFinite(upgradeWaitMs) || upgradeWaitMs < 0) {
 /** `--fixture-range` / `--break-after-install` stage a row that is fine at install and denied afterwards. */
 const fixtureRange = argOf('--fixture-range', null)
 const breakAfterInstall = argOf('--break-after-install', null)
-if (stamp === null || !existsSync(dshMain)) {
-  process.stderr.write('usage: node scripts/record_client_serve.mjs --dsh-main <bin.js> --install <dir> --stamp <iso>\n')
+/*
+ * R70: `--dsh-main` used to default to `pathFor('')`, which is the REPO ROOT — and `existsSync(<dir>)` passes,
+ * so a run without the flag got `node <repo> plugin install` → "Cannot find module '<repo>'", recorded as
+ * `install: failed`. That is the same family as R50's "the check never ran but reported a 401": a missing
+ * configuration produced a red that looks like the product's fault. Require an explicit file now.
+ */
+if (stamp === null || argOf('--dsh-main', null) === null || !existsSync(dshMain) || !statSync(dshMain).isFile()) {
+  process.stderr.write(
+    'usage: node scripts/record_client_serve.mjs --dsh-main <bin.js> --install <dir> --stamp <iso>\n' +
+      `  --dsh-main must be the launcher FILE (e.g. sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js)\n` +
+      `  got: ${dshMain}\n`,
+  )
   process.exit(2)
 }
 
@@ -1440,6 +1463,8 @@ async function finish(outcome, hostLog = '') {
     generated_at: stamp,
     label,
     outcome,
+    /** R70: what the machine was doing — the reading R68's tail had no way to explain. */
+    conditions: describeConditions({ before: conditionsBefore, after: cpuTimes(), startedAt: runStartedAt, endedAt: new Date().toISOString() }),
     sandbox: { home: clean(home), profile: 'web', bundle: 'file:packages/* (workspace rewritten)' },
     steps,
     // The Host's own words: a route that never mounted or refused must be diagnosable from the artifact.
