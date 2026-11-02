@@ -58,6 +58,12 @@ const screenshotRequest = argOf('--screenshot', null)
  * give up after 300ms and the step must say `unmeasured` ("we stopped asking"), never `failed`.
  */
 const upgradeWaitMs = Number(argOf('--upgrade-wait-ms', '30000'))
+if (!Number.isFinite(upgradeWaitMs) || upgradeWaitMs < 0) {
+  // A NaN budget would silently turn the loop's 200-attempt ceiling into a ~100s wait, which reads
+  // like a hang; refuse the value instead of guessing what was meant.
+  process.stderr.write(`--upgrade-wait-ms must be a non-negative number of milliseconds (got "${String(argOf('--upgrade-wait-ms', ''))}")\n`)
+  process.exit(2)
+}
 /** `--fixture-range` / `--break-after-install` stage a row that is fine at install and denied afterwards. */
 const fixtureRange = argOf('--fixture-range', null)
 const breakAfterInstall = argOf('--break-after-install', null)
