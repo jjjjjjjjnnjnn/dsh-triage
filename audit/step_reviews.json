@@ -8560,6 +8560,78 @@
         "sha256": "08863d1e08d03036f44615e01b534da874d35d45d6186e0ea8093181d39922b1",
         "outcome": "ALL GREEN · 9 gates · 593 tests · check_listing 14/14"
       }
+    },
+    {
+      "id": "R60-S8",
+      "batch": "R60",
+      "step": "**分类器 v3 候选（判据轮，未采用）**：在 v2 上补中文/日志形状（`卡着`、`401/403`、`400/损坏`、`提权`、`symlink`、`no text block`）+ 问题/功能请求否决；开发集 **20/20**、留出集 1 **17/20**、**干净留出集 2 17/20（85%）**，过 80% 门槛；但换生产会改覆盖率，需 R62 重测 + HUMAN 抽查，所以本轮只记 `candidate-validated`",
+      "changed": [
+        "scripts/lib/discussion-triage.mjs",
+        "scripts/lib/discussion-triage.d.mts",
+        "tests/unit/discussion-triage.test.ts",
+        "scripts/record_classifier_v3.mjs",
+        "data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/holdout2-review.json",
+        "audit/RECON_2026-11-02_classifier-v3.md",
+        "audit/blind_spots.json",
+        "docs/HANDOFF.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：v1/v2 未改；v3 24/24 单测；三集合由 `record_classifier_v3.mjs` 复算；干净留出集 17/20（v1 5/20、v2 15/20）",
+        "reproducibility": "PASS：只读 QA 快照 + 三份标签，不联网；产物带 sha256；复算命令写进报告 §5",
+        "licence": "PASS：只用公开帖子的标题/正文与人工标签；没有引入外部模型或数据",
+        "ssot": "PASS：`classifier-v3-2026-11-02T12-50-00-000Z.json` 有 produced_by/generated_at/schema_version/sha256；`decision: candidate-validated`；R59 覆盖率产物与 README 未改",
+        "adversary": "反例一：把 17/20 写成 adopted——被拒：产物写 candidate-validated，生产仍 v1；反例二：在留出集 2 上继续加「慢/卡在」——被拒：报告写明会把它变成第二个开发集；反例三：拿 agent 标签当人工抽查——被拒：报告要求 HUMAN 5 条；反例四：不重测就改 README 的 4.8%/9-20——被拒：本轮一字未动"
+      },
+      "real_test": {
+        "command": "node scripts/record_classifier_v3.mjs --stamp 2026-11-02T12:50:00.000Z",
+        "artifact": "data/results/classifier-v3-2026-11-02T12-50-00-000Z.json",
+        "sha256": "4b0247e48c357729cd30c299ec7ab5bcdef26399a9c7560a91a9c18c189e174b",
+        "outcome": "dev 20/20 · holdout1 17/20 · holdout2 17/20 · decision candidate-validated"
+      }
+    },
+    {
+      "id": "R60-S9",
+      "batch": "R60",
+      "step": "**v3 候选后的文案复跑**：分类器 v3 实验与 R60 文档更新后，`check_listing` 仍 **14/14**（tests 602）；R59 的覆盖率块（4.8% / 9-20）与 #65 的 `MERGEABLE/BLOCKED` 同时成立",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing` 14/14；覆盖率块与 11:00 的读数一致；v3 没有改覆盖率产物或 README 数字",
+        "reproducibility": "PASS：`listing-2026-11-02T13-00-00.000Z.json` 带 sha256；同输入重跑同结果",
+        "licence": "PASS：只读仓内文档与产物",
+        "ssot": "PASS：第 14 条仍比对测量/复算/抽检三份产物；v3 只加实验产物与文档",
+        "adversary": "反例一：把 v3 的 17/20 写进 README 的一致率——被拒：README 仍写 v1 的 9/20，v3 未采用；反例二：改完文档不跑检查器——被拒：本条就是复跑产物"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T13:00:00.000Z --tests 602",
+        "artifact": "data/results/listing-2026-11-02T13-00-00.000Z.json",
+        "sha256": "ae3013c6a951dfd7b555f4afb76869075470335d18fa89c316da7eff6fcf12ff",
+        "outcome": "14/14 PASS · tests 602"
+      }
+    },
+    {
+      "id": "R60-S10",
+      "batch": "R60",
+      "step": "**R60 + v3 候选收口门禁**：9 门 ALL GREEN（v3 产物、R59 覆盖率、T-821 渠道产物、无孤儿）；`--mutate` 9/9；602 测试 / 0 fail；`check_listing` 14/14",
+      "changed": [
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：9 门全绿；`--mutate` 9/9；602 测试；`check_listing` 14/14",
+        "reproducibility": "PASS：`gates-2026-11-02T13-10-00.000Z.json` 带 sha256；`--mutate` 是门禁自己的负对照",
+        "licence": "PASS：门禁只读仓内文件，不联网",
+        "ssot": "PASS：323 份产物全部被引用；v3 实验产物与 v2 产物都有 sha256；无孤儿",
+        "adversary": "反例一：v3 只写报告不落产物——被拒：`classifier-v3-2026-11-02T12-50-00-000Z.json` 就是证据；反例二：把 candidate-validated 写成 adopted——被拒：产物、报告、BS-53 都写未采用；反例三：改完文档不跑门禁——被拒：本条就是门禁产物"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T13:10:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T13-10-00.000Z.json",
+        "sha256": "d6081c39c9e2039e7a264c28949c7bb430e7361a566c22cfbfa8d63f45a3be7c",
+        "outcome": "ALL GREEN · 9 gates · 602 tests · check_listing 14/14"
+      }
     }
   ]
 }

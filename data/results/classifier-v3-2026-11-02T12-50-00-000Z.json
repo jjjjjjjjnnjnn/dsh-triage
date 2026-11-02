@@ -1,0 +1,739 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_classifier_v3.mjs",
+  "generated_at": "2026-11-02T12:50:00.000Z",
+  "corpus": {
+    "fixtures": "2026-11-02T09-57-53-229Z",
+    "threads": 1545,
+    "qa_total_count": 1545
+  },
+  "classifiers": {
+    "v1": "scripts/lib/discussion-triage.mjs#SIGNALS_V1 (production)",
+    "v2": "scripts/lib/discussion-triage.mjs#SIGNALS_V2 (experiment)",
+    "v3": "scripts/lib/discussion-triage.mjs#SIGNALS_V3 + question veto (candidate)"
+  },
+  "sets": {
+    "dev": {
+      "source": "review.json",
+      "v1": {
+        "sample_size": 20,
+        "agree": 9,
+        "agreement": 0.45,
+        "disagreements": [
+          {
+            "number": 3443,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 1027,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 437,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 9266,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 8110,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "composition",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 9758,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 1865,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 11658,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 10099,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "composition",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 4332,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 1122,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      },
+      "v2": {
+        "sample_size": 20,
+        "agree": 20,
+        "agreement": 1,
+        "disagreements": []
+      },
+      "v3": {
+        "sample_size": 20,
+        "agree": 20,
+        "agreement": 1,
+        "disagreements": []
+      }
+    },
+    "holdout1": {
+      "source": "holdout-review.json",
+      "v1": {
+        "sample_size": 20,
+        "agree": 7,
+        "agreement": 0.35,
+        "disagreements": [
+          {
+            "number": 6065,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6429,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 264,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 2898,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 540,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 7316,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5439,
+            "classifier": {
+              "layer": "upgrade",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "composition",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 653,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6509,
+            "classifier": {
+              "layer": "upgrade",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            }
+          },
+          {
+            "number": 5445,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 11338,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5116,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 10057,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      },
+      "v2": {
+        "sample_size": 20,
+        "agree": 12,
+        "agreement": 0.6,
+        "disagreements": [
+          {
+            "number": 264,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5439,
+            "classifier": {
+              "layer": "upgrade",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "composition",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 653,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6509,
+            "classifier": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            },
+            "reviewer": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            }
+          },
+          {
+            "number": 5445,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 11338,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5116,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 10057,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      },
+      "v3": {
+        "sample_size": 20,
+        "agree": 17,
+        "agreement": 0.85,
+        "disagreements": [
+          {
+            "number": 6429,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6509,
+            "classifier": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            },
+            "reviewer": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            }
+          },
+          {
+            "number": 5116,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      }
+    },
+    "holdout2": {
+      "source": "holdout2-review.json",
+      "v1": {
+        "sample_size": 20,
+        "agree": 5,
+        "agreement": 0.25,
+        "disagreements": [
+          {
+            "number": 10652,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 11173,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 9809,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6580,
+            "classifier": {
+              "layer": "composition",
+              "verdict": "needs-their-profile"
+            },
+            "reviewer": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            }
+          },
+          {
+            "number": 10279,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6901,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 10855,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 3491,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 3602,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5605,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 2712,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 7934,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 9493,
+            "classifier": {
+              "layer": "composition",
+              "verdict": "partially-answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 9949,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 716,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      },
+      "v2": {
+        "sample_size": 20,
+        "agree": 15,
+        "agreement": 0.75,
+        "disagreements": [
+          {
+            "number": 11173,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 6580,
+            "classifier": {
+              "layer": "composition",
+              "verdict": "needs-their-profile"
+            },
+            "reviewer": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            }
+          },
+          {
+            "number": 10855,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 3491,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 5605,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      },
+      "v3": {
+        "sample_size": 20,
+        "agree": 17,
+        "agreement": 0.85,
+        "disagreements": [
+          {
+            "number": 11173,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 10855,
+            "classifier": {
+              "layer": "admission",
+              "verdict": "answerable"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          },
+          {
+            "number": 3491,
+            "classifier": {
+              "layer": "unknown",
+              "verdict": "not-ours"
+            },
+            "reviewer": {
+              "layer": "runtime",
+              "verdict": "partially-answerable"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "clean_holdout": "holdout2",
+  "bar": 0.8,
+  "meets_bar": true,
+  "decision": "candidate-validated",
+  "reasons": [
+    "v3 reaches 17/20 on a holdout it never saw (bar: 80%)",
+    "adoption is a separate round: it changes the coverage headline, so it needs a live re-measurement and a new 20-thread review",
+    "the two misses (runtime performance without an error code, startup stuck on the plugin page) are recorded, not hidden"
+  ],
+  "limits": [
+    "holdout2 is now seen: a v4 must use a fourth set",
+    "the holdout2 labels were written by an agent, not a HUMAN; a 5-thread HUMAN spot-check is required before adoption",
+    "the coverage headline was measured with v1 and is unchanged by this artifact"
+  ]
+}

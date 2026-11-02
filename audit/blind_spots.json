@@ -425,10 +425,10 @@
     {
       "id": "BS-53",
       "area": "分类器 / 覆盖率文本判定",
-      "cannot_see": "v2 是按 R59 的 20 条开发集错误设计的：在开发集上 20/20，但在**互斥留出集**（新种子 20261103、排除开发集）上只有 **12/20（60%）**，v1 同一留出集 7/20（35%）。纯关键词表到不了 `docs/specs/question-coverage.md` §8 的 80% 门槛。漏掉的形状包括：中文/日志词（`卡着`、`403`、`400`、`损坏`、`提权`、`symlink`）、没有失败动词的现象（`no text block` / `nothing to display`）、以及「问题 vs 故障」的区分（feature request / usage question 被 `不能` 等通用词误判）。仍然看不见的：① 如果 v3 修好这 8 条，会不会只是把留出集变成第二个开发集；② 纯关键词方法的上限到底是多少；③ 引入本地小模型做辅助判断的离线/许可边界（需要新 ADR）。",
-      "mitigation": "① **生产分类器仍是 v1**，R59 的覆盖率数字（74/1545 = 4.8%）与 README 的 9/20 一字未动；② v2 以 `classifyThreadV2` + `SIGNALS_V2` 保留，实验产物 `classifier-v2-2026-11-02T11-20-00-000Z.json` 写死 `decision: not-adopted`；③ 下一轮 v3 必须先写 spec + **第三个互斥留出集**，或用「问题 vs 故障」二分类 / 本地模型辅助；④ 覆盖率 README 的一致率必须用**留出集**，不许拿开发集 20/20 当准确率。",
-      "owner": "scripts/lib/discussion-triage.mjs · scripts/record_classifier_v2.mjs · audit/RECON_2026-11-02_classifier-v2.md · data/results/classifier-v2-2026-11-02T11-20-00-000Z.json",
-      "status": "open (R60): v2 is a real recall improvement but fails the 80% holdout bar; v1 stays production",
+      "cannot_see": "v2 是按 R59 的 20 条开发集错误设计的：在开发集上 20/20，但在**互斥留出集**（新种子 20261103、排除开发集）上只有 **12/20（60%）**，v1 同一留出集 7/20（35%）。纯关键词表到不了 `docs/specs/question-coverage.md` §8 的 80% 门槛。漏掉的形状包括：中文/日志词（`卡着`、`403`、`400`、`损坏`、`提权`、`symlink`）、没有失败动词的现象（`no text block` / `nothing to display`）、以及「问题 vs 故障」的区分（feature request / usage question 被 `不能` 等通用词误判）。仍然看不见的：① 如果 v3 修好这 8 条，会不会只是把留出集变成第二个开发集；② 纯关键词方法的上限到底是多少；③ 引入本地小模型做辅助判断的离线/许可边界（需要新 ADR）。**v3 已补形状 + 问题否决：开发集 20/20、留出集 1 17/20、干净留出集 2 17/20（85%）——过了 80%，但仍未采用：换分类器必须与新的覆盖率读数一起出现（R62），且留出集 2 的标签还是 agent 盲标。**",
+      "mitigation": "① **生产分类器仍是 v1**，R59 的覆盖率数字（74/1545 = 4.8%）与 README 的 9/20 一字未动；② v2 以 `classifyThreadV2` + `SIGNALS_V2` 保留，实验产物 `classifier-v2-2026-11-02T11-20-00-000Z.json` 写死 `decision: not-adopted`；③ 下一轮 v3 必须先写 spec + **第三个互斥留出集**，或用「问题 vs 故障」二分类 / 本地模型辅助；④ 覆盖率 README 的一致率必须用**留出集**，不许拿开发集 20/20 当准确率；⑤ v3 以 `classifyThreadV3` + `SIGNALS_V3` 保留，产物 `classifier-v3-2026-11-02T12-50-00-000Z.json` 写 `candidate-validated`；⑥ 采用前必须 HUMAN 抽查 5 条 + live 重测 + 新种子抽检。",
+      "owner": "scripts/lib/discussion-triage.mjs · scripts/record_classifier_v2.mjs · scripts/record_classifier_v3.mjs · audit/RECON_2026-11-02_classifier-v2.md · audit/RECON_2026-11-02_classifier-v3.md · data/results/classifier-v2-2026-11-02T11-20-00-000Z.json · data/results/classifier-v3-2026-11-02T12-50-00-000Z.json",
+      "status": "open (R60→R61): v2 failed the bar; v3 is a validated candidate (17/20 clean holdout) but not adopted; adoption needs a live re-measurement",
       "resolved_by": null
     }
   ]

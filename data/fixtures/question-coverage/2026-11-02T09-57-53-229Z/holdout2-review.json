@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "produced_by": "manual review (agent, R61 holdout 2)",
+  "reviewer": "agent:deepseek-v4.1-flash",
+  "seed": 20261104,
+  "method": "read title + bodyText only; exclude the 40 threads used by the v1 review and the v2 holdout; label before looking at v3",
+  "reviews": [
+    { "number": 10652, "layer": "runtime", "verdict": "partially-answerable", "why": "cannot delete or archive conversations; runtime/UI state" },
+    { "number": 11173, "layer": "runtime", "verdict": "partially-answerable", "why": "the app has become very slow; runtime/performance" },
+    { "number": 4675, "layer": "composition", "verdict": "partially-answerable", "why": "two cordis presets cannot coexist because inspect providers are process-global; composition/preset" },
+    { "number": 9809, "layer": "runtime", "verdict": "partially-answerable", "why": "a missing message id corrupts the session log and a subagent TypeError kills the host; runtime/session persistence" },
+    { "number": 1669, "layer": "unknown", "verdict": "not-ours", "why": "asks why ACP does not stream intermediate output; a product/UX question" },
+    { "number": 6580, "layer": "unknown", "verdict": "not-ours", "why": "the model keeps emitting thinking with no work output; model/provider behaviour, not plugin compatibility" },
+    { "number": 10279, "layer": "runtime", "verdict": "partially-answerable", "why": "/compact is cancelled at 5 minutes and the timeout patch is ignored; runtime/timeout" },
+    { "number": 6901, "layer": "runtime", "verdict": "partially-answerable", "why": "Goal mode spins idle and burns rounds/tokens; runtime/agent behaviour" },
+    { "number": 10855, "layer": "runtime", "verdict": "partially-answerable", "why": "cannot start after upgrading to rc.3; DesktopHostFatalError Invalid URL; runtime" },
+    { "number": 3491, "layer": "runtime", "verdict": "partially-answerable", "why": "startup stays stuck on the plugin loading page after syncing code; runtime/startup" },
+    { "number": 3602, "layer": "runtime", "verdict": "partially-answerable", "why": "a conversation with a failed screenshot keeps showing the failure prompt; runtime/UI" },
+    { "number": 9541, "layer": "runtime", "verdict": "partially-answerable", "why": "the Models settings page is unavailable behind a reverse proxy; runtime/settings" },
+    { "number": 5605, "layer": "runtime", "verdict": "partially-answerable", "why": "workspace-write permission is forgotten overnight and asks for authorization again; runtime/permission" },
+    { "number": 2712, "layer": "runtime", "verdict": "partially-answerable", "why": "after a while the web UI accepts only English input until restart; runtime/UI" },
+    { "number": 7934, "layer": "runtime", "verdict": "partially-answerable", "why": "dragging the sidebar disables drag/close and only reinstall fixes it; runtime/UI" },
+    { "number": 9723, "layer": "unknown", "verdict": "not-ours", "why": "asks whether a plugin can theme DSH; a usage/feature question" },
+    { "number": 9493, "layer": "runtime", "verdict": "partially-answerable", "why": "workspace-write shells fail with 0xC0000142; runtime/sandbox ACL" },
+    { "number": 9949, "layer": "runtime", "verdict": "partially-answerable", "why": "subagent_codex fails on a newer model because of a pinned Codex binary; runtime/tool" },
+    { "number": 6822, "layer": "runtime", "verdict": "partially-answerable", "why": "double-click desktop shells fail with 0xC0000142 while the terminal host works; runtime/sandbox" },
+    { "number": 716, "layer": "runtime", "verdict": "partially-answerable", "why": "tool calls fail with an invalid-arguments schema error; runtime/tool schema" }
+  ]
+}

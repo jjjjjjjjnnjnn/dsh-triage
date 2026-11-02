@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { classifyThread, classifyThreadV2, extractPackages } from '../../scripts/lib/discussion-triage.mjs'
+import { classifyThread, classifyThreadV2, classifyThreadV3, extractPackages } from '../../scripts/lib/discussion-triage.mjs'
 
 test('a runtime crash is never "answerable", even when it mentions plugins', () => {
   const result = classifyThread({
@@ -131,4 +131,81 @@ test('R60: a version question with no failure verb is admission, and needs their
   })
   assert.equal(result.layer, 'admission')
   assert.equal(result.verdict, 'needs-their-profile')
+})
+
+/*
+ * R61 / classifier v3. v2's holdout missed Chinese/log shapes (卡着, 403, 400, 损坏, 提权, symlink,
+ * "no text block") and falsely fired on `不能` inside a methodology paragraph. v3 adds those shapes
+ * and a question/feature-request veto. These tests pin both directions.
+ */
+
+test('R61: Chinese "卡着" and 403 are runtime shapes', () => {
+  assert.equal(classifyThreadV3({ title: '提问一直卡着', body: '模型提问一直卡着不给选啊' }).layer, 'runtime')
+  assert.equal(classifyThreadV3({ title: '反代 403', body: '通过反代访问提示大部分接口返回403' }).layer, 'runtime')
+})
+
+test('R61: INVALID_REQUEST / HTTP 400 and corruption are runtime shapes', () => {
+  const result = classifyThreadV3({
+    title: '长会话被 400 拒绝',
+    body: 'Content Exists Risk / INVALID_REQUEST (HTTP 400); 会话日志里有一段 tool/result 字节损坏。',
+  })
+  assert.equal(result.layer, 'runtime')
+})
+
+test('R61: a stale symlink is composition, not an upgrade', () => {
+  const result = classifyThreadV3({
+    title: 'stale broken fallback symlink breaks every request after upgrade',
+    body: 'the symlink under $DSH_HOME/profiles/node_modules is a stale broken symlink; healProfilesModuleFallback never repairs it.',
+  })
+  assert.equal(result.layer, 'composition')
+})
+
+test('R61: elevation / permission is a runtime shape', () => {
+  const result = classifyThreadV3({
+    title: '更新后工作区需要提权',
+    body: '更新后 4.1flash 说没法写入工作区 word 文档，需要权限/提权。',
+  })
+  assert.equal(result.layer, 'runtime')
+})
+
+test('R61: a turn with no text block is a runtime contract issue', () => {
+  const result = classifyThreadV3({
+    title: 'turn ends normally but the assistant message has no text block',
+    body: 'the client receives nothing to display; only reasoning + tool-call blocks.',
+  })
+  assert.equal(result.layer, 'runtime')
+})
+
+test('R61: a methodology study using 不能, with no concrete failure, is not ours', () => {
+  const result = classifyThreadV3({
+    title: '请问身份提示是否影响推理模式',
+    body: '还不能把这些实验写成因果结论，请问有没有办法排查？',
+  })
+  assert.equal(result.layer, 'unknown')
+  assert.equal(result.verdict, 'not-ours')
+})
+
+test('R61: a how-to question with no failure is not ours', () => {
+  const result = classifyThreadV3({
+    title: 'qwen3.8 27b 怎么调用网页搜索工具？',
+    body: '纯小白求教，本地模型怎么支持网页搜索？',
+  })
+  assert.equal(result.layer, 'unknown')
+})
+
+test('R61: a question that quotes a concrete failure is still a failure', () => {
+  const result = classifyThreadV3({
+    title: '能不能修一下粘贴长文本卡顿？',
+    body: '粘贴到对话框文本过长会卡顿。',
+  })
+  assert.equal(result.layer, 'runtime')
+})
+
+test('R61: "install fails: peer..." stays admission under v3 too', () => {
+  const result = classifyThreadV3({
+    title: 'install fails after the upgrade',
+    body: 'peer @deepseek-ai/dsh-tools@0.2.1-rc.4 does not include 0.2.1-rc.5',
+  })
+  assert.equal(result.layer, 'admission')
+  assert.equal(result.verdict, 'answerable')
 })

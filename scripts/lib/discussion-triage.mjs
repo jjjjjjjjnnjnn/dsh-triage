@@ -83,6 +83,46 @@ export const SIGNALS_V2 = [
 /** Production table (v1). `signalSnippets()` and the coverage projection use this one. */
 export const SIGNALS = SIGNALS_V1
 
+/**
+ * v3 (R61 candidate): v2 + the shapes its holdout missed (Chinese "卡着/卡顿", 401/403,
+ * INVALID_REQUEST/400, corruption, elevation, symlink, "no text block") plus a question/feature
+ * veto in `classifyThreadV3`. The veto is what v2 lacked: `不能` inside a methodology paragraph made
+ * a model-behaviour study look like a runtime failure.
+ */
+export const SIGNALS_V3 = [
+  // runtime — concrete shapes
+  ['runtime', /service-unavailable|gateway\/|workspaceController|sessionController|typert/i, 5],
+  ['runtime', /0xC000|SEC_E_|TRANSPORT|ECONN|EACCES|EPERM|permission denied|access denied|沙箱|sandbox|ACL/i, 5],
+  ['runtime', /白屏|blank screen|\bfreeze\b|卡死|卡住|卡着|卡顿|卡了|\bhang\b|\btimeout\b|超时|WebSocket|socket closed|50[23]|40[13]/i, 4],
+  ['runtime', /cookie|Web authentication|认证|登录|login|token|localStorage|certificate|证书/i, 4],
+  ['runtime', /写锁|write lock|bundle-in-use|安装器|installer|安装目录/i, 4],
+  ['runtime', /INVALID_REQUEST|Content Exists Risk|HTTP 400|损坏|corrupt|提权|权限|elevation/i, 4],
+  ['runtime', /no (?:text|reply)|nothing to display|empty (?:reply|message)|no content/i, 4],
+  // runtime — generic failure verbs (the class v1 missed)
+  ['runtime', /\bcrash\b|崩溃|闪退|\bexception\b|stack trace|\bpanic\b/i, 3],
+  ['runtime', /\bfail(?:s|ed|ure)?\b|\berror\b|报错|失败|异常|\bcannot\b|can't|does not work|not working|\bbroken\b|无法|不能|不可用/i, 3],
+  // admission
+  ['admission', /not activate|did not activate|未激活|\bpeer\b|peerDependencies|engines\.dsh/i, 4],
+  ['admission', /incompatible|不兼容|版本不符|版本区间|依赖版本/i, 4],
+  ['admission', /dist-tags?|latest tag|npm .*tag/i, 4],
+  ['admission', /被禁用|禁用.*插件|插件.*消失|silently disables|静默/i, 3],
+  ['admission', /\binstall(?:ed|ing)?\b|安装|dependency|依赖|\bversion\b|版本/i, 2],
+  // composition
+  ['composition', /duplicate|重复|两份|shadow|抢先|覆盖|fork|same name|同名|entry id|标识冲突|命名冲突|slot|槽位/i, 4],
+  ['composition', /bundle patch|硬依赖|FIBER_PENDING|optional inject|inject.*optional|dsh\.bundle\.patch/i, 4],
+  ['composition', /symlink|module-fallback|healProfilesModuleFallback/i, 5],
+  ['composition', /link:|node_modules|inject|manifest|dsh\.profile\.bundles|prune/i, 3],
+  ['composition', /preset-(?:standard|ptc|minimal|cordis)|agent preset/i, 3],
+  // upgrade
+  ['upgrade', /升级.*(之后|后)|after (the )?upgrade|升到|updated? to|rc\.\d.*插件/i, 3],
+  ['upgrade', /upgrade broke|升级破坏|回退/i, 2],
+]
+
+/** A question/feature request, not a failure report (used only by v3's veto). */
+const QUESTION_PATTERN = /please add|can you add|能不能|能否|如何|怎么|求教|小白|想请教|why does|how do i|is it possible|有没有办法|请问/i
+/** A concrete failure shape that overrides the veto (a question quoting an error is still a failure). */
+const CONCRETE_FAILURE_PATTERN = /0xC000|SEC_E_|TRANSPORT|ECONN|EACCES|EPERM|\berror\b|\bcrash\b|\bexception\b|\bfail(?:s|ed|ure)?\b|失败|崩溃|无法|白屏|卡顿|卡着|卡死|卡住|卡了|\btimeout\b|超时|沙箱|ACL|损坏|corrupt|40[13]|symlink|INVALID_REQUEST/i
+
 /** Packages a reader could check with `dsh-triage check <pkg>`; `/`-scoped or `dsh-*` shaped. */
 const PACKAGE_PATTERN = /@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|\bdsh-[a-z0-9][a-z0-9._-]*\b/gi
 
@@ -236,4 +276,24 @@ export function classifyThread(input) {
 /** R60 experiment (v2): not adopted — 12/20 on a disjoint holdout, below the 80% bar. */
 export function classifyThreadV2(input) {
   return classifyWith(SIGNALS_V2, input)
+}
+
+/**
+ * R61 candidate (v3): v2 + the missed shapes, and a question/feature-request veto. A question that
+ * quotes no concrete failure shape (`怎么用`, `能不能加个开关`, a model-behaviour study using
+ * `不能` in a caveat) is `not-ours` even if it contains a generic failure word.
+ */
+export function classifyThreadV3(input) {
+  const text = `${String(input?.title ?? '')}\n${String(input?.body ?? '')}`
+  if (QUESTION_PATTERN.test(text) && !CONCRETE_FAILURE_PATTERN.test(text)) {
+    return {
+      layer: 'unknown',
+      verdict: 'not-ours',
+      reason: 'the text reads as a question or feature request, and carries no concrete failure shape',
+      signals: [],
+      packages: extractPackages(text),
+      answerableWith: null,
+    }
+  }
+  return classifyWith(SIGNALS_V3, input)
 }
