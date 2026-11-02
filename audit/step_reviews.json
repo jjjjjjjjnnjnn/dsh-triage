@@ -9431,6 +9431,55 @@
         "sha256": "849dba540ca2750b9e407f7eb50edde39f44c07b9ef22d4ae0477408b680d230",
         "outcome": "RED · 12 项失败 · 20 attempt(s) over 301516ms · signals@0.3.3 缺失"
       }
+    },
+    {
+      "id": "R62-S33",
+      "batch": "R62",
+      "step": "**0.3.3 的权威发布证据（21/21）**：四个包 `latest=0.3.3`，匿名安装 exit 0、三个内部包 0.3.3、CLI 15 行、`import()` 解析，**`client-bundle` 首次在真实发布上四项全绿**；`git_dirty=false`、`head 0ad06c7`、`attempts=1`",
+      "changed": [
+        "audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS 21/21：17 项检查 + 4 个包的 bytes/rewritten/latest；`client_bundle = {entry: ./client.js, bytes: 35944, facts: {declared, platform: web, present, loader, slot} 全 true}`",
+        "reproducibility": "PASS：`attempts=1 / waited_ms=2077`（这一次没有等副本）；同一命令可逐字复跑；产物带 sha256",
+        "licence": "PASS：只读 registry 与本地构建产物，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：`git_dirty=false` + `head` 可追溯到已提交的树；这是 0.3.3 的唯一权威指针（15-29-45 那份红保留为事故见证）",
+        "adversary": "反例一：用 15-29-45 的红当「0.3.3 发布失败」——被拒：那份的结论是「四个里缺一个 / 当时还没提升」，现在四包齐、装得上；反例二：只看 `latest=0.3.3` 就宣布成功——被拒：真正的问题是「装不装得上」，所以证据是匿名安装 + 依赖树 + client-bundle"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T15-54-38.303Z.json",
+        "sha256": "54ba06e127f68b7f7c89d9688873c891874a2815cbf326051d633be23536b78c",
+        "outcome": "GREEN 21/21 · git_dirty=false · head 0ad06c7 · latest=0.3.3 · attempts=1 · client-bundle 四项全绿"
+      }
+    },
+    {
+      "id": "R62-S34",
+      "batch": "R62",
+      "step": "**0.3.3 收口后的文案终跑（15/15）**：README / 两份上架文案 / 提交包 / CHANGELOG 的版本串统一到 0.3.3，测试数 643；`latest` 与取证指针改为对齐后的那一份",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "CHANGELOG.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/market/submissions/README.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：`version-matches-manifest` 每处都是 0.3.3、`test-count-matches` 2 条声明均为 643、18 条证据路径带 sha256",
+        "reproducibility": "PASS：`--stamp` 与 `--tests` 显式给出，产物带 sha256，可逐字复跑",
+        "licence": "PASS：只改本仓文档，没有引入外部素材、数据或第三方依赖",
+        "ssot": "PASS：包内容与发布时**逐字节相同**（本轮只动了 AGENTS / HANDOFF / INDEX / BACKLOG / CHANGELOG / docs，均不在 `files` 里），所以 21/21 那份发布证据仍然成立",
+        "adversary": "反例一：改了 README 却仍用发布前的证据——被拒：README 在包内，改了就得重发；本轮**没有**改它；反例二：把 0.3.3 写成「0.3.2 的补丁」——被拒：CHANGELOG 写明是 documentation-only，并专段记录了那段 15 分钟装不上的窗口"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T15:59:00.000Z --tests 643",
+        "artifact": "data/results/listing-2026-11-02T15-59-00.000Z.json",
+        "sha256": "cb30d4de2fe36f33618199dcc2f8ecd55f5c8abca1a9f092f9433e6f613df7b2",
+        "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 643 · 0 失败"
+      }
     }
   ]
 }

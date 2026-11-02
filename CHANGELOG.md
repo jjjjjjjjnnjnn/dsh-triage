@@ -19,6 +19,12 @@ when they do, the change is written here with the reason, not just the diff.
   addition to running the CLI and `import()`, resolves `exports["./client"]` inside the installed tree
   and requires the file to exist, carry the client-runner contract, and name `settings.plugins.tab`.
   Until this, "the four-bucket screen reached users" was confirmed by hand (`npm pack` + grep).
+- **A note on the 0.3.3 window itself.** For about fifteen minutes after the publish, `@dsh-triage/signals@0.3.3`
+  was accepted but not yet promoted by the registry: the version was unreadable `(404)` while a re-publish
+  answered `409 Cannot publish over previously staged version`. During that window `dsh-triage@0.3.3` could not
+  install, because it pins `signals@0.3.3` exactly. Both ends are now readable and `latest` on all four
+  packages is `0.3.3`; nothing in this release's content changed. Recorded because a version you cannot install
+  is worth telling people about, even briefly.
 - **The release chain waits for the registry instead of calling a successful publish red.** 0.3.2's
   publish produced three red artifacts in five minutes because npm's anonymous/install document lagged
   ~4.5 minutes behind the write; the fourth run, with no code change, was green. The chain now retries

@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-11-02T15:54:38.303Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "0.3.3",
+    "version_source": "manifest",
+    "git_head": "0ad06c7cfd7da11194fc3e4e315b25c11bbc3b0f",
+    "git_dirty": false
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-11-02T15:54:38.303Z"
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": true,
+      "version": "0.3.3",
+      "latest": "0.3.3",
+      "published_at": "2026-11-02T15:34:50.292Z",
+      "integrity": "sha512-/lB7Y8hxNXCoGzG+o/6IKLIOQ/Ar0daJmQfywrJFTUa7oyNwjlDygxDy+AfbLvjMEOOnKI082uyFHyuVVttr0Q==",
+      "shasum": "2a4f4497a3177bb56b0c0415ff50a60b511614af",
+      "file_count": 79,
+      "unpacked_size": 449565,
+      "dependencies": {
+        "yaml": "^2.8.1",
+        "semver": "^7.7.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.3"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": true,
+      "version": "0.3.3",
+      "latest": "0.3.3",
+      "published_at": "2026-11-02T15:48:59.011Z",
+      "integrity": "sha512-mV4i623EIYe/TwZ2zXYHYvLlMwU/r0buPzrk9taQaaFPRN75RT75v7BqRUC130Wtq/BdKPAVgqfQ727ywMjNjw==",
+      "shasum": "fd41694b27c471e24f8ce70e78f0c0c45e898552",
+      "file_count": 19,
+      "unpacked_size": 37167,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.3"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": true,
+      "version": "0.3.3",
+      "latest": "0.3.3",
+      "published_at": "2026-11-02T15:31:19.502Z",
+      "integrity": "sha512-TSzGjRR9Y52yLUKiwL7nHCP379SeGv6HE27Mspn8qq3KB7e6YzLKHgso4/PhrNL7uMGJ83LQNIgEMspgeClhzA==",
+      "shasum": "752dc84f38ac8f474e4b23d5c515ba66bb8e94c4",
+      "file_count": 27,
+      "unpacked_size": 335698,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.3"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "dsh-triage",
+      "ok": true,
+      "version": "0.3.3",
+      "latest": "0.3.3",
+      "published_at": "2026-11-02T15:31:51.266Z",
+      "integrity": "sha512-KP1Y6ut0mLXRlB4rMp2RULuzBKgJJ5CnLSP4z8m2jy3Csqy96b3i6miHNaIfe+OM6pRajff+bSjTmpYjsxj1+w==",
+      "shasum": "ce8944f8f72bd5004d95047084f08c76b41322b9",
+      "file_count": 85,
+      "unpacked_size": 654487,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.3",
+        "@dsh-triage/probe": "0.3.3",
+        "@dsh-triage/signals": "0.3.3"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.1 <0.3.0-0",
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.3"
+      },
+      "local_tarball": null
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@0.3.3",
+    "exit_code": 0,
+    "attempts": 1,
+    "waited_ms": 2077,
+    "wait_budget_ms": 300000,
+    "tail": "added 6 packages in 2s",
+    "client_bundle": {
+      "entry": "./client.js",
+      "bytes": 35944,
+      "facts": {
+        "declared": true,
+        "platform": "web",
+        "present": true,
+        "loader": true,
+        "slot": true
+      },
+      "ok": true
+    },
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": true,
+        "version": "0.3.3",
+        "expected": "0.3.3"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": true,
+        "version": "0.3.3",
+        "expected": "0.3.3"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": true,
+        "version": "0.3.3",
+        "expected": "0.3.3"
+      }
+    ],
+    "cli": {
+      "exit_code": 0,
+      "first_lines": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n\n用法 (Usage)",
+      "commands": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n  dsh-triage                         一屏速览：当前配置是否存在异常、受影响条目及修复建议\n  dsh-triage status                  输出与无参相同的一屏诊断结论\n  dsh-triage env                     查看当前环境指纹（DSH 版本、Profile、已装 Bundle）\n  dsh-triage why                     排查插件静默失效根因，进行逐行准入归因\n  dsh-triage check <包名[@版本]>      在安装前预检候选插件是否满足当前环境准入\n  dsh-triage audit                   全量兼容性台账（配合 --all 查看完整清单）\n  dsh-triage probe <包名[@版本]>      生成隔离沙盒实测方案（默认 dry-run，--execute 真跑）\n  dsh-triage serve                   启动本地可视化诊断面板（127.0.0.1，Token 鉴权）\n  dsh-triage badge <包名[@版本]>      基于真实证据生成 shields 风格 SVG 状态徽章\n  dsh-triage index                   导出本地实测为 \"go\" 的格式 1 兼容索引\n  dsh-triage outcomes                回流层本地存储：status / --enable / --disable / --purge\n  dsh-triage upgrade --to <目标版本>  预检目标 DSH 版本会拦截当前哪些插件，并输出修复建议\n  dsh-triage upgrade --to next|latest 预检升级至 npm 远端 next/latest 版本的兼容影响\n  dsh-triage fix                     自动修复计划；--apply 实际写入，--undo 依日志撤销"
+    },
+    "module_exports": "apply,default,loadBundleLayers,loadComposition,loadPatchText,name",
+    "scratch": "<path>"
+  },
+  "checks": [
+    {
+      "id": "rewritten:@dsh-triage/core",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/core",
+      "ok": true,
+      "detail": "latest=0.3.3"
+    },
+    {
+      "id": "rewritten:@dsh-triage/signals",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/signals",
+      "ok": true,
+      "detail": "latest=0.3.3"
+    },
+    {
+      "id": "rewritten:@dsh-triage/probe",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/probe",
+      "ok": true,
+      "detail": "latest=0.3.3"
+    },
+    {
+      "id": "rewritten:dsh-triage",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:dsh-triage",
+      "ok": true,
+      "detail": "latest=0.3.3"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": true,
+      "detail": "npm install dsh-triage@0.3.3 exit 0 · added 6 packages in 2s"
+    },
+    {
+      "id": "installed-tree",
+      "ok": true,
+      "detail": "node_modules/dsh-triage exists"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": true,
+      "detail": "@dsh-triage/core@0.3.3 (declared 0.3.3)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": true,
+      "detail": "@dsh-triage/signals@0.3.3 (declared 0.3.3)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": true,
+      "detail": "@dsh-triage/probe@0.3.3 (declared 0.3.3)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": true,
+      "detail": "exit 0 · 15 command line(s) · dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层"
+    },
+    {
+      "id": "module-resolves",
+      "ok": true,
+      "detail": "import('dsh-triage') → apply,default,loadBundleLayers,loadComposition,loadPatchText,name"
+    },
+    {
+      "id": "client-bundle",
+      "ok": true,
+      "detail": "./client.js resolves (35944B) · loader=yes · slot=settings.plugins.tab"
+    }
+  ],
+  "ok": true,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}

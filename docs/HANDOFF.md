@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 四个包都已可安装**（staged 的 `signals@0.3.3` 异步转正；三包 `latest` 仍停在 0.3.2，待对齐，见事故文档 §7）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
+> **Stand**: R62 (2026-11-02，**T-818 收口**：四桶页签真机 **16/16**、四桶与 CLI 逐项相同；R61 记的「页面 fetch pending」查明是**探针在 ≈500ms 就收工**；**0.3.2 四包已发布**（取证 20/20），发布后修掉发布链的**传播延迟假红**；**T-829：`record_publish` 现在验浏览器半边**（21 项）；**0.3.3 四个包已发布、`latest=0.3.3`**（21/21 取证，见 §3 续 5）；D5 窗口到 2026-11-15；#65 `MERGEABLE/BLOCKED`)｜**下一件事：`docs/HANDOFF.md` §3 的「R62 交接」**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -149,6 +149,12 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 **剩余**：`dsh-triage` / `core` / `probe` 的 `latest` 在一次回滚里回到 0.3.2（signals 已是 0.3.3）→
 `npm dist-tag add <pkg>@0.3.3 latest` 三条，然后 `node scripts/record_publish.mjs` 应 21/21。
 现场与三条独立读数见 `audit/INCIDENT_2026-11-02_missing-signals-0.3.3.md`；新盲区 **`BS-55`：发布输出不是证据**。
+
+**续 5 · 0.3.3 收口（`latest=0.3.3`）**：`npm dist-tag add` 把三个包对齐后重跑 `record_publish` → **21/21**
+（`data/results/publish-2026-11-02T15-54-38.303Z.json`：`git_dirty=false` / `head 0ad06c7` / `attempts=1` /
+匿名安装 exit 0 / 三个内部包 0.3.3 / **`client-bundle` 首次在真实发布上四项全绿**）。
+四个包的 `latest` 现在都是 0.3.3。**留给下一个人的不是这个版本号，而是那条读法**：
+「发布输出 = 请求被接受」，状态只能靠三条独立读（两个 packument 视图 / 版本 404 / tarball HEAD）**重读**得到。
 
 **下一位的第一件事（按价值排序）**：
 
