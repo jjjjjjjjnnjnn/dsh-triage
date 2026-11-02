@@ -120,7 +120,7 @@ async function probePackage(name, target, pinned = null) {
     mode: admission.mode,
     admits_target: admission.status === 'admitted',
     declared_range: typeof dshRange === 'string' ? `engines.dsh ${dshRange}` : peers === '' ? null : peers,
-    unmet: Array.isArray(admission.unmet) ? admission.unmet.map((requirement) => `${requirement.name}@${requirement.range}`) : [],
+    unmet: Array.isArray(admission.unmet) ? admission.unmet.map((requirement) => `${requirement.key}@${requirement.range}`) : [],
   }
 }
 

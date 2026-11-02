@@ -8038,16 +8038,16 @@
     {
       "id": "R57-S1",
       "batch": "R57",
-      "step": "**采证：上游 12 条求助帖，逐条判「我们能不能答」**——纯函数分类（层：admission / upgrade / composition / runtime / unknown）+ 对点到包名的帖子**真算一次准入**（拉 registry 的已发布 manifest，用同一个 `evaluateAdmission` 对目标运行时求值）",
+      "step": "**采证：上游 12 条求助帖，逐条判「我们能不能答」**——纯函数分类（层：admission / upgrade / composition / runtime / unknown）+ 对点到包名的帖子**真算一次准入**（拉 registry 的已发布 manifest，用同一个 `evaluateAdmission` 对目标运行时求值）（**同轮修了一个字段**：`unmet` 原先读 `requirement.name`，打印成 `undefined@^0.1.0-rc.7`；`Requirement` 的字段是 `key`。改后产物重录，shas 更新）",
       "changed": [
         "scripts/lib/discussion-triage.mjs",
         "scripts/lib/discussion-triage.d.mts",
         "scripts/record_discussion_triage.mjs",
         "tests/unit/discussion-triage.test.ts",
-        "data/fixtures/discussions/2026-11-02T11-30-00-000Z.json",
-        "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json",
-        "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json.sha256",
-        "audit/RECON_2026-11-02_upstream-help.md"
+        "audit/RECON_2026-11-02_upstream-help.md",
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json",
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json.sha256",
+        "data/fixtures/discussions/2026-11-02T12-10-00-000Z.json"
       ],
       "review": {
         "correctness": "PASS：12 条 → `answerable 9 / partially-answerable 3`；按「我们实际能说什么」再分：**names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3**。关键读数：`#11687`（升级 rc.5 后启动崩溃）点名的两个第三方插件 **admits rc.5** → 声明层不是凶手（`rules-out-declaration`）；`#10849` 的 `@deepseek-ai/dsh-mcp-client@0.0.1-rc.1` 与 `#8202` 帖内点名的 `@1.0-rc.7` 都 **denies**；`#7590` 两个包 **declares nothing**，与既有 CASE-7590 的标签一致。**两个错误是自己抓的**：把「不是 admitted」一律写成「denies」（于是出现 `@deepseek-ai/dsh@0.2.1-rc.5 denies 0.2.1-rc.5` —— 应用不可能拒自己）→ 改用 `admission.status` 四态；以及裸名 `dsh-im` 被当成另一个包探针 → 加「作用域名已覆盖时丢弃裸名」",
@@ -8057,9 +8057,9 @@
         "adversary": "反例一：把运行期崩溃算成 answerable——被拒：`runtime` 层最高只给 `partially-answerable`，单测钉住；反例二：拿 `latest` 去判一个点名了版本的帖子——被拒：加了 `pkg@ver` 解析，`#8202` 现在按 `0.1.0-rc.7` 判；反例三：把「没声明」说成「被拒」或「兼容」——被拒：`declares-nothing` 是独立的一档，既不 `admits` 也不 `denies`；反例四：把文本分类当成结论——被拒：每行都带 `reason` 与 `answer`，`#11421` 明明偏运行期却被判 `composition`，报告里点出这条会错；反例五：把 7 条 `names-a-denial` 说成「解决了他们的问题」——被拒：报告第 5 节写明我们判的是**包**，不是**他们那台机器**"
       },
       "real_test": {
-        "command": "node scripts/record_discussion_triage.mjs --stamp 2026-11-02T11:30:00.000Z --ids 11687,10849,8202,7590,11080,10908,11421,10201,10759,7317,10458,11288",
-        "artifact": "data/results/discussion-triage-2026-11-02T11-30-00-000Z.json",
-        "sha256": "5485b24095a55fa408b583e1fed3d733600b1001d0c82a3605c558720ce0798a",
+        "command": "node scripts/record_discussion_triage.mjs --stamp 2026-11-02T12:10:00.000Z --ids 11687,10849,8202,7590,11080,10908,11421,10201,10759,7317,10458,11288",
+        "artifact": "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json",
+        "sha256": "3c7b53c92c5745986e00c9a357c0d77d9e2fb9884a5ad40382e7f76402b7809f",
         "outcome": "sample 12 · names-a-denial 7 · rules-out-declaration 1 · declares-nothing 3 · runtime 3"
       }
     },
@@ -8085,6 +8085,32 @@
         "artifact": "data/results/listing-2026-11-02T11-50-00.000Z.json",
         "sha256": "be879f56fee8d4c7af93392f75ed65eac36c199ac861c8b2ca4050bf4e0ba5e1",
         "outcome": "13/13 PASS · version 0.3.1 · tests 548"
+      }
+    },
+    {
+      "id": "R57-S4",
+      "batch": "R57",
+      "step": "**把采证结论变成三条可直接贴的回帖草稿**（用户批准）：#8202（按帖内点名版本判出 denies）· #10849（问题在 dist-tag）· #11687（反向：声明层不是凶手）。每条都带复算命令、边界句与证据产物路径",
+      "changed": [
+        "docs/distribution/T-810/06-reply-8202-mcp-client.md",
+        "docs/distribution/T-810/07-reply-10849-dist-tag.md",
+        "docs/distribution/T-810/08-reply-11687-not-declaration.md",
+        "docs/distribution/T-810/registry.json",
+        "data/results/listing-2026-11-02T12-40-00.000Z.json",
+        "data/results/listing-2026-11-02T12-40-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：三条的技术内容逐条对到探针读数——#8202 引用 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.7` 的六个 `^0.1.0-rc.7` peer（`^0.1.0-rc.7` 排除任何 0.2.x）；#10849 引用 `0.0.1-rc.1` 的四个 `^0.0.1-rc.1` peer，并把「该修 tag 的是上游」写清；#11687 给出两个插件**放行** rc.5 的实际 peers，把 `1 required plugin did not activate` 引向 apply/import 而不是准入",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp 2026-11-02T12:40:00.000Z --tests 548` → 13/13，`drafts-cite-real-artifacts` 报「8 draft(s)」；三条草稿的 `cites` 都指向 `discussion-triage-…T12-10-00-000Z`（正文里逐字写了该路径）",
+        "licence": "PASS：只引用公开帖的标题/症状与**我们自己的**读数，不复制他人长文；无个人身份信息（无邮箱/即时通讯/个人站点）；三条都注明是项目口吻",
+        "ssot": "PASS：`registry.json` 新增三条 `status: draft` + `posted_url: null`（第 13 条断言要求 draft 不带 URL）；产物 sha 与文件一致；**一次真红**：草稿里的路径当初写成 `.000Z.json`（而产物名是 `-000Z.json`），第 9 条断言当场点名「cites a missing artifact」→ 改路径而不是改断言",
+        "adversary": "反例一：三条都写成「你的问题解决了」——被拒：每条都有边界句（我们判的是已发布版本，不是你那台机器）；反例二：在 #11687 贴升级卡片——被拒：那条明确说「声明层不是凶手」，贴卡片正好是报告里点名的答非所问；反例三：把 #10849 写成「升级区间就好」——被拒：那条的修法是 retag / 显式版本，不是改区间；反例四：引用产物路径写成缩写——被拒：第 9 条断言要求正文逐字含路径"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T12:40:00.000Z --tests 548",
+        "artifact": "data/results/listing-2026-11-02T12-40-00.000Z.json",
+        "sha256": "c13d2f81aa2e6543b0a9ac652bb383d12780027478cb40d0abf2d73169af3e0e",
+        "outcome": "13/13 PASS · 8 草稿 · 三条新回复的引用与命令全部可复算"
       }
     }
   ]

@@ -56,6 +56,36 @@
       "cites": [
         "data/results/upgrade-card-2026-10-31T09-00-00.000Z.json"
       ]
+    },
+    {
+      "file": "06-reply-8202-mcp-client.md",
+      "channel": "回复 upstream #8202（英文）：按帖内点名的版本判出 denies",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+      ]
+    },
+    {
+      "file": "07-reply-10849-dist-tag.md",
+      "channel": "回复 upstream #10849（英文）：问题在 dist-tag，不在区间",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+      ]
+    },
+    {
+      "file": "08-reply-11687-not-declaration.md",
+      "channel": "回复 upstream #11687（中文）：声明层不是凶手（反向回答）",
+      "status": "draft",
+      "posted_url": null,
+      "posted_on": null,
+      "cites": [
+        "data/results/discussion-triage-2026-11-02T12-10-00-000Z.json"
+      ]
     }
   ]
 }
