@@ -181,7 +181,7 @@ interface Parsed {
   readonly flags: Flags
 }
 
-const HELP = `dsh-triage — the judgment layer for DeepSeek Harness plugins
+const HELP_EN = `dsh-triage — the judgment layer for DeepSeek Harness plugins
 
 Usage
   dsh-triage                         one screen: is this profile broken, which row, what to type
@@ -238,6 +238,43 @@ Flags
 Exit codes: 0 ok · 1 findings (audit always, others only with --strict) · 2 usage · 3 unavailable
 `
 
+const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层
+
+用法 (Usage)
+  dsh-triage                         一屏速览：当前配置是否存在异常、受影响条目及修复建议
+  dsh-triage status                  输出与无参相同的一屏诊断结论
+  dsh-triage env                     查看当前环境指纹（DSH 版本、Profile、已装 Bundle）
+  dsh-triage why                     排查插件静默失效根因，进行逐行准入归因
+  dsh-triage check <包名[@版本]>      在安装前预检候选插件是否满足当前环境准入
+  dsh-triage audit                   全量兼容性台账（配合 --all 查看完整清单）
+  dsh-triage probe <包名[@版本]>      生成隔离沙盒实测方案（默认 dry-run，--execute 真跑）
+  dsh-triage serve                   启动本地可视化诊断面板（127.0.0.1，Token 鉴权）
+  dsh-triage badge <包名[@版本]>      基于真实证据生成 shields 风格 SVG 状态徽章
+  dsh-triage index                   导出本地实测为 "go" 的格式 1 兼容索引
+  dsh-triage outcomes                回流层本地存储：status / --enable / --disable / --purge
+  dsh-triage upgrade --to <目标版本>  预检目标 DSH 版本会拦截当前哪些插件，并输出修复建议
+  dsh-triage upgrade --to next|latest 预检升级至 npm 远端 next/latest 版本的兼容影响
+  dsh-triage fix                     自动修复计划；--apply 实际写入，--undo 依日志撤销
+参数 (Flags)
+  --json                输出机器可读的 JSON 数据
+  --all                 包含非阻断性条目（audit 命令下打印全量台账）
+  --apply               (fix) 真正执行修复写入；不加此参数时仅输出方案
+  --undo <日志文件>      (fix) 依据此前执行生成的日志文件回滚修复改动
+  --strict              当存在非 "go" 结论时以退出码 1 退出
+  --profile <名称>       指定分析的 Profile 名称（默认：web）
+  --dsh-home <路径>      覆盖 $DSH_HOME 路径（默认：~/.dsh）
+  --locale <en|zh>      输出语言（默认：zh，或读取 $DSH_TRIAGE_LOCALE）
+  --no-redact           在 --json 输出中保留原始绝对路径（默认脱敏为 ~）
+  --stamp <iso时间戳>    指定固定时间戳以获得确定性输出
+  --to <版本>           (upgrade) 目标 DSH 版本：精确 semver（如 0.2.1-rc.5）或 next / latest
+  --card                (upgrade) 输出格式化 Markdown 升级卡片
+  --execute             (probe) 在独立隔离临时 DSH_HOME 中真正拉起沙盒执行实测
+  --port <端口>          (serve) 本地面板绑定的端口（默认自动选取空闲端口）
+  --help                显示帮助信息
+
+退出状态码: 0 正常 · 1 存在异常（audit 始终生效，其他命令需加 --strict） · 2 参数错误 · 3 元数据不可用
+`
+
 async function run(argv: readonly string[]): Promise<number> {
   const parsed = parseArgs(argv)
   if (parsed === null) {
@@ -248,7 +285,7 @@ async function run(argv: readonly string[]): Promise<number> {
 
   switch (command) {
     case 'help':
-      process.stdout.write(HELP)
+      process.stdout.write(flags.locale === 'zh' ? HELP_ZH : HELP_EN)
       return EXIT_OK
     case 'status':
       return commandStatus(flags)
@@ -1242,9 +1279,9 @@ async function commandFix(flags: Flags): Promise<number> {
   } else {
     const zh = flags.locale === 'zh'
     if (plan.items.length === 0) {
-      process.stdout.write(zh ? '没有需要修复的项。\n' : 'nothing to fix.\n')
+      process.stdout.write(zh ? '未检测到需要修复的配置项。\n' : 'nothing to fix.\n')
     } else {
-      process.stdout.write(zh ? `可修复 ${plan.applicable} / ${plan.items.length} 项\n` : `${plan.applicable} of ${plan.items.length} fixable\n`)
+      process.stdout.write(zh ? `可自动修复 ${plan.applicable} / ${plan.items.length} 项\n` : `${plan.applicable} of ${plan.items.length} fixable\n`)
       for (const item of plan.items) {
         const mark = item.status === 'ready' ? '✓' : '·'
         process.stdout.write(`  ${mark} ${item.id}  [${item.action}/${item.status}]\n      ${item.detail}\n`)
@@ -1254,16 +1291,16 @@ async function commandFix(flags: Flags): Promise<number> {
     if (!plan.exemptionSupport) {
       process.stdout.write(
         zh
-          ? `\n本机运行时（dsh ${plan.runtime ?? '?'}）不读取 compatibility.json，因此豁免类修复不可用。\n`
+          ? `\n本机运行环境（dsh ${plan.runtime ?? '?'}）不读取 compatibility.json，因此豁免类修复在此处不可用。\n`
           : `\nthis runtime (dsh ${plan.runtime ?? '?'}) does not read compatibility.json, so exemptions cannot be applied here.\n`,
       )
     }
     if (run.dryRun) {
       if (plan.applicable > 0) {
-        process.stdout.write(zh ? '\n只出了计划，没有写任何文件。要执行：dsh-triage fix --apply\n' : '\nplan only — nothing was written. To apply: dsh-triage fix --apply\n')
+        process.stdout.write(zh ? '\n当前仅输出修复方案，未修改任何文件。如需执行修改，请运行：dsh-triage fix --apply\n' : '\nplan only — nothing was written. To apply: dsh-triage fix --apply\n')
       }
     } else {
-      process.stdout.write(zh ? `\n已写入 ${run.changes.length} 处，撤销：dsh-triage fix --undo ${run.journal}\n` : `\nwrote ${run.changes.length} change(s); undo with: dsh-triage fix --undo ${run.journal}\n`)
+      process.stdout.write(zh ? `\n已写入 ${run.changes.length} 处修复变更；如需撤销回滚请执行：dsh-triage fix --undo ${run.journal}\n` : `\nwrote ${run.changes.length} change(s); undo with: dsh-triage fix --undo ${run.journal}\n`)
     }
   }
 
@@ -1304,7 +1341,11 @@ async function commandAudit(flags: Flags): Promise<number> {
   const summary = buildProfileSummary(data, { locale: flags.locale })
   process.stdout.write(formatProfileSummary(summary, { locale: flags.locale, env }))
   if (!flags.all) {
-    process.stdout.write('\n(full ledger behind --all; `audit --json` carries every field)\n')
+    process.stdout.write(
+      flags.locale === 'zh'
+        ? '\n（使用 --all 可查看完整台账；`audit --json` 输出所有字段）\n'
+        : '\n(full ledger behind --all; `audit --json` carries every field)\n',
+    )
     return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
   }
   process.stdout.write(`\ncapability ledger · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`)

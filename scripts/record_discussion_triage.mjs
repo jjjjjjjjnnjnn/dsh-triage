@@ -24,8 +24,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { isAbsolute, basename, dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 
-import { evaluateAdmission } from '../packages/core/dist/index.js'
 import { fetchPackument } from '../packages/signals/dist/index.js'
+import { probePackage, selectProbeTargets } from './lib/discussion-probe.mjs'
 import { classifyThread } from './lib/discussion-triage.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 
@@ -76,53 +76,9 @@ function fetchThreads() {
 
 /**
  * A real answer for an admission/upgrade thread: published manifest + declared range vs the target
- * runtime. We ask the registry, never the author's profile.
+ * runtime. The implementation lives in `scripts/lib/discussion-probe.mjs` so R59 uses the same one.
  */
-async function probePackage(name, target, pinned = null) {
-  const fetched = await fetchPackument(name, {})
-  if (!fetched?.ok) {
-    return { package: name, state: 'unreadable', detail: fetched?.error?.detail ?? 'registry did not answer', verdict: null }
-  }
-  const packument = fetched.value
-  const versions = [...packument.versions.keys()].sort()
-  const chosen = pinned ?? packument.latest ?? versions.at(-1)
-  const manifest = chosen === undefined ? undefined : packument.versions.get(chosen)
-  if (manifest === undefined) {
-    return {
-      package: name,
-      state: 'unreadable',
-      detail: pinned === null ? 'no published version with a manifest' : `version ${String(pinned)} is not on the registry`,
-      verdict: null,
-    }
-  }
-  const admission = evaluateAdmission({ name, ...manifest }, target)
-  const engines = manifest.engines
-  const dshRange = engines !== null && typeof engines === 'object' ? /** @type {Record<string, unknown>} */ (engines).dsh : null
-  const peers =
-    manifest.peerDependencies !== null && typeof manifest.peerDependencies === 'object'
-      ? Object.entries(/** @type {Record<string, unknown>} */ (manifest.peerDependencies))
-          .filter(([key]) => key.startsWith('@deepseek-ai/dsh'))
-          .map(([key, range]) => `${key}@${String(range)}`)
-          .join(' , ')
-      : ''
-  /*
-   * `status`, NOT "anything that is not admitted is denied" (R57): the engine has four statuses and
-   * `unconstrained` means "declares nothing" — reporting that as a denial is the exact false claim
-   * this repository forbids. The first version of this script did exactly that and printed
-   * `@deepseek-ai/dsh@0.2.1-rc.5 denies 0.2.1-rc.5`, which the app cannot do to itself.
-   */
-  return {
-    package: name,
-    version: chosen,
-    state: 'measured',
-    target,
-    admission_status: admission.status,
-    mode: admission.mode,
-    admits_target: admission.status === 'admitted',
-    declared_range: typeof dshRange === 'string' ? `engines.dsh ${dshRange}` : peers === '' ? null : peers,
-    unmet: Array.isArray(admission.unmet) ? admission.unmet.map((requirement) => `${requirement.key}@${requirement.range}`) : [],
-  }
-}
+const loadPackument = (name) => fetchPackument(name, {})
 
 function loadFixtures() {
   const file = String(fixturesIn)
@@ -145,43 +101,15 @@ if (fixturesIn === null) {
   writeFileSync(fixturesOut, `${JSON.stringify({ schema_version: 1, produced_by: 'scripts/record_discussion_triage.mjs', captured_at: stamp, threads }, null, 2)}\n`, 'utf8')
 }
 
-/**
- * Versions the thread pinned itself (`pkg@1.2.3`). A probe must judge the version the reporter had,
- * not `latest`: #8202 names `@deepseek-ai/dsh-mcp-client@0.1.0-rc.7`, while `latest` is `0.0.1-rc.1`
- * — judging `latest` there answers a different question than the one asked.
- */
-function pinnedVersions(text) {
-  const map = new Map()
-  for (const match of String(text ?? '').matchAll(/(@?[a-z0-9][a-z0-9._/-]*[a-z0-9])@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)/gi)) {
-    const name = match[1].toLowerCase()
-    if (!map.has(name)) map.set(name, match[2])
-  }
-  return map
-}
-
 const rows = []
 for (const thread of [...threads].sort((a, b) => Number(b.number) - Number(a.number))) {
   const classification = classifyThread({ title: thread.title, body: thread.bodyText, category: thread.category?.name })
   const probes = []
   if (classification.verdict === 'answerable' || classification.verdict === 'partially-answerable') {
-    const pinned = pinnedVersions(`${thread.title}\n${thread.bodyText}`)
-    /*
-     * Bare names are dropped when the same thread also carries `@scope/<bare>`: `dsh-llm` on npm is
-     * not `@deepseek-ai/dsh-llm`, and judging the wrong registry entry is worse than not judging.
-     */
-    const scopedSuffixes = new Set(
-      classification.packages.filter((name) => name.startsWith('@')).map((name) => name.split('/')[1].toLowerCase()),
-    )
-    const candidates = classification.packages.filter(
-      (name) => name.startsWith('@') || !scopedSuffixes.has(name.toLowerCase()),
-    )
-    // Third-party names first: an upstream built-in that "denies" is usually the app itself talking.
-    const ordered = [...candidates].sort((a, b) => {
-      const third = (name) => (/^@deepseek-ai\//i.test(name) ? 1 : 0)
-      return third(a) - third(b)
-    })
-    for (const name of ordered.slice(0, 3)) {
-      probes.push(await probePackage(name, targetRuntime, pinned.get(name.toLowerCase()) ?? null))
+    // Bare names, pinned versions and third-party ordering all live in the shared selector (R59).
+    const { targets } = selectProbeTargets(classification, `${thread.title}\n${thread.bodyText}`)
+    for (const target of targets) {
+      probes.push(await probePackage(target.name, targetRuntime, { pinned: target.pinned, loadPackument }))
     }
   }
   rows.push({

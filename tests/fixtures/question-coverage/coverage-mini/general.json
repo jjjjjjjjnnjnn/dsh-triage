@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_question_coverage.mjs",
+  "captured_at": "2026-11-02T15:00:00.000Z",
+  "total_count": 2,
+  "cutoff": 11,
+  "pages": 1,
+  "projection_only": true,
+  "threads": [
+    {
+      "number": 10,
+      "title": "[Bug] desktop startup fails",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10",
+      "createdAt": "2026-10-10T00:00:00Z",
+      "category": { "name": "General" },
+      "body_sha256": "7be4e2b5a8c7c1a3f2e6b6c2d2c5e0f0b0d2f4a6c8e0a2b4d6f8a0c2e4b6a8c0",
+      "body_chars": 96,
+      "layer": "runtime",
+      "verdict": "partially-answerable",
+      "signals": ["runtime"],
+      "packages": ["@deepseek-ai/dsh-tools"],
+      "probe_targets": [{ "name": "@deepseek-ai/dsh-tools", "pinned": null }],
+      "packages_omitted": 0,
+      "snippets": [{ "layer": "runtime", "snippet": "gateway/service-unavailable: typert gateway" }]
+    },
+    {
+      "number": 11,
+      "title": "[Bug] after upgrade my plugin is missing",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11",
+      "createdAt": "2026-10-11T00:00:00Z",
+      "category": { "name": "General" },
+      "body_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+      "body_chars": 64,
+      "layer": "admission",
+      "verdict": "answerable",
+      "signals": ["admission", "upgrade"],
+      "packages": ["@acme/dsh-third-party-ok"],
+      "probe_targets": [{ "name": "@acme/dsh-third-party-ok", "pinned": "1.0.0" }],
+      "packages_omitted": 0,
+      "snippets": [{ "layer": "admission", "snippet": "incompatible after upgrade" }]
+    }
+  ]
+}

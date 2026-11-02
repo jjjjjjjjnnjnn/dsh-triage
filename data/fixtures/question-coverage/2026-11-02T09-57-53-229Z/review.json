@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "produced_by": "manual review (agent, R59)",
+  "reviewer": "agent:deepseek-v4.1-flash",
+  "method": "read title + bodyText only; label layer and verdict from the same taxonomy as scripts/lib/discussion-triage.mjs; do not look at the classifier output until after labelling",
+  "reviews": [
+    { "number": 3443, "layer": "runtime", "verdict": "partially-answerable", "why": "browser API failure (crypto.randomUUID over plain HTTP); a runtime/UI bug, no package or profile question" },
+    { "number": 1027, "layer": "runtime", "verdict": "partially-answerable", "why": "startup dialog cannot persist confirmation; app runtime state, no named package" },
+    { "number": 437, "layer": "runtime", "verdict": "partially-answerable", "why": "LAN port forwarding / cross-origin localStorage; runtime/network, not a declaration problem" },
+    { "number": 8497, "layer": "runtime", "verdict": "partially-answerable", "why": "Windows sandbox ACL makes every child process fail with 0xC0000142; runtime/OS bug" },
+    { "number": 7199, "layer": "unknown", "verdict": "not-ours", "why": "withdrawn by the author; nothing left to judge" },
+    { "number": 3397, "layer": "upgrade", "verdict": "needs-their-profile", "why": "asks to move pi-ai to 0.84.2 / add models; no DSH package named, so the answer depends on their provider config" },
+    { "number": 9266, "layer": "runtime", "verdict": "partially-answerable", "why": "desktop TLS/proxy state survives reinstall; runtime/environment, no package declaration question" },
+    { "number": 8110, "layer": "composition", "verdict": "partially-answerable", "why": "fork of an official plugin under the same name, patch not listed, link only in node_modules; composition/override, needs their profile" },
+    { "number": 9090, "layer": "composition", "verdict": "partially-answerable", "why": "optional bundles are pruned from dsh.profile.bundles at launch; a profile manifest/composition issue" },
+    { "number": 4817, "layer": "upgrade", "verdict": "needs-their-profile", "why": "after upgrading to a release, third-party providers stop responding; no DSH package named, so it needs their profile/config" },
+    { "number": 9758, "layer": "runtime", "verdict": "partially-answerable", "why": "confined sandbox blocks Schannel/SSPI HTTPS (SEC_E_NO_CREDENTIALS); runtime/OS sandbox issue" },
+    { "number": 1865, "layer": "runtime", "verdict": "partially-answerable", "why": "backspace/typing loses characters; a UI input bug, nothing about declarations" },
+    { "number": 6794, "layer": "unknown", "verdict": "not-ours", "why": "asks why the official opencode provider does not update its model list; a product/config question, not a compatibility failure" },
+    { "number": 11658, "layer": "runtime", "verdict": "partially-answerable", "why": "cad_render returning an image permanently breaks the transport; runtime crash triggered by a tool result" },
+    { "number": 2286, "layer": "admission", "verdict": "answerable", "why": "Mise/Aube cannot resolve mutually recursive peers while installing @deepseek-ai/dsh@0.1.0-rc.6; a named, pinned package and a peer/declaration question" },
+    { "number": 4790, "layer": "runtime", "verdict": "partially-answerable", "why": "Code Mode crashes on a tool description containing {{ }}; a prompt-rendering runtime bug" },
+    { "number": 10099, "layer": "composition", "verdict": "partially-answerable", "why": "a third-party bundle injects a hard dependency into core presets; loader composition/optional-inject issue" },
+    { "number": 4332, "layer": "runtime", "verdict": "partially-answerable", "why": "asks for a LAN switch; after upgrades LAN access is lost — runtime/network, not declarations" },
+    { "number": 1122, "layer": "runtime", "verdict": "partially-answerable", "why": "cordis_define's object parameter always fails oneOf validation; a tool-schema runtime bug" },
+    { "number": 5687, "layer": "runtime", "verdict": "partially-answerable", "why": "history fails to load with a gateway WebSocket error after an upgrade; gateway/runtime first, upgrade second" }
+  ]
+}

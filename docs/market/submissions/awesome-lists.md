@@ -62,7 +62,7 @@ credential access, no security claims.
 |---|---|
 | Package | `dsh-triage` |
 | Tagline (EN) | The judgment layer for DSH plugins: decide before you install, attribute after it breaks. |
-| Tagline (ZH) | 装之前判断该不该装，装完坏了定位为什么——DSH 插件的判断层。 |
+| Tagline (ZH) | 装后失效定位根因，升级前预检兼容风险——DSH 插件本地兼容分诊台。 |
 | Homepage | https://github.com/jjjjjjjjnnjnn/dsh-triage |
 | Category | Diagnostics / Developer tools |
 | Licence | MIT |

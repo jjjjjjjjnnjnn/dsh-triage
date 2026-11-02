@@ -87,6 +87,30 @@ DSH 会在运行日志中打印拒绝信息，但在重启或日常运行后日�
 
 ---
 
+## 上游问题里，这套判断层能覆盖多少
+
+<!-- question-coverage: data/results/question-coverage-2026-11-02T09-57-53-229Z.json -->
+**样本**：`deepseek-ai/deepseek-harness` 的 **Q&A 全量 1545 条**（2026-08-13 → 2026-11-02，截止 `#11857`），目标运行时 `0.2.1-rc.5`。**能给出声明层判定：74/1545 = 4.8%（Wilson 95% 3.8–6.0%）**。
+
+| tier | 条数 | 占 Q&A | 意思 |
+|---|---:|---:|---|
+| `names-a-denial` | 47 | 3.0% | 能点名「这个包会被拒」并给出区间 |
+| `rules-out-declaration` | 27 | 1.7% | 能排除声明层（「不是版本区间的问题」） |
+| `declares-nothing` | 89 | 5.8% | 只能说明「没声明」——不算兼容，也不算被拒 |
+| `upstream-only` | 164 | 10.6% | 只涉及未点名的上游包（npm tag 常年过期），不进头条 |
+| `probe-unreadable` | 90 | 5.8% | 名字不是 registry 包（404）或读不到 |
+| `needs-their-profile` | 178 | 11.5% | 相关层，但没有可探针的包名 |
+| `not-relevant` | 950 | 61.5% | 不是我们的层 |
+
+**上下文（不是头条）**：有层信号的 **595** 条里 **74/595 = 12.4%（Wilson 10.0–15.3%）**；再摘掉读不到的 90 条，是 **74/505 = 14.7%（11.8–18.0%）**。**General 全量 5786 条**另算：**411/5786 = 7.1%（6.5–7.8%）**，投影快照，只作对照，**不与 Q&A 合并**。
+
+**边界**：只对这个样本成立；判的是**已发布 manifest** 对 `0.2.1-rc.5`，**不是你的机器**；分类器只读文本，agent 复核 20 条一致 **9/20**，HUMAN 抽查 **5/5**；未点名的上游包不进头条；`probe-unreadable` 多数是 npm 上没这个名字（404），不是 npm 挂了。
+
+复算：`node scripts/record_question_coverage.mjs --stamp 2026-11-02T10:05:00.000Z --recompute --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --target 0.2.1-rc.5`。产物：`data/results/question-coverage-recompute-2026-11-02T10-05-00-000Z.json`；抽检：`data/results/question-review-2026-11-02T10-10-00-000Z.json`；方法：`audit/RECON_2026-11-02_question-coverage.md`。
+<!-- /question-coverage -->
+
+---
+
 ## 快速安装与使用
 
 ### 1. 独立 CLI 工具（推荐日常排查使用，无需常驻后台）

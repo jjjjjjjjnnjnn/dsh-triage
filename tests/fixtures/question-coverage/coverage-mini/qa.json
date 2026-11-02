@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_question_coverage.mjs",
+  "captured_at": "2026-11-02T15:00:00.000Z",
+  "total_count": 3,
+  "cutoff": 3,
+  "pages": 1,
+  "threads": [
+    {
+      "number": 1,
+      "title": "升级到 0.2.1-rc.5 之后插件不见了",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/1",
+      "createdAt": "2026-10-01T00:00:00Z",
+      "category": { "name": "Q&A" },
+      "bodyText": "incompatible: @acme/dsh-third-party@0.1.0 does not include 0.2.1-rc.5, the peer is not activate."
+    },
+    {
+      "number": 2,
+      "title": "插件被禁用了",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/2",
+      "createdAt": "2026-10-02T00:00:00Z",
+      "category": { "name": "Q&A" },
+      "bodyText": "some plugin is incompatible after the upgrade, I do not know which one."
+    },
+    {
+      "number": 3,
+      "title": "How do I change the theme?",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/3",
+      "createdAt": "2026-10-03T00:00:00Z",
+      "category": { "name": "Q&A" },
+      "bodyText": "Just aesthetics, thanks."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R58 (2026-11-02)",
+  "stand": "R59 (2026-11-02)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -411,6 +411,15 @@
       "mitigation": "① 口径里写死「只数 GitHub 搜索可见的 issue/PR」，并把这条限制写进每份 `d5-evidence` 产物的 `limits[]`（不是写在文档里就算了）；② 产物同时记 `references_seen`（搜索回来多少条）与被排除的每一条，读者能自己看穿「0 是因为没有，还是因为全被排除」；③ 判定表里 `unmeasurable` 与 `0` 严格分开，读不到不许折成没达标；④ 若窗口结束时引用仍为 0，结论只能是「在 GitHub 上没看到引用」，**不许**扩展成「产品没人用」——那三个数一起看（`BS-48` 说下载也一样）。",
       "owner": "scripts/record_d5_evidence.mjs + docs/specs/D5-measurement.md §1/§4",
       "status": "open (R54): the number is honest about what it counts, and counts only a slice of the possible references",
+      "resolved_by": null
+    },
+    {
+      "id": "BS-52",
+      "area": "Question 覆盖率 / 分类器",
+      "cannot_see": "R59 的头条（74/1544 = 4.8%）与 tier 拆分都建立在**只读文本的分类器**上，而 20 条盲标抽检只有 **9/20 = 45%** 一致：9 条运行期/UI 报告（`fails` / `cannot` / `TRANSPORT` / 沙箱 ACL / 浏览器 API）没有命中关键词表，被读成 `unknown / not-ours`，人工读成 `runtime / partially-answerable`。头条**不受这类误读影响**（`unknown` 不探针、分子不进；正确读成 runtime 最多变成 `rules-out-declaration`，只会把头条抬高），所以 4.8% 是保守下界；但 **tier 拆分与「相关问题 594 / 12.5%」会把运行期报告算进 `not-relevant`**，目前只能当粗略分布看。仍然看不见的：① 如果分类器 v2 把 950 条 `not-relevant` 里的运行期帖正确分出来，会有多少条新增 tier2（可能把 4.8% 抬高，但抬多少未知）；② General 是投影快照（无全文进仓），它的率不能像 Q&A 那样逐字复算；③ 一个目标运行时（rc.5）判全部帖子，帖子说的是旧运行时也不改目标；④ 每帖最多 3 个包，Q&A 138 条 / General 677 条被截断。",
+      "mitigation": "① README 与产物同屏写「分类器辅助，一致率 9/20」，不写「覆盖率 100%」；② 头条分母固定为**全部 Q&A**，相关/可判口径只作上下文，且用 `shareOf` 纯函数算 Wilson；③ 抽检用固定种子盲标（先读 title+body，再看分类器），`question-review-*` 产物带 `measurement.sha256`，改过的测量产物拒绝复核；④ 分类器 v2 另开**判据轮**（改规则 + 重跑 20 条 + 负对照），不许在覆盖率轮里顺手调；⑤ `--fixtures` 复算必须 rows/counts/coverage 逐项相同（本轮修掉 `null`/`undefined` 两个假绿才做到）。",
+      "owner": "scripts/lib/discussion-triage.mjs · docs/specs/question-coverage.md · data/results/question-review-2026-11-02T09-55-00-000Z.json · audit/RECON_2026-11-02_question-coverage.md",
+      "status": "open (R59): the headline is a conservative lower bound; the tier split is classifier-dependent until v2",
       "resolved_by": null
     }
   ]

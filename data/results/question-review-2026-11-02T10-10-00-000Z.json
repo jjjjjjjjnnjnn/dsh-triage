@@ -1,0 +1,501 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_question_coverage.mjs",
+  "generated_at": "2026-11-02T10:10:00.000Z",
+  "mode": "review",
+  "measurement": {
+    "path": "data/results/question-coverage-2026-11-02T09-57-53-229Z.json",
+    "sha256": "7354f39db3ab48fbaa4d515d408c9b2aed5197854313781cba3b840f1e98e8c4"
+  },
+  "seed": 20261102,
+  "sample_size": 20,
+  "sample_numbers": [
+    3443,
+    1027,
+    437,
+    8497,
+    7199,
+    3397,
+    9266,
+    8110,
+    9090,
+    4817,
+    9758,
+    1865,
+    6794,
+    11658,
+    2286,
+    4790,
+    10099,
+    4332,
+    1122,
+    5687
+  ],
+  "reviews": [
+    {
+      "number": 437,
+      "title": "Ask: 端口转发跨host后工作记录显示缺失",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "LAN port forwarding / cross-origin localStorage; runtime/network, not a declaration problem"
+    },
+    {
+      "number": 1027,
+      "title": "开局弹窗显示”暂时无法保存确认状态，请重试“",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "startup dialog cannot persist confirmation; app runtime state, no named package"
+    },
+    {
+      "number": 1122,
+      "title": "`cordis_define` tool: `plugin` object parameter always fails oneOf validation (matched 0)",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "cordis_define's object parameter always fails oneOf validation; a tool-schema runtime bug"
+    },
+    {
+      "number": 1865,
+      "title": "when we press back the harness fails",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "backspace/typing loses characters; a UI input bug, nothing about declarations"
+    },
+    {
+      "number": 2286,
+      "title": "通过 Mise 安装 npm:@deepseek-ai/dsh 时 Aube 无法解析互递归 peer dependencies",
+      "classifier": {
+        "layer": "admission",
+        "verdict": "answerable"
+      },
+      "reviewer": {
+        "layer": "admission",
+        "verdict": "answerable"
+      },
+      "agree": true,
+      "why": "Mise/Aube cannot resolve mutually recursive peers while installing @deepseek-ai/dsh@0.1.0-rc.6; a named, pinned package and a peer/declaration question"
+    },
+    {
+      "number": 3397,
+      "title": "opencode-go供应商下缺少部分模型",
+      "classifier": {
+        "layer": "upgrade",
+        "verdict": "needs-their-profile"
+      },
+      "reviewer": {
+        "layer": "upgrade",
+        "verdict": "needs-their-profile"
+      },
+      "agree": true,
+      "why": "asks to move pi-ai to 0.84.2 / add models; no DSH package named, so the answer depends on their provider config"
+    },
+    {
+      "number": 3443,
+      "title": "Bug: workspace directory picker throws 'crypto.randomUUID is not a function' over plain HTTP on an IP",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "browser API failure (crypto.randomUUID over plain HTTP); a runtime/UI bug, no package or profile question"
+    },
+    {
+      "number": 4332,
+      "title": "就不能开个开关支持局域网的开关吗？",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "asks for a LAN switch; after upgrades LAN access is lost — runtime/network, not declarations"
+    },
+    {
+      "number": 4790,
+      "title": "Code Mode crashes on tool descriptions containing {{ }} — fix included",
+      "classifier": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": true,
+      "why": "Code Mode crashes on a tool description containing {{ }}; a prompt-rendering runtime bug"
+    },
+    {
+      "number": 4817,
+      "title": "升级到release: dsh@0.1.2-alpha.1 后，不支持第三方模型了，添加提供方没有响应",
+      "classifier": {
+        "layer": "upgrade",
+        "verdict": "needs-their-profile"
+      },
+      "reviewer": {
+        "layer": "upgrade",
+        "verdict": "needs-their-profile"
+      },
+      "agree": true,
+      "why": "after upgrading to a release, third-party providers stop responding; no DSH package named, so it needs their profile/config"
+    },
+    {
+      "number": 5687,
+      "title": "【在线等】历史加载失败：api gateway: Remote stream WebSocket closed（gateway/internal）",
+      "classifier": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": true,
+      "why": "history fails to load with a gateway WebSocket error after an upgrade; gateway/runtime first, upgrade second"
+    },
+    {
+      "number": 6794,
+      "title": "opencode-go会经常更新模型，但是dsh官方的opencode提供商并不会更新",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "agree": true,
+      "why": "asks why the official opencode provider does not update its model list; a product/config question, not a compatibility failure"
+    },
+    {
+      "number": 7199,
+      "title": "Withdrawn",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "agree": true,
+      "why": "withdrawn by the author; nothing left to judge"
+    },
+    {
+      "number": 8110,
+      "title": "自己替换官方实现的插件的正确方式是什么",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "composition",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "fork of an official plugin under the same name, patch not listed, link only in node_modules; composition/override, needs their profile"
+    },
+    {
+      "number": 8497,
+      "title": "[Bug][Windows 10] workspace-write 沙箱下所有子进程 0xC0000142（连 cmd.exe 都起不来）— Default DACL 使用 capability SID 所致",
+      "classifier": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": true,
+      "why": "Windows sandbox ACL makes every child process fail with 0xC0000142; runtime/OS bug"
+    },
+    {
+      "number": 9090,
+      "title": "[Bug] Optional experimental bundles cannot keep their enabled state across restarts — the launch projection prunes them from `dsh.profile.bundles` (Voice input switch resets)",
+      "classifier": {
+        "layer": "composition",
+        "verdict": "partially-answerable"
+      },
+      "reviewer": {
+        "layer": "composition",
+        "verdict": "partially-answerable"
+      },
+      "agree": true,
+      "why": "optional bundles are pruned from dsh.profile.bundles at launch; a profile manifest/composition issue"
+    },
+    {
+      "number": 9266,
+      "title": "[Bug][Windows Desktop 0.2.0-rc.2] Generic transport failure persists across reinstall/reset due to Node CA, stale state, and Electron UI cache",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "desktop TLS/proxy state survives reinstall; runtime/environment, no package declaration question"
+    },
+    {
+      "number": 9758,
+      "title": "[Bug?] Windows confined 沙箱下所有 Schannel/SSPI 客户端 HTTPS 失败:SEC_E_NO_CREDENTIALS(受限令牌+Low integrity)",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "confined sandbox blocks Schannel/SSPI HTTPS (SEC_E_NO_CREDENTIALS); runtime/OS sandbox issue"
+    },
+    {
+      "number": 10099,
+      "title": "Bug: Loader inject has no optional/timeout degrade - a third-party bundle can permanently block core agent presets while dsh only logs a warning",
+      "classifier": {
+        "layer": "admission",
+        "verdict": "answerable"
+      },
+      "reviewer": {
+        "layer": "composition",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "a third-party bundle injects a hard dependency into core presets; loader composition/optional-inject issue"
+    },
+    {
+      "number": 11658,
+      "title": "cad_render 图片导致会话永久 TRANSPORT 报错",
+      "classifier": {
+        "layer": "unknown",
+        "verdict": "not-ours"
+      },
+      "reviewer": {
+        "layer": "runtime",
+        "verdict": "partially-answerable"
+      },
+      "agree": false,
+      "why": "cad_render returning an image permanently breaks the transport; runtime crash triggered by a tool result"
+    }
+  ],
+  "agent": {
+    "reviewer": "agent:deepseek-v4.1-flash",
+    "total": 20,
+    "agree": 9,
+    "agreement": 0.45,
+    "disagreements": [
+      {
+        "number": 3443,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "browser API failure (crypto.randomUUID over plain HTTP); a runtime/UI bug, no package or profile question"
+      },
+      {
+        "number": 1027,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "startup dialog cannot persist confirmation; app runtime state, no named package"
+      },
+      {
+        "number": 437,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "LAN port forwarding / cross-origin localStorage; runtime/network, not a declaration problem"
+      },
+      {
+        "number": 9266,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "desktop TLS/proxy state survives reinstall; runtime/environment, no package declaration question"
+      },
+      {
+        "number": 8110,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "composition",
+          "verdict": "partially-answerable"
+        },
+        "why": "fork of an official plugin under the same name, patch not listed, link only in node_modules; composition/override, needs their profile"
+      },
+      {
+        "number": 9758,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "confined sandbox blocks Schannel/SSPI HTTPS (SEC_E_NO_CREDENTIALS); runtime/OS sandbox issue"
+      },
+      {
+        "number": 1865,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "backspace/typing loses characters; a UI input bug, nothing about declarations"
+      },
+      {
+        "number": 11658,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "cad_render returning an image permanently breaks the transport; runtime crash triggered by a tool result"
+      },
+      {
+        "number": 10099,
+        "classifier": {
+          "layer": "admission",
+          "verdict": "answerable"
+        },
+        "reviewer": {
+          "layer": "composition",
+          "verdict": "partially-answerable"
+        },
+        "why": "a third-party bundle injects a hard dependency into core presets; loader composition/optional-inject issue"
+      },
+      {
+        "number": 4332,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "asks for a LAN switch; after upgrades LAN access is lost — runtime/network, not declarations"
+      },
+      {
+        "number": 1122,
+        "classifier": {
+          "layer": "unknown",
+          "verdict": "not-ours"
+        },
+        "reviewer": {
+          "layer": "runtime",
+          "verdict": "partially-answerable"
+        },
+        "why": "cordis_define's object parameter always fails oneOf validation; a tool-schema runtime bug"
+      }
+    ]
+  },
+  "human_spot_check": {
+    "reviewer": "human",
+    "size": 5,
+    "numbers": [
+      3443,
+      1027,
+      437,
+      8497,
+      7199
+    ],
+    "status": "done",
+    "agree": 5,
+    "total": 5,
+    "notes": [
+      {
+        "number": 3443,
+        "agree": true,
+        "note": "runtime/UI bug; agent label accepted"
+      },
+      {
+        "number": 1027,
+        "agree": true,
+        "note": "startup/runtime; agent label accepted"
+      },
+      {
+        "number": 437,
+        "agree": true,
+        "note": "LAN/port-forwarding runtime issue; agent label accepted"
+      },
+      {
+        "number": 8497,
+        "agree": true,
+        "note": "Windows sandbox ACL runtime issue; agent label accepted"
+      },
+      {
+        "number": 7199,
+        "agree": true,
+        "note": "withdrawn; agent label accepted"
+      }
+    ]
+  },
+  "limits": [
+    "the reviewer labels the text they were shown; the classifier is frozen for this round",
+    "agreement is exact on both layer and verdict; near misses are still disagreements"
+  ]
+}

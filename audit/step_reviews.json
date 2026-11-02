@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R58 (2026-11-02)",
+  "stand": "R59 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -8139,6 +8139,254 @@
         "artifact": "data/results/gates-2026-11-02T13-00-00.000Z.json",
         "sha256": "32a2dcaaf8c348c71af598f9f2b666986db3425c667bf65ddaf51e0f5d11081c",
         "outcome": "ALL GREEN · 9 gates · 同一次 verify 548 测试 / 0 fail"
+      }
+    },
+    {
+      "id": "R59-S1",
+      "batch": "R59",
+      "step": "**大样本 Question 覆盖率：口径先签、再跑 Q&A 全量 + General 全量**——`docs/specs/question-coverage.md`（HUMAN「同意，开始跑」）；P1 = Q&A 全量（头条）/ P2 = General 全量（对照，不合并）；截止按帖子号；M≠N 或 403/429 → exit 2 零产物；三档互斥，`declares-nothing`/`upstream-only` 不进分子；`probe-unreadable` 留在分母；20 条盲标 + 5 条 HUMAN 抽查。中途按 50 条试点修正一次（R59-S1：第三方 + 上游点名版本才进头条，新增 `upstream-only`）",
+      "changed": [
+        "docs/specs/question-coverage.md",
+        "scripts/lib/question-coverage.mjs",
+        "scripts/lib/question-coverage.d.mts",
+        "scripts/lib/discussion-probe.mjs",
+        "scripts/lib/discussion-probe.d.mts",
+        "scripts/lib/discussion-triage.mjs",
+        "scripts/lib/discussion-triage.d.mts",
+        "scripts/record_question_coverage.mjs",
+        "scripts/record_discussion_triage.mjs",
+        "tests/unit/question-coverage.test.ts",
+        "tests/unit/discussion-probe.test.ts",
+        "tests/governance/question-coverage.test.ts",
+        "tests/fixtures/question-coverage/coverage-mini/qa.json",
+        "tests/fixtures/question-coverage/coverage-mini/general.json",
+        "tests/fixtures/question-coverage/coverage-mini/packuments.json",
+        "audit/SIGNOFF.md",
+        "audit/RECON_2026-11-02_question-coverage.md"
+      ],
+      "review": {
+        "correctness": "PASS：Q&A 1545/1545（16 页）/ General 5786/5786（58 页），M=N；目标 `0.2.1-rc.5` 逐字读回；1393 个唯一包去重后 5332 次探针；头条 74/1545，tier 47/27/89/164/90/178/950；`declares-nothing` 与 `upstream-only` 都不进分子",
+        "reproducibility": "PASS：产物带 produced_by/generated_at/schema_version + .sha256；快照 `qa.json`（全文）/ `general.json`（投影）/ `packuments.json`（1393 包）落 `data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/`；下一行的 `--fixtures` 复算逐项相同",
+        "licence": "PASS：只读 GitHub Discussions 与 npm registry 元数据；正文是公开讨论内容；General 只存投影与 hash；未 vendor 任何第三方代码",
+        "ssot": "PASS：`gate_ssot` 校验 produced_by/generated_at/sha256；`sample.source=graphql`；产物 8.1MB；只出现仓库相对路径，没有本机 home 路径",
+        "adversary": "反例一：把 `declares-nothing` 算进分子——被拒：tier 规则只让 names-a-denial + rules-out 进分子；反例二：把上游未点名包的 denial 算成答案——被拒（R59-S1）：`upstream-only` 独立成档；反例三：M<N 仍写产物——被拒：`assertComplete` + exit 2；反例四：拿试点产物当证据——被拒：`pilot` 标记 + 第 14 条 live-only 正则"
+      },
+      "real_test": {
+        "command": "node scripts/record_question_coverage.mjs --stamp 2026-11-02T09:32:13.057Z --delay 150",
+        "artifact": "data/results/question-coverage-2026-11-02T09-57-53-229Z.json",
+        "sha256": "7354f39db3ab48fbaa4d515d408c9b2aed5197854313781cba3b840f1e98e8c4",
+        "outcome": "Q&A 1545/1545 · General 5786/5786 · 头条 74/1545 = 4.8% · Wilson 3.8–6.0%"
+      }
+    },
+    {
+      "id": "R59-S2",
+      "batch": "R59",
+      "step": "**离线复算 + 两个假绿的修复**：第一次全量把 `packumentsSnapshot` 初始成 `undefined`（不是 `null`）→ 快照没有 `packages`，复算 exit 1；第二次复算把 `undefined` 写成 `null`，`evaluateAdmission` 把字面 null 读成畸形声明 → 81 条从 `unconstrained` 翻成 `denied`（47/27/89 vs 128/17/18）。修法是快照省略字段、读取时把旧 null 还原成 undefined，并加 3 条回归测试",
+      "changed": [
+        "scripts/record_question_coverage.mjs",
+        "scripts/lib/discussion-probe.mjs",
+        "tests/unit/discussion-probe.test.ts",
+        "audit/RECON_2026-11-02_question-coverage.md"
+      ],
+      "review": {
+        "correctness": "PASS：`--fixtures` 从快照重跑 5327 次探针，rows/counts/coverage 与实测逐项相同；修掉 `undefined` 快照与 `null` 声明两个假绿（81 条 unconstrained→denied）",
+        "reproducibility": "PASS：命令与产物固定；同一 snapshot + stamp 产生同一 sha；三条回归测试钉住「null 仍是 unconstrained / 真声明仍 denied / round-trip 相同」",
+        "licence": "PASS：只读本地快照，不联网；没有引入新的外部数据",
+        "ssot": "PASS：产物带 sha256；`target.source=argument`、`sample.source=fixtures:…` 自曝与实测不同；第 14 条会逐项比对 rows/counts",
+        "adversary": "反例一：快照写 `engines:null` 当没声明——被拒：`packumentFromSnapshot` 还原成 undefined；反例二：recompute 只比计数不比 rows——被拒：第 14 条比 rows.qa/rows.general；反例三：把 recompute 当 README 的测量指针——被拒：第 14 条的 live-only 正则"
+      },
+      "real_test": {
+        "command": "node scripts/record_question_coverage.mjs --stamp 2026-11-02T09:50:00.000Z --recompute --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --target 0.2.1-rc.5",
+        "artifact": "data/results/question-coverage-recompute-2026-11-02T10-05-00-000Z.json",
+        "sha256": "2d51b1666275888eb6863132b5194b09108118bb282d25c159dc846d5f97185f",
+        "outcome": "rows / counts / coverage 与实测逐项相同；头条仍是 74/1545 = 4.8%"
+      }
+    },
+    {
+      "id": "R59-S3",
+      "batch": "R59",
+      "step": "**20 条盲标抽检 + 5 条 HUMAN 抽查**：固定种子 `20261102` 取 sha256 前 20；agent 先读 title+body 给 layer/verdict，再看分类器；一致 9/20；HUMAN 抽查前 5 条 5/5；11 条分歧逐条记录（9 条运行期/UI 转述被读成 unknown，1 条 composition，1 条 admission）",
+      "changed": [
+        "data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/review.json",
+        "data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/human.json",
+        "data/results/question-review-2026-11-02T10-10-00-000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：20 条固定种子盲标，agent 9/20；HUMAN 抽查 5/5；11 条分歧逐条记录（9 条运行期转述被读成 unknown，1 条 composition，1 条 admission）",
+        "reproducibility": "PASS：`review.json` / `human.json` 在快照目录；`--review-only` 校验 `measurement.sha256`；种子 20261102 可复算样本",
+        "licence": "PASS：只引用公开帖子标题；未写入作者身份、邮箱或个人信息",
+        "ssot": "PASS：review 产物带 `measurement.path` + sha256；agent 与 human 两级 reviewer 分开记录；HUMAN 未逐条复核的部分写进 SIGNOFF",
+        "adversary": "反例一：先看分类器再标——被拒：流程要求先读 title+body；反例二：只报一致率不报错例——被拒：`disagreements[]` 逐条；反例三：把 agent 复核写成人工——被拒：`reviewer: agent:…` 与 `human_spot_check` 分开"
+      },
+      "real_test": {
+        "command": "node scripts/record_question_coverage.mjs --review-only --stamp 2026-11-02T09:55:00.000Z --measurement data/results/question-coverage-2026-11-02T09-57-53-229Z.json --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --review .../review.json --human .../human.json",
+        "artifact": "data/results/question-review-2026-11-02T10-10-00-000Z.json",
+        "sha256": "285fc59e5ac5f43dec3f9322a9ead8aed86fa4107c65c80cff0b9432bfe4aac5",
+        "outcome": "agent 9/20 · HUMAN 5/5"
+      }
+    },
+    {
+      "id": "R59-S4",
+      "batch": "R59",
+      "step": "**README 新增覆盖率一节 + `check_listing` 第 14 条**：两份 README 的 `question-coverage` 块（头条 / 七档 / 上下文档 / 边界 / 复算命令）；检查器从测量产物读回头条、每档计数与占比、相关/可判上下文、General、抽检 9/20 + HUMAN 5/5，并逐项比对 recompute 的 rows/counts/coverage；pilot/selftest/recompute 不得当测量指针",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：第 14 条从两份 README 的块读回头条/七档/上下文/边界；**14/14** 全绿（tests 583）",
+        "reproducibility": "PASS：`--stamp` 固定；产物带 sha256；同一输入重跑同结果（除 stamp）",
+        "licence": "PASS：只读仓内文档与产物；没有引入外部文案或图片",
+        "ssot": "PASS：14 条断言全绿；新证据路径都有 `.sha256`；`skip` 一个都没有",
+        "adversary": "反例一：README 改数——在 S5 真红；反例二：删边界——S6 真红；反例三：指复算产物——S7 真红；三条红产物各自保留"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T10:00:00.000Z --tests 583",
+        "artifact": "data/results/listing-2026-11-02T10-00-00.000Z.json",
+        "sha256": "fc9a8f2f02476b01471700cddb4ee0e51ef47e3b50df772fb8aedc04c71c0ebe",
+        "outcome": "14/14 PASS · 10 documents · tests 583"
+      }
+    },
+    {
+      "id": "R59-S5",
+      "batch": "R59",
+      "step": "**定向负对照一：README 改一个 tier 数字**——把 `names-a-denial` 47 改成 48，`check_listing` 第 14 条当场红并点名「README.md: names-a-denial says 48, artifact says 47」；恢复后 S8 绿",
+      "changed": [
+        "data/results/listing-2026-11-02T10-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：改数不重跑即红，且错误信息点名文件与数字；没有放宽检查",
+        "reproducibility": "PASS：红产物与其 sha256 保留，可逐字节复算",
+        "licence": "PASS：只改仓内 README 的一行，恢复后无残留",
+        "ssot": "PASS：红产物不进 README，也不被任何文档引用；终跑另取 stamp",
+        "adversary": "构造即反例：如果第 14 条只检查「有这一节」而不比对数字，这条会假绿；它红了，说明比对真的生效"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T10:10:00.000Z --tests 583",
+        "artifact": "data/results/listing-2026-11-02T10-10-00.000Z.json",
+        "sha256": "42f242af0acc6b7e8d6c31464bf30ac8ca04758d607115628def16f488d3c42c",
+        "outcome": "FAIL（预期）· readme-quotes-real-question-coverage · names-a-denial 48 vs 47"
+      }
+    },
+    {
+      "id": "R59-S6",
+      "batch": "R59",
+      "step": "**定向负对照二：删掉边界句**——把「不是你的机器」改成「不是本机」，第 14 条判红「missing not-your-machine boundary」；恢复后 S8 绿",
+      "changed": [
+        "data/results/listing-2026-11-02T10-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：边界句不是装饰，删掉即红；失败条件与 spec §9 一致",
+        "reproducibility": "PASS：红产物与其 sha256 保留",
+        "licence": "PASS：只改仓内 README 的一行，恢复后无残留",
+        "ssot": "PASS：红产物不被引用；终跑另取 stamp",
+        "adversary": "构造即反例：如果检查器只查「README 有覆盖率数字」而不管边界，这条会假绿；它红了，说明边界是可机器检查的"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T10:20:00.000Z --tests 583",
+        "artifact": "data/results/listing-2026-11-02T10-20-00.000Z.json",
+        "sha256": "f4af2c35bcc76942c38073b5c7ba02864f195c4c0647f2ee14f209995827f35a",
+        "outcome": "FAIL（预期）· missing not-your-machine boundary"
+      }
+    },
+    {
+      "id": "R59-S7",
+      "batch": "R59",
+      "step": "**定向负对照三：把复算产物当测量指针**——README 的 `question-coverage` 块指向 `question-coverage-recompute-…`，第 14 条判红「is not a live measurement (pilot/selftest/recompute are not evidence)」；恢复后 S8 绿",
+      "changed": [
+        "data/results/listing-2026-11-02T10-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（负对照）：测量指针只接受 live 产物；复算产物不能冒充测量",
+        "reproducibility": "PASS：红产物与其 sha256 保留",
+        "licence": "PASS：只改仓内 README 的一行，恢复后无残留",
+        "ssot": "PASS：红产物不被引用；终跑另取 stamp",
+        "adversary": "构造即反例：如果 live-only 正则不排除 `recompute`，一个 9.39% 的复算读数就能被当成头条；它红了，说明 4.79% 不能被换掉"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T10:30:00.000Z --tests 583",
+        "artifact": "data/results/listing-2026-11-02T10-30-00.000Z.json",
+        "sha256": "88ecf13576d818cac18a5eb5ba47118cc6237bdefd50638f5f49ec449a2f6da0",
+        "outcome": "FAIL（预期）· recompute artifact is not a live measurement"
+      }
+    },
+    {
+      "id": "R59-S8",
+      "batch": "R59",
+      "step": "**收口复跑**：三条负对照恢复后，两份 README 的覆盖率块与测量/复算/抽检产物逐项一致，`check_listing` 14/14；同一次 `pnpm run verify` 报 583 测试 / 0 fail",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：第 14 条 14/14；头条 74/1545，七档与产物逐项相同，上下文 74/594、74/504 与 Wilson 都由 `shareOf` 复算",
+        "reproducibility": "PASS：`--stamp` 固定；产物与 sha256 落盘；同输入重跑同结果",
+        "licence": "PASS：只读仓内文档与产物",
+        "ssot": "PASS：三份新证据（测量/复算/抽检）都有 sha256 且被 README 引用；三条红产物各自保留",
+        "adversary": "反例：把 S5–S7 的红产物删掉以「看起来干净」——被拒：它们就是负对照的见证，报告与 HANDOFF 都点名保留"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T10:40:00.000Z --tests 583",
+        "artifact": "data/results/listing-2026-11-02T10-40-00.000Z.json",
+        "sha256": "6f5a270c9bf049e3370787d606b12991375b2110edbb7f9d1e8075c21b78b695",
+        "outcome": "14/14 PASS"
+      }
+    },
+    {
+      "id": "R59-S9",
+      "batch": "R59",
+      "step": "**外部文案/UI 专业化改动后的独立复核 + 最终 14/14**：外部 AI 改了 `cli.ts`（HELP_ZH）、`serve.ts`、`listing_zh.md`、`SECURITY.md`、`awesome-lists.md`、`ROADMAP.md`；我独立跑 build / typecheck / 584 tests / `check_listing` 14/14（**未采信对方报告**）。**工作区实际 diff 只覆盖 6 个文件**，对方报告里说的 `client.js` / `summary.ts` / `CONTRIBUTING` / T-810 并不在 diff 里——以工作区为准",
+      "changed": [
+        "packages/plugin/src/cli.ts",
+        "packages/plugin/src/serve.ts",
+        "docs/market/listing_zh.md",
+        "docs/SECURITY.md",
+        "docs/market/submissions/awesome-lists.md",
+        "docs/ROADMAP.md",
+        "README.md",
+        "README.zh-CN.md",
+        "scripts/check_listing.mjs",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：584 测试 / 0 fail；`check_listing` 14/14；`pnpm run build` 与 `pnpm run typecheck` exit 0；外部改动只是文案与 HELP_ZH，没有动判据/阈值",
+        "reproducibility": "PASS：`listing-2026-11-02T11-00-00.000Z.json` 带 sha256；文案断言可复跑；版本/区间/Wilson/1584 仍由检查器逐项核对",
+        "licence": "PASS：只改仓内文案与帮助屏；没有引入外部素材或他人代码",
+        "ssot": "PASS：`listing-1584-is-qualified` 重新绿（「非全网全量普查」改成带关键词限定的写法）；R59 的 `readme-quotes-real-question-coverage` 仍绿",
+        "adversary": "反例一：直接采信外部报告的 9/9、14/14——被拒：我独立跑了 build/typecheck/tests/check_listing；反例二：把报告里声称但未落盘的改动写进台账——被拒：以 `git diff` 的实际 6 个文件为准；反例三：把文案改动当成判据改动——被拒：`admission.ts`/四桶/阈值一字未动"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T11:00:00.000Z --tests 584",
+        "artifact": "data/results/listing-2026-11-02T11-00-00.000Z.json",
+        "sha256": "569031df904c41d955ddc55a372d8abf041b73b6d40c58d45aef27b117346700",
+        "outcome": "14/14 PASS · tests 584 · 外部文案改动与 R59 覆盖率块同时成立"
+      }
+    },
+    {
+      "id": "R59-S10",
+      "batch": "R59",
+      "step": "**收口门禁**：9 门 ALL GREEN（含 governance 的 `index-references` / `results-privacy`、step-review 的 `no-orphan-results`）；同一次 verify 584 测试 / 0 fail；R59 的产物、外部文案改动与台账同时成立",
+      "changed": [
+        "audit/step_reviews.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：9 门全绿；`governance` 的隐私与 INDEX 引用检查都过；`step-review` 不再有孤儿产物；测试 584 / 0 fail",
+        "reproducibility": "PASS：`gates-2026-11-02T11-10-00.000Z.json` 带 sha256；`--mutate` 另行验证 9/9（下一条命令）",
+        "licence": "PASS：门禁只读仓内文件，不联网",
+        "ssot": "PASS：所有 `data/results/*.json` 都有 produced_by/generated_at/sha256 且被某一步引用；红产物（10:10/10:20/10:30）各自保留",
+        "adversary": "反例一：只跑 `gate` 不跑 `--mutate`——被拒：`--mutate` 是门禁自己的负对照；反例二：把外部文案改动漏进台账——被拒：S9 已列 6 个实际文件；反例三：删掉红产物让树看起来干净——被拒：报告与 HANDOFF 都点名保留"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-02T11:10:00.000Z",
+        "artifact": "data/results/gates-2026-11-02T11-10-00.000Z.json",
+        "sha256": "7628cf1c6392300b1e7a414c6c91475f2c241a54bc58a111c0f7946d20d9a749",
+        "outcome": "ALL GREEN · 9 gates · 同一次 verify 584 测试 / 0 fail"
       }
     }
   ]

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "reviewer": "human",
+  "method": "HUMAN spot-checked the first five threads of the seeded sample against the agent's labels (R59)",
+  "reviews": [
+    { "number": 3443, "agree": true, "note": "runtime/UI bug; agent label accepted" },
+    { "number": 1027, "agree": true, "note": "startup/runtime; agent label accepted" },
+    { "number": 437, "agree": true, "note": "LAN/port-forwarding runtime issue; agent label accepted" },
+    { "number": 8497, "agree": true, "note": "Windows sandbox ACL runtime issue; agent label accepted" },
+    { "number": 7199, "agree": true, "note": "withdrawn; agent label accepted" }
+  ]
+}

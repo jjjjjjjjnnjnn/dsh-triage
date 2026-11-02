@@ -27,7 +27,7 @@ export const VERDICTS = Object.freeze(['answerable', 'partially-answerable', 'ne
  * heaviest layer wins. Weights exist because a single word ("incompatible") shows up in runtime
  * reports too, while `service-unavailable` never shows up in a declaration problem.
  */
-const SIGNALS = [
+export const SIGNALS = [
   ['runtime', /service-unavailable|gateway\/|workspaceController|sessionController|typert/i, 5],
   ['runtime', /cookie|Web authentication|认证/i, 4],
   ['runtime', /写锁|write lock|bundle-in-use|安装器|installer|安装目录/i, 4],

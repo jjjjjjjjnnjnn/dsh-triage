@@ -30,6 +30,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { formatInterval, formatPercent, TIERS } from './lib/question-coverage.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -360,6 +361,149 @@ check(
   'posted-drafts-carry-a-date',
   postingProblems.length === 0,
   postingProblems.slice(0, 4).join('; ') || 'every posted draft has a discussion URL and a past ISO date; drafts carry no URL',
+)
+
+/*
+ * 14th assertion (R59): the coverage section's numbers are read out of the artifact, not typed.
+ * WHY: the headline is 4.8% of all Q&A, and the easiest way to make it look like 12.5% is to swap
+ * the denominator in prose. The block points at the **live** measurement; the review artifact and
+ * the recompute artifact must exist, hash-match, and agree with it. A pilot, self-test or recompute
+ * artifact is refused as the measurement pointer.
+ */
+const coverageProblems = []
+const artifactCache = new Map()
+const readArtifact = (path) => {
+  if (artifactCache.has(path)) return artifactCache.get(path)
+  const value = JSON.parse(readFileSync(abs(path), 'utf8'))
+  artifactCache.set(path, value)
+  return value
+}
+const sameJson = (left, right) => JSON.stringify(left) === JSON.stringify(right)
+
+for (const file of ['README.md', 'README.zh-CN.md']) {
+  const text = texts.get(file) ?? ''
+  const block = text.match(/<!--\s*question-coverage:\s*(\S+?)\s*-->([\s\S]*?)<!--\s*\/question-coverage\s*-->/)
+  if (block === null) {
+    coverageProblems.push(`${file}: no question-coverage block`)
+    continue
+  }
+  const [, pointer, body] = block
+  if (!/^data\/results\/question-coverage-(?!pilot-|selftest-|recompute-)[A-Za-z0-9._-]+\.json$/.test(pointer)) {
+    coverageProblems.push(`${file}: ${pointer} is not a live measurement (pilot/selftest/recompute are not evidence)`)
+    continue
+  }
+  if (!existsSync(abs(pointer))) {
+    coverageProblems.push(`${file}: points at a missing artifact ${pointer}`)
+    continue
+  }
+  if (!existsSync(abs(`${pointer}.sha256`)) || readFileSync(abs(`${pointer}.sha256`), 'utf8').trim() !== sha256(readFileSync(abs(pointer), 'utf8'))) {
+    coverageProblems.push(`${file}: ${pointer} does not match its .sha256`)
+    continue
+  }
+  const measurement = readArtifact(pointer)
+  const qa = measurement?.counts?.qa
+  const general = measurement?.counts?.general
+  const coverage = measurement?.coverage?.qa
+  if (qa === undefined || general === undefined || coverage === undefined) {
+    coverageProblems.push(`${file}: ${pointer} has no counts/coverage blocks`)
+    continue
+  }
+
+  const headline = coverage.headline
+  const headlineText = `${headline.count}/${headline.denominator} = ${formatPercent(headline.ratio)}`
+  if (!body.includes(headlineText)) coverageProblems.push(`${file}: headline does not say "${headlineText}"`)
+  const headlineInterval = formatInterval(headline.wilson95)
+  if (headlineInterval === null || !body.includes(headlineInterval)) {
+    coverageProblems.push(`${file}: headline does not carry Wilson ${String(headlineInterval)}`)
+  }
+
+  for (const tier of TIERS) {
+    const count = qa.tiers?.[tier]
+    if (typeof count !== 'number') {
+      coverageProblems.push(`${file}: the artifact has no count for tier ${tier}`)
+      continue
+    }
+    const match = body.match(new RegExp(`\\|\\s*\`?${tier}\`?\\s*\\|\\s*(\\d+)\\s*\\|\\s*([\\d.]+)%\\s*\\|`))
+    if (match === null) {
+      coverageProblems.push(`${file}: the ${tier} row is missing`)
+      continue
+    }
+    if (Number(match[1]) !== count) coverageProblems.push(`${file}: ${tier} says ${match[1]}, artifact says ${count}`)
+    const share = `${((count / qa.threads) * 100).toFixed(1)}%`
+    if (match[2] !== share.replace('%', '')) coverageProblems.push(`${file}: ${tier} share is ${match[2]}%, artifact implies ${share}`)
+  }
+
+  for (const [label, share] of [
+    ['relevant', coverage.sensitivity?.relevant],
+    ['decidable', coverage.sensitivity?.decidable],
+  ]) {
+    if (share === undefined || share === null) {
+      coverageProblems.push(`${file}: the artifact has no ${label} sensitivity`)
+      continue
+    }
+    const text = `${share.count}/${share.denominator} = ${formatPercent(share.ratio)}`
+    if (!body.includes(text)) coverageProblems.push(`${file}: ${label} context does not say "${text}"`)
+    const interval = formatInterval(share.wilson95)
+    if (interval === null || !body.includes(interval)) coverageProblems.push(`${file}: ${label} context does not carry Wilson ${String(interval)}`)
+  }
+
+  const generalHeadline = measurement?.coverage?.general?.headline
+  if (generalHeadline === undefined) {
+    coverageProblems.push(`${file}: the artifact has no General headline`)
+  } else {
+    const text = `${generalHeadline.count}/${generalHeadline.denominator} = ${formatPercent(generalHeadline.ratio)}`
+    if (!body.includes(text)) coverageProblems.push(`${file}: General context does not say "${text}"`)
+    if (!/投影|projection/i.test(body)) coverageProblems.push(`${file}: General is not labelled as a projection snapshot`)
+    if (!/不与 Q&A 合并|not pooled/i.test(body)) coverageProblems.push(`${file}: General is not marked as un-pooled`)
+  }
+
+  const boundary = [
+    ['sample-only boundary', /只对这个样本成立|sample only/i],
+    ['not-your-machine boundary', /不是你的机器|not your machine/i],
+    ['classifier caveat', /分类器|classifier/i],
+    ['classifier agreement', /9\/20/],
+    ['human spot-check', /5\/5/],
+    ['404 explanation', /404/],
+  ]
+  for (const [label, pattern] of boundary) {
+    if (!pattern.test(body)) coverageProblems.push(`${file}: missing ${label}`)
+  }
+
+  const reviewPointer = body.match(/data\/results\/question-review-[A-Za-z0-9._-]+\.json/)?.[0]
+  if (reviewPointer === undefined) {
+    coverageProblems.push(`${file}: no question-review artifact is cited`)
+  } else if (!existsSync(abs(reviewPointer))) {
+    coverageProblems.push(`${file}: review artifact is missing: ${reviewPointer}`)
+  } else {
+    const review = readArtifact(reviewPointer)
+    const agreement = `${review?.agent?.agree}/${review?.agent?.total}`
+    if (agreement !== '9/20') coverageProblems.push(`${file}: review artifact says ${agreement}, README says 9/20`)
+    const human = `${review?.human_spot_check?.agree}/${review?.human_spot_check?.total}`
+    if (human !== '5/5') coverageProblems.push(`${file}: human spot-check is ${human}, README says 5/5`)
+    if (review?.measurement?.sha256 !== sha256(readFileSync(abs(pointer), 'utf8'))) {
+      coverageProblems.push(`${file}: review artifact was recorded against a different measurement`)
+    }
+  }
+
+  const recomputePointer = body.match(/data\/results\/question-coverage-recompute-[A-Za-z0-9._-]+\.json/)?.[0]
+  if (recomputePointer === undefined) {
+    coverageProblems.push(`${file}: no recompute artifact is cited`)
+  } else if (!existsSync(abs(recomputePointer))) {
+    coverageProblems.push(`${file}: recompute artifact is missing: ${recomputePointer}`)
+  } else {
+    const recompute = readArtifact(recomputePointer)
+    for (const key of ['counts', 'coverage']) {
+      if (!sameJson(recompute?.[key], measurement?.[key])) coverageProblems.push(`${file}: recompute disagrees with the measurement on ${key}`)
+    }
+    for (const key of ['qa', 'general']) {
+      if (!sameJson(recompute?.rows?.[key], measurement?.rows?.[key])) coverageProblems.push(`${file}: recompute rows.${key} differ from the measurement`)
+    }
+  }
+}
+check(
+  'readme-quotes-real-question-coverage',
+  coverageProblems.length === 0,
+  coverageProblems.slice(0, 4).join('; ') || 'both READMEs quote the live measurement, and its review/recompute artifacts agree',
 )
 
 const passed = checks.every((entry) => entry.ok)

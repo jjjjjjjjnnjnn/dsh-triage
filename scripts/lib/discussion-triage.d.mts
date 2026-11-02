@@ -5,6 +5,7 @@ export type TriageVerdict = 'answerable' | 'partially-answerable' | 'needs-their
 
 export declare const LAYERS: readonly TriageLayer[]
 export declare const VERDICTS: readonly TriageVerdict[]
+export declare const SIGNALS: ReadonlyArray<readonly [TriageLayer, RegExp, number]>
 
 export declare function extractPackages(text: string): string[]
 
