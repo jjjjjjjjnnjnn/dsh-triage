@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R63 (2026-11-02)",
+  "stand": "R64 (2026-11-02)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -9529,6 +9529,170 @@
         "artifact": "data/results/listing-2026-11-02T16-08-00.000Z.json",
         "sha256": "f85e10c3f5160d51fb19e205e9be61d60a28f8d2eb3683ad3894d4912a44e12e",
         "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 643 · 0 失败"
+      }
+    },
+    {
+      "id": "R64-S1",
+      "batch": "R64",
+      "step": "**负对照 1：X 的 URL 配一个只说 GitHub Discussions 的 channel** —— 第 13 条改写后，域与声明的平台不一致必须判红；否则「按 channel 验域」只是一句好听话",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "docs/distribution/T-810/registry.json"
+      ],
+      "review": {
+        "correctness": "PASS：红并点名 `status=posted but posted_url is not a github-discussion URL (got \"https://x.com/…\")`——报的是「哪个域不对」而不是「URL 不合法」",
+        "reproducibility": "PASS：构造方式写在 `audit/AUDIT_2026-11-02_R64.md` §2.2；用 node 改、跑完立刻写回原串并复算 sha256",
+        "licence": "PASS：只动仓内 JSON 与检查器，无外部素材",
+        "ssot": "PASS：红产物带 `produced_by` / `generated_at` / sha256；结论来自检查器原话，不是我复述",
+        "adversary": "反例：只看 exit code 就宣布对照成功——被拒：第一次三条对照全是 exit 2（我把 `--stamp` 写成了文件名格式），exit 2 看起来跟「断言没过」一模一样"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r64-negctl.mjs  （内部跑 node scripts/check_listing.mjs --stamp 2026-11-02T17:50:00.000Z --tests 643）",
+        "artifact": "data/results/listing-2026-11-02T17-50-00.000Z.json",
+        "outcome": "RED 1/15：posted-drafts-carry-a-date 点名「不是 github-discussion URL」；还原后 registry sha256 与原文相同",
+        "sha256": "56e7cda00cccb5aba8e0c8d883c0b2a5e52da1bdbebdc5551100a1f5f573c821"
+      }
+    },
+    {
+      "id": "R64-S2",
+      "batch": "R64",
+      "step": "**负对照 2：`posted_on` 只写日期** —— `Date.parse(\"2026-11-02\")` 是合法的，但它把 D5 的 14 天窗口挪最多 24 小时，必须红",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "docs/distribution/T-810/registry.json"
+      ],
+      "review": {
+        "correctness": "PASS：红并点名 `posted_on is not a timezone-qualified ISO instant (got \"2026-11-02\")`",
+        "reproducibility": "PASS：同一脚本，同一还原校验",
+        "licence": "PASS：只改了仓内 JSON 与检查器正则，没有引入外部数据、第三方依赖或他人素材；负对照用的未来日期是构造值",
+        "ssot": "PASS：红产物在 `data/results/`，sha256 随文件",
+        "adversary": "反例：把裸日期当「足够精确」——被拒：D5 的窗口是 `posted_on + 14d`，这是本轮唯一会移动判定的字段"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r64-negctl.mjs  （--stamp 2026-11-02T17:55:00.000Z）",
+        "artifact": "data/results/listing-2026-11-02T17-55-00.000Z.json",
+        "outcome": "RED 1/15：posted_on 不是带时区的 instant；还原校验通过",
+        "sha256": "8aeb6bd92acc2946e043067a46a421555a2534fdd4e740ff824f85549ccc438a"
+      }
+    },
+    {
+      "id": "R64-S3",
+      "batch": "R64",
+      "step": "**负对照 3：`posted_on` 在未来** —— 窗口还没开始就当成已开，等于自己先把 14 天借出来",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "docs/distribution/T-810/registry.json"
+      ],
+      "review": {
+        "correctness": "PASS：红并点名 `posted_on is in the future (2026-12-01T00:00:00.000Z)`",
+        "reproducibility": "PASS：同一脚本，同一还原校验",
+        "licence": "PASS：同上，纯仓内改动；`2026-12-01` 是人为构造的未来时间，不引用任何外部快照或他人内容",
+        "ssot": "PASS：红产物在 `data/results/`",
+        "adversary": "反例：认为 R56 已有的「未来时间」断言不用重测——被拒：本轮改了同一段代码，没重测就是假设它没坏"
+      },
+      "real_test": {
+        "command": "node %TEMP%\\r64-negctl.mjs  （--stamp 2026-11-02T18:00:00.000Z）",
+        "artifact": "data/results/listing-2026-11-02T18-00-00.000Z.json",
+        "outcome": "RED 1/15：posted_on 在未来；还原校验通过",
+        "sha256": "2c6fb8ebcf50d2310bab3534348ac4e8c6daf42877c785e0f2ee632b18779a61"
+      }
+    },
+    {
+      "id": "R64-S4",
+      "batch": "R64",
+      "step": "**升级日监听的第一次真跑（baseline）** —— 读上游 `dist-tags.next`，没有历史就记 baseline，并把「卡片要本机 profile」写在产物里",
+      "changed": [
+        "scripts/watch_next_release.mjs",
+        "scripts/lib/next-release.mjs",
+        "scripts/lib/next-release.d.mts",
+        "tests/unit/next-release.test.ts"
+      ],
+      "review": {
+        "correctness": "PASS：`baseline next=0.2.1-rc.5`，产物含 `previous: null` / `change.state: baseline` / 两条建议命令",
+        "reproducibility": "PASS：`node scripts/watch_next_release.mjs` 可重跑；读的是公开 packument",
+        "licence": "PASS：只读 npm 元数据，按 registry 条款使用",
+        "ssot": "PASS：`produced_by` / `generated_at` / `.sha256` 齐全",
+        "adversary": "反例：把这次成功当成「脚本能用」——被拒：这一次真跑的退出码其实是 **1**（`process.exit()` 紧跟 `fetch` 触发 libuv 断言），修完才拿到 exit 0"
+      },
+      "real_test": {
+        "command": "node scripts/watch_next_release.mjs",
+        "artifact": "data/results/next-release-2026-11-02T17-40-00.322Z.json",
+        "outcome": "GREEN：baseline，next=0.2.1-rc.5；随后同脚本再跑一次得到 `unchanged` 且不落产物",
+        "sha256": "4471d331fb010d44a25cf9eb54750562e90cfd088d13f4717a941c623874fd7a"
+      }
+    },
+    {
+      "id": "R64-S5",
+      "batch": "R64",
+      "step": "**「测试数已僵」这次是检查器自己抓的** —— README 还写着 643，而套件已经是 656；断言当场判红",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "review": {
+        "correctness": "PASS：`test-count-matches` 点名 `stale: README.md:643, README.zh-CN.md:643`",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式给出",
+        "licence": "PASS：改的两份 README 是 MIT 项目自有文档；徽章 URL 指向本仓 `scripts/gate.mjs`，没有引入外部徽章服务",
+        "ssot": "PASS：红产物保留；修法是改数（徽章 + 正文四处），不是放宽断言",
+        "adversary": "反例：只在正文改数字、忘了徽章里的 SVG——被拒：R62 抓到过正是这一对（徽章与正文）同时僵，本轮两处一起改并由 `test-count-matches` 的两条声明复核"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T17:52:00.000Z --tests 656",
+        "artifact": "data/results/listing-2026-11-02T17-52-00.000Z.json",
+        "outcome": "RED 1/15：README 两份仍写 643（保留作「检查器会抓到漂移」的见证）",
+        "sha256": "427bb33d3dd70941794dc12cd19386a785efcb32eafdc3b9cb6b2b10ed55b669"
+      }
+    },
+    {
+      "id": "R64-S6",
+      "batch": "R64",
+      "step": "**发布链路体检：四包 `latest` 一致 + 匿名装得回来** —— 新增 `dist-tags-agree` 的第一次真跑",
+      "changed": [
+        "scripts/lib/dist-tags.mjs",
+        "scripts/lib/dist-tags.d.mts",
+        "tests/unit/dist-tags.test.ts",
+        "scripts/record_publish.mjs"
+      ],
+      "review": {
+        "correctness": "PASS：22 项全绿，其中 `dist-tags-agree — all 4 package(s) point latest at 0.3.3`；`anonymous-install` 1s、6 个包、`client-bundle` 四项仍在",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs`（版本从 manifest 读）；`git_dirty=false` 由干净树保证",
+        "licence": "PASS：只读 registry + 本机 tarball 校验",
+        "ssot": "PASS：产物含 `dist_tags{expected,latest,agree,unreachable,dangling,extra}`，读不到时不会写成 agree",
+        "adversary": "反例：把「四包都等于 0.3.3」当成新证据——被拒：0.3.3 是 R63 发的，本轮验的是「今天还一致 + 现在装得回来」，产物里写明这是某个时间点的一次读取"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "artifact": "data/results/publish-2026-11-02T17-45-57.990Z.json",
+        "outcome": "GREEN 22/22 · latest 四包 0.3.3 · 匿名安装 exit 0 · CLI 15 行 · `import()` 六个导出 · client-bundle 四项",
+        "sha256": "c1da8d78b575543fed7ab5172737358343ca4d7efd17752878e12feb87fc3049"
+      }
+    },
+    {
+      "id": "R64-S7",
+      "batch": "R64",
+      "step": "**收口：对外文档自洽且 15/15** —— 改完 README 与 registry 之后，`check_listing` 必须重新绿",
+      "changed": [
+        "scripts/check_listing.mjs",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/distribution/T-810/registry.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/BACKLOG.md"
+      ],
+      "review": {
+        "correctness": "PASS 15/15：版本 0.3.3 · 测试数 656（2 条声明）· 19 条证据路径带 sha256",
+        "reproducibility": "PASS：`--stamp` / `--tests` 显式；产物带 sha256",
+        "licence": "PASS：改的都是本仓 MIT 文档与检查器；19 条被引用的证据路径都在仓内 `data/results/`，没有引入外部素材、他人截图或第三方数据",
+        "ssot": "PASS：第 13 条现在验到「URL 与 channel 一致」而不是「URL 是不是 discussion」；红产物（17-50 / 17-55 / 18-00 / 17-52）全部保留",
+        "adversary": "反例：把 17-52 那次红删掉只留绿——被拒：红产物是「检查器会抓到漂移」的唯一见证，删了下次就只能靠人记得"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-02T18:05:00.000Z --tests 656",
+        "artifact": "data/results/listing-2026-11-02T18-05-00.000Z.json",
+        "outcome": "GREEN 15/15 · version 0.3.3 · 测试数 656 · 0 失败",
+        "sha256": "a947a2a5b6344ab8c42e0ba4fc814038d2cd818facd0b81d32355688c0a2e9e4"
       }
     }
   ]
