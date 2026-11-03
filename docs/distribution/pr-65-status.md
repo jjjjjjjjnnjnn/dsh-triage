@@ -1,8 +1,9 @@
-# 三条渠道 PR 的现状（R75，2026-11-03 实测）
+# 三条渠道 PR 的现状（R76，2026-11-03 15:05Z 实测）
 
 > **这一页解决一个问题**：同一句「PR 卡住了」，三条 PR 的**原因**各不相同，按错的原因去修会做无用功。
-> **R75 的变化**：#193 的维护者给了**人类回复**并开出合并条件（补 `README.zh.md` 一行）——已补齐、已 rebase，现在 `MERGEABLE/CLEAN`；
-> 而 **#65 又变回 `CONFLICTING/DIRTY`**（上游 `main` 又动了），R74 写的「别再 rebase，它不是冲突」**对今天不再成立**。
+> **R76 的变化**：**#65 的冲突已解**（rebase 到最新 `upstream/main`，只保留我们追加的那一条），现在 `MERGEABLE/BLOCKED`——
+> 「blocked」是仓库要求 review，不是冲突；按 §5 留了**一次**评论。三条现在**都**只差「人看一眼」，没有技术债。
+> （R75 时 #193 靠一条**人类**维护者的合并条件补齐并 rebase；那部分记录保留在 §7。）
 
 ---
 
@@ -10,7 +11,7 @@
 
 | PR | 仓库 | state | mergeable | mergeStateStatus | reviewDecision | reviews |
 |---|---|---|---|---|---|---|
-| **#65** | `zhu1090093659/dsh-community-plugins` | OPEN | **CONFLICTING** | **DIRTY** | `""`（无决定） | **0 条** |
+| **#65** | `zhu1090093659/dsh-community-plugins` | OPEN | **MERGEABLE** | **BLOCKED**（等 review） | `""`（无决定） | **0 条** |
 | **#193** | `awesome-deepseekharness/awesome-deepseek-harness` | OPEN | **MERGEABLE** | **CLEAN** | APPROVED | 1（**bot**；但**人类** contributor 已给合并条件并说「up 了就合」） |
 | #140 | `walkinglabs/awesome-deepseek-harness-plugins` | OPEN | MERGEABLE | CLEAN | `""` | 0 |
 
@@ -22,19 +23,26 @@ gh pr view 193 --repo awesome-deepseekharness/awesome-deepseek-harness --json st
 gh pr view 140 --repo walkinglabs/awesome-deepseek-harness-plugins --json state,mergeable,mergeStateStatus,reviewDecision,reviews
 ```
 
+产物：`data/results/market-channels-2026-11-03T15-05-38.106Z.json`（三条 live 状态）。
+**同一次采证还留了一份「读早了」的产物** `…T15-04-52.304Z.json`：推送后 **46 秒**读的，#193 的
+`mergeable_state` 是 **`unknown`**（GitHub 还在算）——它留着是因为 `unknown` 确实是一个会出现的读数，
+不是「clean 的另一种写法」。两分钟后的重读是 `clean`。
+
 ---
 
 ## 2. 三条各自卡在哪
 
-### #65（community-plugins）
+### #65（community-plugins）——**R76：冲突已解，等 review**
 
-**R75 实测：它又变回 `CONFLICTING/DIRTY` 了**（R74 时是 `MERGEABLE/BLOCKED`）。上游 `main` 在这两天里动过，
-我们那一行 `community.json` 与新版文件冲突。**R74 写的「别再 rebase，它不是冲突」对今天不成立**——今天它真的是冲突。
+**R76 实测：`MERGEABLE / BLOCKED`**（改动 `+12/-0`、1 个文件）。做法不是 `git rebase` 后手解冲突：
+两边都往同一个 JSON 数组末尾追加，三方合并的冲突恰好落在「逗号与条目位置」上——R60 那次就是这么过来的。
+这次改成**取上游文件逐字节 + 只在末尾插入我们那一条**（脚本 `%TEMP%\opencode\r76-rebase-prep.mjs`，写入前断言
+「条目数 +1」「`dsh-triage` 是最后一条」），于是 `git diff upstream/main` 恒为 **+12/-0**。
+用它自己的校验器复验：`node scripts/community-index.cjs --check` → **OK (152 entries)**；
+`node --test scripts/community-index.test.mjs` → **9/9**（这两条读数由 `market-channels-…T15-05-38` 产物记录）。
 
-- 改动面：1 个文件、`+12/-0`（只在 `community.json` 里追加一个条目，没有动别人的行）。
-- 但 `reviewDecision: ""` + `reviews: []` 没变：**就算 rebase 回 `MERGEABLE`，它仍然缺一条人 review**。
-
-**所以：rebase 是必要条件，不是充分条件。**要不要再花一次动作，见 §7 的决定。
+`BLOCKED` 是**仓库要求 review**，不是冲突。`reviewDecision: ""` + `reviews: []` 仍没变：
+**rebase 是必要条件，不是充分条件。** 按 §5 留了**一次**评论（`issuecomment-6607329040`），之后不再跟进。
 
 ### #193（awesome-deepseek-harness）——**R75 有真人回复**
 
@@ -75,10 +83,11 @@ gh pr view 140 --repo walkinglabs/awesome-deepseek-harness-plugins --json state,
 ## 5. 唯一值得做的一件事（一次，之后等）
 
 在 #65 留一条**一次性的**、说明「已 rebase 到最新 main、`community-index.cjs --check` 通过、
-9 条测试全过、改动只有一行」的评论，然后不再跟进。模板：
+9 条测试全过、改动只有一行」的评论，然后不再跟进。**R76 已发**（`issuecomment-6607329040`，2026-11-03），
+正文即下面这段（把 `151` 按实测改成 `152`）：
 
 > Hi — the branch is rebased onto the latest `main` and the only change is one appended entry in
-> `community.json` (+12/-0). `community-index.cjs --check` reports 151 entries OK and the repo's own
+> `community.json` (+12/-0). `community-index.cjs --check` reports 152 entries OK and the repo's own
 > test suite passes 9/9. No rush — just flagging it in case it fell through. Thanks!
 
 **什么时候放弃**：如果 2026-11-15 之后 #65 仍无 review，就把它记成「外部不可控」，写进交接，

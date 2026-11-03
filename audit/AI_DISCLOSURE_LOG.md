@@ -866,3 +866,34 @@
 - **总计**：728 → **731 测试**；9 门 ALL GREEN；`check_listing` 17/17。**四个部分各请了一次独立审核，抓到 5 处真问题**：`claims[].id` 写死结论、我自己的计数写错 4 处（10 项 unmeasured 不是 7、`client` 是 200 不是 passed、Chromium 17 步不是 16）、27/13 的条件不对口、ADR 治错路由、§4.3 假话。
 
 - 反思：**一个数从「不算需求」变成「达标」，最容易发生的事就是有人只读后半句**。所以这一轮交付的不是 1035，而是 1035 的日序列、窗口与两条边界——判据一字未动，改的只是「这个数能被读成什么」。第二个教训更便宜也更普遍：**写死的 id 会变成第二份过期的答案**，而机器只看 id。
+
+### 2026-11-03 R76-A｜D5 的采样截止日变成算得出来的数（把三处写错的 11-08 换掉）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；**新增非人类手写模块** `scripts/lib/d5-window-coverage.mjs`（纯函数 `judgeWindowCoverage`）、`scripts/d5_window_status.mjs`（只读记录器）、`tests/governance/d5-window-deadline.test.ts`
+- SessionID：主会话（本轮未启用 subagent）；台账 `R76-S1`
+- 人工决策：HUMAN 选「A→B→C→D 依次进行」；A 的范围（只动工具与文档、不碰判据）按交付轮执行
+- 范围：`scripts/lib/d5-window-coverage.{mjs,d.mts}` · `scripts/d5_window_status.mjs` · `tests/unit/d5-window-coverage.test.ts` · `tests/governance/d5-window-deadline.test.ts` · `AGENTS.md` · `INDEX.md` · `docs/{HANDOFF,BACKLOG}.md` · `audit/step_reviews.json` · 产物 `data/results/d5-window-status-2026-11-03T14-59-39.111Z.json`
+- 结果：窗口日 `D` 可在 `R∈[D+lag, D+lag+6]` 的跑里取到；`lag` 由两份现场件反推得 **2 天**（10-31→`..10-29`、11-03→`..11-01`），所以相隔 ≤7 天的两跑无缝拼接，**当前截止日 = 2026-11-10**；按旧文档字面在 11-07 跑会漏 **11-06**。逐日给 `collect-now` / `upcoming` / `lost`；只有 `inputs.offline === false` 的现场件算覆盖。11 条单测 + 2 条治理断言（三份入口文档的日期必须等于按已提交产物重算的截止日）。
+- 负对照：把「最后可取日」+1 天 → **6 绿 / 5 红**；让复算件也算覆盖 → **10 绿 / 1 红**；两次逐字节还原后 **11/11**。治理断言第一次跑即真红（三份文档都还没有 `2026-11-10`）—— 这正是它存在的理由。
+- 反思：**「一个要人记住的日子」本身就是缺陷**（与 `T-839` 同族）。另外第一版脚本按「最新的 posted 日期」取窗口起点，会挑到 X 那条 11-02 的帖子把窗口后移一天 —— **多条渠道各有 `posted_on` 时，「最新」不等于「D5 的那个」**。
+
+### 2026-11-03 R76-B｜#65 的冲突再解一次（不改条目、只用它自己的校验器）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；**外部仓库的一次写入**（`jjjjjjjjnnjnn/dsh-community-plugins` 的 fork 推送 + 一条评论），本仓侧新增台账 `R76-S2` / `R76-S3`
+- SessionID：主会话（本轮未启用 subagent）
+- 人工决策：HUMAN 选「A→B→C→D 依次进行」；B 的范围按 `docs/distribution/pr-65-status.md` §5（一次 rebase + 一次评论）执行
+- 范围：外部 `community.json`（+12/-0）· 本仓 `docs/distribution/pr-65-status.md` · `docs/BACKLOG.md`（`T-843`） · `INDEX.md` · `audit/step_reviews.json` · 产物 `data/results/market-channels-2026-11-03T15-04-52.304Z.json` 与 `…T15-05-38.106Z.json`
+- 结果：`CONFLICTING/DIRTY` → **`MERGEABLE/BLOCKED`**。解法是**取上游文件逐字节 + 只在末尾插入我们那一条**（写盘前断言条目数 +1 且 `dsh-triage` 是最后一条），`git diff` 恒 `+12/-0`；`community-index.cjs --check` → **OK (152 entries)**、`node --test scripts/community-index.test.mjs` → **9/9**。按 §5 发**一次**评论（`issuecomment-6607329040`）
+- 负对照 / 读数陷阱：推送后 **46 秒**读的产物里 `#193` 是 `mergeable_state: unknown`（GitHub 还在算），约 2 分钟后重读才是 `clean` —— 两份产物都留，页面上写明「`unknown` 不是 `clean` 的别名」
+- 反思：**「MERGEABLE」与「会有 review」是两件事**。这次 rebase 让技术上的障碍归零，`reviewDecision` 仍为空、`reviews` 仍 0 —— 换句话说，能做的都做完了，剩下的不在我们手里
+
+### 2026-11-03 R76-C/D｜复制失败后命令留在屏幕上（T-844）+ D5 窗口内第二份现场基线
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；**C 改了可见 UI**（`packages/plugin/client.js`），**D 只采证**（`record_market_baseline`）
+- SessionID：主会话（本轮未启用 subagent）；台账 `R76-S4`（C）/ `R76-S5` / `R76-S6`（D）
+- 人工决策：HUMAN 选「A→B→C→D 依次进行」——C 是 R75 标注「需要 HUMAN 点头」的那条可见 UI 改动，本轮获得授权
+- 范围：`packages/plugin/client.js`（`copyText(text, onResult)` + `data-copy-fallback` 块 + `copyFallback` 两语言文案）· `tests/unit/client-tab.test.ts`（+1 条，20/20）· `docs/{BACKLOG,HANDOFF}.md` · `INDEX.md` · `AGENTS.md` · `scripts/lib/d5-window-coverage.mjs`（滞后注释 2 → 1–2） · `scripts/d5_window_status.mjs`（limits 文案） · 产物 `data/results/r76-t844-2026-11-03T15-09-30.458Z.json`、`market-baseline-2026-11-03T15-11-10.030Z.json`、`d5-window-status-2026-11-03T15-12-26.191Z.json`
+- C 的结果：失败后修复格多渲染一句人话 + `user-select: all` 的 `<code>`（引擎自己那行）；**正常屏仍然不含命令**（否则「按钮复制的是引擎那行」无法验证）。负对照 `if (failed)` → `if (false && failed)` 当场 1 红，改回 20/20；真机 Chromium **13 passed + `client: 200` + 3 unmeasured**（与 R75-P3 同形状 = 正常屏未回归）。**边界**：真机**没有**复制失败路径的见证，那条只有 vm 单测。
+- D 的结果：第二份现场基线窗口 `2026-10-27..2026-11-02`、周下载 **1392**、`steady`（5/7 天，峰值 45.6%）；日序列 `0 0 634 192 17 192 357` —— 仍是 10-29 那次的回声，`BS-48` 照旧成立，`judgeD5` 仍 `pending`。**同一天两次跑滞后不同（2 与 1）**，模块注释与产物 `limits` 改成「1–2 天，默认 2 是保守值」。覆盖推进到 `11-02`，截止日 `11-10 → 11-11`，三份入口文档已同步。
+- 一处自我纠正：中间那份 `d5-window-status-…T15-11-55` 的 `limits` 写着「2 天滞后」而它自己的 `lag_observed` 是 `1/2` —— 自相矛盾，删除并重跑（未进过 SSOT，理由记在 `R76-S6`）。
+- 反思：**「保守的常数」和「错的事实」是两回事**。滞后不是常数（1 或 2），但把默认取 2 是对的：截止日早一天只是多看一眼，晚一天就永久缺一天。

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R75 (2026-11-03)",
+  "stand": "R76 (2026-11-03)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -11061,6 +11061,182 @@
         "artifact": "data/results/market-channels-2026-11-03T14-20-00.000Z.json",
         "outcome": "live 3：dsh-community-plugins `open/dirty` · awesome-deepseek-harness `open/clean` + `review_decision: APPROVED` · awesome-deepseek-harness-plugins `open/clean`；`merged_at` 全为 null",
         "sha256": "9b7bcd1b4164b191fa2ba2a5f133663356452f842f4b018220129c24f0646b5c"
+      }
+    },
+    {
+      "id": "R76-S1",
+      "batch": "R76",
+      "step": "A · 把「下一份市场基线最晚哪天跑」做成可计算的：纯函数 d5-window-coverage + 只读 d5_window_status + 2 条治理断言，取代三处文档里写错的 11-08",
+      "changed": [
+        "scripts/lib/d5-window-coverage.mjs",
+        "scripts/lib/d5-window-coverage.d.mts",
+        "scripts/d5_window_status.mjs",
+        "tests/unit/d5-window-coverage.test.ts",
+        "tests/governance/d5-window-deadline.test.ts",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/d5-window-status-2026-11-03T14-59-39.111Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：规则与实测一致 —— 窗口日 D 可在 R∈[D+lag, D+lag+6] 的跑里取到，lag 由两份现场件反推（10-31 → ..10-29、11-03 → ..11-01）得 2 天；11 条单测覆盖现状、字面 11-07 建议会漏 11-06、11-10 跑仍能补回前 7 天、lost 判定、复算件不算覆盖、complete、urgent 边界、坏日期拒收、确定性。",
+        "reproducibility": "PASS：脚本只读磁盘（market-baseline 与 d5-evidence + registry），不联网；产物经 writeEvidence 落盘并带 .sha256；治理断言的 today 固定在最新一份现场件的日期，干净 checkout 上可复算；--today 的来源写进 inputs.today_source，回放不会被当成现场读数。",
+        "licence": "PASS：只用本仓自产产物与公开的 npm 行为常量，不引入第三方代码或数据；窗口起点取自 D5 证据链，不复制外部文本。",
+        "ssot": "PASS：新产物有 produced_by / generated_at / schema_version 与 .sha256；三份入口文档里的日期由治理断言与被引产物对撞（改数字不重跑即红）；INDEX 新增登记行，AGENTS 架构图同步 scripts 列表。",
+        "adversary": "反例一：把「覆盖」写成「需求」—— 被拒，claims 与 limits 明写 verdict 仍读单一基线、三个阈值冻结；反例二：把复算件当覆盖 —— 被拒，只认 inputs.offline === false，负对照改成 false && 后当场 1 红；反例三：第一版脚本取「最新的 posted 日期」当窗口起点，挑到 X 那条 11-02 的帖子把窗口后移一天 —— 已改成读 D5 证据链，registry 不一致即 exit 2，治理断言钉住 posted_on_source = d5-evidence；反例四：把发布延迟当 0（旧的「11-08 之前」）—— 单测用 11-07 那一跑演示会漏 11-06；反例五：「截止日靠前就安全」也不对 —— 关键是相邻跑 ≤7 天，测试按这个构造。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs（真实时钟）；随后 node --test tests/governance/d5-window-deadline.test.ts",
+        "artifact": "data/results/d5-window-status-2026-11-03T14-59-39.111Z.json",
+        "outcome": "D5 窗口 2026-11-01..2026-11-15；covered 1（11-01）· missing 14（collectible now 0 / upcoming 14 / lost 0）· baselines used 4 ignored 2 · lag 假定 2 实测 2 · next_run_by 2026-11-10 · verdict not-yet · exit 0；治理断言 2/2 绿（它第一次跑时真红：三份文档都还没有 2026-11-10）",
+        "sha256": "a029dd14be8406e95f5c85c72d5a74e10bd49d6d0e11f9c32228e107c9df45f0"
+      }
+    },
+    {
+      "id": "R76-S2",
+      "batch": "R76",
+      "step": "B · #65 的冲突再解一次：取上游文件逐字节 + 只在末尾插入我们那一条，用它自己的校验器复验后 force-with-lease 推回",
+      "changed": [
+        "docs/distribution/pr-65-status.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/market-channels-2026-11-03T15-04-52.304Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：冲突是真的（`gh pr view 65` 实测 `CONFLICTING/DIRTY`，上游 `a58eab2..c7bee93` 两个新提交）。解法不是 `git rebase` 后手解：两边都往同一个 JSON 数组末尾追加，三方合并的冲突点正是「逗号与条目位置」。改成取 `upstream/main` 的文件逐字节、在最后一个 `}` 后插入我们那条，并在**写盘前**断言「条目数恰好 +1」「`dsh-triage` 是最后一条」；`git diff` 恒为 **+12/-0**、1 个文件。",
+        "reproducibility": "PASS：整个动作可从产物复算——`market-channels-2026-11-03T15-05-38.106Z.json` 记录三条 PR 的 `state / mergeable_state / merge_state_status / additions / deletions` 与 `dsh-community-plugins` 条目自己的校验器输出（`community-index: OK (152 entries)`、测试 exit 0）；本仓侧的复算命令写在 `pr-65-status.md` §1。",
+        "licence": "PASS：只在上游 MIT 仓库的 `community.json` 末尾追加**我们自己的**条目（+12/-0），没有动别人任何一行；没有引入第三方内容；本仓文档同样是自己的字。",
+        "ssot": "PASS：两份 `market-channels` 产物都进 SSOT 并各自被一步引用；`pr-65-status.md` 的表格与最新产物逐项一致（`blocked/BLOCKED +12/-0`、`clean/CLEAN`、`clean/CLEAN`）；`merged` 仍写 0，没有把「MERGEABLE」写成「已收录」。",
+        "adversary": "反例一：把 `BLOCKED` 读成「又冲突了」—— 被拒，`mergeable: MERGEABLE` 与 `mergeStateStatus: BLOCKED` 是两件事，页面上分开写；反例二：把 `unknown` 当 `clean` —— 被拒，46 秒那份产物的 `#193` 就是 `unknown`，两份都留并写明「GitHub 还在算」，没有为了让页面好看删掉；反例三：顺手改条目内容换合并 —— 被拒，`git diff` 只有追加的 12 行，`name/description/repo/npm/category` 与上次提交逐字相同；反例四：重复催 —— 被拒，只发一次评论（`issuecomment-6607329040`），与 R74「每条 PR 只 ping 一次」一致；反例五：把 rebase 成功写成「会合并」—— 被拒，`reviewDecision` 仍为空、`reviews` 仍 0。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --pr dsh-community-plugins=…/pull/65 --pr awesome-deepseek-harness=…/pull/193 --pr awesome-deepseek-harness-plugins=…/pull/140（推送后 46 秒）",
+        "artifact": "data/results/market-channels-2026-11-03T15-04-52.304Z.json",
+        "outcome": "推送后 46 秒：`#65` `open / blocked / BLOCKED` `+12/-0`（冲突已解）· `#193` `open / unknown / UNKNOWN` + `APPROVED`（GitHub 还在算）· `#140` `open / clean / CLEAN`；`dsh-community-plugins` 校验器 `community-index: OK (152 entries)`、测试 exit 0、`merged` 全 null",
+        "sha256": "6830e571a5b596d16b993197173b9afd17614b365578cbc5a2336665ec861f89"
+      }
+    },
+    {
+      "id": "R76-S3",
+      "batch": "R76",
+      "step": "B 续 · `mergeable_state` 在推送后短暂是 `unknown`：等它算完重读一次，按实际记账（两份产物都留）",
+      "changed": [
+        "docs/distribution/pr-65-status.md",
+        "data/results/market-channels-2026-11-03T15-05-38.106Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`unknown` 是 GitHub 的「还在计算」，不是结论。46 秒那份与 2 分钟后那份的差别只在 `#193` 的 `mergeable_state`（`unknown` → `clean`）；`#65` 与 `#140` 两次相同，说明不是随机抖动。页面按**最新**产物记账，并把「读早了」那一份当证据保留。",
+        "reproducibility": "PASS：同一条命令、同一组 `--pr`，两次产物可直接 `diff` 出唯一差异；`gh pr view` 也能独立复读。没有手工改产物里的字段。",
+        "licence": "PASS：只读 GitHub 元数据（公开仓库），产物里没有凭据、没有个人信息。",
+        "ssot": "PASS：覆盖关系写清楚——最新产物是被 `pr-65-status.md` §1 引用与 `INDEX` 登记的那份；旧那份被 S2 引用，不构成「无人认领的产物」（`step-review` 的 `no-orphan-results` 绿）。",
+        "adversary": "反例一：为了让 `#193` 显示 `clean` 而删掉 `unknown` 那份 —— 被拒，两份都留且页面上写明原因；反例二：把第二次读当成「重新采证推翻第一次」—— 被拒，两次读数说的是不同时间点，不是互相矛盾；反例三：把 `unknown` 写成 `unmeasurable` 或 `clean` —— 被拒，产物里就是原始字符串 `unknown`。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --pr dsh-community-plugins=…/pull/65 --pr awesome-deepseek-harness=…/pull/193 --pr awesome-deepseek-harness-plugins=…/pull/140（推送后约 2 分钟）",
+        "artifact": "data/results/market-channels-2026-11-03T15-05-38.106Z.json",
+        "outcome": "`#65` `blocked/BLOCKED` `+12/-0` · `#193` `clean/CLEAN` + `APPROVED` · `#140` `clean/CLEAN`；`live 3`、`validated 1`、`merged` 全 null；`community-index: OK (152 entries)`",
+        "sha256": "d70fcfe5ec1591c272b3bac3a49139d48c745524388336ae4aa579d313b7ba11"
+      }
+    },
+    {
+      "id": "R76-S4",
+      "batch": "R76",
+      "step": "C · T-844：复制失败时把修复命令渲染成可选中文本（此前命令只活在按钮的闭包里），并补一条能真红的 UI 断言",
+      "changed": [
+        "packages/plugin/client.js",
+        "tests/unit/client-tab.test.ts",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/r76-t844-2026-11-03T15-09-30.458Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：三种状态各自有断言——正常屏**不含**命令文本（否则「按钮复制的是引擎自己那行」就无法验证）、失败后命令作为独立 `<code>` 节点出现且带 `user-select: all`、成功时不出现。点击路由也钉住：给了 `onCopy` 就只走它（视图不再自己碰剪贴板）。真机跑一次（Chromium，13 passed + client 200 + 3 unmeasured）确认正常屏没有被改坏。",
+        "reproducibility": "PASS：单测走 vm 沙箱 + `{type, props}` 纯树，`node --test tests/unit/client-tab.test.ts` 可离线复跑（20/20）；真机产物 `r76-t844-…json` 由 `scripts/record_client_serve.mjs` 落盘并带 .sha256，17 步逐项可读。",
+        "licence": "PASS：只改自己的 `packages/plugin/client.js` 与测试；文案两语言各加一条（`copyFallback`），没有引入第三方代码或字体。",
+        "ssot": "PASS：真机产物进 SSOT 并被本步引用；`BACKLOG` 的 `T-844` 从 ⬜ 改成 ✅ 并写明「真机**没有**复制失败路径的见证」；`INDEX` 与 `HANDOFF` 的措辞与产物一致（13 passed / 3 unmeasured，没有写成「全绿」）。",
+        "adversary": "反例一：把回退做成**常显**（省掉状态）—— 被拒，单测第一条就要求正常屏不含命令，否则「复制的是引擎那行」这条真机断言会退化成检查字符串存在；反例二：只在 `window.__dshTriage.clipboard` 里记失败（R75 的形状）—— 被拒，那对用户不可见，本条票的存在理由就是它；反例三：把复制失败静默成成功 —— 被拒，`copyText` 的 marker 三态未动，T-812 的 19 条仍在跑；反例四：声称真机验证过失败路径 —— 被拒，产物里 `clipboard-copy` 是 **unmeasured**（沙盒 profile 没有 fix 行），如实写进 BACKLOG 与 `INDEX`。"
+      },
+      "real_test": {
+        "command": "node --test tests/unit/client-tab.test.ts（20/20）；随后 node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install packages --label r76-t844",
+        "artifact": "data/results/r76-t844-2026-11-03T15-09-30.458Z.json",
+        "outcome": "真机（Chromium）：`bundle/install/boot/graph/upgrade-route/mount/visible/summary-visible/upgrade-visible/user-answer/same-source/upgrade-same-source/cleanup` **passed**，`client: 200`，`screenshot`/`english-screen`（未请求）与 `clipboard-copy`（沙盒 profile 无 fix 行）三项 **unmeasured** —— 与 R75-P3 的形状完全相同，说明正常屏未回归",
+        "sha256": "00b36ef706bd47afc658fcc0819c835f8100ba70266325819dc5ccb4084ca9db"
+      }
+    },
+    {
+      "id": "R76-S5",
+      "batch": "R76",
+      "step": "D · D5 窗口内第二份现场基线（采证轮）：日序列多一天、形状仍是 10-29 那次爆发的回声，覆盖推进到 11-02",
+      "changed": [
+        "data/results/market-baseline-2026-11-03T15-11-10.030Z.json",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：`inputs.offline=false`、`failures: []`；窗口 `2026-10-27..2026-11-02`（比 06:22 那份多一天）、周下载 1392、`download_shape=steady`、5/7 天有下载、峰值占比 45.6%（06:22 那份是 61.3%）。日序列 `0 0 634 192 17 192 357` 必须一起读：634 之后**没有断**，所以 `BS-48` 的「steady 不等于人」照旧成立。",
+        "reproducibility": "PASS：`record_market_baseline` 把 12 份原始响应写进 `data/fixtures/market-baseline/2026-11-03T15-11-00/` 一类目录，`--fixtures` 可离线复算；产物带 `.sha256`。",
+        "licence": "PASS：只读 npm registry 与 GitHub Discussions 的公开元数据，按各自条款使用；没有把任何第三方正文写进仓。",
+        "ssot": "PASS：新基线进 SSOT 并被本步引用；`HANDOFF` 的读数（1392 / steady / 5 天 / 45.6% / 窗口 10-27..11-02）与产物逐项一致；**没有**把它写成 D5 需求证据——`judgeD5` 仍是 `pending`，reactions 与外部引用两项一个都没动。",
+        "adversary": "反例一：把 1392（门槛 20 的 70 倍）读成「下载达标了」—— 被拒，日序列形状说明它仍是回声，且 D5 的下载项只在关窗那次读数里算；反例二：把峰值占比从 61.3% 掉到 45.6% 读成「更像人了」—— 被拒，占比下降是因为尾日 357 变大，样本仍集中在 10-29；反例三：拿这份基线当关窗读数 —— 被拒，它的窗口只有 `11-01..11-02` 落在 D5 窗口内；反例四：删掉 06:22 那份让「最新一份」更好看 —— 被拒，两份都留，覆盖是并集。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-03T15:11:10.030Z",
+        "artifact": "data/results/market-baseline-2026-11-03T15-11-10.030Z.json",
+        "outcome": "窗口 2026-10-27..2026-11-02 · dsh-triage 周下载 **1392** · `steady`（5/7 天，峰值 45.6%，10-29）· 日序列 0/0/634/192/17/192/357 · 诊断类 3795 / 市场 517261 / 装饰 514773 · 讨论 817（痛点 361 / 零回复 253）· `failures: []`",
+        "sha256": "6bcae0e3b3c1317f78e9bfe37b30ae651feb712ebf36dd27210da8c7ce625619"
+      }
+    },
+    {
+      "id": "R76-S6",
+      "batch": "R76",
+      "step": "D 续 · 新基线把覆盖推进到 `11-02`：重算截止日（11-10 → 11-11）并同步三份入口文档；顺手删掉一份自相矛盾的中间产物",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "scripts/lib/d5-window-coverage.mjs",
+        "scripts/d5_window_status.mjs",
+        "data/results/d5-window-status-2026-11-03T15-12-26.191Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`covered 2`（`11-01..11-02`）· `missing 13`（collectible now 0 / upcoming 13 / lost 0）· `next_run_by 2026-11-11`。**同一天两次跑的滞后不同**（06:22 读到 2 天、15:11 读到 1 天），所以模块注释与产物 `limits` 都改成「**1–2 天，默认 2 是保守值**」——保守方向意味着截止日最多早一天，不会晚。",
+        "reproducibility": "PASS：`node scripts/d5_window_status.mjs` 只读磁盘、`inputs.today_source=clock`、`lag_observed=[1,2]` 都写进产物；治理断言用「最新一份现场件的日期」当 today，因此干净 checkout 上可复算。",
+        "licence": "PASS：只读本仓产物与 registry 公开行为；没有第三方内容。",
+        "ssot": "PASS：三份入口文档的日期（`2026-11-11`）由治理断言与被引产物对撞；`d5-window-status-…T15-12-26` 进 SSOT 并被本步引用；**删掉**的 `…T15-11-55` 未进过 SSOT（同一次会话内生成，`limits` 里还写着「2 天滞后」而它自己的 `lag_observed` 是 `1/2`，自相矛盾），删除理由记在这里而不是悄悄消失。",
+        "adversary": "反例一：只改文档不回填产物 —— 被拒，治理断言比对的是产物字段 `coverage.next_run_by`；反例二：把滞后当常数 1（更乐观）—— 被拒，默认保持 2，理由是「早一天只是多看一眼，晚一天永久缺一天」；反例三：把中间那份自相矛盾的产物留着当证据 —— 被拒，它没有任何论断价值，且会让「最新产物」与「算了什么」出现两个版本；反例四：把 11-11 写成新的硬编码常量 —— 被拒，文档写的是「由脚本算出」，日期只是当前读数。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs（真实时钟）；随后 node --test tests/governance/d5-window-deadline.test.ts",
+        "artifact": "data/results/d5-window-status-2026-11-03T15-12-26.191Z.json",
+        "outcome": "D5 窗口 2026-11-01..2026-11-15 · covered 2（11-01..11-02）· missing 13（upcoming 13 / lost 0）· baselines used 5 / ignored 2 · lag 假定 2、observed 1/2 · **next_run_by 2026-11-11** · verdict `not-yet` · exit 0",
+        "sha256": "cd4604e36d33bb2515de7c8f928a3aa897d62281a79cce9297e460f799647419"
+      }
+    },
+    {
+      "id": "R76-S7",
+      "batch": "R76",
+      "step": "A/B/C/D 之后的对外文案对账：两份 README 的测试数 746 → 760（第一次写成 759 是漏算了 T-844 那一条；改数字而不重跑，这条断言会红）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-03T15-28-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`--tests 760` 与两份 README 的徽章 alt、徽章 URL（`tests-760%20passed`）与正文「760 个测试」逐项相同；`test-count-matches` 与 `test-count-is-not-vacuous` 分别证明「数字对」和「确实找到了声明」。**第一版写 759 是错的**：11 条单测 + 2 条治理 + 1 条 UI 一共 13 条，746 + 13 = 760 —— 实跑读数按 `pnpm run test` 的 `tests 760` 为准，产物已按 760 重跑（旧的 759 件删除，未进过 SSOT）。",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp … --tests 759` 可随时重跑，17 条断言各自带读数；产物带 `.sha256`。",
+        "licence": "PASS：只改自己的 README 数字，没有引用第三方文本。",
+        "ssot": "PASS：产物进 SSOT 并被本步引用；README 的声明由检查器从真实测试数与 manifest 复算，不是抄某个文档。**没有**动 Wilson 区间、`improved` 前向 0/1584 与问题覆盖率的既有边界句（第 9–15 条全绿）。",
+        "adversary": "反例一：把徽章 URL 留着 746 只改正文 —— 被拒，三条声明都要等于 `--tests`；反例二：不传 `--tests` 让检查跳过 —— 被拒，`test-count-is-not-vacuous` 会点名「skipped」，节律上也不允许；反例三：把 746 改成 759 却顺手改 Wilson 区间让它「更好看」—— 被拒，第 9 条独立校验两个上架文案必须保留区间原文。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T15:28:00.000Z --tests 760",
+        "artifact": "data/results/listing-2026-11-03T15-28-00.000Z.json",
+        "outcome": "**17/17 全绿**：documents 10 · version 0.3.3 · engines `>=0.2.0-rc.1 <0.3.0-0` · **tests 760**（2 处声明，非空转）· 19 条证据路径带 sha256 全部解析 · 8 篇草稿引用真实产物 · 4 个渠道台账只有一条喂 D5",
+        "sha256": "610bd837d048df4cc7c8fd6930a41c674561966602d6482ac00c5edacb47c06d"
       }
     }
   ]

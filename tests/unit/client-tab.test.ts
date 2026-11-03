@@ -27,7 +27,17 @@ const SOURCE_PATH = join(repoRoot, 'packages', 'plugin', 'client.js')
 const MANIFEST_PATH = join(repoRoot, 'packages', 'plugin', 'package.json')
 
 interface Views {
-  readonly summaryView: (summary: unknown, copy: Record<string, string>, onRefresh: () => void, onUpgrade?: () => void) => Record<string, unknown>
+  /**
+   * T-844 added the fifth parameter: the last copy attempt plus the tab's own click handler. It is optional
+   * so every older call site (and a host that mounts the view without a clipboard) keeps working.
+   */
+  readonly summaryView: (
+    summary: unknown,
+    copy: Record<string, string>,
+    onRefresh: () => void,
+    onUpgrade?: () => void,
+    feedback?: { state?: { id: string, ok: boolean, error: string | null } | null, onCopy?: (id: string, fix: string) => void },
+  ) => Record<string, unknown>
   readonly failureView: (result: unknown, copy: Record<string, string>, onRefresh: () => void) => Record<string, unknown>
   readonly upgradeView: (result: unknown, copy: Record<string, string>, onBack: () => void) => Record<string, unknown>
   readonly upgradeFailureView: (status: string, result: unknown, copy: Record<string, string>, onBack: () => void) => Record<string, unknown>
@@ -709,4 +719,105 @@ test('T-812: the copy button publishes a real failure instead of claiming a copy
   await new Promise((resolvePromise) => setImmediate(resolvePromise))
   assert.equal(readAccepted()?.ok, true)
   assert.equal(written, 'dsh-triage fix dsh-mcp-connector')
+})
+
+/** Every string inside a plain `{ type, props }` tree, in document order. */
+function collectText(node: unknown, out: string[] = []): string[] {
+  if (typeof node === 'string') out.push(node)
+  else if (typeof node === 'number') out.push(String(node))
+  else if (node !== null && typeof node === 'object') {
+    const children = (node as TreeNode).props?.children
+    const list = Array.isArray(children) ? children : children === undefined ? [] : [children]
+    for (const child of list) collectText(child, out)
+  }
+  return out
+}
+
+test('T-844: a failed copy leaves the command on screen (the button was its only home)', async () => {
+  /*
+   * WHAT WAS BROKEN: `client.js` rendered the fix as a **button only** — the command text lived in the
+   * click handler's closure. So on a browser without a clipboard (or with clipboard-write denied by a
+   * permissions policy) the person had no way to get the command at all, and the failure was only
+   * visible in `window.__dshTriage.clipboard`, which nobody reads. R75 recorded that; this test is the
+   * fix's seam.
+   *
+   * THREE CLAIMS, tested separately because they fail differently:
+   *   1. the normal screen still does NOT contain the command (so "the button copies the engine's own
+   *      line" stays checkable — a screen that always prints it would make the button untestable);
+   *   2. after a failure the command IS in the DOM as text, under a human sentence;
+   *   3. the click routes through the tab's callback when there is one, and does not quietly call the
+   *      clipboard itself (that is what lets claim 2 ever happen).
+   */
+  const summary = {
+    tone: 'broken',
+    headline: '1 row will break',
+    plain: 'One of your plugins will break on this version.',
+    counts: { rows: 1, judged: 1, go: 0, denied: 1, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [
+      {
+        id: 'dsh-mcp-connector',
+        kind: 'denied',
+        line: 'declared 0.2.1-rc.4',
+        plain: 'cannot load here',
+        fix: 'dsh-triage fix dsh-mcp-connector',
+      },
+    ],
+    more: 0,
+    next: [],
+  }
+  const payload = { env: { dsh: '0.2.1-rc.4', profile: 'web' }, summary: { zh: summary, en: summary }, ms: 1 }
+  const bundle = loadBundle({ fetch: async () => ({ ok: true, status: 200, json: async () => payload }) })
+  const fake = fakeContext()
+  bundle.exports.apply(fake.ctx)
+  const tab = mountTab(fake, bundle.exports)
+  const copy = tab.injected.copy as Record<string, string>
+
+  // (1) Normal screen: button yes, command no.
+  const clean = tab.views.summaryView(summary, copy, () => {})
+  assert.notEqual(findNode(clean, (node) => node.props?.['data-copy-fix'] !== undefined), null)
+  assert.equal(findNode(clean, (node) => node.props?.['data-copy-fallback'] !== undefined), null)
+  assert.equal(
+    collectText(clean).some((line) => line.includes('dsh-triage fix dsh-mcp-connector')),
+    false,
+    'the engine command must not be printed before a copy is attempted',
+  )
+
+  // (2) After a failure: sentence + the command as its own text node (and marked selectable).
+  const failed = tab.views.summaryView(summary, copy, () => {}, undefined, {
+    state: { id: 'dsh-mcp-connector', ok: false, error: 'navigator.clipboard is unavailable' },
+    onCopy: () => {},
+  })
+  const fallback = findNode(failed, (node) => node.props?.['data-copy-fallback'] !== undefined)
+  assert.ok(fallback !== null, 'a failed copy must leave something on screen')
+  const lines = collectText(fallback)
+  assert.ok(lines.includes('dsh-triage fix dsh-mcp-connector'), `the command itself must be text, got: ${JSON.stringify(lines)}`)
+  assert.ok(
+    lines.includes(String(copy.copyFallback)),
+    'the fallback needs a sentence, not just a code block',
+  )
+  const code = findNode(fallback, (node) => node.type === 'code' && node.props?.children === 'dsh-triage fix dsh-mcp-connector')
+  assert.equal(String(code?.props?.style && (code.props.style as Record<string, unknown>).userSelect), 'all', 'the fallback must be selectable with one click')
+
+  // A success must NOT print it: the fallback is a reaction to a failure, not decoration.
+  const succeeded = tab.views.summaryView(summary, copy, () => {}, undefined, {
+    state: { id: 'dsh-mcp-connector', ok: true, error: null },
+    onCopy: () => {},
+  })
+  assert.equal(findNode(succeeded, (node) => node.props?.['data-copy-fallback'] !== undefined), null)
+
+  // (3) The click goes through `onCopy` (the tab owns the state), not straight to the clipboard.
+  const calls: Array<[string, string]> = []
+  const wired = tab.views.summaryView(summary, copy, () => {}, undefined, {
+    state: null,
+    onCopy: (id: string, fix: string) => calls.push([id, fix]),
+  })
+  const button = findNode(wired, (node) => node.props?.['data-copy-fix'] !== undefined)
+  assert.ok(button !== null)
+  ;(button!.props!.onClick as () => void)()
+  assert.deepEqual(calls, [['dsh-mcp-connector', 'dsh-triage fix dsh-mcp-connector']])
+  assert.equal(
+    (bundle.window.__dshTriage as { clipboard?: unknown } | undefined)?.clipboard,
+    undefined,
+    'with a tab callback wired, the view must not also touch the clipboard itself',
+  )
 })

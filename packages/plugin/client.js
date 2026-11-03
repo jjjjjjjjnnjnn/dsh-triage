@@ -93,6 +93,7 @@ window.__ModuleLoader__.load({
       source: '数据来源于本地只读接口 /compat-triage/summary，与 `dsh-triage status` 同源。',
       reload: '刷新',
       copy: '复制',
+      copyFallback: '复制不可用，请手动选中这条命令：',
       failed: '读取失败',
       pending: '正在加载诊断数据…',
       unreachable: '未能获取诊断结果（本地接口无响应），请检查服务状态。',
@@ -158,6 +159,7 @@ window.__ModuleLoader__.load({
       source: 'Read from the host route /compat-triage/summary, the same projection `dsh-triage status` prints.',
       reload: 'Refresh',
       copy: 'Copy',
+      copyFallback: 'Copying is unavailable — select this command instead:',
       failed: 'Read failed',
       pending: 'Reading the host…',
       unreachable: 'No conclusion (the read-only route did not answer) — that is not "all good".',
@@ -195,8 +197,15 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /** A clipboard we do not have is a no-op, not a fake "copied". */
-    function copyText(text) {
+    /**
+     * A clipboard we do not have is a no-op, not a fake "copied".
+     *
+     * T-844: the outcome goes two places. `window.__dshTriage.clipboard` is for the probe (R51 showed
+     * the marker is how "the button did nothing" becomes observable), and `onResult` is for the tab,
+     * because a marker nobody renders leaves the person clicking with no way to get the command at all:
+     * the button is the only place the command text exists.
+     */
+    function copyText(text, onResult) {
       const report = (ok, error) => {
         try {
           if (typeof window === 'object' && window !== null) {
@@ -204,6 +213,13 @@ window.__ModuleLoader__.load({
           }
         } catch {
           // Recording the outcome is a nicety; the button still works without it.
+        }
+        // The tab's own reaction is separate from the marker: a Host that froze `window` must still
+        // get the on-screen fallback.
+        try {
+          if (typeof onResult === 'function') onResult({ ok, error: error === undefined ? null : error })
+        } catch {
+          // A renderer that throws here must not turn a failed copy into a successful one.
         }
       }
       try {
@@ -295,33 +311,66 @@ window.__ModuleLoader__.load({
        * One row per issue: what it is, then the engine's own reason on a second line inside the same
        * cell. Five columns did not fit a settings dialog; the reason belongs under the conclusion it
        * explains, not in a column of its own.
+       *
+       * T-844: on a FAILED copy the command itself is printed under the button as selectable text.
+       * Before this, `client.js` rendered only the button, so on a browser without a clipboard the
+       * command existed nowhere in the DOM — a dead end for the person and unreadable for any probe.
+       * The fallback appears only after the failure: the normal screen still has no copy of the
+       * command, which is what keeps "the button copies the engine's own line" checkable.
        */
-      function issuesTable(issues, copy) {
-        const rows = issues.map((issue, index) => [
-          String(index + 1),
-          jsx('code', { children: String(issue.id) }),
-          jsxs('span', {
-            'data-issue-kind': String(issue.kind),
-            children: [
-              jsx('span', { children: String(issue.plain) }),
-              typeof issue.line === 'string' && issue.line !== ''
-                ? jsx('span', {
-                    style: { display: 'block', opacity: 0.75, fontSize: '0.9em' },
-                    children: `${copy.reason}: ${issue.line}`,
-                  })
-                : null,
-            ].filter((node) => node !== null),
-          }),
-          typeof issue.fix === 'string' && issue.fix !== ''
-            ? jsx('button', {
+      function issuesTable(issues, copy, feedback) {
+        const state = feedback && feedback.state ? feedback.state : null
+        const onCopy = feedback && typeof feedback.onCopy === 'function' ? feedback.onCopy : null
+        const rows = issues.map((issue, index) => {
+          const failed = state !== null && state.id === String(issue.id) && state.ok === false
+          const fixCell = []
+          if (typeof issue.fix === 'string' && issue.fix !== '') {
+            fixCell.push(
+              jsx('button', {
                 type: 'button',
                 'data-copy-fix': String(issue.id),
                 style: { whiteSpace: 'nowrap' },
-                onClick: () => copyText(issue.fix),
+                /*
+                 * The click reports to the tab when it can (so the screen can show the command), and
+                 * falls back to the bare call when a test mounts the view directly.
+                 */
+                onClick: () => (onCopy === null ? copyText(issue.fix) : onCopy(String(issue.id), issue.fix)),
                 children: copy.copy,
-              })
-            : copy.none,
-        ])
+              }),
+            )
+            if (failed) {
+              fixCell.push(
+                jsxs('span', {
+                  'data-copy-fallback': String(issue.id),
+                  style: { display: 'block', marginTop: '4px', opacity: 0.85, fontSize: '0.9em' },
+                  children: [
+                    jsx('span', { style: { display: 'block' }, children: copy.copyFallback }),
+                    jsx('code', { style: { userSelect: 'all' }, children: String(issue.fix) }),
+                  ],
+                }),
+              )
+            }
+          } else {
+            fixCell.push(copy.none)
+          }
+          return [
+            String(index + 1),
+            jsx('code', { children: String(issue.id) }),
+            jsxs('span', {
+              'data-issue-kind': String(issue.kind),
+              children: [
+                jsx('span', { children: String(issue.plain) }),
+                typeof issue.line === 'string' && issue.line !== ''
+                  ? jsx('span', {
+                      style: { display: 'block', opacity: 0.75, fontSize: '0.9em' },
+                      children: `${copy.reason}: ${issue.line}`,
+                    })
+                  : null,
+              ].filter((node) => node !== null),
+            }),
+            fixCell.length === 1 ? fixCell[0] : fixCell,
+          ]
+        })
         return matrix(copy.issueColumns, rows, { 'data-triage-issues': String(issues.length) })
       }
 
@@ -331,7 +380,7 @@ window.__ModuleLoader__.load({
         return matrix(copy.nextColumns, rows)
       }
 
-      function summaryView(summary, copy, onRefresh, onUpgrade) {
+      function summaryView(summary, copy, onRefresh, onUpgrade, feedback) {
         const counts = summary && summary.counts ? summary.counts : null
         const children = [jsx('h3', { children: copy.title }), jsx('p', { children: copy.hint })]
         children.push(
@@ -349,7 +398,7 @@ window.__ModuleLoader__.load({
         if (issues.length === 0) children.push(jsx('p', { children: copy.noIssues }))
         else {
           children.push(jsx('h4', { children: copy.issues }))
-          children.push(issuesTable(issues, copy))
+          children.push(issuesTable(issues, copy, feedback))
           if (summary.more > 0) children.push(jsx('p', { children: fill(copy.more, { n: summary.more }) }))
         }
         if (counts !== null && counts.unknown > 0) children.push(jsx('p', { children: copy.unknownSuffix }))
@@ -455,6 +504,15 @@ window.__ModuleLoader__.load({
         const [state, setState] = useState({ status: 'idle', result: null })
         const [screen, setScreen] = useState('summary')
         const [upgrade, setUpgrade] = useState({ status: 'idle', result: null })
+        /*
+         * T-844: what the last copy attempt did, so the screen can print the command when the copy
+         * failed. Without it the command lives only inside the button's closure — on a browser
+         * without a clipboard the fix is simply unreachable.
+         */
+        const [clipboard, setClipboard] = useState(null)
+        const onCopy = useCallback((id, fix) => {
+          copyText(fix, (outcome) => setClipboard({ id, ok: outcome.ok, error: outcome.error }))
+        }, [])
         const load = useCallback(() => {
           let cancelled = false
           setState((previous) => ({ ...previous, status: 'loading' }))
@@ -508,7 +566,7 @@ window.__ModuleLoader__.load({
         if (state.status !== 'ready' || result === null || result.ok !== true || result.summary === null) {
           return views.failureView(state.status === 'idle' ? null : result, copy, load)
         }
-        return views.summaryView(result.summary, copy, load, loadUpgrade)
+        return views.summaryView(result.summary, copy, load, loadUpgrade, { state: clipboard, onCopy })
       }
     }
 

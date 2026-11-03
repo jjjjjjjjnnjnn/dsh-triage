@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R75 (2026-11-03，**采证 + 加固 + 落地**：P1 D5 窗口内第一份基线（下载项首次 `steady` 1035 / 4 天，但是 10-29 爆发的回声、窗口只有 11-01 在 D5 内 → 仍 `pending`）· P3 复制按钮失败路径有单测 + Firefox 如实 `unmeasured` + 修掉记录器挂死 · P2 `attempts === 1` 是时钟粒度竞态（机制已证、翻红率未证）· P4/P5 两张 ADR 签字后落地（Host 不匹配 **421** + 两个扫描路由共享 **1 秒复用**；局域网 IP 默认失效）；**746 测试**)｜**下一件事：11-08 前跑第二份窗口内基线（滚动 7 天，过了就永久缺前 7 天）→ 11-15 关窗**
+> **Stand**: R76 (2026-11-03，**交付轮**：把「D5 窗口哪天必须再跑基线」从一句要人记住的话变成算得出来的数 —— `scripts/lib/d5-window-coverage.mjs`（纯函数）+ `scripts/d5_window_status.mjs`（只读）+ 11 条单测 + 2 条治理断言。实测：`last-week` 滞后 **1–2 天**（同日两次跑读到 2 与 1），所以「11-08 之前跑」会漏掉 **11-06**，而「11-03 那份 + 再跑一次」就能无缝拼上；**判据/阈值一字未动**；**746 → 760 测试**)｜**下一件事：窗口内基线的第二跑，截止 **`2026-11-11`**（算出来的，不是记的；`node scripts/d5_window_status.mjs` 会自己说哪天到期）→ 11-15 关窗**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 采证（R76-D，2026-11-03） | **D5 窗口内第二份现场基线：下载项仍是 `steady`，但形状还是 10-29 那次的回声（采证轮，判据/阈值一字未动）**。① 真跑 `data/results/market-baseline-2026-11-03T15-11-10.030Z.json`（`inputs.offline=false`、`failures: []`）：窗口 **`2026-10-27..2026-11-02`**（比 06:22 那份多一天）、周下载 **1392**、`download_shape=steady`、5/7 天有下载、峰值 61.3%→**45.6%**。② **日序列必须一起读**：`10-27:0 · 10-28:0 · 10-29:634 · 10-30:192 · 10-31:17 · 11-01:192 · 11-02:357` —— 634 之后仍是 192/17/192/357，**没有断**，所以 `BS-48` 那句「`steady` 不等于人」照旧成立；这份**不是**关窗读数，`judgeD5` 仍 `pending`。③ **它把覆盖推进了一天**：`11-01..11-02` 现在有现场读数，`d5_window_status` 的 `next_run_by` 从 `11-10` 推到 **`11-11`**（三份入口文档已同步，治理断言会盯着）。④ **顺带纠正一处自己的常数**：同一天 06:22 的跑滞后 2 天、15:11 的跑只滞后 **1 天** —— 所以「滞后 2 天」是**保守默认**而不是常数，模块注释与产物 `limits` 都改成 1–2 天并写明「保守一天早、绝不晚」。⑤ **重复读两遍的说法**：这份基线**不是新需求证据**，只是「窗口里有读数」的补证；D5 的三个数一个都没动。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
+| 交付（R76-C，2026-11-03） | **T-844：复制失败时把修复命令留在屏幕上（HUMAN 点名要做的那条可见 UI 改动）**。① 问题原样：`client.js` 的修复格只渲染按钮，**命令文本只活在点击闭包里** —— 没有剪贴板或写入被拒时，命令在屏幕上**根本不可达**，失败只写进 `window.__dshTriage.clipboard`（没人读）。② 改法：`copyText(text, onResult)` 把结果同时给**探针标记**与**页面**；失败后修复格多渲染 `data-copy-fallback` 块（一句人话 `copyFallback` + `user-select: all` 的 `<code>` = 引擎自己那行）；页签用 `useState` 记住最后一次尝试。③ **三条断言方向不同**（这是本轮唯一的设计判断）：**正常屏不含命令**（否则「按钮复制的是引擎那行」无法验证）/ 失败后命令作为独立文本节点出现 / 成功时不出现；点击路由也钉住（给了 `onCopy` 就只走它）。④ **负对照**：`if (failed)` → `if (false && failed)` → 单元当场 **1 红**（19/20），改回 20/20。⑤ **真机**：Chromium `--label r76-t844` → **13 passed + `client: 200` + 3 unmeasured**（`screenshot`/`english-screen` 没请求、`clipboard-copy` 因沙盒 profile 无 fix 行），与 R75-P3 形状相同 = **正常屏没被改坏**。⑥ **边界如实写**：真机**没有**复制失败路径的见证，失败路径的证据是 vm 单测（`clipboard-copy` 仍 `unmeasured`）。**冻结项一字未动**：四桶 / `improved` 五门槛 / `admission.ts` / `data/gold/` / 20s / settle / readiness / 9 门 / D5 三个阈值 |
+| 分发（R76-B，2026-11-03） | **#65 的冲突又解了一次，这次用「不改别人的字节」的做法（交付 + 分发轮，判据/阈值一字未动）**。① 现场：`gh pr view 65` 实测 **`CONFLICTING/DIRTY`**（上游 `a58eab2..c7bee93` 两个新提交：注册 `dsh-widget-board` + cohort 升级），R75 记的「MERGEABLE 等 review」对今天不成立。② **做法不是 `git rebase` 后手解冲突**：两边都往同一个 JSON 数组末尾追加，三方合并的冲突点正是「逗号与条目位置」。改成**取 `upstream/main` 的文件逐字节 + 只在最后一个 `}` 后插入我们那一条**，写盘前断言「条目数恰好 +1」「`dsh-triage` 是最后一条」→ `git diff upstream/main` 恒 **+12/-0**、1 文件。③ 用它自己的校验器复验：`node scripts/community-index.cjs --check` → **OK (152 entries)**、`node --test scripts/community-index.test.mjs` → **9/9**（两条读数由产物记录）。④ `force-with-lease` 推回后实测 **`MERGEABLE/BLOCKED`** —— `blocked` 是**仓库要求 review**，不是冲突；`reviewDecision` 仍空、`reviews` 仍 0。按 runbook §5 留了**一次**评论（`issuecomment-6607329040`），之后不再跟进。⑤ **一个读数陷阱**：推送后 **46 秒**读的产物里 `#193` 是 `mergeable_state: unknown`（GitHub 还在算），约 2 分钟后重读才是 `clean` —— **两份产物都留**，`unknown` 不是 `clean` 的别名。⑥ 产物 `market-channels-2026-11-03T15-04-52.304Z.json` 与 `…T15-05-38.106Z.json`；`merged` 仍 **0**。**冻结项一字未动**：D5 三个阈值 / 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
+| 交付（R76-A，2026-11-03） | **「下一份基线最晚哪天跑」变成算得出来的数（交付轮；判据/阈值一字未动）**。① **被取代的那句话错了两处**：`AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` 三处都写着「11-08 之前跑第二份窗口内基线，否则前 7 天永久缺失」。拿两份现场件实测 —— `10-31T06-40` 的窗口是 `10-23..10-29`、`11-03T06-22` 是 `10-26..11-01`，**发布滞后稳定 2 天**（不是 0）；而**滚动窗口不需要一次覆盖 7 天**：相隔 ≤7 天的两跑无缝拼接。所以在 11-07 跑（字面建议）覆盖 `10-30..11-05`，恰好把 **11-06** 留成缺口；真正的截止日是 **`2026-11-10`**（**R76-D 的第二份现场基线把覆盖推进到 `11-02` 后，它变成 `11-11`**）。② **新纯函数** `scripts/lib/d5-window-coverage.mjs#judgeWindowCoverage`（+ 手写 `.d.mts`）：窗口日 `D` 可在 `R ∈ [D+lag, D+lag+6]` 的跑里取到，逐日给 `collect-now` / `upcoming` / `lost`，再算 `next_run_by` 与 `urgent`；**只有 `measured`（`inputs.offline === false`）算覆盖**，复算件明确 `ignored`。③ **只读脚本** `scripts/d5_window_status.mjs`：窗口起点从 **D5 证据链**取（不是「最新的 posted 日期」——第一版就是这么错的，会挑到 X 那条 11-02 的帖子，把窗口整体挪后一天，已修并写进注释）；与 `registry.json` 的同一帖子比 `epochMs`，不一致 **exit 2**；产物带 `lag_observed`（实测 2）；`urgent`/`lost` → **exit 1**。④ **11 条单测 + 2 条治理断言**：治理断言把三份文档里的日期与「按已提交产物重算出来的截止日」对撞（今天固定为最新一份现场件的日期，所以可复算；新基线进仓会让它红，逼文档跟着走）。**它第一次跑就真红**（三份文档都没有 `2026-11-10`）—— 这就是它存在的理由。⑤ **两条负对照各自真红**：把「最后可取日」改成 +1 天 → **6 绿 / 5 红**；让复算件也算覆盖 → **10 绿 / 1 红**；两次都逐字节还原、复跑 **11/11**。⑥ 产物 `data/results/d5-window-status-2026-11-03T14-59-39.111Z.json`（`covered 1 / missing 14 / next_run_by 2026-11-10 / verdict not-yet`）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R75-P5，2026-11-03） | **两张 ADR 签字后落地（交付轮；判据/阈值一字未动）**。① **`T-811` Host 准入**：新纯函数 `packages/plugin/src/host-allow.ts#judgeHost`（10 条单测）+ `serve.ts` 的请求**第一步**判 Host、失败 **421**（不是 401：Host 错与 token 错是两件事）+ CLI 新增 `--host` / `--allow-host`（`--host 0.0.0.0` 不给 `--allow-host` → **启动即 exit 2** 并打印示例）+ 打印的 URL 一定是规则接受的名字。**默认路径零变化**（`127.0.0.1` / `localhost` 照旧）。**代价如实生效**：局域网 IP 默认打不开。② **`T-814` 1 秒复用**：`AUDIT_REUSE_MS = 1000`（常量，不做配置项）；`singleFlight` 换成 `reusableScan`，挂在**共享扫描层** —— `/api/summary` 与 `/api/audit` 共用同一个窗口（这正是 P4 复审抓到的「治错路由」）；`/api/summary` 的 body 带 `reused` / `age_ms`，`/api/audit` 走响应头（它的 body 必须与 `audit --json` 逐字节相同，R19）；**失败的扫描不缓存**（读不到要能重试）。③ **两处按实测偏离 ADR 原文，已写进两份 ADR 的实施记录**：`/api/audit` 的元数据走头不走 body；`[::1]` 仍在白名单但默认不监听。④ **731 → 746 测试**（+15：Host 纯函数 10 + 集成 5 —— 复审补了「端口 80 省略」与「打印的 URL 合法」两条）；9 门 ALL GREEN；`check_listing` 17/17。⑤ 签字记账在 `audit/SIGNOFF.md` 2026-11-03 行（原话「同意，继续」+ 未逐条复核的三项）。⑥ **复审（独立 adversary）判 FAIL 后修掉四处真缺陷**：`--port 80` 会拒绝每一条请求（浏览器省略默认端口）· `ssh -L` / 反代场景被挡（记入 ADR-0014 §3 并给出 `--allow-host localhost:<port>`）· 打印的 URL 在 `--host ::1` 与 `--allow-host name:port` 两种组合下不是合法 URL（新增纯函数 `panelAuthority` + 6 条用例）· CLI 那行「answers … only」重复 `127.0.0.1` 且漏掉 `[::1]`。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 判据记录（R75-P4，2026-11-03） | **两张 ADR 只写决策、不改行为（**当时**等 HUMAN 签字；P5 已签并落地）；复审抓到两处阻断级并已修**。① **`docs/adr/0014-host-header-allowlist.md`（proposed，`T-811`）**：默认绑定要求 `Host` ∈ `127.0.0.1:<port>` / `localhost:<port>` / `[::1]:<port>`，不匹配 → **421**；`--host 0.0.0.0` 必须配 `--allow-host`，否则启动即 exit 2。**代价写在 ADR 里**：局域网 IP 默认打不开面板 —— 这是需要 HUMAN 点头的那一条。② **`docs/adr/0015-local-panel-rate-limit.md`（proposed，`T-814`）**：案 A（推荐）1 秒复用窗口 + `reused` / `age_ms`，案 B 明确不设限并写死理由；两案各自的代价都写清。③ **独立 reviewer 抓到两处阻断级**：**(a) ADR-0015 原本治错了路由** —— 面板「刷新」走 `/api/summary`（`serve.ts:1251 → :1001 → :1003`），`/api/audit` 只是 raw 页签的一次性读取（`:1151`），照原文实施会「验收全绿而问题原样保留」→ 改成挂在**共享扫描层**（`context.audit` / `singleFlight`），并要求两个路由各一条验收 + 一条「共享同一窗口」断言；**(b) `docs/SECURITY.md` §4.3 原有一句是假话**（「空 Origin 一律拒绝」对 `serve.ts` 不成立，只对 `host-audit-route.ts` 成立）→ 改成两个半边分开写，并点名 DNS rebinding 借的正是 `serve` 这一侧。④ **状态一致**：两张 ADR 的 Status、`SECURITY.md` 两处、`BACKLOG` 两行、`INDEX` 登记全部是「proposed / 等签字」，**没有一处**写成已实施；`packages/` 零改动（reviewer 用 grep 反向取证：`421` / `allow-host` / `AUDIT_REUSE` / `reused` 全仓 0 命中）。⑤ `check_listing` 17/17；**731 测试 / 9 门 ALL GREEN**（这是 P4 当时的数字；P5 落地后是 746）。⑥ **「`packages/` 零改动」只对 P4 当时成立**：P5 签字后已实施（Host 准入 + 1 秒复用），本条保留原样是因为它记录的是那一轮的证据。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 契约（R75-P2，2026-11-03） | **T-840：CI 上那条「恰好 1 次尝试」不是契约，是时钟粒度竞态（契约轮，判据/阈值一字未动）**。① **机制**：hook 的停止条件是 `Date.now() - started >= retryMs`，而测试给的是 `retryMs: 1` —— 首试若与 `started` 落在同一毫秒，`0 >= 1` 为假 → 睡 250ms 再试一次，于是拿到 2 个 `attempts`。② **实测**：同一进程（模块已缓存）连跑 40 次，`attempts[0].ms === 0` 与「2 个 attempts」**逐条对齐**（两轮 21/21、25/25）——因果成立；**但这个数字不是这条测试的翻红率**：测试每个用例新建 tree（冷 import），本机按该条件 40/40 都是 1 个 attempt，所以 **CI 那次红只能算「合理但未证明」**（CI 上冷 import 是否 <1ms 没有取证）。**本机绿不能证明稳定**。③ **修法**：`retryMs: 0`（`??` 不会把 0 吞成 20000，`0 >= 0` 恒真 ⇒ 构造上确定），断言仍是 `=== 1`；新增**反方向**测试（`retryMs: 50` → `attempts.length >= 2`、每条 `inactive-context`、`error.attempts` 一致）把「预算用尽才停」也钉住；**同模式残留两处一并收掉**（projection-missing 用例、`probe-hook-two-phase`）——它们不断言计数，但留着就是下一个抖动的种子。④ **诊断补上**：断言消息打印整个 `attempts` 数组（原来只打印 falsy，红一次无法归因）。⑤ **负对照两条**：期望改 2 → 真红（actual 1 / expected 2）；把产品码改成「永不重试」→ 只有反方向测试红、`retryMs: 0` 那条仍绿（说明两条各钉一个方向）。**没有**放宽成 `>= 1`。⑥ **730 → 731 测试**；`check_listing` 17/17。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
@@ -114,8 +118,8 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **746 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。
 
-**然后看「R75」一节**（本文 §2 下方）：那里有换会话开工清单、**11-08 之前必须跑的第二份窗口内基线**，
-以及 11-15 关窗的四条命令。**时间敏感的是 11-08 那条**——npm 的 `last-week` 是滚动 7 天，过了就永久缺前 7 天。
+**然后看 §2 最上面那条 R76 批次记录**：那里说清了「下一份基线最晚哪天跑」，而这个日子现在是**算出来的**
+（`node scripts/d5_window_status.mjs`），另有 11-15 关窗的四条命令。
 
 **还要确认 CI 是绿的**（这是本机看不见的一层）：
 
@@ -144,11 +148,19 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1   # 预期 success
 **唯一的时间敏感待办（过了就补不回来）**：
 
 ```powershell
-# 11-08 之前跑；stamp 必须带冒号
+# 截止日看这条命令，不要凭记忆；当前是 2026-11-11
+node scripts/d5_window_status.mjs
+# 到期那天跑（stamp 必须带冒号）
 node scripts/record_market_baseline.mjs --stamp <真实UTC>
 ```
 
-理由：npm 的 `last-week` 是**滚动 7 天**。关窗那天（11-15）只能看见 `11-08..11-14`，D5 窗口的前 7 天（`11-01..11-07`）**会永久缺失**。
+理由（**R76 更正，原文有两处错**）：npm 的 `last-week` 是滚动 7 天，但
+① 它**滞后 1–2 天**才发布（10-31 跑 → `..10-29`；11-03T06:22 跑 → `..11-01`；**同一天** 11-03T15:11 跑 → `..11-02`，
+所以「滞后 2 天」只是保守值，不是常数），
+② 一次跑不必覆盖整 7 天 —— **相隔 ≤7 天的两次跑会无缝拼上**。所以不是「11-08 之前」，
+而是「**在 11-11 或更早再跑一次**」= 与 11-03 那两份接起来连续；若按字面在 11-07 跑，
+覆盖 `10-30..11-05`，恰好把 **11-06** 留成缺口（要等 11-14 那跑才补得回来）。
+算这件事的机器是 `scripts/d5_window_status.mjs`（`data/results/d5-window-status-*.json`）。
 跑完把产物与 `.sha256` 提交，并在 `docs/HANDOFF.md` 补一行批次记录。
 
 **然后**：**`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 四条命令关窗
@@ -165,8 +177,10 @@ node scripts/record_market_baseline.mjs --stamp <真实UTC>
 - 不动 `docs/distribution/T-810/03-x-en.md` 与 `docs/distribution/reddit-and-hn-posts.md`（人类宣传物料）；
 - 关窗前重跑 D5 只会是 `pending`，**不算新证据**。
 
-**P1 做了什么（一句话）**：在 D5 窗口内落了第一份市场基线，因为 npm 的 `last-week` 是**滚动 7 天**——
-晚于 `11-08` 再跑，`11-01..11-07` 就永久缺了。
+**P1 做了什么（一句话）**：在 D5 窗口内落了第一份市场基线，因为 npm 的 `last-week` 是**滚动 7 天**且
+**滞后 2 天**——`R76` 更正了此处原先的「晚于 `11-08` 再跑，`11-01..11-07` 就永久缺了」：真正的截止日由
+`scripts/d5_window_status.mjs` 算出（R76-A 时是 `2026-11-10`，R76-D 的第二份现场基线之后是 `2026-11-11`；
+两次相隔 ≤7 天的跑即可无缝拼接），而不是记的。
 
 **这一轮唯一必须一起读的三句话**：
 
@@ -181,8 +195,9 @@ node scripts/record_market_baseline.mjs --stamp <真实UTC>
 - **P4（当时）**：两张 **proposed** ADR（`T-811` Host 准入 / `T-814` 面板速率），**那一轮** `packages/` 零改动（P5 才落地）。
 - **P5（签字后落地）**：两张 ADR 按推荐案实施 —— `Host` 不匹配 **421**（`--host` / `--allow-host` 新增，`0.0.0.0` 必须配 `--allow-host`）；两个扫描路由共享 **1 秒复用窗口**（`/api/audit` 的元数据走响应头，body 仍与 `audit --json` 逐字节相同）。**代价如实生效**：局域网 IP 默认打不开。
 
-**下一位的第一件事**：**`11-08` 之前**再跑一次 `record_market_baseline`（第二份窗口内基线），
-把 `11-01..11-07` 补上；然后仍是 **`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 四条命令。
+**下一位的第一件事**：先跑 `node scripts/d5_window_status.mjs` 读**算出来的截止日**（当前 **2026-11-11**），
+在那天或之前再跑一次 `record_market_baseline`（第二份窗口内基线）；然后仍是 **`2026-11-15T20:24:37Z` 之后**
+按 `docs/d5-close-runbook.md` §0 四条命令。
 **同时**：`docs/adr/0014` 与 `0015` **已于 2026-11-03 签字并落地**（原话「同意，继续」，记账 `audit/SIGNOFF.md`）；
 落地时的两处实测偏离（`/api/audit` 元数据走响应头、`[::1]` 默认不监听）写在两份 ADR 的「实施记录」里。
 
