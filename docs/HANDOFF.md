@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R75 (2026-11-03，**采证 + 加固 + 落地**：P1 D5 窗口内第一份基线（下载项首次 `steady` 1035 / 4 天，但是 10-29 爆发的回声、窗口只有 11-01 在 D5 内 → 仍 `pending`）· P3 复制按钮失败路径有单测 + Firefox 如实 `unmeasured` + 修掉记录器挂死 · P2 `attempts === 1` 是时钟粒度竞态（机制已证、翻红率未证）· P4/P5 两张 ADR 签字后落地（Host 不匹配 **421** + 两个扫描路由共享 **1 秒复用**；局域网 IP 默认失效）；**746 测试**)｜**下一件事：11-08 前跑第二份窗口内基线（`last-week` 滚动，晚于 11-08 就永久缺前 7 天）；两张 ADR 已签并落地**
+> **Stand**: R75 (2026-11-03，**采证 + 加固 + 落地**：P1 D5 窗口内第一份基线（下载项首次 `steady` 1035 / 4 天，但是 10-29 爆发的回声、窗口只有 11-01 在 D5 内 → 仍 `pending`）· P3 复制按钮失败路径有单测 + Firefox 如实 `unmeasured` + 修掉记录器挂死 · P2 `attempts === 1` 是时钟粒度竞态（机制已证、翻红率未证）· P4/P5 两张 ADR 签字后落地（Host 不匹配 **421** + 两个扫描路由共享 **1 秒复用**；局域网 IP 默认失效）；**746 测试**)｜**下一件事：11-08 前跑第二份窗口内基线（滚动 7 天，过了就永久缺前 7 天）→ 11-15 关窗**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -111,7 +111,10 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 ```
 
-**验收标准**：第二条输出 `ALL GREEN · 9 gates`；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。
+**验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **746 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。
+
+**然后看「R75」一节**（本文 §2 下方）：那里有换会话开工清单、**11-08 之前必须跑的第二份窗口内基线**，
+以及 11-15 关窗的四条命令。**时间敏感的是 11-08 那条**——npm 的 `last-week` 是滚动 7 天，过了就永久缺前 7 天。
 
 **还要确认 CI 是绿的**（这是本机看不见的一层）：
 
@@ -122,10 +125,44 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
 
-## R75（2026-11-03，采证 + 加固）
+## R75（2026-11-03，采证 + 加固 + 落地 · **交接**）
 
-**状态**：**746 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；
+**状态**：**746 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；CI `success`（`41608591346`）。
 **D5 仍 `pending`**（reactions 0/10 · 外部引用 0/1 · 下载项在窗口外读到 `steady` 1035，见下）。
+
+**换会话后从这里开始**：
+
+```powershell
+git status --short          # 预期：只剩两个宣传物料（03-x-en.md 改动 + reddit-and-hn-posts.md 未跟踪），不要动
+pnpm install --frozen-lockfile
+pnpm run verify             # 746 测试 / 9 门
+node scripts/gate.mjs --mutate
+gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1   # 预期 success
+```
+
+**唯一的时间敏感待办（过了就补不回来）**：
+
+```powershell
+# 11-08 之前跑；stamp 必须带冒号
+node scripts/record_market_baseline.mjs --stamp <真实UTC>
+```
+
+理由：npm 的 `last-week` 是**滚动 7 天**。关窗那天（11-15）只能看见 `11-08..11-14`，D5 窗口的前 7 天（`11-01..11-07`）**会永久缺失**。
+跑完把产物与 `.sha256` 提交，并在 `docs/HANDOFF.md` 补一行批次记录。
+
+**然后**：**`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 四条命令关窗
+（刷新基线 → 读 D5 且 `--fixtures-out` → 离线复算 → 登记），`--baseline` 必须显式点名。
+`pass` / `fail` / `unmeasurable` 三个分支见 runbook §4；**`fail` 就执行 D，禁止「再加一个功能试试」**。
+
+**上游若发新 rc**：`watch-upstream`（每 6 小时）会给 `changed`；**卡片必须在真机上重跑**再引用（HANDOFF §3 已写死）。
+
+**不要做的事**（每条都付过学费）：
+
+- 不为「让 D5 好看」加功能或改判据（阈值 10/1/20、判定顺序、`admission.ts`、四桶、`improved` 五门槛全部冻结）；
+- 不把 X / Reddit 热度算进 D5（`channels.json` 只允许一条 `d5_counts: true`）；
+- 不再 rebase 三条渠道 PR（`#65` 是 `MERGEABLE/BLOCKED` 等 review，不是冲突）；
+- 不动 `docs/distribution/T-810/03-x-en.md` 与 `docs/distribution/reddit-and-hn-posts.md`（人类宣传物料）；
+- 关窗前重跑 D5 只会是 `pending`，**不算新证据**。
 
 **P1 做了什么（一句话）**：在 D5 窗口内落了第一份市场基线，因为 npm 的 `last-week` 是**滚动 7 天**——
 晚于 `11-08` 再跑，`11-01..11-07` 就永久缺了。
@@ -159,6 +196,11 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 4. **「本机绿」不能证明一条断言稳定**：`probe-hook-error` 的 `attempts.length === 1` 在本机 40/40 绿，
    而它在 `retryMs: 1` 下是**时钟粒度竞态**（首试落在同一毫秒就会重试一次）。判断依据是停止条件与
    首试耗时，不是「我跑了几次都绿」。测试里凡是「数量」断言，预算必须给成确定值（`retryMs: 0`）。
+5. **「安全规则对了」不等于「用户还能用」**：Host 准入没有一条绕过路径，但它第一版把
+   **`--port 80`**（浏览器省略默认端口）和 **`ssh -L` / 反向代理**（端口变了）全挡死了。
+   安全改动的验收必须同时列**正常路径清单**，不能只列攻击路径清单。
+6. **面板有两个扫描入口**：`/api/summary`（刷新按钮）与 `/api/audit`（raw 页签）。改缓存/限速必须挂在
+   **共享扫描层**（`context.audit`），只给一个路由加会「验收全绿而问题原样保留」——`T-814` 第一版就是这个形状。
 
 ## R74（2026-11-02，交接）
 

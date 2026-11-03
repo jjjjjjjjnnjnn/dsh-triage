@@ -11013,6 +11013,30 @@
         "outcome": "GREEN：17/17（746 测试计数在 10 份文档里一致）。本步的代码证据是 pnpm run verify 746 测试 / 9 门 + 新增 15 条单测与集成测试全绿",
         "sha256": "8e58625a598a5dab6ac491a64db5937c5f4aa1221179fc34197f371dc535e455"
       }
+    },
+    {
+      "id": "R75-S9",
+      "batch": "R75",
+      "step": "交接轮：只记录状态与下一步（换会话开工清单 / 11-08 时间敏感项 / 11-15 关窗），不改行为",
+      "changed": [
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json",
+        "data/results/listing-2026-11-03T10-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：本轮没有改任何代码、判据或阈值（`git diff` 只有文档 + 台账）；交接块里的数字（746 测试 / 9 门 / CI `41608591346`）都是当轮实测，不是转述。",
+        "reproducibility": "PASS：交接块给的三条命令（verify / `--mutate` / `gh run list`）都是可原样重跑的；11-08 那条给了完整命令与「stamp 必须带冒号」的已知坑。",
+        "licence": "PASS：只写仓内文档，不读外部服务、不含个人身份。",
+        "ssot": "PASS：`check_listing` 17/17 作为本轮唯一产物（文档一致性没有漂移）；listing 产物由本步引用，no-orphan-results 绿。",
+        "adversary": "反例一：把「交接」写成「已完成」——被拒，交接块第一句就是 D5 仍 `pending` 与两个未到期的时间点；反例二：漏掉 11-08 这个截止——被拒，它单独占一节并写明「过了就补不回来」及原因（`last-week` 滚动 7 天）；反例三：把宣传物料写进「可以改」——被拒，「不要做的事」第一条列的就是那两个文件。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T10:10:00.000Z --tests 746",
+        "artifact": "data/results/listing-2026-11-03T10-10-00.000Z.json",
+        "outcome": "GREEN：17/17（746 测试计数在 10 份文档里一致）；本轮零行为改动",
+        "sha256": "6326c077d403627feb40c0122eff5d948d74fffa46f186f516cf7eec2443f619"
+      }
     }
   ]
 }

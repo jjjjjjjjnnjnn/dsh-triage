@@ -820,6 +820,16 @@
 - 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 447 步
 - 反思：这一轮唯一有价值的判断是**把「外部转述」与「实测字段」分开**。「#65 需解冲突」这句话若是真的，下一步就是 rebase；而实测说 `MERGEABLE/BLOCKED`，下一步只能是等 review。两条路差一整个动作，而唯一能区分它们的是 `gh pr view` 的两个字段——不是谁说得更有把握。
 
+### 2026-11-03 R75 交接｜换会话前的状态与两个时间点（交接轮，零行为改动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R75-S9`；无 subagent
+- 人工决策：HUMAN「进行项目交接，即将切换会话并继续」
+- 范围：`docs/HANDOFF.md`（Stand 尾句、§3 第一件事、R75 一节改成「交接」+ 开工清单 + 时间敏感项 + 6 条坑）· `audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}` · 产物 `listing-2026-11-03T10-10-00.000Z.json`
+- 结果：① 交接块写清「换会话后三条命令 + CI 检查」；② **唯一时间敏感项**：**11-08 之前**跑第二份窗口内基线（`record_market_baseline`），因为 npm 的 `last-week` 是滚动 7 天，关窗那天只能看见 `11-08..11-14`；③ 11-15 关窗仍按 `docs/d5-close-runbook.md` §0 四条命令；④ 新增两条坑：「安全规则对了 ≠ 用户还能用」（端口 80 / 隧道）与「面板有两个扫描入口，限速要挂共享层」
+- 实测：**746 测试 / 0 fail** · 9 门 ALL GREEN · `check_listing` 17/17 · CI `success`（`41608591346`）
+- 反思：交接最容易漏的不是状态，是**截止时间**。这一轮把「11-08」单独拎出来写成一行命令，因为它是唯一一个**过了就补不回来**的动作。
+
 ### 2026-11-03 R75-P5｜两张 ADR 签字后落地（Host 准入 + 1 秒复用）
 
 - 生成者：DeepSeek V4.1 Flash（主会话）；**新增非人类手写模块** `packages/plugin/src/host-allow.ts`（纯函数 `judgeHost` / `allowedHosts`）
