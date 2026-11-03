@@ -11317,6 +11317,55 @@
         "outcome": "31 行搬入 `_archive/2026-11-03_HANDOFF-batch-rows-R39-R66.md`；`governance/archive-manifest` → `no dangling entries`；`governance/index-references` → `289 references ok`；`docs/HANDOFF.md` 仍以标题开头且 §1/§2/§3 齐全",
         "sha256": "e5363087fb103915da515e1b20ccd0114a442ed934207d8366f26ba0e14c7bcc"
       }
+    },
+    {
+      "id": "R77-S4",
+      "batch": "R77",
+      "step": "0.3.4 发布：四包上线（HUMAN 跑 OTP），第一次取证的读数被 registry 副本滞后判红 —— 红产物原样保留",
+      "changed": [
+        "packages/core/package.json",
+        "packages/plugin/package.json",
+        "data/results/publish-2026-11-03T15-45-35.175Z.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：这一跑**不是失败**，它记录的是「发布已成功、但元数据副本还没传播」。判据区分得很清楚：6 项红全是**读**（`root-manifest` / 四个 `version:` / `dist-tags-agree`，都还看到 `latest=0.3.3`），而**唯一能证明「装得上」的那一项是绿的** —— `anonymous-install` 重试 20 次、等了 **302349ms** 后 `npm install dsh-triage@0.3.4` exit 0，装回 6 个包。",
+        "reproducibility": "PASS：产物带 `.sha256`，`checks[]` 逐项可读；`npm view <pkg> dist-tags.latest` 任何时候都能独立复读（发布 17 分钟后四包都是 0.3.4）。",
+        "licence": "PASS：只读 registry 元数据与自己做出来的 tarball；没有第三方内容。",
+        "ssot": "PASS：红产物**进 SSOT 并保留**（不删红件是这个仓的一贯做法）；`AGENTS` / `HANDOFF` 把这份产物写成「读早了」的证据，而不是写成「发布失败」。",
+        "adversary": "反例一：看到 6 项红就判定「发布失败、重发一次」—— 被拒，重发只会拿到 `403 / 409`，而同一份产物里匿名安装已经成功；反例二：为了让取证变绿把 `version:` 检查放宽成「读到 latest 就算」—— 被拒，那条断言存在的理由就是「用户装到的是不是 manifest 说的那版」；反例三：删掉红产物只留绿的那份 —— 被拒，两份合起来才是「副本滞后 ~5 分钟」这句话的证据。"
+      },
+      "real_test": {
+        "command": "pnpm run release:publish（HUMAN 在你自己终端跑：preflight → pnpm -r publish（OTP）→ record_publish）",
+        "artifact": "data/results/publish-2026-11-03T15-45-35.175Z.json",
+        "outcome": "四包全部 `✅ Published`；取证 16 项检查 / **6 红**（`root-manifest` + 四个 `version:` + `dist-tags-agree`，都读到 `latest=0.3.3`）；`anonymous-install` **exit 0**（20 次尝试 / 302349ms / 6 包）/ `installed-tree` / 三个 `dependency:` / `cli-runs`（15 行）/ `module-resolves` / `client-bundle` 全绿",
+        "sha256": "b3db2271c5fda1d3cab8f7828a82ffd79d3f7639c0154be4a42452a5ab188e83"
+      }
+    },
+    {
+      "id": "R77-S5",
+      "batch": "R77",
+      "step": "0.3.4 取证重读：副本传播完成后 18/18 全绿（latest=0.3.4、无 workspace:、匿名安装 1 秒、client-bundle 39219B）",
+      "changed": [
+        "data/results/publish-2026-11-03T16-02-49.621Z.json",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/market/submissions/README.md"
+      ],
+      "review": {
+        "correctness": "PASS：18 项全过，且每一项都是对**装回来的东西**说的：`latest:` 四项 = 0.3.4；`rewritten:` 四项无 `workspace:`（否则用户装不上）；`dist-tags-agree` 四包都指向 0.3.4；匿名安装 1 秒 6 包；`client-bundle` 39219B + loader + `settings.plugins.tab` —— 这一项直接证明 T-844 的修复真的在包里（0.3.3 是 35944B）。",
+        "reproducibility": "PASS：同一条命令 `node scripts/record_publish.mjs` 可重跑；`npm view` 与匿名安装都能独立复算。**已知边界**：这一份的 `git_dirty=true`，因为跑它时上一份红产物还是未跟踪文件 —— 下一份（S6）会给出干净树的读数。",
+        "licence": "PASS：只读 registry 与自己发的 tarball。",
+        "ssot": "PASS：产物进 SSOT 并被本步引用；`AGENTS` 的 npm 行、`INDEX` 的 Stand、`HANDOFF` 的 §2/§3、`docs/market/submissions/README.md` 四处都改成「已发布 + 取证指针」，且 `check_listing` 的 `version-matches-manifest` 仍要求每个被点名的版本等于 0.3.4。",
+        "adversary": "反例一：把 `git_dirty=true` 藏起来不写 —— 被拒，本步如实写「下一份给干净树读数」；反例二：用这份产物声称「发布链路从来没出过问题」—— 被拒，S4 的红产物与 §3 的「读了两遍」都留着；反例三：把 `client-bundle` 的字节数说成「修复的证据」—— 部分拒，字节数只能说明 `client.js` 变了，**行为**的证据是 `tests/unit/client-tab.test.ts` 那条单测。"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（发布 17 分钟后）",
+        "artifact": "data/results/publish-2026-11-03T16-02-49.621Z.json",
+        "outcome": "**18/18 全绿**：四包 `latest=0.3.4` · 四个 `rewritten` 无 `workspace:` · `dist-tags-agree` · 匿名安装 exit 0（1 秒 / 6 包）· CLI 15 行 · `import()` → apply,default,loadBundleLayers,loadComposition,loadPatchText,name · `client-bundle` 39219B · loader=yes · slot=settings.plugins.tab",
+        "sha256": "9c841bfe6a81d59b33d96ac0a92cf276be30f77d329d5b07d66fe0f464680a4d"
+      }
     }
   ]
 }

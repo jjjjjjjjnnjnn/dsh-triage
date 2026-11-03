@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-11-03T15:45:35.175Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "0.3.4",
+    "version_source": "manifest",
+    "git_head": "ebfe6ed7fc80695f940d06919bdc5cd0a06249ff",
+    "git_dirty": false
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-11-03T15:45:35.175Z"
+  },
+  "dist_tags": {
+    "expected": "0.3.4",
+    "latest": {
+      "@dsh-triage/core": "0.3.3",
+      "@dsh-triage/signals": "0.3.3",
+      "@dsh-triage/probe": "0.3.3",
+      "dsh-triage": "0.3.3"
+    },
+    "agree": true,
+    "unreachable": [],
+    "dangling": [],
+    "extra": []
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": false,
+      "status": 200,
+      "detail": "version 0.3.4 is not published",
+      "latest": "0.3.3"
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": false,
+      "status": 200,
+      "detail": "version 0.3.4 is not published",
+      "latest": "0.3.3"
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": false,
+      "status": 200,
+      "detail": "version 0.3.4 is not published",
+      "latest": "0.3.3"
+    },
+    {
+      "name": "dsh-triage",
+      "ok": false,
+      "status": 200,
+      "detail": "version 0.3.4 is not published",
+      "latest": "0.3.3"
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@0.3.4",
+    "exit_code": 0,
+    "attempts": 20,
+    "waited_ms": 302349,
+    "wait_budget_ms": 300000,
+    "tail": "added 6 packages in 1s",
+    "client_bundle": {
+      "entry": "./client.js",
+      "bytes": 39219,
+      "facts": {
+        "declared": true,
+        "platform": "web",
+        "present": true,
+        "loader": true,
+        "slot": true
+      },
+      "ok": true
+    },
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": true,
+        "version": "0.3.4",
+        "expected": "0.3.4"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": true,
+        "version": "0.3.4",
+        "expected": "0.3.4"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": true,
+        "version": "0.3.4",
+        "expected": "0.3.4"
+      }
+    ],
+    "cli": {
+      "exit_code": 0,
+      "first_lines": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n\n用法 (Usage)",
+      "commands": "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层\n  dsh-triage                         一屏速览：当前配置是否存在异常、受影响条目及修复建议\n  dsh-triage status                  输出与无参相同的一屏诊断结论\n  dsh-triage env                     查看当前环境指纹（DSH 版本、Profile、已装 Bundle）\n  dsh-triage why                     排查插件静默失效根因，进行逐行准入归因\n  dsh-triage check <包名[@版本]>      在安装前预检候选插件是否满足当前环境准入\n  dsh-triage audit                   全量兼容性台账（配合 --all 查看完整清单）\n  dsh-triage probe <包名[@版本]>      生成隔离沙盒实测方案（默认 dry-run，--execute 真跑）\n  dsh-triage serve                   启动本地可视化诊断面板（127.0.0.1，Token 鉴权）\n  dsh-triage badge <包名[@版本]>      基于真实证据生成 shields 风格 SVG 状态徽章\n  dsh-triage index                   导出本地实测为 \"go\" 的格式 1 兼容索引\n  dsh-triage outcomes                回流层本地存储：status / --enable / --disable / --purge\n  dsh-triage upgrade --to <目标版本>  预检目标 DSH 版本会拦截当前哪些插件，并输出修复建议\n  dsh-triage upgrade --to next|latest 预检升级至 npm 远端 next/latest 版本的兼容影响\n  dsh-triage fix                     自动修复计划；--apply 实际写入，--undo 依日志撤销"
+    },
+    "module_exports": "apply,default,loadBundleLayers,loadComposition,loadPatchText,name",
+    "scratch": "<path>"
+  },
+  "checks": [
+    {
+      "id": "root-manifest",
+      "ok": false,
+      "detail": "dsh-triage@0.3.4 is not on the registry"
+    },
+    {
+      "id": "version:@dsh-triage/core",
+      "ok": false,
+      "detail": "0.3.4 absent (latest=0.3.3)"
+    },
+    {
+      "id": "version:@dsh-triage/signals",
+      "ok": false,
+      "detail": "0.3.4 absent (latest=0.3.3)"
+    },
+    {
+      "id": "version:@dsh-triage/probe",
+      "ok": false,
+      "detail": "0.3.4 absent (latest=0.3.3)"
+    },
+    {
+      "id": "version:dsh-triage",
+      "ok": false,
+      "detail": "0.3.4 absent (latest=0.3.3)"
+    },
+    {
+      "id": "dist-tags-agree",
+      "ok": false,
+      "detail": "@dsh-triage/core: latest=0.3.3, expected 0.3.4 · @dsh-triage/signals: latest=0.3.3, expected 0.3.4 · @dsh-triage/probe: latest=0.3.3, expected 0.3.4 · dsh-triage: latest=0.3.3, expected 0.3.4"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": true,
+      "detail": "npm install dsh-triage@0.3.4 exit 0 · added 6 packages in 1s · 20 attempt(s) over 302349ms"
+    },
+    {
+      "id": "registry-propagation",
+      "ok": true,
+      "detail": "the install answered \"not on the registry yet\" 19 time(s); the probe re-asked and got a real answer after 302349ms"
+    },
+    {
+      "id": "installed-tree",
+      "ok": true,
+      "detail": "node_modules/dsh-triage exists"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": true,
+      "detail": "@dsh-triage/core@0.3.4 (declared 0.3.4)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": true,
+      "detail": "@dsh-triage/signals@0.3.4 (declared 0.3.4)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": true,
+      "detail": "@dsh-triage/probe@0.3.4 (declared 0.3.4)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": true,
+      "detail": "exit 0 · 15 command line(s) · dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层"
+    },
+    {
+      "id": "module-resolves",
+      "ok": true,
+      "detail": "import('dsh-triage') → apply,default,loadBundleLayers,loadComposition,loadPatchText,name"
+    },
+    {
+      "id": "client-bundle",
+      "ok": true,
+      "detail": "./client.js resolves (39219B) · loader=yes · slot=settings.plugins.tab"
+    }
+  ],
+  "ok": false,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}
