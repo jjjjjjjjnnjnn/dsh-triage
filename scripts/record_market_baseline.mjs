@@ -549,7 +549,14 @@ const claims = [
     recompute: 'compare categories.diagnostics / categories.marketplace',
   },
   {
-    id: 'this-package-weekly-downloads-are-not-demand',
+    /*
+     * R75: the id names the SUBJECT, never the conclusion. It used to be the literal
+     * `this-package-weekly-downloads-are-not-demand`, which was true for the 2026-10-29 burst and
+     * became a contradiction the first time the shape was `steady` (id said "not demand", statement
+     * said "counts as demand: true"). An id that flips with the verdict turns a stable handle into a
+     * second, stale copy of the answer.
+     */
+    id: 'this-package-weekly-downloads-verdict',
     statement: `dsh-triage summed ${String(d5.week_downloads)} weekly downloads with shape '${d5.download_shape}', so the D5 download verdict is '${d5.verdict}' (counts as demand: ${String(d5.counts_as_demand)})`,
     recompute: 'd5.verdict / packages["dsh-triage"].download_shape',
   },

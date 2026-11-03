@@ -118,6 +118,66 @@ test('a steady window that clears the threshold DOES count (the rule is not "alw
   }
 })
 
+test('a claim id names the subject, not the verdict (the id must not flip when the shape flips)', () => {
+  /*
+   * R75: the burst artifact carried `claims[].id = 'this-package-weekly-downloads-are-not-demand'`
+   * while its statement said `counts as demand: true` the first time the shape was steady. The id was
+   * a hard-coded copy of the old answer. The rule this test pins: the same subject keeps the same id
+   * whatever the verdict is, so the id can never become a stale second copy of the conclusion.
+   */
+  const burstOut = mkdtempSync(join(tmpdir(), 'dsh-triage-market-out-'))
+  const steadyFixtures = scratchFixtures()
+  const steadyOut = mkdtempSync(join(tmpdir(), 'dsh-triage-market-out-'))
+  try {
+    const burst = run(['--stamp', '2026-10-31T08:40:00.000Z', '--fixtures', FIXTURES, '--out', burstOut])
+    assert.equal(burst.status, 0, burst.stderr)
+
+    const point = readFixture(steadyFixtures, 'npm-downloads-bulk-unscoped.json')
+    const pointBody = JSON.parse(point.body)
+    pointBody['dsh-triage'] = { downloads: 25, package: 'dsh-triage', start: '2026-10-23', end: '2026-10-29' }
+    writeFixture(steadyFixtures, 'npm-downloads-bulk-unscoped.json', { ...point, body: JSON.stringify(pointBody) })
+
+    const range = readFixture(steadyFixtures, 'npm-downloads-range-bulk-unscoped.json')
+    const rangeBody = JSON.parse(range.body)
+    rangeBody['dsh-triage'] = {
+      package: 'dsh-triage',
+      start: '2026-10-23',
+      end: '2026-10-29',
+      downloads: [
+        { day: '2026-10-23', downloads: 3 },
+        { day: '2026-10-24', downloads: 4 },
+        { day: '2026-10-25', downloads: 3 },
+        { day: '2026-10-26', downloads: 4 },
+        { day: '2026-10-27', downloads: 3 },
+        { day: '2026-10-28', downloads: 4 },
+        { day: '2026-10-29', downloads: 4 },
+      ],
+    }
+    writeFixture(steadyFixtures, 'npm-downloads-range-bulk-unscoped.json', { ...range, body: JSON.stringify(rangeBody) })
+
+    const steady = run(['--stamp', '2026-10-31T08:50:00.000Z', '--fixtures', steadyFixtures, '--out', steadyOut])
+    assert.equal(steady.status, 0, steady.stderr)
+
+    type Claim = { id: string; statement: string; recompute: string }
+    const idOf = (file: string): string => {
+      const artifact = JSON.parse(readFileSync(join(file), 'utf8')) as { claims: Claim[] }
+      const claim = artifact.claims.find((entry) => entry.recompute.includes('d5.verdict'))
+      assert.ok(claim !== undefined, 'the download claim must exist')
+      return claim.id
+    }
+    const burstId = idOf(join(burstOut, 'market-baseline-2026-10-31T08-40-00.000Z.json'))
+    const steadyId = idOf(join(steadyOut, 'market-baseline-2026-10-31T08-50-00.000Z.json'))
+
+    assert.equal(burstId, steadyId, 'the same subject must keep the same claim id in both verdicts')
+    assert.match(burstId, /^[a-z0-9-]+$/)
+    assert.doesNotMatch(burstId, /not-demand|threshold-met|burst-not|counts-as|pass|fail/)
+  } finally {
+    rmSync(burstOut, { recursive: true, force: true })
+    rmSync(steadyFixtures, { recursive: true, force: true })
+    rmSync(steadyOut, { recursive: true, force: true })
+  }
+})
+
 test('an empty discussion projection refuses to write a baseline', () => {
   const fixtures = scratchFixtures()
   const out = mkdtempSync(join(tmpdir(), 'dsh-triage-market-out-'))

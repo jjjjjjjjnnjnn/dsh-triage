@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R74 (2026-11-02，**交付 + 交接**：三条渠道 PR 的实测现状写成页（`#65` 是 **MERGEABLE/BLOCKED 零 review**，不是冲突）· Reddit 发布时间的两条采集路径都试过并堵死（记为 `T-842` 的现状）· D5 关窗唯一动作不变；**728 测试**）｜**下一件事：D5 关窗读数（`2026-11-15T20:24:37Z`）**）
+> **Stand**: R75 (2026-11-03，**采证 + 加固**：P1 落了 D5 窗口内第一份市场基线 —— 下载项**首次读到 `steady`**（1035 / 4 天 / 峰值 61.3%），但它是 10-29 爆发的回声且窗口 `10-26..11-01` 只有 11-01 在 D5 窗口内，**不是关窗读数**（`judgeD5` 仍 `pending`）；**729 测试**)｜**下一件事：11-08 前的第二份窗口内基线（`last-week` 滚动，晚于 11-08 就永久缺前 7 天）**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 采证（R75-P1，2026-11-03） | **D5 窗口内的第一份市场基线：下载项第一次读到 `steady`（1035 / 4 天），但它是 10-29 爆发的回声，不能当 D5 达标（采证轮，判据/阈值一字未动）**。① **为什么要现在跑**：`record_market_baseline` 用的是 npm 的 `last-week`（**滚动 7 天**），关窗那天（`2026-11-15`）刷新只能看见 `11-08..11-14`，D5 窗口的前 7 天（`11-01..11-07`）**会永久缺失**；而上一份基线（`market-baseline-2026-10-31T06-40-00`）覆盖 `10-22..10-30`，**整个落在 D5 窗口之前**。② **真跑**：`data/results/market-baseline-2026-11-03T06-22-20.130Z.json`（现场件 `inputs.offline=false`，12 份原始响应进 `data/fixtures/market-baseline/2026-11-03T06-10-27.203Z/`）。读数：**周下载 1035 · `download_shape=steady` · 4/7 天有下载 · 峰值 61.3%** → 按冻结口径 `threshold-met`（`counts_as_demand: true`）。③ **必须一起说的边界（否则这个数会被读成 D5 达标）**：日序列是 `0 0 0 / 634 / 192 / 17 / 192` —— 634 之后三天是 **192 / 17 / 192**（两个 192 同值），**看起来仍像抓取方的回声**；`BS-48` 已写明「`steady` 只说明不像单日爬虫，**不等于人**」。④ **窗口边界**：这份基线的窗口是 **`2026-10-26..2026-11-01`**，只有 `11-01` 落在 D5 窗口内 → 它**不是**关窗读数；reactions 仍 **0/10**、外部引用仍 **0/1**，`judgeD5` 仍只会给 **`pending`**。⑤ **离线可复算**：`--fixtures` 重跑，`d5` / `categories` / `downloads` / `discussions` **逐项相同**（`SAME = true`，复算件在 `%TEMP%` 未进 SSOT）。⑤b **独立 verifier 复审抓到并修掉一处真缺陷**：产物里 `claims[].id` 写死成 `this-package-weekly-downloads-are-not-demand`，而 `statement` 在 `steady` 那天说 `counts as demand: true` —— **同一个对象自相矛盾**（id 是旧答案的硬编码副本）。修法是让 id 只命名主体（`this-package-weekly-downloads-verdict`），并新增治理测试：**同一个 subject 在 burst 与 steady 两组夹具下 id 必须相同**，且 id 不得出现 `not-demand` / `threshold-met` / `burst-not` / `counts-as` / `pass` / `fail`；负对照把 id 改回旧值 → **当场真红**（exit 1），改回即 5/5 绿。含矛盾 id 的旧产物（`06-10-27`）与其 fixtures 已删除，重跑件是 `06-22-20`（数字一字未变：1035 / steady / 4 天 / 61.3%）。⑥ `check_listing` **17/17**；**728 测试 / 9 门 ALL GREEN**。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交接（R74，2026-11-02） | **只交接 + 补一页实测现状，不改行为**。① **换会话可用性检查**：`pnpm run verify` **728 测试 / 9 门 ALL GREEN**、`--mutate` **9/9**、`check_listing` **17/17**、CI `success`（run `41520036285`）；工作区只剩两个**人类宣传物料**（`docs/distribution/T-810/03-x-en.md` 改动、`docs/distribution/reddit-and-hn-posts.md` 未跟踪）——HUMAN 明确「用于宣传，不要管」。② **新增 `docs/distribution/pr-65-status.md`**：三条渠道 PR 的实测状态（`#65` **MERGEABLE/BLOCKED、零 review**；`#193` 的 `APPROVED` 来自 **bot**（`authorAssociation: NONE`）；`#140` **CLEAN、零 review**），并写清「合并会改变什么 / **不会**改变 D5 / 不许做的三件事（再 rebase、改内容换合并、重复催） / 一次性的评论模板 / 放弃条件」。**这一页的存在理由**：外部转述说「#65 仍冲突需解冲突」，按错的原因去修会做无用功。③ **`T-842` 两条采集路径都试过并堵死**：Reddit `.json` → **403**；`old.reddit.com` → **200 但内容是「Welcome to Reddit」拦截面**（`datetime=` 零命中）。剩下只有 CDP 真浏览器一条路，而 `render.ts` 的取值表达式写死，要动 probe 包 → 单独一轮。**④ 本轮没有任何判据/阈值/代码行为改动**（只有 docs + BACKLOG 状态）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R73，2026-11-02） | **四个渠道的台账变成机器可查的，并当场更正两处转述（交付轮，判据/阈值一字未动）**。① **背景**：R56–R72 之间投放面从「一个 discussion」扩到四个渠道（GitHub `#11813` / X / `r/DeepSeek` / `r/DeepSeekHarness`），而只有 GitHub 那条被机器检查过（`T-810/registry.json`），其余活在 prose 表格里 —— 两种失败形状：**链接打错没人点**（R57 的「引用了不存在的产物」搬到 URL 上）与**推广悄悄变成证据**（11-15 最诱人的一句话是「我们发了四个地方，总该算吧」）。② **做法**：新增 `docs/distribution/channels.json`（平台 / 链接 / 日期 / `d5_counts` / `evidence` / `why_not_counted`）+ 纯函数 `scripts/lib/channels.mjs#judgeChannels`（10 条单测）+ `check_listing` **第 17 条** `channel-ledger-matches-reality`：**`d5_counts: true` 只允许一条**；其余每条必须写 `why_not_counted`（否则推广会看起来像需求）；URL 域必须与平台相符；计入 D5 的那条要与 `registry.json` 的 `posted_url` / `posted_on` **逐毫秒相同**；`00-README.md` 的表与台账**双向**对齐（表里有台账没有 = 无人检查的说法；台账有表里没有 = 读者看不见）。**三条定向负对照各自真红并保留产物**（把 Reddit 设成计入 `20-24-54` / 把 Reddit 域换成 x.com `20-24-59` / 删掉表里一行 `20-25-25`），终跑 **17/17**。③ **两处转述校正**（都不是我说的，但必须按证据记）：**(a)** 「`gate.mjs 6/6`」不成立 —— 仓里是 **9 门**（实测 `ALL GREEN · 9 gates`）；**(b)** 「PR #65 仍处于冲突状态」不成立 —— `gh pr view 65` 实测 `mergeable: MERGEABLE` / `mergeStateStatus: BLOCKED`，R60 已把冲突解掉，`BLOCKED` 的门槛是**等 review**，不是解冲突。④ **一处文档自相矛盾**：`00-README` 的 R58 注记写「三条回帖不发了——帖子已经有人答过」，而 R71 实测三条都 `isAnswered: false`（各有 1–2 条回复）；**决定不变**（不发），理由改成「已有人回复，再贴一份只会稀释信息」，并注明「没人接受答案 ≠ 没人回」。⑤ **718 → 728 测试**（+10 `channels`）；9 门 ALL GREEN；`--mutate` 9/9；`check_listing` **17/17**。**边界如实写**：Reddit 的正文与发布时间从本机读不到（`.json` 端点 403），那两条 `evidence` 只能是 `declared-url-reachable`、`posted_on` 留空（不猜时刻）。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 交付（R72，2026-11-02） | **D5 关窗的「怎么跑」写成一页，并把「可离线复算」这条硬规则补到 D5 上（交付轮，判据/阈值一字未动）**。① **runbook**：`docs/d5-close-runbook.md` —— 关窗（`2026-11-15T20:24:37Z`）当天四条命令（**刷新市场基线 → 读 D5 并抓原始读数 → 离线复算 → 登记**）、三个数各自的来源与陷阱、判定表照抄 spec、退出码含义（**`fail` 走 exit 1 是判定完成，不是脚本坏了**）、`pass` / `fail` / `unmeasurable` 三个分支各自做什么（`fail` → 执行 D，**禁止再加功能**）。② **写 runbook 的时候撞见两个真问题**：**(a) 下载那一项不是现场抓的** —— 它读最近一份 `market-baseline-*.json` 的 `d5` 块，不刷新就是拿 `10-31` 的数判 `11-15` 的窗；**(b) `--fixtures` 只读不写**，全仓没有任何东西会产出 D5 的 fixtures（R54 那份自检夹具是手写的）→ **关窗产物的离线复算是空路径**，而这正是仓规「进 `data/results` 的数必须可离线重算」要求的东西。补 `record_d5_evidence --fixtures-out <dir>`（抓 `reactions.json` / `references.json`）；`--dry-read` 与它同时给 → **exit 2 零文件**（预演不许留下证据）。真跑：capture → recompute 的 `d5_verdict` / `numbers` / `window` **逐项相同**，复算件名字是 `d5-selftest-*` 且 `self_test: true`（不可能被当测量指针）。③ **顺带发现 `T-841`**：`--baseline` 的默认值是「文件名排序最后那件」，**分不出测量件与离线复算件**——今天实测选中的就是 R52 的复算件（两者数字相同所以无害，关窗必须点名）。④ **708 → 710 → 718 测试**（+2 `d5-fixtures-out` / +8 `d5-baseline`）；9 门 ALL GREEN；`check_listing` 16/16。⑤ **同轮关掉 `T-841`**：`--baseline` 缺省原本按**文件名排序**取最后一份，分不出测量件与离线复算件（实测会选中 R52 的复算件）。新纯函数 `pickBaselineArtifact`：优先 `inputs.offline === false` 的**现场件**里最新的一份；只有复算件时退回并在 **stderr 明说**，产物新增 `inputs.baseline_kind`（`measured` / `recompute` / `unproven` / `explicit`）。三条真跑：默认现在选中 `06-40`（measured）/ 把四份现场件临时挪走 → `recompute` + 警告句 / 四份**逐字节还原**。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
@@ -116,6 +117,30 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 > **R53 环境事实**：本机现在**直连可用**（`gh` / `npm` 都通）。R39–R52 写的 `HTTPS_PROXY=http://127.0.0.1:19828` 那个代理**当前没在监听**——照抄会得到 `proxyconnect tcp: dial tcp 127.0.0.1:19828: connectex: No connection could be made`，那不是网络坏了，是代理没开。直连失败时再回头看那条代理。
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
+
+## R75（2026-11-03，采证 + 加固）
+
+**状态**：**729 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；
+**D5 仍 `pending`**（reactions 0/10 · 外部引用 0/1 · 下载项在窗口外读到 `steady` 1035，见下）。
+
+**P1 做了什么（一句话）**：在 D5 窗口内落了第一份市场基线，因为 npm 的 `last-week` 是**滚动 7 天**——
+晚于 `11-08` 再跑，`11-01..11-07` 就永久缺了。
+
+**这一轮唯一必须一起读的三句话**：
+
+1. 下载项**第一次读到 `steady`**（1035 / 4 天 / 峰值 61.3%）→ 冻结口径判 `threshold-met`；
+2. 但它是 **10-29 爆发的回声**（`0 0 0 / 634 / 192 / 17 / 192`，两个 192 同值），`BS-48` 写明 `steady` **不等于人**；
+3. 且它的窗口是 `10-26..11-01`，**只有 11-01 落在 D5 窗口内** → **不是关窗读数**，`judgeD5` 仍 `pending`。
+
+**下一位的第一件事**：**`11-08` 之前**再跑一次 `record_market_baseline`（第二份窗口内基线），
+把 `11-01..11-07` 补上；然后仍是 **`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 四条命令。
+
+**本轮新增的坑**：
+
+1. **`claims[].id` 会变成第二份过期的答案**：`this-package-weekly-downloads-are-not-demand` 写死，
+   第一次读到 `steady` 就与 statement（`counts as demand: true`）自相矛盾。现在 id 只命名主体，
+   并有治理测试钉死「同一 subject 在 burst / steady 下 id 必须相同」。
+2. **`--stamp` 必须带冒号**（`2026-11-03T06:22:20.130Z`），写成文件名形状（`06-22-20.130Z`）会 exit 1 报 usage。
 
 ## R74（2026-11-02，交接）
 

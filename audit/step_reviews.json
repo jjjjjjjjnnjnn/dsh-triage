@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R74 (2026-11-02)",
+  "stand": "R75 (2026-11-03)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -10801,6 +10801,79 @@
         "artifact": "data/results/listing-2026-11-02T20-39-59.708Z.json",
         "outcome": "GREEN：17/17，exit 0（新增的 `pr-65-status.md` 不影响台账断言；README 测试数 728 一致）",
         "sha256": "c48b5190cf3cd6f72a1caf80c8b438394681c632999b14d83268bd4a4dd5ddd6"
+      }
+    },
+    {
+      "id": "R75-S1",
+      "batch": "R75",
+      "step": "P1 · D5 窗口内的第一份市场基线（npm last-week 是滚动 7 天，必须在 11-08 前落一份，否则窗口前 7 天永久缺失）",
+      "changed": [
+        "data/results/market-baseline-2026-11-03T06-22-20.130Z.json",
+        "data/results/market-baseline-2026-11-03T06-22-20.130Z.json.sha256",
+        "data/fixtures/market-baseline/2026-11-03T06-22-20.130Z/npm-downloads-bulk-unscoped.json",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md"
+      ],
+      "review": {
+        "correctness": "PASS：读数由脚本真跑产出；d5 块与 packages[dsh-triage] 的日序列自洽（634+192+17+192=1035）；形状判定走 R52 冻结的 classifyDownloadShape（4/7 天、峰值 61.3% → steady），本轮没有改任何阈值或判定顺序。",
+        "reproducibility": "PASS：12 份原始响应落在 data/fixtures/market-baseline/2026-11-03T06-22-20.130Z/，--fixtures 离线重跑得到相同的 d5 / categories / downloads / discussions（逐项 SAME = true）。",
+        "licence": "PASS：只读 npm downloads API 与 GitHub Discussions 公开数据；产物不含个人身份，results-privacy 门照旧绿。",
+        "ssot": "PASS：产物由 scripts/record_market_baseline.mjs 写入并自带 .sha256（2bacc5e3…）；inputs.offline=false 标明它是现场件，关窗时 pickBaselineArtifact 会优先选它而不是复算件。",
+        "adversary": "反例一：把 1035 当成「D5 下载项达标」——被拒，窗口 10-26..11-01 只有 11-01 落在 D5 窗口内，reactions 0/10、引用 0/1 仍是 0，judgeD5 仍 pending；反例二：把 steady 当成「有人用」——被拒，日序列 634→192→17→192 里两个 192 同值，BS-48 已写明 steady 不等于人；反例三：关窗当天只跑一次基线就以为覆盖了 14 天——被拒，last-week 是滚动 7 天，前 7 天会缺，必须在 11-08 前补一份。 反例四（复审时由独立 verifier 抓到、已修）：产物里 claims[].id 原本写死成 this-package-weekly-downloads-are-not-demand，而 statement 在 steady 那天说 counts as demand: true——同一个对象自相矛盾；修法与负对照见 R75-S3。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-03T06:10:27.203Z",
+        "artifact": "data/results/market-baseline-2026-11-03T06-22-20.130Z.json",
+        "outcome": "GREEN：现场件落盘（dsh-triage 1035 weekly / steady / 4 天 / 峰值 61.3% / d5=threshold-met）；--fixtures 离线复算 d5、categories、downloads、discussions 逐项相同",
+        "sha256": "8a7a050a0bc052b2b49150fcbb63bce2d7f7b3cbc46cf3ba6b6e0ce8c289e169"
+      }
+    },
+    {
+      "id": "R75-S2",
+      "batch": "R75",
+      "step": "P1 收尾 · 对外文档一致性检查（新增基线没有让 README / 上架文案 / 渠道台账漂移）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：check_listing 17 条断言全绿；新增基线只在 HANDOFF 与 ROADMAP 里被引用，两份 README 与上架文案的数字没有改动（本轮没有新功能）。",
+        "reproducibility": "PASS：命令与 stamp 都写在这一步里，任何人重跑同一条命令会得到同一组断言结果；产物自带 .sha256。",
+        "licence": "PASS：只检查仓内文档与仓内产物，不读取任何外部服务。",
+        "ssot": "PASS：listing 产物进 data/results 并由本步 real_test 引用；新增的 market-baseline 产物由 R75-S1 引用，no-orphan-results 因此恢复绿。",
+        "adversary": "反例：把「1035 达标」直接写进 README 的 D5 段落——那会把一次窗口外的读数变成对外承诺，且违反 R52 口径；本轮只写进 HANDOFF/ROADMAP 并带两条边界，README 一字未动。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T06:50:00.000Z --tests 729",
+        "artifact": "data/results/listing-2026-11-03T06-50-00.000Z.json",
+        "outcome": "GREEN：17/17，exit 0（tests 729）",
+        "sha256": "bd2eff2c00e5c2cea62a51e145076653fec3e2fd26a2284d167f7988365da465"
+      }
+    },
+    {
+      "id": "R75-S3",
+      "batch": "R75",
+      "step": "P1 复审修复 · 市场基线的 claims[].id 不得写死结论（id 说「不是需求」而 statement 说「算作需求」）",
+      "changed": [
+        "scripts/record_market_baseline.mjs",
+        "tests/governance/market-baseline.test.ts",
+        "data/results/market-baseline-2026-11-03T06-22-20.130Z.json",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：id 改为中性的 this-package-weekly-downloads-verdict，结论只由 statement 承载；新增测试在 burst 与 steady 两组夹具上断言「同一个 subject 的 id 必须相同」，并禁止 id 出现 not-demand / threshold-met / burst-not / counts-as / pass / fail。",
+        "reproducibility": "PASS：两组夹具都由已提交的 fixtures 派生（steady 那组只改 dsh-triage 的周总数与日序列），测试自建临时目录、不写 data/results；重跑同一条命令得到同一结果。",
+        "licence": "PASS：只改仓内脚本与测试，不读外部服务、不引入第三方代码、不含个人身份。",
+        "ssot": "PASS：重跑后产物里的 id 已是中性值；含矛盾 id 的旧产物（06-10-27）与其 fixtures 已删除，新产物由本步与 R75-S1 引用，no-orphan-results 保持绿。",
+        "adversary": "反例（真跑过）：把 id 改回 this-package-weekly-downloads-are-not-demand → 新测试当场红（actual 含 not-demand，exit 1）；改回中性 id 即 5/5 绿。没有放宽任何断言，也没有改文案掩盖。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-03T06:22:20.130Z",
+        "artifact": "data/results/market-baseline-2026-11-03T06-22-20.130Z.json",
+        "outcome": "GREEN：重跑后 claims[2].id = this-package-weekly-downloads-verdict，statement 仍是 threshold-met（counts as demand: true）；market-baseline 治理测试 5/5，其中新测试的负对照真红一次",
+        "sha256": "8a7a050a0bc052b2b49150fcbb63bce2d7f7b3cbc46cf3ba6b6e0ce8c289e169"
       }
     }
   ]

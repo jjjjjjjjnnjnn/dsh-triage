@@ -819,3 +819,14 @@
 - 结果：① 三条渠道 PR 的实测现状写成页：`#65` **MERGEABLE/BLOCKED、零 review**（冲突早在 R60 解决，再 rebase 无效）、`#193` 的 `APPROVED` 来自 **bot**、`#140` CLEAN 零 review；并写清「合并改变渠道收录、**不改变 D5**」、三种不许做的动作、一次性评论模板、放弃条件；② `T-842` 记录 Reddit 两条采集路径都堵死（`.json` 403 / `old.reddit.com` 拦截面），剩下只有 CDP 一条且需要动 probe 包；③ 交接清单改成「换会话可直接开工」的三步 + 三条禁令
 - 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 447 步
 - 反思：这一轮唯一有价值的判断是**把「外部转述」与「实测字段」分开**。「#65 需解冲突」这句话若是真的，下一步就是 rebase；而实测说 `MERGEABLE/BLOCKED`，下一步只能是等 review。两条路差一整个动作，而唯一能区分它们的是 `gh pr view` 的两个字段——不是谁说得更有把握。
+
+### 2026-11-03 R75-P1｜D5 窗口内的第一份市场基线（采证轮）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R75-S1` / `R75-S2`；无 subagent
+- 人工决策：HUMAN「开始自动依次进行，每个部分都进行审核」+「P1 的产物进仓（推荐）」
+- 范围：`data/results/market-baseline-2026-11-03T06-22-20.130Z.json`（+`.sha256`）· `data/fixtures/market-baseline/2026-11-03T06-10-27.203Z/`（12 份原始响应）· `docs/{HANDOFF,ROADMAP}.md` · `audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 结果：① 现在跑的理由是 npm `last-week` 是**滚动 7 天**——关窗那天只能看见 `11-08..11-14`，D5 窗口的前 7 天会永久缺失，而上一份基线（`10-31T06-40`）整个落在窗口之前；② 读数 **1035 / `steady` / 4 天有下载 / 峰值 61.3%** → 冻结口径判 `threshold-met`；③ **两条边界一起写进文档**：日序列 `0 0 0 634 192 17 192` 是 10-29 爆发的回声（两个 192 同值，`BS-48` 写明 steady 不等于人），且窗口 `10-26..11-01` 只有 11-01 落在 D5 窗口内 → **不是关窗读数**，`judgeD5` 仍 `pending`；④ `--fixtures` 离线复算 `d5` / `categories` / `downloads` / `discussions` 逐项相同
+- 实测：**729 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 17/17
+- 复审（独立 verifier，只读复算）：**PASS**（sha256 相符、形状复算逐项相同、总数自洽、离线复算 `SAME=true`、D5 仍 `pending`），但抓到一处真缺陷——产物里 `claims[].id` 写死成 `…-are-not-demand`，而 `statement` 在 steady 那天说 `counts as demand: true`，同一对象自相矛盾。修法是 id 只命名主体（`this-package-weekly-downloads-verdict`）+ 一条治理测试（同一 subject 在 burst/steady 下 id 必须相同、id 不得出现结论词）；负对照把 id 改回旧值 → 真红，改回即绿。旧产物删除、重跑件数字一字未变。
+- 反思：**一个数从「不算需求」变成「达标」，最容易发生的事就是有人只读后半句**。所以这一轮交付的不是 1035，而是 1035 的日序列、窗口与两条边界——判据一字未动，改的只是「这个数能被读成什么」。第二个教训更便宜也更普遍：**写死的 id 会变成第二份过期的答案**，而机器只看 id。
