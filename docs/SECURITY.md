@@ -45,7 +45,7 @@
 | **同机其他未授权用户** | 能发起指向 `127.0.0.1` 的网络请求，但无权读取本进程内存与启动命令行 | **强制防御**：基于随机高位端口 + 一次性鉴权 Token |
 | **同机同权限的其他运行进程** | 能读取操作系统的进程列表与命令行，能直接访问 `~/.dsh` | **不作防御**（系统底层权限边界，见第 5 节说明） |
 | **浏览器内第三方恶意页面** | 能够发起跨源请求（CSRF）或尝试在 iframe 中嵌入面板 | **强制防御**：严格 Origin 校验 + `SameSite=Strict` + 禁用 CORS |
-| **DNS 重新绑定攻击 (DNS Rebinding)** | 将恶意域名动态解析至 `127.0.0.1` 尝试窃取会话 | **部分防御**：必须携带未知 Token；建议配置特定 Host 约束 |
+| **DNS 重新绑定攻击 (DNS Rebinding)** | 将恶意域名动态解析至 `127.0.0.1` 尝试窃取会话 | **部分防御**：必须携带未知 Token；Origin 校验挡跨源请求，但同源导航可以没有 `Origin` 头 —— 因此 Host 准入是**待签**的 `docs/adr/0014-host-header-allowlist.md`（`proposed`：要求 `Host` 匹配绑定地址，默认路径零变化，局域网 IP 需要 `--allow-host`）。**签字前不许把这一行写成「已强制」** |
 | **恶意构造的评测产物** | 在结果目录中伪造超大畸形 JSON、注入路径符号链接逃逸 | **强制防御**：文件名白名单 + realpath 边界包含性 + 2MB 强制截断 |
 | **上游依赖供应链风险** | 在安装构建阶段执行恶意脚本 | **强制防御**：门禁与面板核心模块**零运行时依赖**；CLI 固定锁文件 |
 
@@ -62,13 +62,17 @@
 ### 4.2 资源消耗与防内存拒绝服务 (DoS)
 - **2MB 单文件解析上限**：所有读取流程均执行 `MAX_ARTIFACT_BYTES = 2MB` 限制，超限文件直接拒绝解析，列表视图降级呈现；
 - **畸形数据降级**：非预期 JSON 统一返回 `422 Unprocessable Entity`，防止异常导致主进程崩溃退出；
-- **并发请求合并 (Single-Flight)**：对本地文件扫描请求实施单飞合并机制，防止并发重复读取导致事件循环拥塞。
+- **并发请求合并 (Single-Flight)**：对本地文件扫描请求实施单飞合并机制，防止并发重复读取导致事件循环拥塞；
+- **顺序请求不设上限（现状）**：单飞挡住的是并发，挡不住「每秒点一次刷新」。速率上限二选一写在 `docs/adr/0015-local-panel-rate-limit.md`（`proposed`：1 秒复用窗口 vs 明确不设限），**签字前不许把本节写成「已有速率上限」**。
 
 ### 4.3 浏览器端安全与防跨站脚本 (XSS / CSRF)
 - **严格内容安全策略 (CSP)**：
   - `default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; img-src data:;`
   - 严禁引入任何未经审查的第三方 CDN、外部图片或脚本资源；
-- **请求源 Origin 校验**：Origin 必须严格匹配 `^http://(127\.0\.0\.1|localhost)(:\d+)?$`，非法来源及空 Origin 均直接拒绝（`403 Forbidden`）；
+- **请求源 Origin 校验（两个半边不一样，别混读）**：
+  - `dsh-triage serve` 面板：**只拒绝「有且非空且不匹配」的 Origin**（`serve.ts:277-281`），空 / 无 Origin 的请求**放行**（token 仍然必需）——浏览器直接导航打开面板就是这种情况，挡掉它会把正常用法判成攻击；
+  - Host 侧只读路由（`host-audit-route.ts:45-56`）：有 Origin 就必须同源；**没有 Origin 时必须带 `sec-fetch-site: same-origin`**，否则 `403 request carries no same-origin evidence`。
+  - 因此「空 Origin 一律拒绝」只对 Host 侧成立，对 `serve` 不成立。DNS rebinding 借的正是 `serve` 这一侧的空 Origin，补法见 `docs/adr/0014-host-header-allowlist.md`（**proposed**）；
 - **输出转义**：所有进入 DOM 的动态数据统一通过 `esc()` 针对 `& < > " '` 进行编码转义，脚本内联 JSON 对 `<` 进行统一替换（`\u003c`）。
 
 ---

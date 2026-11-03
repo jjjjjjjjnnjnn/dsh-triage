@@ -820,13 +820,18 @@
 - 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 447 步
 - 反思：这一轮唯一有价值的判断是**把「外部转述」与「实测字段」分开**。「#65 需解冲突」这句话若是真的，下一步就是 rebase；而实测说 `MERGEABLE/BLOCKED`，下一步只能是等 review。两条路差一整个动作，而唯一能区分它们的是 `gh pr view` 的两个字段——不是谁说得更有把握。
 
-### 2026-11-03 R75-P1｜D5 窗口内的第一份市场基线（采证轮）
+### 2026-11-03 R75｜D5 窗口内第一份基线 + 三项加固（P1–P4，四个部分各自独立审核）
 
 - 生成者：DeepSeek V4.1 Flash（主会话）
-- SessionID：主会话；台账 `R75-S1` / `R75-S2`；无 subagent
+- SessionID：主会话；台账 `R75-S1` … `R75-S7`；四个部分各请了一次独立审核（P1 verifier / P2 verifier+adversary / P3 verifier+adversary / P4 reviewer）
 - 人工决策：HUMAN「开始自动依次进行，每个部分都进行审核」+「P1 的产物进仓（推荐）」
-- 范围：`data/results/market-baseline-2026-11-03T06-22-20.130Z.json`（+`.sha256`）· `data/fixtures/market-baseline/2026-11-03T06-10-27.203Z/`（12 份原始响应）· `docs/{HANDOFF,ROADMAP}.md` · `audit/{step_reviews.json,AI_DISCLOSURE_LOG.md}`
+- 范围：`data/results/market-baseline-2026-11-03T06-22-20.130Z.json` + `data/fixtures/market-baseline/2026-11-03T06-22-20.130Z/` · `scripts/record_market_baseline.mjs` · `scripts/record_client_serve.mjs` · `tests/governance/market-baseline.test.ts` · `tests/unit/client-tab.test.ts` · `tests/unit/probe-hook-error.test.ts` · `tests/unit/probe-hook-two-phase.test.ts` · `docs/adr/0014-host-header-allowlist.md` / `0015-local-panel-rate-limit.md` · `docs/{HANDOFF,ROADMAP,BACKLOG,SECURITY}.md` · `README.md` / `README.zh-CN.md` · `INDEX.md` / `AGENTS.md` / `PROJECT_RULES.md` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `market-baseline-…06-22-20` / `client-serve-…07-35` / `firefox-…07-30` / `listing-…08-40`
 - 结果：① 现在跑的理由是 npm `last-week` 是**滚动 7 天**——关窗那天只能看见 `11-08..11-14`，D5 窗口的前 7 天会永久缺失，而上一份基线（`10-31T06-40`）整个落在窗口之前；② 读数 **1035 / `steady` / 4 天有下载 / 峰值 61.3%** → 冻结口径判 `threshold-met`；③ **两条边界一起写进文档**：日序列 `0 0 0 634 192 17 192` 是 10-29 爆发的回声（两个 192 同值，`BS-48` 写明 steady 不等于人），且窗口 `10-26..11-01` 只有 11-01 落在 D5 窗口内 → **不是关窗读数**，`judgeD5` 仍 `pending`；④ `--fixtures` 离线复算 `d5` / `categories` / `downloads` / `discussions` 逐项相同
 - 实测：**731 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 17/17
 - 复审（独立 verifier，只读复算）：**PASS**（sha256 相符、形状复算逐项相同、总数自洽、离线复算 `SAME=true`、D5 仍 `pending`），但抓到一处真缺陷——产物里 `claims[].id` 写死成 `…-are-not-demand`，而 `statement` 在 steady 那天说 `counts as demand: true`，同一对象自相矛盾。修法是 id 只命名主体（`this-package-weekly-downloads-verdict`）+ 一条治理测试（同一 subject 在 burst/steady 下 id 必须相同、id 不得出现结论词）；负对照把 id 改回旧值 → 真红，改回即绿。旧产物删除、重跑件数字一字未变。
+- **P3（T-812 / T-813）**：复制按钮的成功路径本来就有 5 份真机 `clipboard-copy: passed`；本轮补的是**失败路径**（无 `navigator` / 写入被拒 / 写入成功三分支，负对照把 `report(false)` 改成 `true` 当场红）。Firefox 装了但没有 CDP，真跑得到 `unmeasured`（不是 `failed`）；**同一次尝试抓到记录器会挂死**：浏览器不自杀时子进程继承的管道 stdio 让 node 在产物写完后仍活着（15 分钟被外部超时杀掉），改 `stdio: 'ignore'` + `unref()`。边界：没有剪贴板时命令在屏幕上仍不可达 → 新票 `T-844`。
+- **P2（T-840）**：CI 那条 `attempts.length === 1` 不是契约，是 `retryMs: 1` 与时钟粒度的竞态（首试落在同一毫秒 → `0 >= 1` 假 → 重试）。机制实测成立，但**翻红率未证**（测试是冷 import，本机 40/40 绿）；修法是 `retryMs: 0` + 一条反方向测试（预算 50ms → ≥2 次），并把两处同模式的 `retryMs: 1` 一并收掉。
+- **P4（T-811 / T-814）**：两张 **proposed** ADR（Host 准入 / 面板速率），`packages/` 零改动，全部标「等签字」。**复审抓到两处阻断级**：ADR-0015 治错了路由（面板刷新走 `/api/summary`，不是 `/api/audit`）、`docs/SECURITY.md` §4.3 原有一句「空 Origin 一律拒绝」对 `serve.ts` 是假话 —— 都已改，并在 ADR 里写成验收断言。
+- **总计**：728 → **731 测试**；9 门 ALL GREEN；`check_listing` 17/17。**四个部分各请了一次独立审核，抓到 5 处真问题**：`claims[].id` 写死结论、我自己的计数写错 4 处（10 项 unmeasured 不是 7、`client` 是 200 不是 passed、Chromium 17 步不是 16）、27/13 的条件不对口、ADR 治错路由、§4.3 假话。
+
 - 反思：**一个数从「不算需求」变成「达标」，最容易发生的事就是有人只读后半句**。所以这一轮交付的不是 1035，而是 1035 的日序列、窗口与两条边界——判据一字未动，改的只是「这个数能被读成什么」。第二个教训更便宜也更普遍：**写死的 id 会变成第二份过期的答案**，而机器只看 id。

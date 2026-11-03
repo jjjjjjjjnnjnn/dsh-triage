@@ -10952,6 +10952,32 @@
         "outcome": "GREEN：17/17（731 测试计数在 10 份文档里一致）。本步的真跑证据是 `node --test tests/unit/probe-hook-error.test.ts` 3/3 + `probe-hook-two-phase` 1/1、新配置连跑 10 次 0 失败、两条负对照各自真红；这些不产生 data/results 产物，按仓规记在 review 里",
         "sha256": "217161f45505ad342ad37083422964f68de6959ccde57f307e7e0e50a3fa65f7"
       }
+    },
+    {
+      "id": "R75-S7",
+      "batch": "R75",
+      "step": "P4 · 两张 ADR（Host 准入 / 面板速率）：只写决策记录，不改行为",
+      "changed": [
+        "docs/adr/0014-host-header-allowlist.md",
+        "docs/adr/0015-local-panel-rate-limit.md",
+        "docs/SECURITY.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "data/results/listing-2026-11-03T08-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：两张 ADR 都只有「背景 / 决策 / 代价 / 验收 / 签字区」，没有实施任何代码；默认路径、判据、阈值一字未动。ADR-0014 的现状对着 serve.ts 的实际行号（origin 校验 :276-281、token :283-286、listen :258），ADR-0015 对着 singleFlight :429 与 --audit 的挂载点 :235。 复审（独立 reviewer）抓到两处阻断级并已修：① **ADR-0015 治错了路由** —— 面板「刷新」走的是 `/api/summary`（`serve.ts:1251` → `:1001` → `:1003`），`/api/audit` 只是 raw 页签的一次性读取（`:1151`），按原文实施会「验收全绿而问题原样保留」；现在 ADR 明确把窗口挂在**共享扫描层**（`context.audit` / `singleFlight`），并要求 `/api/summary` 与 `/api/audit` 各一条验收 + 一条「共享同一窗口」的断言。② **`docs/SECURITY.md` §4.3 原有一句是假话**（「非法来源及空 Origin 均直接拒绝（403）」）—— 对 `serve.ts` 不成立（`:278` 放行空/无 Origin），只对 `host-audit-route.ts:45-56` 成立；已改成两个半边分开写，并点名 DNS rebinding 借的正是 `serve` 这一侧。",
+        "reproducibility": "PASS：ADR 里每条现状都指向仓内文件与行号，任何人可以照着复核；没有引用任何外部不可达材料。",
+        "licence": "PASS：只写仓内决策记录，不引第三方内容、不含个人身份。",
+        "ssot": "PASS：两张 ADR 都在 INDEX 的决策记录行登记；SECURITY.md 的 DNS rebinding 行与 §4.2 都改成指向 proposed ADR，并明写「签字前不许写成已强制」。",
+        "adversary": "反例一：把 proposed 写成 accepted —— 被拒，Status 行、SECURITY.md 两处、BACKLOG 两行都写死「等签字」；反例二：只讲安全收益、藏起「局域网 IP 会失效」—— 被拒，ADR-0014 §3 与签字区第一条都写明代价；反例三：把速率上限做成配置项 —— 被拒，ADR-0015 §3 明确建议用常量（可调的速率参数最后一定被调成 0）。 反例四（复审提出、已写进 ADR）：只给 `/api/audit` 加缓存 —— 被拒，ADR-0015 §1 的「范围必须写死」与 §4 的「两个路由共享同一个窗口」断言都点名这个形状。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T08:40:00.000Z --tests 731",
+        "artifact": "data/results/listing-2026-11-03T08-40-00.000Z.json",
+        "outcome": "GREEN：17/17（新增两张 ADR 与 SECURITY.md 改动没有让 README / 上架文案 / 渠道台账漂移）；ADR 不产生运行产物，这是本步唯一的新产物",
+        "sha256": "2bb6e93fbd52e5f4294c49591d32b75868ab0a35ba4e0a0d9a92354fd7685735"
+      }
     }
   ]
 }
