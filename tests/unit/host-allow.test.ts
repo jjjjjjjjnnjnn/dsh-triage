@@ -73,6 +73,15 @@ test('a wildcard bind is never itself an accepted Host', () => {
   assert.equal(judgeHost({ boundHost: '0.0.0.0', port: 8080, allowHosts: ['panel.local'], host: '0.0.0.0:8080' }).ok, false)
 })
 
+test('binding an IPv6 literal is printed and matched in brackets', () => {
+  // `--host ::1` must accept `Host: [::1]:port` (what a browser sends) and must not put the
+  // unbracketed `::1:port` in the allowed list or in the printed URL.
+  const allowed = allowedHosts({ boundHost: '::1', port: 5555 })
+  assert.equal(allowed.includes('[::1]:5555'), true)
+  assert.equal(allowed.includes('::1:5555'), false)
+  assert.equal(judgeHost({ boundHost: '::1', port: 5555, host: '[::1]:5555' }).ok, true)
+})
+
 test('the scheme-default port may be omitted (--port 80 must not kill the panel)', () => {
   /*
    * A browser drops `:80` from the Host header for `http://localhost:80/`. The first version of

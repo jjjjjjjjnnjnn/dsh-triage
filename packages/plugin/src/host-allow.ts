@@ -58,7 +58,11 @@ export function allowedHosts(input: HostInput): string[] {
   const port = input.port
   const bound = normalise(input.boundHost ?? '127.0.0.1')
   const allowed = new Set<string>(LOOPBACK_HOSTS.map((name) => `${name}:${port}`))
-  if (!WILDCARD_BIND.has(bound) && bound !== '') allowed.add(`${bound}:${port}`)
+  if (!WILDCARD_BIND.has(bound) && bound !== '') {
+    // An IPv6 literal needs brackets to be a Host value a browser can send: `[::1]:5555`, never `::1:5555`.
+    const name = bound.includes(':') && !bound.startsWith('[') ? `[${bound}]` : bound
+    allowed.add(`${name}:${port}`)
+  }
   for (const raw of input.allowHosts ?? []) {
     const entry = normalise(raw)
     if (entry === '') continue

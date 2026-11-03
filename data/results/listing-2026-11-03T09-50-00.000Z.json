@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/check_listing.mjs",
-  "generated_at": "2026-11-03T09:30:00.000Z",
+  "generated_at": "2026-11-03T09:50:00.000Z",
   "inputs": {
     "version": "0.3.3",
     "engines_dsh": ">=0.2.0-rc.1 <0.3.0-0",
-    "tests": 745,
+    "tests": 746,
     "documents": [
       "README.md",
       "README.zh-CN.md",
@@ -65,7 +65,7 @@
     {
       "id": "test-count-matches",
       "ok": true,
-      "detail": "2 claim(s) all equal 745"
+      "detail": "2 claim(s) all equal 746"
     },
     {
       "id": "test-count-is-not-vacuous",

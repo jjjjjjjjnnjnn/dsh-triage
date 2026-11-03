@@ -76,4 +76,4 @@ R75 之前 `docs/SECURITY.md` §4.2 只写了「单飞挡住了并发」，**没
 | 验收 | `tests/unit/serve-host-and-reuse.test.ts`：窗口内第二次 `reused:true` 且 `age_ms <= 1000`；**跨路由共享**（`/api/summary` 之后 `/api/audit` 仍只扫 1 次）；窗口外重扫；失败不被缓存。`serve-adversarial.test.ts` 里 R20 那条「no TTL」的断言按本 ADR 改成「窗口内复用」并写明原因 |
 | 未做 | 没有给「刷新」按钮加禁用/节流（窗口在服务端，UI 保持可点，点下去会看到 `reused: true`） |
 
-证据：745 测试 · 9 门 ALL GREEN；`docs/SECURITY.md` §4.2 从「单飞」改成「单飞 + 1 秒复用」。
+证据：746 测试 · 9 门 ALL GREEN；`docs/SECURITY.md` §4.2 从「单飞」改成「单飞 + 1 秒复用」。

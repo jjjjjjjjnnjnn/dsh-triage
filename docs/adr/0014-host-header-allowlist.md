@@ -81,11 +81,11 @@ token 那一层是真的（没有 token 就 401），但 token 有两个已知�
 
 | 项 | 落地 |
 |---|---|
-| 纯函数 | `packages/plugin/src/host-allow.ts`（`judgeHost` / `allowedHosts`），8 条单测覆盖：默认三名字、错端口、`127.0.0.1.evil.com` 一类「包含但不相等」、大小写与尾点、无 `Host`、`--allow-host` 的裸名与带端口两种写法、具体 LAN 绑定、通配绑定本身不是合法 Host |
+| 纯函数 | `packages/plugin/src/host-allow.ts`（`judgeHost` / `allowedHosts`），10 条单测覆盖：默认三名字、错端口、`127.0.0.1.evil.com` 一类「包含但不相等」、大小写与尾点、无 `Host`、`--allow-host` 的裸名与带端口两种写法、具体 LAN 绑定、通配绑定本身不是合法 Host |
 | 请求准入 | `serve.ts` 的 `handle()` **第一步**就是 Host 判定，失败 → **421** 并给出期望列表（不是 401：Host 错与 token 错是两件事） |
 | CLI | 新增 `--host <addr>` 与 `--allow-host <name[:port]>`（可重复）；`--host 0.0.0.0` / `::` 且没给 `--allow-host` → **启动即 exit 2** 并打印示例 |
 | 打印的 URL | 绑定具体地址时打印该地址；通配绑定时打印第一个 `--allow-host` 名字（否则打印的链接会被自己的规则拒掉） |
 | 默认路径 | 零变化：不给 `--host` 时 `127.0.0.1:<port>` / `localhost:<port>` 照旧 |
 | 未做 | 没有做「按 `Origin` 推断 Host」之类的宽容回退；`[::1]` 仍在白名单里但默认不监听（`listen` 绑 `127.0.0.1`），这一点已在 §2 注明 |
 
-证据：`tests/unit/serve-host-and-reuse.test.ts`（集成 3 条：默认通过 / 三种敌意 Host 各 421 / `--allow-host` 只放行它点名的那个），`pnpm run verify` 745 测试 · 9 门 ALL GREEN。
+证据：`tests/unit/serve-host-and-reuse.test.ts`（集成 5 条：默认通过 / 三种敌意 Host 各 421 / `--allow-host` 只放行它点名的那个 / **端口 80 省略** / **打印的 URL 合法且被规则接受**——后两条是复审 FAIL 后补的），`pnpm run verify` 746 测试 · 9 门 ALL GREEN。
