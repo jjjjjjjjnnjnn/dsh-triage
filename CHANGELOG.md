@@ -6,6 +6,24 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.4] — 2026-11-03
+
+> **One visible fix, and no judgement change.** The four buckets, the `improved` evidence thresholds, every
+> admission rule, every threshold, every exit code and `audit --json` are what `0.3.3` shipped. All four
+> packages move together.
+
+- **A failed "copy fix" no longer leaves you with nothing.** In the settings tab the fix command used to live
+  only inside the copy button. On a browser without `navigator.clipboard`, or where a permissions policy
+  denies `clipboard-write`, the button silently did nothing and the command was **not on screen anywhere** —
+  the only trace was a marker in `window.__dshTriage` that no person reads. Now a failed copy prints the
+  command under the button as selectable text (`user-select: all`) together with one plain sentence, in
+  both languages. A successful copy still prints nothing, so "the button copies the engine's own line"
+  stays checkable.
+- **What this release does not contain.** The D5 measurement guard (`scripts/d5_window_status.mjs`) that
+  tells an operator when the next market baseline must run is a repository tool: `scripts/` is not inside
+  the published package, so nothing about it reaches your install.
+- **Test count on the npm page: 760** (badge and prose together). `0.3.3` claimed 643.
+
 ## [0.3.3] — 2026-11-02
 
 > **Documentation-only.** Nothing in `dist/` or `client.js` changed; every judgement, threshold, exit

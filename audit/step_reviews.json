@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R76 (2026-11-03)",
+  "stand": "R77 (2026-11-03)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -11237,6 +11237,85 @@
         "artifact": "data/results/listing-2026-11-03T15-28-00.000Z.json",
         "outcome": "**17/17 全绿**：documents 10 · version 0.3.3 · engines `>=0.2.0-rc.1 <0.3.0-0` · **tests 760**（2 处声明，非空转）· 19 条证据路径带 sha256 全部解析 · 8 篇草稿引用真实产物 · 4 个渠道台账只有一条喂 D5",
         "sha256": "610bd837d048df4cc7c8fd6930a41c674561966602d6482ac00c5edacb47c06d"
+      }
+    },
+    {
+      "id": "R77-S1",
+      "batch": "R77",
+      "step": "发版准备：四包 0.3.4 同升 + CHANGELOG + 版本号/测试数对账（check_listing 17/17，含「不许提前写已发布」的措辞）",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/submissions/README.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/listing-2026-11-03T15-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：四个 manifest 都到 `0.3.4`（`workspace:*` 依赖不动，发布时由 pnpm 改写）；`check_listing` 的 `version-matches-manifest` 把「每处被点名的 `dsh-triage@x.y.z` 都必须等于 manifest」逐条对过（README×2 + 提交包），一处没改就红；测试数用 `pnpm run test` 的实跑值 **760**，不是推算。",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp … --tests 760` 可重跑（产物带 `.sha256`）；`node scripts/gate_release_pack.mjs` 独立检查四个包的文件清单与体积；两者的读数都进产物而不是写在 prose 里。",
+        "licence": "PASS：只改自己的 manifest / CHANGELOG / 文案；CHANGELOG 没有引用第三方代码，也没有把别人的数据算成自己的。",
+        "ssot": "PASS：新产物 `listing-2026-11-03T15-40-00.000Z.json` 进 SSOT 并被本步引用；版本号与测试数在「manifest / README / 上架文案 / 提交包」四处一致，且都由检查器复算而不是互抄。**关键的一条**：`docs/market/submissions/README.md` 写的是「**发布完成后才是 `latest`**」——在 `publish-*.json` 还不存在时，写「已发布」就是假话（R50/R53 的假警报与部分发布都出在这类提前宣称上）。",
+        "adversary": "反例一：只升 `dsh-triage` 不升内部三包 —— 被拒（R42 的原事故：用户会装到旧 core 并在启动时 `SyntaxError`），`gate_release_pack` 与 `release:check` 都会看四包的依赖面；反例二：版本号改了但徽章 URL 没改 —— 被拒，`test-count-matches` 与 `version-matches-manifest` 都扫徽章；反例三：顺手把「0.3.4 已发布」写进提交包 —— 被拒，本轮明确写成「发布完成后才是 latest」，并把上一版的 21/21 取证保留为历史指针；反例四：把 CHANGELOG 写成「升级会修好」式的收益话术 —— 被拒，措辞是「一处可见修复，判定不变」，并主动列出这一版**不含**什么。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T15:40:00.000Z --tests 760；node scripts/gate_release_pack.mjs",
+        "artifact": "data/results/listing-2026-11-03T15-40-00.000Z.json",
+        "outcome": "**17/17 全绿**：documents 10 · version **0.3.4** · engines `>=0.2.0-rc.1 <0.3.0-0` · **tests 760**（2 处声明，非空转）· 19 条证据路径带 sha256 全部解析 · 8 篇草稿引用真实产物 · 4 个渠道台账只有一条喂 D5；`gate_release_pack` OK（四个包的文件清单与体积都在限内）",
+        "sha256": "49da8d1e39b4bf470bfe5adfefe331fef8b8292afb9cf7dc4d91538d3bd9710a"
+      }
+    },
+    {
+      "id": "R77-S2",
+      "batch": "R77",
+      "step": "发布预检如实判红：本机 npm 凭据失效（E401），把「先 npm login」变成一条可复查的产物而不是一句提醒",
+      "changed": [
+        "data/results/release-preflight-2026-11-03T15-42-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`version 0.3.4` 与 `registry 0.3.4 还没发过` 两项是绿的，唯一红项是 `not-logged-in`，且它引用的是真实 `npm error code E401` —— 与 R50 那个「检查根本没跑起来却报 401」的形状相反（那一轮的修复在 `scripts/lib/npm-auth.mjs`，三态 `logged-in` / `not-logged-in` / `could-not-run`）。",
+        "reproducibility": "PASS：`node scripts/release_preflight.mjs --stamp … --out data/results/release-preflight-….json` 可重跑；产物带 `produced_by` / `generated_at` / `.sha256`，环境变化（登录之后）会直接翻绿。",
+        "licence": "PASS：只读本机 npm 身份与被扫描的 manifest，不写凭据、不读 `~/.dsh/credentials`。",
+        "ssot": "PASS：红产物进 SSOT 并被本步引用（红就是红，不删）；`docs/HANDOFF.md` 的「发布待办」指向它，所以「为什么不能立刻发」有据可查。",
+        "adversary": "反例一：把 `E401` 写成「包名冲突 / 网络问题」—— 被拒，产物里就是 `npm error code E401`，提示也直接给 `npm login`；反例二：为了让预检变绿把检查跳过 —— 被拒，跳过会让「未登录」在发布时变成 `404 Not found`（scoped 包最经典的假象）；反例三：先写「已发布」再去登录 —— 被拒，`HANDOFF` 与提交包都写成「发布完成后才是 latest」。"
+      },
+      "real_test": {
+        "command": "node scripts/release_preflight.mjs --stamp 2026-11-03T15:42:00.000Z --out data/results/release-preflight-2026-11-03T15-42-00.000Z.json",
+        "artifact": "data/results/release-preflight-2026-11-03T15-42-00.000Z.json",
+        "outcome": "version 0.3.4 · workspace 5 dep（走 pnpm 会改写）· registry 0.3.4 还没发过 · **not-logged-in（E401）** → 1 个问题，先 `npm login`",
+        "sha256": "e5363087fb103915da515e1b20ccd0114a442ed934207d8366f26ba0e14c7bcc"
+      }
+    },
+    {
+      "id": "R77-S3",
+      "batch": "R77",
+      "step": "整理归档：HANDOFF §2 只留最近十轮，R39–R66 的 31 行逐行原文进 _archive 并登记 manifest（第一版脚本丢过文件头，已还原重做）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "audit/blind_spots.json",
+        "_archive/2026-11-03_HANDOFF-batch-rows-R39-R66.md",
+        "_archive/ARCHIVE_MANIFEST.md"
+      ],
+      "review": {
+        "correctness": "PASS：搬走的 31 行是 R39–R66 的**批次行**（首格含轮次且 < R67），逐行原文进归档；常设行（产品名 / 里程碑 / 仓库 / CI / 规模 / 硬规则 / 未通过门槛 / 环境）、**证据指针行**与「**R37–R38 的批次行**」等指针行原地不动。搬之前先把每行的首格打出来核对（R67–R76 仍在表内）。",
+        "reproducibility": "PASS：归档文件与 manifest 一起进仓，`gate_governance` 的 `archive-manifest` 校验登记路径存在（实测 `no dangling entries`），`index-references` 校验 289 条引用全部可解析。",
+        "licence": "PASS：只动本仓文档与归档目录，不涉及第三方内容。",
+        "ssot": "PASS：`_archive/ARCHIVE_MANIFEST.md` 新增一行（日期 / 原路径 / 归档路径 / 原因 / 引用处是否更新）；`docs/HANDOFF.md` §2 新增一行指针；Stand 与 `step_reviews` / `blind_spots` 的 `stand` 字段同步到 R77（`doc-stand` 测试会盯着）。",
+        "adversary": "反例一（**本轮真踩到**）：改写脚本从 `## 2.` 处开始复制，把标题、Stand 与 §1 整段丢了 —— `git checkout HEAD -- docs/HANDOFF.md` 还原后重做，并在脚本里加了「写出前必须仍含 `# HANDOFF · 交接入口` / `> **Stand**:` / `## 1.` / `## 2.` / `## 3.`」的守卫；**只靠重读是防不住这类事故的**。反例二：顺手把证据指针也搬走 —— 被拒，查产物的人比读历史的人多（三轮归档的一致口径）。反例三：删文件而不是 `git mv` —— 被拒，铁律 7 只进不出。反例四：把 31 行压缩成摘要「省地方」—— 被拒，归档要的是逐行原文。"
+      },
+      "real_test": {
+        "command": "node \"…/r77-archive2.mjs\"（重建 §2 表 + 写归档）→ node scripts/gate_governance.mjs；node scripts/gate.mjs",
+        "artifact": "data/results/release-preflight-2026-11-03T15-42-00.000Z.json",
+        "outcome": "31 行搬入 `_archive/2026-11-03_HANDOFF-batch-rows-R39-R66.md`；`governance/archive-manifest` → `no dangling entries`；`governance/index-references` → `289 references ok`；`docs/HANDOFF.md` 仍以标题开头且 §1/§2/§3 齐全",
+        "sha256": "e5363087fb103915da515e1b20ccd0114a442ed934207d8366f26ba0e14c7bcc"
       }
     }
   ]

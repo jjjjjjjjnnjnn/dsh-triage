@@ -897,3 +897,13 @@
 - D 的结果：第二份现场基线窗口 `2026-10-27..2026-11-02`、周下载 **1392**、`steady`（5/7 天，峰值 45.6%）；日序列 `0 0 634 192 17 192 357` —— 仍是 10-29 那次的回声，`BS-48` 照旧成立，`judgeD5` 仍 `pending`。**同一天两次跑滞后不同（2 与 1）**，模块注释与产物 `limits` 改成「1–2 天，默认 2 是保守值」。覆盖推进到 `11-02`，截止日 `11-10 → 11-11`，三份入口文档已同步。
 - 一处自我纠正：中间那份 `d5-window-status-…T15-11-55` 的 `limits` 写着「2 天滞后」而它自己的 `lag_observed` 是 `1/2` —— 自相矛盾，删除并重跑（未进过 SSOT，理由记在 `R76-S6`）。
 - 反思：**「保守的常数」和「错的事实」是两回事**。滞后不是常数（1 或 2），但把默认取 2 是对的：截止日早一天只是多看一眼，晚一天就永久缺一天。
+
+### 2026-11-03 R77｜0.3.4 发版准备 + 项目整理（归档 31 行批次表，改脚本时把自己的文件头删了）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；台账 `R77-S1`（发版准备）/ `R77-S2`（预检红产物）/ `R77-S3`（归档）
+- SessionID：主会话（本轮未启用 subagent）
+- 人工决策：HUMAN 要「直接能 run 的发布命令 + 项目更新 / 文件整理 / 历史归档」；发布本身由 HUMAN 执行（需要 OTP）
+- 范围：四个 `package.json`（0.3.3 → 0.3.4）· `CHANGELOG.md` · `README.md` / `README.zh-CN.md` / `docs/market/submissions/README.md` · `docs/HANDOFF.md` · `INDEX.md` · `AGENTS.md` · `docs/ROADMAP.md` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}.json/md` · `_archive/2026-11-03_HANDOFF-batch-rows-R39-R66.md` · `_archive/ARCHIVE_MANIFEST.md` · 产物 `data/results/listing-2026-11-03T15-40-00.000Z.json`、`release-preflight-2026-11-03T15-42-00.000Z.json`
+- 结果：四包同升 `0.3.4`；`check_listing` **17/17**（版本号与测试数 760 在 manifest / 两份 README / 提交包四处一致）；`gate_release_pack` OK；**预检如实判红 `E401`**（真没登录，产物保留）。整理：`docs/HANDOFF.md` §2 只留最近十轮（R67–R76），R39–R66 的 **31 行**逐行归档并登记 manifest；证据指针与审核报告行未搬
+- 一处真事故：第一版归档脚本从 `## 2.` 处开始复制，**把标题、Stand 与 §1 整段丢了**（`git status` 立刻能看见，`git checkout HEAD -- docs/HANDOFF.md` 还原）。重写后脚本自带「写出前必须仍含标题 / Stand / §1 / §2 / §3」的守卫。教训：**改写长文档的脚本要断言「没被删掉的东西还在」**，只重读一遍是防不住的
+- 边界：`0.3.4` **还没发布**，`latest` 仍是 `0.3.3`；在 `publish-*.json` 出现之前不许写「已发布」
