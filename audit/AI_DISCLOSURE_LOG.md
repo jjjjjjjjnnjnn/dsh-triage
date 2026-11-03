@@ -827,7 +827,7 @@
 - 人工决策：HUMAN「同意，继续」→ 按两张 ADR 的推荐案实施，记账 `audit/SIGNOFF.md` 2026-11-03 行
 - 范围：`packages/plugin/src/{host-allow,serve,cli}.ts` · `tests/unit/{host-allow,serve-host-and-reuse,serve-adversarial}.test.ts` · `docs/adr/0014` / `0015`（proposed → accepted + 实施记录）· `docs/SECURITY.md` · `docs/{BACKLOG,HANDOFF}.md` · `README(.zh-CN).md` · `audit/{SIGNOFF,step_reviews}.json`
 - 结果：① **Host 准入**：请求第一步判 `Host`，不匹配 **421**；CLI `--host` / `--allow-host`；`--host 0.0.0.0` 无 `--allow-host` → 启动即 exit 2。② **1 秒复用**：`AUDIT_REUSE_MS = 1000`，`singleFlight` → `reusableScan`，挂在共享扫描层（两个路由同一个窗口）；`/api/audit` 的元数据走响应头（body 仍与 `audit --json` 逐字节相同）；失败不缓存。③ **731 → 746 测试**。
-- **复审判 FAIL，四处真缺陷已修**：`--port 80` 会拒绝每一条请求（浏览器省略默认端口）· `ssh -L` / 反代场景被挡（已写进 ADR-0014 §3 并给出 `--allow-host localhost:<port>`）· 打印的 URL 在 `--host ::1` 与 `--allow-host name:port` 两种组合下不是合法 URL（新增 `panelAuthority` + 6 条用例）· CLI 那行「answers … only」重复 `127.0.0.1` 且漏掉 `[::1]`。另有四处文档漂移（Stand 仍写 proposed、P4 行被改成 746、ADR-0014 验收项 3 无证据、§4.2 说 body 给字段而实际是头）一并修正。
+- **复审判 FAIL，四处真缺陷已修**：`--port 80` 会拒绝每一条请求（浏览器省略默认端口）· `ssh -L` / 反代场景被挡（已写进 ADR-0014 §3 并给出 `--allow-host localhost:<port>`）· 打印的 URL 在 `--host ::1` 与 `--allow-host name:port` 两种组合下不是合法 URL（新增 `panelAuthority` + 6 条用例）· CLI 那行「answers … only」重复 `127.0.0.1` 且漏掉 `[::1]`。另有四处文档漂移（Stand 仍写 proposed、P4 行被改成 745、ADR-0014 验收项 3 无证据、§4.2 说 body 给字段而实际是头）一并修正。
 - 实测：**746 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` 17/17
 - 反思：**「安全规则对了」不等于「用户还能用」**。这一轮的 Host 规则没有一条绕过路径（reviewer 用 20 多种敌意 Host 试过），但它先把 `--port 80` 和 `ssh -L` 这两种正常用法挡死了——**安全改动的验收必须包含「正常路径」清单，而不只是「攻击路径」清单**。
 
