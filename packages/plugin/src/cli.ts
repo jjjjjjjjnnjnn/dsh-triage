@@ -93,6 +93,7 @@ import {
   sandboxBundles,
 } from './probe-run.js'
 import { applyExemptionFixes, planFixes, readProfileDependencies, runtimeSupportsExemptions, undoFix } from './fix.js'
+import { allowedHosts } from './host-allow.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
 import { buildProfileSummary, formatProfileSummary } from './summary.js'
 
@@ -130,6 +131,10 @@ interface Flags {
   readonly browser: string | null
   /** `serve --port <n>`: 0 picks a free port. */
   readonly port: number | null
+  /** `serve --host <addr>`: bind address (ADR-0014). Default 127.0.0.1. */
+  readonly host: string | null
+  /** `serve --allow-host <name[:port]>`: extra Host names the panel answers (ADR-0014). */
+  readonly allowHosts: readonly string[]
   /** `serve --results <dir>`, `badge --results <dir>`: where the panel/command reads artifacts from. */
   readonly results: string | null
   /** `badge --out <file>`: write the SVG to a file instead of stdout. */
@@ -220,6 +225,8 @@ Flags
   --unsettled-timeout <ms>  (probe --execute) readiness window while the tree is still composing (default 20000)
   --copy-profile <name> (probe) measure inside a copy of this profile's declarations (T-304)
   --port <n>            (serve) port to bind on 127.0.0.1; 0 picks a free one
+  --host <addr>         (serve) bind address; default 127.0.0.1 (ADR-0014)
+  --allow-host <name>   (serve) extra Host name the panel answers; repeatable; required with --host 0.0.0.0
   --results <dir>       (serve, badge) directory of evidence to read (default: ./data/results)
   --out <file>          (badge) write the SVG here; (upgrade --card) write the card here, print the path
   --allow-execute       (serve) enable actions; without it the panel is read-only
@@ -270,6 +277,8 @@ const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 
   --card                (upgrade) 输出格式化 Markdown 升级卡片
   --execute             (probe) 在独立隔离临时 DSH_HOME 中真正拉起沙盒执行实测
   --port <端口>          (serve) 本地面板绑定的端口（默认自动选取空闲端口）
+  --host <地址>          (serve) 绑定地址（默认 127.0.0.1；ADR-0014）
+  --allow-host <名字>    (serve) 额外允许的 Host 名（可重复；--host 0.0.0.0 时必须给）
   --help                显示帮助信息
 
 退出状态码: 0 正常 · 1 存在异常（audit 始终生效，其他命令需加 --strict） · 2 参数错误 · 3 元数据不可用
@@ -1654,6 +1663,21 @@ async function commandProbe(flags: Flags, spec: string | undefined): Promise<num
 async function commandServe(flags: Flags): Promise<number> {
   const resultsDir = flags.results === null ? resolve(process.cwd(), 'data/results') : resolve(flags.results)
   const dshHome = resolveDshHome(flags)
+  /*
+   * ADR-0014: binding every interface without saying which name clients use would leave the Host
+   * check with nothing to accept — the panel would start and then refuse every request. Refuse at
+   * startup instead, and print the flag that fixes it (R50: a missing config must not look like a
+   * broken product).
+   */
+  const bindHost = flags.host ?? '127.0.0.1'
+  const wildcard = bindHost === '0.0.0.0' || bindHost === '::' || bindHost === '[::]'
+  if (wildcard && flags.allowHosts.length === 0) {
+    process.stderr.write(
+      `--host ${bindHost} needs at least one --allow-host <name[:port]>: the panel only answers a Host it was told about.\n` +
+        `example: dsh-triage serve --host ${bindHost} --allow-host 192.168.1.7\n`,
+    )
+    return 2
+  }
   // R49: the panel's whole purpose is the current composition, so it reads the profile by
   // default. `--no-audit` keeps the old artifacts-only mode (and `/api/audit` answers 501,
   // never an empty ledger that looks clean).
@@ -1686,6 +1710,8 @@ async function commandServe(flags: Flags): Promise<number> {
   const panel = await startPanel({
     resultsDir,
     port: flags.port ?? 0,
+    host: bindHost,
+    allowHosts: flags.allowHosts,
     allowExecute: flags.allowExecute,
     locale: flags.locale,
     audit,
@@ -1704,7 +1730,10 @@ async function commandServe(flags: Flags): Promise<number> {
     process.stdout.write(`panel   ${panel.url}\n`)
     process.stdout.write(`results ${resultsDir}${existsSync(resultsDir) ? '' : '  (does not exist yet)'}\n`)
     process.stdout.write(`mode    ${readOnly ? 'read-only' : 'actions requested (POST still returns 501)'}\n`)
-    process.stdout.write('open the URL above; it carries a one-time token, and the panel binds 127.0.0.1 only\n')
+    // Print exactly the set the Host rule accepts (deduplicated, including [::1]); "only" has to
+    // be true in both directions, which the first version got wrong (duplicate 127.0.0.1, no [::1]).
+    const answered = allowedHosts({ boundHost: bindHost, port: panel.port, allowHosts: flags.allowHosts })
+    process.stdout.write(`hosts   answers ${answered.join(', ')} only (ADR-0014)\n`)
   }
   // Stay in the foreground until the user stops it: a panel that backgrounds itself is a
   // process nobody can find later.
@@ -1902,6 +1931,8 @@ function parseArgs(argv: readonly string[]): Parsed | null {
   let noHttp = false
   let browser: string | null = null
   let port: number | null = null
+  let host: string | null = null
+  const allowHosts: string[] = []
   let results: string | null = null
   let out: string | null = null
   let allowExecute = false
@@ -2016,6 +2047,18 @@ function parseArgs(argv: readonly string[]): Parsed | null {
         port = parsed
         break
       }
+      case '--host': {
+        const value = takeValue()
+        if (value === null || value.trim() === '') return null
+        host = value.trim()
+        break
+      }
+      case '--allow-host': {
+        const value = takeValue()
+        if (value === null || value.trim() === '') return null
+        allowHosts.push(value.trim())
+        break
+      }
       case '--results': {
         const value = takeValue()
         if (value === null) return null
@@ -2100,7 +2143,7 @@ function parseArgs(argv: readonly string[]): Parsed | null {
     }
   }
 
-  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, results, allowExecute, apply, undo, audit, noAudit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
+  const flags = { json, all, strict, execute, dshHome, profile, stamp, locale, noRedact, snapshot, explain, dshMain, noHttp, browser, port, host, allowHosts, results, allowExecute, apply, undo, audit, noAudit, readinessTimeoutMs, unsettledReadinessMs, copyProfile, profileExplicit, out, outcomes, enable, disable, purge, status, to, registry, card }
   if (help) return { command: 'help', positionals: [], flags }
   // R49: no subcommand is not an error. It is the question the product exists to answer.
   const command = positionals.shift() ?? 'status'

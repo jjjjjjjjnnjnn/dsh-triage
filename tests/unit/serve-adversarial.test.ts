@@ -237,7 +237,7 @@ test('origins that merely start with 127.0.0.1 are still cross-origin', async ()
 
 /* ------------------------------- concurrency ------------------------------ */
 
-test('ten concurrent readers share one scan, and the next request scans again', async () => {
+test('ten concurrent readers share one scan, and a click inside the window reuses it (ADR-0015)', async () => {
   const root = dir()
   let calls = 0
   try {
@@ -257,9 +257,16 @@ test('ten concurrent readers share one scan, and the next request scans again', 
         assert.deepEqual(responses.map((response) => response.status), Array(10).fill(200))
         assert.equal(calls, 1, 'pile-up protection: ten tabs, one profile read')
 
+        /*
+         * R20 wrote "no TTL: the next click re-reads the profile" here. ADR-0015 (signed
+         * 2026-11-03) changed that on purpose: inside the 1s window a click reuses the answer,
+         * and the body says so (`reused: true`) instead of passing an old verdict off as new.
+         * The "outside the window it scans again" half is pinned in serve-host-and-reuse.test.ts.
+         */
         const after = await fetch(`http://127.0.0.1:${panel.port}/api/summary?token=${panel.token}`)
         assert.equal(after.status, 200)
-        assert.equal(calls, 2, 'no TTL: the next click re-reads the profile')
+        assert.equal(calls, 1, 'ADR-0015: inside the window the click reuses the answer')
+        assert.equal(((await after.json()) as { reused: boolean }).reused, true)
       },
     )
   } finally {

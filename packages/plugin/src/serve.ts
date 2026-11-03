@@ -28,13 +28,32 @@ import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
+import { judgeHost } from './host-allow.js'
 import type { ProfileSummary } from './summary.js'
+
+/**
+ * ADR-0015 / T-814: how long a scan answer may be reused.
+ *
+ * WHY 1 SECOND AND NOT A FLAG: a profile scan is fs-bound and takes ~0.4–1s on a real profile
+ * (R68: median 921ms). Clicking refresh ten times in a second used to mean ten full scans. One
+ * second is far below the rate at which a plugin actually changes (installs are minute-scale),
+ * and a constant cannot be tuned down to 0 by someone chasing a benchmark.
+ */
+export const AUDIT_REUSE_MS = 1_000
 
 export interface ServeOptions {
   /** Directory holding `*.json` + `.sha256` evidence files. */
   readonly resultsDir: string
-  /** Bind address; defaults to 127.0.0.1 and is not meant to be changed. */
+  /**
+   * Bind address; defaults to 127.0.0.1.
+   *
+   * ADR-0014: this is no longer "not meant to be changed" — binding a non-loopback address is a
+   * deliberate act that requires `allowHosts` to name the address clients will use, so the Host
+   * check can tell "my address" from "a name that resolves to me".
+   */
   readonly host?: string
+  /** ADR-0014: extra `Host` names to accept (`name` or `name:port`). Empty for loopback only. */
+  readonly allowHosts?: readonly string[]
   /** 0 picks a free port (tests use this). */
   readonly port?: number
   /** Locale for the tiny bit of chrome copy on the page. */
@@ -223,16 +242,28 @@ function readEnvHeadline(payload: Record<string, unknown>): EnvHeadline {
 export function createPanelServer(options: ServeOptions): PanelServer {
   const token = randomBytes(18).toString('base64url')
   const allowExecute = options.allowExecute === true
+  /**
+   * The port is only known after `listen` (0 means "pick one"), and the Host rule compares
+   * against the port the socket actually took — so the getter asks the server, not the options.
+   * `serverRef` is assigned right after the server exists (before any request can arrive).
+   */
+  let serverRef: Server | null = null
   const context: HandlerContext = {
     resultsDir: options.resultsDir,
     token,
     allowExecute,
     locale: options.locale ?? 'zh',
-    // One scan at a time: a profile read is fs-bound and synchronous, so ten tabs refreshing
-    // together would otherwise queue ten full scans on the event loop. Concurrent callers
-    // share the in-flight scan; the next request after it settles starts a fresh one (no TTL,
-    // no stale verdict).
-    audit: options.audit == null ? null : singleFlight(options.audit),
+    boundHost: options.host ?? '127.0.0.1',
+    allowHosts: options.allowHosts ?? [],
+    port: () => {
+      const address = serverRef?.address()
+      return typeof address === 'object' && address !== null ? address.port : (options.port ?? 0)
+    },
+    // One scan at a time (T-406), and one answer per second (ADR-0015): a profile read is
+    // fs-bound, so ten tabs refreshing together would otherwise queue ten full scans. The
+    // window is on the SHARED scan, not on a route — the panel's refresh button reads
+    // /api/summary, and a cache on /api/audit alone would pass its own tests and change nothing.
+    audit: options.audit == null ? null : reusableScan(options.audit, AUDIT_REUSE_MS),
   }
 
   const server = createServer((request, response) => {
@@ -246,9 +277,32 @@ export function createPanelServer(options: ServeOptions): PanelServer {
       sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
     })
   })
+  // From here on the Host rule can read the real port (still 0 until `listen` resolves).
+  serverRef = server
 
   // Port 0 is resolved on listen; the URL is filled in by `startPanel`.
   return { server, token, url: '', port: options.port ?? 0 }
+}
+
+/**
+ * The `name:port` a person should type to reach this panel (ADR-0014).
+ *
+ * Three cases that a naive `${host}:${port}` gets wrong, all found by an independent reviewer:
+ *   1. `--host ::1` → `http://::1:5555/` is not a URL; IPv6 literals need brackets;
+ *   2. `--host 0.0.0.0 --allow-host panel.local:8080` → appending the socket port gives
+ *      `panel.local:8080:61247`, which is also not a URL;
+ *   3. `ssh -L 8080:127.0.0.1:<port>` (or any reverse proxy): the browser will send
+ *      `Host: localhost:8080`, so the printed link must use that pair, not the socket port.
+ */
+export function panelAuthority(host: string | undefined, allowHosts: readonly string[] | undefined, port: number): string {
+  const bound = host ?? '127.0.0.1'
+  const wildcard = bound === '0.0.0.0' || bound === '::' || bound === '[::]'
+  const firstAllow = allowHosts?.[0] ?? null
+  const carriesPort = (value: string): boolean => /^\[[^\]]+\]:\d+$/.test(value) || /^[^:]+:\d+$/.test(value)
+  const chosen = wildcard ? (firstAllow ?? '127.0.0.1') : firstAllow !== null && carriesPort(firstAllow) ? firstAllow : bound
+  if (carriesPort(chosen)) return chosen
+  const isIpv6 = chosen.includes(':')
+  return `${isIpv6 ? `[${chosen}]` : chosen}:${port}`
 }
 
 export async function startPanel(options: ServeOptions): Promise<PanelServer> {
@@ -259,7 +313,9 @@ export async function startPanel(options: ServeOptions): Promise<PanelServer> {
   })
   const address = panel.server.address()
   const port = typeof address === 'object' && address !== null ? address.port : 0
-  return { ...panel, port, url: `http://127.0.0.1:${port}/?token=${panel.token}` }
+  // The printed link has to be a name the Host rule accepts, and a URL a browser can parse.
+  const authority = panelAuthority(options.host, options.allowHosts, port)
+  return { ...panel, port, url: `http://${authority}/?token=${panel.token}` }
 }
 
 interface HandlerContext {
@@ -267,15 +323,38 @@ interface HandlerContext {
   readonly token: string
   readonly allowExecute: boolean
   readonly locale: 'en' | 'zh'
-  readonly audit: (() => Promise<AuditSnapshot>) | null
+  /** ADR-0014: what `listen` was given, and which extra Host names were allowed. */
+  readonly boundHost: string
+  readonly allowHosts: readonly string[]
+  readonly port: () => number
+  /** ADR-0015: one shared scan with a reuse window; both routes read through it. */
+  readonly audit: (() => Promise<ScanOutcome>) | null
 }
 
 async function handle(request: IncomingMessage, response: ServerResponse, context: HandlerContext): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1')
 
+  /*
+   * ADR-0014 (T-811), checked FIRST: a DNS-rebinding page reaches the loopback socket while the
+   * browser still believes it is talking to `evil.com`, so the Host header names the attacker.
+   * The Origin check below cannot see that case (a same-origin navigation may send no Origin at
+   * all), and a token can leak (shell history, screenshots). 421 is the honest status: the
+   * request reached a server, just not the one it asked for.
+   */
+  const hostVerdict = judgeHost({
+    host: request.headers.host,
+    boundHost: context.boundHost,
+    port: context.port(),
+    allowHosts: context.allowHosts,
+  })
+  if (!hostVerdict.ok) {
+    sendJson(response, 421, { error: hostVerdict.reason })
+    return
+  }
+
   // A panel that answers a browser on any other origin is a CSRF gadget; refuse loudly.
   const origin = request.headers.origin
-  if (typeof origin === 'string' && origin !== '' && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) {
+  if (typeof origin === 'string' && origin !== '' && !/^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(origin)) {
     sendJson(response, 403, { error: 'cross-origin request refused' })
     return
   }
@@ -374,10 +453,10 @@ async function handle(request: IncomingMessage, response: ServerResponse, contex
       return
     }
     const started = Date.now()
-    const snapshot = await context.audit()
+    const { snapshot, reused, age_ms } = await context.audit()
     const ms = Date.now() - started
     if (!snapshot.ok) {
-      sendJson(response, 409, { error: snapshot.message }, { 'x-triage-audit-ms': String(ms) })
+      sendJson(response, 409, { error: snapshot.message }, { 'x-triage-audit-ms': String(ms), 'x-triage-audit-reused': '0' })
       return
     }
     // One scan, two shapes: the answer and the env it was measured on. The page renders the
@@ -385,8 +464,8 @@ async function handle(request: IncomingMessage, response: ServerResponse, contex
     sendJson(
       response,
       200,
-      { summary: snapshot.summary, env: readEnvHeadline(snapshot.payload), ms },
-      { 'x-triage-audit-ms': String(ms) },
+      { summary: snapshot.summary, env: readEnvHeadline(snapshot.payload), ms, reused, age_ms },
+      { 'x-triage-audit-ms': String(ms), 'x-triage-audit-reused': reused ? '1' : '0' },
     )
     return
   }
@@ -402,15 +481,24 @@ async function handle(request: IncomingMessage, response: ServerResponse, contex
     // duration). Publishing the number on the response is the difference between "the panel
     // felt slow" and "this request took 412ms" (R20 follow-up to T-406).
     const started = Date.now()
-    const snapshot = await context.audit()
+    const { snapshot, reused, age_ms } = await context.audit()
     const ms = Date.now() - started
     if (!snapshot.ok) {
       // Same sentence the CLI would print on stderr, and a status that is not 200: a profile
       // that cannot be read must never render as "no findings".
-      sendJson(response, 409, { error: snapshot.message }, { 'x-triage-audit-ms': String(ms) })
+      sendJson(response, 409, { error: snapshot.message }, { 'x-triage-audit-ms': String(ms), 'x-triage-audit-reused': '0' })
       return
     }
-    sendJson(response, 200, snapshot.payload, { 'x-triage-audit-ms': String(ms) })
+    /*
+     * The body stays EXACTLY the object `dsh-triage audit --json` prints (R19 pinned that with a
+     * byte-for-byte negative control), so the reuse metadata travels in headers here. `/api/summary`
+     * has a wrapper body of its own and can carry the two fields directly.
+     */
+    sendJson(response, 200, snapshot.payload, {
+      'x-triage-audit-ms': String(ms),
+      'x-triage-audit-reused': reused ? '1' : '0',
+      'x-triage-audit-age-ms': String(age_ms),
+    })
     return
   }
 
@@ -419,24 +507,46 @@ async function handle(request: IncomingMessage, response: ServerResponse, contex
 
 /* --------------------------------- helpers --------------------------------- */
 
+/** One answer from the shared scan, with enough metadata to say whether it was fresh (ADR-0015). */
+export interface ScanOutcome {
+  readonly snapshot: AuditSnapshot
+  /** True when this answer came out of the reuse window instead of a new scan. */
+  readonly reused: boolean
+  /** How old the reused answer is (0 for a fresh scan). */
+  readonly age_ms: number
+}
+
 /**
- * Share one in-flight scan between concurrent requests.
+ * Share one in-flight scan between concurrent requests, and reuse its answer for `ttlMs`.
  *
- * Deliberately has no TTL: once the scan settles the next caller re-reads the profile, so the
- * panel never shows a verdict older than the last click. This only prevents *pile-up*, not
- * staleness.
+ * ADR-0015 / T-814. Two different protections, deliberately kept in one place:
+ *   - concurrency (R20): ten tabs refreshing together must not queue ten full scans;
+ *   - rate (T-814): ten clicks in one second must not either. The window is short on purpose —
+ *     a plugin install is a minute-scale event, so a 1s-old verdict is still "now" for a human,
+ *     while `reused: true` keeps it from being passed off as a fresh measurement.
+ *
+ * A failed scan is never cached: "the profile could not be read" must be retried, not replayed.
  */
-function singleFlight(run: () => Promise<AuditSnapshot>): () => Promise<AuditSnapshot> {
+function reusableScan(run: () => Promise<AuditSnapshot>, ttlMs: number): () => Promise<ScanOutcome> {
+  let cached: { at: number; snapshot: AuditSnapshot } | null = null
   let inFlight: Promise<AuditSnapshot> | null = null
-  return () => {
-    if (inFlight !== null) return inFlight
-    const started = run()
-    inFlight = started
-    const clear = (): void => {
+  return async () => {
+    const now = Date.now()
+    if (cached !== null && now - cached.at <= ttlMs) {
+      return { snapshot: cached.snapshot, reused: true, age_ms: now - cached.at }
+    }
+    if (inFlight !== null) {
+      // A concurrent caller waited for the same scan; the data is new, so it is not "reused".
+      return { snapshot: await inFlight, reused: false, age_ms: 0 }
+    }
+    inFlight = run()
+    try {
+      const snapshot = await inFlight
+      if (snapshot.ok) cached = { at: Date.now(), snapshot }
+      return { snapshot, reused: false, age_ms: 0 }
+    } finally {
       inFlight = null
     }
-    started.then(clear, clear)
-    return started
   }
 }
 

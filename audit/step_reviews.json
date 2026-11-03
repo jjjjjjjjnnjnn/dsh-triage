@@ -10978,6 +10978,41 @@
         "outcome": "GREEN：17/17（新增两张 ADR 与 SECURITY.md 改动没有让 README / 上架文案 / 渠道台账漂移）；ADR 不产生运行产物，这是本步唯一的新产物",
         "sha256": "2bb6e93fbd52e5f4294c49591d32b75868ab0a35ba4e0a0d9a92354fd7685735"
       }
+    },
+    {
+      "id": "R75-S8",
+      "batch": "R75",
+      "step": "P5 · 两张 ADR 签字后落地：Host 准入（421）+ 共享 1 秒复用窗口",
+      "changed": [
+        "packages/plugin/src/host-allow.ts",
+        "packages/plugin/src/serve.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/host-allow.test.ts",
+        "tests/unit/serve-host-and-reuse.test.ts",
+        "tests/unit/serve-adversarial.test.ts",
+        "docs/adr/0014-host-header-allowlist.md",
+        "docs/adr/0015-local-panel-rate-limit.md",
+        "docs/SECURITY.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "README.md",
+        "README.zh-CN.md",
+        "audit/SIGNOFF.md",
+        "data/results/listing-2026-11-03T09-30-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：Host 规则是纯函数（`judgeHost`），8 条单测覆盖默认三名字 / 错端口 / `127.0.0.1.evil.com` 一类「包含但不相等」/ 大小写与尾点 / 无 Host / `--allow-host` 两种写法 / 具体 LAN 绑定 / 通配绑定本身；集成测试证明默认通过、三种敌意 Host 各 421、`--allow-host` 只放行点名的那个。复用窗口挂在**共享扫描层**，跨路由断言（`/api/summary` 之后 `/api/audit` 仍只扫 1 次）在，失败不缓存也有断言。",
+        "reproducibility": "PASS：`--host 0.0.0.0` 不给 `--allow-host` 是确定性的 exit 2；`/api/audit` 的 body 仍与 `audit --json` 逐字节相同（R19 的断言未改，测试套件全绿）；复用窗口的时间断言用 `AUDIT_REUSE_MS + 100` 而不是魔法数字。",
+        "licence": "PASS：只改仓内代码与文档，不引第三方依赖、不读外部服务。",
+        "ssot": "PASS：两张 ADR 从 proposed 改 accepted 并补「实施记录」，签字记账在 `audit/SIGNOFF.md` 2026-11-03 行（含 HUMAN 未逐条复核的三项）；`docs/SECURITY.md` 两处从「待签」改成「已强制 / 已有上限」；`listing` 产物由本步引用，no-orphan-results 绿。",
+        "adversary": "反例一：用 `startsWith` / `includes` 匹配 Host —— 被拒，单测里 `127.0.0.1.evil.com` / `localhost.evil.com` / `127.0.0.1:51234.evil.com` 三条都会红；反例二：把复用窗口只挂在 `/api/summary`（P4 复审抓到的形状）—— 被拒，**跨路由断言**会红（reviewer 的负对照实测：给 `/api/audit` 单独一个 `reusableScan` 时红在「must reuse the same scan」那一行；只挂 `/api/audit` 的形状则由同一条测试里的 `scans === 1` 先拦住）；反例三：把失败也缓存 —— 被拒，「失败重试」那条会红；反例四：把 `reused` 字段塞进 `/api/audit` 的 body —— 被拒，R19 的逐字节断言会红，所以元数据走了响应头；反例五：`--host 0.0.0.0` 直接启动 —— 被拒，启动即 exit 2。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T09:30:00.000Z --tests 745",
+        "artifact": "data/results/listing-2026-11-03T09-30-00.000Z.json",
+        "outcome": "GREEN：17/17（745 测试计数在 10 份文档里一致）。本步的代码证据是 pnpm run verify 745 测试 / 9 门 + 新增 14 条单测与集成测试全绿",
+        "sha256": "58ab402dce7726a866a7def495e3f0990805be7eded5b3ec12f96101ca73d4c2"
+      }
     }
   ]
 }

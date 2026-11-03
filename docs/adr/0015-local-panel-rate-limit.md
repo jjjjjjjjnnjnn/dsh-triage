@@ -1,6 +1,6 @@
 # ADR-0015 · 本地面板的速率上限：要么给一个，要么写清为什么不给
 
-> **Status**: **proposed**（2026-11-03，R75；**未实施，等 HUMAN 签字**）
+> **Status**: **accepted**（2026-11-03，R75；HUMAN 原话「**同意，继续**」→ 按推荐案 **A** 实施，记账 `audit/SIGNOFF.md` 2026-11-03 行）
 > **票号**: `T-814`（R49 发现；`docs/SECURITY.md` §4.2 现在只写了单飞）
 > **取代**: 无。本 ADR 不改任何判定，只决定「同一秒里被点十次会发生什么」
 > **依据代码**: `packages/plugin/src/serve.ts`（`singleFlight` 在 `:429`、`audit` 只在 `--audit` 时挂载在 `:235`）
@@ -60,8 +60,20 @@ R75 之前 `docs/SECURITY.md` §4.2 只写了「单飞挡住了并发」，**没
 
 ## 5. 签字区（HUMAN）
 
-- [ ] **选 A**：1 秒复用窗口（推荐）
-- [ ] **选 B**：不设上限，把理由写进 `docs/SECURITY.md`
-- 签字日期：____　原话：____　（记账到 `audit/SIGNOFF.md`）
+- [x] **选 A**：1 秒复用窗口（推荐）—— 2026-11-03，原话「同意，继续」
+- [ ] 选 B：不设上限，把理由写进 `docs/SECURITY.md`
+- 签字日期：2026-11-03　原话：「同意，继续」　（已记账到 `audit/SIGNOFF.md`）
 
-> **未签之前不实施**：现在 `docs/SECURITY.md` §4.2 只能写「单飞挡住并发，顺序请求不设上限」，**不许**写成「已有速率上限」。
+## 6. 实施记录（R75，2026-11-03）
+
+| 项 | 落地 |
+|---|---|
+| 常量 | `serve.ts#AUDIT_REUSE_MS = 1000`（不做成配置项，理由见 §3） |
+| 挂在哪 | `reusableScan(run, ttl)` 替换了原来的 `singleFlight`，仍然挂在 `context.audit` 上 → **`/api/summary` 与 `/api/audit` 共享同一个窗口**（reviewer 抓到的「治错路由」就是在这里防住的） |
+| 并发 | 同一个 in-flight 仍只扫一次；并发调用者拿到的是新数据，记 `reused: false` |
+| 失败 | **不缓存**：`ok:false` 不进窗口，下一次请求重扫（「读不到」必须能重试，不能被回放成答案） |
+| 元数据 | `/api/summary` 的 body 加 `reused` / `age_ms`；`/api/audit` 走响应头 `x-triage-audit-reused` / `x-triage-audit-age-ms` —— **偏离原文的「响应体加两个字段」**，因为 `/api/audit` 的 body 必须与 `dsh-triage audit --json` **逐字节相同**（R19 用逐字节负对照钉过），加字段会破坏那条契约。可读性没有损失：两个字段仍然是机器可读的 |
+| 验收 | `tests/unit/serve-host-and-reuse.test.ts`：窗口内第二次 `reused:true` 且 `age_ms <= 1000`；**跨路由共享**（`/api/summary` 之后 `/api/audit` 仍只扫 1 次）；窗口外重扫；失败不被缓存。`serve-adversarial.test.ts` 里 R20 那条「no TTL」的断言按本 ADR 改成「窗口内复用」并写明原因 |
+| 未做 | 没有给「刷新」按钮加禁用/节流（窗口在服务端，UI 保持可点，点下去会看到 `reused: true`） |
+
+证据：745 测试 · 9 门 ALL GREEN；`docs/SECURITY.md` §4.2 从「单飞」改成「单飞 + 1 秒复用」。
