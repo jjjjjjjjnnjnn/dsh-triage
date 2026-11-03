@@ -10923,6 +10923,35 @@
         "outcome": "served · 10 项 unmeasured / 0 项 failed（mount 与 visible 的原因是 browser never exposed a debugging port）· Host 侧 6 项 passed、client=200 · 进程正常退出",
         "sha256": "3fa09f1c19d049f2cab7395fd9c198d1b168905ac259064fc2154d539d293dec"
       }
+    },
+    {
+      "id": "R75-S6",
+      "batch": "R75",
+      "step": "P2 · T-840 CI 抖动归因：`attempts.length === 1` 不是契约，是 `retryMs: 1` 与时钟粒度的竞态",
+      "changed": [
+        "tests/unit/probe-hook-error.test.ts",
+        "tests/unit/probe-hook-two-phase.test.ts",
+        "docs/BACKLOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/listing-2026-11-03T08-10-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：机制成立 —— 同一进程（模块已缓存）连跑 40 次，`attempts[0].ms === 0` 与「2 个 attempts」逐条对齐（两轮 21/21、25/25），停止条件 `Date.now() - started >= retryMs` 在首试同毫秒时恒假。但**这个数字不是本测试的翻红率**：测试每个用例新建 tree（冷 import），本机按该条件 40/40 都是 1 个 attempt，CI 那次红只能算「合理但未证明」。修法 `retryMs: 0`（`??` 不吞 0，`0 >= 0` 恒真）使 `=== 1` 成为构造上确定的事实；反方向测试（`retryMs: 50` → `>= 2`）钉住重试方向；另把两处同模式的 `retryMs: 1` 一并改成 0。",
+        "reproducibility": "PASS：两条测试只跑仓内 hook 文件 + 临时 tree，不联网；新配置连跑 10 次 0 失败。**本机绿不能证明稳定**这句话写进了 BACKLOG：旧配置在本机 6 次绿（首次 import >1ms），而冷 import 条件下 40/40 也是绿 —— 两种条件都不能替代 CI 的取证。",
+        "licence": "PASS：只改测试与文档，不引第三方代码、不读外部服务。",
+        "ssot": "PASS：没有新增判据产物；断言消息现在打印整个 attempts 数组（原来只打印 falsy），红一次即可归因，不必靠复跑。",
+        "adversary": "反例一：把断言放宽成 `>= 1` —— 被拒，那会让「一次都没试」也通过；反例二：期望改 2 的负对照 → 真红（actual 1 / expected 2）；反例三：把产品码改成「永不重试」→ 只有反方向测试红、`retryMs: 0` 那条仍绿，说明两条测试各钉一个方向，缺一条就会被读成「修好了」；反例四：以为 27/13 是翻红率 —— 被拒，那是「模块已缓存」这个测试从不经过的条件，数字本身也在 19:21 / 15:25 之间波动。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T08:10:00.000Z --tests 731",
+        "artifact": "data/results/listing-2026-11-03T08-10-00.000Z.json",
+        "outcome": "GREEN：17/17（731 测试计数在 10 份文档里一致）。本步的真跑证据是 `node --test tests/unit/probe-hook-error.test.ts` 3/3 + `probe-hook-two-phase` 1/1、新配置连跑 10 次 0 失败、两条负对照各自真红；这些不产生 data/results 产物，按仓规记在 review 里",
+        "sha256": "217161f45505ad342ad37083422964f68de6959ccde57f307e7e0e50a3fa65f7"
+      }
     }
   ]
 }

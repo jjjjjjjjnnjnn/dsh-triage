@@ -56,7 +56,13 @@ test('T-312: the shipped hook publishes a provisional sample, then the settled o
     {
       out,
       resolveFrom: tree,
-      retryMs: 1,
+      /*
+       * T-840: `retryMs: 1` made "how many attempts" a race against the millisecond clock, so a
+       * test that later asserts an attempt count would flake exactly like `probe-hook-error` did.
+       * This test does not assert a count, but a zero budget removes the 250ms retry sleep and the
+       * ambiguity together: one attempt, then settle.
+       */
+      retryMs: 0,
       timeoutMs: 2_000,
       // Long enough that the provisional write is observable, short enough for a fast test.
       intervalMs: 120,

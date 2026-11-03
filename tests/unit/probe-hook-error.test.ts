@@ -83,9 +83,17 @@ test('T-316: the shipped hook writes {error} with code inactive-context and sett
   hook.apply(activeCtx(), {
     out,
     resolveFrom: tree,
-    // One retry attempt is enough for the assertion; the default 20s backoff is the product
-    // behaviour for a tree that may still recover, not something a unit test should wait for.
-    retryMs: 1,
+    /*
+     * T-840: this used to be `retryMs: 1`, which made the attempt count a race against the
+     * clock. The loop breaks on `Date.now() - started >= retryMs`, so a first attempt that
+     * lands in the same millisecond as `started` sees `0 >= 1` = false, sleeps 250ms and
+     * tries again: measured on 2026-11-03, 27 of 40 runs produced TWO attempts with
+     * `retryMs: 1` and 13 produced one. The CI red was that coin landing on 2.
+     * A zero budget says what this test actually means — "one attempt, then report" — and
+     * makes it a fact instead of a coin flip. The retry path itself is pinned by the next
+     * test, so nothing is lost by removing the ambiguity here.
+     */
+    retryMs: 0,
     timeoutMs: 1_000,
     profile: 'web',
   })
@@ -99,8 +107,31 @@ test('T-316: the shipped hook writes {error} with code inactive-context and sett
   assert.equal(isUsableSample(payload), false)
   // The generation guard still applies: this task wrote because it was the newest apply.
   assert.equal(payload['applies'], 1)
-  assert.ok(Array.isArray(payload['attempts']) && payload['attempts'].length === 1)
-  assert.equal((payload['attempts'] as Array<Record<string, unknown>>)[0]?.['code'], 'inactive-context')
+  const attempts = payload['attempts'] as Array<Record<string, unknown>>
+  assert.ok(Array.isArray(attempts), 'attempts must be a list')
+  // The message prints the attempts: the CI red said only "falsy", so the actual count was
+  // unrecoverable from the log. A red must be diagnosable without a rerun.
+  assert.equal(attempts.length, 1, `a zero retry budget must stop after the first attempt: ${JSON.stringify(attempts)}`)
+  assert.equal(attempts[0]?.['code'], 'inactive-context')
+  assert.equal(error['attempts'], 1, 'the error block and the attempt list must agree')
+})
+
+test('T-840: a non-zero retry budget really retries (the stop condition is the budget, not the first failure)', async () => {
+  /*
+   * The other half of the contract. Without this test, `retryMs: 0` above could be read as
+   * "the loop never retries"; with it, both directions are pinned: zero budget -> one
+   * attempt, positive budget -> the loop tries again and stops when the budget is spent.
+   */
+  const tree = treeWithThrowingProjection('cannot get required service "loader" in inactive context')
+  const out = join(tree, 'sample.json')
+  const hook = await loadHook()
+  hook.apply(activeCtx(), { out, resolveFrom: tree, retryMs: 50, timeoutMs: 1_000, profile: 'web' })
+  const payload = JSON.parse(await waitForFile(out)) as Record<string, unknown>
+  const attempts = payload['attempts'] as Array<Record<string, unknown>>
+  assert.ok(attempts.length >= 2, `a 50ms budget must be spent on retries, got ${JSON.stringify(attempts)}`)
+  for (const attempt of attempts) assert.equal(attempt['code'], 'inactive-context')
+  assert.equal((payload['error'] as Record<string, unknown>)['attempts'], attempts.length)
+  assert.equal(payload['settled'], false)
 })
 
 test('T-316: a tree without the projection package yields code projection-missing, still unreadable', async () => {
@@ -109,7 +140,7 @@ test('T-316: a tree without the projection package yields code projection-missin
   const tree = mkdtempSync(join(tmpdir(), 'dsh-triage-hook-missing-'))
   const out = join(tree, 'sample.json')
   const hook = await loadHook()
-  hook.apply(activeCtx(), { out, resolveFrom: tree, retryMs: 1, timeoutMs: 1_000, profile: 'web' })
+  hook.apply(activeCtx(), { out, resolveFrom: tree, retryMs: 0, timeoutMs: 1_000, profile: 'web' })
   const payload = JSON.parse(await waitForFile(out)) as Record<string, unknown>
   const error = payload['error'] as Record<string, unknown>
   assert.equal(error['code'], 'projection-missing')
