@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R77 (2026-11-03，**发版 + 整理**：四包 **`0.3.4` 已发布**（`latest=0.3.4`，取证 **18/18**；T-844 的复制修复随 `client.js` 到用户手里）+ CHANGELOG + 上架文案 / README 的版本号与测试数对齐（`check_listing` **17/17**）· 预检先如实报 `E401`、`npm login` 后才发 · §2 按既定口径只留最近十轮（R39–R66 的 **31 行**逐行归档并登记 `ARCHIVE_MANIFEST`）· **判据/阈值一字未动**；**760 测试**)｜**R76（2026-11-03，交付轮**：把「D5 窗口哪天必须再跑基线」从一句要人记住的话变成算得出来的数 —— `scripts/lib/d5-window-coverage.mjs`（纯函数）+ `scripts/d5_window_status.mjs`（只读）+ 11 条单测 + 2 条治理断言。实测：`last-week` 滞后 **1–2 天**（同日两次跑读到 2 与 1），所以「11-08 之前跑」会漏掉 **11-06**，而「11-03 那份 + 再跑一次」就能无缝拼上；**746 → 760 测试**)｜**下一件事：① `npm login` 后跑 `pnpm run release:publish`（0.3.4 到用户手里）；② 窗口内基线的第二跑，截止 **`2026-11-11`**（`node scripts/d5_window_status.mjs` 会自己说哪天到期）→ 11-15 关窗**
+> **Stand**: R77 (2026-11-03，**发版 + 整理**：四包 **`0.3.4` 已发布**（`latest=0.3.4`，取证 **18/18 · `git_dirty=false`**；T-844 的复制修复随 `client.js` 到用户手里）+ CHANGELOG + 上架文案 / README 的版本号与测试数对齐（`check_listing` **17/17**）· 预检先如实报 `E401`、`npm login` 后才发 · §2 按既定口径只留最近十轮（R39–R66 的 **31 行**逐行归档并登记 `ARCHIVE_MANIFEST`）· **判据/阈值一字未动**；**760 测试**)｜**R76（2026-11-03，交付轮**：把「D5 窗口哪天必须再跑基线」从一句要人记住的话变成算得出来的数 —— `scripts/lib/d5-window-coverage.mjs`（纯函数）+ `scripts/d5_window_status.mjs`（只读）+ 11 条单测 + 2 条治理断言。实测：`last-week` 滞后 **1–2 天**（同日两次跑读到 2 与 1），所以「11-08 之前跑」会漏掉 **11-06**，而「11-03 那份 + 再跑一次」就能无缝拼上；**746 → 760 测试**)｜**下一件事：① `npm login` 后跑 `pnpm run release:publish`（0.3.4 到用户手里）；② 窗口内基线的第二跑，截止 **`2026-11-11`**（`node scripts/d5_window_status.mjs` 会自己说哪天到期）→ 11-15 关窗**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -93,7 +93,7 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 **发布已完成（R77，HUMAN 执行）**：`npm login` → `pnpm run release:publish`，四包 `0.3.4` 全部 `✅ Published`。
 **取证读了两遍**：第一遍（`publish-2026-11-03T15-45-35.175Z.json`）**红** —— 四个 `version` 项与 `dist-tags-agree` 都还写着
 `latest=0.3.3`，而同一份产物里**匿名安装等 302 秒后成功**（19 次「还不在 registry」）→ 又是副本传播滞后，不是发布失败；
-约 17 分钟后重跑（`publish-2026-11-03T16-02-49.621Z.json`）**18/18 全绿**、`latest=0.3.4` / 四个 `rewritten` 无 `workspace:` /
+约 17 分钟后重跑（`publish-2026-11-03T16-05-17.632Z.json`，干净树 `git_dirty=false`）**18/18 全绿**、`latest=0.3.4` / 四个 `rewritten` 无 `workspace:` /
 匿名安装 1 秒 / CLI 15 行 / `import()` 6 个名 / `client-bundle` 39219B + loader + slot。**两份都留**（红的就是「读早了」的证据）。
 发布前用 `git stash` 临时收起了两份人类宣传物料 —— `pnpm -r publish` 拒绝脏树；取完证已还原。
 

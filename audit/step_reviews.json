@@ -11366,6 +11366,54 @@
         "outcome": "**18/18 全绿**：四包 `latest=0.3.4` · 四个 `rewritten` 无 `workspace:` · `dist-tags-agree` · 匿名安装 exit 0（1 秒 / 6 包）· CLI 15 行 · `import()` → apply,default,loadBundleLayers,loadComposition,loadPatchText,name · `client-bundle` 39219B · loader=yes · slot=settings.plugins.tab",
         "sha256": "9c841bfe6a81d59b33d96ac0a92cf276be30f77d329d5b07d66fe0f464680a4d"
       }
+    },
+    {
+      "id": "R77-S6",
+      "batch": "R77",
+      "step": "干净树上的发布取证：18/18 且 `git_dirty=false`（这一份才是钉在文档里的那份）",
+      "changed": [
+        "data/results/publish-2026-11-03T16-05-17.632Z.json",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/market/submissions/README.md"
+      ],
+      "review": {
+        "correctness": "PASS：与 S5 那份读数逐项相同（四包 0.3.4、`latest=0.3.4`、四个 `rewritten`、`dist-tags-agree`、匿名安装 1 秒 6 包、CLI 15 行、`import()` 6 名、`client-bundle` 39219B），唯一差别是 `release.git_dirty` 从 `true` 变成 **`false`** —— 因为这一次运行前工作区真的干净（四份证据与文档都已提交）。",
+        "reproducibility": "PASS：同一条命令 `node scripts/record_publish.mjs`；`release.git_head` = 发布时的提交，`git_dirty=false` 让「发出去的字节对应哪个提交」不再有歧义。",
+        "licence": "PASS：只读 registry 与自己发的 tarball。",
+        "ssot": "PASS：四份对外文档的取证指针全部改指这一份（`AGENTS` npm 行、`INDEX` Stand、`HANDOFF` §2/§3、`docs/market/submissions/README.md`），S5 那份仍留在 SSOT 里作为「同一次发布的另一次读数」，两份都被台账引用。",
+        "adversary": "反例一：直接用 S5（`git_dirty=true`）当钉住的证据 —— 被拒，脏树读数分不清「发出去的是哪个提交的状态」；反例二：为了拿到干净读数把未提交的文档「先 stash 掉再说」—— 被拒，那会让文档与证据对不上；正确做法是**先提交文档与证据，再取一次读数**；反例三：把两次读数说成「发布了两次」—— 被拒，`release.git_head` 相同、`checks` 逐项相同，只有 `git_dirty` 变了。"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（工作区干净：前一次提交已完成）",
+        "artifact": "data/results/publish-2026-11-03T16-05-17.632Z.json",
+        "outcome": "**18/18 全绿 · `git_dirty=false` · `head=ebfe6ed`**：四包 `latest=0.3.4` · 四个 `rewritten` 无 `workspace:` · `dist-tags-agree` · 匿名安装 exit 0（1 秒 / 6 包）· CLI 15 行 · `import()` 6 个名字 · `client-bundle` 39219B · loader=yes · slot=settings.plugins.tab",
+        "sha256": "752a2ed5d62cd623563e52788160f6ba8b59ceca4aeb50dc08e49af7c0a62886"
+      }
+    },
+    {
+      "id": "R77-S7",
+      "batch": "R77",
+      "step": "发布后文案终检：17/17（含「渠道台账」在宣传物料还原后才完整跑起来的一条）",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "INDEX.md",
+        "data/results/listing-2026-11-03T16-06-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`version-matches-manifest` 仍要求每处被点名的版本 = manifest 的 0.3.4；`test-count-matches` 仍对 760；`channel-ledger-matches-reality` 这次输出的是**完整**版本（没有「campaign file absent」那句）—— 因为宣传物料已经从 stash 还原，红蓝对照的链接核对真的跑了。",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp … --tests 760` 可重跑；产物带 `.sha256`。",
+        "licence": "PASS：只检查自己的文档与台账。",
+        "ssot": "PASS：产物进 SSOT 并被本步引用。**顺带记一个状态差**：物料被 stash 期间跑过一次同样的检查，那条渠道断言退化成「文件缺席，结论未跑」——那份产物已删除（它描述的不是仓库真实状态），删除理由记在这里。",
+        "adversary": "反例一：物料还在 stash 时就把检查结果当结论 —— 被拒，退化的断言不会报「通过」而是明说「未跑」，但那样的产物仍不该被当成仓库状态的记录；反例二：把「未跑」读成「通过」—— 被拒，这次特意在物料还原后重跑并比对两版输出；反例三：改 README 里的 Wilson 区间让数字「更整齐」—— 被拒，第 9 条独立校验两处区间原文。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T16:06:00.000Z --tests 760（宣传物料已还原）",
+        "artifact": "data/results/listing-2026-11-03T16-06-00.000Z.json",
+        "outcome": "**17/17 全绿**：documents 10 · version 0.3.4 · engines `>=0.2.0-rc.1 <0.3.0-0` · tests 760 · 19 条证据路径带 sha256 · 8 篇草稿引用真实产物 · 4 个渠道台账只有一条喂 D5（这一条现在是完整输出）",
+        "sha256": "04c4957171fa90fbe7c627b98757262987466bc12a9d79a7e7b56f39686b7061"
+      }
     }
   ]
 }
