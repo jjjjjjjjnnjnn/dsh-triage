@@ -10842,14 +10842,14 @@
         "correctness": "PASS：check_listing 17 条断言全绿；新增基线只在 HANDOFF 与 ROADMAP 里被引用，两份 README 与上架文案的数字没有改动（本轮没有新功能）。",
         "reproducibility": "PASS：命令与 stamp 都写在这一步里，任何人重跑同一条命令会得到同一组断言结果；产物自带 .sha256。",
         "licence": "PASS：只检查仓内文档与仓内产物，不读取任何外部服务。",
-        "ssot": "PASS：listing 产物进 data/results 并由本步 real_test 引用；新增的 market-baseline 产物由 R75-S1 引用，no-orphan-results 因此恢复绿。",
+        "ssot": "PASS：listing 产物进 data/results 并由本步 real_test 引用；market-baseline 由 R75-S1、client-serve 与 firefox 由 R75-S4/S5 引用，no-orphan-results 绿。",
         "adversary": "反例：把「1035 达标」直接写进 README 的 D5 段落——那会把一次窗口外的读数变成对外承诺，且违反 R52 口径；本轮只写进 HANDOFF/ROADMAP 并带两条边界，README 一字未动。"
       },
       "real_test": {
-        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T06:50:00.000Z --tests 729",
-        "artifact": "data/results/listing-2026-11-03T06-50-00.000Z.json",
-        "outcome": "GREEN：17/17，exit 0（tests 729）",
-        "sha256": "bd2eff2c00e5c2cea62a51e145076653fec3e2fd26a2284d167f7988365da465"
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-03T07:20:00.000Z --tests 730",
+        "artifact": "data/results/listing-2026-11-03T07-20-00.000Z.json",
+        "outcome": "GREEN：17/17，exit 0（tests 730；P1 与 P3 的文档改动都没有让 README / 上架文案 / 渠道台账漂移）",
+        "sha256": "84210621e50eaa4130e370aef61b518bf3ecec0507bff0eb50adeae0886f70d3"
       }
     },
     {
@@ -10874,6 +10874,54 @@
         "artifact": "data/results/market-baseline-2026-11-03T06-22-20.130Z.json",
         "outcome": "GREEN：重跑后 claims[2].id = this-package-weekly-downloads-verdict，statement 仍是 threshold-met（counts as demand: true）；market-baseline 治理测试 5/5，其中新测试的负对照真红一次",
         "sha256": "8a7a050a0bc052b2b49150fcbb63bce2d7f7b3cbc46cf3ba6b6e0ce8c289e169"
+      }
+    },
+    {
+      "id": "R75-S4",
+      "batch": "R75",
+      "step": "P3-A · T-812 的失败路径有测试（无 navigator / 写入被拒 / 写入成功）+ 记录器不再因浏览器不退出而挂死",
+      "changed": [
+        "tests/unit/client-tab.test.ts",
+        "scripts/record_client_serve.mjs",
+        "data/results/client-serve-2026-11-03T07-35-00.000Z.json",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：T-812 用例把「点击后 marker 必须如实写 ok:false + 原因」钉成三分支；负对照把 report(false, …) 改成 true 后当场红（actual true / expected false），改回即 19/19 绿。Chromium 真机在改动后重跑，mount / visible / summary-visible / upgrade-visible / user-answer / same-source / upgrade-same-source 仍全部 passed。",
+        "reproducibility": "PASS：单测在 node:vm 里执行仓内 client.js（不是重写的副本），三分支只改沙箱的 navigator；真机命令与 stamp 都写在 real_test 里，产物自带 .sha256。",
+        "licence": "PASS：只改仓内测试与记录器，不引第三方代码、不读外部服务、产物不含个人身份。",
+        "ssot": "PASS：真机产物进 data/results 并由本步引用；旧 firefox 产物（07-05，挂死那次）已删除，不留下无人引用的孤儿。",
+        "adversary": "反例一：把「没有剪贴板」当成「复制成功」——被拒（负对照真红）；反例二：把 Firefox 的 unmeasured 写成 failed——被拒，`BS-46` 与 T-813 都写明那是「判不了」不是「产品坏了」；反例三：以为 Chromium 绿就代表剪贴板失败路径有见证——被拒，沙盒 profile 没有 fix 行，真机 clipboard-copy 仍是 unmeasured，失败路径只有单测证据（如实写进票里）。"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-03T07:35:00.000Z",
+        "artifact": "data/results/client-serve-2026-11-03T07-35-00.000Z.json",
+        "outcome": "served · 17 步：13 项 passed（bundle / install / boot / graph / upgrade-route / mount / visible / summary-visible / upgrade-visible / user-answer / same-source / upgrade-same-source / cleanup）+ client=200 + 3 项 unmeasured（screenshot / english-screen 没请求；clipboard-copy 因为沙盒 profile 没有 fix 行）",
+        "sha256": "e740767cbe37554842629cecee9b76178d23ca98565a44f2f1ff8340ebea5702"
+      }
+    },
+    {
+      "id": "R75-S5",
+      "batch": "R75",
+      "step": "P3-B · T-813 Firefox 见证：浏览器装了，但探针只会说 CDP",
+      "changed": [
+        "data/results/firefox-2026-11-03T07-30-00.000Z.json",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：`record_client_serve --browser <firefox.exe>` 真跑一次，mount / visible 直接是 unmeasured（detail = `browser never exposed a debugging port`），summary-visible / upgrade-visible 级联未测，另有 3 项按设计未请求（screenshot / english-screen / clipboard-copy）——共 10 项 unmeasured、0 项 failed；Host 侧 bundle / install / boot / graph / upgrade-route / cleanup 六项 passed，client 是 200，说明不是 Host 坏了。产物里 outcome.served=true 只描述 Host 供货，不描述浏览器。",
+        "reproducibility": "PASS：同一条命令在同一台机器上可重复（Firefox 版本不变）；产物自带 .sha256，且这一轮修掉挂死后重跑，读数与挂死那次一致。",
+        "licence": "PASS：只在本机启动已安装的浏览器，不下载、不联网、不抓取用户内容。",
+        "ssot": "PASS：产物进 data/results 并由本步引用；结论同时写进 `BS-46` 与 `T-813` 的退出条件，没有在 README 或上架文案里出现「Firefox 已验证」。",
+        "adversary": "反例一：把「Firefox 打开过」当成「面板在 Firefox 里能用」——被拒，浏览器根本没暴露调试端口，页面一次都没被问过；反例二：把这次 unmeasured 记成 failed——被拒，Host 六项是绿的，失败的是探针的通道；反例三（本轮真抓到的）：以为产物写完就等于跑完——被拒，第一次跑产物写完但进程活了 15 分钟，修法是 stdio ignore + unref。"
+      },
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-03T07:30:00.000Z --browser \"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" --label firefox",
+        "artifact": "data/results/firefox-2026-11-03T07-30-00.000Z.json",
+        "outcome": "served · 10 项 unmeasured / 0 项 failed（mount 与 visible 的原因是 browser never exposed a debugging port）· Host 侧 6 项 passed、client=200 · 进程正常退出",
+        "sha256": "3fa09f1c19d049f2cab7395fd9c198d1b168905ac259064fc2154d539d293dec"
       }
     }
   ]

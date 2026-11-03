@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/check_listing.mjs",
-  "generated_at": "2026-11-03T06:50:00.000Z",
+  "generated_at": "2026-11-03T07:20:00.000Z",
   "inputs": {
     "version": "0.3.3",
     "engines_dsh": ">=0.2.0-rc.1 <0.3.0-0",
-    "tests": 729,
+    "tests": 730,
     "documents": [
       "README.md",
       "README.zh-CN.md",
@@ -64,13 +64,13 @@
     },
     {
       "id": "test-count-matches",
-      "ok": true,
-      "detail": "2 claim(s) all equal 729"
+      "ok": false,
+      "detail": "stale: README.md:729, README.zh-CN.md:729"
     },
     {
       "id": "test-count-is-not-vacuous",
       "ok": true,
-      "detail": "2 claim(s) found across 10 document(s)"
+      "detail": "4 claim(s) found across 10 document(s)"
     },
     {
       "id": "no-placeholders-or-claims",
@@ -128,7 +128,7 @@
       "detail": "4 channel(s): one feeds D5, the rest say why they do not, and the table names the same links"
     }
   ],
-  "passed": true,
+  "passed": false,
   "limits": [
     "this checks mechanically verifiable claims only: version, DSH range, test count, evidence pointers, forbidden phrases",
     "prose quality, tone and whether the evidence actually supports a sentence are review work, not script work",

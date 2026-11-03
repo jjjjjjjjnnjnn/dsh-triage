@@ -42,10 +42,17 @@ interface Exports {
 }
 
 /** Execute the shipped file with a fake loader and return what the factory exported. */
-function loadBundle(options: { react?: boolean; fetch?: (url: string, init?: unknown) => Promise<unknown> } = {}) {
+function loadBundle(
+  options: {
+    react?: boolean
+    fetch?: (url: string, init?: unknown) => Promise<unknown>
+    /** T-812: `undefined` means "a browser without `navigator`", the no-clipboard case. */
+    navigator?: unknown
+  } = {},
+) {
   const source = readFileSync(SOURCE_PATH, 'utf8')
   const loaded: Array<{ id: string; factory: (require: (id: string) => unknown) => Exports }> = []
-  const sandbox: { window: Record<string, unknown> } = {
+  const sandbox: Record<string, unknown> = {
     window: {
       __ModuleLoader__: {
         load: (entry: { id: string; factory: (require: (id: string) => unknown) => Exports }) => {
@@ -54,6 +61,7 @@ function loadBundle(options: { react?: boolean; fetch?: (url: string, init?: unk
       },
     },
   }
+  if (options.navigator !== undefined) sandbox.navigator = options.navigator
   /*
    * The tab reads the Host's read-only route over `fetch` (R33), so the vm sandbox gets a `fetch`
    * like a browser would. Default: a failing fetch, so a test that forgets to provide one cannot
@@ -598,4 +606,107 @@ test('R62: "still reading" and "the read failed" are two different marks on scre
   )
   assert.match(failed, /"data-triage-tab":"upgrade-error"/, 'a real failure keeps the error mark')
   assert.match(failed, /"data-triage-kind":"http"/)
+})
+
+/** Depth-first search over the plain `{ type, props }` trees the pure views return. */
+type TreeNode = { type?: unknown; props?: Record<string, unknown> }
+
+function findNode(node: unknown, predicate: (node: TreeNode) => boolean): TreeNode | null {
+  if (node === null || typeof node !== 'object') return null
+  const candidate = node as TreeNode
+  if (candidate.props !== undefined && predicate(candidate)) return candidate
+  const children = candidate.props?.children
+  const list = Array.isArray(children) ? children : children === undefined ? [] : [children]
+  for (const child of list) {
+    const found = findNode(child, predicate)
+    if (found !== null) return found
+  }
+  return null
+}
+
+test('T-812: the copy button publishes a real failure instead of claiming a copy it did not make', async () => {
+  /*
+   * WHAT WAS MISSING (T-812): the button was only ever witnessed with a clipboard that works
+   * (`clipboard-copy: passed` in five real runs). The path that matters when it does NOT work was
+   * untested, and it is the one that can turn into a lie: a button that says nothing while the
+   * value it holds is nowhere else on screen (see T-844 — the command is only reachable through
+   * this button, so the failure has to be at least observable).
+   *
+   * The invariant pinned here is narrow on purpose: the click must never report `ok: true` unless a
+   * clipboard actually accepted the text. Whether the screen should also show the command is a UI
+   * decision, not a test seam.
+   */
+  const summary = {
+    tone: 'broken',
+    headline: '1 row will break',
+    plain: 'One of your plugins will break on this version.',
+    counts: { rows: 1, judged: 1, go: 0, denied: 1, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
+    issues: [
+      {
+        id: 'dsh-mcp-connector',
+        kind: 'denied',
+        line: 'declared 0.2.1-rc.4',
+        plain: 'cannot load here',
+        fix: 'dsh-triage fix dsh-mcp-connector',
+      },
+    ],
+    more: 0,
+    next: [],
+  }
+  const payload = { env: { dsh: '0.2.1-rc.4', profile: 'web' }, summary: { zh: summary, en: summary }, ms: 1 }
+  const fetching = async () => ({ ok: true, status: 200, json: async () => payload })
+
+  const clickCopy = (bundle: ReturnType<typeof loadBundle>): (() => { ok: boolean; error: string | null } | undefined) => {
+    const fake = fakeContext()
+    bundle.exports.apply(fake.ctx)
+    const tab = mountTab(fake, bundle.exports)
+    const tree = tab.views.summaryView(summary, tab.injected.copy, () => {})
+    const button = findNode(tree, (node) => node.props?.['data-copy-fix'] !== undefined)
+    assert.ok(button !== null, 'a denied row with a fix command must offer the copy button')
+    const onClick = button!.props?.onClick
+    assert.equal(typeof onClick, 'function', 'the copy button must carry a click handler')
+    ;(onClick as () => void)()
+    /* The marker object is REPLACED on every report, so read it fresh instead of holding a copy. */
+    return () => (bundle.window.__dshTriage as { clipboard?: { ok: boolean; error: string | null } }).clipboard
+  }
+
+  // (1) A browser without `navigator`: the failure is named, not swallowed (this path is synchronous).
+  const readBare = clickCopy(loadBundle({ fetch: fetching }))
+  assert.equal(readBare()?.ok, false, 'a missing clipboard must never be reported as a successful copy')
+  assert.equal(readBare()?.error, 'navigator.clipboard is unavailable')
+
+  // (2) A clipboard that rejects (permissions policy): its own message survives to the marker.
+  const readRejected = clickCopy(
+    loadBundle({
+      fetch: fetching,
+      navigator: {
+        clipboard: {
+          writeText: async () => {
+            throw new Error('permissions policy forbids clipboard-write')
+          },
+        },
+      },
+    }),
+  )
+  await new Promise((resolvePromise) => setImmediate(resolvePromise))
+  assert.equal(readRejected()?.ok, false)
+  assert.match(String(readRejected()?.error), /permissions policy/)
+
+  // (3) A clipboard that accepts: ok, and the text is the engine's command rather than a guess.
+  let written: string | null = null
+  const readAccepted = clickCopy(
+    loadBundle({
+      fetch: fetching,
+      navigator: {
+        clipboard: {
+          writeText: async (text: string) => {
+            written = String(text)
+          },
+        },
+      },
+    }),
+  )
+  await new Promise((resolvePromise) => setImmediate(resolvePromise))
+  assert.equal(readAccepted()?.ok, true)
+  assert.equal(written, 'dsh-triage fix dsh-mcp-connector')
 })

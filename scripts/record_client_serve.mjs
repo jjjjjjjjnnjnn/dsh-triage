@@ -697,8 +697,17 @@ async function observePage(browser, pageUrl, cookie, screenshotTarget = null) {
       `--user-data-dir=${userDataDir}`,
       'about:blank',
     ],
-    { windowsHide: true },
+    /*
+     * R75 (T-813): a browser that does not exit on its own must not keep this process alive.
+     * Chromium shuts down when its last page target goes away; Firefox does not, and because the
+     * child inherited piped stdio, node stayed alive after the artifact was written — the Firefox
+     * witness run hung for 15 minutes and was killed by an outside timeout instead of reporting
+     * `unmeasured`. `stdio: 'ignore'` + `unref()` means "we speak CDP over a socket, so the pipes
+     * are not evidence", and the run can end as soon as its work is done.
+     */
+    { windowsHide: true, stdio: 'ignore' },
   )
+  chrome.unref()
   const nothingObserved = (detail, evidence = {}) => ({
     marker: { registered: null, detail },
     visible: { status: 'unmeasured', detail, evidence },
@@ -1477,6 +1486,13 @@ async function finish(outcome, hostLog = '') {
       'the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved',
       'this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)',
       'the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing',
+      /*
+       * R75 (T-813): `served` and the exit code are the two fields a machine reader will use, and
+       * neither says anything about a browser. The Firefox witness run proved why this needs saying:
+       * `outcome.served: true` plus exit 0 looked like "Firefox opened the panel" while every
+       * browser-side step was `unmeasured`.
+       */
+      'outcome.served is a HOST fact (the composed asset answered 200, exposed the loader and our id) and says nothing about any browser: with --browser <path>, a browser-side step that is unmeasured means the browser was never successfully asked. The exit code is 0 when served is true and tab_visible is not failed, so exit 0 means "this run finished", not "a browser witnessed the tab"',
       'one sandbox runtime (0.2.1-rc.4) on one Windows machine',
     ],
   }
