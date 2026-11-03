@@ -9,7 +9,16 @@
  * Negative control: `--mutate` registers a phantom path in the reference list.
  */
 
-import { Checks, exists, fileUrl, listDir, readJson, readText, runGate } from './lib/kit.mjs'
+import { Checks, exists, fileUrl, listDir, readJson, readText, runGate, sha256 } from './lib/kit.mjs'
+
+/** Same tolerant read as `gate_ssot`: a missing hash file is a finding, not a crash. */
+function readTextSafe(path) {
+  try {
+    return readText(path)
+  } catch {
+    return null
+  }
+}
 
 // Files that legitimately contain credential-shaped prose (documentation of the rule itself).
 const SECRET_SCAN_SKIP = new Set(['COMPLIANCE.md', 'audit/AI_DISCLOSURE_LOG.md', 'scripts/gate_governance.mjs'])
@@ -93,6 +102,37 @@ await runGate('governance', async ({ checks, mutate }) => {
     if (!exists(archivedPath)) archiveProblems.push(archivedPath)
   }
   checks.add('archive-manifest', archiveProblems.length === 0, archiveProblems.join(', ') || 'no dangling entries')
+
+  // 4b. The backup policy must not name a script that does not exist, and every snapshot must be hash-locked.
+  /*
+   * WHY THIS CHECK EXISTS (R78): `backup/BACKUP_POLICY.md` has promised since M0 that snapshots are produced
+   * by `scripts/snapshot_state.mjs`, and named four milestone tags. Neither was true — the script was never
+   * written, `backup/snapshots/` held only `.gitkeep`, and no gate ever looked at `backup/`. A rule that
+   * *reads* as enforced and is not is worse than no rule: it makes the next person believe there is a
+   * restore point. The check is deliberately narrow — it cannot tell whether a snapshot is *useful*, only
+   * that the tool named in the policy exists and that every snapshot can be verified against its hash.
+   */
+  const backupPolicy = readText('backup/BACKUP_POLICY.md')
+  const namedScripts = [...backupPolicy.matchAll(/`(scripts\/[A-Za-z0-9._-]+\.mjs)`/g)].map((match) => match[1])
+  const missingScripts = [...new Set(namedScripts)].filter((script) => !exists(script))
+  checks.add(
+    'backup-policy-scripts',
+    missingScripts.length === 0,
+    missingScripts.slice(0, 3).join(', ') || `${new Set(namedScripts).size} script reference(s) resolve`,
+  )
+
+  const snapshotFiles = listDir('backup/snapshots').filter((entry) => entry.isFile && entry.name.endsWith('.json'))
+  const unlockedSnapshots = []
+  for (const entry of snapshotFiles) {
+    const path = `backup/snapshots/${entry.name}`
+    const recorded = readTextSafe(`${path}.sha256`)
+    if (recorded === null || recorded.trim() !== sha256(readText(path))) unlockedSnapshots.push(entry.name)
+  }
+  checks.add(
+    'snapshots-hash-locked',
+    unlockedSnapshots.length === 0,
+    unlockedSnapshots.slice(0, 3).join(', ') || `${snapshotFiles.length} snapshot(s)`,
+  )
 
   // 5. Quarantine manifest completeness.
   const vendor = readJson('quarantine/vendor-manifest.json')

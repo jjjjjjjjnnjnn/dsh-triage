@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R77 (2026-11-03)",
+  "stand": "R78 (2026-11-03)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -11413,6 +11413,61 @@
         "artifact": "data/results/listing-2026-11-03T16-06-00.000Z.json",
         "outcome": "**17/17 全绿**：documents 10 · version 0.3.4 · engines `>=0.2.0-rc.1 <0.3.0-0` · tests 760 · 19 条证据路径带 sha256 · 8 篇草稿引用真实产物 · 4 个渠道台账只有一条喂 D5（这一条现在是完整输出）",
         "sha256": "04c4957171fa90fbe7c627b98757262987466bc12a9d79a7e7b56f39686b7061"
+      }
+    },
+    {
+      "id": "R78-S1",
+      "batch": "R78",
+      "step": "HUMAN 重跑发布命令被预检拦住（版本已发过），按它自己的建议改跑 `record_publish --version 0.3.4` → 18/18 再确认一次",
+      "changed": [
+        "data/results/publish-2026-11-03T16-41-55.008Z.json",
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：预检这一次**做对了事**：`version-already-published` 直接点名四个包并给出两条出路（bump 或只取证），而不是让人去撞 `403`。改跑取证后 18 项全绿：四包 `latest=0.3.4`、四个 `rewritten` 无 `workspace:`、`dist-tags-agree`、匿名安装 2 秒 6 包、CLI 15 行、`import()` 6 名、`client-bundle` 39219B。",
+        "reproducibility": "PASS：同一命令可重跑（`--version 0.3.4`，`--stamp` 可省）。**这份的 `git_dirty=true`**：跑它时人类的两份宣传物料在工作区里（未跟踪/已修改），所以它**不是**钉住的那份证据 —— 钉住的是 `publish-2026-11-03T16-05-17.632Z.json`（`git_dirty=false`）。",
+        "licence": "PASS：只读 registry 与自己发的 tarball。",
+        "ssot": "PASS：产物进 SSOT 并被本步引用。**两份证实的读数描述同一状态**（同样 18 项、同样 head），所以文档继续引用干净的那份，这一份的作用是「发布后再次独立确认」，不另开说法。",
+        "adversary": "反例一：把「预检红」读成「发布坏了」—— 被拒，红的是**重复发布**这一动作，产物里四包 `latest` 全是 0.3.4；反例二：为了让 `git_dirty=false` 把两份宣传物料删掉 —— 被拒，那是人类的东西；正确做法是记清楚哪份是干净读数；反例三：把这次读数当成「又发了一版」—— 被拒，`release.version_source: argument`、`git_head` 与上一份相同。"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --version 0.3.4（HUMAN 在预检拦住 `release:publish` 之后按提示执行）",
+        "artifact": "data/results/publish-2026-11-03T16-41-55.008Z.json",
+        "outcome": "**18/18 全绿**：四包 `latest=0.3.4` · 四个 `rewritten` 无 `workspace:` · `dist-tags-agree` · 匿名安装 exit 0（2 秒 / 6 包）· CLI 15 行 · `import()` 6 名 · `client-bundle` 39219B · `git_dirty=true`（宣传物料在工作区里）",
+        "sha256": "7bffb90f50e8d8d3e11198df3e01faa847841bb7d8d3087add35b461a1302170"
+      }
+    },
+    {
+      "id": "R78-S2",
+      "batch": "R78",
+      "step": "维护 + 交接：兑现「快照由脚本生成」这条从未执行的规则（`scripts/snapshot_state.mjs` + 两条治理检查 + 交接快照），并记下 tag 线从未启用",
+      "changed": [
+        "scripts/snapshot_state.mjs",
+        "scripts/gate_governance.mjs",
+        "backup/BACKUP_POLICY.md",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/gates-2026-11-03T16-55-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`snapshot_state.mjs` 产出的 body 只含确定性字段（版本 / git head / 分支 / 脏树标记 / 逐项门禁 ok / 448 份 SSOT 产物的 sha256 / 运行时），**刻意不含门禁耗时与绝对路径**；同一提交重跑内容相同。两条治理检查各自有真实负对照：把 `scripts/snapshot_state.mjs` 改名 → `backup-policy-scripts` **当场红**，改回即绿；快照缺 `.sha256` 或哈希不符 → `snapshots-hash-locked` 红。",
+        "reproducibility": "PASS：`node scripts/snapshot_state.mjs --name <label> [--stamp …]` 可随时重跑（已存在则拒绝覆盖）；门禁结果来自 `scripts/gate.mjs --json`，不是抄输出。本步的 real_test 用的是 `gate.mjs --record` 生成的产物（门禁套跑的机器可读记录，**不含耗时**）。",
+        "licence": "PASS：只读本仓（manifest / git / SSOT 文件）；零第三方依赖、零网络。",
+        "ssot": "PASS：`gates-2026-11-03T16-55-00.000Z.json` 进 SSOT 并被本步引用；快照落 `backup/snapshots/`（策略指定的位置，不是 `data/results`），`BACKUP_POLICY` §2 与 `INDEX` 各有一条说明；`ROADMAP` 的过期读数（0.3.3 已上线）已改；Stand 在 AGENTS / INDEX / HANDOFF / ROADMAP 与两个 JSON 台账里一致为 R78（`doc-stand` 会盯）。",
+        "adversary": "反例一：把「策略里写了一个脚本名」当成「有快照机制」—— 这正是**本轮要修的那个缺陷**（脚本根本不存在，77 轮无人发现）；反例二：让快照记录门禁耗时以求「更完整」—— 被拒，那会让同一提交两次运行不同（本仓的确定性规则）；反例三：把 `git_dirty: true` 藏起来或为了让它是 false 删掉人类的两份宣传物料 —— 被拒，policy 的 limits 明写这条边界；反例四：顺手补打 `v0.2.0-m1` 等 tag 让表变绿 —— 被拒，那是**追溯性声明**，记成 `T-848` 等 HUMAN 决定；反例五：把 `BACKUP_POLICY` 的承诺偷偷删掉 —— 被拒，改为「记事实 + 说明现状」，承诺保留。"
+      },
+      "real_test": {
+        "command": "node scripts/gate_governance.mjs（含两条新检查 + 一次改名负对照）；node scripts/gate.mjs --record --stamp 2026-11-03T16:55:00.000Z；node scripts/snapshot_state.mjs --name handover",
+        "artifact": "data/results/gates-2026-11-03T16-55-00.000Z.json",
+        "outcome": "9 门 **ALL GREEN**（`governance/backup-policy-scripts` 1 处脚本引用可解析 · `governance/snapshots-hash-locked` 通过 · `index-references` 295 条引用全部可解析）；负对照：脚本改名 → `FAIL backup-policy-scripts`，改回 → PASS；快照含 448 份 SSOT 产物哈希清单",
+        "sha256": "cdb71d9e51ae58fb6c16e66750ce3f2fd4515c5b8d11f7e9b80c5d690e0a37ce"
       }
     }
   ]

@@ -116,6 +116,9 @@
 
 ---
 
+| T-848 | **tag 线从未启用**：`backup/BACKUP_POLICY.md` 的 tag 表列了 `v0.2.0-m1` / `v0.3.0-m2` / `v0.4.0-m3`，实测 `git tag` **只有 `v0.1.0-skeleton`**，而 M1–M5 早已交付 | 流程 | HUMAN | — | 二选一：① 从**当前**状态起向前打（例如 `v0.3.4-published`），② 承认 tag 线不启用并把表改成实况。**补打历史 tag 是追溯性声明**（给旧提交贴「当时通过了」），需 HUMAN 明确同意 | 🟨 **R78 只记事实、不动手**：`backup/BACKUP_POLICY.md` §3 已按实况加一列（✅/❌/⛔），并写明「未签之前不打任何 tag」—— 打 tag 是写的动作，且 `main` 禁 force-push，打错只能加不能删 |
+| T-849 | **`record_publish` 的元数据读没有等待窗口**：`version:` ×4 与 `dist-tags-agree` 都是**单次读**，而同一份产物里的 `anonymous-install` 有 5 分钟预算。R77 的第一遍取证因此判红 6 项，17 分钟后重跑全绿 | 流程 | implementer | — | 把 `scripts/lib/registry-wait.mjs` 的等待**也套到元数据读**上（或先读 install 再读元数据，用前者的成功证明副本已到）；红时产物要能说清「是没发上去还是读早了」。**不许**把 `dist-tags-agree` 放宽成「读到就过」 | ⬜ **可领（R78 发现）**：`BS-55 ⑧` 已记录现象与人工处置（先看 `anonymous-install`，等 10–20 分钟重跑）；本轮不修，因为 D5 窗口期内不改发布链 |
+
 ## 历史交付记录（R3–R16）
 
 > 已归档到 `_archive/2026-10-29_BACKLOG-delivered-R3-R16.md`（逐行原文，未改一字）。**本文件只放可领取的任务**；每轮的交付叙述在 `docs/HANDOFF.md` §2 与该轮的 `audit/AUDIT_*.md`。

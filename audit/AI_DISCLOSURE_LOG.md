@@ -907,3 +907,12 @@
 - 结果：四包同升 `0.3.4`；`check_listing` **17/17**（版本号与测试数 760 在 manifest / 两份 README / 提交包四处一致）；`gate_release_pack` OK；**预检如实判红 `E401`**（真没登录，产物保留）。整理：`docs/HANDOFF.md` §2 只留最近十轮（R67–R76），R39–R66 的 **31 行**逐行归档并登记 manifest；证据指针与审核报告行未搬
 - 一处真事故：第一版归档脚本从 `## 2.` 处开始复制，**把标题、Stand 与 §1 整段丢了**（`git status` 立刻能看见，`git checkout HEAD -- docs/HANDOFF.md` 还原）。重写后脚本自带「写出前必须仍含标题 / Stand / §1 / §2 / §3」的守卫。教训：**改写长文档的脚本要断言「没被删掉的东西还在」**，只重读一遍是防不住的
 - 边界：`0.3.4` **还没发布**，`latest` 仍是 `0.3.3`；在 `publish-*.json` 出现之前不许写「已发布」
+
+### 2026-11-03 R78｜把一条「读起来像已执行」的备份规则兑现，并交接（tag 线从未启用）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）；台账 `R78-S1`（HUMAN 重跑发布被预检拦住 → 只取证）/ `R78-S2`（维护 + 交接）
+- SessionID：主会话（本轮未启用 subagent）
+- 人工决策：HUMAN 要求「项目继续 + 文件整理 + 归档 + 交接，即将切换会话」；tag 是否补打由 HUMAN 决定（`T-848`）
+- 范围：**新增非人类手写模块** `scripts/snapshot_state.mjs` · `scripts/gate_governance.mjs`（两条新检查） · `backup/BACKUP_POLICY.md` · `backup/snapshots/`（交接快照） · `AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md`（Stand、R78 行、§3 交接包、M6 过期读数） · `docs/BACKLOG.md`（`T-848` / `T-849`） · `audit/blind_spots.json`（`BS-55` 补第 ⑧ 条） · `audit/step_reviews.json` · 产物 `data/results/publish-2026-11-03T16-41-55.008Z.json`、`data/results/gates-*.json`
+- 结果：① **`BACKUP_POLICY.md` 从 M0 起写着「快照由 `scripts/snapshot_state.mjs` 生成」，而那个脚本到 R78 都不存在**（`backup/snapshots/` 只有 `.gitkeep`、没有任何门禁看过 `backup/`）→ 脚本落地（零依赖、不联网、排除耗时与绝对路径），并加两条治理检查；负对照把脚本改名 → `backup-policy-scripts` 当场红。② **tag 线从未启用**：策略表里 3 个里程碑 tag 一个都没打，记成 `T-848`，**未签不打**。③ `ROADMAP` M6 的「0.3.3 已上线」改为 0.3.4。④ 交接快照 `backup/snapshots/` 落地（`git_dirty=true`，因为人类两份宣传物料长期未跟踪）。
+- 边界：快照**不是**备份（备份是 git），它说的是「这个提交上绿是什么样」；`T-849`（元数据读没有等待窗口）本轮**只记录不修** —— D5 窗口期内不动发布链
