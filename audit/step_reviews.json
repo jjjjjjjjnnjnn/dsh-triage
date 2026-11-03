@@ -11037,6 +11037,31 @@
         "outcome": "GREEN：17/17（746 测试计数在 10 份文档里一致）；本轮零行为改动",
         "sha256": "6326c077d403627feb40c0122eff5d948d74fffa46f186f516cf7eec2443f619"
       }
+    },
+    {
+      "id": "R75-S10",
+      "batch": "R75",
+      "step": "P6 · #193 按维护者要求补齐 README.zh.md 行并 rebase（外部仓库的一次写入 + 本仓记账）",
+      "changed": [
+        "docs/distribution/pr-65-status.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/market-channels-2026-11-03T14-20-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`CONTRIBUTING.md` 的原话是「`README.zh.md`（required, Chinese, same category/position）」+「Bilingual is mandatory」；我们的两行落在同一张表的同一位置（都在 `lengrufeng2008/dsh-code-intel` 之后），`git diff upstream/main...HEAD` 是 2 个文件各 +1 行。星数按 `CONTRIBUTING.md` 的「别用 0，除非真的是 0」改成实测 1。",
+        "reproducibility": "PASS：外部状态用 `gh pr view` 与 `scripts/record_market_channels.mjs --pr …` 落成产物（三条 PR 的 `state/mergeable_state/review_decision/merged_at`）；本仓的复算路径写在 `pr-65-status.md` 的 §1。**边界**：PR 的 live 状态不可离线复算，产物是当时快照。",
+        "licence": "PASS：只改公开清单的一行（MIT 仓库）与本仓文档；没有改动别人的行，没有引入第三方内容。",
+        "ssot": "PASS：`market-channels-2026-11-03T14-20-00.000Z.json` 进 SSOT 并由本步引用；`pr-65-status.md` 的表格与产物逐项一致（`dirty` / `clean+APPROVED` / `clean`）；`merged` 仍写 0，没有把「合并概率高」写成「已收录」。",
+        "adversary": "反例一：把 `reviewDecision: APPROVED` 读成「人类已批准」——被拒，`pr-65-status.md` 明写那条 review 仍来自 `sourcery-ai`（bot），人类给的是评论承诺；反例二：把 rebase 当成「改内容换合并」——被拒，`git diff` 只有新增的两行，没有动任何别人的条目；反例三：把 #193 的成功套到 #65 上——被拒，`#65` 是 `CONFLICTING/DIRTY` 且零 review，两者原因不同；反例四：刷评论催——被拒，只留了一次回复，与 R74 的「每条 PR 只 ping 一次」一致。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-03T14:20:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140",
+        "artifact": "data/results/market-channels-2026-11-03T14-20-00.000Z.json",
+        "outcome": "live 3：dsh-community-plugins `open/dirty` · awesome-deepseek-harness `open/clean` + `review_decision: APPROVED` · awesome-deepseek-harness-plugins `open/clean`；`merged_at` 全为 null",
+        "sha256": "9b7bcd1b4164b191fa2ba2a5f133663356452f842f4b018220129c24f0646b5c"
+      }
     }
   ]
 }

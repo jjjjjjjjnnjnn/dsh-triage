@@ -820,6 +820,16 @@
 - 实测：**728 测试 / 0 fail** · 9 门 ALL GREEN · `--mutate` 9/9 · `check_listing` **17/17** · step-review 447 步
 - 反思：这一轮唯一有价值的判断是**把「外部转述」与「实测字段」分开**。「#65 需解冲突」这句话若是真的，下一步就是 rebase；而实测说 `MERGEABLE/BLOCKED`，下一步只能是等 review。两条路差一整个动作，而唯一能区分它们的是 `gh pr view` 的两个字段——不是谁说得更有把握。
 
+### 2026-11-03 R75-P6｜#193 补齐双语行并 rebase（分发轮，零判据改动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）
+- SessionID：主会话；台账 `R75-S10`；无 subagent
+- 人工输入：HUMAN 转来维护者留言截图（`hdjekuue`：仓库检查通过，只差 `README.zh.md` 同位置一行，补上就合）
+- 范围：外部仓库 `awesome-deepseekharness/awesome-deepseek-harness` 的分支 `docs/add-dsh-triage`（`README.md` + `README.zh.md` 各 +1 行）· 本仓 `docs/distribution/pr-65-status.md` · `docs/{BACKLOG,HANDOFF}.md` · `audit/{step_reviews,AI_DISCLOSURE_LOG}` · 产物 `market-channels-2026-11-03T14-20-00.000Z.json`
+- 结果：① 中文行加在**同一张表同一位置**；② 星数 `0 → 1`；③ 分支 **43 个提交落后 + `CONFLICTING`** → rebase 到 `upstream/main`（冲突只在我们那一行，保留上游新增 4 行）；④ 推送后 **`MERGEABLE/CLEAN`**，`curate` 检查 pass；⑤ 留了**一次**回复；⑥ **`#65` 又变回 `CONFLICTING/DIRTY`**（新事实，记进 `pr-65-status.md` §2 与 §7）
+- 实测：**746 测试 / 0 fail** · 9 门 ALL GREEN · `check_listing` 17/17（本仓未改判据）
+- 反思：**「缺一条 review」和「缺一行 README」是两种完全不同的阻塞**。前者只能等，后者是一条可以直接做完的清单项——把维护者的原话当清单读，比猜他的意图有用。
+
 ### 2026-11-03 R75 交接｜换会话前的状态与两个时间点（交接轮，零行为改动）
 
 - 生成者：DeepSeek V4.1 Flash（主会话）
