@@ -472,6 +472,13 @@
       "cannot_see": "R81 只完成了同定位仓库的**元数据采证**与集成方案（`docs/10-adjacent-tools.md`），**没有实现任何救援动作**：`rescue` 计划、SAFE MODE、`profile snapshot` 都还在 BACKLOG（`T-854`–`T-856`）。所以现在**不能**说「dsh-triage 能救起不来的宿主」；能说的仍然只是「声明层归因 + 升级预检 + 对 `compatibility.json` 的 fix/undo」。另外采证只读 GitHub 元数据，没有读源码、没有验证任何同定位工具能跑，`stars` 与 `pushed_at` 也不是质量结论。",
       "mitigation": "① 对外文案与 README 在 `T-854` 的真机见证出现之前，不许出现「急救 / 一键救回」类承诺；② `rescue` 第一条分支先做**只读计划**，用负对照锁住「只读不写盘 / 失败必回滚 / undo 逐字节还原」；③ 每条救援动作只改 `dsh.profile.bundles`，不动 `dependencies`，并在产物里写明「这不是 dsh-rescue 的替代品」；④ 互操作（`T-858`）优先于重复实现。",
       "owner": "docs/10-adjacent-tools.md · docs/BACKLOG.md（T-854–T-859）· packages/plugin/src/cli.ts（下一阶段）"
+    },
+    {
+      "id": "BS-60",
+      "area": "CI / 真浏览器控制",
+      "cannot_see": "R81 的 CI（run `41999863821`，提交 `b1c7319`）第一次跑时 `render controls (ubuntu, real browser)` **红**：blank 夹具 `node scripts/record_render_fixture.mjs --mode blank --expect blank` 报 `expectation not met: expected blank, got inconclusive (no DOM observation)`，耗时 18.3s；同一提交**重跑后绿**。本机无法复现（本机 Chrome/Edge 走 CDP），也没有留存 runner 上的 DOM/浏览器日志，所以**成因未归因**：可能是 Chromium 启动/页面加载的竞态，也可能是 runner 资源瞬时不足。`inconclusive` 的语义是「没有观察到 DOM」，它既不是 blank 也不是 rendered —— 判定本身是对的，错在于我们还没有把它与「真白屏」区分开的诊断。",
+      "mitigation": "① 不把「重跑绿」当成稳定证明（R75 的同一条教训）；② 这一条只记事实，不改判定：`expect blank` 仍必须真的观察到空挂载点；③ 下一轮（`T-860`）给该作业加**可归因的诊断**（失败时保留 browser stderr / CDP 连接状态 / 页面生命周期），再决定是否允许一次有预算的重试；④ 在归因之前，对外不许说「CI 稳定绿」——只能说「最近一次重跑绿」。",
+      "owner": ".github/workflows/ci.yml（render controls）· scripts/record_render_fixture.mjs · packages/probe/src/render.ts"
     }
   ]
 }

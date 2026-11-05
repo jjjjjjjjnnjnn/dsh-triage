@@ -128,6 +128,7 @@
 | T-857 | **Windows 失败面只读诊断**：`0xC0000142` / ACL / `pwsh` 的已知形状 | M3 | implementer | — | 只读检查 + 归因；**不修系统 ACL**；每条形状要有负对照 | ⬜ **可领（R81）** |
 | T-858 | **互操作探测**：检测已安装的 `dsh-rescue` / `dsh-undo-savepoint`，在输出里点名并给命令，不重复实现 | M7 | implementer | T-854 | 只读探测；找不到就明说「没装」，不猜 | ⬜ **可领（R81）** |
 | T-859 | **借用台账**：把同定位仓库的「可学 / 不可抄」写进 `docs/09-open-source-borrowing.md` | 流程 | implementer | T-853 | 每个来源：机制、许可、落地状态（借鉴 / 只读 / 不做）；AGPL / 无许可一律「不复制」 | ⬜ **可领（R81）** |
+| T-860 | **CI `render controls` 偶发 `inconclusive`**：R81 的 `b1c7319` 第一次跑红（`expected blank, got inconclusive (no DOM observation)`，18.3s），同一提交重跑绿 | 流程 | implementer + verifier | — | 失败时保留 browser stderr / CDP 连接状态 / 页面生命周期，让下一次红可归因；**先诊断、再决定**是否允许有预算的重试；不许把 `expect blank` 放宽成「没观察到也算 blank」 | ⬜ **可领（`BS-60`）**：不改判定，只加诊断 |
 
 ## 历史交付记录（R3–R16）
 
