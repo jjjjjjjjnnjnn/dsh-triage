@@ -163,11 +163,59 @@ export function findBrowser(input: BrowserLookup = {}): string | null {
 
 /* ------------------------------- execution -------------------------------- */
 
+/** What the browser process itself said when it never got as far as a port. */
+export interface BrowserExit {
+  readonly code: number | null
+  readonly signal: string | null
+}
+
 export interface RenderCheck {
   readonly state: RenderState
   readonly detail: string
   readonly ms: number
   readonly signals: RenderSignals | null
+  /**
+   * R90 / T-860: the last few KB of the browser's stderr, with machine paths masked.
+   *
+   * WHY: three CI reds (R81, R90 ×2) all stopped at `the browser never opened a debugging
+   * port`, and `stdio: 'ignore'` meant the reason was thrown away — the only way to tell
+   * "the binary refused to start" from "the profile is not writable" was to guess. This is a
+   * diagnostic, never an input to `judgeRender`: it cannot turn `inconclusive` into `blank`.
+   */
+  readonly browserStderr: string | null
+  /** Set when the browser had already exited by the time we stopped waiting. */
+  readonly browserExit: BrowserExit | null
+}
+
+/** How much of the browser's stderr we keep before truncating from the left. */
+const STDERR_LIMIT = 4_000
+
+/**
+ * Mask machine-specific paths in browser output.
+ *
+ * A browser writes `--user-data-dir=…` back into its own errors, and CI logs/artifacts are
+ * published — so the raw string would carry a home directory or a scratch path. The
+ * replacements are ordered longest-root first (`tmpdir` lives under `homedir`).
+ */
+export function scrubBrowserStderr(text: string, roots: { profileDir?: string | null; scratchRoot?: string | null } = {}): string {
+  let out = text.replace(/\r\n/g, '\n')
+  const swap = (from: string | null | undefined, to: string): void => {
+    if (typeof from === 'string' && from.length > 0) out = out.replaceAll(from, to)
+  }
+  swap(roots.profileDir, '<profile-dir>')
+  swap(roots.scratchRoot, '<scratch-root>')
+  swap(tmpdir(), '<tmp>')
+  swap(homedir(), '~')
+  // Belt and braces for anything the browser composed itself (a crash dump path, a helper
+  // binary under another user's home).
+  out = out.replace(/([A-Za-z]:\\Users\\)[^\\\s"']+/gi, '$1<user>')
+  out = out.replace(/(\/(?:home|Users)\/)[^/\s"']+/g, '$1<user>')
+  // A healthy browser prints `DevTools listening on ws://127.0.0.1:<port>/devtools/browser/<id>`.
+  // The port is already public in `served_at`; the session id is not, and the token of a real
+  // Host must never appear in a published artifact.
+  out = out.replace(/\/devtools\/browser\/[0-9A-Za-z-]{8,}/g, '/devtools/browser/<session>')
+  out = out.replace(/token=[^\s"'&]+/g, 'token=<redacted>')
+  return out.length > STDERR_LIMIT ? `…${out.slice(-STDERR_LIMIT)}` : out
 }
 
 export interface RenderUrlInput {
@@ -211,6 +259,18 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
   let child: ReturnType<typeof spawn> | null = null
   let socket: MinimalSocket | null = null
   let profileDir: string | null = null
+  const stderrChunks: string[] = []
+  let stderrSeen = 0
+  let exitSeen: BrowserExit | null = null
+  /** Diagnostic snapshot; never consulted by the judgement. */
+  const diagnose = (): { browserStderr: string | null; browserExit: BrowserExit | null } => {
+    const joined = stderrChunks.join('').trim()
+    const exit = exitSeen ?? (typeof child?.exitCode === 'number' ? { code: child.exitCode, signal: child.signalCode ?? null } : null)
+    return {
+      browserStderr: joined.length === 0 ? null : scrubBrowserStderr(joined, { profileDir, scratchRoot: input.scratchRoot }),
+      browserExit: exit,
+    }
+  }
   try {
     mkdirSync(input.scratchRoot, { recursive: true })
     profileDir = mkdtempSync(join(input.scratchRoot, 'triage-render-'))
@@ -227,12 +287,27 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
         `--user-data-dir=${profileDir}`,
         'about:blank',
       ],
-      { stdio: ['ignore', 'ignore', 'ignore'] },
+      { stdio: ['ignore', 'ignore', 'pipe'] },
     )
+    const stderr = child.stderr
+    if (stderr !== null && stderr !== undefined) {
+      stderr.setEncoding('utf8')
+      stderr.on('data', (chunk: string | Buffer) => {
+        // Bounded on purpose: a renderer stuck in a loop can print forever, and this string
+        // ends up in an artifact.
+        if (stderrSeen >= STDERR_LIMIT * 2) return
+        const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8')
+        stderrSeen += text.length
+        stderrChunks.push(text)
+      })
+    }
+    child.on('exit', (code, signal) => {
+      exitSeen = { code: typeof code === 'number' ? code : null, signal: signal === null ? null : String(signal) }
+    })
     const cdpPort = await waitForDevToolsPort(profileDir, Math.min(timeoutMs, 20_000))
-    if (cdpPort === null) return { state: 'inconclusive', detail: 'the browser never opened a debugging port', ms: Date.now() - started, signals: null }
+    if (cdpPort === null) return { state: 'inconclusive', detail: 'the browser never opened a debugging port', ms: Date.now() - started, signals: null, ...diagnose() }
     const page = await firstPageTarget(cdpPort)
-    if (page === null) return { state: 'inconclusive', detail: 'the browser exposed no page target', ms: Date.now() - started, signals: null }
+    if (page === null) return { state: 'inconclusive', detail: 'the browser exposed no page target', ms: Date.now() - started, signals: null, ...diagnose() }
 
     socket = await connect(page.webSocketDebuggerUrl)
     let id = 0
@@ -307,13 +382,14 @@ export async function renderUrl(input: RenderUrlInput): Promise<RenderCheck> {
       // an honest "cannot tell", not a blank page.
       judgement = { state: 'inconclusive', detail: `the page never answered a DOM query within ${timeoutMs}ms` }
     }
-    return { state: judgement.state, detail: judgement.detail, ms: Date.now() - started, signals }
+    return { state: judgement.state, detail: judgement.detail, ms: Date.now() - started, signals, ...diagnose() }
   } catch (error) {
     return {
       state: 'inconclusive',
       detail: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
       ms: Date.now() - started,
       signals: null,
+      ...diagnose(),
     }
   } finally {
     try {

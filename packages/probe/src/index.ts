@@ -76,8 +76,10 @@ export {
   killBrowser,
   renderScratchRoot,
   renderUrl,
+  scrubBrowserStderr,
 } from './render.js'
 export type {
+  BrowserExit,
   BrowserLookup,
   HostUrl,
   RenderCheck,

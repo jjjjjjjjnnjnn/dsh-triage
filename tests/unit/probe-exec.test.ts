@@ -504,9 +504,9 @@ test('an install that reports sending an authorization header says so in the run
 
 /* --------------------------- client render (T-302) ------------------------- */
 
-const renderedCheck = { state: 'rendered' as const, detail: 'mount root with 1 child(ren), 320 visible chars', ms: 1_400, signals: null }
-const blankCheck = { state: 'blank' as const, detail: 'mount point "root" has no children', ms: 900, signals: null }
-const inconclusiveCheck = { state: 'inconclusive' as const, detail: 'the browser never opened a debugging port', ms: 20_000, signals: null }
+const renderedCheck = { state: 'rendered' as const, detail: 'mount root with 1 child(ren), 320 visible chars', ms: 1_400, signals: null, browserStderr: null, browserExit: null }
+const blankCheck = { state: 'blank' as const, detail: 'mount point "root" has no children', ms: 900, signals: null, browserStderr: null, browserExit: null }
+const inconclusiveCheck = { state: 'inconclusive' as const, detail: 'the browser never opened a debugging port', ms: 20_000, signals: null, browserStderr: null, browserExit: null }
 
 test('a rendered page is an info reason, and the segment is timed separately', async () => {
   const { run } = await runWith({

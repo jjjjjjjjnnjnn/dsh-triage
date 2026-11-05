@@ -108,6 +108,13 @@ const artifact = {
     state: check.state,
     detail: check.detail,
     ms: check.ms,
+    /**
+     * R90 / T-860: `stdio` used to be three `ignore`s, so a browser that never opened a
+     * debugging port left nothing behind but a sentence. The two fields below are what makes
+     * the next red attributable; `browserStderr` is already masked by `scrubBrowserStderr`.
+     */
+    browser_stderr: check.browserStderr,
+    browser_exit: check.browserExit,
     signals:
       check.signals === null
         ? null
@@ -160,6 +167,9 @@ if (!expectationMet) {
   // while `renderUrl` knew whether the browser never opened a port, exposed no page target, or
   // never answered a query. Print that sentence before the prose.
   process.stderr.write(`  render said: ${check.state} — ${check.detail} · ${check.ms}ms\n`)
+  process.stderr.write(
+    `  browser: exit=${check.browserExit === null ? 'still running' : `${String(check.browserExit.code)}/${String(check.browserExit.signal)}`} · stderr=${check.browserStderr === null ? 'none captured' : JSON.stringify(check.browserStderr.slice(0, 600))}\n`,
+  )
   process.stderr.write(
     `  signals: ${
       check.signals === null

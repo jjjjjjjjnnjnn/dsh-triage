@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_render_fixture.mjs",
+  "generated_at": "2026-11-05T20:19:44.000Z",
+  "sample": {
+    "kind": "render-control",
+    "mode": "blank",
+    "served_at": "http://127.0.0.1:49228/"
+  },
+  "expectation": "blank",
+  "expectation_met": true,
+  "render": {
+    "state": "blank",
+    "detail": "mount point \"root\" has no children",
+    "ms": 3182,
+    "browser_stderr": "DevTools listening on ws://127.0.0.1:49229/devtools/browser/<session>\n[44792:26584:1105/211946.793:ERROR:chrome\\browser\\task_manager\\providers\\fallback_task_provider.cc:126] Every renderer should have at least one task provided by a primary task provider. If a \"Renderer\" fallback task is shown, it is a bug. If you have repro steps, please file a new bug and tag it as a dependency of crbug.com/40528867.",
+    "browser_exit": null,
+    "signals": {
+      "title_length": 20,
+      "ready_state": "complete",
+      "body_children": 2,
+      "root_id": "root",
+      "root_children": 0,
+      "text_length": 0,
+      "html_bytes": 204
+    }
+  },
+  "judged": {
+    "state": "blank",
+    "detail": "mount point \"root\" has no children"
+  },
+  "environment": {
+    "platform": "win32",
+    "node": "v24.15.0",
+    "cpu_count": 24,
+    "browser": "msedge.exe",
+    "run_id": null,
+    "run_attempt": null
+  },
+  "limits": [
+    "this is a detector control, not a measurement of any plugin",
+    "blank: a 200 response with an empty mount point must be caught",
+    "error: a browser error page must not be scored as a rendered plugin",
+    "blocked: a renderer whose main thread never yields must still return within the budget",
+    "the page is static; a real Host serving a broken client is a different shape (T-305 keeps collecting those)"
+  ]
+}

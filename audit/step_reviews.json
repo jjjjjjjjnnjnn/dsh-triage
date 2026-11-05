@@ -12835,6 +12835,96 @@
         "outcome": "covered 11-01..11-04 · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet（今天不刷基线：0 天可采）",
         "sha256": "ba320868811a12e1208857cc524c5d151a30dc4b8dcd9290c4f5687981003d96"
       }
+    },
+    {
+      "id": "R90-S2",
+      "batch": "R90",
+      "step": "T-860 的诊断半边：把浏览器 stderr 与退出码收进 render 结论（只加诊断，不改判定）",
+      "changed": [
+        "data/results/render-fixture-blank-2026-11-05T20-19-44.000Z.json",
+        "data/results/render-fixture-blank-2026-11-05T20-19-44.000Z.json.sha256",
+        "packages/probe/src/render.ts",
+        "packages/probe/src/index.ts",
+        "scripts/record_render_fixture.mjs",
+        "tests/unit/render.test.ts",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：`stdio` 从三个 `ignore` 改成 `['ignore','ignore','pipe']`，stderr 进有上限的缓冲（最多 8 KB 收、4 KB 留），`RenderCheck` 增 `browserStderr` / `browserExit` 两个**纯诊断**字段；`judgeRender` 的输入仍是 signals，一个字节都没动，三条返回路径（无端口 / 无页面目标 / 正常）与 catch 路径都带上诊断。真机 3/3：blank → `blank`（`mount point \"root\" has no children`，3182ms）、rendered → `rendered`（77 字符）、error → `inconclusive`（`no #root or #app mount point`）。",
+        "reproducibility": "PASS：`node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp <iso> --out data/results` 可重跑（真浏览器，本机 Chrome/Edge 走 CDP）；产物里 `browser_stderr` 是**已脱敏**的字符串，`environment` 仍是 R86 那套。单测用假 `spawnImpl`（`timeoutMs: 400`）复现「端口从未出现 + 浏览器退出」，不依赖真浏览器，全套 21/21。",
+        "licence": "PASS：只用 Node 内置模块与仓库自己的代码；浏览器 stderr 是运行时产物，不含第三方源码。`scrubBrowserStderr` 额外遮掉 DevTools session id 与 `token=`，所以发布出去的是「为什么没起来」而不是「谁的机器、哪个会话」。",
+        "ssot": "PASS：产物 `render-fixture-blank-2026-11-05T20-19-44.000Z.json`（`.sha256` 见本例）被本步引用；规模行随实算更新为 **496 份产物 / 520 步**。旧的 `…T20-19-02`（未脱敏 session id）已删除，不留两份同义产物。",
+        "adversary": "反例三条，逐条真红后逐字节还原：① `diagnose()` 直接返回 `browserStderr: null` → 「the browser sentence must be kept」红；② 返回未脱敏的 `joined` → 「diagnostics must be masked before they reach an artifact」红；③ 把「端口未出现」那条返回的 `state` 改成 `blank` → 「a missing debugging port is not a blank page」红。也就是说这条诊断既**必须出现**、**必须脱敏**、又**不许改变判定**，三个方向各有一条断言钉住。边界：真机跑没有制造出「端口未出现」，那一半只有单测证据（假 spawn），如实写在这里。"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blank --expect blank --stamp 2026-11-05T20:19:44.000Z --out data/results",
+        "artifact": "data/results/render-fixture-blank-2026-11-05T20-19-44.000Z.json",
+        "outcome": "blank → blank（`mount point \"root\" has no children` · 3182ms）；`browser_stderr` 现在含已脱敏的 `DevTools listening on ws://127.0.0.1:49229/devtools/browser/<session>` 与一条 Chrome 自身告警；`browser_exit: null`；另跑 rendered / error 各一次（`%TEMP%`，不进 SSOT）分别 `rendered` / `inconclusive`",
+        "sha256": "05f05603ac21ec854a7dd67f3b809a5ac8c15867484d822af6ac961e3e6434b7"
+      }
+    },
+    {
+      "id": "R90-S3",
+      "batch": "R90",
+      "step": "测试数 818 → 821 之后重跑对外文案检查器（第一次红：README 的 alt 文本没跟着改）",
+      "changed": [
+        "data/results/listing-2026-11-05T20-23-04.000Z.json",
+        "data/results/listing-2026-11-05T20-23-04.000Z.json.sha256",
+        "data/results/listing-2026-11-05T20-23-11.000Z.json",
+        "data/results/listing-2026-11-05T20-23-11.000Z.json.sha256",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "packages/probe/src/render.ts",
+        "packages/probe/src/index.ts",
+        "scripts/record_render_fixture.mjs",
+        "tests/unit/render.test.ts",
+        "tests/unit/probe-exec.test.ts",
+        "docs/BACKLOG.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：`R90-S2` 加了两条诊断用例，整套从 **818 → 821**，而 README 徽章、§3 验收句、规模行、两份 Stand 都还写着 818 —— 一个没人复算的数字又是一句假话。`check_listing.mjs --tests 821` **第一次跑就红**（`test-count-matches :: stale: README.md:818, README.zh-CN.md:818`）：我只改了徽章的 URL slug，忘了 alt 文本 `tests: 818 passed`。红产物 `listing-2026-11-05T20-23-04.000Z.json` **保留**（这是「检查器抓到我自己的错」的现场），改完 alt 文本重跑 **17/17 全绿**（`…T20-23-11`）。",
+        "reproducibility": "PASS：`node scripts/check_listing.mjs --stamp <iso> --tests 821`，零网络、只读本仓文档与产物；同一条命令、换 stamp 即重跑。产物带 `produced_by` / `generated_at` / `inputs`，`.sha256` 同字节写出。",
+        "licence": "PASS：只读本仓文档与 `data/results/` 产物，无第三方内容、无网络。",
+        "ssot": "PASS：红绿成对保留（红的证明检查器有效、绿的证明当前文案自洽），两份都被本步引用；规模行随之 **498 份产物 / 521 步**。九个数仍由 `tests/governance/handoff-scale-line.test.ts` 从仓库实算。",
+        "adversary": "反例一：把红产物删掉只留绿 —— 那就抹掉了「徽章 alt 文本会漂」这条唯一的现场，本轮**没有**删。反例二：把 `--tests` 传 818 让检查器闭嘴 —— 那等于用旧数字验证新套件，**没有**这么做（821 是 `pnpm run test` 实跑的 `tests 821`）。反例三：只改 README 徽章不改 §3/规模行 —— `handoff-scale-line` 的第二条断言（§3 的接受标准与徽章一致）会立刻红。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T20:23:11.000Z --tests 821",
+        "artifact": "data/results/listing-2026-11-05T20-23-11.000Z.json",
+        "outcome": "17/17 PASS（10 份文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 821）；同轮第一次跑是红（`stale: README.md:818, README.zh-CN.md:818`），红产物保留为 `…T20-23-04`",
+        "sha256": "a18c2b3246ac9bad73d5a05e659f881089ad8f7a20902c91312884360951da3c"
+      }
+    },
+    {
+      "id": "R90-S4",
+      "batch": "R90",
+      "step": "保留「检查器抓到我自己的错」的红产物（README 徽章的 alt 文本仍写 818）",
+      "changed": [
+        "data/results/listing-2026-11-05T20-23-04.000Z.json",
+        "data/results/listing-2026-11-05T20-23-04.000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS（红是预期的）：第一次 `check_listing --tests 821` 的失败项只有 `test-count-matches :: stale: README.md:818, README.zh-CN.md:818` —— 我把徽章的 URL slug 改成 821，却把 alt 文本 `tests: 818 passed` 留着。这条断言读的正是 alt 文本，所以它抓住了我，而不是我重跑三次让它变绿。",
+        "reproducibility": "PASS：同一条命令（`node scripts/check_listing.mjs --stamp 2026-11-05T20:23:04.000Z --tests 821`）在任何一台机器上都会红，因为文档里的数字与 `--tests` 参数不一致；修法是改文档，不是改断言。",
+        "licence": "PASS：只读本仓文档与产物，零网络零第三方。",
+        "ssot": "PASS：红绿成对 —— 本步的红件与 `R90-S3` 的绿件（`…T20-23-11`）sha256 不同、内容不同（`passed: false` vs `true`），两份都被 ledger 引用；产物计数因此 +2。",
+        "adversary": "反例：把红产物删掉、只在正文里写「第一次跑红了」——那是一条无法复算的自述。留着这份 JSON，谁都可以打开看到 `failed: [test-count-matches]`。反过来，如果 `check_listing` 在这个错误上**没有**红，那检查器本身就是假的；本轮它红了，所以保留。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T20:23:04.000Z --tests 821",
+        "artifact": "data/results/listing-2026-11-05T20-23-04.000Z.json",
+        "outcome": "FAIL（预期）· test-count-matches · README.md:818, README.zh-CN.md:818（只错这一项，其余 16 项已绿）",
+        "sha256": "8dd5f78457a39a0f8c8d570eb2b2da05e89c3463b9e6b342ef736e03bb4406c7"
+      }
     }
   ]
 }

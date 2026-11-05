@@ -1044,3 +1044,13 @@
 - 结果：① 推送前 `pnpm run verify` **818 测试 / 9 门 ALL GREEN**、`gate --mutate` **9/9**。② `git push origin main`（`84ac9eb..7a8332d`，8 个提交 = R88 三件 + R89 四件 + 快照）→ run `42098350228` 是这两轮**第一次**过 CI；`render controls` **attempt 1 红 / attempt 2 绿**。③ 复算 D5 覆盖：`11-01..11-04`、`collectible_now 0`、`next_run_by 2026-11-13`。④ R79 批次行归档（对 `git show HEAD:` 逐字节相同）。⑤ 修掉入口文档之间「第三跑 `11-12` / 第四跑 `11-13`」的日期漂移。
 - 实测：`pnpm run verify` **818 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；CI run `42098350228` **attempt 2 六分钟内全绿**（`render controls` / `verify`×3 / `gates can fail`）
 - 边界（如实写）：`render controls` 的 attempt 1 红**没有归因**，只把第二次现场（`the browser never opened a debugging port`，15.1s，ubuntu runner）追加进 `BS-60`，**没有**放宽 `expect blank`；「CI 绿」指的是**最近一次 attempt**，不是稳定绿。D5 的三个数本轮**没有重读**（`0/10` · `0/1` 是 10:48 那份），今天也没有新基线可跑。**没有**动任何判据 / 阈值 / 冻结项，**没有**开新功能（`T-855`–`T-858` 仍推迟）。
+
+### 2026-11-05 R90（续）｜T-860 诊断半边：把浏览器 stderr 收进结论，不改判定
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R90-S2 / S3 / S4）
+- 人工决策：HUMAN「A，开始进行」（在三条候选里选了「只做诊断半边」；启动参数改动仍然没做）
+- 范围：`packages/probe/src/render.ts`（`RenderCheck.browserStderr` / `browserExit`、`scrubBrowserStderr()`、`stdio` 由三个 `ignore` 改为只喂 stderr）· `packages/probe/src/index.ts`（导出）· `scripts/record_render_fixture.mjs`（产物字段 + 失败时打印）· `tests/unit/render.test.ts`（+3）· `tests/unit/probe-exec.test.ts`（夹具补字段）· 两份 README / `docs/HANDOFF.md` / `INDEX.md` / `AGENTS.md` / `docs/BACKLOG.md` / `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `data/results/render-fixture-blank-2026-11-05T20-19-44.000Z.json` 与 `listing-2026-11-05T20-23-04/11.000Z.json`（红绿各一）
+- 结果：① 浏览器 stderr 与退出码进 `RenderCheck`，脱敏函数遮 home / tmp / 用户名 / DevTools session id / `token=`；`judgeRender` 的输入一个字节没动。② 三条负对照各自真红后还原：诊断必须出现 / 必须脱敏 / 把 `inconclusive` 改成 `blank` 立即红。③ 真机 blank / rendered / error 3/3。④ 测试 818 → **821**，两份 README 徽章、§3、规模行、两份 Stand 同步；`check_listing --tests 821` **17/17**（第一次跑红，红产物保留）。
+- 实测：`pnpm run verify` **821 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**
+- 边界（如实写）：本机三次真机跑都没制造出「端口未出现」，所以那条路径只有**单元测试**（假 `spawnImpl`）证据，没有真机现场；「浏览器为什么在 runner 上不开端口」**仍未归因**，下一次 CI 红才会带上 `browser_stderr`。启动参数（`--disable-dev-shm-usage` 等）**没动**。判据 / 阈值 / 冻结项一字未动。
