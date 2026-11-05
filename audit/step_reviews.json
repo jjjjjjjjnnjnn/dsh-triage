@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R82 (2026-11-05)",
+  "stand": "R83 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12215,6 +12215,61 @@
         "artifact": "data/results/listing-2026-11-05T10-05-00.000Z.json",
         "outcome": "18 checks passed (version 0.3.4 · tests 792 · 10 documents)",
         "sha256": "493fe619f2751e3b2a95910534f6e03b0b1e512b3d13d632ba3f1c91fa88c305"
+      }
+    },
+    {
+      "id": "R83-S1",
+      "batch": "R83",
+      "step": "采证：4 个指定包按「最高 semver 的发布时间 vs 已装版本发布时间」判更新方向（含作者报的那个包）",
+      "changed": [
+        "scripts/record_update_trap.mjs",
+        "docs/copy/facts/2026-11-05-12209-followup.md",
+        "docs/copy/drafts/12209-followup.md",
+        "docs/copy/outreach.json",
+        "docs/copy/README.md",
+        "docs/specs/M9-downgrade-trap.md",
+        "INDEX.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/update-trap-2026-11-05T10-40-00-000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`dsh-win-pwsh7@0.2.6` → `no-newer`（`versions` 里没有高于 0.2.6 的版本，旧线已被下架）；`@deepseek-ai/dsh@0.2.1-rc.5` 的最高候选 `0.2.2-rc.1` 发布于它**之后** 5.8 天 → `no-trap`；`@deepseek-ai/dsh-plugin-manager@0.1.6-alpha.2` 的最高候选晚 47.8 天 → `no-trap`；`dsh-triage@0.3.4` → `no-newer`。**没有找到活的陷阱实例**，这一点在产物与分析里都写明。",
+        "reproducibility": "PASS：`record_update_trap.mjs` 读 registry packument 的 `versions` + `time` + `dist-tags`，产物带 `produced_by` / `generated_at` / `recompute`；semver 比较是脚本内自实现，产物里的 `checks` 6 条（含 `0.12.3 > 0.2.6`、`0.2.2-rc.1 < 0.2.2`、`1.0.0-rc.2 < 1.0.0-rc.10`）全部通过，证明这条声称依赖的比较语义正确。",
+        "licence": "PASS：只读 npm 公开元数据；为读代码把两份 tarball 下载到 `%TEMP%` 并在读完后丢弃，**未进仓库**（`quarantine/vendor-manifest.json` 里 npm 那一条写明「不缓存 tarball」）；未复制任何上游代码。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；事实包只引用这份产物与 remedy-probe；文案草稿的每个数字都能在事实包里找到。",
+        "adversary": "反例一：「没找到陷阱」被说成「没有这个问题」——产物 `limits` 与事实包都写明「样本 4 个包、一条搜索查询、不是普查」，回复里也明说 0 例。反例二：把 `time` 里仍保留的下架日期当成可安装版本——候选列表只取 `versions` 的键，`publishedAt` 只用于比较时间。反例三：拿「下架之后的读数」当机制证据（这正是作者指出的我们的错）——本轮把这条写进 `docs/copy/README.md` §5 第 6 条红线。"
+      },
+      "real_test": {
+        "command": "node scripts/record_update_trap.mjs --stamp 2026-11-05T10:40:00.000Z",
+        "artifact": "data/results/update-trap-2026-11-05T10-40-00-000Z.json",
+        "outcome": "traps 0/4 · dsh-win-pwsh7 no-newer · dsh no-trap (5.8d later) · plugin-manager no-trap (47.8d later) · checks 6/6",
+        "sha256": "c966ba2d6e695a2ad5ca3615da859d94547fdfebfd7dc2309462569d2ff33d96"
+      }
+    },
+    {
+      "id": "R83-S2",
+      "batch": "R83",
+      "step": "采证：npm 搜索 `dsh` 的前 60 个包，量出「semver 更新但发布更早」的实例数，以及 `latest` 落后于最高版本的比例",
+      "changed": [
+        "scripts/record_update_trap.mjs",
+        "docs/copy/facts/2026-11-05-12209-followup.md",
+        "data/results/update-trap-2026-11-05T10-46-00-000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：60 个包全部可读，`traps 0 / 60`（`no-newer` 38 · `no-trap` 22）；其中 **22 个**包的 `dist-tags.latest` 低于该包最高已发布版本（例如 `@deepseek-ai/dsh` 的 `latest=0.2.1-rc.5` 对 `0.2.2-rc.1`）——这是「只信 latest 会漏更新」的直接读数。",
+        "reproducibility": "PASS：搜索端点是 `registry.npmjs.org/-/v1/search?text=dsh&size=60`，采样集合由该查询决定并写进 `method`；`--search` / `--limit` 可重跑同一条命令。",
+        "licence": "PASS：只读公开元数据，未下载 tarball、未执行任何第三方代码。",
+        "ssot": "PASS：第二份产物 + `.sha256` 独立存在，与 4 包那份不共享文件名、`writeEvidence` 拒绝覆盖。",
+        "adversary": "反例一：把 60 个包的抽样说成「生态普查」——`limits` 与事实包明写「一条搜索查询的前 60 个包」。反例二：只在「有陷阱」时记录、没有时不出产物——本轮 0 例照样落盘，因为「量过但没找到」本身是结论。反例三：把 `latest` 落后直接等同于陷阱——两者在产物里是不同字段（`latest_lags` 与 `trap`），M9 spec 的 C3 把这条钉住。"
+      },
+      "real_test": {
+        "command": "node scripts/record_update_trap.mjs --stamp 2026-11-05T10:46:00.000Z --search dsh --limit 60",
+        "artifact": "data/results/update-trap-2026-11-05T10-46-00-000Z.json",
+        "outcome": "traps 0/60 · no-newer 38 · no-trap 22 · latest below highest: 22 · checks 6/6",
+        "sha256": "74dcf8637128d930925b9397fc9d620ecf36c8bc1db94c934d7ec9e65ac4d536"
       }
     }
   ]

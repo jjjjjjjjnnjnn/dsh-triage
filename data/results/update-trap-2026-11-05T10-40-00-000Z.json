@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_update_trap.mjs",
+  "generated_at": "2026-11-05T10:40:00.000Z",
+  "question": "for each package, was the highest semver above the installed version published before the installed version?",
+  "method": {
+    "source": "registry.npmjs.org packument: versions + time + dist-tags",
+    "installed": "dist-tags.latest",
+    "semver": "semver.gt semantics, reimplemented here (see checks)"
+  },
+  "rows": [
+    {
+      "package": "dsh-win-pwsh7",
+      "installed": "0.2.6",
+      "installed_published_at": "2026-11-04T23:20:44.548Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh",
+      "installed": "0.2.1-rc.5",
+      "installed_published_at": "2026-10-29T14:15:23.355Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:20:32.310Z",
+      "days_older_than_installed": -5.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.2.1-rc.5 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-plugin-manager",
+      "installed": "0.1.6-alpha.2",
+      "installed_published_at": "2026-09-17T13:40:04.699Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:07:32.585Z",
+      "days_older_than_installed": -47.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.6-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "dsh-triage",
+      "installed": "0.3.4",
+      "installed_published_at": "2026-11-03T15:48:14.109Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    }
+  ],
+  "counts": {
+    "packages": 4,
+    "traps": 0,
+    "readable": 4
+  },
+  "checks": [
+    {
+      "a": "0.12.3",
+      "b": "0.2.6",
+      "expected": 1,
+      "actual": 1,
+      "why": "a renumbered-down older line still sorts higher",
+      "passed": true
+    },
+    {
+      "a": "0.2.2-rc.1",
+      "b": "0.2.1-rc.5",
+      "expected": 1,
+      "actual": 1,
+      "why": "a newer release candidate sorts higher",
+      "passed": true
+    },
+    {
+      "a": "0.2.2-rc.1",
+      "b": "0.2.2",
+      "expected": -1,
+      "actual": -1,
+      "why": "a prerelease sorts below its release",
+      "passed": true
+    },
+    {
+      "a": "1.0.0-rc.2",
+      "b": "1.0.0-rc.10",
+      "expected": -1,
+      "actual": -1,
+      "why": "numeric prerelease identifiers compare numerically",
+      "passed": true
+    },
+    {
+      "a": "1.0.0",
+      "b": "1.0.0",
+      "expected": 0,
+      "actual": 0,
+      "why": "equal versions compare equal",
+      "passed": true
+    },
+    {
+      "a": "not-a-version",
+      "b": "1.0.0",
+      "expected": null,
+      "actual": null,
+      "why": "an unparsable version yields null, never a guess",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "published metadata only: this says nothing about whether either build runs",
+    "no version was unpublished for this run, which is the point — a trap row is measured on live data",
+    "dsh-win-pwsh7 appears as no-newer because its whole older line has been unpublished; that is the honest post-mitigation state, not proof the comparison is correct",
+    "semver.gt semantics are reimplemented here instead of imported; the checks array proves the cases this claim depends on"
+  ],
+  "recompute": "node scripts/record_update_trap.mjs --stamp 2026-11-05T10:40:00.000Z --package dsh-win-pwsh7 --package @deepseek-ai/dsh --package @deepseek-ai/dsh-plugin-manager --package dsh-triage"
+}

@@ -48,7 +48,32 @@
         "data/results/remedy-probe-2026-11-05T08-37-26-770Z.json"
       ],
       "d5_counts": false,
-      "why_not_counted": "General category, manual read after HUMAN go-ahead; not a D5 signal."
+      "why_not_counted": "General category, manual read after HUMAN go-ahead; not a D5 signal.",
+      "reply_received": {
+        "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12209#discussioncomment-19415133",
+        "author": "xinspark",
+        "received_at": "2026-11-05T09:06:17Z",
+        "outcome": "correction-accepted",
+        "correction": "Our probe ran after the author unpublished 0.12.3, so the readings describe a post-mitigation state and cannot distinguish \"the comparison is correct\" from \"nothing older left to compare\". The admitted reading for 0.2.6 stands; the inference drawn from 0.12.3 being unreadable does not.",
+        "facts_after_reply": [
+          "docs/copy/facts/2026-11-05-12209-followup.md"
+        ]
+      },
+      "follow_up": {
+        "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12209#discussioncomment-19416157",
+        "posted_on": "2026-11-05T10:22:40Z",
+        "language": "en",
+        "draft": "docs/copy/drafts/12209-followup.md",
+        "facts": "docs/copy/facts/2026-11-05-12209-followup.md",
+        "cites": [
+          "data/results/update-trap-2026-11-05T10-40-00-000Z.json",
+          "data/results/update-trap-2026-11-05T10-46-00-000Z.json"
+        ],
+        "wrote_by": "agy (gemini-3.8-flash-high), numbers verified by the engineering side",
+        "one_reply_only": true,
+        "d5_counts": false,
+        "why_not_counted": "A follow-up inside an existing thread; D5 counts only the #11813 discussion."
+      }
     },
     {
       "thread": 11149,

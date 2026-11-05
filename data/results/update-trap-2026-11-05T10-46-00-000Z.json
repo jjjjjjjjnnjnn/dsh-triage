@@ -1,0 +1,744 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_update_trap.mjs",
+  "generated_at": "2026-11-05T10:46:00.000Z",
+  "question": "for each package, was the highest semver above the installed version published before the installed version?",
+  "method": {
+    "source": "registry.npmjs.org packument: versions + time + dist-tags",
+    "installed": "dist-tags.latest",
+    "semver": "semver.gt semantics, reimplemented here (see checks)"
+  },
+  "rows": [
+    {
+      "package": "dsh",
+      "installed": "1.0.1",
+      "installed_published_at": "2016-02-01T15:02:27.697Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-sdk-app",
+      "installed": "0.1.2-alpha.2",
+      "installed_published_at": "2026-08-30T14:05:42.793Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:14:59.435Z",
+      "days_older_than_installed": -65.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.2-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-acp-app",
+      "installed": "0.1.2-alpha.2",
+      "installed_published_at": "2026-08-30T13:57:58.817Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:02:04.371Z",
+      "days_older_than_installed": -65.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.2-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-headless",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:38:13.246Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:12:52.455Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh",
+      "installed": "0.2.1-rc.5",
+      "installed_published_at": "2026-10-29T14:15:23.355Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:20:32.310Z",
+      "days_older_than_installed": -5.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.2.1-rc.5 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-skill-badge",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:36:19.004Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:12:53.169Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-experimental-agent-team-profile",
+      "installed": "0.1.5-alpha.2",
+      "installed_published_at": "2026-09-09T14:42:10.566Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:10:14.105Z",
+      "days_older_than_installed": -55.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.5-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-web-app",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:41:08.673Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:22:20.561Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-experimental-badge-skill-bundle",
+      "installed": "0.2.1-alpha.2",
+      "installed_published_at": "2026-10-09T08:10:06.135Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:09:45.061Z",
+      "days_older_than_installed": -26,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.2.1-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-workflow-run",
+      "installed": "0.0.1-rc.2",
+      "installed_published_at": "2026-08-11T15:23:29.946Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:19:47.257Z",
+      "days_older_than_installed": -84.7,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-cmdline",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:38:05.482Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:01:29.817Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@michengai/dsh-skills-manager",
+      "installed": "1.2.32",
+      "installed_published_at": "2026-11-05T09:55:20.615Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-plugin-shop-catalog",
+      "installed": "2026.1105.0",
+      "installed_published_at": "2026-11-05T09:29:17.089Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-plugin-manager",
+      "installed": "0.1.6-alpha.2",
+      "installed_published_at": "2026-09-17T13:40:04.699Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:07:32.585Z",
+      "days_older_than_installed": -47.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.6-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-web-frontend",
+      "installed": "0.0.1-rc.5",
+      "installed_published_at": "2026-08-12T22:36:06.928Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:20:22.177Z",
+      "days_older_than_installed": -83.4,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.5 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@michengai/dsh-automation",
+      "installed": "1.0.18",
+      "installed_published_at": "2026-11-04T23:57:10.399Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-base",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:37:59.988Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:10:01.054Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-task-board-github",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:03:37.845Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-aimail",
+      "installed": "0.1.59",
+      "installed_published_at": "2026-10-19T17:46:42.447Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-ssh",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:04:26.232Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@xmanrui/dsh-im",
+      "installed": "5.10.0",
+      "installed_published_at": "2026-11-03T16:53:33.154Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-mobile-plugin",
+      "installed": "0.5.21",
+      "installed_published_at": "2026-11-04T21:20:17.778Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-git-graph",
+      "installed": "0.4.14",
+      "installed_published_at": "2026-11-02T09:44:11.546Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-llm-pi-ai",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:35:26.974Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:05:15.883Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-task-board",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:03:36.705Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@zaofan/dsh-qqbot",
+      "installed": "1.11.42",
+      "installed_published_at": "2026-11-05T05:47:12.223Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-market",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:02:57.145Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-web-ui-settings",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:03:47.679Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-bigfish",
+      "installed": "0.6.0",
+      "installed_published_at": "2026-10-08T13:49:55.441Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@opencode2dsh/dsh-plugin",
+      "installed": "0.3.14",
+      "installed_published_at": "2026-10-20T11:41:33.651Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-i18n",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:04:35.397Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-plugin-manager",
+      "installed": "0.1.6-alpha.2",
+      "installed_published_at": "2026-09-17T13:49:28.660Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:17:36.470Z",
+      "days_older_than_installed": -47.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.6-alpha.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "dsh-wechat",
+      "installed": "0.16.0",
+      "installed_published_at": "2026-11-04T01:18:35.400Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-plugin-market",
+      "installed": "0.2.1-alpha.4",
+      "installed_published_at": "2026-10-15T12:56:01.089Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:11:36.949Z",
+      "days_older_than_installed": -19.8,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.2.1-alpha.4 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-settings-agent-loop",
+      "installed": "0.1.7-alpha.1",
+      "installed_published_at": "2026-09-22T06:18:26.837Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:17:33.239Z",
+      "days_older_than_installed": -43.1,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.7-alpha.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-community-plugins",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T15:45:39.630Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-roost",
+      "installed": "1.0.2",
+      "installed_published_at": "2026-11-04T19:22:41.373Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-attachment",
+      "installed": "0.0.1-rc.2",
+      "installed_published_at": "2026-08-11T15:23:38.743Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:18:44.212Z",
+      "days_older_than_installed": -84.7,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.2 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@dsh-ops/bash-win32-x64",
+      "installed": "0.2.1",
+      "installed_published_at": "2026-10-08T11:00:18.910Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-claude-style",
+      "installed": "0.19.8",
+      "installed_published_at": "2026-11-04T20:55:34.331Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@sessionbus/dsh",
+      "installed": "0.1.5",
+      "installed_published_at": "2026-10-15T21:17:01.292Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-primitives",
+      "installed": "0.0.1-rc.1",
+      "installed_published_at": "2026-08-10T19:40:05.271Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:22:32.551Z",
+      "days_older_than_installed": -85.6,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.0.1-rc.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "dsh-skill-mcp-panel",
+      "installed": "2.3.7",
+      "installed_published_at": "2026-11-04T15:16:45.098Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-settings-subagent",
+      "installed": "0.1.7-alpha.1",
+      "installed_published_at": "2026-09-22T06:18:51.201Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:19:11.442Z",
+      "days_older_than_installed": -43.1,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.7-alpha.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "dsh-ops",
+      "installed": "0.4.4",
+      "installed_published_at": "2026-10-28T02:44:21.827Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@huaqiu/dsh-huaqiu-about",
+      "installed": "0.6.22",
+      "installed_published_at": "2026-11-04T11:38:48.167Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-finops-suite",
+      "installed": "0.1.0-alpha.11",
+      "installed_published_at": "2026-11-04T12:23:15.187Z",
+      "channels": [
+        "next",
+        "alpha",
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@feng0531/dsh-code-review",
+      "installed": "0.91.0",
+      "installed_published_at": "2026-11-05T09:22:08.025Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@ycodium-ai/agent-dsh",
+      "installed": "0.2.4021",
+      "installed_published_at": "2026-11-04T20:09:25.798Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-mnemon-source-skills",
+      "installed": "0.5.7",
+      "installed_published_at": "2026-11-04T15:43:27.261Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@eddyskywalker/dsh-chatgpt-subscription",
+      "installed": "0.58.0",
+      "installed_published_at": "2026-11-04T14:13:54.258Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-settings-shell",
+      "installed": "0.1.7-alpha.1",
+      "installed_published_at": "2026-09-22T06:18:46.716Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:19:37.810Z",
+      "days_older_than_installed": -43.1,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.7-alpha.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "dsh-fix",
+      "installed": "0.2.0",
+      "installed_published_at": "2026-08-15T01:43:44.601Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@deepseek-ai/dsh-client-ui-settings-web-search",
+      "installed": "0.1.7-alpha.1",
+      "installed_published_at": "2026-09-22T06:18:55.568Z",
+      "channels": [
+        "latest"
+      ],
+      "highest_semver": "0.2.2-rc.1",
+      "highest_published_at": "2026-11-04T09:18:09.895Z",
+      "days_older_than_installed": -43.1,
+      "verdict": "no-trap",
+      "detail": "the highest semver above 0.1.7-alpha.1 was published later, so semver and publish order agree"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-task-board-team",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:03:40.428Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-office-tools",
+      "installed": "1.0.8",
+      "installed_published_at": "2026-10-26T13:33:29.771Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@dsh-market/core",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-02T18:17:05.349Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "@linxin666/dsh-client-ui-plugin-manager",
+      "installed": "0.4.15",
+      "installed_published_at": "2026-11-04T16:03:21.461Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-douyin-browser-local",
+      "installed": "1.4.6",
+      "installed_published_at": "2026-10-30T05:02:12.503Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    },
+    {
+      "package": "dsh-plugin-ops-bundle",
+      "installed": "0.20.8",
+      "installed_published_at": "2026-11-01T14:18:24.876Z",
+      "channels": [
+        "latest"
+      ],
+      "verdict": "no-newer",
+      "detail": "no published version has a higher semver than the installed one"
+    }
+  ],
+  "counts": {
+    "packages": 60,
+    "traps": 0,
+    "readable": 60
+  },
+  "checks": [
+    {
+      "a": "0.12.3",
+      "b": "0.2.6",
+      "expected": 1,
+      "actual": 1,
+      "why": "a renumbered-down older line still sorts higher",
+      "passed": true
+    },
+    {
+      "a": "0.2.2-rc.1",
+      "b": "0.2.1-rc.5",
+      "expected": 1,
+      "actual": 1,
+      "why": "a newer release candidate sorts higher",
+      "passed": true
+    },
+    {
+      "a": "0.2.2-rc.1",
+      "b": "0.2.2",
+      "expected": -1,
+      "actual": -1,
+      "why": "a prerelease sorts below its release",
+      "passed": true
+    },
+    {
+      "a": "1.0.0-rc.2",
+      "b": "1.0.0-rc.10",
+      "expected": -1,
+      "actual": -1,
+      "why": "numeric prerelease identifiers compare numerically",
+      "passed": true
+    },
+    {
+      "a": "1.0.0",
+      "b": "1.0.0",
+      "expected": 0,
+      "actual": 0,
+      "why": "equal versions compare equal",
+      "passed": true
+    },
+    {
+      "a": "not-a-version",
+      "b": "1.0.0",
+      "expected": null,
+      "actual": null,
+      "why": "an unparsable version yields null, never a guess",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "published metadata only: this says nothing about whether either build runs",
+    "no version was unpublished for this run, which is the point — a trap row is measured on live data",
+    "dsh-win-pwsh7 appears as no-newer because its whole older line has been unpublished; that is the honest post-mitigation state, not proof the comparison is correct",
+    "semver.gt semantics are reimplemented here instead of imported; the checks array proves the cases this claim depends on"
+  ],
+  "recompute": "node scripts/record_update_trap.mjs --stamp 2026-11-05T10:46:00.000Z --package dsh --package @deepseek-ai/dsh-sdk-app --package @deepseek-ai/dsh-acp-app --package @deepseek-ai/dsh-headless --package @deepseek-ai/dsh --package @deepseek-ai/dsh-skill-badge --package @deepseek-ai/dsh-experimental-agent-team-profile --package @deepseek-ai/dsh-web-app --package @deepseek-ai/dsh-experimental-badge-skill-bundle --package @deepseek-ai/dsh-client-ui-workflow-run --package @deepseek-ai/dsh-cmdline --package @michengai/dsh-skills-manager --package dsh-plugin-shop-catalog --package @deepseek-ai/dsh-plugin-manager --package @deepseek-ai/dsh-web-frontend --package @michengai/dsh-automation --package @deepseek-ai/dsh-base --package @linxin666/dsh-client-ui-task-board-github --package dsh-aimail --package @linxin666/dsh-ssh --package @xmanrui/dsh-im --package dsh-mobile-plugin --package @linxin666/dsh-client-ui-git-graph --package @deepseek-ai/dsh-llm-pi-ai --package @linxin666/dsh-client-ui-task-board --package @zaofan/dsh-qqbot --package @linxin666/dsh-client-ui-market --package @linxin666/dsh-client-ui-web-ui-settings --package dsh-bigfish --package @opencode2dsh/dsh-plugin --package @linxin666/dsh-i18n --package @deepseek-ai/dsh-client-ui-plugin-manager --package dsh-wechat --package @deepseek-ai/dsh-client-ui-plugin-market --package @deepseek-ai/dsh-client-ui-settings-agent-loop --package @linxin666/dsh-client-ui-community-plugins --package dsh-roost --package @deepseek-ai/dsh-client-ui-attachment --package @dsh-ops/bash-win32-x64 --package dsh-claude-style --package @sessionbus/dsh --package @deepseek-ai/dsh-client-ui-primitives --package dsh-skill-mcp-panel --package @deepseek-ai/dsh-client-ui-settings-subagent --package dsh-ops --package @huaqiu/dsh-huaqiu-about --package dsh-finops-suite --package @feng0531/dsh-code-review --package @ycodium-ai/agent-dsh --package dsh-mnemon-source-skills --package @eddyskywalker/dsh-chatgpt-subscription --package @deepseek-ai/dsh-client-ui-settings-shell --package dsh-fix --package @deepseek-ai/dsh-client-ui-settings-web-search --package @linxin666/dsh-client-ui-task-board-team --package dsh-office-tools --package @dsh-market/core --package @linxin666/dsh-client-ui-plugin-manager --package dsh-douyin-browser-local --package dsh-plugin-ops-bundle"
+}

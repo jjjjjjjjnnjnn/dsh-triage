@@ -973,3 +973,13 @@
 > （否则解析器没看懂布局时会把 `@deepseek-ai/dsh-base` 一起删掉）。
 > N9 / N10 / N11 三条写入面负对照逐条真红后还原；终跑 **792 测试 / 9 门 / `--mutate` 9/9**。
 > 边界同 A 段：**没有证明「裁掉之后宿主起得来」**——那要 `probe --execute`，另一条命令。
+
+### 2026-11-05 R83｜外部更正：接受「下架之后读数」的批评，收窄更新判定规则（判据/阈值一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话做事实与校验）· **回复文案：外部 `agy --model gemini-3.8-flash-high`**（不经 opencode 的模型供应商）
+- SessionID：主会话（`audit/step_reviews.json` R83-S1 / R83-S2）
+- 人工决策：HUMAN「收到回复，查看，分析处理，计划」→ 选「P0 + P1 直接发」与「开 T-861，先写 spec」
+- 范围：`scripts/record_update_trap.mjs`（新）· `docs/specs/M9-downgrade-trap.md`（新）· `docs/copy/facts/2026-11-05-12209-followup.md`（新）· `docs/copy/drafts/12209-followup.md`（新）· `docs/copy/outreach.json`（`reply_received` + `follow_up`）· `docs/copy/README.md`（§5 第 6 条红线）· `INDEX.md` / `docs/BACKLOG.md`（T-861） / `docs/HANDOFF.md` / `docs/ROADMAP.md` / `AGENTS.md` / `PROJECT_RULES.md` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}.json/md` · 产物 `data/results/update-trap-2026-11-05T10-40-00-000Z.json`、`data/results/update-trap-2026-11-05T10-46-00-000Z.json`
+- 结果：① **接受更正**：作者 `xinspark` 指出我们上一轮探测取自「下架之后」，按构造分不出「比较逻辑对」与「没东西可比较」；数字没错、**推论越界**。这条写进 `docs/copy/README.md` §5 第 6 条红线：**缓解之后的读数不能当机制证据**。② **四条代码层事实**（0.2.2-rc.1 tarball 只下到 `%TEMP%`）：`newerVersions()` 只比 semver；`update()` 同样只收更高 semver；客户端取降序第一个可安装；60 个抽样包里 22 个 `latest` 低于最高版本。③ **新采证器 + 两份产物**：traps 0/4、traps 0/60，**如实说抽样里没有活的实例**；`dsh-win-pwsh7@0.2.6` 现在读作 `no-newer`（正是作者那句话，被同一个工具量出来）。④ **回复已发** `discussioncomment-19416157`（10:22:40Z），一条、不催；给更窄规则：`semver.gt` **且** `time[c] > time[installed]`。⑤ **T-861 spec 先行**（C1–C7 / N1–N6，**未实现**）：只出 `measured-registry` 证据，不改任何 conclusion。
+- 实测：`pnpm run verify` **792 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` 9/9
+- 边界：抽样是「一条 npm 搜索查询的前 60 个包」，**不是普查**；tarball 未进仓库（`vendor-manifest` 写明 npm 只读元数据、不缓存 tarball）；回复里明确写了「我们没证明管理器今天会给旧代码」。没有改任何判据/阈值/冻结项。
