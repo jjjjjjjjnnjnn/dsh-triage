@@ -67,6 +67,7 @@ Gemini：docs/copy/drafts/<ticket>.md       草稿（paste 块 + 声明 claims�
 
 - 角色卡：`.agents/roles/copywriter.md`
 - 文风与禁用话术：`docs/copy/STYLE.md`
+- 已发记录：`docs/copy/outreach.json`（thread / comment URL / `posted_on` / 引用的产物 / 是否计入 D5）
 - 发帖规则：`docs/distribution/posting-runbook.md`
 - 上架文案的机器校验：`scripts/check_listing.mjs`（17 条）
 - 本通道的结构校验：`tests/governance/copy-channel.test.ts`
