@@ -12585,8 +12585,7 @@
         "outcome": "17/17 PASS（10 份对外文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 808，两份 README 与规模行同步）；归档保真 8/8 IDENTICAL；规模行九项与仓库实算逐项相同；N1/N2 两条负对照真红后还原",
         "sha256": "b13f4870989d1aebfd79b9cc977e844d236ae508953eb13c604fe8f21775808a"
       }
-    }
-,
+    },
     {
       "id": "R88-S2",
       "batch": "R88",
@@ -12622,8 +12621,7 @@
         "outcome": "needs-their-profile 178 → installed-set 107 · runtime 71；probe-unreadable 90 · 160 probes · 160/160 \"npm has no package\"（131/19/6/4 四种形状）；not-relevant 950 · layer 全为 unknown。两条负对照（源 sha 不符 / 同 stamp 覆盖）各自 exit 2。",
         "sha256": "8ee924c7dbc410c406749fef7bfe1e1afc9d3d58133bb2fc1ef9b6700d55d6cb"
       }
-    }
-,
+    },
     {
       "id": "R88-S3",
       "batch": "R88",
@@ -12648,8 +12646,7 @@
         "outcome": "17/17 PASS（10 份文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 808）：改过 tier 表与边界段之后，对外文案仍自洽",
         "sha256": "0d3a6ecd6f5eec47097d285fe89b323fce21eb0ca5d7efb2a9178492c5138565"
       }
-    }
-,
+    },
     {
       "id": "R89-S1",
       "batch": "R89",
@@ -12760,8 +12757,7 @@
         "outcome": "130 单元 → 128 would-be-denied · 2 cannot-tell · 0 improved · 0 likely-fine · 今天 0 被拒；19 项自检全过（含 `no-home-path-in-payload`、`why` 交叉校验）；provenance 已按 `--dsh-home` 派生。回帖 `discussioncomment-19423754`（17:48:21Z），评论数 1 → 2",
         "sha256": "63db0a2f3018bb412a6e122bdb50641c76c408cc95a644adfde0b2b68ceb002c"
       }
-    }
-,
+    },
     {
       "id": "R89-S5",
       "batch": "R89",
@@ -12783,6 +12779,29 @@
         "artifact": "data/results/discussion-state-2026-11-05T18-35-00-000Z.json",
         "outcome": "threads 3 · open 3（`#12294` 1 评论 · `#12191` 1 评论 · `#12323` 0 评论）；两条随后判定「不发」并记入 outreach.json",
         "sha256": "d7387a0910243c61b7605d759e196a0ea42094b641500f7bac124371f5d000f2"
+      }
+    },
+    {
+      "id": "R89-S6",
+      "batch": "R89",
+      "step": "轮末复算 D5 窗口截止日：下一跑最晚 2026-11-13（只读脚本，不刷基线、不出 verdict）",
+      "changed": [
+        "data/results/d5-window-status-2026-11-05T18-05-33.517Z.json",
+        "data/results/d5-window-status-2026-11-05T18-05-33.517Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：只读复算，`covered 4 / missing 11 / collectible_now 0 / lost 0 / next_run_by 2026-11-13`，`verdict: not-yet`。与 R86 那份结论一致（覆盖仍到 `11-04`，因为今天没有新基线可跑），说明截止日不是被这一轮的产物推着走的。**今天不跑基线**：0 天可采，跑了只是同窗重复。",
+        "reproducibility": "PASS：`node scripts/d5_window_status.mjs`，零网络、纯读已提交产物；`--today` 可覆盖日期，`--out` 可换目录。产物带 `inputs.today` 与实测 `lag_observed`（1–2 天），截止日由窗口算术得出而不是记的。",
+        "licence": "PASS：只读本仓已提交产物，零网络、零第三方数据；这一轮没有引入任何外部内容，`quarantine/vendor-manifest.json` 无需登记。",
+        "ssot": "PASS：`data/results/d5-window-status-2026-11-05T18-05-33.517Z.json`（`.sha256` `9c2a9bb6…`）由脚本产出；三份入口文档里的日期由 `tests/governance/d5-window-deadline.test.ts` 对着最新一份产物重算，手写日期会红。",
+        "adversary": "反例：把「今天可采 0 天」读成「不用管」——脚本的 `urgent` / `lost` 分支正是为此（`lost > 0` 会 exit 1）。这一轮没有 `lost`，所以唯一的意义是**把截止日固定在一个有哈希的时间点上**，而不是让人记住 `11-13`。边界如实写：cron 守卫（`d5-window.yml`）是漏报兜底，不是准点承诺；窗口关掉之后这份产物也不再更新。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "artifact": "data/results/d5-window-status-2026-11-05T18-05-33.517Z.json",
+        "outcome": "covered 11-01..11-04 · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet",
+        "sha256": "9c2a9bb6e60cc6f6b83a3415eabe4d87ceda7cd3316618730562b09c9be085bc"
       }
     }
   ]
