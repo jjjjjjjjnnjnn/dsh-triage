@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_remedy_probe.mjs",
+  "generated_at": "2026-11-05T08:06:23.439Z",
+  "question": "if the reporter installs this exact build, does the published declaration admit the target runtime?",
+  "sample": {
+    "target": "0.2.1-rc.2",
+    "pins": [
+      "@deepseek-ai/dsh-tools@0.2.0-rc.2",
+      "@deepseek-ai/dsh-tools@0.2.1-rc.2"
+    ]
+  },
+  "rows": [
+    {
+      "package": "@deepseek-ai/dsh-tools",
+      "version": "0.2.0-rc.2",
+      "target": "0.2.1-rc.2",
+      "state": "measured",
+      "admission_status": "denied",
+      "admits_target": false,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@0.2.0-rc.2 , @deepseek-ai/dsh-agent@0.2.0-rc.2 , @deepseek-ai/dsh-scope@0.2.0-rc.2 , @deepseek-ai/dsh-sandbox@0.2.0-rc.2 , @deepseek-ai/dsh-session@0.2.0-rc.2 , @deepseek-ai/dsh-invariants@0.2.0-rc.2 , @deepseek-ai/dsh-ptc-runtime@0.2.0-rc.2 , @deepseek-ai/dsh-system-prompt@0.2.0-rc.2 , @deepseek-ai/dsh-user-approval@0.2.0-rc.2 , @deepseek-ai/dsh-sandbox-policy@0.2.0-rc.2",
+      "unmet": [
+        "@deepseek-ai/dsh-agent@0.2.0-rc.2",
+        "@deepseek-ai/dsh-invariants@0.2.0-rc.2",
+        "@deepseek-ai/dsh-llm@0.2.0-rc.2",
+        "@deepseek-ai/dsh-ptc-runtime@0.2.0-rc.2",
+        "@deepseek-ai/dsh-sandbox@0.2.0-rc.2",
+        "@deepseek-ai/dsh-sandbox-policy@0.2.0-rc.2",
+        "@deepseek-ai/dsh-scope@0.2.0-rc.2",
+        "@deepseek-ai/dsh-session@0.2.0-rc.2",
+        "@deepseek-ai/dsh-system-prompt@0.2.0-rc.2",
+        "@deepseek-ai/dsh-user-approval@0.2.0-rc.2"
+      ],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    },
+    {
+      "package": "@deepseek-ai/dsh-tools",
+      "version": "0.2.1-rc.2",
+      "target": "0.2.1-rc.2",
+      "state": "measured",
+      "admission_status": "admitted",
+      "admits_target": true,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@0.2.1-rc.2 , @deepseek-ai/dsh-agent@0.2.1-rc.2 , @deepseek-ai/dsh-scope@0.2.1-rc.2 , @deepseek-ai/dsh-sandbox@0.2.1-rc.2 , @deepseek-ai/dsh-session@0.2.1-rc.2 , @deepseek-ai/dsh-ptc-runtime@0.2.1-rc.2 , @deepseek-ai/dsh-system-prompt@0.2.1-rc.2 , @deepseek-ai/dsh-user-approval@0.2.1-rc.2 , @deepseek-ai/dsh-sandbox-policy@0.2.1-rc.2 , @deepseek-ai/dsh-working-directory@0.2.1-rc.2",
+      "unmet": [],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    }
+  ],
+  "limits": [
+    "live registry read: a snapshot at one timestamp, not byte-for-byte reproducible offline",
+    "admitted is a declaration-layer result; it says nothing about whether the code runs on the reporter's machine",
+    "the engine is the same `evaluateAdmission` used by `check` / `why` / `upgrade` — a second rule set would be a bug"
+  ]
+}

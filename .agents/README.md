@@ -23,6 +23,7 @@
 | `reviewer.md` | 四轴审核（正确/可复现/合规/SSOT） | 禁跨轴改结论、禁只报「看起来没问题」 |
 | `adversary.md` | 专门证明「这个门/结论可以被骗过」 | 禁以「没找到反例」代替构造 |
 | `arbiter.md` | 主会话仲裁，矛盾不解决不过门 | 禁跳过任一轴直接放行 |
+| `copywriter.md` | 把工程侧的事实包写成可发的文案（Gemini） | 禁发明数字、禁决定发布、禁改判据 |
 
 并发规则见 `.agents/rules/agent_collaboration.md`；对抗性要求见 `.agents/rules/adversarial_review.md`。
 

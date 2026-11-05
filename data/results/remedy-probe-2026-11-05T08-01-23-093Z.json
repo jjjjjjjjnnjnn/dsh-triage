@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_remedy_probe.mjs",
+  "generated_at": "2026-11-05T08:01:23.093Z",
+  "question": "if the reporter installs this exact build, does the published declaration admit the target runtime?",
+  "sample": {
+    "target": "0.2.2-rc.1",
+    "pins": [
+      "@deepseek-ai/dsh-mcp-client@0.2.2-rc.1",
+      "@deepseek-ai/dsh-mcp-client@0.2.1-rc.5",
+      "@deepseek-ai/dsh-mcp-client@0.1.0-rc.7",
+      "@deepseek-ai/dsh-mcp-client@0.0.1-rc.1"
+    ]
+  },
+  "rows": [
+    {
+      "package": "@deepseek-ai/dsh-mcp-client",
+      "version": "0.2.2-rc.1",
+      "target": "0.2.2-rc.1",
+      "state": "measured",
+      "admission_status": "admitted",
+      "admits_target": true,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@0.2.2-rc.1 , @deepseek-ai/dsh-scope@0.2.2-rc.1 , @deepseek-ai/dsh-tools@0.2.2-rc.1 , @deepseek-ai/dsh-timeout@0.2.2-rc.1 , @deepseek-ai/dsh-attachment@0.2.2-rc.1 , @deepseek-ai/dsh-subprocess@0.2.2-rc.1 , @deepseek-ai/dsh-mcp-resources@0.2.2-rc.1 , @deepseek-ai/dsh-system-prompt@0.2.2-rc.1",
+      "unmet": [],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    },
+    {
+      "package": "@deepseek-ai/dsh-mcp-client",
+      "version": "0.2.1-rc.5",
+      "target": "0.2.2-rc.1",
+      "state": "measured",
+      "admission_status": "denied",
+      "admits_target": false,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@0.2.1-rc.5 , @deepseek-ai/dsh-scope@0.2.1-rc.5 , @deepseek-ai/dsh-tools@0.2.1-rc.5 , @deepseek-ai/dsh-timeout@0.2.1-rc.5 , @deepseek-ai/dsh-attachment@0.2.1-rc.5 , @deepseek-ai/dsh-subprocess@0.2.1-rc.5 , @deepseek-ai/dsh-mcp-resources@0.2.1-rc.5 , @deepseek-ai/dsh-system-prompt@0.2.1-rc.5",
+      "unmet": [
+        "@deepseek-ai/dsh-attachment@0.2.1-rc.5",
+        "@deepseek-ai/dsh-llm@0.2.1-rc.5",
+        "@deepseek-ai/dsh-mcp-resources@0.2.1-rc.5",
+        "@deepseek-ai/dsh-scope@0.2.1-rc.5",
+        "@deepseek-ai/dsh-subprocess@0.2.1-rc.5",
+        "@deepseek-ai/dsh-system-prompt@0.2.1-rc.5",
+        "@deepseek-ai/dsh-timeout@0.2.1-rc.5",
+        "@deepseek-ai/dsh-tools@0.2.1-rc.5"
+      ],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    },
+    {
+      "package": "@deepseek-ai/dsh-mcp-client",
+      "version": "0.1.0-rc.7",
+      "target": "0.2.2-rc.1",
+      "state": "measured",
+      "admission_status": "denied",
+      "admits_target": false,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@^0.1.0-rc.7 , @deepseek-ai/dsh-tools@^0.1.0-rc.7 , @deepseek-ai/dsh-timeout@^0.1.0-rc.7 , @deepseek-ai/dsh-attachment@^0.1.0-rc.7 , @deepseek-ai/dsh-invariants@^0.1.0-rc.7 , @deepseek-ai/dsh-subprocess@^0.1.0-rc.7",
+      "unmet": [
+        "@deepseek-ai/dsh-attachment@^0.1.0-rc.7",
+        "@deepseek-ai/dsh-invariants@^0.1.0-rc.7",
+        "@deepseek-ai/dsh-llm@^0.1.0-rc.7",
+        "@deepseek-ai/dsh-subprocess@^0.1.0-rc.7",
+        "@deepseek-ai/dsh-timeout@^0.1.0-rc.7",
+        "@deepseek-ai/dsh-tools@^0.1.0-rc.7"
+      ],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    },
+    {
+      "package": "@deepseek-ai/dsh-mcp-client",
+      "version": "0.0.1-rc.1",
+      "target": "0.2.2-rc.1",
+      "state": "measured",
+      "admission_status": "denied",
+      "admits_target": false,
+      "mode": "peers",
+      "declared_range": "@deepseek-ai/dsh-llm@^0.0.1-rc.1 , @deepseek-ai/dsh-tools@^0.0.1-rc.1 , @deepseek-ai/dsh-invariants@^0.0.1-rc.1 , @deepseek-ai/dsh-subprocess@^0.0.1-rc.1",
+      "unmet": [
+        "@deepseek-ai/dsh-invariants@^0.0.1-rc.1",
+        "@deepseek-ai/dsh-llm@^0.0.1-rc.1",
+        "@deepseek-ai/dsh-subprocess@^0.0.1-rc.1",
+        "@deepseek-ai/dsh-tools@^0.0.1-rc.1"
+      ],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.0.1-rc.1",
+        "next": "0.2.2-rc.1"
+      }
+    }
+  ],
+  "limits": [
+    "live registry read: a snapshot at one timestamp, not byte-for-byte reproducible offline",
+    "admitted is a declaration-layer result; it says nothing about whether the code runs on the reporter's machine",
+    "the engine is the same `evaluateAdmission` used by `check` / `why` / `upgrade` — a second rule set would be a bug"
+  ]
+}

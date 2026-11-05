@@ -926,3 +926,13 @@
 - 结果：① `@deepseek-ai/dsh` 的 `next` 从 `0.2.1-rc.5` 变成 **`0.2.2-rc.1`**（`latest` 未动），本机 `watch_next_release --baseline` 记下 `changed`；真机卡片 `--to 0.2.2-rc.1` **14/14**（192 单元 → 119 拒 / 73 判不了 / 0 改善 / 0 像没事）；已发布 `0.3.4` 的可用性 smoke **6/6**。② D5 窗口内第二份现场基线：窗口 `10-28..11-03`、周下载 **1564**、`steady`（6/7 天、峰值 40.5%），日序列 `0/634/192/17/192/357/172` 仍是 10-29 爆发的回声（`BS-48`），`judgeD5` 仍 `pending`。③ 覆盖推进到 `11-01..11-03`，**下一跑截止 `2026-11-12`**（由 `d5_window_status` 按产物算出），三份入口文档已跟随。
 - 实测：`pnpm run verify` **760 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；`git status` 在本轮开始前已被 HUMAN 提交干净（`ac18c40`）
 - 边界：新 rc 的卡片回答的是仓内沙盒的 192 个单元，**不是任何用户机器**；两份 README 仍引用 `0.2.1-rc.5` 的卡片（历史真话），换它要动 HUMAN 文案 → 记入 `BS-57`
+
+### 2026-11-05 R80｜文案交给外部 copywriter（Gemini），并去上游找出能答的问题（判据一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话）· **文案草稿：`opencode-go/gemini-4-argon`（subagent，SessionID `ses_e55402afcffe0hSN7ZTJj0STVB`）**；前两次同模型请求因供应商余额不足失败（`Insufficient account funds`），第三次换供应商成功 → `BS-58`
+- SessionID：主会话 + `ses_e55402afcffe0hSN7ZTJj0STVB`（`audit/step_reviews.json` R80-S1…S6）
+- 人工决策：HUMAN「全面把写文案的任务交给外部 agent gemini 做…进行项目结构调整…寻找 dsh 上的讨论…如果你有回复能力可以直接让 gemini 回复」；本轮**不改判据/阈值**；发布由 HUMAN/arbiter 在与帖子状态核对后执行
+- 范围：`docs/copy/README.md` / `STYLE.md` / `facts/2026-11-05-outreach.md` / `drafts/`（5 篇） · `.agents/roles/copywriter.md` · `.agents/README.md` · `AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md` / `docs/BACKLOG.md` · `tests/governance/copy-channel.test.ts` · `audit/{step_reviews,blind_spots}.json` · 产物 `data/results/discussion-state-2026-11-05T08-00-37-544Z.json`、`discussion-triage-2026-11-05T08-01-22-614Z.json`、`remedy-probe-2026-11-05T08-01-23-093Z.json`、`…T08-03-35-886Z`、`…T08-06-23-439Z`、`…T08-06-24-136Z`
+- 结果：① 文案所有权交接：事实包 → 草稿 → 结构校验 → 发布四段分开，3 条治理测试（角色卡四节 / 事实包必须引用带 `.sha256` 的产物 / 草稿必须带 `<!-- facts: -->` 与 paste 块）全绿。② 扫 300 条最近更新的 Discussions，选出 5 条；对点名的包真算：`#10849` 四构建（0.0.1-rc.1 denied 4 / 0.2.1-rc.5 在 0.2.2-rc.1 上 **also denied** 8 / 0.2.2-rc.1 admitted 8）、`#12210` 三者全 `unconstrained`、`#10458` 同一包两运行时相反、`#10759` dsh-tools 两版本相反、`#12192` 只能给排查命令。③ `#8202` / `#11687` 已被评论回答 → 不发；`#10458` / `#10759` / `#12192` 的 General 分类没有 `isAnswered` → `unreadable`，只备稿（`T-851`）。④ 发布与回填 `docs/copy/outreach.json` 见下一行/下一轮。
+- 实测：`pnpm run verify` **763 测试 / 9 门 ALL GREEN**（+3 copy-channel）· `gate.mjs --mutate` 9/9 · `check_listing` 17/17
+- 边界：Gemini 只写了文字；所有数字来自工程侧产物；`#10458` / `#10759` / `#12192` **没有发布**；`#10849` / `#12210` 的发布状态以 `docs/copy/outreach.json` 为准

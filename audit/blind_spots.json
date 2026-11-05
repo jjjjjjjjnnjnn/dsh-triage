@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R79 (2026-11-05)",
+  "stand": "R80 (2026-11-05)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -458,6 +458,13 @@
       "cannot_see": "R79 用仓内沙盒 profile（0.2.1-rc.4 的 192 个单元）给新 rc `0.2.2-rc.1` 出了卡片（14/14），所以这张卡片回答的是**沙盒这套已装集合**，不是任何真实用户机器；产物 `limits` 已写明，但对外引用时仍可能被读成「所有人升上去都会这样」。另外两份 README 引用的仍是 `0.2.1-rc.5` 的卡片：它是历史真话（`check_listing` 仍过），但读者会看到一个 rc 的滞后——换它要动 HUMAN 正在定稿的宣传文案，所以留到单独一轮。",
       "mitigation": "① 对外只说「这份卡片描述的是沙盒集合」，并给出用户自己跑的命令（`dsh-triage upgrade --to next`），不把 119/73 说成普适比例；② README 的卡片块等 HUMAN 文案定稿后再换成新 rc 的产物，换之前 `check_listing` 的 `readme-shows-real-card` 仍按旧产物复算；③ 每次上游换 rc 都重跑 `watch_next_release --baseline` 与 `record_upgrade_card`（R79 已做一次），产物进 SSOT 供下次比对。",
       "owner": "packages/plugin/src/cli.ts（`upgrade --card`）· scripts/record_upgrade_card.mjs · docs/HANDOFF.md §3"
+    },
+    {
+      "id": "BS-58",
+      "area": "文案通道 / 外部模型可用性",
+      "cannot_see": "R80 把对外文案的所有权交给外部 copywriter（Gemini），但**模型的可用性不在本仓的控制范围内**：本机 opencode 的 Gemini 供应商在 2026-11-05 两次返回 `Insufficient account funds`，第三次换到另一个供应商才成功。也就是说，事实包（`docs/copy/facts/`）与结构校验（`tests/governance/copy-channel.test.ts`）都在仓里可复算，但“谁把事实写成文字”这一步依赖一个余额、配额与策略都在外部的服务。仓里没有、也不该有“工程侧代写文案”的兜底——那正是 R80 要拆开的两件事。",
+      "mitigation": "① 事实包与草稿分开提交：模型不可用时，先落事实包与候选分析，文案留空，不阻塞证据链；② 每次交接在 `docs/copy/drafts/` 里只放已通过结构校验的稿子，草稿文件缺失就是“还没写”，不是“写坏了”；③ 发布永远不是自动的：`posting-runbook` 要求先读帖子状态、再由 HUMAN/arbiter 决定，所以模型不可用最多延迟文案，不会造成错误发布；④ 若长期不可用，退回「只做事实包 + 让 HUMAN 用任何写作工具完成文字」，并在本条目记录日期与错误原文。",
+      "owner": "docs/copy/README.md · .agents/roles/copywriter.md · tests/governance/copy-channel.test.ts"
     }
   ]
 }

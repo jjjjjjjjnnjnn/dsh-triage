@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R79 (2026-11-05)",
+  "stand": "R80 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -11642,6 +11642,330 @@
         "artifact": "data/results/listing-2026-11-05T07-43-01.099Z.json",
         "outcome": "17/17：10 份文档 / 20 条证据路径 / version 0.3.4 / dsh >=0.2.0-rc.1 <0.3.0-0 / tests 760 / 卡片与覆盖率引用真实 / 渠道台账 1 条计入 D5",
         "sha256": "b5edef149221bc4708a0dfae8f3e9945b0ce06275e52cf14fd16ff746560cdaa"
+      }
+    },
+    {
+      "id": "R80-S1",
+      "batch": "R80",
+      "step": "读帖子状态：把四个候选与四条待判线程一次读齐（Q&A 有 isAnswered；General / Ideas 没有）",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/discussion-state-2026-11-05T08-00-37-544Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：四档由 `judgeReplyGate` 判，`closed:false + isAnswered:false` 才叫 open；General / Ideas 返回 null 时如实记 `unreadable`，没有把「读不到」写成 open。",
+        "reproducibility": "PASS：同一命令可重跑；帖子状态是时点事实，产物带 generated_at。",
+        "licence": "PASS：只读 public Discussions，无凭据写入。",
+        "ssot": "PASS：产物进 `data/results/` 并带 `.sha256`，由本步引用。",
+        "adversary": "反例：把 `unreadable`（General 分类没有 isAnswered）当成 open 去发帖 —— 被拒，R80 的四条备稿因此没有发。另一个反例：只读标题不读评论，会把「已有人答」误判成 open（#8202 / #11687 正是这样被排除的）。"
+      },
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --ids 8202,10849,11687,12210,12213,12209,12192,12171 --stamp 2026-11-05T08:00:37.544Z",
+        "artifact": "data/results/discussion-state-2026-11-05T08-00-37-544Z.json",
+        "outcome": "8 条：open 4（8202 / 10849 / 11687 / 12210）· unreadable 4（12171 / 12192 / 12209 / 12213，General/Ideas 无 isAnswered 字段）",
+        "sha256": "38c1fe876a5f001b8361a9243e27dbd7129df2761cb5a811c3705ee2f3fb8f00"
+      }
+    },
+    {
+      "id": "R80-S2",
+      "batch": "R80",
+      "step": "四条候选的声明层读数：按帖子点名的包与版本，用同一个 `evaluateAdmission` 在 0.2.2-rc.1 上求值",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/discussion-triage-2026-11-05T08-01-22-614Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：按帖子点名的版本判（8202 用 0.1.0-rc.7，10849 用 0.0.1-rc.1），没有把 `latest` 套到所有帖子上；`unconstrained` 没有写成 admitted。",
+        "reproducibility": "PASS：同一 `--target` 与同一 registry 快照可复算；快照落 `data/fixtures/discussions/`（产物里记录）。",
+        "licence": "PASS：npm public registry + GitHub public Discussions。",
+        "ssot": "PASS：产物 + `.sha256`；四个数字被 `docs/copy/facts/2026-11-05-outreach.md` 逐项引用。",
+        "adversary": "反例一：把 11687 的 0.4.15 / 0.30.1 当成帖子里的版本 —— 不成立，帖子没有点这两个精确版本；草稿因此只说「我们取到的最新发布版本」，不说「你的版本」。反例二：把 12210 的 `unconstrained` 说成「兼容」——被拒，事实包写明它只代表没有声明。"
+      },
+      "real_test": {
+        "command": "node scripts/record_discussion_triage.mjs --stamp 2026-11-05T08:01:22.614Z --ids 8202,10849,11687,12210 --target 0.2.2-rc.1",
+        "artifact": "data/results/discussion-triage-2026-11-05T08-01-22-614Z.json",
+        "outcome": "answerable 4：8202 mcp-client@0.1.0-rc.7 denied（6 项）· 10849 mcp-client@0.0.1-rc.1 denied（4 项）· 11687 两款第三方 admitted（0.4.15 / 0.30.1）· 12210 dsh@0.2.1-rc.5 与 cordis@4.1.0 unconstrained",
+        "sha256": "edc89186b5d731370d88a56f7d78e3a193303cb7d9f89f40afaedd917a0bacb0"
+      }
+    },
+    {
+      "id": "R80-S3",
+      "batch": "R80",
+      "step": "「该钉哪个构建」的对照：mcp-client 四个构建在 0.2.2-rc.1 上的准入",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：四个构建各判各的；`0.2.1-rc.5` 在 `0.2.2-rc.1` 上被拒这一点是 R57 草稿里没有的新事实，正是本轮不能直接复用旧稿的原因。",
+        "reproducibility": "PASS：精确版本 + 目标版本，全程可复算。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #10849 草稿引用。",
+        "adversary": "反例：继续推荐 `0.2.1-rc.5`（R57 的旧稿）—— 在 0.2.2 运行时上会被拒；草稿已改成 `0.2.2-rc.1`，并在边界里写明「0.2.1-rc.5 不是可复用的 pin」。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08:01:23.093Z --target 0.2.2-rc.1 --pins \"@deepseek-ai/dsh-mcp-client@0.2.2-rc.1,@deepseek-ai/dsh-mcp-client@0.2.1-rc.5,@deepseek-ai/dsh-mcp-client@0.1.0-rc.7,@deepseek-ai/dsh-mcp-client@0.0.1-rc.1\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json",
+        "outcome": "0.2.2-rc.1 admitted（8 项）· 0.2.1-rc.5 denied（8 项精确钉在 0.2.1-rc.5）· 0.1.0-rc.7 denied（6 项）· 0.0.1-rc.1 denied（4 项）；标签 latest=0.0.1-rc.1 / next=0.2.2-rc.1",
+        "sha256": "132cec21ca9a89c230616a760065486e6fdda72ced7b89f28857a769278c4f54"
+      }
+    },
+    {
+      "id": "R80-S4",
+      "batch": "R80",
+      "step": "嵌套 app-boot 帖的两组读数：同一个 presentation 包在两个运行时上相反",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-03-35-886Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：同一个包在两个运行时上给出相反结论，方向与 #10458 的描述一致；只声明「声明层能证明的部分」。",
+        "reproducibility": "PASS：精确版本 + 目标版本可复算。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #10458 草稿引用。",
+        "adversary": "反例：把「0.2.0-rc.2 被拒」说成「所以我们复现了嵌套 app-boot 的启动失败」—— 不成立，我们只测了声明层；草稿明确写了没有复现启动路径。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08:03:35.886Z --target 0.2.1-rc.2 --pins \"@deepseek-ai/dsh-agent-tool-presentation@0.2.1-rc.2,@deepseek-ai/dsh-agent-preset-registry@0.2.0-rc.2,@deepseek-ai/dsh-agent-tool-presentation@0.2.0-rc.2\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-03-35-886Z.json",
+        "outcome": "presentation@0.2.1-rc.2 admitted（1 项）· presentation@0.2.0-rc.2 denied（1 项）· preset-registry@0.2.0-rc.2 denied（9 项）",
+        "sha256": "63b046e9c2cac5a151c5dc8a50d18a5e3b3ffe09ff1fa20bddcc36ecc8c96eac"
+      }
+    },
+    {
+      "id": "R80-S5",
+      "batch": "R80",
+      "step": "被 hoist 的 dsh-tools：0.2.0-rc.2 与 0.2.1-rc.2 在同一 runtime 上的准入",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-06-23-439Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：与 #10759 的报错方向一致；案例 `CASE-10759` 是重建，草稿写明不是用户的机器。",
+        "reproducibility": "PASS：精确版本 + 目标版本可复算。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #10759 草稿引用。",
+        "adversary": "反例：把案例重建说成「我们在用户机器上跑过」—— 不成立，草稿写了 reconstruction。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08:06:23.439Z --target 0.2.1-rc.2 --pins \"@deepseek-ai/dsh-tools@0.2.0-rc.2,@deepseek-ai/dsh-tools@0.2.1-rc.2\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-06-23-439Z.json",
+        "outcome": "0.2.0-rc.2 denied（10 项）· 0.2.1-rc.2 admitted（10 项）",
+        "sha256": "ca436a01ce9c8f837f01ea7d7b28f8e4cd5a85b341cee9670c219a87f5ff442a"
+      }
+    },
+    {
+      "id": "R80-S6",
+      "batch": "R80",
+      "step": "cordis 家族的声明层盲区：dsh 与两代 cordis 都是 unconstrained",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-06-24-136Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：这三个 manifest 都没有声明 DSH 范围；因此启动时的声明层门禁无法区分 4.0.5 与 4.1.0 —— 这是支持帖子里「加运行期断言」的事实，而不是我们的检出能力。",
+        "reproducibility": "PASS：精确版本 + 目标版本可复算。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #12210 草稿引用。",
+        "adversary": "反例：把 `unconstrained` 说成「兼容」—— 被拒；草稿明确写 `unconstrained` is not `compatible`，并写「我们的工具不检出这个故障」。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08:06:24.136Z --target 0.2.2-rc.1 --pins \"@deepseek-ai/dsh@0.2.2-rc.1,@deepseek-ai/cordis@4.1.0,@deepseek-ai/cordis@4.0.5\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-06-24-136Z.json",
+        "outcome": "三者全部 unconstrained：dsh@0.2.2-rc.1 / cordis@4.1.0 / cordis@4.0.5",
+        "sha256": "50455dfb5db76bc75985bf4284eb74125869fbeb65e1ca5f7b4e699cf78e989c"
+      }
+    },
+    {
+      "id": "R80-S7",
+      "batch": "R80",
+      "step": "文案检查器第一次跑：README 的测试数还停在 760，17 条里 1 条红（保留红产物）",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/listing-2026-11-05T08-14-13.045Z.json"
+      ],
+      "review": {
+        "correctness": "PASS（检查器正确）：这不是脚本坏了，是「文案里的测试数没人跟着改」——正是 `test-count-matches` 存在的理由；红产物保留。",
+        "reproducibility": "PASS：同一 `--tests` 与同一 README 必然复现；改 README 后同一命令转绿。",
+        "licence": "PASS：只读本仓的 Markdown、manifest 与产物清单，无网络、无第三方依赖。",
+        "ssot": "PASS：红产物进 `data/results/` 并带 `.sha256`；它不被当作绿证据，只作为「检查器真的会拦」的见证。",
+        "adversary": "反例：把 `--tests` 传成 760 让检查过 —— 那是让断言去迎合文档（R45 的同型错误）；正确做法是改 README 的数字，并在下一步用 763 重跑。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T08:14:13.045Z --tests 763",
+        "artifact": "data/results/listing-2026-11-05T08-14-13.045Z.json",
+        "outcome": "17 项跑完，`test-count-matches` 红：README.md:760 / README.zh-CN.md:760（本轮新增 3 条治理测试后实际是 763）",
+        "sha256": "d2fbf62fb909cd45533a1fc895405fb0d4330844aecc65de07d7aa93c3775f48"
+      }
+    },
+    {
+      "id": "R80-S8",
+      "batch": "R80",
+      "step": "把两份 README 的测试数与正文一起改成 763，再跑一次文案检查器：17/17",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/copy/README.md",
+        "docs/copy/STYLE.md",
+        "docs/copy/facts/2026-11-05-outreach.md",
+        "docs/copy/drafts/10849-dist-tag.md",
+        "docs/copy/drafts/12210-cordis-gate.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        ".agents/README.md",
+        ".agents/roles/copywriter.md",
+        "tests/governance/copy-channel.test.ts",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/listing-2026-11-05T08-14-59.235Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：两份 README 的徽章 alt、徽章 URL 与正文三处都改成 763；其余 16 项与上一轮语义相同。",
+        "reproducibility": "PASS：`--stamp` + `--tests 763` 可重跑；产物记录 20 条引用文件的 sha256。",
+        "licence": "PASS：只读本仓的 Markdown、manifest 与产物清单，无网络、无第三方依赖。",
+        "ssot": "PASS：绿产物 + `.sha256`；README 的测试数与 `pnpm run test` 的实际输出一致。",
+        "adversary": "反例：只改徽章不改正文（或反过来）—— 检查器数的是「文档里的声明」，改漏一处仍会红；本步三处一起改。另一个反例：把 `--tests` 写死成 763 而不跑测试 —— CI 的 `pnpm run test` 会给出真实数，二者必须相等。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T08:14:59.235Z --tests 763",
+        "artifact": "data/results/listing-2026-11-05T08-14-59.235Z.json",
+        "outcome": "17/17：版本 0.3.4 / 区间 / 763 测试 / 20 条证据路径 / 卡片与覆盖率引用 / 3 篇草稿声明 / 4 个渠道台账全过",
+        "sha256": "3661a2ee68152982b88bdd36c664951f29ded70dcf0b3df074082a1321b5f3ff"
       }
     }
   ]
