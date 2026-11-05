@@ -41,6 +41,22 @@ node scripts/record_d5_evidence.mjs --stamp <ISO+10min> --out %TEMP%/d5-recomput
 
 ---
 
+## 0.5 彩排（R86，2026-11-05；**不是证据**）
+
+> 关窗是一次性的，所以四步在窗口还开着的时候先走一遍。**彩排产物全部写在 `%TEMP%`，不进 `data/results`，也不算读数**。
+
+| 步骤 | 彩排命令（stamp 是彩排时刻，不是读数时刻） | 结果 |
+|---|---|---|
+| 基线离线复算 | `record_market_baseline --stamp 2026-11-05T14:00:00.000Z --fixtures data/fixtures/market-baseline/2026-11-05T10-45-00.000Z --out %TEMP%\…` | `d5` / `categories` / `downloads` / `discussions` 与现场件**逐项相同** |
+| D5 现场抓取 | `record_d5_evidence --stamp 2026-11-05T13:56:00.000Z … --fixtures-out %TEMP%\…\fixtures --out %TEMP%\…\capture` | `pending` · reactions **0/10** · 外部引用 **0/1** · 下载 **1598**（steady）/20 |
+| D5 离线复算 | `… --stamp 2026-11-05T13:57:00.000Z --fixtures %TEMP%\…\fixtures --out %TEMP%\…\recompute` | 产物是 `d5-selftest-*`；`d5_verdict` / `numbers` / `window` **逐项相同** |
+
+**读法**：彩排只证明「这四条命令在这台机器上能跑通、抓取与复算两条路径自洽」，**不证明** 11-15 那天的读数会是什么。
+**一个自己踩的坑**：第一次比对把 `self_test` 也算进比较键，得到 `SAME=false` —— 那是复算件的**设计差异**，不是抓取有损；按本页 §0 的口径只能比 `d5_verdict` / `numbers` / `window`。
+**下一次真跑的截止日**：`2026-11-13`（`node scripts/d5_window_status.mjs` 现算：覆盖 `11-01..11-04`、今天可采 **0** 天、lost 0）。
+
+---
+
 ## 1. 时间点
 
 | 项 | 值 |

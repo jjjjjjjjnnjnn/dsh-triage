@@ -12481,6 +12481,50 @@
         "outcome": "served blank · judged blank · 3024ms；同轮 rendered 1296ms / error 6218ms 均通过；负对照 --mode blank --expect rendered → exit 1 并打印 render.detail",
         "sha256": "931fb670a323471a003de25025d98aaad57c7c6d6448f6063d5ee6bb15422f26"
       }
+    },
+    {
+      "id": "R86-S3",
+      "batch": "R86",
+      "step": "D5 关窗彩排：四条命令走通，彩排产物留 %TEMP%；截止日复算仍 2026-11-13",
+      "changed": [
+        "docs/d5-close-runbook.md",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：基线用 11-05 现场件的 fixtures 离线复算，`d5` / `categories` / `downloads` / `discussions` 与现场件逐项相同；D5 用同一份基线做现场抓取 → 离线复算，`d5_verdict` / `numbers` / `window` 逐项相同（`pending` · 0/10 · 0/1 · 1598 steady）。",
+        "reproducibility": "PASS：四条命令原样写进 `docs/d5-close-runbook.md` §0.5；`d5_window_status` 现算仍 `next_run_by 2026-11-13`（覆盖 11-01..11-04、今天可采 0 天、lost 0）。",
+        "licence": "PASS：只读公开 GitHub Discussions 的计数与仓内 npm 快照；不读私有数据、不联网写任何仓库文件。",
+        "ssot": "PASS：彩排产物全部写 `%TEMP%`，**明确不进 `data/results`**（runbook 原文「不是证据」）；本轮唯一新 SSOT 是 `d5-window-status-*`，带 `.sha256`。",
+        "adversary": "反例一：把彩排的 `pending` 当成 11-15 的读数——runbook 写明「不证明那天的读数」。反例二：我第一次把 `self_test` 算进比较键，得到 `SAME=false`；那其实是复算件的设计差异，按 §0 的口径只比 `d5_verdict` / `numbers` / `window` 后为 `true`（这类「比较键写错」正是 R59 两个假绿的同一形状）。反例三：把彩排件放进 `data/results` 以便「有产物」——那会让复算件看起来像测量件（T-841 的坑），所以留在 `%TEMP%`。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs --stamp 2026-11-05T13:55:52.466Z",
+        "artifact": "data/results/d5-window-status-2026-11-05T13-55-52.466Z.json",
+        "outcome": "covered 4 (11-01..11-04) · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet",
+        "sha256": "a97af1f4ad0d2c8cd3c6bfa2a9e95559080b3f6bdd56eb26c9cdb67439ee2b7b"
+      }
+    },
+    {
+      "id": "R86-S4",
+      "batch": "R86",
+      "step": "基线抖动修复：probe-host-sample 夹具改成 tmp+rename（`replacement.samples` 读到 3 的根因）",
+      "changed": [
+        "tests/unit/probe-host-sample.test.ts",
+        "docs/HANDOFF.md"
+      ],
+      "review": {
+        "correctness": "PASS：假 launcher 原来用 `writeFileSync(out, …)`，先截断再写；轮询方可以在这一步读到空/半截文件，而循环按「内容变了才算一个样本」计数（`host.ts` 的 `text !== sampleText`），于是同一个 ERROR 被读成两个样本 → `samples 3 !== 2`。改成写 `.tmp` 再 `renameSync`（原子的目录项替换）后，文件内容只经历 `ERROR → GOOD` 两个状态，断言仍是 `=== 2`，**没有放宽**。",
+        "reproducibility": "PASS：2026-11-05 全量套件里观测到两次（连续 3 次跑中 1 次；再跑 3 次中 1 次），失败点是 `tests/unit/probe-host-sample.test.ts:130`；修复后 **10 次单文件 + 3 次全量套件** 全是 `fail 0`。残留风险如实写：若进程被饿住 >400ms 才第一次读，可能只见 GOOD（samples=1），那是另一种形状，真出现再按它归因。",
+        "licence": "PASS：只改测试夹具（Node 内置 fs），不引第三方、不联网。",
+        "ssot": "PASS：产品代码零改动；本轮门禁快照 `data/results/gates-2026-11-05T14-09-07.997Z.json` 带 `.sha256`，`gate --record` 现产。",
+        "adversary": "反例一：把断言改成 `>= 2` —— 那会把「夹具写坏了」与「循环数错了」一起放过，不做。反例二：改产品循环「半截文件不计数」—— 会改 `replacement.samples` 的已发布语义，且本次证据指向夹具。反例三：另一处同样的非原子写 `tests/unit/probe-scratch-lock.test.ts:83` 只写一次、不断言样本数，**未动**（改了是扩大范围，不改也没有同名断言可骗）。"
+      },
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-05T14:09:07.997Z",
+        "artifact": "data/results/gates-2026-11-05T14-09-07.997Z.json",
+        "outcome": "9 gates ALL GREEN；同一树上去重后全量套件 3/3 `fail 0`，单文件 10/10",
+        "sha256": "c991304c69e299b6ac6b75c45355a05863adbfbcec07904c69712ca4d0bfac31"
+      }
     }
   ]
 }

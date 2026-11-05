@@ -24,12 +24,21 @@ import { test } from 'node:test'
 import { bootAndSampleHost, isProvisionalSample, isReadableSample, isUsableSample } from '@dsh-triage/probe'
 
 const FAKE_LAUNCHER = `
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 
 const args = process.argv.slice(2)
 const patchPath = args[args.indexOf('--patch') + 1]
 const out = /out: '([^']+)'/.exec(readFileSync(patchPath, 'utf8'))[1]
-const write = (payload) => writeFileSync(out, JSON.stringify(payload, null, 2) + '\\n', 'utf8')
+// R86: write atomically (tmp + rename). A plain writeFileSync truncates and then writes, so a
+// poller can observe an empty or half-written file as a distinct sample — which made
+// \`replacement.samples === 2\` fail with 3 about once in three full-suite runs (observed
+// 2026-11-05, test \`an {error} sample still waits…\`). The loop is not under test for torn
+// reads: this fixture is supposed to model a Host that publishes one whole sample at a time.
+const write = (payload) => {
+  const tmp = out + '.tmp'
+  writeFileSync(tmp, JSON.stringify(payload, null, 2) + '\\n', 'utf8')
+  renameSync(tmp, out)
+}
 
 const UNSETTLED = { kind: 'live', settled: false, wait_ms: 15000, applies: 1, attempts: [{ n: 1, ok: true }] }
 const GOOD = { kind: 'live', settled: true, wait_ms: 400, applies: 2, attempts: [{ n: 1, ok: true }] }
