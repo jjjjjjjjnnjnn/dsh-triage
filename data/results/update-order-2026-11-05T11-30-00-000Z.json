@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_update_order.mjs",
+  "generated_at": "2026-11-05T11:30:00.000Z",
+  "question": "does the installed set contain a package whose highest-semver neighbour was published earlier than what is installed?",
+  "sample": {
+    "kind": "measured",
+    "profile": "upstream",
+    "dsh_home": "(dsh-home)"
+  },
+  "live": {
+    "cli_exit": 1,
+    "rows": 3,
+    "verdicts": {
+      "no-trap": 3
+    }
+  },
+  "rows": [
+    {
+      "name": "@deepseek-ai/dsh",
+      "version": "0.2.1-rc.4",
+      "verdict": "no-trap",
+      "installed_published_at": "2026-10-26T15:28:13.431Z",
+      "candidate": {
+        "version": "0.2.2-rc.1",
+        "published_at": "2026-11-04T09:20:32.310Z",
+        "days_older": -8.7
+      },
+      "latest_lags": true,
+      "detail": "the highest semver above 0.2.1-rc.4 was published later, so semver order and publish order agree"
+    },
+    {
+      "name": "@deepseek-ai/dsh-base",
+      "version": "0.2.1-rc.4",
+      "verdict": "no-trap",
+      "installed_published_at": "2026-10-26T15:14:50.751Z",
+      "candidate": {
+        "version": "0.2.2-rc.1",
+        "published_at": "2026-11-04T09:10:01.054Z",
+        "days_older": -8.7
+      },
+      "latest_lags": true,
+      "detail": "the highest semver above 0.2.1-rc.4 was published later, so semver order and publish order agree"
+    },
+    {
+      "name": "@deepseek-ai/dsh-web-app",
+      "version": "0.2.1-rc.4",
+      "verdict": "no-trap",
+      "installed_published_at": "2026-10-26T15:28:25.347Z",
+      "candidate": {
+        "version": "0.2.2-rc.1",
+        "published_at": "2026-11-04T09:22:20.561Z",
+        "days_older": -8.7
+      },
+      "latest_lags": true,
+      "detail": "the highest semver above 0.2.1-rc.4 was published later, so semver order and publish order agree"
+    }
+  ],
+  "cases": [
+    {
+      "id": "N1-same-line-patch",
+      "installed": "0.2.5",
+      "expected": "no-trap",
+      "actual": "no-trap",
+      "candidate": {
+        "version": "0.2.6",
+        "publishedAt": "2026-11-04T23:20:44.548Z",
+        "daysOlder": -1.5
+      },
+      "passed": true
+    },
+    {
+      "id": "N2-renumbered-old-line",
+      "installed": "0.2.6",
+      "expected": "trap",
+      "actual": "trap",
+      "candidate": {
+        "version": "0.12.3",
+        "publishedAt": "2026-10-18T16:25:28.000Z",
+        "daysOlder": 17.3
+      },
+      "passed": true
+    },
+    {
+      "id": "N3-higher-semver-published-later",
+      "installed": "0.2.1-rc.5",
+      "expected": "no-trap",
+      "actual": "no-trap",
+      "candidate": {
+        "version": "0.2.2-rc.1",
+        "publishedAt": "2026-11-05T07:00:00.000Z",
+        "daysOlder": -6
+      },
+      "passed": true
+    },
+    {
+      "id": "N4-nothing-above",
+      "installed": "0.2.6",
+      "expected": "no-candidate",
+      "actual": "no-candidate",
+      "candidate": null,
+      "passed": true
+    },
+    {
+      "id": "N5-candidate-time-missing",
+      "installed": "0.2.6",
+      "expected": "unmeasured",
+      "actual": "unmeasured",
+      "candidate": null,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the live half reads one machine's installed set against the registry at one moment; the rows describe that profile, not the ecosystem",
+    "traps are counted, not predicted: `no-candidate` means \"no higher semver is published\", never \"you are up to date\"",
+    "publish order says nothing about whether either build runs — that is the probe, a different command",
+    "unmeasured rows are kept on purpose: an unreadable registry must not look like a clean answer"
+  ],
+  "recompute": "node scripts/record_update_order.mjs --stamp 2026-11-05T11:30:00.000Z --dsh-home '(dsh-home)' --profile upstream"
+}

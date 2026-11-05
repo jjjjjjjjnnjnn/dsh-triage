@@ -180,11 +180,11 @@ export function redactedVerdicts(
  */
 export function auditJsonPayload(
   data: AuditData,
-  options: { noRedact: boolean; roots: readonly string[] },
+  options: { noRedact: boolean; roots: readonly string[]; updateOrder?: readonly unknown[] },
 ): Record<string, unknown> {
   const redaction = { noRedact: options.noRedact, roots: options.roots }
   const { snapshot, diff } = data
-  return {
+  const payload: Record<string, unknown> = {
     schema_version: 1,
     command: 'audit',
     env: redactedEnv(data.env, redaction),
@@ -259,6 +259,10 @@ export function auditJsonPayload(
           },
     errors: [...data.errors],
   }
+  // T-861: only present when the caller explicitly asked the registry (`audit --registry`), so the
+  // default payload stays byte-identical (M9-C5 / N6).
+  if (options.updateOrder !== undefined) payload['update_order'] = options.updateOrder
+  return payload
 }
 
 /** `audit`'s exit code: findings in collisions, duplicate copies, or any non-go verdict. */

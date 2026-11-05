@@ -90,3 +90,11 @@
 ```
 | 日期 | 范围（文件/判据/阈值） | 授权（原话或摘要） | 执行与结论（模型 + 做了什么） | HUMAN 未逐条复核的部分 | 证据（产物 + sha256） |
 ```
+
+### 2026-11-05 R84 · T-861（M9）判据轮签字
+
+> 本节记录的是**授权**与**执行边界**，不是「HUMAN 逐条复核过」。规则见文件头第 3、4 条。
+
+| 日期 | 范围 | 授权（HUMAN） | 执行与结论（agent） | HUMAN 未逐条复核的部分 | 证据 |
+|---|---|---|---|---|---|
+| 2026-11-05 | **T-861 / M9「更新提示指向旧代码」的判据与实现**（新增纯函数 `judgeUpdateOrder()`、`audit --registry` 证据项、`M9` spec 定稿） | 会话内原话：「开始进行按 spec 实现 T-861（判据轮，四轴 + 负对照 + 签字）」 | DeepSeek V4.1 Flash：按 `docs/specs/M9-downgrade-trap.md` 实现；**只加 `measured-registry` 次要证据，不改任何 `conclusion`**；`audit` 默认路径逐字节不变（`--registry` 才读网）；负对照 N1–N6 逐条真红后还原；`pnpm run verify` 805 测试 / 9 门；`gate.mjs --mutate` 9/9 | 判据本身是否认可（`trap` 的定义取「高于已装的最高 semver」而不是「管理器实际会选的第一个可安装项」）；spec 的两处实施偏差（四态而非三态、挂载点从 `check --explain` 改到 `audit --registry`）未由 HUMAN 逐条审阅措辞；抽样里 0 个活实例这一点是否足以支撑对外说法 | `docs/specs/M9-downgrade-trap.md`（实施记录）· `data/results/update-order-2026-11-05T11-30-00-000Z.json` · `data/results/update-trap-2026-11-05T10-40-00-000Z.json` · `data/results/update-trap-2026-11-05T10-46-00-000Z.json` · `audit/step_reviews.json` R84-S1 |

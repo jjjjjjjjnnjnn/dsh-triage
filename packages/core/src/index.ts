@@ -74,6 +74,8 @@ export {
 
 export type { DriftStanding, RangeShape, RangeShapeReading, RegistryFacts, VersionDrift } from './version-drift.js'
 export { judgeRangeShape, judgeVersionDrift } from './version-drift.js'
+export type { UpdateOrder, UpdateOrderCandidate, UpdateOrderVerdict } from './update-order.js'
+export { judgeUpdateOrder } from './update-order.js'
 
 export type {
   DeclaredRow,

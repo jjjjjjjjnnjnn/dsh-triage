@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R83 (2026-11-05)",
+  "stand": "R84 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12270,6 +12270,64 @@
         "artifact": "data/results/update-trap-2026-11-05T10-46-00-000Z.json",
         "outcome": "traps 0/60 · no-newer 38 · no-trap 22 · latest below highest: 22 · checks 6/6",
         "sha256": "74dcf8637128d930925b9397fc9d620ecf36c8bc1db94c934d7ec9e65ac4d536"
+      }
+    },
+    {
+      "id": "R84-S1",
+      "batch": "R84",
+      "step": "T-861 判据轮：`judgeUpdateOrder()` + `audit --registry`，live 3 行 + 5 条纯函数用例，负对照 N1–N6 逐条真红",
+      "changed": [
+        "packages/core/src/update-order.ts",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/cli.ts",
+        "packages/plugin/src/audit-data.ts",
+        "tests/unit/update-order.test.ts",
+        "tests/e2e/audit-registry.test.ts",
+        "scripts/record_update_order.mjs",
+        "docs/specs/M9-downgrade-trap.md",
+        "audit/SIGNOFF.md",
+        "INDEX.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/update-order-2026-11-05T11-30-00-000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：四态（`trap` / `no-trap` / `no-candidate` / `unmeasured`）由纯函数 `judgeUpdateOrder()` 决定；候选取「高于已装的最高 semver」（管理器就是这样取的），时间取 registry `time`；`audit --registry` 在真机沙箱 profile 上给出 3 行 `no-trap`（`@deepseek-ai/dsh` / `dsh-base` / `dsh-web-app` 0.2.1-rc.4 → 0.2.2-rc.1，晚 8.7 天发布）。",
+        "reproducibility": "PASS：`record_update_order.mjs` 的 live 半边跑 CLI 的 `audit --registry --json`，pure 半边在同一份产物里跑 5 条固定用例；产物带 `produced_by` / `generated_at` / `limits` / `recompute`，`passed: true` 由用例逐条比较得出。",
+        "licence": "PASS：只读 registry 元数据；未下载 tarball、未执行第三方代码；实现独立（semver 比较复用 core 已有的 `semver` 依赖，未复制上游代码）。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；默认 `audit --json` 不含 `update_order` 键（e2e N6 钉住），所以面板与既有自动化读到的字节没变。",
+        "adversary": "反例一：把判定写成「一律 trap」——N1（同线 patch）与 N3（更高 semver 但发布更晚）当场红（4 条测试红）。反例二：写成「一律 no-trap」——N2（回退重编号）红（3 条）。反例三：把「候选缺时间」当成 0 天——N5 红。反例四：让 `audit` 总是读 registry——N6 的 e2e 报 `publish-order evidence must stay behind --registry`。反例五：把「没有更高 semver」说成「你已是最新」——`no-candidate` 的 detail 明写「no published version has a higher semver」，不是「up to date」。"
+      },
+      "real_test": {
+        "command": "node scripts/record_update_order.mjs --stamp 2026-11-05T11:30:00.000Z --dsh-home 'sandbox/upstream/0.2.1-rc.4/home' --profile upstream",
+        "artifact": "data/results/update-order-2026-11-05T11-30-00-000Z.json",
+        "outcome": "live 3 行 no-trap · cases 5/5 · passed true",
+        "sha256": "4afe80226629913316328a620aeba49a3d843803d8c136207e534d0f602c5367"
+      }
+    },
+    {
+      "id": "R84-S2",
+      "batch": "R84",
+      "step": "测试数对齐 805 后的上架检查器终跑：18 条断言全绿",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-05T11-40-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing --tests 805` 18 条全过；两份 README 的徽章与正文都写 805。",
+        "reproducibility": "PASS：断言从文档与被引产物两边复算，`--tests` 由调用方给。",
+        "licence": "PASS：只读仓内文档与既有产物，不联网。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；本轮 792 的那份 `listing-2026-11-05T10-05-00.000Z.json` 仍在，指针未改。",
+        "adversary": "反例一：只改徽章不改正文——`COUNT` 三种形状都扫，漏一处即红。反例二：把 `--tests` 继续传 792 让断言「通过」——那是用旧读数验证新代码；805 来自 `pnpm run test` 的 `tests 805`。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T11:40:00.000Z --tests 805",
+        "artifact": "data/results/listing-2026-11-05T11-40-00.000Z.json",
+        "outcome": "18 checks passed (version 0.3.4 · tests 805 · 10 documents)",
+        "sha256": "e3746828f48e7a4153ad8b538e9422ca4046b91b202ad38e17c228b63fb87b89"
       }
     }
   ]

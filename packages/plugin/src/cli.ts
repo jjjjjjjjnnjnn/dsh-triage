@@ -31,6 +31,7 @@ import {
   groupClaimsBySource,
   hasNewDenials,
   judgeUpgradeImpact,
+  judgeUpdateOrder,
   judgeVersionDrift,
   loadEnv,
   parseInventorySnapshot,
@@ -64,6 +65,7 @@ import {
   type UpgradeJudgement,
   type UpgradeRegistryFact,
   type UpgradeRegistryFailure,
+  type UpdateOrder,
   type Verdict,
   type VersionDrift,
 } from '@dsh-triage/core'
@@ -240,7 +242,7 @@ Flags
   --purge               (outcomes) delete every record this tool stored, then the directory
   --status              (outcomes) how many records exist (default when no verb is given)
   --to <version>        (upgrade) target dsh: exact semver (e.g. 0.3.0), or next / latest (resolved from npm)
-  --registry            (upgrade) annotate with published builds that declare the target (offline by default)
+  --registry            (upgrade) annotate with published builds that declare the target; (audit) add publish-order evidence per installed package
   --card                (upgrade) paste-ready markdown for the release discussion (four buckets + boundary)
   --help                this text
 
@@ -277,6 +279,7 @@ const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 
   --no-redact           在 --json 输出中保留原始绝对路径（默认脱敏为 ~）
   --stamp <iso时间戳>    指定固定时间戳以获得确定性输出
   --to <版本>           (upgrade) 目标 DSH 版本：精确 semver（如 0.2.1-rc.5）或 next / latest
+  --registry            (upgrade) 标注哪些已发布构建声明了目标版本；(audit) 为每个已装包补「发布顺序」证据
   --card                (upgrade) 输出格式化 Markdown 升级卡片
   --execute             (probe) 在独立隔离临时 DSH_HOME 中真正拉起沙盒执行实测
   --port <端口>          (serve) 本地面板绑定的端口（默认自动选取空闲端口）
@@ -1477,6 +1480,105 @@ async function commandFix(flags: Flags): Promise<number> {
   return run.dryRun ? EXIT_FINDINGS : plan.applicable === run.changes.length ? EXIT_OK : EXIT_FINDINGS
 }
 
+interface UpdateOrderRow {
+  readonly name: string
+  readonly version: string
+  readonly verdict: UpdateOrder['verdict']
+  readonly installed_published_at: string | null
+  readonly candidate: { readonly version: string; readonly published_at: string; readonly days_older: number } | null
+  readonly latest_lags: boolean
+  readonly detail: string
+}
+
+function updateOrderRow(name: string, version: string, order: UpdateOrder): UpdateOrderRow {
+  return {
+    name,
+    version,
+    verdict: order.verdict,
+    installed_published_at: order.installedPublishedAt,
+    candidate:
+      order.candidate === null
+        ? null
+        : { version: order.candidate.version, published_at: order.candidate.publishedAt, days_older: order.candidate.daysOlder },
+    latest_lags: order.latestLags,
+    detail: order.detail,
+  }
+}
+
+/**
+ * T-861: publish-order evidence for every installed package, read only when the caller asked.
+ *
+ * WHY OPT-IN: `audit` is offline by contract. Adding registry reads to the default path would make
+ * every existing automation depend on npm being reachable, and would break the "audit --json is the
+ * same bytes as before" guarantee the panel and the tests rely on. `--registry` says it out loud.
+ */
+async function collectUpdateOrders(env: EnvFingerprint, at: string): Promise<readonly UpdateOrderRow[]> {
+  const targets = env.installed.filter((pkg) => pkg.version !== null)
+  const rows: UpdateOrderRow[] = []
+  const concurrency = 4
+  for (let index = 0; index < targets.length; index += concurrency) {
+    const slice = targets.slice(index, index + concurrency)
+    const answers = await Promise.all(
+      slice.map(async (pkg) => {
+        const version = pkg.version as string
+        const packument = await fetchPackument(pkg.name, { at })
+        if (!packument.ok) {
+          const order: UpdateOrder = {
+            verdict: 'unmeasured',
+            installed: version,
+            installedPublishedAt: null,
+            candidate: null,
+            latestLags: false,
+            detail: `the registry could not be read for this package (${packument.error.code})`,
+          }
+          return updateOrderRow(pkg.name, version, order)
+        }
+        const value = packument.value
+        return updateOrderRow(
+          pkg.name,
+          version,
+          judgeUpdateOrder(
+            {
+              latest: value.distTags['latest'] ?? null,
+              next: value.distTags['next'] ?? null,
+              versions: [...value.versions.keys()],
+              publishedAt: value.publishedAt,
+            },
+            version,
+          ),
+        )
+      }),
+    )
+    rows.push(...answers)
+  }
+  return rows
+}
+
+function renderUpdateOrder(rows: readonly UpdateOrderRow[], locale: Locale): string {
+  const zh = locale === 'zh'
+  const lines = [zh ? '\nupdate order（只读 registry）' : '\nupdate order (registry read)']
+  for (const row of rows) {
+    const candidate = row.candidate === null ? '' : ` → ${row.candidate.version}`
+    const when =
+      row.candidate === null
+        ? ''
+        : row.candidate.days_older > 0
+          ? zh
+            ? `（早 ${String(row.candidate.days_older)} 天发布）`
+            : ` (published ${String(row.candidate.days_older)} day(s) earlier)`
+          : zh
+            ? `（晚 ${String(Math.abs(row.candidate.days_older))} 天发布）`
+            : ` (published ${String(Math.abs(row.candidate.days_older))} day(s) later)`
+    lines.push(`  ${row.verdict.padEnd(11)} ${row.name}@${row.version}${candidate}${when}`)
+  }
+  lines.push(
+    zh
+      ? '  边界：这条只说明发布顺序，不改上面任何结论；也不证明哪个构建能跑。'
+      : '  boundary: publish order only — it changes none of the conclusions above and proves no build runs.',
+  )
+  return lines.join('\n')
+}
+
 async function commandAudit(flags: Flags): Promise<number> {
   const env = await requireEnv(flags)
   if (env === null) return EXIT_UNAVAILABLE
@@ -1499,9 +1601,16 @@ async function commandAudit(flags: Flags): Promise<number> {
   const rowConclusion = new Map(
     rowVerdicts.map((verdict) => [verdict.subject.name, verdict.conclusion] as const),
   )
+  const updateOrder = flags.registry ? await collectUpdateOrders(env, stampOf(flags)) : undefined
 
   if (flags.json) {
-    writeJson(auditJsonPayload(data, { noRedact: flags.noRedact, roots: auditRedactRoots(dshHome) }))
+    writeJson(
+      auditJsonPayload(data, {
+        noRedact: flags.noRedact,
+        roots: auditRedactRoots(dshHome),
+        ...(updateOrder === undefined ? {} : { updateOrder }),
+      }),
+    )
     return auditExitOutcome(data) === 'ok' ? EXIT_OK : EXIT_FINDINGS
   }
 
@@ -1509,6 +1618,7 @@ async function commandAudit(flags: Flags): Promise<number> {
   // (`--all`) instead of being the only thing between the user and their answer.
   const summary = buildProfileSummary(data, { locale: flags.locale })
   process.stdout.write(formatProfileSummary(summary, { locale: flags.locale, env }))
+  if (updateOrder !== undefined) process.stdout.write(`${renderUpdateOrder(updateOrder, flags.locale)}\n`)
   if (!flags.all) {
     process.stdout.write(
       flags.locale === 'zh'
