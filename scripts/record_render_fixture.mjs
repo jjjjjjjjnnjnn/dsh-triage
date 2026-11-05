@@ -16,8 +16,8 @@
 
 import { createServer } from 'node:http'
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { isAbsolute, join, resolve } from 'node:path'
+import { cpus, tmpdir } from 'node:os'
+import { basename, isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { findBrowser, judgeRender, renderUrl } from '../packages/probe/dist/index.js'
@@ -122,6 +122,20 @@ const artifact = {
           },
   },
   judged: { state: judgement.state, detail: judgement.detail },
+  /**
+   * R86 / T-860: the first unattributable red (run 41999863821) could not be explained because
+   * the console printed only `judgeRender`'s sentence, and a rerun replaced the uploaded JSON.
+   * The row below is what a reader needs to separate "the runner is different" from "the page
+   * did not answer"; it carries no paths, no tokens and no page content.
+   */
+  environment: {
+    platform: process.platform,
+    node: process.version,
+    cpu_count: cpus().length,
+    browser: basename(browser),
+    run_id: process.env['GITHUB_RUN_ID'] ?? null,
+    run_attempt: process.env['GITHUB_RUN_ATTEMPT'] ?? null,
+  },
   limits: [
     'this is a detector control, not a measurement of any plugin',
     'blank: a 200 response with an empty mount point must be caught',
@@ -141,6 +155,18 @@ process.stdout.write(`wrote ${target}\n`)
 process.stdout.write(`served ${mode} · judged ${judgement.state} (${judgement.detail}) · ${check.ms}ms\n`)
 if (!expectationMet) {
   process.stderr.write(`expectation not met: expected ${expectation}, got ${judgement.state}\n`)
+  // R86 / T-860: printing only `judgement.detail` hid the underlying reason. `judgeRender` is a
+  // function of the signals, so when no DOM was read at all it always says "no DOM observation" —
+  // while `renderUrl` knew whether the browser never opened a port, exposed no page target, or
+  // never answered a query. Print that sentence before the prose.
+  process.stderr.write(`  render said: ${check.state} — ${check.detail} · ${check.ms}ms\n`)
+  process.stderr.write(
+    `  signals: ${
+      check.signals === null
+        ? 'none (no DOM observation)'
+        : `${check.signals.rootId ?? 'no-mount'} · children ${check.signals.rootChildren} · text ${check.signals.textLength} · html ${check.signals.htmlBytes}B · ready ${check.signals.readyState}`
+    }\n`,
+  )
   process.exit(1)
 }
 process.exit(0)

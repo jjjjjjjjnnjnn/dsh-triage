@@ -477,7 +477,7 @@
       "id": "BS-60",
       "area": "CI / 真浏览器控制",
       "cannot_see": "R81 的 CI（run `41999863821`，提交 `b1c7319`）第一次跑时 `render controls (ubuntu, real browser)` **红**：blank 夹具 `node scripts/record_render_fixture.mjs --mode blank --expect blank` 报 `expectation not met: expected blank, got inconclusive (no DOM observation)`，耗时 18.3s；同一提交**重跑后绿**。本机无法复现（本机 Chrome/Edge 走 CDP），也没有留存 runner 上的 DOM/浏览器日志，所以**成因未归因**：可能是 Chromium 启动/页面加载的竞态，也可能是 runner 资源瞬时不足。`inconclusive` 的语义是「没有观察到 DOM」，它既不是 blank 也不是 rendered —— 判定本身是对的，错在于我们还没有把它与「真白屏」区分开的诊断。",
-      "mitigation": "① 不把「重跑绿」当成稳定证明（R75 的同一条教训）；② 这一条只记事实，不改判定：`expect blank` 仍必须真的观察到空挂载点；③ 下一轮（`T-860`）给该作业加**可归因的诊断**（失败时保留 browser stderr / CDP 连接状态 / 页面生命周期），再决定是否允许一次有预算的重试；④ 在归因之前，对外不许说「CI 稳定绿」——只能说「最近一次重跑绿」。",
+      "mitigation": "① 不把「重跑绿」当成稳定证明（R75 的同一条教训）；② 这一条只记事实，不改判定：`expect blank` 仍必须真的观察到空挂载点；③ 下一轮（`T-860`）给该作业加**可归因的诊断**（失败时保留 browser stderr / CDP 连接状态 / 页面生命周期），再决定是否允许一次有预算的重试；④ 在归因之前，对外不许说「CI 稳定绿」——只能说「最近一次重跑绿」。 ⑤ **R86 补上了诊断的一半**：`record_render_fixture` 失败时打印 `render.detail` + signals，产物带 `environment`（platform / node / cpu / 浏览器名 / run id / attempt）；CI 的 `upload-artifact` 改成 `if: always()` 且名字带 `run_attempt`（重跑不再覆盖失败尝试的 JSON）。**仍缺** browser stderr / CDP 生命周期（要改 `packages/probe/src/render.ts`，产品代码，留到 D5 判定之后），所以本条**不关闭**。",
       "owner": ".github/workflows/ci.yml（render controls）· scripts/record_render_fixture.mjs · packages/probe/src/render.ts"
     }
   ]

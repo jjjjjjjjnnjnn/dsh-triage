@@ -12455,6 +12455,32 @@
         "outcome": "covered 4 (11-01..11-04) · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet",
         "sha256": "1fd4339f4e52079a38bd3d53aa4781d1b51d362d29460cd919b8cac8be5412d3"
       }
+    },
+    {
+      "id": "R86-S2",
+      "batch": "R86",
+      "step": "T-860 诊断半边：render controls 失败可归因（判定、断言与阈值一字未动）",
+      "changed": [
+        "scripts/record_render_fixture.mjs",
+        ".github/workflows/ci.yml",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "docs/HANDOFF.md",
+        ".agents/tasks/RESULTS-2026-11-05.md"
+      ],
+      "review": {
+        "correctness": "PASS：只改诊断面——失败时打印 `render.detail` + signals（`judgeRender` 只拿得到信号，拿不到「没开调试端口 / 没页面目标 / 查询超时」这些分支，所以原来恒打印 `no DOM observation`）；产物新增 `environment`；CI 上传改 `if: always()` 且名字带 `run_attempt`。`judgeRender`、`BLANK_SETTLE_MS` / `RENDER_SETTLE_MS`、`MIN_VISIBLE_TEXT`、`expect blank` 全部未动。",
+        "reproducibility": "PASS：本机真跑 blank / rendered / error 3/3（3024 / 1296 / 6218 ms）；定向负对照 `--mode blank --expect rendered` → exit 1 且新诊断行按预期出现。SSOT 只收录 blank 一份（rendered / error 写 `%TEMP%`，结论未随本轮改动变化）。",
+        "licence": "PASS：只跑本机浏览器（Edge）与仓内脚本；不联网、不引入第三方代码、不读凭据。",
+        "ssot": "PASS：产物 + `.sha256`；`environment` 只含 platform / node / cpu_count / 浏览器 basename / run id / attempt，不含绝对路径、token 或页面内容。",
+        "adversary": "反例一：把 `expect blank` 放宽成「没观察到也算 blank」——本轮**没有**这么做，负对照走的仍是「期望不符即 exit 1」。反例二：「重跑绿就算修好」——同一提交 attempt 1 红、attempt 2 绿正是这次的事实，所以只加诊断、不宣布修复。反例三：只把原因写进 artifact 而控制台继续藏——`gh run view --log` 是排障者第一眼看到的地方，所以两条都改了。"
+      },
+      "real_test": {
+        "command": "node scripts/record_render_fixture.mjs --mode blank --expect blank --out data/results --stamp 2026-11-05T13:40:04.829Z",
+        "artifact": "data/results/render-fixture-blank-2026-11-05T13-40-04.829Z.json",
+        "outcome": "served blank · judged blank · 3024ms；同轮 rendered 1296ms / error 6218ms 均通过；负对照 --mode blank --expect rendered → exit 1 并打印 render.detail",
+        "sha256": "931fb670a323471a003de25025d98aaad57c7c6d6448f6063d5ee6bb15422f26"
+      }
     }
   ]
 }

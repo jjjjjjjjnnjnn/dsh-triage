@@ -86,9 +86,13 @@ jobs:
         run: node scripts/record_render_fixture.mjs --mode rendered --expect rendered --out "$RUNNER_TEMP/render"
       - name: a browser error page must not be read as a rendered plugin
         run: node scripts/record_render_fixture.mjs --mode error --expect inconclusive --out "$RUNNER_TEMP/render"
+      # R86 / T-860: `if: always()` keeps the JSON written by the step that failed. Without it the
+      # upload was skipped, and a rerun replaced the only copy — which is why the 2026-11-05 red
+      # could not be attributed. The attempt number keeps attempt 1 and attempt 2 apart.
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: render-controls
+          name: render-controls-${{ github.run_attempt }}
           path: ${{ runner.temp }}/render/*.json
 
   negative-control:
