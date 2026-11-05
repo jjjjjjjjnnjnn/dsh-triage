@@ -12139,6 +12139,83 @@
         "outcome": "18 checks passed (version 0.3.4 · tests 782 · 10 documents)",
         "sha256": "6d7eebdf45510bffb7aa251b43313218ff7d38bd7e062109d6417edd7960b96c"
       }
+    },
+    {
+      "id": "R82-S4",
+      "batch": "R82",
+      "step": "rescue B 段：apply → undo 循环在一次性副本上真跑，证明只裁 `dsh.profile.bundles` 且逐字节还原",
+      "changed": [
+        "packages/plugin/src/rescue.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/rescue-apply.test.ts",
+        "tests/e2e/rescue-cli.test.ts",
+        "scripts/record_rescue.mjs",
+        "docs/specs/M8-rescue.md",
+        "data/results/rescue-cycle-2026-11-05T09-46-53-964Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`--apply` 只从 `dsh.profile.bundles` 删掉可裁条目（本 fixture 只删 `@acme/dsh-widgets`，官方 scope 的 `unresolved` 条目 `@deepseek-ai/dsh-ghost` **留在原处**），`dependencies` 三个键一字未变；`--undo` 之后 sha256 回到 apply 之前的值（`byte_exact_restore: true`）。",
+        "reproducibility": "PASS：循环跑在一次性的 profile 副本上，副本用 `cpSync` 从 fixture 复制、跑完即删；产物记录 before / applied / undone 三个阶段的 manifest sha256 与 bundle 列表，读者可按 `recompute` 重跑。",
+        "licence": "PASS：只读写用户 profile 的两个文件（`package.json` 与自有 `.dsh-triage` 备份），不读凭据 / 会话；实现独立，未复制 `dsh-rescue` 代码。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；`cycle.byte_exact_restore` 与 `dependencies_unchanged` 是两次真实 sha256 / 键集比较的结果，不是脚本自述。",
+        "adversary": "反例一：失败注入只覆盖「写之前」——那条路径不需要回滚，所以补了 `afterWrite` 注入：去掉 `catch` 里的 `copyFileSync(backup, file)` 后，该测试立刻红（文件停在被裁状态），改回即绿（N9）。反例二：`--undo` 用「重写等价 JSON」代替复制备份——逐字节断言红（N10）。反例三：去掉「profile 已被改动」的 sha 检查——拒绝覆盖的测试报 Missing expected exception（N11）。反例四：把 apply 写成「顺手把 `dependencies` 也整理一下」——e2e 的 `dependencies` deepEqual 会红。"
+      },
+      "real_test": {
+        "command": "node scripts/record_rescue.mjs --dsh-home <fixture-home> --profile web --kind synthetic --cycle",
+        "artifact": "data/results/rescue-cycle-2026-11-05T09-46-53-964Z.json",
+        "outcome": "apply removed 1 · byte_exact_restore true · dependencies unchanged true",
+        "sha256": "6004c2a5db3076cc82dc343c9c5d8c3fb7627407b992cb78b6f390974370dc23"
+      }
+    },
+    {
+      "id": "R82-S5",
+      "batch": "R82",
+      "step": "规则改动后的只读计划真跑：官方 scope 的 `unresolved` 只报告、不裁",
+      "changed": [
+        "packages/plugin/src/rescue.ts",
+        "tests/unit/rescue.test.ts",
+        "docs/specs/M8-rescue.md",
+        "data/results/rescue-fixture-2026-11-05T09-46-54-876Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：合成 fixture 3 个 bundle → `official` 1 / `third-party` 1 / `unresolved` 1；可裁只有 1 个（第三方），`@deepseek-ai/dsh-ghost`（官方 scope 但没装上）保留并给理由「reported only」。",
+        "reproducibility": "PASS：`sample.kind: synthetic`；fixture 内自带 `node_modules`，复算时不需要网络。规则改动前后的两份合成产物（`…T09-32-25-410Z` 与 `…T09-46-54-876Z`）都保留，差异只来自那条规则。",
+        "licence": "PASS：只读 fixture 文件。",
+        "ssot": "PASS：产物 + `.sha256`；`counts.*` 与 `plan` 内部计数逐项一致（verifier 会复算）。",
+        "adversary": "反例一：把「官方 scope 的 unresolved」并进可裁——本轮之前正是那样，真跑立刻显示它会把 `@deepseek-ai/dsh-base` 一起删掉（在副本缺 `node_modules` 时尤为明显）。反例二：把这条规则实现成「官方 scope 一律不裁」——第三方 fixture 的可裁数会变 0，单测红。"
+      },
+      "real_test": {
+        "command": "node scripts/record_rescue.mjs --dsh-home <fixture-home> --profile web --kind synthetic",
+        "artifact": "data/results/rescue-fixture-2026-11-05T09-46-54-876Z.json",
+        "outcome": "bundles 3 · removable 1 · third-party 1 · unresolved 1 (official, reported only) · read_only true",
+        "sha256": "813058c7109cab35260454f954692919b26dd88f7e8688779bf6afdcc5193a57"
+      }
+    },
+    {
+      "id": "R82-S6",
+      "batch": "R82",
+      "step": "B 段落定后的上架检查器终跑：测试数 792 与两份 README 对齐，18 条断言全绿",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/listing-2026-11-05T10-05-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing --tests 792` 18 条全过；两份 README 的徽章与正文都写 792（`test-count-matches` 找到 2 条 claim，全部相等）。",
+        "reproducibility": "PASS：断言从文档与被引产物两边复算，`--tests` 由调用方给。",
+        "licence": "PASS：只读仓内文档与既有产物，不联网、不读用户 profile。",
+        "ssot": "PASS：终跑产物 + `.sha256` 进 `data/results/`；本轮 782 的那份 `listing-2026-11-05T09-52-00.000Z.json` 也是绿的、同样保留（它是 B 段落定前的读数）。",
+        "adversary": "反例：只改徽章不改正文——`COUNT` 三种形状都会扫，漏一处即红（R62 的老毛病）。本轮的 792 来自 `pnpm run test` 的 `pass 792`，不是从文档读回来的。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T10:05:00.000Z --tests 792",
+        "artifact": "data/results/listing-2026-11-05T10-05-00.000Z.json",
+        "outcome": "18 checks passed (version 0.3.4 · tests 792 · 10 documents)",
+        "sha256": "493fe619f2751e3b2a95910534f6e03b0b1e512b3d13d632ba3f1c91fa88c305"
+      }
     }
   ]
 }

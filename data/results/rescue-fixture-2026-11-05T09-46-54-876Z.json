@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_rescue.mjs",
+  "generated_at": "2026-11-05T09:46:54.876Z",
+  "question": "if this host will not start, which dsh.profile.bundles entries would a rescue trim — and did asking change the profile?",
+  "sample": {
+    "kind": "synthetic",
+    "profile": "web"
+  },
+  "inputs": {
+    "dsh_home": "(dsh-home)",
+    "cli": "packages/plugin/dist/cli.js",
+    "cli_exit": 1,
+    "manifest_sha256": "e68ac6a26f5403b9496226fcf770b76e38978985ae38ce7b9ef6cfbc9afda93a",
+    "manifest_sha256_after": "e68ac6a26f5403b9496226fcf770b76e38978985ae38ce7b9ef6cfbc9afda93a",
+    "read_only": true
+  },
+  "counts": {
+    "bundles": 3,
+    "removable": 1,
+    "third_party": 1,
+    "unresolved": 1
+  },
+  "plan": {
+    "evidence": "scanned",
+    "profile": "web",
+    "manifestSha256": "e68ac6a26f5403b9496226fcf770b76e38978985ae38ce7b9ef6cfbc9afda93a",
+    "bundles": [
+      {
+        "name": "@deepseek-ai/dsh-base",
+        "spec": "^0.2.1",
+        "version": "0.2.1-rc.4",
+        "origin": "official",
+        "removable": false,
+        "detail": "Official bundle: outside what a rescue would trim.",
+        "restore": {
+          "at": 0,
+          "entry": "@deepseek-ai/dsh-base"
+        }
+      },
+      {
+        "name": "@acme/dsh-widgets",
+        "spec": "^1.0.0",
+        "version": "1.0.3",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 1,
+          "entry": "@acme/dsh-widgets"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-ghost",
+        "spec": "^0.2.1",
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 2,
+          "entry": "@deepseek-ai/dsh-ghost"
+        }
+      }
+    ],
+    "removable": [
+      {
+        "name": "@acme/dsh-widgets",
+        "spec": "^1.0.0",
+        "version": "1.0.3",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 1,
+          "entry": "@acme/dsh-widgets"
+        }
+      }
+    ],
+    "thirdParty": 1,
+    "unresolved": 1,
+    "empty": false,
+    "field": "present"
+  },
+  "limits": [
+    "a plan is computed from the profile manifest only: it does not prove the host boots, before or after a trim",
+    "the CLI was invoked with --json; this artifact is that output plus the before/after manifest hashes",
+    "SYNTHETIC PROFILE: the manifest was constructed for this run, so the numbers describe the fixture, not a user machine",
+    "evidence tier is `scanned` — dsh.profile.bundles is configuration read off disk, not something the package declares"
+  ],
+  "recompute": "node scripts/record_rescue.mjs --stamp 2026-11-05T09:46:54.876Z --dsh-home '(dsh-home)' --profile web --kind synthetic"
+}

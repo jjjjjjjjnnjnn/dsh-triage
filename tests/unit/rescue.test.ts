@@ -82,6 +82,17 @@ test('listed but not installed is its own origin, not a flavour of third-party (
   assert.equal(plan.unresolved, 1)
 })
 
+test('an official-scope bundle that is not installed is reported, never trimmed', () => {
+  const plan = classify({
+    declared: [{ name: '@deepseek-ai/dsh-base', spec: '^0.2.1' }],
+    installed: [{ name: '@deepseek-ai/dsh-base', version: null }],
+  })
+  assert.equal(plan.bundles[0]?.origin, 'unresolved')
+  assert.equal(plan.bundles[0]?.removable, false, 'an unresolved core bundle is likelier our resolver than the user')
+  assert.equal(plan.removable.length, 0)
+  assert.match(plan.bundles[0]?.detail ?? '', /reported only/u)
+})
+
 test('a missing bundles field and an empty list are different facts (N6)', () => {
   const absent = classify({ declared: [], field: 'absent' })
   const empty = classify({ declared: [], field: 'empty' })

@@ -19,8 +19,9 @@
 
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 
 import { writeEvidence } from './lib/evidence.mjs'
@@ -63,6 +64,100 @@ if (!existsSync(manifestPath)) {
 }
 
 const sha256Of = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
+const bundleNames = (text) => {
+  try {
+    const bundles = JSON.parse(text)?.dsh?.profile?.bundles
+    return Array.isArray(bundles) ? bundles.filter((entry) => typeof entry === 'string') : []
+  } catch {
+    return []
+  }
+}
+const dependencyKeys = (text) => {
+  try {
+    const dependencies = JSON.parse(text)?.dependencies
+    return dependencies !== null && typeof dependencies === 'object' ? Object.keys(dependencies).sort() : []
+  } catch {
+    return []
+  }
+}
+const applyPayload = (result) => {
+  try {
+    return JSON.parse(String(result.stdout ?? ''))
+  } catch {
+    return null
+  }
+}
+
+/** `--cycle`: apply then undo on a **copy**, and prove the copy came back byte for byte. */
+const cycle = argv.includes('--cycle')
+if (cycle) {
+  if (kind !== 'synthetic') {
+    process.stderr.write('refusing --cycle on a measured profile: this recorder only applies to a throw-away copy (--kind synthetic)\n')
+    process.exit(2)
+  }
+  const scratch = mkdtempSync(join(tmpdir(), 'triage-rescue-cycle-'))
+  const copyDir = join(scratch, 'profiles', profile)
+  mkdirSync(dirname(copyDir), { recursive: true })
+  cpSync(profileDir, copyDir, { recursive: true })
+  const copyManifest = join(copyDir, 'package.json')
+  const original = readFileSync(copyManifest, 'utf8')
+  const before = sha256Of(copyManifest)
+  const depsBefore = JSON.stringify(dependencyKeys(original))
+
+  const applied = spawnSync(process.execPath, [cli, 'rescue', '--apply', '--json', '--no-redact', '--locale', 'en', '--dsh-home', scratch, '--profile', profile], {
+    cwd: repoRoot, encoding: 'utf8', windowsHide: true,
+  })
+  const appliedText = readFileSync(copyManifest, 'utf8')
+  const afterApply = sha256Of(copyManifest)
+  const undoPath = String(applyPayload(applied)?.run?.journal ?? '')
+  const restoredRun = undoPath === ''
+    ? { status: -1, stdout: '', stderr: 'no journal path in the apply output' }
+    : spawnSync(process.execPath, [cli, 'rescue', '--undo', undoPath, '--locale', 'en'], {
+        cwd: repoRoot, encoding: 'utf8', windowsHide: true,
+      })
+  const undoneText = readFileSync(copyManifest, 'utf8')
+  const afterUndo = sha256Of(copyManifest)
+  rmSync(scratch, { recursive: true, force: true })
+
+  const payload = {
+    schema_version: 1,
+    produced_by: 'scripts/record_rescue.mjs',
+    generated_at: stamp,
+    question: 'does --apply trim only dsh.profile.bundles, and does --undo put the exact bytes back?',
+    sample: { kind, profile },
+    inputs: { dsh_home: '(dsh-home)', cli: 'packages/plugin/dist/cli.js', mode: 'cycle-on-a-copy' },
+    phases: [
+      { phase: 'before', cli_exit: null, manifest_sha256: before, bundles: bundleNames(original), dependencies: dependencyKeys(original) },
+      { phase: 'applied', cli_exit: applied.status, manifest_sha256: afterApply, bundles: bundleNames(appliedText), dependencies: dependencyKeys(appliedText) },
+      { phase: 'undone', cli_exit: restoredRun.status, manifest_sha256: afterUndo, bundles: bundleNames(undoneText), dependencies: dependencyKeys(undoneText) },
+    ],
+    cycle: {
+      removed: applyPayload(applied)?.run?.removed ?? [],
+      dependencies_unchanged: JSON.stringify(dependencyKeys(undoneText)) === depsBefore,
+      byte_exact_restore: afterUndo === before,
+    },
+    limits: [
+      'SYNTHETIC COPY: the apply/undo ran on a throw-away copy of a constructed profile, not on a user machine',
+      'a trimmed profile is not a proven boot: this records the file edit only',
+      'the undo phase refuses when the copy changed in between; that refusal is covered by tests, not by this artifact',
+    ],
+    recompute: `node scripts/record_rescue.mjs --stamp ${stamp} --dsh-home '(dsh-home)' --profile ${profile} --kind synthetic --cycle`,
+  }
+  const cycleFile = `rescue-cycle-${stamp.replace(/[:.]/g, '-')}.json`
+  const written = writeEvidence({ outDir, fileName: cycleFile, text: `${JSON.stringify(payload, null, 2)}\n`, root: repoRoot })
+  if (!written.ok) {
+    process.stderr.write(`refusing to overwrite existing evidence: ${written.target}\n`)
+    process.exit(2)
+  }
+  process.stdout.write(`cycle        apply removed ${payload.cycle.removed.length} · undo byte-exact: ${String(payload.cycle.byte_exact_restore)} · dependencies unchanged: ${String(payload.cycle.dependencies_unchanged)}\n`)
+  process.stdout.write(`ssot ${written.display} (${written.sha256.slice(0, 12)}…)\n`)
+  if (!payload.cycle.byte_exact_restore || !payload.cycle.dependencies_unchanged) {
+    process.stderr.write('the apply/undo cycle did not come back to the original bytes\n')
+    process.exit(1)
+  }
+  process.exit(0)
+}
+
 const before = sha256Of(manifestPath)
 
 const run = spawnSync(process.execPath, [cli, 'rescue', '--json', '--locale', 'en', '--dsh-home', resolve(dshHome), '--profile', profile], {

@@ -966,3 +966,10 @@
 - 结果：① 判据先行（C1–C8 / N1–N8）：三态分类 `official` / `third-party` / `unresolved`，官方 scope 但 `link:`/`file:`/`workspace:` 安装的按本地代码算第三方，`unresolved` **不并入**第三方。② 纯函数 `classifyBundles()`（无盘无网）+ 唯一读盘函数 `readProfileBundles()`（只读 `<profile>/package.json`）。③ **零写盘由测量证明**：记录器先算 manifest sha256 → 跑 CLI → 再算一次，两次相同才写 `read_only: true`；本机真实 profile（2 个官方 bundle、可裁 0）与合成 fixture（4 个 bundle、可裁 3）两份产物都是 `read_only: true`。④ 8 条负对照逐条真红后逐字节还原：N1 只读时顺手格式化 → e2e sha256 断言红；N2「名字含 dsh 算第三方」→ 可裁列表红；N3 合并 `unresolved` → 三态变两态红；N4 删边界句 → 中英两条 e2e 红；N7 把 home 路径塞进 `--json` → 隐私断言红；N8 给计划加 `generatedAt` → 可复现断言红。⑤ `--apply` / `--undo` **未实现**，给了就 exit 2 明说，不静默 exit 0。
 - 实测：`pnpm run verify` **782 测试 / 9 门 ALL GREEN** · `gate.mjs` 9/9（含 `step-review` 492 步）· `check_listing --tests 782` 待终跑
 - 边界：A 段**不写任何用户文件**，所以「失败必回滚 / undo 逐字节」这两条 B 段的负对照**还没有见证**；计划不证明启动成功（启动验证仍要 `probe --execute`）。构造 fixture 时 PowerShell 的 `$HOME` / `$PROFILE` 是只读自动变量，赋值失败把文件写到了 `C:\Users\rongj\profiles\` —— 发现后逐项核对、整目录删除、改用具名变量在 `%TEMP%` 重做（这条记在这里是因为它长得像正常输出）。
+
+> **R82 补记（B 段，同一轮）**：写入面 `--apply` / `--undo` 已落地，并在一次性副本上真跑
+> （`rescue-cycle-2026-11-05T09-46-53-964Z.json`：removed 1 · byte-exact restore · dependencies unchanged）。
+> **真跑时改了一条规则，并取得 HUMAN 点头**：官方 scope 的 `unresolved` **只报告、不裁**
+> （否则解析器没看懂布局时会把 `@deepseek-ai/dsh-base` 一起删掉）。
+> N9 / N10 / N11 三条写入面负对照逐条真红后还原；终跑 **792 测试 / 9 门 / `--mutate` 9/9**。
+> 边界同 A 段：**没有证明「裁掉之后宿主起得来」**——那要 `probe --execute`，另一条命令。

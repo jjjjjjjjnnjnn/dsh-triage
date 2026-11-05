@@ -141,14 +141,49 @@ test('an unreadable profile is exit 3 with a hint, never an empty plan (N5)', ()
   }
 })
 
-test('--apply is refused loudly and still writes nothing', () => {
+test('--apply removes exactly the listed bundles from bundles only, and --undo restores the manifest byte for byte', () => {
   const fixture = buildFixture({ bundles: ['@deepseek-ai/dsh', '@acme/dsh-widgets'] })
   try {
     const before = sha256(fixture.manifestPath)
-    const result = run(['rescue', '--apply', '--dsh-home', fixture.dshHome, '--locale', 'en'])
-    assert.equal(result.code, 2, 'a silent no-op that exits 0 would look like success')
-    assert.match(result.stderr, /not implemented yet/u)
-    assert.equal(sha256(fixture.manifestPath), before)
+
+    const applied = run(['rescue', '--apply', '--dsh-home', fixture.dshHome, '--locale', 'en', '--json', '--no-redact'])
+    assert.equal(applied.code, 0, `apply should succeed: ${applied.stderr}`)
+    const payload = JSON.parse(applied.stdout) as { plan: { removable: unknown[] }; run: { journal: string; removed: string[]; dryRun: boolean } }
+    assert.equal(payload.plan.removable.length, 1, 'the plan is computed before the write')
+    assert.equal(payload.run.dryRun, false)
+    assert.deepEqual(payload.run.removed, ['@acme/dsh-widgets'])
+
+    const afterApply = JSON.parse(readFileSync(fixture.manifestPath, 'utf8')) as {
+      dependencies: Record<string, string>
+      dsh: { profile: { bundles: string[] } }
+    }
+    assert.deepEqual(afterApply.dsh.profile.bundles, ['@deepseek-ai/dsh'], 'only the third-party bundle left')
+    assert.deepEqual(afterApply.dependencies, { '@acme/dsh-widgets': '^1.0.0' }, 'dependencies must not change')
+    assert.notEqual(sha256(fixture.manifestPath), before, 'apply is supposed to change the file')
+
+    const undone = run(['rescue', '--undo', payload.run.journal, '--locale', 'en'])
+    assert.equal(undone.code, 0, `undo should succeed: ${undone.stderr}`)
+    assert.equal(sha256(fixture.manifestPath), before, 'undo must restore the original bytes, not an equivalent file')
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('--undo refuses to overwrite a profile that changed after the rescue (N11)', () => {
+  const fixture = buildFixture({ bundles: ['@deepseek-ai/dsh', '@acme/dsh-widgets'] })
+  try {
+    const applied = run(['rescue', '--apply', '--dsh-home', fixture.dshHome, '--locale', 'en', '--json', '--no-redact'])
+    assert.equal(applied.code, 0, applied.stderr)
+    const journal = (JSON.parse(applied.stdout) as { run: { journal: string } }).run.journal
+
+    // The user edits the profile after the rescue: overwriting that would be a second silent change.
+    writeFileSync(fixture.manifestPath, `${readFileSync(fixture.manifestPath, 'utf8')}\n`, 'utf8')
+    const edited = sha256(fixture.manifestPath)
+
+    const undone = run(['rescue', '--undo', journal, '--locale', 'en'])
+    assert.equal(undone.code, 3, `expected a refusal, got ${undone.code}: ${undone.stdout}`)
+    assert.match(undone.stderr, /changed after this rescue was applied/u)
+    assert.equal(sha256(fixture.manifestPath), edited, 'a refused undo must not touch the file')
   } finally {
     rmSync(fixture.root, { recursive: true, force: true })
   }

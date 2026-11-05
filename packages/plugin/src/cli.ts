@@ -93,7 +93,7 @@ import {
   sandboxBundles,
 } from './probe-run.js'
 import { applyExemptionFixes, planFixes, readProfileDependencies, runtimeSupportsExemptions, undoFix } from './fix.js'
-import { classifyBundles, readProfileBundles } from './rescue.js'
+import { applyRescue, classifyBundles, readProfileBundles, undoRescue } from './rescue.js'
 import { allowedHosts } from './host-allow.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
 import { buildProfileSummary, formatProfileSummary } from './summary.js'
@@ -208,8 +208,8 @@ Usage
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking (audit: print the full ledger)
-  --apply               (fix) actually write the plan; without it nothing is written
-  --undo <journal>      (fix) restore the files an earlier --apply changed
+  --apply               (fix) actually write the plan; (rescue) take the listed bundles out
+  --undo <journal>      (fix, rescue) restore the files an earlier --apply changed
   --strict              exit 1 when a conclusion is not "go"
   --profile <name>      profile name (default: web)
   --dsh-home <path>     override $DSH_HOME (default: ~/.dsh)
@@ -268,8 +268,8 @@ const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 
 参数 (Flags)
   --json                输出机器可读的 JSON 数据
   --all                 包含非阻断性条目（audit 命令下打印全量台账）
-  --apply               (fix) 真正执行修复写入；不加此参数时仅输出方案
-  --undo <日志文件>      (fix) 依据此前执行生成的日志文件回滚修复改动
+  --apply               (fix) 真正执行修复写入；(rescue) 把列出的 bundle 从配置中移除
+  --undo <日志文件>      (fix, rescue) 依据此前执行生成的日志文件回滚改动
   --strict              当存在非 "go" 结论时以退出码 1 退出
   --profile <名称>       指定分析的 Profile 名称（默认：web）
   --dsh-home <路径>      覆盖 $DSH_HOME 路径（默认：~/.dsh）
@@ -1237,22 +1237,36 @@ async function commandStatus(flags: Flags): Promise<number> {
  * `ready`, backs the file up first, and records a journal so `--undo` can put it back.
  */
 /**
- * `rescue` (M8 A 段): read-only plan for the smallest reversible change when the host will not start.
+ * `rescue` (M8): read-only plan by default, `--apply` takes the listed bundles out of
+ * `dsh.profile.bundles`, `--undo <journal>` puts the manifest back byte for byte.
  *
  * Three things this command is careful about:
- *   - **it writes nothing** — not even a backup, not even a formatted copy of the manifest (C4);
+ *   - **the plan writes nothing** — not even a backup, not even a formatted copy (C4);
  *   - **it does not promise a boot** — the boundary sentence is part of the output, both locales (C5);
- *   - **`--apply` / `--undo` are refused loudly** instead of silently doing nothing, because a
- *     no-op that exits 0 would look exactly like "it worked" (B 段 lands those).
+ *   - **it never touches `dependencies`** — the whole point of trimming bundles is that undo stays
+ *     an array edit instead of a reinstall (spec §3 rule 3).
  */
 async function commandRescue(flags: Flags): Promise<number> {
-  if (flags.apply || flags.undo !== null) {
-    process.stderr.write(
-      flags.locale === 'zh'
-        ? 'rescue 的写入面（--apply / --undo）还没落地：这一版只有只读计划。未修改任何文件。\n'
-        : 'rescue --apply / --undo are not implemented yet: this build only plans. Nothing was written.\n',
-    )
-    return EXIT_USAGE
+  if (flags.undo !== null) {
+    try {
+      const { restored } = undoRescue(flags.undo)
+      if (flags.json) {
+        writeJson({ schema_version: 1, command: 'rescue', undo: flags.undo, restored })
+      } else {
+        process.stdout.write(
+          flags.locale === 'zh'
+            ? `已逐字节还原 ${restored.length} 个文件：\n`
+            : `restored ${restored.length} file(s) byte for byte:\n`,
+        )
+        for (const file of restored) process.stdout.write(`  ${file}\n`)
+      }
+      return EXIT_OK
+    } catch (error) {
+      process.stderr.write(
+        `${flags.locale === 'zh' ? '无法撤销' : 'cannot undo'}: ${error instanceof Error ? error.message : String(error)}\n`,
+      )
+      return EXIT_UNAVAILABLE
+    }
   }
 
   const env = await requireEnv(flags)
@@ -1273,9 +1287,33 @@ async function commandRescue(flags: Flags): Promise<number> {
     field: reading.field,
   })
 
+  let run: ReturnType<typeof applyRescue> = { journal: '', backupDir: null, changes: [], removed: [], dryRun: true }
+  if (flags.apply && plan.removable.length > 0) {
+    try {
+      run = applyRescue({
+        plan,
+        profileDir: env.profileDir,
+        stamp: stampOf(flags),
+        dryRun: false,
+      })
+    } catch (error) {
+      process.stderr.write(
+        `${flags.locale === 'zh' ? '无法应用' : 'cannot apply'}: ${error instanceof Error ? error.message : String(error)}\n`,
+      )
+      return EXIT_UNAVAILABLE
+    }
+  }
+
   if (flags.json) {
-    // The plan carries no absolute paths by construction; this is checked by a control, not by hope.
-    writeJson({ schema_version: 1, command: 'rescue', plan })
+    // The plan carries no absolute paths by construction; the run does (journal/backup), so JSON
+    // output keeps the same contract as every other command: redact unless --no-redact.
+    const payload = {
+      schema_version: 1,
+      command: 'rescue',
+      plan,
+      run: flags.noRedact ? run : { ...run, journal: '', backupDir: null },
+    }
+    writeJson(payload)
   } else {
     const zh = flags.locale === 'zh'
     process.stdout.write(
@@ -1324,13 +1362,32 @@ async function commandRescue(flags: Flags): Promise<number> {
         ? '\n边界：本计划只从声明层读 dsh.profile.bundles，不证明启动成功；启动验证请用 `dsh-triage probe --execute`。\n'
         : '\nboundary: this plan is read off dsh.profile.bundles only — it does not prove the host boots; verify with `dsh-triage probe --execute`.\n',
     )
-    process.stdout.write(
-      zh
-        ? '未修改任何文件：写入与撤销在下一版（--apply / --undo）落地。\n'
-        : 'nothing was written: --apply / --undo land in the next build.\n',
-    )
+    if (run.dryRun) {
+      process.stdout.write(
+        plan.removable.length > 0
+          ? zh
+            ? '\n当前仅输出计划，未修改任何文件。如需执行：dsh-triage rescue --apply\n'
+            : '\nplan only — nothing was written. To apply: dsh-triage rescue --apply\n'
+          : zh
+            ? '\n未修改任何文件：没有可裁的条目。\n'
+            : '\nnothing was written: nothing to trim.\n',
+      )
+    } else {
+      process.stdout.write(
+        zh
+          ? `\n已从 dsh.profile.bundles 移除 ${run.removed.length} 个条目：${run.removed.join('、')}\n`
+          : `\nremoved ${run.removed.length} entry/entries from dsh.profile.bundles: ${run.removed.join(', ')}\n`,
+      )
+      process.stdout.write(zh ? `备份：${run.backupDir}\n` : `backup: ${run.backupDir}\n`)
+      process.stdout.write(
+        zh
+          ? `撤销（逐字节还原）：dsh-triage rescue --undo ${run.journal}\n`
+          : `undo (byte for byte): dsh-triage rescue --undo ${run.journal}\n`,
+      )
+    }
   }
 
+  if (!run.dryRun) return EXIT_OK
   return plan.removable.length > 0 ? EXIT_FINDINGS : EXIT_OK
 }
 

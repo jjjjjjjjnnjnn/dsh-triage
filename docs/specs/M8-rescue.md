@@ -1,6 +1,6 @@
 # M8 · 急救箱（rescue）判据
 
-> **Stand**: R82 (2026-11-05)｜**状态**: **A 段已实现**（只读计划 `rescue`），**B 段待做**（`--apply` / `--undo`）
+> **Stand**: R82 (2026-11-05)｜**状态**: **A 段（只读计划）与 B 段（`--apply` / `--undo`）均已实现**
 > **这条 spec 回答一件事**：当一台机器起不来时，我们**能**给出什么答案、**不能**给出什么答案，
 > 以及用什么证据证明「只读就是只读」。
 > **来源**：R81 的同定位采证（`docs/10-adjacent-tools.md`、`data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json`）。
@@ -47,7 +47,12 @@
 | 名字以 `@deepseek-ai/` 开头，`dependencies` 里是 registry 形态（`^1.2.3` / `~` / 精确 / `*` / 缺省） | `official` | 否 | 「官方 bundle，不属于救援范围」 |
 | 名字**不以** `@deepseek-ai/` 开头（任意 scope 或无 scope） | `third-party` | **是** | 「第三方 bundle，可以暂时裁掉」 |
 | `@deepseek-ai/` 开头，但 `dependencies` 里是本地形态（`link:` / `file:` / `workspace:` / 相对或绝对路径） | `third-party` | **是** | 「官方 scope 但装的是本地路径，属于你自己的代码」 |
-| 磁盘上解析不到安装位置（不在 profile `node_modules`、也不在共享 `node_modules`） | `unresolved` | **是**（单独计数） | 「在 `dsh.profile.bundles` 里，但没装上」 |
+| 非官方，且磁盘上解析不到安装位置 | `unresolved` | **是**（单独计数） | 「在 `dsh.profile.bundles` 里，但没装上」 |
+| **官方 scope**，且磁盘上解析不到安装位置 | `unresolved` | **否** | 「官方 bundle 没装上：只报告，不裁」 |
+
+> **为什么官方 scope 的 `unresolved` 不裁（R82 真跑时改的一条）**：解析不到最常见的原因不是「用户没装」，而是**我们自己的解析器没看懂那种布局**（非 hoisted store、嵌套副本）。在这种情况下把
+> `@deepseek-ai/dsh-base` 从 `dsh.profile.bundles` 里删掉，是这个命令能做的最具破坏性的一件事。
+> 第三方 bundle 的「没装上」不一样：文件已经和磁盘不一致，而且撤销只差一条 `--undo`。
 
 **两条硬规则**：
 
@@ -99,10 +104,23 @@
 
 ---
 
-## 7. B 段（下一轮，未实现）
+## 7. B 段（写入面）——**R82 已实现**
 
-1. `--apply`：备份 (`<profile>/.dsh-triage/rescue/<stamp>/manifest.before.json`) → 原子替换 → journal（记录删掉的条目与原始下标）→ 回读校验；
-2. 失败必回滚：写入中途注入一次失败，`package.json` 逐字节回到原样；
-3. `--undo <journal>`：逐字节还原；如果用户在这期间又改过 profile → **拒绝覆盖**并明说；
-4. SAFE MODE 入口（`T-855`）在 `--apply` 之上，不另开写入路径；
-5. 负对照沿用 §6，另加三条：只读不写 / 失败必回滚 / undo 逐字节。
+| 编号 | 判据 | 由什么证明 |
+|---|---|---|
+| **C9** | `--apply` 只改 `dsh.profile.bundles`；`dependencies` 与其余键逐字节保持（除 `bundles` 数组本身） | 单测与 e2e 都断言 `dependencies` deepEqual；e2e 还比对 apply 前后的键集 |
+| **C10** | 写入顺序固定：**备份 → 原子替换 → 回读校验 → journal**；任一步失败必须**先回滚再抛错** | 注入「写后失败」的测试（`afterWrite`）断言原始字节回来了、且没有留下 journal |
+| **C11** | `--undo` **逐字节还原**，并在 profile 于救援后被改动过时**拒绝覆盖** | 单测比 sha256；e2e 改一行后 undo 必须 exit 3 且文件不变 |
+| **C12** | 默认（无 `--apply`）仍然**零写盘**：连 `<profile>/.dsh-triage/` 目录都不产生 | 单测断言目录不存在；A 段的 C4 仍然成立 |
+
+补充负对照：
+
+| 编号 | 怎么把它弄红 | 期望 |
+|---|---|---|
+| **N9** | 去掉 `catch` 里的回滚（`copyFileSync(backup, file)`） | 「写后失败」的测试红（文件停在被裁过的状态） |
+| **N10** | 把 undo 改成「重写等价内容」而不是复制备份 | 逐字节断言红 |
+| **N11** | 去掉 undo 的「profile 已被改动」检查 | 拒绝覆盖的测试红（Missing expected exception） |
+
+**存储位置**：`<profile>/.dsh-triage/rescue/<stamp>/package.json`（备份）与 `<profile>/.dsh-triage/rescue/<stamp>.json`（journal），
+与 `fix` 的 `.dsh-triage/{journal,backups}` 同一个根，撤销只有一套查找规则。
+**不做**：不重启宿主（重启是 `T-855` 的 SAFE MODE 入口），不装/卸包，不动 `node_modules` 与 lockfile。
