@@ -12329,6 +12329,77 @@
         "outcome": "18 checks passed (version 0.3.4 · tests 805 · 10 documents)",
         "sha256": "e3746828f48e7a4153ad8b538e9422ca4046b91b202ad38e17c228b63fb87b89"
       }
+    },
+    {
+      "id": "R84-S3",
+      "batch": "R84",
+      "step": "D5 窗口内第三跑之前的状态读数：覆盖 11-01..11-03、下一跑截止 2026-11-12",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "data/results/d5-window-status-2026-11-05T10-42-29.302Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`d5_window_status` 按已提交产物算出 covered 3 天、missing 12 天（collectible now 0 · not published yet 12 · lost 0）、`next_run_by 2026-11-12`、verdict `not-yet`。",
+        "reproducibility": "PASS：只读脚本，输入是 `data/results/` 里的现场件；产物带 `produced_by` / `generated_at`，文件名由 `--stamp` 决定。",
+        "licence": "PASS：只读仓内产物，不联网。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；`registry.json` 的 `posted_on` 与 d5-evidence 的窗口起点逐毫秒比对通过（脚本内建 exit 2 守卫）。",
+        "adversary": "反例：把「collectible now 0」读成「不用再跑」——脚本本身给的是 `next_run_by`（最晚日期），不是「现在就跑」；这条正是 R76 把口头建议改成算得出来的数的原因。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "artifact": "data/results/d5-window-status-2026-11-05T10-42-29.302Z.json",
+        "outcome": "covered 3 · missing 12 · next_run_by 2026-11-12 · not-yet",
+        "sha256": "7e4c1713071146e8e5b1799737d624f446becdeba24d8cbcf77668259a9daf52"
+      }
+    },
+    {
+      "id": "R84-S4",
+      "batch": "R84",
+      "step": "D5 窗口内第三份现场基线：周下载 1598 / shape=steady / 日序列仍是 10-29 爆发的回声",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/market-baseline-2026-11-05T10-45-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`inputs.offline=false`、`failures: []`；窗口 `10-29..11-04`、周下载 **1598**、`download_shape=steady`（7/7 天、峰值 39.7%）、`d5=threshold-met`。日序列 `634/192/17/192/357/172/34` 与 10-29 的爆发形状一致，尾巴在收，**因此这不是新需求证据**，`judgeD5` 仍 `pending`。",
+        "reproducibility": "PASS：同类两跑（10-40 与 10-46）用的是同一批 npm/GitHub 端点，原始响应进 `data/fixtures/market-baseline/`；`--fixtures` 可离线复算（R52 已证逐字节）。",
+        "licence": "PASS：只读 npm 下载数与 GitHub Discussions 公开元数据。",
+        "ssot": "PASS：产物 + `.sha256`；`d5` 块与 `packages` 里同名条目逐项一致（周下载、shape、峰值、日序列）。",
+        "adversary": "反例一：把 `threshold-met` 说成「D5 达标」——判定表还要求 reactions ≥10 与外部引用 ≥1，这两项仍是 0/10 与 0/1。反例二：把 7/7 天有下载当成「有人在用」——`BS-48` 已写明 steady 只说明不像单日爬虫；本轮 `11-04` 单日只有 34，正是回声在衰减。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-05T10:45:00.000Z",
+        "artifact": "data/results/market-baseline-2026-11-05T10-45-00.000Z.json",
+        "outcome": "window 2026-10-29..2026-11-04 · weekly 1598 · steady (7/7, peak 39.7%) · diagnostic 3872 / market 471182 / decorative 425257 · discussions 876 / pain 379 / unanswered 256",
+        "sha256": "b91b627455deaa5b22752b700db2dbcf540ac0e8cb39db2b20496f2fa4eb5076"
+      }
+    },
+    {
+      "id": "R84-S5",
+      "batch": "R84",
+      "step": "D5 覆盖与截止日重算：覆盖推进到 11-04，下一跑截止 2026-11-13，三份入口文档同步",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "data/results/d5-window-status-2026-11-05T10-44-11.339Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：covered 4 天（`11-01..11-04`）、missing 11、`next_run_by 2026-11-13`、verdict `not-yet`；与跑前那份的差正好是新增的一天。",
+        "reproducibility": "PASS：同一脚本、同一输入集；治理测试会按已提交产物重算截止日并与三份文档对撞。",
+        "licence": "PASS：只读仓内产物与文档，不联网、不改任何产物内容。",
+        "ssot": "PASS：产物 + `.sha256`；`AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` 三处日期一致（`2026-11-13`）。",
+        "adversary": "反例：把截止日往前写成「11-12」保守一点——治理测试要求文档日期等于按产物重算的值，写保守值即红（那不是保守，是另一个数）。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "artifact": "data/results/d5-window-status-2026-11-05T10-44-11.339Z.json",
+        "outcome": "covered 4 (11-01..11-04) · missing 11 · next_run_by 2026-11-13 · not-yet",
+        "sha256": "df37ae3b3474bf4d896d147d2d6d8978c2967226c8aef3abf8e0494f1d16c9f7"
+      }
     }
   ]
 }
