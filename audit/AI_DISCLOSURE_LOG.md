@@ -993,3 +993,14 @@
 - 结果：① 四态判定（`trap` / `no-trap` / `no-candidate` / `unmeasured`），`unmeasured` 不许看起来像「没有陷阱」。② `audit --registry` 显式联网，默认 `audit --json` 逐字节不变（N6 e2e 钉住）。③ 真跑：live 3 行 `no-trap`（沙箱 profile 0.2.1-rc.4 → 0.2.2-rc.1，晚 8.7 天）+ 5 条纯用例全过。④ 负对照 N1–N6 逐条真红后还原：`true ? 'trap'` → N1/N3 红（4 条）；`false ? 'trap'` → N2 红（3 条）；「候选缺时间当 0 天」→ N5 红；「audit 总是读网」→ N6 e2e 红。⑤ spec 两处实施偏差写进 §7（三态→四态；挂载点从 `check --explain` / `audit --all` 改成 `audit --registry`：`check` 判的是候选、`audit` 默认离线是契约）。
 - 实测：`pnpm run verify` **805 测试 / 9 门 ALL GREEN** · `gate.mjs --mutate` **9/9** · `check_listing --tests 805` **18/18**
 - 边界：live 半边读的是本机沙箱 profile（不是用户机器）；60 包抽样里 **0 个活陷阱实例**，本项价值是「真出现回退重编号时能提前说『更高 ≠ 更新』」；不改任何 verdict / 阈值 / 冻结项。
+
+### 2026-11-05 R86｜关窗前定桩 + D 线备件 + 投递任务处理 + 关窗彩排 + 每日守卫
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R86-S1…S5）
+- 人工决策：HUMAN「交接过来项目，进行下一步计划」→ 选 **A（关窗优先 + 备 D 线）**；「面板写盘允许，**先写 ADR 再实现**」（记为 `T-855` 前提，本轮不实施）；「全部同意，开始进行」（同意加每日 CI 守卫）
+- 范围：`AGENTS.md` · `INDEX.md` · `PROJECT_RULES.md` · `docs/{HANDOFF,ROADMAP,BACKLOG,09-open-source-borrowing,d5-close-runbook}.md` · `docs/11-d-path.md`（新）· `docs/copy/facts/2026-11-05-upstream-attribution.md`（新）· `.agents/README.md` · `.agents/tasks/{TASK-20261105-01,TASK-20261105-02,RESULTS-2026-11-05}.md` · `_archive/{2026-11-05_HANDOFF-batch-rows-R75.md,ARCHIVE_MANIFEST.md}` · `scripts/record_render_fixture.mjs` · `.github/workflows/{ci.yml,d5-window.yml（新）}` · `tests/unit/probe-host-sample.test.ts` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `data/results/{d5-window-status-2026-11-05T12-49-57.095Z,13-55-52.466Z,15-04-35.594Z,render-fixture-blank-2026-11-05T13-40-04.829Z,gates-2026-11-05T14-09-07.997Z}.json`
+- 结果：① 基线 **805 测试 / 9 门** + `--mutate` 9/9；② D5 覆盖复算 `11-01..11-04`、今天可采 **0** 天、**下一跑截止 `2026-11-13`**；③ D 线写成可执行文件（`docs/11-d-path.md`，contingency）+ 上游归因事实包；④ `T-855`–`T-858` 推迟、`T-859` 收口；⑤ §2 归档 R75 六行（逐行 `git show` 比对 byte-identical）；⑥ **外部投递的两份 task packet 已证伪/处理**（一份不可复现的 flake、一份模块与方向都不成立）；⑦ **关窗四条命令彩排**（基线复算逐项相同、D5 抓取→复算三项相同）；⑧ **修掉一个真抖动**（`probe-host-sample` 假 launcher 非原子写导致 `samples 3≠2`，改 tmp+rename，断言未放宽）；⑨ **新增每日守卫** `d5-window.yml`（urgent/lost → 红，窗口结束后自退役），本地四条分支真跑 + CI 手动触发见证
+- 审核：主会话四轴自审（正确性 / 可复现 / 合规 / SSOT）+ 对抗性反例，逐条记入 `audit/step_reviews.json` R86-S1…S5；没有 subagent，因此没有独立评审员
+- SessionID：主会话（未启用 subagent）
+- 备注（边界）：D5 仍是 `pending`（0/10 · 0/1 · 1598 steady 回声）；`docs/11-d-path.md` 在判定前**不得对外引用**；`T-860` 只补了诊断半边（CDP/stderr 仍缺）；CI 守卫是 best-effort 兜底，不是准点承诺。

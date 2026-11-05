@@ -12525,6 +12525,32 @@
         "outcome": "9 gates ALL GREEN；同一树上去重后全量套件 3/3 `fail 0`，单文件 10/10",
         "sha256": "c991304c69e299b6ac6b75c45355a05863adbfbcec07904c69712ca4d0bfac31"
       }
+    },
+    {
+      "id": "R86-S5",
+      "batch": "R86",
+      "step": "每日守卫 `d5-window.yml`：urgent / lost → job 红，读不到 → 也红，窗口结束后自退役",
+      "changed": [
+        ".github/workflows/d5-window.yml",
+        "docs/d5-close-runbook.md",
+        "docs/HANDOFF.md",
+        "AGENTS.md",
+        "INDEX.md",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：守卫只跑既有的只读脚本（`d5_window_status.mjs`），按它产出的 JSON 判：`urgent` 或 `lost>0` → exit 1；脚本 exit 2 或没有产物 → exit 1（不安静通过）；`today > window.to` → notice + exit 0（自退役）。**不刷基线、不写 SSOT、不出 D5 verdict**。",
+        "reproducibility": "PASS：本地真跑四条分支——当前 `0`（notice）· 伪造 `urgent=true` → `1` · 伪造 `today=2026-11-16` + `lost=2` → `0`（退役 notice）· `exit 2` 空产物 → `1`；CI 侧用 `workflow_dispatch` 真触发一次（结果记在 HANDOFF R86 行）。",
+        "licence": "PASS：workflow 只 checkout 本仓、跑 Node 内置依赖的脚本；不装依赖、不联网、不读凭据。",
+        "ssot": "PASS：守卫的产物只写 `$RUNNER_TEMP`；唯一新 SSOT 是本机真跑的 `d5-window-status-*` + `.sha256`，`produced_by` 与 `generated_at` 齐全。",
+        "adversary": "反例一：让它在窗口关闭后一直红（`lost` 会随窗口过去变成常态）——退役分支专门挡这个，且判据是 `today > window.to`（由产物给出，不是记的日期）。反例二：把 exit 2 当 `not-yet` 放行——测试里 `exit 2` → `1`。反例三：让守卫顺手刷新基线——它没有写权限也不需要：刷新是人的动作，守卫只负责**让那一天不被忘掉**。边界：cron 是 best-effort（`BS-56`），守卫是漏报兜底，不是准点承诺。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs --stamp 2026-11-05T15:04:35.594Z",
+        "artifact": "data/results/d5-window-status-2026-11-05T15-04-35.594Z.json",
+        "outcome": "covered 4 (11-01..11-04) · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet；守卫四条分支本地真跑通过",
+        "sha256": "d7d2e0f361b6df805bbbaaddc1241116613d6c2924d9f4392126d1ff30b5347a"
+      }
     }
   ]
 }

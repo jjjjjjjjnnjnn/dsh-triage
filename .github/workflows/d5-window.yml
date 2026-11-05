@@ -1,0 +1,76 @@
+name: d5 window guard
+
+# R86: the only time-sensitive item in this repository is the D5 window. A date a human has to
+# remember is the failure mode this repository already paid for once (R76 wrote the deadline
+# arithmetic into `scripts/d5_window_status.mjs`; the prose still drifted). This job runs the same
+# read-only script every day, writes nothing into the repository, and fails when the next baseline
+# is due or a window day can no longer be measured — so the run cannot be forgotten.
+#
+# WHAT IT DOES NOT DO: it does not refresh the baseline, does not write SSOT, does not compute a
+# D5 verdict. It only reads `data/results/` as committed and says whether the deadline is here.
+#
+# IT RETIRES ITSELF after the window closes (`today > window.to`): from then on the D5 verdict is
+# the authority, and a missing day is a fact for that verdict rather than a scheduling alarm.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  window:
+    name: D5 window deadline
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # No `pnpm install`: this script imports only Node builtins and the repository's own
+      # zero-dependency modules. That is deliberate — a guard that can fail because of a lockfile
+      # is not a guard.
+      - name: the deadline, computed from the committed artifacts
+        run: |
+          set +e
+          node scripts/d5_window_status.mjs --out "$RUNNER_TEMP/d5-window"
+          status=$?
+          set -e
+          artifact=$(ls -1t "$RUNNER_TEMP"/d5-window/d5-window-status-*.json 2>/dev/null | head -n 1)
+          node - "$status" "${artifact:-}" <<'NODE'
+          const fs = require('fs')
+
+          const [statusRaw, artifact] = process.argv.slice(2)
+          const status = Number(statusRaw)
+          if (status === 2 || artifact === '' || !fs.existsSync(artifact)) {
+            console.log(`::error::d5_window_status could not read the committed artifacts (exit ${status}); see its stderr above`)
+            process.exit(1)
+          }
+
+          const payload = JSON.parse(fs.readFileSync(artifact, 'utf8'))
+          const coverage = payload.coverage ?? {}
+          const counts = coverage.counts ?? {}
+          const window = coverage.window ?? {}
+          const today = payload.inputs?.today ?? null
+          const summary =
+            `D5 window ${window.from}..${window.to} · covered ${counts.covered}/${window.days} · ` +
+            `missing ${counts.missing} (lost ${counts.lost}) · next run by ${coverage.next_run_by ?? 'not needed'}`
+
+          const out = process.env.GITHUB_STEP_SUMMARY
+          if (out) fs.appendFileSync(out, `### D5 window guard\n\n\`${summary}\`\n`)
+
+          console.log(summary)
+          if (today !== null && window.to !== null && today > window.to) {
+            console.log(`::notice::the D5 window closed on ${window.to}; this guard retires itself — the D5 verdict is the authority now`)
+            process.exit(0)
+          }
+          if (coverage.urgent === true || (counts.lost ?? 0) > 0) {
+            const why = coverage.urgent === true ? 'the next market baseline is due now' : 'a D5 window day can no longer be measured'
+            console.log(`::error::${why} — ${summary}`)
+            process.exit(1)
+          }
+          console.log(`::notice::${summary}`)
+          NODE

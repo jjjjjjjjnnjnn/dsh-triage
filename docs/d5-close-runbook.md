@@ -57,6 +57,24 @@ node scripts/record_d5_evidence.mjs --stamp <ISO+10min> --out %TEMP%/d5-recomput
 
 ---
 
+## 0.6 每日守卫（R86 起）
+
+`.github/workflows/d5-window.yml` 每天 **06:00 UTC**（+ 手动 `workflow_dispatch`）跑同一条只读脚本：
+
+```bash
+node scripts/d5_window_status.mjs --out "$RUNNER_TEMP/d5-window"
+```
+
+- 产物只写 runner 临时目录：**不写 SSOT、不刷基线、不出 D5 verdict**；
+- `urgent`（截止日就是今天/已过）或 `lost > 0` → **job 失败**，`::error::` 里带窗口摘要；
+- 脚本读不到（exit 2）→ **也失败**，不安静通过；
+- **窗口结束后自退役**：`today > window.to` 时只打 `::notice::` 并 exit 0 —— 那时 D5 判定才是权威，缺一天是判定要记的事实，不是排期告警。
+
+**边界**：cron 是 best-effort（可能延迟几十分钟，`BS-56` 同一条）；它是「不漏掉」的兜底，不是「准点」承诺。
+守卫自己不懂「基线该跑哪一天」，那句话仍然由脚本算（`next_run_by`）。
+
+---
+
 ## 1. 时间点
 
 | 项 | 值 |
