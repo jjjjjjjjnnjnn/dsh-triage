@@ -21,7 +21,7 @@ Pre-install judgement and post-mortem attribution for DeepSeek Harness profiles:
 - `compat_verdict` agent tool so a model can ask "does this candidate fit this profile?" before
   installing anything.
 
-It never installs or removes plugins, never reads credentials, and never claims a plugin is safe —
+It never installs into your profile or removes plugins, never reads credentials, and never claims a plugin is safe —
 the verdict vocabulary is `go` / `risky` / `blocked` / `unknown` with per-claim evidence tiers.
 
 - Repo: https://github.com/jjjjjjjjnnjnn/dsh-triage
