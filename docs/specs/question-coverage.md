@@ -57,9 +57,9 @@
 | 2 | `rules-out-declaration` | 无 actionable denied，且至少一个 actionable probe 的 `status = admitted` | 能排除声明层（「不是版本区间的问题」）——**不是**解决问题 |
 | 3 | `declares-nothing` | 有 actionable measured probe，但全部是 `unconstrained` / `indeterminate` | 只能说明「没声明」——**不算兼容，也不算被拒** |
 | 4 | `upstream-only` | 有 measured probe，但**没有 actionable**（全是未点名上游包） | 只能说到「上游 npm tag 与 app 自带版本不一致」，不进头条 |
-| 5 | `probe-unreadable` | 有探针目标，但全部读不到（404 / 429 / 超时 / 结构不对） | 读不到 ≠ denied |
-| 6 | `needs-their-profile` | 相关层，但没有任何可探针的包名 | 只能在他们的 profile 上答 |
-| 7 | `not-relevant` | `layer = unknown`（分类器没读到任何层信号） | 不是我们的层 |
+| 5 | `probe-unreadable` | 有探针目标，但全部读不到。**R88 实测：Q&A 的 160 次全部是 `npm has no package`（名字不是包），不是网络/权限失败** | 读不到 ≠ denied；**名字读错 ≠ 读不到**（`docs/specs/X2-name-extraction-precision.md`） |
+| 6 | `needs-their-profile` | 相关层，但没有任何可探针的包名。**R88 拆分：107 条在 admission / composition / upgrade（读已装集合就能答），71 条在 runtime（`ADR-0009` A 不读）** | 只能在他们的 profile 上答 |
+| 7 | `not-relevant` | `layer = unknown`（分类器没读到任何层信号） | **只说明分类器没匹配到**；**不得**写成「与我们无关 / 不是我们的层」（`docs/specs/X3-not-relevant-means-no-signal.md`） |
 
 **硬规则**：`declares-nothing` 与 `upstream-only` **永远不进头条分子**；两者都**留在分母里**（保守），并单列。
 `indeterminate` 只允许来自「区间无法解析」这类证据不足，不允许来自「没给目标版本」。

@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_extension_candidates.mjs",
+  "generated_at": "2026-11-05T16:50:00.000Z",
+  "inputs": {
+    "source": "question-coverage-2026-11-02T09-57-53-229Z.json",
+    "source_sha256": "7354f39db3ab48fbaa4d515d408c9b2aed5197854313781cba3b840f1e98e8c4",
+    "source_sha256_verified_against_sibling": true,
+    "qa_threads": 1545
+  },
+  "findings": {
+    "needs_their_profile": {
+      "total": 178,
+      "answerable_from_installed_set": 107,
+      "runtime_we_do_not_read": 71,
+      "by_layer": {
+        "admission": 33,
+        "composition": 54,
+        "runtime": 71,
+        "upgrade": 20
+      },
+      "why_this_split": "admission / composition / upgrade answers depend on which packages that machine has; the engine already reads that. Runtime-layer rows are per-session traces, which `docs/adr/0009-agent-scope-reads.md` A decided not to read."
+    },
+    "probe_unreadable": {
+      "total": 90,
+      "probes": 160,
+      "by_state": {
+        "unreadable": 160
+      },
+      "by_reason": {
+        "npm has no package <name>": 160
+      },
+      "by_name_shape": {
+        "file-name": 6,
+        "upstream-module-or-absent": 131,
+        "version-or-path-fragment": 4,
+        "version-suffixed": 19
+      },
+      "name_examples": {
+        "file-name": [
+          "DSH-crash-report-2026-10-24.zip",
+          "dsh-YYYY-MM-DD.error.log",
+          "dsh-bug-report-session-seq-gap.zip"
+        ],
+        "upstream-module-or-absent": [
+          "@DeepSeek.x.x.x/demo",
+          "@DeepSeek.x.x.x/drive",
+          "@deepseek-ai/dsh-browser"
+        ],
+        "version-or-path-fragment": [
+          "@0.34.5/libvips",
+          "@0.35.5/libvips",
+          "@2.1.1/node_modules"
+        ],
+        "version-suffixed": [
+          "DSH-0.2.1-rc.3",
+          "dsh-v0.0.1-rc.5",
+          "dsh-v0.1.0-rc.2"
+        ]
+      },
+      "threads_without_a_single_measured_probe": 90,
+      "why_this_matters": "Every probe behind this tier failed the same way — the name is not a package. Registry fallback cannot answer a name that does not exist, and probe isolation would install nothing. This is extraction precision, not coverage."
+    },
+    "not_relevant": {
+      "total": 950,
+      "by_layer": {
+        "unknown": 950
+      },
+      "threads_with_signals": 0,
+      "threads_with_packages": 308,
+      "what_the_label_means": "this tier is assigned when the keyword classifier matches nothing. It is a statement about the classifier, not about the thread: any claim that these 950 are \"runtime / usage / methodology\" is an inference this artifact does not contain."
+    },
+    "crossed_thresholds": {
+      "needs_profile_installed_set_is_the_only_large_candidate": true
+    }
+  },
+  "tiers": {
+    "names-a-denial": {
+      "count": 47,
+      "by_layer": {
+        "admission": 10,
+        "composition": 12,
+        "runtime": 20,
+        "upgrade": 5
+      },
+      "by_verdict": {
+        "answerable": 15,
+        "partially-answerable": 32
+      },
+      "threads_with_packages": 47,
+      "threads_with_probes": 47
+    },
+    "rules-out-declaration": {
+      "count": 27,
+      "by_layer": {
+        "admission": 8,
+        "composition": 6,
+        "runtime": 11,
+        "upgrade": 2
+      },
+      "by_verdict": {
+        "answerable": 10,
+        "partially-answerable": 17
+      },
+      "threads_with_packages": 27,
+      "threads_with_probes": 27
+    },
+    "declares-nothing": {
+      "count": 89,
+      "by_layer": {
+        "admission": 23,
+        "composition": 34,
+        "runtime": 23,
+        "upgrade": 9
+      },
+      "by_verdict": {
+        "answerable": 32,
+        "partially-answerable": 57
+      },
+      "threads_with_packages": 89,
+      "threads_with_probes": 89
+    },
+    "upstream-only": {
+      "count": 164,
+      "by_layer": {
+        "admission": 28,
+        "composition": 67,
+        "runtime": 52,
+        "upgrade": 17
+      },
+      "by_verdict": {
+        "answerable": 45,
+        "partially-answerable": 119
+      },
+      "threads_with_packages": 164,
+      "threads_with_probes": 164
+    },
+    "probe-unreadable": {
+      "count": 90,
+      "by_layer": {
+        "admission": 20,
+        "composition": 26,
+        "runtime": 37,
+        "upgrade": 7
+      },
+      "by_verdict": {
+        "answerable": 27,
+        "partially-answerable": 63
+      },
+      "threads_with_packages": 90,
+      "threads_with_probes": 90
+    },
+    "needs-their-profile": {
+      "count": 178,
+      "by_layer": {
+        "admission": 33,
+        "composition": 54,
+        "runtime": 71,
+        "upgrade": 20
+      },
+      "by_verdict": {
+        "needs-their-profile": 107,
+        "partially-answerable": 71
+      },
+      "threads_with_packages": 0,
+      "threads_with_probes": 0
+    },
+    "not-relevant": {
+      "count": 950,
+      "by_layer": {
+        "unknown": 950
+      },
+      "by_verdict": {
+        "not-ours": 950
+      },
+      "threads_with_packages": 308,
+      "threads_with_probes": 0
+    }
+  },
+  "limits": [
+    "this re-groups one committed artifact; it runs no classifier and reads no network",
+    "the tier counts are copied through unchanged so a reader can compare them with the source artifact",
+    "labels come from the v1 keyword classifier; R60 measured v2 at 12/20 on a disjoint holdout and it was not adopted",
+    "manual_review.status is \"pending\" in the source artifact — the 9/20 + 5/5 spot check lives in its own artifact",
+    "nothing here says any of these questions will be asked again, or that answering them creates demand (D5 is frozen)"
+  ]
+}

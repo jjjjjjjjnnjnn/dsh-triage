@@ -12586,5 +12586,68 @@
         "sha256": "b13f4870989d1aebfd79b9cc977e844d236ae508953eb13c604fe8f21775808a"
       }
     }
+,
+    {
+      "id": "R88-S2",
+      "batch": "R88",
+      "step": "T-862 规划半边：把交接文档里三个「未逐条核」的假设逐条核过（两条被推翻），产出 X1/X2/X3 三份 spec 草案，并改正一处我们自己写的无证据断言",
+      "changed": [
+        "scripts/record_extension_candidates.mjs",
+        "data/results/extension-candidates-2026-11-05T16-50-00.000Z.json",
+        "data/results/extension-candidates-2026-11-05T16-50-00.000Z.json.sha256",
+        "docs/specs/X1-reply-command-pack.md",
+        "docs/specs/X2-name-extraction-precision.md",
+        "docs/specs/X3-not-relevant-means-no-signal.md",
+        "docs/specs/question-coverage.md",
+        "docs/copy/facts/2026-11-05-upstream-attribution.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "README.md",
+        "README.zh-CN.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：三个假设各自有了机器读数，而不是继续复述。(a) `needs-their-profile` 178 拆成 installed-set **107**（admission 33 / composition 54 / upgrade 20）与 runtime **71** —— 交接文档把它整体写成「我们的强项」，对 71 条不成立；(b) `probe-unreadable` 90 背后 **160/160** 探针都是 `npm has no package`，形状是 131 上游模块名 / 19 版本后缀 / 6 附件名 / 4 路径片段 —— 「补 registry 兜底」与「走 probe 隔离」**两条都不对症**；(c) `not-relevant` 950 在产物里**全为 `layer=unknown`、零信号**，所以「与我们无关」是一句标签反推，不是读数。**判据/阈值一字未动**：新脚本只重分组既有产物，不跑分类器、不联网。",
+        "reproducibility": "PASS：`scripts/record_extension_candidates.mjs` 只读本仓产物、零网络、输出确定性（所有 tally 排序、无时钟、无随机）；它先把输入与同名 `.sha256` 比对，不一致 **exit 2**（负对照真跑：换成全 0 的 `.sha256` → 报 mismatch、exit 2）；同 stamp 二次运行 → 拒覆盖 exit 2；改形状规则后旧产物删除重录（16-40 → 16-45 → 16-50，最终 16-50）。三条计数（178 / 90 / 950）与源产物 `counts.qa.tiers` 逐项相同。",
+        "licence": "PASS：全部是自产文本与本仓产物；`scripts/` 只用 Node 内置；没有引入任何第三方代码或数据，`quarantine/vendor-manifest.json` 无需登记；spec 里引用的样本都是本仓既有产物中的公开讨论编号。",
+        "ssot": "PASS：新产物 `data/results/extension-candidates-2026-11-05T16-50-00.000Z.json` 带 `produced_by` / `generated_at` / `inputs.source_sha256`（并与源产物 `.sha256` 校验通过）/ `limits`，`.sha256` 由同一字节写出；**没有手填任何 `data/results` 数字**。文档里新增的每个数字都能在这份产物里找到字段。",
+        "adversary": "四条反例：① 让脚本在源产物 `.sha256` 不符时照常输出 → 已用负对照真跑（exit 2、零产物）；② 让同一 stamp 覆盖已有证据 → 已真跑（exit 2，文件未变）；③ 「把不存在的名字当成读不到」这一条**是我们自己要避免的推论**，所以 spec 里把它写成 `X2` 的验收（过滤 + 计数守恒），**不在本轮改代码**；④ 「950 条无关」这句话已从 README / question-coverage / 事实包里删掉，并留了 `X3-N1/N2` 两条可机器真红的断言草案（本轮**未实现**，如实写在票里）。**残留边界**：形状分类器是正则，不是语义判断；131 条 `upstream-module-or-absent` 里混着「上游内部模块」与「真的没发布」，本产物**不区分**这两者，spec 也照此写。"
+      },
+      "real_test": {
+        "command": "node scripts/record_extension_candidates.mjs --stamp 2026-11-05T16:50:00.000Z",
+        "artifact": "data/results/extension-candidates-2026-11-05T16-50-00.000Z.json",
+        "outcome": "needs-their-profile 178 → installed-set 107 · runtime 71；probe-unreadable 90 · 160 probes · 160/160 \"npm has no package\"（131/19/6/4 四种形状）；not-relevant 950 · layer 全为 unknown。两条负对照（源 sha 不符 / 同 stamp 覆盖）各自 exit 2。",
+        "sha256": "8ee924c7dbc410c406749fef7bfe1e1afc9d3d58133bb2fc1ef9b6700d55d6cb"
+      }
+    }
+,
+    {
+      "id": "R88-S3",
+      "batch": "R88",
+      "step": "最终文案的独立复核：README ×2 的 tier 表与边界段改动之后重跑 check_listing，17/17",
+      "changed": [
+        "data/results/listing-2026-11-05T17-00-00.000Z.json",
+        "data/results/listing-2026-11-05T17-00-00.000Z.json.sha256",
+        "README.md",
+        "README.zh-CN.md",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：16:20 那份 listing 产物记录的是**改 README 之前**的字节；R88-S2 改了 tier 表的「意思」列与边界段，所以最终文案需要自己的一次复核。17:00 这份是同一脚本在同一台机器上对**最终字节**的读数：`passed: true`、17 项全绿、`inputs.tests = 808`、`documents` 10 份。它不改变任何结论，只是把「对外文档仍然自洽」这件事重新钉在一个时间点上。",
+        "reproducibility": "PASS：同一条命令、换一个 `--stamp` 即可重跑（`node scripts/check_listing.mjs --stamp <ISO> --tests 808`）；产物带 `produced_by` / `generated_at` / `inputs.drafts_registry_sha256`，`.sha256` 同字节写出。",
+        "licence": "PASS：只读本仓文档与产物，零网络、零第三方依赖。",
+        "ssot": "PASS：这是本轮唯一一份「针对最终文案」的对外文档读数；它取代了 16:20 那份作为**文案状态**的证据，但 16:20 仍被 R88-S1 引用（它记录的是那一轮文档编辑的状态），**两份都不删**——同一件事在两个时间点的读数不是重复，是时间序列。",
+        "adversary": "反例一：把 17:00 这份当成「16:20 那份的替代品」而删掉后者 → 会抹掉 S1 的产物指针，`step-review` 的 `no-orphan-results` 也会立刻红（这一步就是被它逼出来的：先跑 verify 再跑 check_listing，新产物当场成了孤儿）。反例二：为了让数字好看而不重跑 → 那正是本项目反复记录的假绿形态。边界：这份产物只证明「文案里的机械可验项仍然成立」，**不证明**文字是否被正确理解——那仍是 review 工作。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T17:00:00.000Z --tests 808",
+        "artifact": "data/results/listing-2026-11-05T17-00-00.000Z.json",
+        "outcome": "17/17 PASS（10 份文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 808）：改过 tier 表与边界段之后，对外文案仍自洽",
+        "sha256": "0d3a6ecd6f5eec47097d285fe89b323fce21eb0ca5d7efb2a9178492c5138565"
+      }
+    }
   ]
 }
