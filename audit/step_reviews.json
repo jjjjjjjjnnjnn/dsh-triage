@@ -12400,6 +12400,29 @@
         "outcome": "covered 4 (11-01..11-04) · missing 11 · next_run_by 2026-11-13 · not-yet",
         "sha256": "df37ae3b3474bf4d896d147d2d6d8978c2967226c8aef3abf8e0494f1d16c9f7"
       }
+    },
+    {
+      "id": "R84-S6",
+      "batch": "R84",
+      "step": "D5 读数与第三份基线配对：reactions 0/10 · 外部引用 0/1 · 下载 1598 steady → 仍 pending",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "data/results/d5-evidence-2026-11-05T10-48-11-239Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：live 读取 `#11813` 的 reactions **0/10**、外部引用 **0/1**；下载项取今天那份现场基线（`market-baseline-2026-11-05T10-45-00.000Z.json` 的 `d5` 块：1598 / steady），三项合判仍 `pending`。**不是**「达标」，也不是「没需求」——判定表还差两项非下载信号。",
+        "reproducibility": "PASS：`--post` + `--posted-on` 显式点名样本，`--baseline` 显式点名现场件（R72 的 `pickBaselineArtifact` 之后默认更不会再挑到复算件）；产物带 `produced_by` / `generated_at` / `sources`。",
+        "licence": "PASS：只读 GitHub Discussions 公开 reactions 与引用计数，不读任何私有数据。",
+        "ssot": "PASS：产物 + `.sha256`；`window.posted_on` 与 `docs/distribution/T-810/registry.json` 的 `posted_on` 逐毫秒相同（治理测试会复算）。",
+        "adversary": "反例一：把 1598 的 `steady` 说成「有新需求」——日序列仍是 10-29 那次的回声，`BS-48` 已写明 steady ≠ 人。反例二：沿用 11-02 的旧 reactions 读数当作今天的——本轮特意重读，结论仍是 0/10，但**旧数字不能替今天的读数**（R83 的教训：缓解/时间差之后的读数不能当机制证据）。"
+      },
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --post \"https://github.com/deepseek-ai/deepseek-harness/discussions/11813\" --posted-on 2026-11-01T20:24:37.000Z --baseline data/results/market-baseline-2026-11-05T10-45-00.000Z.json",
+        "artifact": "data/results/d5-evidence-2026-11-05T10-48-11-239Z.json",
+        "outcome": "pending · reactions 0/10 · references 0/1 · downloads 1598 (steady)/20",
+        "sha256": "e5ee088ad2d9fa045f3df1a20704b5d4b1f6dd50381f9c45784f9b963740dfda"
+      }
     }
   ]
 }
