@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R89 (2026-11-05)",
+  "stand": "R90 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12802,6 +12802,38 @@
         "artifact": "data/results/d5-window-status-2026-11-05T18-05-33.517Z.json",
         "outcome": "covered 11-01..11-04 · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet",
         "sha256": "9c2a9bb6e60cc6f6b83a3415eabe4d87ceda7cd3316618730562b09c9be085bc"
+      }
+    },
+    {
+      "id": "R90-S1",
+      "batch": "R90",
+      "step": "交接：把 R88/R89 的 8 个提交第一次推上 CI，并复算 D5 窗口截止日（只读；今天不刷基线）",
+      "changed": [
+        "data/results/d5-window-status-2026-11-05T19-58-08.778Z.json",
+        "data/results/d5-window-status-2026-11-05T19-58-08.778Z.json.sha256",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "docs/ROADMAP.md",
+        "PROJECT_RULES.md",
+        "_archive/2026-11-05_HANDOFF-batch-rows-R79.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "review": {
+        "correctness": "PASS：推送前本机 `pnpm run verify` **818 测试 / 9 门 ALL GREEN**、`gate --mutate` **9/9**；推送后 run `42098350228` 的 `verify`×3（node 22 / node 24 / windows node 24）与 `gates can fail` 全绿，`render controls` **attempt 1 红**（`expected blank, got inconclusive`，detail = `the browser never opened a debugging port`，15.1s，产物 `render-controls-1`）→ 同一提交 `--failed` 重跑 **attempt 2 全绿**。这不是 R88/R89 引入的回归：`git diff --stat 84ac9eb..7a8332d -- packages/ scripts/record_render_fixture.mjs .github/workflows/ci.yml` **输出为空**（这两轮没碰判定代码），形状与 R81 同一条 `BS-60` 一致（第二次现场）。",
+        "reproducibility": "PASS：`node scripts/d5_window_status.mjs` 零网络、只读已提交产物，今天给出 `covered 11-01..11-04 / missing 11 / collectible_now 0 / lost 0 / next_run_by 2026-11-13`，与 18:05 那份**逐项相同**（只差 stamp）；截止日由窗口算术得出，不是记的。CI 那一半的命令是 `gh run rerun 42098350228 --failed`，日志与失败产物由 GitHub 保存（`render-controls-1`，带 `environment.run_attempt = 1`）。",
+        "licence": "PASS：只读本仓已提交产物 + 本仓自己 CI 的日志/失败产物（`render-controls-1` 由本仓 workflow 生成），零第三方数据、零外部代码；本轮没有引入任何需要 `quarantine/vendor-manifest.json` 登记的内容。",
+        "ssot": "PASS：新产物 `data/results/d5-window-status-2026-11-05T19-58-08.778Z.json`（`.sha256` `ba320868…`）由脚本产出并被本步引用；规模行按实算更新为 **495 份 SSOT 产物 / 519 步台账**，`tests/governance/handoff-scale-line.test.ts` 会自己把这九个数从仓库重算一遍——改数不重跑即红。",
+        "adversary": "反例一：把「重跑绿」读成「CI 稳定绿」——这正是 `BS-60` 明令禁止的说法，本轮只记「最近一次 attempt 绿」，并把第二次现场追加进 `BS-60`。反例二：为了让 CI 变绿去放宽 `expect blank`（例如把 `inconclusive` 也当通过）——那会让「200 + 白屏」这个产品判断失去唯一的控制项，**没有**这么做，断言一字未动。反例三：把「今天不跑基线」说成「基线已经够了」——脚本说的是覆盖 **4/15**、`collectible_now 0`，下一跑截止仍是 **`2026-11-13`**；晚于它 `11-05..11-08` 会永久缺失。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "artifact": "data/results/d5-window-status-2026-11-05T19-58-08.778Z.json",
+        "outcome": "covered 11-01..11-04 · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet（今天不刷基线：0 天可采）",
+        "sha256": "ba320868811a12e1208857cc524c5d151a30dc4b8dcd9290c4f5687981003d96"
       }
     }
   ]

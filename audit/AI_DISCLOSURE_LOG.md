@@ -1034,3 +1034,13 @@
 - 结果：① **X2（`T-864`）**：`judgePackageName()` 只拒**不可能存在**的 npm 名字（真实数据里 147/1393，其中 **0 个曾 measured**），`planProbeTargets()` 把「不发请求但仍留记录」做成纯函数；离线复算七档**逐项守恒**。② **X3（`T-865`）**：措辞规则写成正面断言 + 假阳性对照，反例真红后还原。③ **X1-A（`T-863`）**：命令包落盘，五条命令真跑（37/12/16/13/60 行，零绝对路径），`--self-test` 注入路径被抓住。④ **出站**：`#12294` 回复（`discussioncomment-19423754`，588 字符，边界句在），用一台真实 profile 的四桶回答「每版都不兼容」；**两条读过但不发**记进 `outreach.json`。⑤ **修掉一个真缺陷**：`record_upgrade_impact` 的 provenance 硬编码沙盒，`--dsh-home` 指向真实 profile 时产物写错了自己的输入。
 - 实测：`pnpm run verify` **818 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；`check_listing --tests 818` **17/17**
 - 边界（如实写）：X2 的形状分类是**正则**，131 条 `upstream-module-or-absent` 里「上游内部模块」与「真的没发布」不区分；X3 的断言只看得见**同一行**（拆行可绕过）；命令包的 `upgrade --card` 已顶 60 行预算，插件多的人会更长（报告项，非门禁）；回帖只说明「声明层」，`improved` 为 0 也只对那一台机器成立。**没有**动任何判据 / 阈值 / 冻结项；**没有**开新功能（`T-855`–`T-858` 仍推迟）。
+
+### 2026-11-05 R90｜交接轮：R88/R89 第一次上 CI + 入口文档对账（判据/阈值一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R90-S1）
+- 人工决策：HUMAN「全部同意，继续进行」（R90 走「推 CI + 兜底」）
+- 范围：`docs/HANDOFF.md` · `INDEX.md` · `AGENTS.md` · `docs/ROADMAP.md` · `PROJECT_RULES.md` · `_archive/2026-11-05_HANDOFF-batch-rows-R79.md`（新）· `_archive/ARCHIVE_MANIFEST.md` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `data/results/d5-window-status-2026-11-05T19-58-08.778Z.json`
+- 结果：① 推送前 `pnpm run verify` **818 测试 / 9 门 ALL GREEN**、`gate --mutate` **9/9**。② `git push origin main`（`84ac9eb..7a8332d`，8 个提交 = R88 三件 + R89 四件 + 快照）→ run `42098350228` 是这两轮**第一次**过 CI；`render controls` **attempt 1 红 / attempt 2 绿**。③ 复算 D5 覆盖：`11-01..11-04`、`collectible_now 0`、`next_run_by 2026-11-13`。④ R79 批次行归档（对 `git show HEAD:` 逐字节相同）。⑤ 修掉入口文档之间「第三跑 `11-12` / 第四跑 `11-13`」的日期漂移。
+- 实测：`pnpm run verify` **818 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；CI run `42098350228` **attempt 2 六分钟内全绿**（`render controls` / `verify`×3 / `gates can fail`）
+- 边界（如实写）：`render controls` 的 attempt 1 红**没有归因**，只把第二次现场（`the browser never opened a debugging port`，15.1s，ubuntu runner）追加进 `BS-60`，**没有**放宽 `expect blank`；「CI 绿」指的是**最近一次 attempt**，不是稳定绿。D5 的三个数本轮**没有重读**（`0/10` · `0/1` 是 10:48 那份），今天也没有新基线可跑。**没有**动任何判据 / 阈值 / 冻结项，**没有**开新功能（`T-855`–`T-858` 仍推迟）。

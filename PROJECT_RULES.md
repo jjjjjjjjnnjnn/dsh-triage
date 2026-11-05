@@ -1,6 +1,6 @@
 # DSH-Addition PROJECT_RULES.md（工程铁律）
 
-> **Stand**: R89 (2026-11-05) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
+> **Stand**: R90 (2026-11-05) | **SSOT**: `data/results/`（真跑 JSON + `.sha256`）与 `data/gold/`（人工签署金标）
 > **R88 变更范围**：只改 Stand（本轮是文档漂移对账：归档整理 + 规模行改为按仓库实算 + 新增一条治理断言）。
 > **10 条铁律一字未动**（冻结）；判据与阈值同样未动。
 > **R77 变更范围**：只改 Stand（本轮是发版准备 + 文档整理：四包 `0.3.4`、`HANDOFF` §2 归档 R39–R66）。
