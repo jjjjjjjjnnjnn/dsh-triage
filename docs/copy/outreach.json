@@ -118,7 +118,42 @@
         "data/results/remedy-probe-2026-11-05T08-03-35-886Z.json"
       ],
       "d5_counts": false,
-      "why_not_counted": "General category, manual read; not a D5 signal."
+      "why_not_counted": "General category, manual read; not a D5 signal.",
+      "reply_received": [
+        {
+          "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458#discussioncomment-19416449",
+          "author": "aturzone",
+          "received_at": "2026-11-05T10:41:09Z",
+          "outcome": "fix-implemented-on-a-branch",
+          "summary": "Confirmed the root cause on master fcc0ad4621 and implemented the first suggested fix shape on branch fix/boot-launcher-runtime-version (commit abe10ce): profileContext.runtimeVersion (optional) takes precedence in composition preflight, with the package-local manifest as fallback."
+        },
+        {
+          "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458#discussioncomment-19417014",
+          "author": "aturzone",
+          "received_at": "2026-11-05T11:15:34Z",
+          "outcome": "fix-extended",
+          "summary": "Extended the same branch (6887f331bb) so the launcher fact reaches bundle layers (loadProfileDirectory/loadProfile) and plugin-manager, which was the two-surface follow-up to abe10ce."
+        }
+      ],
+      "follow_up": {
+        "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458#discussioncomment-19417004",
+        "posted_on": "2026-11-05T11:15:09Z",
+        "language": "en",
+        "draft": "docs/copy/drafts/10458-followup.md",
+        "facts": "docs/copy/facts/2026-11-05-10458-followup.md",
+        "cites": [
+          "data/results/remedy-probe-2026-11-05T08-03-35-886Z.json"
+        ],
+        "wrote_by": "agy (gemini-3.8-flash-high), line numbers verified by the engineering side",
+        "one_reply_only": true,
+        "d5_counts": false,
+        "why_not_counted": "A follow-up inside an existing thread; D5 counts only the #11813 discussion.",
+        "edited_after_posting": {
+          "updated_at": "2026-11-05T11:17:54Z",
+          "why": "6887f331bb landed while the comment was being written; the body was updated to the branch-tip state within a minute.",
+          "method": "updateDiscussionComment"
+        }
+      }
     },
     {
       "thread": 10759,
