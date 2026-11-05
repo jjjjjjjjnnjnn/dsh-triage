@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_remedy_probe.mjs",
+  "generated_at": "2026-11-05T08:37:27.222Z",
+  "question": "if the reporter installs this exact build, does the published declaration admit the target runtime?",
+  "sample": {
+    "target": "0.2.2-alpha.2",
+    "pins": [
+      "@deepseek-ai/dsh-experimental-session-search@0.2.1-alpha.2",
+      "@deepseek-ai/dsh-experimental-terminal-bundle@0.2.1-alpha.2"
+    ]
+  },
+  "rows": [
+    {
+      "package": "@deepseek-ai/dsh-experimental-session-search",
+      "version": "0.2.1-alpha.2",
+      "target": "0.2.2-alpha.2",
+      "state": "measured",
+      "admission_status": "unconstrained",
+      "admits_target": false,
+      "mode": "none",
+      "declared_range": null,
+      "unmet": [],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.2.1-alpha.2",
+        "next": "0.2.2-rc.1"
+      }
+    },
+    {
+      "package": "@deepseek-ai/dsh-experimental-terminal-bundle",
+      "version": "0.2.1-alpha.2",
+      "target": "0.2.2-alpha.2",
+      "state": "measured",
+      "admission_status": "unconstrained",
+      "admits_target": false,
+      "mode": "none",
+      "declared_range": null,
+      "unmet": [],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.2.1-alpha.2",
+        "next": "0.2.2-rc.1"
+      }
+    }
+  ],
+  "limits": [
+    "live registry read: a snapshot at one timestamp, not byte-for-byte reproducible offline",
+    "admitted is a declaration-layer result; it says nothing about whether the code runs on the reporter's machine",
+    "the engine is the same `evaluateAdmission` used by `check` / `why` / `upgrade` — a second rule set would be a bug"
+  ]
+}

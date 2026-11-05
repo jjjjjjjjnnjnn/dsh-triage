@@ -11967,6 +11967,66 @@
         "outcome": "17/17：版本 0.3.4 / 区间 / 763 测试 / 20 条证据路径 / 卡片与覆盖率引用 / 3 篇草稿声明 / 4 个渠道台账全过",
         "sha256": "3661a2ee68152982b88bdd36c664951f29ded70dcf0b3df074082a1321b5f3ff"
       }
+    },
+    {
+      "id": "R80-S9",
+      "batch": "R80",
+      "step": "版本漂移候选的声明层读数：被下架的 0.12.3 vs 正在用的 0.2.6",
+      "changed": [
+        "docs/copy/facts/2026-11-05-batch2.md",
+        "docs/copy/drafts/12209-dist-tag-update.md",
+        "docs/copy/drafts/11149-compat-command.md",
+        "docs/copy/drafts/12103-link-duplicate-cards.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-37-26-770Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：帖子说作者把旧线下架了，产物如实记 `unreadable` 而不是把「读不到」写成 denied；0.2.6 的引擎区间被逐字读出。",
+        "reproducibility": "PASS：精确版本 + 目标版本可复算；registry 状态是时点事实，产物带 generated_at。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #12209 草稿引用。",
+        "adversary": "反例：把「提示消失」说成「管理器修好了」—— 不成立，产物显示的是版本被下架；草稿明确区分了这两件事。另一个反例：把 `unreadable` 读成 `denied` —— 会得出「0.12.3 被声明层拒绝」的错误结论。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08:37:26.770Z --target 0.2.2-rc.1 --pins \"dsh-win-pwsh7@0.12.3,dsh-win-pwsh7@0.2.6\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-37-26-770Z.json",
+        "outcome": "0.2.6 admitted（1 项，engines.dsh >=0.2.1-rc.3 <0.3.0-0）· 0.12.3 unreadable（`version 0.12.3 is not on the registry`）· latest = 0.2.6",
+        "sha256": "596acd45466e41cef22f4e582c859d88dbadad8acc552e43c99112d45fc83326"
+      }
+    },
+    {
+      "id": "R80-S10",
+      "batch": "R80",
+      "step": "「版本不兼容」是不是声明层说的：两个 link 安装的实验包的声明读数",
+      "changed": [
+        "docs/copy/facts/2026-11-05-batch2.md",
+        "docs/copy/drafts/12209-dist-tag-update.md",
+        "docs/copy/drafts/11149-compat-command.md",
+        "docs/copy/drafts/12103-link-duplicate-cards.md",
+        "docs/copy/drafts/10458-nested-app-boot.md",
+        "docs/copy/drafts/10759-shadowed-tools.md",
+        "docs/copy/drafts/12192-duplicate-factory.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/remedy-probe-2026-11-05T08-37-27-222Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`unconstrained` 没有被写成 `denied`；结论是「不是声明层」，而不是「这两个包兼容」。",
+        "reproducibility": "PASS：精确版本 + 目标版本可复算。",
+        "licence": "PASS：只读 npm public registry。",
+        "ssot": "PASS：产物 + `.sha256`；事实包与 #12103 草稿引用。",
+        "adversary": "反例：把「读不到声明」当成「兼容」—— 被拒；草稿写的是「声明层看不见」，并建议去看安装器/pnpm 的原始报错。另一个反例：把重复卡片的渲染问题归到准入层 —— 草稿明确说那是 profile/渲染层。"
+      },
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --stamp 2026-11-05T08-37-27.222Z --target 0.2.2-alpha.2 --pins \"@deepseek-ai/dsh-experimental-session-search@0.2.1-alpha.2,@deepseek-ai/dsh-experimental-terminal-bundle@0.2.1-alpha.2\"",
+        "artifact": "data/results/remedy-probe-2026-11-05T08-37-27-222Z.json",
+        "outcome": "两个版本都 unconstrained（没有声明 DSH 范围）→ 「与 0.2.2-alpha.2 不兼容被拒装」不可能来自声明层",
+        "sha256": "4f5c4c7e53bf6632851533f7a67c181332aa390ba3dc1f8690a34c89755f4b5b"
+      }
     }
   ]
 }

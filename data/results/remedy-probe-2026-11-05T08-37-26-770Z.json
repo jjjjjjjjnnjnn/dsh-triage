@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_remedy_probe.mjs",
+  "generated_at": "2026-11-05T08:37:26.770Z",
+  "question": "if the reporter installs this exact build, does the published declaration admit the target runtime?",
+  "sample": {
+    "target": "0.2.2-rc.1",
+    "pins": [
+      "dsh-win-pwsh7@0.12.3",
+      "dsh-win-pwsh7@0.2.6"
+    ]
+  },
+  "rows": [
+    {
+      "package": "dsh-win-pwsh7",
+      "version": "0.12.3",
+      "target": "0.2.2-rc.1",
+      "state": "unreadable",
+      "admission_status": null,
+      "admits_target": null,
+      "mode": null,
+      "declared_range": null,
+      "unmet": [],
+      "detail": "version 0.12.3 is not on the registry",
+      "dist_tags": {
+        "latest": "0.2.6",
+        "next": null
+      }
+    },
+    {
+      "package": "dsh-win-pwsh7",
+      "version": "0.2.6",
+      "target": "0.2.2-rc.1",
+      "state": "measured",
+      "admission_status": "admitted",
+      "admits_target": true,
+      "mode": "engines",
+      "declared_range": "engines.dsh >=0.2.1-rc.3 <0.3.0-0",
+      "unmet": [],
+      "detail": null,
+      "dist_tags": {
+        "latest": "0.2.6",
+        "next": null
+      }
+    }
+  ],
+  "limits": [
+    "live registry read: a snapshot at one timestamp, not byte-for-byte reproducible offline",
+    "admitted is a declaration-layer result; it says nothing about whether the code runs on the reporter's machine",
+    "the engine is the same `evaluateAdmission` used by `check` / `why` / `upgrade` — a second rule set would be a bug"
+  ]
+}
