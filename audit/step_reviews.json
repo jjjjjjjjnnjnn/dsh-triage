@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R80 (2026-11-05)",
+  "stand": "R81 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12026,6 +12026,37 @@
         "artifact": "data/results/remedy-probe-2026-11-05T08-37-27-222Z.json",
         "outcome": "两个版本都 unconstrained（没有声明 DSH 范围）→ 「与 0.2.2-alpha.2 不兼容被拒装」不可能来自声明层",
         "sha256": "4f5c4c7e53bf6632851533f7a67c181332aa390ba3dc1f8690a34c89755f4b5b"
+      }
+    },
+    {
+      "id": "R81-S1",
+      "batch": "R81",
+      "step": "同定位仓库采证：7 条固定查询 + 许可证字段，产出可复算的 rescue / doctor / backup / gating 台账与研究页",
+      "changed": [
+        "scripts/record_adjacent_tools.mjs",
+        "docs/10-adjacent-tools.md",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json",
+        "audit/blind_spots.json"
+      ],
+      "review": {
+        "correctness": "PASS：7 条查询各取 50 条，去重后保留名称/描述提到 DSH 的 **140** 个仓库；词面分类 rescue 6 / doctor 6 / compatibility 6 / backup 10 / ops 4 / catalog 30 / context 10 / other 68；`same_position_rescue_or_doctor` **12**。许可证字段来自 GitHub 的 `license.key`（第一次写成 `spdxId` 导致全是 null，已修正并重跑）。",
+        "reproducibility": "PASS：查询固定、每条原始响应落 `data/fixtures/adjacent-tools/<stamp>/`；`--stamp` 决定文件名与 `generated_at`；同一查询集的计数可复算。GitHub 搜索的排序会随时间变化，这一点写在 `limits` 里。",
+        "licence": "PASS：只读 GitHub public metadata，不读源码、不下载 tarball；`license: null` 如实记（6 个），研究页写明「无许可证 = 保留所有权利，不复制代码」。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/` 并由本步引用；研究页与 INDEX/HANDOFF 的指针都能解析；`docs/10-adjacent-tools.md` 的数字以产物为准。",
+        "adversary": "反例一：把「搜索返回 140 个」当成生态 census —— 不成立，`limits` 写明最多 50/查询、只匹配名称/描述/README。反例二：把 `stars` 当采用率或维护承诺 —— 不成立，只是读取时刻的事实。反例三：把词面分类当质量判断 —— 研究页已人工剔除无关项并说明。反例四：直接复制 `dsh-rescue` 的代码 —— 被拒，只学 `enter/exit/status` 与「只改 bundles」的机制，实现自己写。"
+      },
+      "real_test": {
+        "command": "node scripts/record_adjacent_tools.mjs --stamp 2026-11-05T09:03:11.609Z",
+        "artifact": "data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json",
+        "outcome": "140 个 DSH 相关仓库；same position 12；无许可证 6；rescue 6 / doctor 6 / compatibility 6 / backup 10 / ops 4 / catalog 30 / context 10 / other 68",
+        "sha256": "e45e58f58df57a0ae1b5d6082efc395d884748c0f30e2053f91b943d42d6c695"
       }
     }
   ]

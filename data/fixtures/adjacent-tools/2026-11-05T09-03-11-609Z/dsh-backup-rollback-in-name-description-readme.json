@@ -1,0 +1,905 @@
+{
+  "query": "dsh backup rollback in:name,description,readme",
+  "rows": [
+    {
+      "description": "A curated list of plugins for DeepSeek Harness (dsh) · DeepSeek Harness 插件精选列表",
+      "forksCount": 6756,
+      "fullName": "awesome-dsh-plugin/awesome-dsh-plugin",
+      "homepage": "https://awesome-dsh-plugin.com",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "cc0-1.0",
+        "name": "Creative Commons Zero v1.0 Universal",
+        "url": "https://api.github.com/licenses/cc0-1.0"
+      },
+      "pushedAt": "2026-11-04T23:25:09Z",
+      "stargazersCount": 22471,
+      "updatedAt": "2026-11-05T09:01:05Z",
+      "url": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin"
+    },
+    {
+      "description": "dsh-purge Community · DeepSeek Harness 社区维护版：宿主兼容、状态诊断、提示词管理、更新与本机备份回滚。基于小杨 / YuJunZhiXue 的 dsh-purge。",
+      "forksCount": 2196,
+      "fullName": "kingcharleslzy-ai/dsh-purge",
+      "homepage": "https://github.com/kingcharleslzy-ai/dsh-purge/releases",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T08:47:58Z",
+      "stargazersCount": 4533,
+      "updatedAt": "2026-11-05T09:00:39Z",
+      "url": "https://github.com/kingcharleslzy-ai/dsh-purge"
+    },
+    {
+      "description": "The plugin market inside DeepSeek Harness — browse, search, one-click install · DSH 可视化插件市场",
+      "forksCount": 410,
+      "fullName": "dsh-market/dsh-market",
+      "homepage": "https://dshmarket.com",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T19:20:45Z",
+      "stargazersCount": 10886,
+      "updatedAt": "2026-11-05T09:01:16Z",
+      "url": "https://github.com/dsh-market/dsh-market"
+    },
+    {
+      "description": "收录最全、更新最快的技能Skills商店：精选原创技能包（涵盖文档处理、内容创作、编程开发、机器学习、自动化工作流），全部打包好可直接安装使用！同时自动抓取GitHub上万个Skills项目，按分类、更新时间、Star数量整理。The most comprehensive and frequently updated AI Agent skill library, featuring curated skill packs across document processing, content creation, programming, machine learning, automated workflows, and many more domains.",
+      "forksCount": 813,
+      "fullName": "anbeime/skill",
+      "homepage": "https://skill.miyucaicai.cn",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "",
+        "name": "",
+        "url": ""
+      },
+      "pushedAt": "2026-11-05T08:52:57Z",
+      "stargazersCount": 9181,
+      "updatedAt": "2026-11-05T08:53:05Z",
+      "url": "https://github.com/anbeime/skill"
+    },
+    {
+      "description": "DeepSeek Harness (DSH) ecosystem: curated plugins, tools, and infrastructure from dsh-external/hub and the public dsh-plugin topic.",
+      "forksCount": 493,
+      "fullName": "0xsline/awesome-deepseek-harness",
+      "homepage": "https://deepseekdocs.com/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "cc0-1.0",
+        "name": "Creative Commons Zero v1.0 Universal",
+        "url": "https://api.github.com/licenses/cc0-1.0"
+      },
+      "pushedAt": "2026-10-16T12:16:30Z",
+      "stargazersCount": 1315,
+      "updatedAt": "2026-11-05T06:32:36Z",
+      "url": "https://github.com/0xsline/awesome-deepseek-harness"
+    },
+    {
+      "description": "A curated list of plugins, skills, MCP servers, patch/profile layers, orchestrators & UIs for DeepSeek Harness (DSH). Visualization · PPT · Coding · Agents · Loops (auto-research) and more. #dsh",
+      "forksCount": 221,
+      "fullName": "Dominic789654/awesome-deepseek-harness",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-10-30T09:11:54Z",
+      "stargazersCount": 415,
+      "updatedAt": "2026-11-05T08:20:16Z",
+      "url": "https://github.com/Dominic789654/awesome-deepseek-harness"
+    },
+    {
+      "description": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+      "forksCount": 26991,
+      "fullName": "msitarzewski/agency-agents",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Shell",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-25T01:43:20Z",
+      "stargazersCount": 166635,
+      "updatedAt": "2026-11-05T08:56:39Z",
+      "url": "https://github.com/msitarzewski/agency-agents"
+    },
+    {
+      "description": "DeepSeek Harness (DSH) backup & restore plugin — export, import, migrate and sync your complete DSH configuration, plugins, MCP servers, skills and workspace. One-click migration to another machine.",
+      "forksCount": 13,
+      "fullName": "xiajiajun516/dsh-config-manager",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T23:23:36Z",
+      "stargazersCount": 298,
+      "updatedAt": "2026-11-05T06:22:13Z",
+      "url": "https://github.com/xiajiajun516/dsh-config-manager"
+    },
+    {
+      "description": "Curated DeepSeek Harness (DSH) plugins, extensions, tools, skills, clients, runtimes, integrations, and verified references — English and Chinese.",
+      "forksCount": 72,
+      "fullName": "Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-18T07:35:14Z",
+      "stargazersCount": 563,
+      "updatedAt": "2026-11-03T18:17:52Z",
+      "url": "https://github.com/Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins"
+    },
+    {
+      "description": "DeepSeek Harness (DSH) 插件精选目录 — 14 类 280+ 个社区插件，覆盖 MCP / Skill / TUI / 多 Agent / 上下文记忆 / UI 皮肤，点链接直达仓库。Curated directory of dsh plugins for DeepSeek Harness.",
+      "forksCount": 90,
+      "fullName": "kejixiaoliang/awesome-dsh-plugins",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T01:07:33Z",
+      "stargazersCount": 74,
+      "updatedAt": "2026-11-05T01:07:38Z",
+      "url": "https://github.com/kejixiaoliang/awesome-dsh-plugins"
+    },
+    {
+      "description": "DeepSeek Harness plugin store, marketplace and hub — 11,000+ dsh plugins with search, rankings, install commands and a free public API. DeepSeek Harness 插件市场 / 插件商店：自动收集与格式校验，免费搜索 API。deepseek1024.com",
+      "forksCount": 379,
+      "fullName": "imsai-sh/awesome-deepseek-harness-plugins",
+      "homepage": "https://deepseek1024.com/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T08:58:49Z",
+      "stargazersCount": 361,
+      "updatedAt": "2026-11-05T08:58:54Z",
+      "url": "https://github.com/imsai-sh/awesome-deepseek-harness-plugins"
+    },
+    {
+      "description": "dsh-purge 1.1.71 适配 DSH 0.2.0-rc.2 的可用副本：修复 #40 complete-prompt keep-inject、hostFs closeSync/readSync、redteam preset toolFilter",
+      "forksCount": 57,
+      "fullName": "realMisakaMikoto/dsh-purge",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-03T14:51:13Z",
+      "stargazersCount": 82,
+      "updatedAt": "2026-11-05T07:28:07Z",
+      "url": "https://github.com/realMisakaMikoto/dsh-purge"
+    },
+    {
+      "description": "A context-compression plugin for month-long single sessions (billions of tokens) ,small context windows (a 100K context is enough) and token savings (5x fewer tokens) .上下文压缩插件，月级长会话会话， 兼顾小窗口(100k上下文足矣)省token(省5倍token) . billion-context is all you need",
+      "forksCount": 332,
+      "fullName": "ranxianglei/billion-context",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-11-05T09:03:09Z",
+      "stargazersCount": 4076,
+      "updatedAt": "2026-11-05T08:56:22Z",
+      "url": "https://github.com/ranxianglei/billion-context"
+    },
+    {
+      "description": "🤖 MateClaw — Your second brain with Multi-Agent Orchestration, MCP Protocol, Skills & Memory, Dream, and Multi-Channel Support. Built on Spring AI Alibaba.",
+      "forksCount": 356,
+      "fullName": "mateaix/mateclaw",
+      "homepage": "https://claw.mate.vip",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Java",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-05T08:54:38Z",
+      "stargazersCount": 1182,
+      "updatedAt": "2026-11-05T08:54:45Z",
+      "url": "https://github.com/mateaix/mateclaw"
+    },
+    {
+      "description": "A curated directory of source-verified DeepSeek Harness (DSH) plugins, tools, design workflows, and official resources.",
+      "forksCount": 55,
+      "fullName": "walkinglabs/awesome-deepseek-harness-plugins",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-10-29T01:04:28Z",
+      "stargazersCount": 52,
+      "updatedAt": "2026-11-04T17:33:52Z",
+      "url": "https://github.com/walkinglabs/awesome-deepseek-harness-plugins"
+    },
+    {
+      "description": "Community-curated DeepSeek Harness (dsh) plugins, tools, skills and learning resources. Searchable bilingual directory | DeepSeek 插件、工具与技能精选",
+      "forksCount": 51,
+      "fullName": "awesome-deepseekharness/awesome-deepseek-harness",
+      "homepage": "https://awesome-deepseekharness.github.io/awesome-deepseek-harness/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "cc0-1.0",
+        "name": "Creative Commons Zero v1.0 Universal",
+        "url": "https://api.github.com/licenses/cc0-1.0"
+      },
+      "pushedAt": "2026-11-05T05:56:39Z",
+      "stargazersCount": 40,
+      "updatedAt": "2026-11-05T05:56:44Z",
+      "url": "https://github.com/awesome-deepseekharness/awesome-deepseek-harness"
+    },
+    {
+      "description": "A DeepSeek Harness (dsh) plugin — turns dsh web into a SillyTavern-style roleplay frontend: character cards, prompt presets, lorebooks, personas, BM25 long-term memory, world-state deltas, and rollback-able floor operations, all on the dsh agent runtime.",
+      "forksCount": 8,
+      "fullName": "Amakurai/dsh-liketavern",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T08:21:46Z",
+      "stargazersCount": 233,
+      "updatedAt": "2026-11-05T08:21:51Z",
+      "url": "https://github.com/Amakurai/dsh-liketavern"
+    },
+    {
+      "description": "Purge Community Plus - DeepSeek Harness jailbreak plugin, adapted for DSH Desktop 0.2.1-rc.x. Fixes #119 host crash and the toolFilter preset-registration failure.",
+      "forksCount": 49,
+      "fullName": "luowang-ui/dsh-purge-plus",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-17T14:36:09Z",
+      "stargazersCount": 88,
+      "updatedAt": "2026-11-05T07:31:36Z",
+      "url": "https://github.com/luowang-ui/dsh-purge-plus"
+    },
+    {
+      "description": "DSH plugin - framework upgrade safety & plugin gating: contract pre-check, rollback point, auto-rollback on failure, evidence-based auto-disable; plus a multi-source plugin market. Unofficial. | DSH 插件：框架升级安全 + 插件门控——升级前契约预检、回滚点、失败自动回滚、有确证证据才自动禁用；另带多源插件市场。非官方社区项目。",
+      "forksCount": 8,
+      "fullName": "Noob-stupid/dsh-plugin-gating-hub",
+      "homepage": "https://github.com/Noob-stupid/dsh-plugin-hub/tree/main/docs",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T21:15:47Z",
+      "stargazersCount": 121,
+      "updatedAt": "2026-11-05T04:06:57Z",
+      "url": "https://github.com/Noob-stupid/dsh-plugin-gating-hub"
+    },
+    {
+      "description": "🐋 DeepSeek Harness 插件总目录 · The catalog of DSH plugins：1958 个仓库 / 1819 个真插件（Skills · MCP · Tools · UI · Orchestration），中英文搜索、分类筛选、STAR 排序 → leenkcool.github.io",
+      "forksCount": 68,
+      "fullName": "leenkcool/Blue-Whale-Harness",
+      "homepage": "https://leenkcool.github.io",
+      "isArchived": false,
+      "isFork": false,
+      "language": "HTML",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-04T23:36:53Z",
+      "stargazersCount": 203,
+      "updatedAt": "2026-11-04T23:36:58Z",
+      "url": "https://github.com/leenkcool/Blue-Whale-Harness"
+    },
+    {
+      "description": "deepseek harness对话和代码状态回退插件 | DSH — rewind conversation and workspace state, powered by a persistent Change Ledger",
+      "forksCount": 16,
+      "fullName": "Anionex/dsh-turn-rewind",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "bsd-3-clause",
+        "name": "BSD 3-Clause \"New\" or \"Revised\" License",
+        "url": "https://api.github.com/licenses/bsd-3-clause"
+      },
+      "pushedAt": "2026-10-26T04:59:27Z",
+      "stargazersCount": 144,
+      "updatedAt": "2026-11-02T13:10:10Z",
+      "url": "https://github.com/Anionex/dsh-turn-rewind"
+    },
+    {
+      "description": "DeepSeek Harness session and workspace manager —— Workspaces: archive and visibility. Sessions: move, migrate presets, delete, favorite, review later, prioritize, tag, and annotate. Batch operations. | DSH 会话与工作区管理——工作区：归档与显示。会话：跨工作区移动、预设迁移、删除；收藏、待回看、优先级、标签、备注。批量操作。",
+      "forksCount": 11,
+      "fullName": "hkkz9522/dsh-session-manager",
+      "homepage": "https://github.com/hkkz9522/dsh-session-manager",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-22T11:23:51Z",
+      "stargazersCount": 107,
+      "updatedAt": "2026-11-05T08:30:53Z",
+      "url": "https://github.com/hkkz9522/dsh-session-manager"
+    },
+    {
+      "description": "A curated list of the best awesome AI plugins for AI assistants including Claude Code, OpenAI Codex / ChatGPT, Gemini, Antigravity, Pi / Oh My Pi, Grok, OpenCodek DSH, Kimi and More. https://hol.org/plugins",
+      "forksCount": 944,
+      "fullName": "hashgraph-online/awesome-ai-plugins",
+      "homepage": "https://hol.org/plugins",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-05T06:37:12Z",
+      "stargazersCount": 984,
+      "updatedAt": "2026-11-05T06:37:18Z",
+      "url": "https://github.com/hashgraph-online/awesome-ai-plugins"
+    },
+    {
+      "description": "Awesome DeepSeek Harness",
+      "forksCount": 58,
+      "fullName": "fendouai/awesome-deepseek-harness",
+      "homepage": "https://deepseekserver.com/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-21T14:44:01Z",
+      "stargazersCount": 45,
+      "updatedAt": "2026-11-04T09:37:39Z",
+      "url": "https://github.com/fendouai/awesome-deepseek-harness"
+    },
+    {
+      "description": "Spam-filtered, open-data registry of DeepSeek Harness (dsh) plugins, bundles, and skills. ",
+      "forksCount": 73,
+      "fullName": "dshworks/awesome-dsh-plugins",
+      "homepage": "https://dsh.works/awesome-dsh-plugins/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T21:51:19Z",
+      "stargazersCount": 31,
+      "updatedAt": "2026-11-04T21:51:24Z",
+      "url": "https://github.com/dshworks/awesome-dsh-plugins"
+    },
+    {
+      "description": "",
+      "forksCount": 4,
+      "fullName": "seriousz158/dsh-memory",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-10T15:59:03Z",
+      "stargazersCount": 169,
+      "updatedAt": "2026-10-22T03:11:14Z",
+      "url": "https://github.com/seriousz158/dsh-memory"
+    },
+    {
+      "description": "DeepSeek Harness 主程序与插件更新管理：npm/GitHub 双源 semver 比对、多语言横幅、一键更新（主程序自动备份/校验/回滚，插件临时目录安装）、更新后看门狗重启。Update management for DeepSeek Harness and its plugins: dual-source semver checks, locale banner, one-click updates with backup/rollback, watchdog restart.",
+      "forksCount": 5,
+      "fullName": "Airmetro/dsh-update-checker",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-10-21T05:41:04Z",
+      "stargazersCount": 21,
+      "updatedAt": "2026-10-30T08:33:45Z",
+      "url": "https://github.com/Airmetro/dsh-update-checker"
+    },
+    {
+      "description": "Time-shifting task delegation for DeepSeek Harness (dsh): plan tasks at leisure, they run unattended off-peak, come back to a report. Human-adjudicated, desktop + web.",
+      "forksCount": 14,
+      "fullName": "KelaoHu/dsh-lowtide",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T13:28:23Z",
+      "stargazersCount": 178,
+      "updatedAt": "2026-11-04T13:28:28Z",
+      "url": "https://github.com/KelaoHu/dsh-lowtide"
+    },
+    {
+      "description": "",
+      "forksCount": 7,
+      "fullName": "lujianjun19/dsh-llm-github-copilot",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T07:36:31Z",
+      "stargazersCount": 12,
+      "updatedAt": "2026-11-04T07:36:18Z",
+      "url": "https://github.com/lujianjun19/dsh-llm-github-copilot"
+    },
+    {
+      "description": "A cross-platform desktop application for managing AI Agents and MCP Servers. 一款用于管理AI智能体与MCP服务器的跨平台桌面应用程序。",
+      "forksCount": 33,
+      "fullName": "Zafer-Liu/Vibe_Assistant",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Rust",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-05T09:02:10Z",
+      "stargazersCount": 169,
+      "updatedAt": "2026-11-05T09:02:15Z",
+      "url": "https://github.com/Zafer-Liu/Vibe_Assistant"
+    },
+    {
+      "description": "#1 Persistent memory for AI coding agents based on real-world benchmarks",
+      "forksCount": 2666,
+      "fullName": "rohitg00/agentmemory",
+      "homepage": "https://agent-memory.dev",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-05T08:04:29Z",
+      "stargazersCount": 30149,
+      "updatedAt": "2026-11-05T08:42:21Z",
+      "url": "https://github.com/rohitg00/agentmemory"
+    },
+    {
+      "description": "Awesome Claude Mods — evidence-graded index of Claude Code mods, plugins and hooks. 20 languages, rebuilt every 2 hours.",
+      "forksCount": 21,
+      "fullName": "wh000wh000/awesome-claude-mods",
+      "homepage": "https://wh000wh000.github.io/awesome-claude-mods/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-10-17T02:10:20Z",
+      "stargazersCount": 269,
+      "updatedAt": "2026-11-05T07:50:45Z",
+      "url": "https://github.com/wh000wh000/awesome-claude-mods"
+    },
+    {
+      "description": "Persistent multi-model workflow teams for DeepSeek Harness — dynamic lead planning, bounded DAGs, per-agent model/tools, Run Center and Token insights.",
+      "forksCount": 6,
+      "fullName": "toolclub/dsh-agent-team-gui",
+      "homepage": "https://github.com/toolclub/dsh-agent-team-gui#readme",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-01T06:26:39Z",
+      "stargazersCount": 287,
+      "updatedAt": "2026-11-03T11:38:33Z",
+      "url": "https://github.com/toolclub/dsh-agent-team-gui"
+    },
+    {
+      "description": "A curated list of plugins, tools, skins, and extensions for DeepSeek Harness (DSH).",
+      "forksCount": 32,
+      "fullName": "vvlife/awesome-deepseek-harness-plugins",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-11-04T11:02:35Z",
+      "stargazersCount": 10,
+      "updatedAt": "2026-11-04T11:05:27Z",
+      "url": "https://github.com/vvlife/awesome-deepseek-harness-plugins"
+    },
+    {
+      "description": "Agent-first DeepSeek Harness handbook: 173 source-backed runtime, plugin, MCP, sandbox, evaluation, troubleshooting, multilingual, and 74-resource Awesome ecosystem guides.",
+      "forksCount": 27,
+      "fullName": "sandbaseai/deepseek-harness-handbook",
+      "homepage": "https://sandbaseai.github.io/deepseek-harness-handbook/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "HTML",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-08-31T02:05:24Z",
+      "stargazersCount": 243,
+      "updatedAt": "2026-11-05T07:46:38Z",
+      "url": "https://github.com/sandbaseai/deepseek-harness-handbook"
+    },
+    {
+      "description": "DeepSeek Harness 桌宠：元气鲸鱼娘，45 项成就、3 个小游戏、跨端存档迁移；按工具类型切换工作姿态，桌面端与旧版 Web 双端支持（desktop pet / mascot，local-first）",
+      "forksCount": 18,
+      "fullName": "Sutera-Diffusus/dsh-whale-musume",
+      "homepage": "https://github.com/Sutera-Diffusus/dsh-whale-musume/releases/latest",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T10:48:57Z",
+      "stargazersCount": 203,
+      "updatedAt": "2026-11-05T06:30:22Z",
+      "url": "https://github.com/Sutera-Diffusus/dsh-whale-musume"
+    },
+    {
+      "description": "A DeepSeek Harness plugin for reasoning-effort defaults and protocol-aware gateway compatibility settings for llm-pi-ai models.",
+      "forksCount": 8,
+      "fullName": "hytime/dsh-thinking-effort",
+      "homepage": "https://www.npmjs.com/package/@hytime/dsh-thinking-effort",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-01T16:26:03Z",
+      "stargazersCount": 57,
+      "updatedAt": "2026-11-01T16:23:35Z",
+      "url": "https://github.com/hytime/dsh-thinking-effort"
+    },
+    {
+      "description": "Install safety net for DeepSeek Harness: pre-install snapshots, one-click/automatic rollback, guarded boot, and incident reports that auto-trigger agent analysis. 中文: DeepSeek Harness 插件安装安全网（安装前自动快照、一键/自动回退、守护启动、事故报告自动触发 Agent 分析）。",
+      "forksCount": 3,
+      "fullName": "lxzy-7/dsh-plugin-guard",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-08-18T17:37:47Z",
+      "stargazersCount": 42,
+      "updatedAt": "2026-10-23T00:41:13Z",
+      "url": "https://github.com/lxzy-7/dsh-plugin-guard"
+    },
+    {
+      "description": "A curated, evidence-led directory of DeepSeek Harness (DSH) plugins: verified loadable extensions, skills, and permission-aware installation guidance.",
+      "forksCount": 35,
+      "fullName": "cccakeee/awesome-dsh-plugins",
+      "homepage": "https://deepseekharnessplugins.com",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-01T19:20:06Z",
+      "stargazersCount": 8,
+      "updatedAt": "2026-11-04T12:03:11Z",
+      "url": "https://github.com/cccakeee/awesome-dsh-plugins"
+    },
+    {
+      "description": "DeepSeek Harness plugins market｜DSH 插件市场",
+      "forksCount": 28,
+      "fullName": "losebird/dsh-plugin-market",
+      "homepage": "https://www.dsh-plugin.shop/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "",
+        "name": "",
+        "url": ""
+      },
+      "pushedAt": "2026-11-04T13:31:49Z",
+      "stargazersCount": 25,
+      "updatedAt": "2026-11-04T13:31:56Z",
+      "url": "https://github.com/losebird/dsh-plugin-market"
+    },
+    {
+      "description": "",
+      "forksCount": 17,
+      "fullName": "Kiyoscripts/Dshpurge",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-09-30T00:39:32Z",
+      "stargazersCount": 14,
+      "updatedAt": "2026-11-04T19:09:12Z",
+      "url": "https://github.com/Kiyoscripts/Dshpurge"
+    },
+    {
+      "description": "A curated collection of plugins, tools, and integrations for the DeepSeek Harness agent runtime",
+      "forksCount": 16,
+      "fullName": "SihanTeng/awesome-deepseek-harness-plugins",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-09-02T06:08:29Z",
+      "stargazersCount": 9,
+      "updatedAt": "2026-11-02T00:15:40Z",
+      "url": "https://github.com/SihanTeng/awesome-deepseek-harness-plugins"
+    },
+    {
+      "description": "DeepSeek Harness 开机动画 + 聊天壁纸，一个插件：六幕冷启动动画（真声台词/可交互）+ 开场视频/底图/大字横幅。双击 安装.cmd 即可，出问题双击 卸载.cmd。",
+      "forksCount": 8,
+      "fullName": "LeeRolling/dsh-boot-suite",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "JavaScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-04T05:47:03Z",
+      "stargazersCount": 61,
+      "updatedAt": "2026-11-05T08:40:12Z",
+      "url": "https://github.com/LeeRolling/dsh-boot-suite"
+    },
+    {
+      "description": "A curated list of plugins for DeepSeek Harness (dsh) - DeepSeek Harness plugin ecosystem",
+      "forksCount": 8,
+      "fullName": "Anil-matcha/awesome-dsh-plugin",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "",
+        "name": "",
+        "url": ""
+      },
+      "pushedAt": "2026-09-17T20:06:00Z",
+      "stargazersCount": 15,
+      "updatedAt": "2026-11-05T07:25:21Z",
+      "url": "https://github.com/Anil-matcha/awesome-dsh-plugin"
+    },
+    {
+      "description": "The living DeepSeek Harness plugin directory — refreshed hourly, compat-tested daily, with an in-app plugin store and scaffolder. DSH 插件活目录：每小时刷新，每日兼容实测，内置插件商店与脚手架。",
+      "forksCount": 15,
+      "fullName": "whyihaveyou/dsh-suite",
+      "homepage": "https://whyihaveyou.github.io/dsh-suite/",
+      "isArchived": false,
+      "isFork": false,
+      "language": "HTML",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T04:54:05Z",
+      "stargazersCount": 64,
+      "updatedAt": "2026-11-05T04:54:10Z",
+      "url": "https://github.com/whyihaveyou/dsh-suite"
+    },
+    {
+      "description": "Solution for long term memory for agent coding CLIs and to facilitate handoff between different agent vendors",
+      "forksCount": 1093,
+      "fullName": "akitaonrails/ai-memory",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Rust",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-11-05T05:27:18Z",
+      "stargazersCount": 15167,
+      "updatedAt": "2026-11-05T08:45:38Z",
+      "url": "https://github.com/akitaonrails/ai-memory"
+    },
+    {
+      "description": "Augmentor Agent Desktop and Browser. Public source under MIT with Augmentor Resale Restriction: free use and modification; resale requires permission.",
+      "forksCount": 5,
+      "fullName": "ManoloRemiddi/augmentor-agent",
+      "homepage": "https://augmentoragent.com",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Python",
+      "license": {
+        "key": "other",
+        "name": "Other",
+        "url": ""
+      },
+      "pushedAt": "2026-10-28T07:36:04Z",
+      "stargazersCount": 27,
+      "updatedAt": "2026-11-03T19:47:33Z",
+      "url": "https://github.com/ManoloRemiddi/augmentor-agent"
+    },
+    {
+      "description": "Condition-driven wakeup for DeepSeek Harness: durable file/command/http/process/webhook watches that wake the agent, with dock, sidebar branch, and a global dashboard.",
+      "forksCount": 6,
+      "fullName": "fuhefei/dsh-sentinel",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "bsd-3-clause",
+        "name": "BSD 3-Clause \"New\" or \"Revised\" License",
+        "url": "https://api.github.com/licenses/bsd-3-clause"
+      },
+      "pushedAt": "2026-11-02T09:30:54Z",
+      "stargazersCount": 21,
+      "updatedAt": "2026-11-02T09:30:58Z",
+      "url": "https://github.com/fuhefei/dsh-sentinel"
+    },
+    {
+      "description": "A Fully free agentic browser driver for AI , few tools, full control, real stealth, top-tier token efficiency.",
+      "forksCount": 21,
+      "fullName": "dondai44423/bladebro",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "Rust",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "url": "https://api.github.com/licenses/apache-2.0"
+      },
+      "pushedAt": "2026-11-05T08:53:35Z",
+      "stargazersCount": 344,
+      "updatedAt": "2026-11-05T08:53:40Z",
+      "url": "https://github.com/dondai44423/bladebro"
+    },
+    {
+      "description": "Visual plugin marketplace for DeepSeek Harness — browse, search and install community plugins",
+      "forksCount": 3,
+      "fullName": "mishibeikejie/zat-dsh-engine",
+      "homepage": "",
+      "isArchived": false,
+      "isFork": false,
+      "language": "TypeScript",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "url": "https://api.github.com/licenses/mit"
+      },
+      "pushedAt": "2026-09-24T11:07:40Z",
+      "stargazersCount": 77,
+      "updatedAt": "2026-10-10T02:41:33Z",
+      "url": "https://github.com/mishibeikejie/zat-dsh-engine"
+    }
+  ]
+}

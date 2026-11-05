@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R80 (2026-11-05)",
+  "stand": "R81 (2026-11-05)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -465,6 +465,13 @@
       "cannot_see": "R80 把对外文案的所有权交给外部 copywriter（Gemini），但**模型的可用性不在本仓的控制范围内**：本机 opencode 的 Gemini 供应商在 2026-11-05 两次返回 `Insufficient account funds`，第三次换到另一个供应商才成功。也就是说，事实包（`docs/copy/facts/`）与结构校验（`tests/governance/copy-channel.test.ts`）都在仓里可复算，但“谁把事实写成文字”这一步依赖一个余额、配额与策略都在外部的服务。仓里没有、也不该有“工程侧代写文案”的兜底——那正是 R80 要拆开的两件事。",
       "mitigation": "① 事实包与草稿分开提交：模型不可用时，先落事实包与候选分析，文案留空，不阻塞证据链；② 每次交接在 `docs/copy/drafts/` 里只放已通过结构校验的稿子，草稿文件缺失就是“还没写”，不是“写坏了”；③ 发布永远不是自动的：`posting-runbook` 要求先读帖子状态、再由 HUMAN/arbiter 决定，所以模型不可用最多延迟文案，不会造成错误发布；④ 若长期不可用，退回「只做事实包 + 让 HUMAN 用任何写作工具完成文字」，并在本条目记录日期与错误原文。",
       "owner": "docs/copy/README.md · .agents/roles/copywriter.md · tests/governance/copy-channel.test.ts"
+    },
+    {
+      "id": "BS-59",
+      "area": "急救箱 / 救援动作",
+      "cannot_see": "R81 只完成了同定位仓库的**元数据采证**与集成方案（`docs/10-adjacent-tools.md`），**没有实现任何救援动作**：`rescue` 计划、SAFE MODE、`profile snapshot` 都还在 BACKLOG（`T-854`–`T-856`）。所以现在**不能**说「dsh-triage 能救起不来的宿主」；能说的仍然只是「声明层归因 + 升级预检 + 对 `compatibility.json` 的 fix/undo」。另外采证只读 GitHub 元数据，没有读源码、没有验证任何同定位工具能跑，`stars` 与 `pushed_at` 也不是质量结论。",
+      "mitigation": "① 对外文案与 README 在 `T-854` 的真机见证出现之前，不许出现「急救 / 一键救回」类承诺；② `rescue` 第一条分支先做**只读计划**，用负对照锁住「只读不写盘 / 失败必回滚 / undo 逐字节还原」；③ 每条救援动作只改 `dsh.profile.bundles`，不动 `dependencies`，并在产物里写明「这不是 dsh-rescue 的替代品」；④ 互操作（`T-858`）优先于重复实现。",
+      "owner": "docs/10-adjacent-tools.md · docs/BACKLOG.md（T-854–T-859）· packages/plugin/src/cli.ts（下一阶段）"
     }
   ]
 }

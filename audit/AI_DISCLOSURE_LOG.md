@@ -946,3 +946,13 @@
 - 结果：① 先扫 300 条最近更新的 Discussions：**120 条**带分类信号，但**只有 39 条**是 admission/upgrade 的 `answerable`，其中大多数是功能贴/公告；按「bug/求助 + 点名包 + 未答 + 我们能加新事实」筛出 **6 条**——这就是实际可答比例，不是"很大比例"。② 计算：`dsh-win-pwsh7@0.2.6` admitted / `0.12.3` 已下架（unreadable）；两个 link 安装的实验包在 0.2.2-alpha.2 上 **unconstrained**（所以"版本不兼容"不是声明层说的）；`dsh-tools` 两版本相反；`presentation` 两运行时相反；沙盒卡片 192 → 119/73。③ 用 agy 写 6 篇稿子，逐条核对数字后发布：`#12209`（`19414852`）· `#11149`（`19414853`）· `#12103`（`19414854`）· `#10458`（`19414856`）· `#10759`（`19414857`）· `#12192`（`19414860`）。④ 全部 `d5_counts: false`；发布前确认 3 个新产物 URL 200，且评论数未增长。
 - 实测：`pnpm run verify` 763 测试 / 9 门 ALL GREEN · `step_reviews` 489 步
 - 边界：这是**人工筛过**的 6 条，不是自动批量；`#8202` / `#11687` 因评论已答而不发；General 分类的「已回答」仍靠人读（`T-851`）；`agy` 是外部 CLI，余额/配额不在本仓控制内（`BS-58`）
+
+### 2026-11-05 R81｜同定位仓库研究与交接（急救箱方向；判据一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R81-S1）
+- 人工决策：HUMAN 要求「研究同定位仓库（如 dsh-rescue）、大量收集、研究、集成、学习（注意版权），继续完善成 360 急救箱；确保可运行、无 bug；可分支测试后并入主线；即将切换会话，进行交接」
+- 范围：`scripts/record_adjacent_tools.mjs`（新）· `docs/10-adjacent-tools.md`（新）· `AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md` / `docs/BACKLOG.md`（Stand、R81 行、T-853–T-859）· `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}.json/md`（`R81-S1`、`BS-59`）· 产物 `data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json`
+- 结果：① 7 条固定查询采证 **140 个 DSH 相关仓库**（rescue 6 / doctor 6 / compatibility 6 / backup 10 / ops 4 / catalog 30 / context 10 / other 68；12 个 rescue/doctor 词面命中；6 个无许可证）。② 研究页点名 `dsh-rescue`（MIT，只裁 bundles 的 `enter/exit/status`）、`dsh-undo-savepoint`（SAFE MODE）、`dsh-backup`（`~/.dsh` 快照/脱敏）、`dsh-win32`（Windows 失败面）、`dsh-plugin-gating-hub` / `dsh-harness-ops`（升级闸门 + 原子切换）。③ 缺口与路线：归因/升级预检已有，缺「坏了之后的最小可逆动作」→ `rescue` 只读计划 → `--apply`/`--undo`、SAFE MODE、`profile snapshot`、互操作探测；**分支优先**（`feat/rescue-plan`），测试通过再并主线；**只学机制不抄代码**。④ 交接：§3 写清下一步分支与验收；冻结项未动。
+- 实测：`pnpm run verify` **763 测试 / 9 门 ALL GREEN** · `gate.mjs --mutate` 9/9 · `check_listing` 17/17 · 已发布 `0.3.4` 的可用性 smoke 6/6 · 交接快照 `snapshot-0.3.4-R81`
+- 边界：本轮**没有实现救援动作**（`BS-59`）；采证只读元数据，没有读源码、没有验证同定位工具能跑；`stars` / `pushed_at` 不是质量结论
