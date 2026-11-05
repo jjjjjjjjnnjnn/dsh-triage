@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R81 (2026-11-05)",
+  "stand": "R82 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12057,6 +12057,87 @@
         "artifact": "data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json",
         "outcome": "140 个 DSH 相关仓库；same position 12；无许可证 6；rescue 6 / doctor 6 / compatibility 6 / backup 10 / ops 4 / catalog 30 / context 10 / other 68",
         "sha256": "e45e58f58df57a0ae1b5d6082efc395d884748c0f30e2053f91b943d42d6c695"
+      }
+    },
+    {
+      "id": "R82-S1",
+      "batch": "R82",
+      "step": "rescue 只读计划（M8 A 段）在本机真实 profile 上真跑：2 个官方 bundle，可裁 0，manifest 前后逐字节相同",
+      "changed": [
+        "packages/plugin/src/rescue.ts",
+        "packages/plugin/src/cli.ts",
+        "tests/unit/rescue.test.ts",
+        "tests/e2e/rescue-cli.test.ts",
+        "scripts/record_rescue.mjs",
+        "docs/specs/M8-rescue.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/BACKLOG.md",
+        "docs/10-adjacent-tools.md",
+        "docs/09-open-source-borrowing.md",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：三态分类（official / third-party / unresolved）全部由纯函数 `classifyBundles()` 决定；官方 scope 但以 `link:` / `file:` / `workspace:` 安装的条目按本地代码算第三方；`unresolved` 不并入第三方（N3 单测钉死）。本机 profile 只有 `@deepseek-ai/dsh-base` 与 `@deepseek-ai/dsh-web-app` 两个官方 bundle，所以计划是「没有可裁的条目」，exit 0——这是结论，不是「没问题」。",
+        "reproducibility": "PASS：`record_rescue.mjs` 先算 manifest 的 sha256 → 跑 CLI `rescue --json` → 再算一次，两次相同才记 `read_only: true`；产物带 `produced_by` / `generated_at` / `inputs`（`dsh_home` 只写占位符 `(dsh-home)`）/ `recompute`。",
+        "licence": "PASS：只读用户 profile 的 `package.json`，不读凭据 / 会话 / settings；机制参考 `Iliyasfiel/dsh-rescue`（MIT）「只改 `dsh.profile.bundles`」的思路，**代码独立实现**，未复制任何片段。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/` 并由本步引用；`docs/specs/M8-rescue.md` 的 C1–C8 / N1–N8 逐条对应测试或控制；INDEX / HANDOFF / BACKLOG 指针同步。",
+        "adversary": "反例一：「只读」在「顺手格式化一下」时也会写盘——N1 把 dry-run 结尾去掉一个换行，e2e 的 sha256 断言当场红。反例二：把 `unresolved` 并进 `third-party`，一句「你有 3 个第三方」从此描述两种不同故障——N3 单测红。反例三：第三方判定改成「名字里含 dsh」——`plain-bundle` 变官方、可裁列表变化，单测红（N2）。反例四：删掉边界句——中英两条 e2e 同时红（N4）。反例五：把真实 home 路径塞进 `--json`——隐私断言红（N7）。反例六：给计划加 `generatedAt`——可复现断言红（N8）。"
+      },
+      "real_test": {
+        "command": "node scripts/record_rescue.mjs --dsh-home \"$env:USERPROFILE/.dsh\" --profile web",
+        "artifact": "data/results/rescue-2026-11-05T09-32-00-752Z.json",
+        "outcome": "bundles 2 · removable 0 · third-party 0 · unresolved 0 · read_only true",
+        "sha256": "690f43f2d5422e2180015af4aacbcb9ae34026c41372c1fb496e87dc3aa95393"
+      }
+    },
+    {
+      "id": "R82-S2",
+      "batch": "R82",
+      "step": "rescue 在合成 profile 上真跑：官方 / 第三方 / 官方 scope 的本地链接 / 宣布了但没装 四类各一，验证分类与只读性质",
+      "changed": [
+        "packages/plugin/src/rescue.ts",
+        "scripts/record_rescue.mjs",
+        "tests/unit/rescue.test.ts",
+        "data/results/rescue-fixture-2026-11-05T09-32-25-410Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：4 个 bundle 分类为 official 1 / third-party 2 / unresolved 1；`@deepseek-ai/local-fork` 因 `link:` 安装算第三方（官方 scope 不豁免本地代码），`@acme/ghost` 因解析不到安装位置记 `unresolved` 而不是第三方。",
+        "reproducibility": "PASS：fixture 由固定 JSON 构造、跑完即删；产物 `sample.kind: synthetic` 明写「数字描述 fixture，不描述用户机器」，合成读数不会被当成现场读数。",
+        "licence": "PASS：fixture 里的包名与版本是构造值，不引用任何真实第三方包的代码或元数据。",
+        "ssot": "PASS：第二份产物同样带 `.sha256`；`--kind synthetic` 决定文件名前缀 `rescue-fixture-`，与现场件不可能混淆；`writeEvidence` 拒绝覆盖同名文件。",
+        "adversary": "反例一：把合成读数当成「本机有 3 个可裁项」——被 `sample.kind` 与 `limits` 挡住。反例二：让 fixture 与现场件重名——前缀不同且写入拒绝覆盖。反例三：把 `read_only` 写成恒 `true`——它是两次真实 sha256 比出来的，N1 已证明这条断言会红。"
+      },
+      "real_test": {
+        "command": "node scripts/record_rescue.mjs --dsh-home <temp-fixture-home> --profile web --kind synthetic",
+        "artifact": "data/results/rescue-fixture-2026-11-05T09-32-25-410Z.json",
+        "outcome": "bundles 4 · removable 3 · third-party 2 · unresolved 1 · read_only true",
+        "sha256": "5f02dc58c9f66471dbc84135bde0b318b04c93b99e511f6358cc396d62ac480b"
+      }
+    },
+    {
+      "id": "R82-S3",
+      "batch": "R82",
+      "step": "文案/上架检查器在本轮终跑：测试数 763 → 782 对齐后 18 条断言全绿",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-05T09-52-00.000Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`check_listing --tests 782` 18 条断言全过；唯一的红是过程中那份 `listing-2026-11-05T09-40-00.000Z.json`（`test-count-matches` 报 README 仍写 763），改两份 README 后复跑转绿。",
+        "reproducibility": "PASS：断言从被引产物与文档正文两边复算（版本、区间、测试数、证据 sha256、Wilson 区间、渠道台账），`--tests` 由调用方给，不是从文档里读回来的。",
+        "licence": "PASS：只读仓内文档与 `data/results/` 产物，不联网。",
+        "ssot": "PASS：终跑产物带 `.sha256` 并进 `data/results/`；过程红产物已删除（它由我在同一分钟内迭代产生，不是一次有意义的读数）。",
+        "adversary": "反例一：把 `--tests` 写成 763 让断言「通过」——那等于用旧读数验证新代码，本轮的 782 是从 `pnpm run verify` 的 `pass 782` 读出来的。反例二：只改徽章不改正文（R62 的老毛病）——`COUNT` 三种形状都扫（正文 / `tests:` / 徽章 URL），漏一处即红。反例三：改 README 时用 PowerShell `Get-Content -Raw`（默认按 ANSI 读），会把中文与行尾改成乱码——本轮**真的踩了**：两份 README 被改写后立刻 `git checkout --` 还原，改用编辑器级替换重做，`git diff --stat` 复核只剩 4 处数字变化。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T09:52:00.000Z --tests 782",
+        "artifact": "data/results/listing-2026-11-05T09-52-00.000Z.json",
+        "outcome": "18 checks passed (version 0.3.4 · tests 782 · 10 documents)",
+        "sha256": "6d7eebdf45510bffb7aa251b43313218ff7d38bd7e062109d6417edd7960b96c"
       }
     }
   ]

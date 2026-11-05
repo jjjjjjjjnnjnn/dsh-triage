@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_rescue.mjs",
+  "generated_at": "2026-11-05T09:32:00.752Z",
+  "question": "if this host will not start, which dsh.profile.bundles entries would a rescue trim — and did asking change the profile?",
+  "sample": {
+    "kind": "measured",
+    "profile": "web"
+  },
+  "inputs": {
+    "dsh_home": "(dsh-home)",
+    "cli": "packages/plugin/dist/cli.js",
+    "cli_exit": 0,
+    "manifest_sha256": "210068ddb9ebc4cdf395ebb53020be6ccaaedb917e74dae16296d62394626398",
+    "manifest_sha256_after": "210068ddb9ebc4cdf395ebb53020be6ccaaedb917e74dae16296d62394626398",
+    "read_only": true
+  },
+  "counts": {
+    "bundles": 2,
+    "removable": 0,
+    "third_party": 0,
+    "unresolved": 0
+  },
+  "plan": {
+    "evidence": "scanned",
+    "profile": "web",
+    "manifestSha256": "210068ddb9ebc4cdf395ebb53020be6ccaaedb917e74dae16296d62394626398",
+    "bundles": [
+      {
+        "name": "@deepseek-ai/dsh-base",
+        "spec": null,
+        "version": "0.1.0-rc.6",
+        "origin": "official",
+        "removable": false,
+        "detail": "Official bundle: outside what a rescue would trim.",
+        "restore": {
+          "at": 0,
+          "entry": "@deepseek-ai/dsh-base"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-web-app",
+        "spec": null,
+        "version": "0.1.0-rc.6",
+        "origin": "official",
+        "removable": false,
+        "detail": "Official bundle: outside what a rescue would trim.",
+        "restore": {
+          "at": 1,
+          "entry": "@deepseek-ai/dsh-web-app"
+        }
+      }
+    ],
+    "removable": [],
+    "thirdParty": 0,
+    "unresolved": 0,
+    "empty": false,
+    "field": "present"
+  },
+  "limits": [
+    "a plan is computed from the profile manifest only: it does not prove the host boots, before or after a trim",
+    "the CLI was invoked with --json; this artifact is that output plus the before/after manifest hashes",
+    "one machine, one profile, one moment: the counts describe this profile, not the ecosystem",
+    "evidence tier is `scanned` — dsh.profile.bundles is configuration read off disk, not something the package declares"
+  ],
+  "recompute": "node scripts/record_rescue.mjs --stamp 2026-11-05T09:32:00.752Z --dsh-home '(dsh-home)' --profile web --kind measured"
+}

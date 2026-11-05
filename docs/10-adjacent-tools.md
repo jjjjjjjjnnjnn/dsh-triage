@@ -76,8 +76,8 @@
 
 ## 7. 下一步（BACKLOG）
 
-- `T-853` 同定位仓库采证（本轮完成）；
-- `T-854` `rescue` 只读计划 + `--apply` / `--undo`（分支，先负对照）；
+- `T-853` 同定位仓库采证（R81 完成）；
+- `T-854` `rescue` 只读计划 + `--apply` / `--undo`（分支 `feat/rescue-plan`；**A 段只读计划 R82 已交付**，B 段写入面待做）；
 - `T-855` SAFE MODE（面板 + CLI）；
 - `T-856` `profile snapshot`（`~/.dsh`，脱敏）；
 - `T-857` Windows 失败面只读诊断；

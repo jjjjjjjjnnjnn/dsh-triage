@@ -93,6 +93,7 @@ import {
   sandboxBundles,
 } from './probe-run.js'
 import { applyExemptionFixes, planFixes, readProfileDependencies, runtimeSupportsExemptions, undoFix } from './fix.js'
+import { classifyBundles, readProfileBundles } from './rescue.js'
 import { allowedHosts } from './host-allow.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
 import { buildProfileSummary, formatProfileSummary } from './summary.js'
@@ -203,6 +204,7 @@ Usage
   dsh-triage upgrade --to <version>  which rows/bundles the target dsh would deny, and how to fix
   dsh-triage upgrade --to next|latest  same judgement, with the target resolved from npm dist-tags
   dsh-triage fix                     what can be repaired automatically; --apply writes, --undo reverts
+  dsh-triage rescue                  which third-party bundles a rescue would trim (plan only, read-only)
 Flags
   --json                machine-readable output
   --all                 include findings that are not blocking (audit: print the full ledger)
@@ -262,6 +264,7 @@ const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 
   dsh-triage upgrade --to <目标版本>  预检目标 DSH 版本会拦截当前哪些插件，并输出修复建议
   dsh-triage upgrade --to next|latest 预检升级至 npm 远端 next/latest 版本的兼容影响
   dsh-triage fix                     自动修复计划；--apply 实际写入，--undo 依日志撤销
+  dsh-triage rescue                  救援计划：哪些第三方 bundle 可以先裁掉（只读，不写盘）
 参数 (Flags)
   --json                输出机器可读的 JSON 数据
   --all                 包含非阻断性条目（audit 命令下打印全量台账）
@@ -300,6 +303,8 @@ async function run(argv: readonly string[]): Promise<number> {
       return commandStatus(flags)
     case 'fix':
       return commandFix(flags)
+    case 'rescue':
+      return commandRescue(flags)
     case 'env':
       return commandEnv(flags)
     case 'why':
@@ -1231,6 +1236,104 @@ async function commandStatus(flags: Flags): Promise<number> {
  * Prints a plan by default and writes NOTHING. `--apply` writes only the items the plan marked
  * `ready`, backs the file up first, and records a journal so `--undo` can put it back.
  */
+/**
+ * `rescue` (M8 A 段): read-only plan for the smallest reversible change when the host will not start.
+ *
+ * Three things this command is careful about:
+ *   - **it writes nothing** — not even a backup, not even a formatted copy of the manifest (C4);
+ *   - **it does not promise a boot** — the boundary sentence is part of the output, both locales (C5);
+ *   - **`--apply` / `--undo` are refused loudly** instead of silently doing nothing, because a
+ *     no-op that exits 0 would look exactly like "it worked" (B 段 lands those).
+ */
+async function commandRescue(flags: Flags): Promise<number> {
+  if (flags.apply || flags.undo !== null) {
+    process.stderr.write(
+      flags.locale === 'zh'
+        ? 'rescue 的写入面（--apply / --undo）还没落地：这一版只有只读计划。未修改任何文件。\n'
+        : 'rescue --apply / --undo are not implemented yet: this build only plans. Nothing was written.\n',
+    )
+    return EXIT_USAGE
+  }
+
+  const env = await requireEnv(flags)
+  if (env === null) return EXIT_UNAVAILABLE
+
+  const reading = readProfileBundles(env.profileDir)
+  if (!reading.ok) {
+    process.stderr.write(`${reading.reason}\n`)
+    process.stderr.write('hint: pass --dsh-home <path> or --profile <name>\n')
+    return EXIT_UNAVAILABLE
+  }
+
+  const plan = classifyBundles({
+    profile: env.profile,
+    declared: reading.declared,
+    installed: env.installed,
+    manifestSha256: reading.manifestSha256,
+    field: reading.field,
+  })
+
+  if (flags.json) {
+    // The plan carries no absolute paths by construction; this is checked by a control, not by hope.
+    writeJson({ schema_version: 1, command: 'rescue', plan })
+  } else {
+    const zh = flags.locale === 'zh'
+    process.stdout.write(
+      zh
+        ? `rescue 计划 · profile ${plan.profile} · manifest ${plan.manifestSha256.slice(0, 12)}…\n`
+        : `rescue plan · profile ${plan.profile} · manifest ${plan.manifestSha256.slice(0, 12)}…\n`,
+    )
+
+    if (plan.empty) {
+      process.stdout.write(
+        zh
+          ? plan.field === 'absent'
+            ? '这个 profile 的 package.json 里没有 dsh.profile.bundles 字段——通常是 --dsh-home / --profile 指错了，而不是"没有问题"。\n'
+            : 'dsh.profile.bundles 是空数组——这个 profile 没声明任何 bundle。\n'
+          : plan.field === 'absent'
+            ? 'this profile\'s package.json has no dsh.profile.bundles field — usually --dsh-home / --profile points somewhere else, not "nothing is wrong".\n'
+            : 'dsh.profile.bundles is empty — this profile declares no bundles.\n',
+      )
+    } else {
+      process.stdout.write(
+        zh
+          ? `可裁 ${plan.removable.length} / ${plan.bundles.length} 个 bundle（第三方 ${plan.thirdParty} · 宣布了但没装 ${plan.unresolved}）\n`
+          : `${plan.removable.length} of ${plan.bundles.length} bundle(s) trimmable (${plan.thirdParty} third-party · ${plan.unresolved} listed-but-not-installed)\n`,
+      )
+      for (const entry of plan.bundles) {
+        const mark = entry.removable ? '✓' : '·'
+        const version = entry.version === null ? '?' : entry.version
+        const spec = entry.spec === null ? '—' : entry.spec
+        process.stdout.write(`  ${mark} ${entry.name}@${version}  [${entry.origin}] · ${spec}\n`)
+        process.stdout.write(`      ${entry.detail}\n`)
+        if (entry.removable) {
+          process.stdout.write(
+            zh
+              ? `      撤回方式：放回 dsh.profile.bundles 第 ${entry.restore.at + 1} 位\n`
+              : `      undo: put "${entry.restore.entry}" back at position ${entry.restore.at + 1}\n`,
+          )
+        }
+      }
+      if (plan.removable.length === 0) {
+        process.stdout.write(zh ? '没有可裁的条目：全部是官方 bundle。\n' : 'nothing to trim: every bundle is official.\n')
+      }
+    }
+
+    process.stdout.write(
+      zh
+        ? '\n边界：本计划只从声明层读 dsh.profile.bundles，不证明启动成功；启动验证请用 `dsh-triage probe --execute`。\n'
+        : '\nboundary: this plan is read off dsh.profile.bundles only — it does not prove the host boots; verify with `dsh-triage probe --execute`.\n',
+    )
+    process.stdout.write(
+      zh
+        ? '未修改任何文件：写入与撤销在下一版（--apply / --undo）落地。\n'
+        : 'nothing was written: --apply / --undo land in the next build.\n',
+    )
+  }
+
+  return plan.removable.length > 0 ? EXIT_FINDINGS : EXIT_OK
+}
+
 async function commandFix(flags: Flags): Promise<number> {
   if (flags.undo !== null) {
     try {
