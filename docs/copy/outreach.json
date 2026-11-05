@@ -2,6 +2,7 @@
   "schema_version": 1,
   "generated_by": "hand-written ledger; every entry names the draft, the fact pack and the artifacts it cites",
   "rule": "A posted entry must carry the real comment URL and an ISO instant with a timezone. Promotion never counts as D5 evidence: d5_counts is false for every entry here, because D5 only counts the #11813 discussion.",
+  "policy": "General and Ideas categories have no isAnswered field, so judgeReplyGate returns unreadable. R80 posted those threads only after an explicit HUMAN go-ahead and a manual read of every comment; T-851 is the task that turns that manual step into a rule.",
   "entries": [
     {
       "thread": 10849,
@@ -35,47 +36,92 @@
       "why_not_counted": "Same rule: only #11813 reactions and external references feed D5; this reply is not counted."
     },
     {
+      "thread": 12209,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12209",
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12209#discussioncomment-19414852",
+      "posted_on": "2026-11-05T08:45:44Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/12209-dist-tag-update.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
+      "cites": [
+        "data/results/remedy-probe-2026-11-05T08-37-26-770Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "General category, manual read after HUMAN go-ahead; not a D5 signal."
+    },
+    {
+      "thread": 11149,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11149",
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11149#discussioncomment-19414853",
+      "posted_on": "2026-11-05T08:45:46Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/11149-compat-command.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
+      "cites": [
+        "data/results/upgrade-card-2026-11-05T07-35-01.051Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "Feature-request thread; the reply points at an existing read-only command. Not a D5 signal."
+    },
+    {
+      "thread": 12103,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12103",
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12103#discussioncomment-19414854",
+      "posted_on": "2026-11-05T08:45:48Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/12103-link-duplicate-cards.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
+      "cites": [
+        "data/results/remedy-probe-2026-11-05T08-37-27-222Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "Q&A, not answered; the reply only rules the declaration layer out. Not a D5 signal."
+    },
+    {
       "thread": 10458,
       "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458",
-      "status": "prepared-blocked",
-      "comment_url": null,
-      "posted_on": null,
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10458#discussioncomment-19414856",
+      "posted_on": "2026-11-05T08:45:49Z",
       "language": "en",
       "draft": "docs/copy/drafts/10458-nested-app-boot.md",
-      "facts": "docs/copy/facts/2026-11-05-outreach.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
       "cites": [
         "data/results/remedy-probe-2026-11-05T08-03-35-886Z.json"
       ],
       "d5_counts": false,
-      "why_not_counted": "Not posted: General category has no isAnswered field, so judgeReplyGate returns unreadable and the repository rule forbids treating that as open (T-851)."
+      "why_not_counted": "General category, manual read; not a D5 signal."
     },
     {
       "thread": 10759,
       "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10759",
-      "status": "prepared-blocked",
-      "comment_url": null,
-      "posted_on": null,
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/10759#discussioncomment-19414857",
+      "posted_on": "2026-11-05T08:45:51Z",
       "language": "en",
       "draft": "docs/copy/drafts/10759-shadowed-tools.md",
-      "facts": "docs/copy/facts/2026-11-05-outreach.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
       "cites": [
         "data/results/remedy-probe-2026-11-05T08-06-23-439Z.json"
       ],
       "d5_counts": false,
-      "why_not_counted": "Not posted: same unreadable gate (General category, T-851)."
+      "why_not_counted": "General category, manual read; not a D5 signal."
     },
     {
       "thread": 12192,
       "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12192",
-      "status": "prepared-blocked",
-      "comment_url": null,
-      "posted_on": null,
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12192#discussioncomment-19414860",
+      "posted_on": "2026-11-05T08:45:53Z",
       "language": "zh",
       "draft": "docs/copy/drafts/12192-duplicate-factory.md",
-      "facts": "docs/copy/facts/2026-11-05-outreach.md",
+      "facts": "docs/copy/facts/2026-11-05-batch2.md",
       "cites": [],
       "d5_counts": false,
-      "why_not_counted": "Not posted: same unreadable gate (General category, T-851); this one also has no artifact to cite because it only offers diagnosis commands."
+      "why_not_counted": "General category, manual read; the reply only offers diagnosis commands. Not a D5 signal."
     }
   ]
 }

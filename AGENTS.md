@@ -147,6 +147,9 @@ node scripts/record_market_baseline.mjs --stamp <ISO>   # 市场基线（R47）�
 **文案所有权（R80 起）**：对外文案由 `copywriter`（Gemini）写，工程 agent 只提供 `docs/copy/facts/` 的**事实包**
 （产物 + sha256 + 精确数字 + 边界）。缺事实包不写文案；发布由 HUMAN / arbiter 决定。规则见 `docs/copy/README.md`，
 发帖规则见 `docs/distribution/posting-runbook.md`，结构由 `tests/governance/copy-channel.test.ts` 校验。
+**模型使用纪律（HUMAN 2026-11-05）**：opencode 内**只用 DeepSeek**；文案一律走外部 `agy`
+（`agy --model gemini-3.8-flash-high --print=...`）读事实包生成，**不得**调用 opencode 里的 Gemini / 其他供应商
+（2026-11-05 实测 `opencode` 的 Gemini 供应商返回 `Insufficient account funds`，记入 `BS-58`）。
 
 ### 并发硬边界
 

@@ -14,6 +14,10 @@
 | **工程 agent**（DeepSeek） | 真跑产物 / 算出数字 / 给命令与边界 / 机器校验 | 在没有事实包时写对外文案 |
 | **HUMAN / arbiter** | 决定发不发、以谁的身份发 | 替模型猜一个数字 |
 
+**模型纪律（HUMAN 2026-11-05）**：opencode 里**只用 DeepSeek**；文案由外部 `agy` 调用
+`gemini-3.8-flash-high` 生成（`agy --model gemini-3.8-flash-high --print=<prompt>`），prompt 里只给事实包与规则。
+不要把 opencode 的 Gemini 供应商当文案通道（实测会因余额失败，见 `BS-58`）。
+
 ## 2. 流向（只有一条）
 
 ```
