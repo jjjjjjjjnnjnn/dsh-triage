@@ -137,7 +137,8 @@ node scripts/record_market_baseline.mjs --stamp <真实UTC>   # 截止日或之�
 Windows 失败面只读诊断（`T-857`）、互操作探测（`T-858`）、借用台账收尾（`T-859`，已在 `docs/09-open-source-borrowing.md` 落了三行）。
 ⚠️ **重启宿主这件事本身没有证据**：本轮只证明「文件改对了、能逐字节撤回」，**没有**证明裁掉之后宿主真的起得来
 （那要 `probe --execute`，另一条命令）。任何对外说法都不许把这两件事混起来。
-**分支优先**：A+B 都在 `feat/rescue-plan` 上，测试通过再并 `main`；合并前跑 `pnpm run verify` + `gate.mjs --mutate`。
+**分支优先**：A+B 都在 `feat/rescue-plan` 上完成并已 **fast-forward 并入 `main`**（`bd7135a`）；分支未删，便于对照。
+合并前跑过 `pnpm run verify`（792 测试 / 9 门）+ `gate.mjs --mutate`（9/9），并有两个独立 verifier（A 段 7/7、B 段 11/11）只读复算产物与 CLI 行为。
 **只学机制不抄代码**：MIT/Apache/BSD 只读实现思路，AGPL / 无许可证一律不复制；要引用代码只进 `quarantine/` 并登记 `vendor-manifest`。
 
 **交接快照**：`backup/snapshots/snapshot-0.3.4-*.json`（`node scripts/snapshot_state.mjs --name <label>` 生成，
