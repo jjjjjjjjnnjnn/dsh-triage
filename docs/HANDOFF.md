@@ -157,6 +157,9 @@ gh run list --repo jjjjjjjjnnjnn/dsh-triage --limit 1
 
 验收：最新一次是 `completed  success`。红的话先看 `FAILING:` 那一行（门禁现在会把失败的 check 名列出来）。
 
+> **R84 首次把本轮的 9 个提交推上 CI**（`fbf8359..6cc7855`，run **`42028080241`**）：`verify (node 22)` / `verify (node 24)` / `verify (windows, node 24)` / `gates can fail` / `render controls (ubuntu, real browser)` **5 个 job 全绿**，`release readiness` 按设计跳过（只在打 tag 时跑）。这是 rescue A+B、T-861、D5 第三份基线**第一次**在 CI 上跑——在此之前它们只在本地绿过。
+> 同一份 run 里有两条**非失败**注解，记下来当维护项：① 所有 action 仍在 Node 20 上，被强制跑在 Node 24（`actions/checkout@v4` / `setup-node@v4` / `pnpm/action-setup@v4` / `upload-artifact@v4`）；② `ubuntu-latest` 从 2026-10-19 起迁到 Ubuntu 26，跑器镜像说明见 `actions/runner-images#14748`。两条都不影响结论，但下一次动 workflow 时顺手升级。
+
 ## R75（2026-11-03，采证 + 加固 + 落地 · **交接**）
 
 **状态**：**746 测试 / 9 门 ALL GREEN / `--mutate` 9/9**；`check_listing` **17/17**；CI `success`（`41608591346`）。
