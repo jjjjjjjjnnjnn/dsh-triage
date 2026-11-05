@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/watch_next_release.mjs",
+  "generated_at": "2026-11-05T07:34:44.456Z",
+  "upstream": {
+    "package": "@deepseek-ai/dsh",
+    "registry": "https://registry.npmjs.org",
+    "tag": "next",
+    "http_status": 200,
+    "dist_tags": {
+      "next": "0.2.2-rc.1",
+      "latest": "0.2.1-rc.5",
+      "alpha": "0.2.2-alpha.3"
+    }
+  },
+  "previous": {
+    "version": "0.2.1-rc.5",
+    "at": "2026-11-02T17:40:00.322Z",
+    "artifact": "next-release-2026-11-02T17-40-00.322Z.json",
+    "source": "data/results"
+  },
+  "next": {
+    "version": "0.2.2-rc.1"
+  },
+  "change": {
+    "state": "changed",
+    "changed": true,
+    "from": "0.2.1-rc.5",
+    "to": "0.2.2-rc.1",
+    "detail": "next moved 0.2.1-rc.5 → 0.2.2-rc.1; this includes a rollback, which changes what the card would say"
+  },
+  "suggested": [
+    "dsh-triage upgrade --to next --card",
+    "dsh-triage upgrade --to 0.2.2-rc.1 --card --out upgrade-0.2.2-rc.1.md"
+  ],
+  "limits": [
+    "this is one registry read at one timestamp: it says what dist-tags said here and now, not what npm serves every region",
+    "changed includes a rollback — the two versions are reported verbatim and no semver ordering is claimed",
+    "the card numbers come from this machine's profile; re-run the card before quoting it anywhere",
+    "this script posts nothing and writes nothing outside data/results"
+  ]
+}

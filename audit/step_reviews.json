@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R78 (2026-11-03)",
+  "stand": "R79 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -11468,6 +11468,180 @@
         "artifact": "data/results/gates-2026-11-03T16-55-00.000Z.json",
         "outcome": "9 门 **ALL GREEN**（`governance/backup-policy-scripts` 1 处脚本引用可解析 · `governance/snapshots-hash-locked` 通过 · `index-references` 295 条引用全部可解析）；负对照：脚本改名 → `FAIL backup-policy-scripts`，改回 → PASS；快照含 448 份 SSOT 产物哈希清单",
         "sha256": "cdb71d9e51ae58fb6c16e66750ce3f2fd4515c5b8d11f7e9b80c5d690e0a37ce"
+      }
+    },
+    {
+      "id": "R79-S1",
+      "batch": "R79",
+      "step": "上游 next 换版本：本机用已提交基线真跑 `watch_next_release --baseline`，把 `changed` 落成 SSOT 产物（CI 里只进 step summary）",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/next-release-2026-11-05T07-34-44.456Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`next` 从 `0.2.1-rc.5` 变成 `0.2.2-rc.1`，`latest` 仍是 `0.2.1-rc.5`（同一次 registry 读里两个标签分别记录）；脚本把 `previous` 指到已提交的 `next-release-2026-11-02T17-40-00.322Z.json`，所以这是「变化」而不是「首次基线」。",
+        "reproducibility": "PASS：同一命令可重跑；产物只写 registry 返回的原文与时间戳，并带一句 limits（一次读、一个时间点，不代表所有地区）。`unchanged` 不落产物是既有口径，本轮触发的是 `changed`。",
+        "licence": "PASS：只读 npm public registry，无凭据、无第三方依赖。",
+        "ssot": "PASS：产物进 `data/results/` 并带 `.sha256`；`check_listing` 与治理测试不依赖它，文档按产物指针引用。",
+        "adversary": "反例一：把「本机能读到 changed」说成「CI 的 changed 分支已验证」——不成立，`BS-56` 仍开着（CI 那次只有 schedule+unchanged 的真跑）。反例二：为了让产物落盘把 `--out` 指到 `%TEMP%` 再手工搬 —— 被拒，SSOT 必须由脚本直接写入并带 sha256。反例三：把 `latest` 一起说成变了 —— 实测未变，产物同时记两个标签。"
+      },
+      "real_test": {
+        "command": "node scripts/watch_next_release.mjs --baseline data/results,.watch-state",
+        "artifact": "data/results/next-release-2026-11-05T07-34-44.456Z.json",
+        "outcome": "changed：0.2.1-rc.5 → 0.2.2-rc.1；基线取自 data/results/next-release-2026-11-02T17-40-00.322Z.json；产物含 dist_tags 原文与 limits",
+        "sha256": "f52bdbc852a3afb086ec88609adfc96f12048844bee67ffcd0886efb0b0ec41d"
+      }
+    },
+    {
+      "id": "R79-S2",
+      "batch": "R79",
+      "step": "升级日真机卡片：对新的精确目标 `0.2.2-rc.1` 重跑 `record_upgrade_card`（关键字不直接传，先读 dist-tags 得到精确版本）",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/upgrade-card-2026-11-05T07-35-01.051Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：14/14；首行结论与 JSON 四桶一致，四桶和 = 192；标题带目标版本；边界句在、无「升级会修好」类承诺；两次渲染同 sha256；文本无 home 路径。",
+        "reproducibility": "PASS：精确 semver 全程离线，可重跑；`--stamp` 是命名与生成时间的唯一来源；产物 `limits` 写明 profile 是仓内沙盒 `0.2.1-rc.4`、**不是用户机器**，且只判声明层。",
+        "licence": "PASS：只读仓内沙盒 profile 与本地引擎，无网络。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；`INDEX` 与 `HANDOFF` 的指针指向它；README 仍引用旧的 0.2.1-rc.5 卡片（历史真话，换它要动 HUMAN 文案，记入 `BS-57`）。",
+        "adversary": "反例一：把 `--to next` 直接传给记录器 —— 关键字不解析成精确版本、标题对不上，会红。反例二：把 119/73 说成「所有用户升上去都这样」—— 不成立，那是沙盒的 192 个单元，产物 limits 已写明。反例三：为了让数字好看换一个 profile —— 被拒，读数必须来自约定的沙盒，换样本就是换实验条件。"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --stamp 2026-11-05T07:35:01.051Z --to 0.2.2-rc.1",
+        "artifact": "data/results/upgrade-card-2026-11-05T07-35-01.051Z.json",
+        "outcome": "14/14：192 单元 → 119 会被拒 / 73 判不了 / 0 会变好 / 0 像没事；四桶自检与边界句全过；profile = 仓内沙盒 0.2.1-rc.4",
+        "sha256": "64e82b370d8db1bad433714de0f616ed72fc144695b6f6855aa332c34e9c2342"
+      }
+    },
+    {
+      "id": "R79-S3",
+      "batch": "R79",
+      "step": "已发布包的「陌生人第一分钟」再验一次：匿名装 `dsh-triage@0.3.4`，在临时目录跑四条命令",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/usability-2026-11-05T07-35-16.214Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：6/6 —— 匿名安装 exit 0；`--help` / 无参 `status`（16 行）/ `audit`（18 行）/ `upgrade --to next --card` 全部 exit 0；卡片里目标版本已是 `0.2.2-rc.1` 且带声明层边界句。",
+        "reproducibility": "PASS：版本从 `packages/plugin/package.json` 读（0.3.4），临时目录跑完即删；同一时间点的 registry 内容固定，重跑得到同一形态。",
+        "licence": "PASS：只安装 public registry 上的发布包，不读本机凭据（空 userconfig）。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/`；它证明的是「已发布的那份」可用，而不是仓库里的工作副本。",
+        "adversary": "反例一：只验 `--help` 就宣称可用 —— R65 已证明那不够（`status`/`audit` 可以在默认 profile 上崩）。反例二：在仓库目录里跑 —— 那样会读到仓库的 `node_modules`，测的不是装回来的包；脚本强制临时目录。反例三：把卡片目标写死成本地版本 —— 实际由 registry 的 `next` 决定，今天读到 `0.2.2-rc.1`。"
+      },
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-05T07:35:16.214Z",
+        "artifact": "data/results/usability-2026-11-05T07-35-16.214Z.json",
+        "outcome": "6/6：匿名装 dsh-triage@0.3.4 exit 0；四条命令 exit 0；卡片目标 0.2.2-rc.1、boundary=yes、buckets=yes",
+        "sha256": "8c59849d7a09ab7bc225f93eaa5036dd7591c07f563d3d1efc74b898c0080c2a"
+      }
+    },
+    {
+      "id": "R79-S4",
+      "batch": "R79",
+      "step": "D5 窗口内第二份现场基线：刷新 npm 下载与上游 Discussions，并保留原始响应供离线复算",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/market-baseline-2026-11-05T07-35-31.003Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：`inputs.offline=false`、`failures: []`；窗口 `10-28..11-03`；`dsh-triage` 周下载 1564、`steady`（6/7 天、峰值 40.5%）、日序列 `0/634/192/17/192/357/172`；按冻结口径 `threshold-met`，但序列仍是 10-29 爆发的回声（`BS-48`），**不是新需求证据**。",
+        "reproducibility": "PASS：原始响应落 `data/fixtures/market-baseline/2026-11-05T07-35-31.003Z/`，`--fixtures` 可离线重算；`--stamp` 带冒号，是真实 UTC 时钟。",
+        "licence": "PASS：npm public API + GitHub public Discussions；无凭据写入。",
+        "ssot": "PASS：产物 + `.sha256`；三份入口文档的截止日已按它重算的结果更新；D5 的三个阈值与判定顺序一字未动。",
+        "adversary": "反例一：把 `steady` 读成「有人在用」——`BS-48` 写明 `steady` 只说明不像单日爬虫，634 之后 192/17/192/357/172 更像同一来源的回声。反例二：只报周下载不报日序列 —— 被拒，形状判定依赖日序列。反例三：把这份说成关窗读数 —— 它只覆盖到 `11-03`，`judgeD5` 仍 `pending`。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-05T07:35:31.003Z",
+        "artifact": "data/results/market-baseline-2026-11-05T07-35-31.003Z.json",
+        "outcome": "现场件、failures: []：窗口 10-28..11-03；dsh-triage 1564 周下载、steady、峰值 40.5%；诊断 4018 / 市场 502350 / 装饰 479194；843 讨论 / 360 故障 / 239 零回复",
+        "sha256": "634fa66e1f77dc84f877af7823ac74a76be1a60fa2d8fc5e6140eb5d66f98c93"
+      }
+    },
+    {
+      "id": "R79-S5",
+      "batch": "R79",
+      "step": "把新基线折算成窗口覆盖与「下一跑最晚哪天」，并让三份入口文档跟着算出来的日期走",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/d5-window-status-2026-11-05T07-36-24.115Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：窗口 `2026-11-01..2026-11-15`；covered `11-01..11-03`（3 天）、missing 12、lost 0、`verdict: not-yet`、`next_run_by 2026-11-12`；`lag_observed [1,2]`；6 份现场件 used、2 份复算/坏窗口件 ignored。",
+        "reproducibility": "PASS：只读磁盘，不联网、不刷新基线；同一份磁盘状态重算同一答案（治理测试会拿已提交产物复算 `next_run_by` 并与产物比较）。",
+        "licence": "PASS：零网络、零依赖。",
+        "ssot": "PASS：`AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` 三处日期已从 `2026-11-11` 改成算出来的 `2026-11-12`；这是治理断言的预期行为（新基线进仓即红，逼文档跟着走）。",
+        "adversary": "反例一：把新日期手填成「大概 11-11」——测试按产物复算，差一天就红。反例二：把复算件也算覆盖 —— 会虚增覆盖；脚本只认 `inputs.offline === false`。反例三：把 `covered` 当成「需求达标」—— coverage 只说明窗口里有读数，D5 判定仍由 `judgeD5` 单独给。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "artifact": "data/results/d5-window-status-2026-11-05T07-36-24.115Z.json",
+        "outcome": "covered 3 天（11-01..11-03）/ missing 12 / lost 0 / not-yet / next_run_by 2026-11-12 / lag_observed 1,2",
+        "sha256": "9b516d26578a3fa84b333cb037a46b7108deaa811dbd944f32c1a5675c143104"
+      }
+    },
+    {
+      "id": "R79-S6",
+      "batch": "R79",
+      "step": "对外文案的机器复核：版本 / 区间 / 测试数 / 证据路径 / 卡片与覆盖率引用 / 渠道台账，一次跑完 17 条",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "audit/blind_spots.json",
+        "audit/step_reviews.json",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "data/results/listing-2026-11-05T07-43-01.099Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：17/17 —— 10 份文档、20 条证据路径都可解析且有 sha256；文档里点名的版本全是 0.3.4、区间与 `engines.dsh` 相同、测试数 760 非空转；禁用话术 0；两份 README 的卡片与覆盖率块仍指向真实产物；3 篇草稿的声明可从粘贴块与产物两边复算；4 个渠道里只有 1 条计入 D5。",
+        "reproducibility": "PASS：`--stamp` + `--tests 760` 可重跑；产物记录每个被引用文件的 sha256，正文改动未重跑会红。",
+        "licence": "PASS：只读本仓文件，无网络、无第三方依赖。",
+        "ssot": "PASS：产物 + `.sha256` 进 `data/results/` 并由本步引用（`no-orphan-results` 通过）。",
+        "adversary": "反例一：把测试数 760 写进 README 却不跑检查 —— `test-count-matches` 会红（R45 的旧漂移抓法）。反例二：把 HUMAN 改写过的 README 当成「不用查的文案」—— 本轮实测 17/17，恰好证明改写没有拆掉可校验的边界。反例三：把 `0/634/...` 这种日序列写进 INDEX —— `index-references` 会把它当路径（本轮真红过一次，改成 `0 · 634 · …` 后 300 条引用全部可解析）。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T07:43:01.099Z --tests 760",
+        "artifact": "data/results/listing-2026-11-05T07-43-01.099Z.json",
+        "outcome": "17/17：10 份文档 / 20 条证据路径 / version 0.3.4 / dsh >=0.2.0-rc.1 <0.3.0-0 / tests 760 / 卡片与覆盖率引用真实 / 渠道台账 1 条计入 D5",
+        "sha256": "b5edef149221bc4708a0dfae8f3e9945b0ce06275e52cf14fd16ff746560cdaa"
       }
     }
   ]

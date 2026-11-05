@@ -1,6 +1,6 @@
 # HANDOFF · 交接入口
 
-> **Stand**: R78 (2026-11-03，**维护 + 交接**：`backup/BACKUP_POLICY.md` 从 M0 起写着「快照由 `scripts/snapshot_state.mjs` 生成」而**那个脚本从未存在**、`backup/snapshots/` 只有 `.gitkeep`、也没有门禁看过 `backup/` → 脚本落地 + 两条治理检查（策略点名的脚本必须存在、每个快照必须能被 `.sha256` 验证，负对照真红）+ 交接快照；同时核对出 **tag 线从未启用**（表里 3 个里程碑 tag 一个都没打，记成 `T-848` **未签不打**）· 文案与证据对齐 `T-844`/0.3.4 已发布 · **判据/阈值一字未动**；**760 测试**)｜**R77（2026-11-03，发版 + 整理**：四包 **`0.3.4` 已发布**（`latest=0.3.4`，取证 **18/18 · `git_dirty=false`**；T-844 的复制修复随 `client.js` 到用户手里）+ CHANGELOG + 上架文案 / README 的版本号与测试数对齐（`check_listing` **17/17**）· 预检先如实报 `E401`、`npm login` 后才发 · §2 按既定口径只留最近十轮（R39–R66 的 **31 行**逐行归档并登记 `ARCHIVE_MANIFEST`）· **判据/阈值一字未动**；**760 测试**)｜**R76（2026-11-03，交付轮**：把「D5 窗口哪天必须再跑基线」从一句要人记住的话变成算得出来的数 —— `scripts/lib/d5-window-coverage.mjs`（纯函数）+ `scripts/d5_window_status.mjs`（只读）+ 11 条单测 + 2 条治理断言。实测：`last-week` 滞后 **1–2 天**（同日两次跑读到 2 与 1），所以「11-08 之前跑」会漏掉 **11-06**，而「11-03 那份 + 再跑一次」就能无缝拼上；**746 → 760 测试**)｜**下一件事：① `npm login` 后跑 `pnpm run release:publish`（0.3.4 到用户手里）；② 窗口内基线的第二跑，截止 **`2026-11-11`**（`node scripts/d5_window_status.mjs` 会自己说哪天到期）→ 11-15 关窗**
+> **Stand**: R79 (2026-11-05，**采证 + 交付**：上游 `next` 从 `0.2.1-rc.5` 变成 **`0.2.2-rc.1`** → 真机重跑升级日卡片（**14/14**：192 单元 → **119 会被拒 / 73 判不了 / 0 会变好 / 0 像没事**）+ 已发布 `0.3.4` 的可用性 smoke **6/6**（`upgrade --to next --card` 的目标已是 `0.2.2-rc.1`）；D5 窗口内**第二份现场基线**（窗口 `10-28..11-03`、周下载 **1564**、`steady` 40.5%，日序列 `0/634/192/17/192/357/172` 仍是 10-29 爆发的回声，`BS-48`）→ 覆盖推进到 **`11-03`**、截止 **`2026-11-12`** · **判据/阈值一字未动**；**760 测试**)｜**R78 (2026-11-03，**维护 + 交接**：`backup/BACKUP_POLICY.md` 从 M0 起写着「快照由 `scripts/snapshot_state.mjs` 生成」而**那个脚本从未存在**、`backup/snapshots/` 只有 `.gitkeep`、也没有门禁看过 `backup/` → 脚本落地 + 两条治理检查（策略点名的脚本必须存在、每个快照必须能被 `.sha256` 验证，负对照真红）+ 交接快照；同时核对出 **tag 线从未启用**（表里 3 个里程碑 tag 一个都没打，记成 `T-848` **未签不打**）· 文案与证据对齐 `T-844`/0.3.4 已发布 · **判据/阈值一字未动**；**760 测试**)｜**R77（2026-11-03，发版 + 整理**：四包 **`0.3.4` 已发布**（`latest=0.3.4`，取证 **18/18 · `git_dirty=false`**；T-844 的复制修复随 `client.js` 到用户手里）+ CHANGELOG + 上架文案 / README 的版本号与测试数对齐（`check_listing` **17/17**）· 预检先如实报 `E401`、`npm login` 后才发 · §2 按既定口径只留最近十轮（R39–R66 的 **31 行**逐行归档并登记 `ARCHIVE_MANIFEST`）· **判据/阈值一字未动**；**760 测试**)｜**R76（2026-11-03，交付轮**：把「D5 窗口哪天必须再跑基线」从一句要人记住的话变成算得出来的数 —— `scripts/lib/d5-window-coverage.mjs`（纯函数）+ `scripts/d5_window_status.mjs`（只读）+ 11 条单测 + 2 条治理断言。实测：`last-week` 滞后 **1–2 天**（同日两次跑读到 2 与 1），所以「11-08 之前跑」会漏掉 **11-06**，而「11-03 那份 + 再跑一次」就能无缝拼上；**746 → 760 测试**)｜**下一件事：窗口内基线的第三跑，截止 **`2026-11-12`**（`node scripts/d5_window_status.mjs` 会自己说哪天到期；发布已完成，不要再发）→ 11-15 关窗**
 > 任何人（人或 agent）接手，**只读本文件 + `PROJECT_RULES.md` + `INDEX.md` 三份**即可开工。
 
 ---
@@ -23,6 +23,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 
 | 项 | 状态 |
 |---|---|
+| 采证 + 交付（R79，2026-11-05） | **两件时间敏感的事各做一次，判断一个字没动（采证 + 交付轮）**。① **升级日换了目标**：`@deepseek-ai/dsh` 的 `next` 从 `0.2.1-rc.5` 变成 **`0.2.2-rc.1`**（`latest` 仍是 `0.2.1-rc.5`）。`watch_next_release --baseline data/results,.watch-state` 本机真跑 → `changed`（`data/results/next-release-2026-11-05T07-34-44.456Z.json`）；真机重跑卡片 `--to 0.2.2-rc.1` **14/14**（`upgrade-card-2026-11-05T07-35-01.051Z.json`）：**192 单元 → 119 会被拒 / 73 判不了 / 0 会变好 / 0 像没事**，四桶自检与边界句全过；profile 仍是仓内沙盒 `0.2.1-rc.4`（产物 `limits` 写明不是用户机器）。② **已发布包再验一次**：匿名装 `dsh-triage@0.3.4` 在临时目录跑 `--help` / 无参 `status` / `audit` / `upgrade --to next --card` **6/6**（`usability-2026-11-05T07-35-16.214Z.json`），卡片印出的目标已是 `0.2.2-rc.1`。③ **D5 窗口内第二份现场基线**：`market-baseline-2026-11-05T07-35-31.003Z.json`（`inputs.offline=false`、`failures: []`），窗口 **`10-28..11-03`**、周下载 **1564**、`steady`（6/7 天，峰值 **40.5%**）；日序列 **`0 · 634 · 192 · 17 · 192 · 357 · 172`** —— 仍是 10-29 那次的回声（`BS-48`），按冻结口径 `threshold-met` 但**不是新需求证据**，`judgeD5` 仍 `pending`。④ **覆盖与截止日**：`d5_window_status` → covered **`11-01..11-03`** / missing 12 / **`next_run_by 2026-11-12`**（`d5-window-status-2026-11-05T07-36-24.115Z.json`）；三份入口文档的日期已随产物更新（治理断言会重算）。⑤ **判据/阈值一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门；**760 测试**，`--mutate` 9/9 |
 | 维护 + 交接（R78，2026-11-03） | **一条从 M0 起就「读起来像已执行」的规则被兑现，两个从没人看过的缺口被记下来（维护/交接轮；判据/阈值一字未动）**。① **`backup/BACKUP_POLICY.md` 说快照由 `scripts/snapshot_state.mjs` 生成 —— 那个脚本不存在**：`backup/snapshots/` 只有一个 `.gitkeep`，而**没有任何门禁看过 `backup/`**，所以这条规则漂了整 77 轮没人发现。现在脚本落地（零依赖、不联网）：产物含版本 / git head 与脏树标记 / **门禁逐项结果** / **448 份 SSOT 产物的 sha256 清单** / 运行时，**刻意排除门禁耗时与绝对路径**（否则同一提交两次运行会不同）；`gate_governance` 新增两条检查——**策略里点名的脚本必须存在**、**每个快照必须能被 `.sha256` 验证**，负对照把脚本改名 → `backup-policy-scripts` 当场红，改回即绿。② **交接快照已生成**：`backup/snapshots/snapshot-0.3.4-<label>.json`（`git_dirty=true` —— 人类的两份宣传物料长期未跟踪，这条边界写进 policy 的 limits）。③ **第二个缺口：tag 线从未启用**。策略表列了 `v0.2.0-m1` / `v0.3.0-m2` / `v0.4.0-m3`，实测 `git tag` **只有 `v0.1.0-skeleton`**，而 M1–M5 早已交付。补打 tag 是**追溯性声明**（给旧提交贴「当时通过了」），所以**只记事实、不动手**：写成 `T-848`，**未签不打**。④ **顺手纠一处过期读数**：`ROADMAP` 的 M6 行还写「发布（0.3.3 已上线，`latest=0.3.3`）」→ 改成 0.3.4 + 干净树取证指针。⑤ **交接包**：§3 重写（工作区预期 / 唯一时间敏感项 / 别再重发 / 快照怎么用），旧 §3 里「发布待办」那段被替换成已完成记录。**冻结项一字未动**：D5 三个阈值（10/1/20）/ 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 发版复验（R78-P，2026-11-03） | **预检拦住了重复发布，改跑取证再确认一次 18/18（HUMAN 执行）**。`pnpm run release:publish` 被 `version-already-published` 拦下（点名四个包 + 给两条出路），按它自己的提示跑 `node scripts/record_publish.mjs --version 0.3.4` → **18 项全绿**：四包 `latest=0.3.4`、四个 `rewritten` 无 `workspace:`、`dist-tags-agree`、匿名安装 2 秒 6 包、CLI 15 行、`import()` 6 名、`client-bundle` 39219B。**这份 `git_dirty=true`**（宣传物料在工作区里），所以文档仍引用干净树那份（`…T16-05-17.632Z`）；这一份的作用是「发布后再次独立确认」，不另开说法。**冻结项一字未动**：D5 三个阈值 / 判定顺序 / `admission.ts` / 四桶 / `improved` 五门槛 / `data/gold/` / 20s / settle / readiness / 9 门 |
 | 发版（R77-P，2026-11-03） | **四包 `0.3.4` 真的发出去了，取证读了两遍才对（HUMAN 执行 OTP）**。① **第一次卡在「树不干净」**：`pnpm -r publish` 拒绝脏树（`ERR_PNPM_GIT_UNCLEAN`），脏的正是两份人类宣传物料（`03-x-en.md` 改动 + `reddit-and-hn-posts.md` 未跟踪）→ 用 `git stash push -u` 临时收起（**内容一字未改**），发完取完证再还原；这样做而不是 `--no-git-checks`，是因为后者会让产物记 `git_dirty=true`（R63 的证据口径）。② **四个包全部 `✅ Published`**：core → probe → signals → dsh-triage。③ **取证第一遍是红的**：`publish-2026-11-03T15-45-35.175Z.json` 的四个 `version` 与 `dist-tags-agree` 都还写着 `latest=0.3.3`（共 **6 项红**），而**同一份产物里匿名安装等 302 秒后成功**（19 次「还不在 registry」）→ 又是副本传播滞后，不是发布失败；④ **约 17 分钟后重跑**：`publish-2026-11-03T16-02-49.621Z.json` **18/18 全绿** —— 四个包 `0.3.4`、`latest=0.3.4`、四个 `rewritten` 无 `workspace:`、`dist-tags-agree`、匿名安装 1 秒 6 包、CLI 15 行、`import()` 6 个名字、**`client-bundle` 39219B + loader + slot**（T-844 真的在包里）。⑤ **两份产物都留**：红的那份是「读早了」的证据，不是废件。⑥ **另外手工核对了一次 tarball**（未落产物，命令可随时重跑）：`npm pack dsh-triage@0.3.4` 解开后 `package/client.js` 是 **39219 字符 / 40555 字节**，含 `data-copy-fallback` / `userSelect` / 两语言 `copyFallback` —— 也就是 T-844 的修复**真的在用户下载到的那个文件里**。（坑：PowerShell 的 `Get-Content -Raw` 默认按 ANSI 读，中文会假阴性，要用 UTF-8 读。） |
@@ -92,20 +93,27 @@ pnpm install --frozen-lockfile; pnpm run verify; node scripts/gate.mjs --mutate
 
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **760 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。不满足即环境不可信。
 
-**接手时的工作区预期**（不是坏了）：`git status --short` 会有两份**人类宣传物料**——`docs/distribution/T-810/03-x-en.md`（已修改）与
-`docs/distribution/reddit-and-hn-posts.md`（未跟踪）。**不要**改它们、不要提交、更不要为了让树变干净删掉；
-需要干净树时（`pnpm -r publish` 才需要）用 `git stash push -u -- <这两个路径>`，用完 `git stash pop`。
+**接手时的工作区预期**：**R79 之后是干净的**——人类那份宣传稿改写已在 `ac18c40` 提交（`docs: de-AI public-facing copy and align profile boundaries`）。
+若又出现未提交改动，**先问来源**：人类宣传物料（`docs/distribution/T-810/03-x-en.md`、`docs/distribution/reddit-and-hn-posts.md`、两份 README 与上架文案）
+**不要**改、不要替人提交、更不要为了让树变干净删掉。真正要发版时（`pnpm -r publish` 才需要干净树）用 `git stash push -u -- <路径>`，用完 `git stash pop`。
 
 **唯一的时间敏感项（现在只剩一条，另一条已做完）**：
 
 ```powershell
-node scripts/d5_window_status.mjs     # 它自己算「下一份基线最晚哪天跑」，当前是 2026-11-11
+node scripts/d5_window_status.mjs     # 它自己算「下一份基线最晚哪天跑」，当前是 2026-11-12
 node scripts/record_market_baseline.mjs --stamp <真实UTC>   # 截止日或之前跑
 ```
 
 理由与口径见 §2 的 R76 行（`last-week` 滞后 **1–2 天**、相隔 ≤7 天的两跑会无缝拼接）。
 **`2026-11-15T20:24:37Z` 之后**按 `docs/d5-close-runbook.md` §0 四条命令关窗；`pass` / `fail` / `unmeasurable`
 三个分支各有一套动作，**`fail` 就执行 D，禁止「再加一个功能试试」**。
+
+**上游已经换版本了（R79 实测并已出证据）**：`@deepseek-ai/dsh` 的 `next` 从 `0.2.1-rc.5` 变成 **`0.2.2-rc.1`**
+（`latest` 仍是 `0.2.1-rc.5`）。本机已真跑 `watch_next_release --baseline`（`changed`）并在真机重跑卡片
+`--to 0.2.2-rc.1`（**14/14**，192 单元 → **119 会被拒 / 73 判不了 / 0 会变好 / 0 像没事**），
+你**不需要再跑一遍**；只有上游**下一次**换版本时才重跑（`watch-upstream` 会给 `changed`）。
+⚠️ 两份 README 里引用的还是旧的 `0.2.1-rc.5` 卡片（那份是历史真话，`check_listing` 仍会过）：
+**不要为此动 README**，等 HUMAN 的文案定稿后再在单独一轮里换。
 
 **发布已经做完（R77，HUMAN 执行）**：四包 `0.3.4` 全部 `✅ Published`，`latest=0.3.4`。取证读了两遍：
 第一遍（`publish-2026-11-03T15-45-35.175Z.json`）**红** —— 四个 `version` 与 `dist-tags-agree` 还写着 `latest=0.3.3`，

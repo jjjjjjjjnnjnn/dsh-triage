@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R78 (2026-11-03)",
+  "stand": "R79 (2026-11-05)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -451,6 +451,13 @@
       "cannot_see": "R71 把 `watch_next_release.mjs` 挂进了定时 workflow（`.github/workflows/watch-upstream.yml`，每 6 小时 + 手动），但仍然看不见四件事：① **workflow 只真跑过「没变化」这一条路**：本机验证了脚本侧四分支（无基线 → baseline / 仓库基线 → unchanged / 伪造旧基线 → changed / 死端口 → exit 2 零产物），并已在 `2026-11-02T19:34:59Z` 手动触发一次真跑（run 41511265795：`unchanged`、零产物、job success）；**R75 补一条**：`schedule` 那条路已经在 `2026-11-03T06:44:02Z` 真跑过（run 41591749124：`unchanged`、17s、job success），所以「定时触发能不能跑起来」不再是盲区；仍未看见的只剩 **`changed` 在 CI 里的形状**（要等上游真发版）；② **GitHub 的 schedule 是 best-effort**，高峰期可延迟几十分钟，所以「升级日」的时效承诺只能是「小时内」而不是「分钟级」；③ **公开仓 60 天无活动会停用定时 workflow**——这不是我们能控的，长期要靠有人 commit；④ **CI 里没有 DSH profile**，所以那里只能得到「`next` 变了」这个信号，卡片数字永远只能来自真机（一个没有 profile 的 runner 生成的卡片会看起来像对所有人说的话）。另外 `.watch-state` 走 `actions/cache`，缓存被清（GitHub 的默认过期策略）后 `previous` 会退回到仓库里已提交的基线，于是同一个变化会被**重复**报一次——重复告警是设计上接受的，漏报不是。",
       "mitigation": "① 卡片只在真机跑：`docs/HANDOFF.md` §3 与 `docs/distribution/posting-runbook.md` 写死「重跑再引用」；② 读不到 registry 时 job **失败**而不是安静通过（`unmeasured` → exit 1），与 R51/R52 的假平静同一条口径；③ 重复告警可接受，嫌吵就在真机跑一次并把新的 `next-release-*.json` 提交进 `data/results/`，基线自然前移；④ 缓存失效只能靠「频繁提交」缓解，这一点如实写在这里，不假装已解决；⑤ 「workflow 已验证」这句话在第一次真跑之前**不许说**——R71 的证据是四条脚本分支 + 一次 YAML 解析，R75 补上了第一次 `schedule` 真跑；但 `changed` 分支在 CI 里仍只有脚本侧证据，**不许**说成「升级日触发已端到端验证」。",
       "owner": ".github/workflows/watch-upstream.yml · scripts/watch_next_release.mjs（`--baseline`）· scripts/lib/next-release.mjs#pickNewestObservation · tests/unit/next-release.test.ts（+5 条）· data/results/next-release-2026-11-02T17-40-00.322Z.json（已提交基线）"
+    },
+    {
+      "id": "BS-57",
+      "area": "升级日 / 读数归属",
+      "cannot_see": "R79 用仓内沙盒 profile（0.2.1-rc.4 的 192 个单元）给新 rc `0.2.2-rc.1` 出了卡片（14/14），所以这张卡片回答的是**沙盒这套已装集合**，不是任何真实用户机器；产物 `limits` 已写明，但对外引用时仍可能被读成「所有人升上去都会这样」。另外两份 README 引用的仍是 `0.2.1-rc.5` 的卡片：它是历史真话（`check_listing` 仍过），但读者会看到一个 rc 的滞后——换它要动 HUMAN 正在定稿的宣传文案，所以留到单独一轮。",
+      "mitigation": "① 对外只说「这份卡片描述的是沙盒集合」，并给出用户自己跑的命令（`dsh-triage upgrade --to next`），不把 119/73 说成普适比例；② README 的卡片块等 HUMAN 文案定稿后再换成新 rc 的产物，换之前 `check_listing` 的 `readme-shows-real-card` 仍按旧产物复算；③ 每次上游换 rc 都重跑 `watch_next_release --baseline` 与 `record_upgrade_card`（R79 已做一次），产物进 SSOT 供下次比对。",
+      "owner": "packages/plugin/src/cli.ts（`upgrade --card`）· scripts/record_upgrade_card.mjs · docs/HANDOFF.md §3"
     }
   ]
 }

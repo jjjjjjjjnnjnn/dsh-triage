@@ -916,3 +916,13 @@
 - 范围：**新增非人类手写模块** `scripts/snapshot_state.mjs` · `scripts/gate_governance.mjs`（两条新检查） · `backup/BACKUP_POLICY.md` · `backup/snapshots/`（交接快照） · `AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md`（Stand、R78 行、§3 交接包、M6 过期读数） · `docs/BACKLOG.md`（`T-848` / `T-849`） · `audit/blind_spots.json`（`BS-55` 补第 ⑧ 条） · `audit/step_reviews.json` · 产物 `data/results/publish-2026-11-03T16-41-55.008Z.json`、`data/results/gates-*.json`
 - 结果：① **`BACKUP_POLICY.md` 从 M0 起写着「快照由 `scripts/snapshot_state.mjs` 生成」，而那个脚本到 R78 都不存在**（`backup/snapshots/` 只有 `.gitkeep`、没有任何门禁看过 `backup/`）→ 脚本落地（零依赖、不联网、排除耗时与绝对路径），并加两条治理检查；负对照把脚本改名 → `backup-policy-scripts` 当场红。② **tag 线从未启用**：策略表里 3 个里程碑 tag 一个都没打，记成 `T-848`，**未签不打**。③ `ROADMAP` M6 的「0.3.3 已上线」改为 0.3.4。④ 交接快照 `backup/snapshots/` 落地（`git_dirty=true`，因为人类两份宣传物料长期未跟踪）。
 - 边界：快照**不是**备份（备份是 git），它说的是「这个提交上绿是什么样」；`T-849`（元数据读没有等待窗口）本轮**只记录不修** —— D5 窗口期内不动发布链
+
+### 2026-11-05 R79｜上游换 rc（0.2.2-rc.1）与 D5 窗口内第二份现场基线（判据一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；本轮未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R79-S1…S6）
+- 人工决策：HUMAN「全部同意，开始依次进行」；本轮只采证与交付，**不改判据/阈值**；README 的卡片块等文案定稿后再换
+- 范围：`AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md` / `docs/BACKLOG.md`（Stand、R79 行、截止日、上游标签） · `audit/{step_reviews,blind_spots}.json`（R79 五步 + `BS-57`） · 产物 `data/results/next-release-2026-11-05T07-34-44.456Z.json`、`upgrade-card-2026-11-05T07-35-01.051Z.json`、`usability-2026-11-05T07-35-16.214Z.json`、`market-baseline-2026-11-05T07-35-31.003Z.json`、`d5-window-status-2026-11-05T07-36-24.115Z.json`（各带 `.sha256`）
+- 结果：① `@deepseek-ai/dsh` 的 `next` 从 `0.2.1-rc.5` 变成 **`0.2.2-rc.1`**（`latest` 未动），本机 `watch_next_release --baseline` 记下 `changed`；真机卡片 `--to 0.2.2-rc.1` **14/14**（192 单元 → 119 拒 / 73 判不了 / 0 改善 / 0 像没事）；已发布 `0.3.4` 的可用性 smoke **6/6**。② D5 窗口内第二份现场基线：窗口 `10-28..11-03`、周下载 **1564**、`steady`（6/7 天、峰值 40.5%），日序列 `0/634/192/17/192/357/172` 仍是 10-29 爆发的回声（`BS-48`），`judgeD5` 仍 `pending`。③ 覆盖推进到 `11-01..11-03`，**下一跑截止 `2026-11-12`**（由 `d5_window_status` 按产物算出），三份入口文档已跟随。
+- 实测：`pnpm run verify` **760 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；`git status` 在本轮开始前已被 HUMAN 提交干净（`ac18c40`）
+- 边界：新 rc 的卡片回答的是仓内沙盒的 192 个单元，**不是任何用户机器**；两份 README 仍引用 `0.2.1-rc.5` 的卡片（历史真话），换它要动 HUMAN 文案 → 记入 `BS-57`
