@@ -1004,3 +1004,13 @@
 - 审核：主会话四轴自审（正确性 / 可复现 / 合规 / SSOT）+ 对抗性反例，逐条记入 `audit/step_reviews.json` R86-S1…S5；没有 subagent，因此没有独立评审员
 - SessionID：主会话（未启用 subagent）
 - 备注（边界）：D5 仍是 `pending`（0/10 · 0/1 · 1598 steady 回声）；`docs/11-d-path.md` 在判定前**不得对外引用**；`T-860` 只补了诊断半边（CDP/stderr 仍缺）；CI 守卫是 best-effort 兜底，不是准点承诺。
+
+### 2026-11-05 R88｜接手 + 文档漂移对账：把三处没人复算的数字改成按仓库实算，并加一条治理断言（判据/阈值一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R88-S1）
+- 人工决策：HUMAN「交接过来项目，查看目前项目进度和要求，任务等，进行下一步计划」→ 在三个选项里选「**1+2 先做，再 T-862**」（基线验收 + 文档漂移对账，然后 T-862）；T-862 的落地形态选「**三条方向各一份 spec 草案**」
+- 范围：`docs/HANDOFF.md` · `_archive/2026-11-05_HANDOFF-batch-rows-R76.md`（新）· `_archive/2026-11-05_HANDOFF-batch-rows-R77-R78.md`（新）· `_archive/ARCHIVE_MANIFEST.md` · `tests/governance/handoff-scale-line.test.ts`（新，3 条）· `docs/11-d-path.md`（重复的计数改为指向唯一来源）· 两份 README（805→808）· `INDEX.md` / `docs/ROADMAP.md` / `AGENTS.md` / `PROJECT_RULES.md` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `data/results/listing-2026-11-05T16-05-00.000Z.json`
+- 结果：① 基线复验 **805 测试 / 9 门 ALL GREEN** + `--mutate` **9/9**，`git status` 干净（`84ac9eb`）。② 修掉三处漂移：§2 的「R67–R74 的批次行」指针**重复 5 次**（合并成一行「归档口径」）、§2 自称「只留最近十轮」实际 16 条批次行（R76 四条 + R77–R78 四条归档，口径真落到 **R79–R88**）、规模行 **611 / 334 / 355 / 53 / 6 → 808 / 486 / 510 / 60 / 7**。③ 归档用脚本搬（禁手抄），对 `git show HEAD:docs/HANDOFF.md` 逐字节比 **8/8 IDENTICAL**。④ 新增 `tests/governance/handoff-scale-line.test.ts`：九个计数从 README 徽章 / `scripts/gate_*.mjs` / `.agents/roles` / `.agents/prompts` / `data/cases` / `data/gold` / `data/results` / 两个台账**实算**，另有一条把 §3 的验收数字钉在 README 徽章上。⑤ 负对照 **N1**（486→485）与 **N2**（删掉整行）各自真红、原因不同，逐字节还原；**N3** 归档保真 8/8。⑥ `check_listing --tests 808` **17/17**；同日 15:50 那份 listing 产物被 16:05 取代并删除，理由写在 step 台账里。
+- 实测：`pnpm run verify` **808 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；`check_listing --tests 808` **17/17**
+- 边界（如实写）：归档保真**没有**持续门禁（只有 git 能证明），本轮靠 `git show HEAD:` 手工复核；规模行的产物数会随 `gate.mjs --record` 增加并让断言变红——那是同步规则 8 的机械形态，不是抖动。**没有**动任何判据 / 阈值 / 冻结项；**没有**开新功能（`T-855`–`T-858` 仍标推迟）。

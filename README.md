@@ -7,7 +7,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
 [![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
-[![tests: 805 passed](https://img.shields.io/badge/tests-805%20passed-success.svg)](scripts/gate.mjs)
+[![tests: 808 passed](https://img.shields.io/badge/tests-808%20passed-success.svg)](scripts/gate.mjs)
 
 [English Overview / Documentation](#english-overview) | [简体中文版 (README.zh-CN.md)](README.zh-CN.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
 
@@ -228,7 +228,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、805 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、808 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |

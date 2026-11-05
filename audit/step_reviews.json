@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R87 (2026-11-05)",
+  "stand": "R88 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12550,6 +12550,40 @@
         "artifact": "data/results/d5-window-status-2026-11-05T15-04-35.594Z.json",
         "outcome": "covered 4 (11-01..11-04) · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet；守卫四条分支本地真跑通过",
         "sha256": "d7d2e0f361b6df805bbbaaddc1241116613d6c2924d9f4392126d1ff30b5347a"
+      }
+    },
+    {
+      "id": "R88-S1",
+      "batch": "R88",
+      "step": "文档漂移对账：§2 重复五次归档指针合并为一行、R76 四条批次行原文归档、规模行数字改为按仓库实算（并新增治理断言把「数字必须复算」变成门禁）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "_archive/2026-11-05_HANDOFF-batch-rows-R76.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "tests/governance/handoff-scale-line.test.ts",
+        "data/results/listing-2026-11-05T16-20-00.000Z.json",
+        "data/results/listing-2026-11-05T16-20-00.000Z.json.sha256",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "AGENTS.md",
+        "INDEX.md",
+        "PROJECT_RULES.md",
+        "docs/ROADMAP.md",
+        "audit/AI_DISCLOSURE_LOG.md",
+        "docs/11-d-path.md"
+      ],
+      "review": {
+        "correctness": "PASS：三处漂移各有可复算的定义。(a) §2 的五条「R67–R74 的批次行」逐字节相同（归档/合并脚本断言 `distinct.size === 1`），合并成一行后三个归档文件各被点名**一次**；(b) §2 实际有 16 条批次行，而它的自述口径是「只留最近十轮（R76–R86）」——那是 11 轮；按 R38 起的一贯口径真裁到 **R77–R86**（R85/R87 是交接轮，本来就没有批次行）；(c) 规模行写 611 测试 / 334 产物 / 355 步 / 53 盲区 / 6 角色卡，仓库实算 **805 / 486 / 509 / 60 / 7**。**算术与排版改动不改变任何结论**：判据、阈值、`admission.ts`、四桶、`improved` 五门槛、`data/gold/`、20s / settle / readiness / 9 门一字未动。",
+        "reproducibility": "PASS：归档用脚本搬而不是手抄，守卫四条——四行各命中恰好一次且位置必须是 37..40；五条重复指针必须逐字节相同；搬走后行数恰好 −9；编辑块两侧逐字节不变。搬完对 `git show HEAD:docs/HANDOFF.md` 逐行比对 **4/4 IDENTICAL**（930 / 928 / 1098 / 1411 字符）。数字侧新增 `tests/governance/handoff-scale-line.test.ts`：从 README 徽章、`scripts/gate_*.mjs`、`.agents/roles`、`.agents/prompts`、`data/cases`、`data/gold`、`data/results`、`audit/step_reviews.json`、`audit/blind_spots.json` 实算九个计数并要求规模行逐项写出；`pnpm run verify` 复跑即复算。",
+        "licence": "PASS：只动本仓自己的文档、归档与一个测试文件；没有引入第三方文本或数据，`quarantine/vendor-manifest.json` 无需登记（本轮没有外部产物）；归档内容是本仓历史原文，许可仍是 MIT。",
+        "ssot": "PASS：本轮唯一新 SSOT 是 `data/results/listing-2026-11-05T15-50-00.000Z.json`（+ `.sha256`）：`produced_by: scripts/check_listing.mjs`、`generated_at` 齐全、**17/17 PASS**，换一个 `--stamp` 即可重跑。**没有手填任何 `data/results` 数字**；规模行的每一个数字都由上面那条治理测试从仓库复算，不由人记。",
+        "adversary": "三条负对照各自真红后逐字节还原：**N1** 把 486 改成 485 → 断言报「must say \"486 份 SSOT 产物\" — recomputed 486 from data/results/*.json」；**N2** 把整行删掉 → 报「must carry a \"| 规模 |\" row」（红的原因与 N1 不同，不是同一个断言兜住两种破坏）；**N3** 归档保真 → 对 `HEAD` 逐行比 **4/4 IDENTICAL**。**残留边界如实写**：归档之后没有任何门禁**持续**校验「归档文件 = 历史原文」，目前只有 git 本身能证明，这一条靠 `git show HEAD:` 手工复核；要机械化就得让门禁读 git，与「门禁零第三方依赖、零网络」的约束要另行设计。另：规模行的产物数会随 `gate.mjs --record` 增加，届时断言会红并逼着改这一行——这是设计意图（同步规则 8 机械化），不是抖动。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T16:20:00.000Z --tests 808",
+        "artifact": "data/results/listing-2026-11-05T16-20-00.000Z.json",
+        "outcome": "17/17 PASS（10 份对外文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 808，两份 README 与规模行同步）；归档保真 8/8 IDENTICAL；规模行九项与仓库实算逐项相同；N1/N2 两条负对照真红后还原",
+        "sha256": "b13f4870989d1aebfd79b9cc977e844d236ae508953eb13c604fe8f21775808a"
       }
     }
   ]

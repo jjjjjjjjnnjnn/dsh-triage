@@ -99,7 +99,8 @@ reactions 只数 `#11813` 这一个 discussion，下载项是机器在数。**�
 | 未回答问题的覆盖率 | 这个生态的痛点分布是可量的 | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json` |
 
 > **数字口径**：SSOT 产物数与测试数每轮都在变，引用时用命令现算，不要抄这里：
-> `(Get-ChildItem data/results -Filter *.json).Count` · `pnpm test`（当前 **805** 测试 / **9** 门）。
+> `(Get-ChildItem data/results -Filter *.json).Count` · `pnpm test`。
+> 当前数字只在 `docs/HANDOFF.md` 的**规模行**写一份，且由 `tests/governance/handoff-scale-line.test.ts` 从仓库复算——这里不再抄第二份。
 
 ---
 
