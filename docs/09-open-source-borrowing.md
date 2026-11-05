@@ -24,9 +24,9 @@
 | 12 | **`syncpack` / `@manypkg/cli`** | monorepo 里版本区间不一致 | 「同类声明必须对齐」的检查 | ⬜ **设计**（T-115）：对候选插件提示「peer 用精确钉定 → 上游每次 patch 都会把你打挂」，与 T-109（dist-tag 失步）同族 | MIT | B |
 | 13 | **`npm audit`** | 已知漏洞库 | —（**明确不借**） | ⛔ 拒绝：本项目不做安全扫描/安全背书（`PROJECT_RULES.md` 严禁行为 2）；没有漏洞库也不该暗示安全 | — | B |
 | 14 | **`depcheck` / `knip`** | 未使用的依赖/导出 | —（只借了「声明 vs 使用」的思想） | 🟡 已有等价物：`missing-entry` 就是「声明了但没注册」；「装了但没人用」会变成噪音，不做 | MIT | B |
-| 15 | **`Iliyasfiel/dsh-rescue`**（R81 采证命中） | GUI 起不来时，用户不知道最小可逆动作是什么 | ① **只改 `dsh.profile.bundles`，不动 `dependencies`**——撤销因此是一个数组操作，不是重装；② `enter` / `exit` / `status` 三动词：先看、再进、再退；③ 事务性 + 可复原 | ✅ **R82 落地（A 段）**：`dsh-triage rescue` 的只读计划（`packages/plugin/src/rescue.ts`），三态分类 + 每条带撤销描述符；写入面（`--apply` / `--undo`）在 B 段 | MIT（**只读 README 与行为，代码独立实现**） | A（`data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json`） |
-| 16 | **`lire1131/dsh-undo-savepoint`**（R81 采证命中） | 崩溃之后不知道该撤什么 | 「**SAFE MODE**」的产品形态：先停第三方，再让用户决定 | ⬜ **设计**（`T-855`）：SAFE MODE 入口挂在 `rescue --apply` 之上的同一套 backup/journal，不另开写入路径 | MIT（仅借鉴产品形态） | A（同上） |
-| 17 | **`xiaoyuyu6420/dsh-backup`**（R81 采证命中） | `~/.dsh` 没有升级前快照 | 整份 home 快照 + **凭据脱敏** | ⬜ **设计**（`T-856`）：`profile snapshot`（sha256 清单，排除凭据与会话正文），与仓库快照 `snapshot_state` 分开 | MIT（仅借鉴机制） | A（同上） |
+| 15 | **`Iliyasfiel/dsh-rescue`**（R81 采证命中） | GUI 起不来时，用户不知道最小可逆动作是什么 | ① **只改 `dsh.profile.bundles`，不动 `dependencies`**——撤销因此是一个数组操作，不是重装；② `enter` / `exit` / `status` 三动词：先看、再进、再退；③ 事务性 + 可复原 | ✅ **R82 落地（A+B）**：`dsh-triage rescue` 的只读计划 + `--apply` / `--undo`（`packages/plugin/src/rescue.ts`，三态分类 + 备份 → 原子替换 → 回读 → journal；`--undo` 逐字节还原） | MIT（**只读 README 与行为，代码独立实现**） | A（`data/results/adjacent-tools-2026-11-05T09-03-11.609Z.json`） |
+| 16 | **`lire1131/dsh-undo-savepoint`**（R81 采证命中） | 崩溃之后不知道该撤什么 | 「**SAFE MODE**」的产品形态：先停第三方，再让用户决定 | ⏸ **推迟到 D5 判定之后**（R86：窗口内不开新功能；`T-855` 的实现前提已定 —— 面板写盘要先写 ADR） | MIT（仅借鉴产品形态） | A（同上） |
+| 17 | **`xiaoyuyu6420/dsh-backup`**（R81 采证命中） | `~/.dsh` 没有升级前快照 | 整份 home 快照 + **凭据脱敏** | ⏸ **推迟到 D5 判定之后**（R86，同上；`T-856`） | MIT（仅借鉴机制） | A（同上） |
 
 ---
 

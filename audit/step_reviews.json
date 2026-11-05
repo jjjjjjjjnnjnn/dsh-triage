@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R85 (2026-11-05)",
+  "stand": "R86 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12422,6 +12422,38 @@
         "artifact": "data/results/d5-evidence-2026-11-05T10-48-11-239Z.json",
         "outcome": "pending · reactions 0/10 · references 0/1 · downloads 1598 (steady)/20",
         "sha256": "e5ee088ad2d9fa045f3df1a20704b5d4b1f6dd50381f9c45784f9b963740dfda"
+      }
+    },
+    {
+      "id": "R86-S1",
+      "batch": "R86",
+      "step": "关窗前定桩：D 线（备用）+ 上游归因事实包 + 借用台账同步；不开新功能",
+      "changed": [
+        "AGENTS.md",
+        "INDEX.md",
+        "PROJECT_RULES.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "docs/BACKLOG.md",
+        "docs/09-open-source-borrowing.md",
+        "docs/11-d-path.md",
+        "docs/copy/facts/2026-11-05-upstream-attribution.md",
+        "_archive/2026-11-05_HANDOFF-batch-rows-R75.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "data/results/d5-window-status-2026-11-05T12-49-57.095Z.json"
+      ],
+      "review": {
+        "correctness": "PASS：D 线的触发条件抄的是 `judgeD5` 的实际出口（`pass` 当且仅当三个数全达标；窗口关闭且未全达标为 `fail`），不是转述；三件事各自带完成判据，且 D-1 明确「不提我们的工具、不以合并为成功判据」。事实包里的数字逐个从产物取（10 案例 9 命中 / 27 金标 / 74 of 1545 = 4.8% / 876 讨论 379 故障 / `#10849` 与 `#10458` 的逐构建读数）。",
+        "reproducibility": "PASS：覆盖与截止日由 `node scripts/d5_window_status.mjs` 现算（`covered 11-01..11-04` / `collectible now 0` / `next_run_by 2026-11-13`），产物带 `.sha256`；事实包引用的每份产物都有 `.sha256`，结构由 `tests/governance/copy-channel.test.ts` 复算。",
+        "licence": "PASS：只读仓内 SSOT 与公开 npm 元数据，不联网抓新数据、不复制第三方代码；`docs/09` 的三条来源仍标 MIT 且「只学机制」。",
+        "ssot": "PASS：唯一新产物是 `d5-window-status-*`（`produced_by` / `generated_at` / `inputs` 齐全）；三份入口文档的截止日与治理断言重算值相同（`2026-11-13`）；`T-859` 的状态同步只改状态列，不改任何来源行。",
+        "adversary": "反例一：今天再造一份市场基线 —— `d5_window_status` 说可采 0 天，跑出来的窗口与 11-05 那份相同，只会多一份同窗产物（所以本轮不跑）。反例二：把 D 线写成「已执行」以提前兑现结论 —— `docs/11-d-path.md` 顶部与两处正文都写 `contingency`，且判定前不得对外引用。反例三：把外部引用当成「多发几条回复就能凑到 1」—— `judgeD5` 三重排除自己的登录名 / 本仓 / 三条投稿 PR，自己造不出来。"
+      },
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs --stamp 2026-11-05T12:49:57.095Z",
+        "artifact": "data/results/d5-window-status-2026-11-05T12-49-57.095Z.json",
+        "outcome": "covered 4 (11-01..11-04) · missing 11 · collectible now 0 · lost 0 · next_run_by 2026-11-13 · not-yet",
+        "sha256": "1fd4339f4e52079a38bd3d53aa4781d1b51d362d29460cd919b8cac8be5412d3"
       }
     }
   ]
