@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_answer_kit.mjs",
+  "generated_at": "2026-11-05T18:15:00.000Z",
+  "inputs": {
+    "cli": "packages/plugin/dist/cli.js",
+    "target": "next",
+    "profile": "the default profile of the machine that ran this",
+    "budgets": {
+      "lines": 60,
+      "bytes": 8192
+    },
+    "kit": "docs/distribution/answer-kit.md"
+  },
+  "commands": [
+    {
+      "id": "help",
+      "command": "dsh-triage --help",
+      "why": "confirms the tool is installed",
+      "exit_code": 0,
+      "allowed_exit": [
+        0
+      ],
+      "lines": 37,
+      "bytes": 3352,
+      "within_budget": true,
+      "absolute_path_leaks": [],
+      "carries_home_relative_path": true,
+      "stdout_sha256": "7e380182e08001c9de42aecafca693ddef04a49286f75f647354275d0ce3a68a",
+      "head": [
+        "dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层",
+        "",
+        "用法 (Usage)",
+        "  dsh-triage                         一屏速览：当前配置是否存在异常、受影响条目及修复建议",
+        "  dsh-triage status                  输出与无参相同的一屏诊断结论",
+        "  dsh-triage env                     查看当前环境指纹（DSH 版本、Profile、已装 Bundle）"
+      ],
+      "ok": true
+    },
+    {
+      "id": "status",
+      "command": "dsh-triage status",
+      "why": "one screen: what this machine has and what looks wrong",
+      "exit_code": 0,
+      "allowed_exit": [
+        0
+      ],
+      "lines": 12,
+      "bytes": 931,
+      "within_budget": true,
+      "absolute_path_leaks": [],
+      "carries_home_relative_path": false,
+      "stdout_sha256": "f4abd24e016a0299c15e917d4920ce8bb3fe8d5bdcee378707bc7979b2df2276",
+      "head": [
+        "分诊台 · dsh 0.1.0-rc.6 · profile web · win32/x64",
+        "",
+        "诊断结论  当前环境未发现已知拦截项，有 2 项未明确声明版本区间。",
+        "  未发现阻断项，存在 2 项未明确版本声明",
+        "  156 项配置（2 项已分析）· 0 正常 · 0 存在异常 · 2 未明确 · 0 冲突",
+        "  其余 154 项未声明任何 DSH 依赖区间，未作推演（未声明不代表兼容）"
+      ],
+      "ok": true
+    },
+    {
+      "id": "why",
+      "command": "dsh-triage why",
+      "why": "row-by-row attribution; `--strict` is what turns a non-go verdict into exit 1",
+      "exit_code": 0,
+      "allowed_exit": [
+        0
+      ],
+      "lines": 16,
+      "bytes": 1522,
+      "within_budget": true,
+      "absolute_path_leaks": [],
+      "carries_home_relative_path": false,
+      "stdout_sha256": "1595889222e41d3b2c2071cc3fdb25cf4dff1d07039cecff1d97628b866e8194",
+      "head": [
+        "scanned 2 bundles · 156 loader rows · 128 import targets · dsh 0.1.0-rc.6 · profile web",
+        "[UNKNOWN] @deepseek-ai/cordis-plugin-hmr@1.0.16 — 证据不足",
+        "  env      dsh 0.1.0-rc.6 · win32/x64 · profile web",
+        "  reason   loader row hmr 引入 @deepseek-ai/cordis-plugin-hmr（声明于 bundle:@deepseek-ai/dsh-base）",
+        "  reason   row hmr 引入的 @deepseek-ai/cordis-plugin-hmr 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过",
+        "  fix      [report] 请作者补上 @deepseek-ai/cordis-plugin-hmr 实际需要的 peer 区间，或做一次隔离实测"
+      ],
+      "ok": true
+    },
+    {
+      "id": "audit",
+      "command": "dsh-triage audit",
+      "why": "the same summary, plus the pointer to the full ledger",
+      "exit_code": 0,
+      "allowed_exit": [
+        0
+      ],
+      "lines": 13,
+      "bytes": 1009,
+      "within_budget": true,
+      "absolute_path_leaks": [],
+      "carries_home_relative_path": false,
+      "stdout_sha256": "9ee4bf0c2002bd2e3c334bdca146ea24991d9914b9ae52f7c53288c61eac6b1d",
+      "head": [
+        "分诊台 · dsh 0.1.0-rc.6 · profile web · win32/x64",
+        "",
+        "诊断结论  当前环境未发现已知拦截项，有 2 项未明确声明版本区间。",
+        "  未发现阻断项，存在 2 项未明确版本声明",
+        "  156 项配置（2 项已分析）· 0 正常 · 0 存在异常 · 2 未明确 · 0 冲突",
+        "  其余 154 项未声明任何 DSH 依赖区间，未作推演（未声明不代表兼容）"
+      ],
+      "ok": true
+    },
+    {
+      "id": "upgrade-card",
+      "command": "dsh-triage upgrade --to next --card",
+      "why": "what would break if this machine moved to the named target",
+      "exit_code": 0,
+      "allowed_exit": [
+        0
+      ],
+      "lines": 60,
+      "bytes": 4526,
+      "within_budget": true,
+      "absolute_path_leaks": [],
+      "carries_home_relative_path": false,
+      "stdout_sha256": "f5da2f59debe1f1ebd32619051646ad607d09b24e11e67b7a479c80005c15cbe",
+      "head": [
+        "# 升级日 · 0.2.2-rc.1",
+        "",
+        "**web：130 个单元（2 bundle + 128 行）升到 0.2.2-rc.1 → 128 会被拒 · 2 判不了 · 0 会变好 · 0 像没事**",
+        "",
+        "> profile `web`（live）· 当前 0.1.0-rc.6 · 目标比当前新",
+        "> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。"
+      ],
+      "stderr_head": [
+        "target   next → 0.2.2-rc.1 (npm @deepseek-ai/dsh)",
+        ""
+      ],
+      "ok": true
+    }
+  ],
+  "summary": {
+    "commands": 5,
+    "ok": 5,
+    "any_absolute_path": false,
+    "any_over_budget": false,
+    "any_unexpected_exit": false
+  },
+  "limits": [
+    "this runs the kit's commands on the machine that ran the recorder; another profile can print different counts",
+    "it checks shape, not meaning: a command can pass here and still not answer a specific thread",
+    "it does not prove that upgrading to the target works — only `probe --execute` in an isolated DSH_HOME can say that",
+    "the target defaults to `next`, which reads the registry; pass an exact semver to run fully offline",
+    "`carries_home_relative_path` is informational: `~\\profiles\\<name>` names the reader's profile, not their home directory",
+    "`within_budget` is informational: a profile with many plugins prints a longer card, and that is not a defect"
+  ]
+}

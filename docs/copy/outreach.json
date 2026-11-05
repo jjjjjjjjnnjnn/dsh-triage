@@ -182,6 +182,36 @@
       "cites": [],
       "d5_counts": false,
       "why_not_counted": "General category, manual read; the reply only offers diagnosis commands. Not a D5 signal."
+    },
+    {
+      "thread": 12294,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12294",
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12294#discussioncomment-19423754",
+      "posted_on": "2026-11-05T17:48:21Z",
+      "language": "zh",
+      "draft": "docs/copy/drafts/12294-version-jump.md",
+      "facts": "docs/copy/facts/2026-11-05-12294-version-jump.md",
+      "cites": [
+        "data/results/upgrade-2026-11-05T18-40-00.000Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "This is a reply, not the D5 sample. D5 counts only the #11813 discussion (its reactions and third-party references); a reply on someone else's thread is not a signal by the frozen measurement.",
+      "state_at_post": "open · 1 comment · not answered (re-read immediately before posting)"
+    }
+  ],
+  "read_not_posted": [
+    {
+      "thread": 12191,
+      "title": "rc.5：profile patch 被重写时丢失手写 insert 条目，MCP 服务器静默消失",
+      "reason": "The existing comment already gives the source-level root cause (sanitizeProfile / initProfile). Our addition would only be a detection recipe, which is thinner than what is already there.",
+      "state": "open · 1 comment by a third party"
+    },
+    {
+      "thread": 12323,
+      "title": "插件更新失败后的恢复重装误报 already-installed",
+      "reason": "A well-diagnosed bug report with its own root cause and a concrete fix proposal; our tool would only describe the resulting profile state. Adding a reply would be noise on someone else's accumulated analysis.",
+      "state": "open · 0 comments"
     }
   ]
 }

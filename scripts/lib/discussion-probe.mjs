@@ -35,12 +35,56 @@ export function pinnedVersions(text) {
 }
 
 /**
+ * Is this token even capable of being an npm package name? (R88 / X2)
+ *
+ * WHY: `probe-unreadable` (90 threads) turned out to be 160 probes that *all* answered
+ * "npm has no package <name>". The names were upstream module names, file names, and path
+ * fragments — tokens our extractor mistook for packages. Asking the registry about a name that
+ * cannot exist spends a request to learn nothing, and (worse) lets the tier read as "the registry
+ * would not answer" when the truth is "we asked about a thing that is not a package".
+ *
+ * Only rules that follow from npm's own naming rules are applied here — a name that breaks one of
+ * them cannot be a package, so refusing to ask changes no answer. Anything merely *unlikely*
+ * (a version glued onto a name, an upstream module id) is still probed: rejecting those would be a
+ * heuristic, and a wrong rejection would silently cost a real thread its one reading.
+ *
+ * Verified against the committed R59 artifact: of 1393 distinct probed names, 147 break a rule
+ * here (uppercase 75 · file name 53 · path fragment 12 · version path 7) and **none of them was
+ * ever `measured`** — so this filter cannot move a single tier.
+ *
+ * @param {string} name
+ * @returns {{ probeable: boolean, reason: string | null }}
+ */
+export function judgePackageName(name) {
+  const value = String(name ?? '')
+  const reject = (reason) => ({ probeable: false, reason })
+  if (value.length === 0) return reject('empty')
+  if (value.length > 214) return reject('too-long')
+  if (/[A-Z]/.test(value)) return reject('uppercase')
+  if (/\s/.test(value)) return reject('whitespace')
+  if (/(^|\/)node_modules(\/|$)/.test(value)) return reject('path-fragment')
+  if (/^@\d/.test(value)) return reject('version-path')
+  if (/\.(zip|log|json|png|jpe?g|tgz|tar|gz|md|txt)$/i.test(value)) return reject('file-name')
+  if (value.startsWith('.') || value.startsWith('_')) return reject('leading-dot-underscore')
+  return { probeable: true, reason: null }
+}
+
+/**
  * Which packages this thread may be judged on, and in what order.
+ *
+ * `targets` keeps its members even when a name cannot be a package: the caller still records a
+ * reading for it (so the tier counts stay identical by construction), it just does not spend a
+ * request. Rejected names are also returned separately so the artifact can say why.
  *
  * @param {{ packages?: string[] }} classification
  * @param {string} text
  * @param {{ limit?: number }} [options]
- * @returns {{ targets: Array<{ name: string, pinned: string | null }>, omitted: number, packages: string[] }}
+ * @returns {{
+ *   targets: Array<{ name: string, pinned: string | null, probeable: boolean, reason: string | null }>,
+ *   rejected: Array<{ name: string, reason: string }>,
+ *   omitted: number,
+ *   packages: string[],
+ * }}
  */
 export function selectProbeTargets(classification, text, { limit = 3 } = {}) {
   const packages = Array.isArray(classification?.packages) ? classification.packages : []
@@ -52,11 +96,55 @@ export function selectProbeTargets(classification, text, { limit = 3 } = {}) {
     return third(left) - third(right)
   })
   const pinned = pinnedVersions(text)
+  const selected = ordered.slice(0, limit).map((name) => {
+    const judged = judgePackageName(name)
+    return { name, pinned: pinned.get(name.toLowerCase()) ?? null, probeable: judged.probeable, reason: judged.reason }
+  })
   return {
-    targets: ordered.slice(0, limit).map((name) => ({ name, pinned: pinned.get(name.toLowerCase()) ?? null })),
+    targets: selected,
+    rejected: selected
+      .filter((entry) => !entry.probeable)
+      .map((entry) => ({ name: entry.name, reason: String(entry.reason) })),
     omitted: Math.max(0, ordered.length - limit),
     packages,
   }
+}
+
+/**
+ * Turn a selection into the exact sequence of probe records, without doing any I/O (R88 / X2).
+ *
+ * WHY THIS IS A FUNCTION AND NOT A LOOP IN THE RECORDER: "a name that cannot be a package is
+ * recorded but never asked" is the whole contract, and the only way to test a contract that lives
+ * inside a 900-line recorder is to move the decision somewhere a test can call. The recorder now
+ * walks this plan and does `await probePackage(...)` only for `kind: 'fetch'`.
+ *
+ * The record for a refused name uses `state: 'unreadable'` on purpose: the thread genuinely has no
+ * registry fact, and `tierOfThread` keys `probe-unreadable` off `probes.length > 0`, so the tier
+ * counts are conserved by construction rather than by hope.
+ *
+ * @param {Array<{ name: string, pinned?: string | null, probeable?: boolean, reason?: string | null }>} targets
+ * @returns {Array<
+ *   | { kind: 'fetch', name: string, pinned: string | null }
+ *   | { kind: 'rejected', name: string, record: { package: string, state: 'unreadable', detail: string, verdict: null } }
+ * >}
+ */
+export function planProbeTargets(targets) {
+  const list = Array.isArray(targets) ? targets : []
+  return list.map((entry) => {
+    if (entry?.probeable === false) {
+      return {
+        kind: 'rejected',
+        name: entry.name,
+        record: {
+          package: entry.name,
+          state: 'unreadable',
+          detail: `name is not a package (${String(entry.reason)}); not sent to the registry`,
+          verdict: null,
+        },
+      }
+    }
+    return { kind: 'fetch', name: entry.name, pinned: entry?.pinned ?? null }
+  })
 }
 
 /** Build a packument-shaped object from the R59 snapshot projection (offline recompute). */

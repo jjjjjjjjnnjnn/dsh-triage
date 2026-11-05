@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_discussion_state.mjs",
+  "generated_at": "2026-11-05T18:35:00.000Z",
+  "sample": {
+    "ids": [
+      12294,
+      12191,
+      12323
+    ],
+    "source": "graphql"
+  },
+  "counts": {
+    "open": 3
+  },
+  "rows": [
+    {
+      "number": 12191,
+      "title": "[Bug][Desktop][macOS] rc.5：profile patch 被重写时丢失手写的 insert 条目，MCP 服务器静默消失",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12191",
+      "category": "Q&A",
+      "created_at": "2026-11-04T17:20:00Z",
+      "updated_at": "2026-11-05T17:21:12Z",
+      "closed": false,
+      "answered": false,
+      "comments": 1,
+      "last_comment": {
+        "at": "2026-11-04T23:47:43Z",
+        "author": "Muguett-DBY"
+      },
+      "answer": null,
+      "gate": "open"
+    },
+    {
+      "number": 12294,
+      "title": "以后别升级了 每次都重新一个新产品就好了 反正也每一版本都不兼容上一版本",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12294",
+      "category": "Q&A",
+      "created_at": "2026-11-05T11:19:14Z",
+      "updated_at": "2026-11-05T12:35:43Z",
+      "closed": false,
+      "answered": false,
+      "comments": 1,
+      "last_comment": {
+        "at": "2026-11-05T12:27:44Z",
+        "author": "XuZhangxing"
+      },
+      "answer": null,
+      "gate": "open"
+    },
+    {
+      "number": 12323,
+      "title": "插件更新失败后的恢复重装误报 already-installed，导致更新按钮永久失败",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/12323",
+      "category": "Q&A",
+      "created_at": "2026-11-05T15:17:18Z",
+      "updated_at": "2026-11-05T15:17:18Z",
+      "closed": false,
+      "answered": false,
+      "comments": 0,
+      "last_comment": null,
+      "answer": null,
+      "gate": "open"
+    }
+  ],
+  "limits": [
+    "this records the thread board state at one timestamp; it says nothing about whether our draft is correct",
+    "isAnswered is GitHub's own \"accepted answer\" flag: a thread can have replies and still read as open",
+    "open means \"a reply would still be a contribution\", not \"a reply would be welcome\"",
+    "read-only: this script posts nothing and writes nothing outside its artifact and fixture snapshot"
+  ]
+}

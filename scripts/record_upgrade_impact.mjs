@@ -59,7 +59,16 @@ if (stamp === null) {
 
 const target = String(argOf('--to', '0.3.0'))
 const profile = String(argOf('--profile', 'upstream'))
-const dshHome = pathFor(String(argOf('--dsh-home', 'sandbox/upstream/0.2.1-rc.4/home')))
+const DEFAULT_DSH_HOME = 'sandbox/upstream/0.2.1-rc.4/home'
+const dshHomeArg = argOf('--dsh-home', null)
+const dshHome = pathFor(String(dshHomeArg ?? DEFAULT_DSH_HOME))
+/*
+ * R88: `runtime_provenance` used to be a constant that said "in-repo sandbox" no matter what
+ * `--dsh-home` pointed at. The first time this recorder was aimed at a real profile, the artifact
+ * described its input wrongly — a claim about *where the numbers came from*, which is the one claim
+ * this repository refuses to get wrong. Provenance is now derived from the argument.
+ */
+const isSandboxHome = dshHomeArg === null || String(dshHomeArg) === DEFAULT_DSH_HOME
 const outDir = pathFor(String(argOf('--out', 'data/results')))
 const asJson = argv.includes('--json')
 /**
@@ -460,12 +469,16 @@ const artifact = {
     // The sandbox path is deliberately NOT recorded: it is a machine-specific path (iron law 5).
     profile,
     profile_source: impact.profile_source,
-    runtime_provenance: 'in-repo sandbox (sandbox/upstream/<version>/home), git-ignored',
+    runtime_provenance: isSandboxHome
+      ? 'in-repo sandbox (sandbox/upstream/<version>/home), git-ignored'
+      : 'an explicit --dsh-home given on the command line; the path is deliberately not recorded (iron law 5)',
     // `null` = the profile has no manifest of its own dependencies (the template case).
     declared_dependencies: declared,
     composition: compositionIsCurated
       ? 'curated: real published packages installed at pinned versions via scripts/prepare_upgrade_mixed_profile.mjs; no package manifest was edited'
-      : 'in-repo sandbox template profile',
+      : isSandboxHome
+        ? 'in-repo sandbox template profile'
+        : 'the profile as it exists on the machine that ran this: not selected by us, and not a random sample of the ecosystem',
     registry_consulted: view.registry?.consulted === true,
     registry_live: registryLive,
     target_verified_to_exist: false,
@@ -528,7 +541,9 @@ const artifact = {
       ? `the composition is CURATED: ${String(declared?.length ?? 0)} real published package(s) were installed at pinned versions to cover all four buckets; the package manifests are the published ones (never edited), but which packages are in the profile is our choice — this is not a random sample of the ecosystem`
       : compositionIsCurated
         ? `the composition is CURATED (${String(declared?.length ?? 0)} pinned package(s)); see \`declared_dependencies\` — the manifests are published, the selection is ours`
-        : 'the composition is the in-repo sandbox template profile: every package pins the running runtime, so `improved` is structurally empty here',
+        : isSandboxHome
+          ? 'the composition is the in-repo sandbox template profile: every package pins the running runtime, so `improved` is structurally empty here'
+          : 'the composition is a real profile read from an explicit --dsh-home: it is the user\'s own install set, so the counts describe that machine and nothing else',
     `the target is ${String(view.target_relation)} relative to the running runtime: ${String(view.current)} → ${String(view.target)}. Today no published plugin declares a range that denies ${String(view.current)} and is admitted by a NEWER build (scripts/scan_upgrade_declarations.mjs scanned the registry and found none), so the real shape of "improved" is "move back to the build your plugins pin"`,
     registryLive
       ? 'the `--registry` run reached the registry: the facts in it are a snapshot of the moment it ran, so re-running can legitimately attach different annotations; what is stable is that no unit changed bucket or count'

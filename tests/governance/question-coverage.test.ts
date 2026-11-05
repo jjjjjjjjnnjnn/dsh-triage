@@ -121,3 +121,74 @@ test('a snapshot without the target runtime is a usage error, not a silent defau
     rmSync(out, { recursive: true, force: true })
   }
 })
+
+/* ------------------------------------------------------------------ *
+ * R88 / X3: the label says what the classifier did, not what the thread is
+ * ------------------------------------------------------------------ */
+
+/**
+ * WHY: for three weeks the README's tier table said `not-relevant | 950 | 61.5% | 不是我们的层`.
+ * The artifact behind it carries `layer = unknown` and an empty `signals[]` for all 950 — the tier is
+ * assigned when the keyword classifier matches nothing. So that cell asserted something the data
+ * never contained, and it happened to be the sentence a reader would use to decide we have nothing
+ * to offer those threads.
+ *
+ * The rule is positive, not a ban list: if you name this tier in copy, you must attribute it to the
+ * classifier. The retracted phrasing is banned outright because it is the specific claim we withdrew.
+ */
+const COPY_DOCUMENTS = [
+  'README.md',
+  'README.zh-CN.md',
+  'docs/market/listing_zh.md',
+  'docs/market/listing_en.md',
+]
+
+const RETRACTED_CLAIMS = ['不是我们的层', 'not our layer', 'irrelevant']
+const ATTRIBUTES_TO_CLASSIFIER = /分类器|classifier/
+
+/** Problems on a single line; exported through the test file so the same rule is used twice. */
+function copyProblems(line: string): string[] {
+  if (!line.includes('not-relevant')) return []
+  const problems = RETRACTED_CLAIMS.filter((phrase) => line.includes(phrase)).map(
+    (phrase) => `retracted claim "${phrase}"`,
+  )
+  if (!ATTRIBUTES_TO_CLASSIFIER.test(line)) problems.push('names the tier without attributing it to the classifier')
+  return problems
+}
+
+const copyLines = () => {
+  const files = [...COPY_DOCUMENTS]
+  const drafts = join(repoRoot, 'docs', 'copy', 'drafts')
+  if (existsSync(drafts)) {
+    for (const name of readdirSync(drafts)) if (name.endsWith('.md')) files.push(join('docs', 'copy', 'drafts', name))
+  }
+  return files.flatMap((file) => {
+    const path = join(repoRoot, file)
+    if (!existsSync(path)) return []
+    return readFileSync(path, 'utf8')
+      .split(/\r?\n/)
+      .map((line, index) => ({ file, line: index + 1, text: line }))
+  })
+}
+
+test('X3-N1: copy that names `not-relevant` attributes it to the classifier and never retracts the claim', () => {
+  const broken = copyLines()
+    .filter((entry) => entry.text.includes('not-relevant'))
+    .flatMap((entry) => copyProblems(entry.text).map((problem) => `${entry.file}:${entry.line} ${problem}`))
+  assert.deepEqual(broken, [], 'the tier is a classifier output; copy may not restate it as "not our layer"')
+})
+
+test('X3-N1: the rule leaves the copy that does exist in place (no false positives)', () => {
+  const scanned = copyLines().filter((entry) => entry.text.includes('not-relevant'))
+  assert.ok(scanned.length >= 2, 'both READMEs must still state the tier — a silent removal is not a fix')
+  for (const entry of scanned) assert.deepEqual(copyProblems(entry.text), [], `${entry.file}:${entry.line}`)
+})
+
+test('X3-N2: a line that never names the tier is not the rule\'s business', () => {
+  // "无关" appears all over this repository in unrelated senses; only lines naming the tier are read.
+  assert.deepEqual(copyProblems('这一行与插件无关，只是排版问题'), [])
+  assert.deepEqual(copyProblems('| `not-relevant` | 950 | 61.5% | 分类器没读到任何信号 |'), [])
+  // The two ways the retracted sentence can come back:
+  assert.match(copyProblems('| `not-relevant` | 950 | 61.5% | 不是我们的层 |').join(' '), /retracted claim/)
+  assert.match(copyProblems('| `not-relevant` | 950 | 61.5% | 与我们无关 |').join(' '), /classifier/)
+})

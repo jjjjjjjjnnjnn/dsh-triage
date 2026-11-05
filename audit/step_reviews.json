@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R88 (2026-11-05)",
+  "stand": "R89 (2026-11-05)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12647,6 +12647,142 @@
         "artifact": "data/results/listing-2026-11-05T17-00-00.000Z.json",
         "outcome": "17/17 PASS（10 份文档 · version 0.3.4 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 808）：改过 tier 表与边界段之后，对外文案仍自洽",
         "sha256": "0d3a6ecd6f5eec47097d285fe89b323fce21eb0ca5d7efb2a9178492c5138565"
+      }
+    }
+,
+    {
+      "id": "R89-S1",
+      "batch": "R89",
+      "step": "X2 落地：不可能存在的包名不再发请求（只加字段、计数守恒），并用离线复算证明七档一个没动",
+      "changed": [
+        "scripts/lib/discussion-probe.mjs",
+        "scripts/lib/discussion-probe.d.mts",
+        "scripts/record_question_coverage.mjs",
+        "tests/unit/discussion-probe.test.ts",
+        "data/results/question-coverage-recompute-2026-11-05T17-45-00-000Z.json",
+        "data/results/question-coverage-recompute-2026-11-05T17-45-00-000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：名字合法性只按 **npm 自己的命名规则**判（大写 / 空白 / `node_modules` 路径片段 / `@<digits>` 版本路径 / 文件后缀 / 前导 `.` `_` / 空 / 超长），因此被拒的名字**不可能存在**，拒绝它不改变任何答案。校验在真实数据上做过：committed 产物里 1393 个不同名字中有 147 个违反规则（大写 75 · 文件名 53 · 路径片段 12 · 版本路径 7），其中**没有任何一个曾经 `measured`**（0 个），所以过滤在构造上动不了一个档。**没有把「版本号粘在名字上」这类只是「可能性低」的形状拒掉**——那会是启发式，且误拒会让一条真实线程失去唯一的读数（spec §7 记了这处与初稿的偏差）。",
+        "reproducibility": "PASS：离线复算 `--recompute --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --target 0.2.1-rc.5` 与 2026-11-02 那份测量**七档逐项相同**（47/27/89/164/90/178/950）、头条相同（74/1545）、`unique_packages`/`attempts` 相同（433/901）；被拒名字 45（Q&A）+ 126（General）= 171 条探针记录，全部记成 `state: unreadable` + `detail: name is not a package (<reason>); not sent to the registry`，并在行上留 `names_rejected[]`。产物 `counts.*.probes.rejected_names` 与 `limits` 里都写明了这一点。",
+        "licence": "PASS：只改本仓脚本与测试，零第三方依赖、零网络（复算走快照）。没有引入外部代码或数据。",
+        "ssot": "PASS：新产物是 `question-coverage-recompute-...17-45-00-000Z.json`（`.sha256` `6dcb8a7d808d…`），`produced_by` / `generated_at` / `inputs` 齐全；**没有手填任何数字**。原测量产物未被改写（复算件与测量件并存，指针语义见 `docs/specs/question-coverage.md`）。",
+        "adversary": "三条负对照逐条真红后逐字节还原（`scripts/lib/discussion-probe.mjs` 备份 → 注入 → 跑单测 → 还原 → 复跑 16/16）：**N1** 过滤恒真（永远 `probeable`）→ 11 条 fixture 全部报「must be refused」；**N2** 直接把这些名字从 targets 里丢掉（最像「正确的错法」）→ 「keeps refused names as targets」红（`[ third-a ]` vs `[ DSH-internal, third-a ]`）——这正是会静默改变七档的那种改法；**N3** 在记录里塞 `Date.now()` → 键集合断言红。边界：形状分类是正则而非语义，131 条 `upstream-module-or-absent` 里「上游内部模块」与「真的没发布」不区分，spec 与产物都照此写。"
+      },
+      "real_test": {
+        "command": "node scripts/record_question_coverage.mjs --stamp 2026-11-05T17:45:00.000Z --recompute --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --target 0.2.1-rc.5",
+        "artifact": "data/results/question-coverage-recompute-2026-11-05T17-45-00-000Z.json",
+        "outcome": "七档与头条与测量件逐项相同（47/27/89/164/90/178/950 · 74/1545 = 4.79%）；rejected_names 45（Q&A）/ 126（General）；N1/N2/N3 三条负对照真红后还原",
+        "sha256": "6dcb8a7d808d7f712f09f3e1950c015637632db1415b5897fcb6cd2d69f20dfd"
+      }
+    },
+    {
+      "id": "R89-S2",
+      "batch": "R89",
+      "step": "X3 落地：把「not-relevant 不得读成与我们无关」写成机器断言（正反两向），并在最终文案上重跑 check_listing",
+      "changed": [
+        "tests/governance/question-coverage.test.ts",
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-05T19-00-00.000Z.json",
+        "data/results/listing-2026-11-05T19-00-00.000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：规则是**正面的**而不是禁用词表——文案只要点名 `not-relevant`，就必须把标签归因给分类器（`分类器` / `classifier`），并且不得出现已撤回的断言（`不是我们的层` / `not our layer` / `irrelevant`）。之所以这样写：这条规则要管的正是「把标签当结论」这一种错误，禁用词表管不住它的变体（「与我们无关」「不是我们的方向」）。只扫**对外文案**（两份 README + 两份 listing + drafts），不扫 spec 与规则文档——后者必须能引用被禁的句子来描述规则本身。",
+        "reproducibility": "PASS：断言纯读文件、零网络；`copyProblems()` 是同一个函数被用在真实文档与三组合成行上，所以「规则本身」也被测了。三条同时覆盖：真实文档全绿、同一条规则对「无关」的无关用法不误报（假阳性对照）、两种回归形状各自红。",
+        "licence": "PASS：只读本仓文档；无外部内容。",
+        "ssot": "PASS：改完文案之后重跑 `check_listing --tests 818` → **17/17**，产物 `listing-2026-11-05T19-00-00.000Z.json`（`.sha256` `c2bbd748f652…`）。它验证的是**最终字节**，不是改之前的。",
+        "adversary": "负对照：把两份 README 的该单元格改回「不是我们的层」→ 断言真红，报 `retracted claim \"不是我们的层\"`，逐字节还原后复绿（`x3-negative-control.mjs`，还原时校验当前文案仍在）。假阳性对照在测试内部：`这一行与插件无关，只是排版问题` 不触发；`| not-relevant | 950 | 分类器没读到任何信号 |` 通过。边界：断言只看得见「同一行」——一句话如果拆成两行绕过它，它抓不到；这条写进 spec 的残留风险。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-05T19:00:00.000Z --tests 818",
+        "artifact": "data/results/listing-2026-11-05T19-00-00.000Z.json",
+        "outcome": "17/17 PASS（10 份对外文档 · version 0.3.4 · tests 818）：文案改动之后仍然自洽；X3-N1 反例真红后还原",
+        "sha256": "c2bbd748f65202b46e938b0a53ad2af6cd7418107b9bb1cde7ffdb8b6d302712"
+      }
+    },
+    {
+      "id": "R89-S3",
+      "batch": "R89",
+      "step": "X1 版本 A：回帖用的命令包（纯文档），并把「输出里没有绝对路径」做成可复算的检查 + 自带负对照",
+      "changed": [
+        "docs/distribution/answer-kit.md",
+        "docs/specs/X1-reply-command-pack.md",
+        "scripts/record_answer_kit.mjs",
+        "scripts/lib/redaction-check.mjs",
+        "scripts/lib/redaction-check.d.mts",
+        "tests/unit/redaction-check.test.ts",
+        "data/results/answer-kit-2026-11-05T18-15-00.000Z.json",
+        "data/results/answer-kit-2026-11-05T18-15-00.000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：文档里的每条命令都在本机真跑过（`--help` / `status` / `why` / `audit` / `upgrade --to next --card`），行数与字节数来自产物（37 / 12 / 16 / 13 / 60 行）。两处「以为如此、实测不是」被文档改写：`why` 其实 **exit 0**（只有 `--strict` 在非 `go` 时 exit 1，读的是 `exitFor()`），`audit --json` 是 **99 KB** 而 `~profiles<名字>` 是**相对路径**不算泄漏。文档同时写明它**不证明**「装得上」。",
+        "reproducibility": "PASS：`scripts/record_answer_kit.mjs` 每条命令记退出码 / 行数 / 字节 / stdout 的 sha256 / 泄漏类目；`--to <确切版本>` 全程离线。判定「有没有绝对路径」的规则单独抽成 `scripts/lib/redaction-check.mjs`（纯函数），所以它可以被单测按住。",
+        "licence": "PASS：只读本机 profile 与 registry 元数据；不写 `~/.dsh`，不装任何东西。",
+        "ssot": "PASS：产物 `answer-kit-2026-11-05T18-15-00.000Z.json`（`.sha256` `807b0851752b…`）带 `produced_by` / `generated_at` / `budgets` / `limits`；文档里每个数字都能在产物里找到对应字段。",
+        "adversary": "负对照存在于**检查器自己身上**：`--self-test` 会把 `status` 的 stdout 换成一条含 `C:\\Users\\alice\\profiles\\web` 的文本，期望 `NEGATIVE CONTROL PASSED · the leak was caught`（真跑通过，两条泄漏类目都被报出）。三条单测另外两边按住：五种绝对路径形状各自被抓住；工具真正会打印的形状（`~\\profiles\\web`、`data/results/...`、URL）**不**算泄漏。边界如实写：`upgrade --card` 已顶着 60 行预算，插件多的人会更长——文档因此把它写成「贴你真正在意的那几条」，而**不是**把预算改成硬门禁。"
+      },
+      "real_test": {
+        "command": "node scripts/record_answer_kit.mjs --stamp 2026-11-05T18:15:00.000Z",
+        "artifact": "data/results/answer-kit-2026-11-05T18-15-00.000Z.json",
+        "outcome": "五条命令全 PASS（37/12/16/13/60 行；0 处绝对路径；0 处超预算）；`--self-test` 注入路径被抓住",
+        "sha256": "807b0851752b1317db552634b6356750ccee4c40b60e0b5b97126959ac05fcf3"
+      }
+    },
+    {
+      "id": "R89-S4",
+      "batch": "R89",
+      "step": "#12294 回帖：用实测四桶回答「每版都不兼容」，文案由 agy/gemini-3.8-flash 写、数字由事实包锁死",
+      "changed": [
+        "docs/copy/facts/2026-11-05-12294-version-jump.md",
+        "docs/copy/drafts/12294-version-jump.md",
+        "docs/copy/outreach.json",
+        "scripts/record_upgrade_impact.mjs",
+        "data/results/upgrade-2026-11-05T18-40-00.000Z.json",
+        "data/results/upgrade-2026-11-05T18-40-00.000Z.json.sha256",
+        "data/results/discussion-state-2026-11-05T18-35-00-000Z.json",
+        "data/results/discussion-state-2026-11-05T18-35-00-000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：回帖只说产物里的数——130 个单元 / 128 个 `would-be-denied` / 2 个 `cannot-tell`（`row:hmr`、`row:timer`，`missing.peer-declaration`）/ `improved` 0 / 今天 0 个被拒。机制那句（`^0.1.0-rc.6` = `>=0.1.0-rc.6 <0.2.0-0`，故任何 `0.2.x` 出界）可由产物 `units[].unmet[]` 复算：128/128 个被拒单元的挡点都是 `^0.1.0-rc.N`，`@deepseek-ai/dsh-invariants@^0.1.0-rc.6` 出现在全部 128 个上。**没有评价官方灰度策略**（那是跟帖里别人的话，我们核不了）。",
+        "reproducibility": "PASS：事实包给了两条复算命令（`upgrade --to 0.2.2-rc.1 --card` 与读产物的 node 一行）；草稿由 `agy --model gemini-3.8-flash-high` 生成两版（第二版按「删重复 + 补两条读数」改），最终粘贴块的字节**直接从 draft 文件的 paste 块读出**再发，所以审过的就是发出去的。发布前后各读一次线程状态（1 → 2 条评论，`isAnswered` 仍 false）。",
+        "licence": "PASS：只引用公开讨论与 npm 元数据；回复里的仓库链接是本仓（MIT）。没有引用第三方私有内容。",
+        "ssot": "PASS：事实包引用两份带 `.sha256` 的产物（`upgrade-…18-40` `63db0a2f…` · `discussion-state-…18-35` `d7387a09…`），`copy-channel` 三条结构校验通过；回填 `docs/copy/outreach.json`（thread / comment URL / 带时区时间 / `d5_counts: false` + 理由），并额外记了**两条读过但决定不发**的线程与理由。",
+        "adversary": "发布前重新读帖状态：若 `isAnswered` 就拒绝发（脚本里是硬断言）。发布后再读一次评论数（1 → 2）并回读正文，确认 588 字符、边界句在正文里。**本轮顺手修掉一个真缺陷**：`record_upgrade_impact.mjs` 的 `source.runtime_provenance` 是硬编码「in-repo sandbox」，当 `--dsh-home` 指向真实 profile 时产物**把自己的输入写错了**——正是「可署名」这类声明最不该错的地方。现在 provenance 由参数派生，并加了一条 composition 描述。没有这句话，这条回帖的数字来源就是假的。"
+      },
+      "real_test": {
+        "command": "node scripts/record_upgrade_impact.mjs --stamp 2026-11-05T18:40:00.000Z --to 0.2.2-rc.1 --dsh-home <local .dsh> --profile web",
+        "artifact": "data/results/upgrade-2026-11-05T18-40-00.000Z.json",
+        "outcome": "130 单元 → 128 would-be-denied · 2 cannot-tell · 0 improved · 0 likely-fine · 今天 0 被拒；19 项自检全过（含 `no-home-path-in-payload`、`why` 交叉校验）；provenance 已按 `--dsh-home` 派生。回帖 `discussioncomment-19423754`（17:48:21Z），评论数 1 → 2",
+        "sha256": "63db0a2f3018bb412a6e122bdb50641c76c408cc95a644adfde0b2b68ceb002c"
+      }
+    }
+,
+    {
+      "id": "R89-S5",
+      "batch": "R89",
+      "step": "回帖前置：三条候选线程的状态各读一次并落盘（open / answered / closed / unreadable 四档，读不到不许写成 open）",
+      "changed": [
+        "data/results/discussion-state-2026-11-05T18-35-00-000Z.json",
+        "data/results/discussion-state-2026-11-05T18-35-00-000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：三条线程（`#12294` / `#12191` / `#12323`）的状态由 `scripts/record_discussion_state.mjs` 读出并落盘，`judgeReplyGate` 判它们都是 `open`（`isAnswered` 为 false、未锁定）。这个判断只说明「还能回」，**不说明「值得回」**——后者是靠把每条评论读完判的：`#12191` 的评论给了源码级根因，`#12323` 的作者自己已完成诊断，所以两条都决定不发，理由写进 `docs/copy/outreach.json` 的 `read_not_posted`。",
+        "reproducibility": "PASS：GraphQL 读取，`--ids` 给定；产物带 `generated_at` 与每条线程的 `comments` 数、`last_by`、`updated_at`。发帖脚本在**发之前又读了一次**（不复用这份产物的判断），并在 `isAnswered` 为真时硬拒。",
+        "licence": "PASS：只读公开讨论元数据。",
+        "ssot": "PASS：`data/results/discussion-state-2026-11-05T18-35-00-000Z.json`（`.sha256` `d7387a09…`）由脚本产出；事实包引用它作为「帖子状态」的唯一来源，没有手写状态。",
+        "adversary": "反例：把「读不到」当成「还能回」——本工具的 `unreadable` 档就是为这个设的（R71 的规则），这次三条都读到了所以没触发；但发布脚本**另外**做了一次读取并硬断言 `isAnswered === false`，因为「15 分钟前的状态」和「此刻的状态」不是同一件事。边界：这条只证明「读的状态是这样」，不证明线程里的人还想要答案。"
+      },
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --stamp 2026-11-05T18:35:00.000Z --ids 12294,12191,12323",
+        "artifact": "data/results/discussion-state-2026-11-05T18-35-00-000Z.json",
+        "outcome": "threads 3 · open 3（`#12294` 1 评论 · `#12191` 1 评论 · `#12323` 0 评论）；两条随后判定「不发」并记入 outreach.json",
+        "sha256": "d7387a0910243c61b7605d759e196a0ea42094b641500f7bac124371f5d000f2"
       }
     }
   ]

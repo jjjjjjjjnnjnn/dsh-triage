@@ -40,7 +40,7 @@ import process from 'node:process'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 import { fetchPackument } from '../packages/signals/dist/index.js'
-import { packumentFromSnapshot, probePackage, selectProbeTargets } from './lib/discussion-probe.mjs'
+import { judgePackageName, packumentFromSnapshot, planProbeTargets, probePackage, selectProbeTargets } from './lib/discussion-probe.mjs'
 import { classifyThread } from './lib/discussion-triage.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import {
@@ -277,10 +277,22 @@ async function probeThreads(rows, target, { snapshot = null } = {}) {
     // General has no full text in the snapshot, so its selected targets (including pinned versions)
     // are recorded at capture time and reused here; Q&A re-selects from the text.
     const selection = Array.isArray(row.probeTargets)
-      ? { targets: row.probeTargets, omitted: Number(row.packagesOmitted ?? 0), packages: Array.isArray(row.packages) ? row.packages : [] }
+      ? {
+          targets: row.probeTargets.map((entry) => ({ ...entry, ...judgePackageName(entry.name) })),
+          omitted: Number(row.packagesOmitted ?? 0),
+          packages: Array.isArray(row.packages) ? row.packages : [],
+        }
       : selectProbeTargets(row, `${row.title}\n${row.bodyText}`)
-    targetsByNumber.set(row.number, selection)
-    for (const entry of selection.targets) unique.add(entry.name)
+    const plan = planProbeTargets(selection.targets)
+    targetsByNumber.set(row.number, { ...selection, plan })
+    /*
+     * Only names that could be packages are fetched. A rejected name still gets a reading below —
+     * that is what keeps `tierOfThread` on the same tier — but it never reaches the network.
+     */
+    for (const item of plan) {
+      if (item.kind !== 'fetch') continue
+      unique.add(item.name)
+    }
   }
 
   const cache = new Map()
@@ -311,8 +323,12 @@ async function probeThreads(rows, target, { snapshot = null } = {}) {
     const selection = targetsByNumber.get(row.number)
     const probes = []
     if (selection !== undefined) {
-      for (const entry of selection.targets) {
-        probes.push(await probePackage(entry.name, target, { pinned: entry.pinned, loadPackument: loader }))
+      for (const item of selection.plan ?? planProbeTargets(selection.targets)) {
+        if (item.kind === 'rejected') {
+          probes.push(item.record)
+          continue
+        }
+        probes.push(await probePackage(item.name, target, { pinned: item.pinned, loadPackument: loader }))
       }
     }
     probesByNumber.set(row.number, { probes, selection })
@@ -409,6 +425,13 @@ function toRow(node, classification, probes, selection, { projection = false } =
       ...(typeof probe.detail === 'string' ? { detail: scrubHomePaths(probe.detail) } : {}),
     })),
   }
+  /*
+   * R88 / X2: names refused before the request. Recorded on the row (not only in the counts) so a
+   * reader can see which token was rejected and why, instead of trusting a total.
+   */
+  if (Array.isArray(selection?.rejected) && selection.rejected.length > 0) {
+    row.names_rejected = selection.rejected.map((entry) => ({ name: entry.name, reason: entry.reason }))
+  }
   if (projection) {
     const text = `${String(node.title ?? '')}\n${String(node.bodyText ?? '')}`
     row.body_sha256 = typeof node.body_sha256 === 'string' ? node.body_sha256 : sha256(text)
@@ -421,16 +444,23 @@ function probeStats(rows) {
   let attempts = 0
   let unreadable = 0
   let truncated = 0
+  let rejected = 0
   const packages = new Set()
   for (const row of rows) {
     for (const probe of row.probes) {
       attempts += 1
       packages.add(probe.package)
       if (probe.state !== 'measured') unreadable += 1
+      if (/^name is not a package \(/.test(String(probe.detail ?? ''))) rejected += 1
     }
     if (row.truncated) truncated += 1
   }
-  return { unique_packages: packages.size, attempts, unreadable, truncated_threads: truncated }
+  /*
+   * `rejected_names` is a *subset* of `unreadable`, not extra work: those names would have been
+   * asked and would have answered "no such package". It is reported so the next reader can see how
+   * much of "unreadable" was never a real question.
+   */
+  return { unique_packages: packages.size, attempts, unreadable, rejected_names: rejected, truncated_threads: truncated }
 }
 
 function buildCounts(rows, coverage, probes) {
@@ -605,6 +635,7 @@ async function main() {
       `one target runtime (${target.runtime}) is used for every thread; a package the thread pinned is judged at that version, everything else at the version the registry called latest at capture`,
       'declares-nothing is not compatibility and not a denial; it never counts toward the headline numerator',
       'probe-unreadable stays in the denominator: a registry we could not read is not evidence that the thread is unanswerable',
+      'R88: `counts.*.probes.attempts` counts probe RECORDS, including `rejected_names` — names refused before any request because they cannot be package names (uppercase / file name / path fragment / `@<version>` path). Those names are a subset of `unreadable`, recorded on the row as `names_rejected[]`; refusing them changes no tier and spends no request',
       'General is a projection snapshot (no full text in the repo); it is a control population and is never pooled with Q&A',
       'at most 3 packages per thread are probed; the omitted count is recorded per row and summed in counts.*.probes.truncated_threads',
     ],
