@@ -83,14 +83,38 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **857 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 不满足即环境不可信——**先修基线，不叠加新功能**。
 
-**接手时的工作区预期**：**干净**。R82–R84 的 10 个提交已推上 origin（`fbf8359..0025c11`），CI 两次全绿
-（run `42028080241` 首次覆盖本轮的 rescue / T-861 / D5 第三份基线；run `42028436382` 是文档提交的复跑）。
-**R88 / R89 的 8 个提交（`84ac9eb..7a8332d`）当初没有推**——它们在本地停了两轮，而这份文件当时写着
-「main 与 origin/main 一致」，那句话是假的；R90 已推上，run `42098350228` 是这两轮第一次过 CI。
-**下次接手先跑 `git log --oneline origin/main..HEAD`（预期空）**，不要只信这一行。
-若又出现未提交改动，**先问来源**：人类宣传物料（`docs/distribution/T-810/03-x-en.md`、`docs/distribution/reddit-and-hn-posts.md`、
-两份 README 与上架文案）不要改、不要替人提交、更不要为了让树变干净删掉。真正发版时（`pnpm -r publish` 需要干净树）
+**接手时的工作区预期**：**干净**，且 **`main` 与 `origin/main` 一致**。R91/R92 的四个提交已推上
+（`f620d9a..4ddf82d`），交接快照 `backup/snapshots/snapshot-0.3.5-handoff-R92.json`
+（`version 0.3.5 · head 4ddf82d · dirty false · gates green · 9 · ssot 508`）。
+**下次接手先跑 `git log --oneline origin/main..HEAD`（预期空）**，不要只信这一行——R88/R89 曾经在本地停了
+两轮而这份文件写着「一致」，那句话当时是假的。若又出现未提交改动，**先问来源**：人类宣传物料
+（`docs/distribution/T-810/03-x-en.md`、`docs/distribution/reddit-and-hn-posts.md`、两份 README 与上架文案）
+不要改、不要替人提交、更不要为了让树变干净删掉。真正发版时（`pnpm -r publish` 需要干净树）
 用 `git stash push -u -- <路径>`，用完 `git stash pop`。
+
+### R91 / R92 交接要点（2026-11-09，比读到上面任何一行都更该先看这几条）
+
+1. **0.3.5 已发布，且已发布的内容与 `main` 一致**：四包 `latest=0.3.5`，取证
+   `data/results/publish-2026-11-09T15-55-00.000Z.json`（**18/18 · `git_dirty=false` · `head 33e6afc`**）。
+   同一轮还有一份红产物 `publish-2026-11-09T14-09-24.796Z.json`：**发布成功、取证读早了**——
+   那是 `R91-S7`，读侧等待缺失的现场，已修（`shouldRetryVisibility`）。**不要把那份红件读成「发布失败」。**
+2. **本机 desktop profile 现在装的是本地构建的 0.3.5**（HUMAN 授权的一次真机验收）。
+   备份在 `%TEMP%\opencode\r91-profile-backup\`（`manifest.json` 记了每个被覆盖的目录）。
+   要回到 registry 版本：`npm i dsh-triage@0.3.5` 装回去即可；要回到装之前：按 manifest 拷回。
+   **设置页还没被验证过**：Host 进程里跑的是旧模块，HUMAN 明确说**不重启**。所以
+   「桌面 403 修复在真机上生效」这件事**只有单元/变异证据，没有一次真实的点击**。下一个接手的人
+   如果看到它，请补一条真机读数（`/compat-triage/summary` 200 + `dsh 0.2.2-rc.1 (kernel)`），
+   并把 `docs/specs/M10-desktop-bridge.md` §7 的「等一次点击」改成实测。
+3. **CLI 与面板的版本来源不同，这是设计不是缺陷**（`M11-C7`）：面板/agent 工具跑在 Host 内 → `(kernel)`；
+   命令行在终端里 → 只能看见共享缓存 → `(inferred)`。**不要**为了「让 CLI 也显示 kernel」去读
+   `~/.dsh/dsh-runtimes/*/runtime.json`——那是桌面壳版本，不是包目录，属于猜。
+4. **`surface` 判据（M12）不是「过滤噪音」那么随便**：它说的是「DSH 的 loader 会不会同时看见这两份」。
+   嵌套的 `@deepseek-ai/dsh-*` 仍然报（那是 #10364 / #10458 的现场，我们在对外回帖里引用过）。
+   动它之前先读 `docs/specs/M12-surface-scope.md` §4 的诚实边界。
+5. **两处「我以为是」已经被真机推翻，别再退回去**：① 那 5 条 `dsh-experimental-*` 不是「真的缺失」，
+   它们在内核 asar 里；② 90 条 `unknown` 不是内核 layer 带来的，声明者是 profile（`kernel 0 / profile 90`）。
+6. **变异对照现在是 18 条**：`node scripts/record_mutation_controls.mjs --stamp <ISO>`。
+   它比 `gate --mutate` 更细（一个决定一条），改动 M10/M11/M12 覆盖的代码时**先跑它**。
 
 ### 本轮新增的常设任务（HUMAN 2026-11-05 交接）
 
