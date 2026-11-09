@@ -26,6 +26,22 @@ export function looksLikePropagationLag(attempt: InstallAttempt | null | undefin
 
 export function shouldRetryInstall(state: RetryState | null | undefined): boolean
 
+/** R91: the read side had no wait of its own; this is the decision it was missing. */
+export interface VisibilityState {
+  visible: boolean
+  elapsedMs: number
+  budgetMs: number
+  attempt: number
+}
+
+export function shouldRetryVisibility(state: VisibilityState | null | undefined): boolean
+
+export function describeVisibilityWait(state: {
+  attempts: number
+  waitedMs: number
+  settled?: boolean
+}): string
+
 export function describePropagationWait(state: {
   attempts: number
   waitedMs: number

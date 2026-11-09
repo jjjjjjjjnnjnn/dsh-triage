@@ -66,6 +66,52 @@ export function shouldRetryInstall(state) {
 }
 
 /**
+ * The same question, asked of the READ side (R91).
+ *
+ * WHAT HAPPENED: `record_publish` fetched every packument at the top, then waited — but only the
+ * anonymous *install* was inside the wait. On 0.3.5 the run therefore recorded
+ *
+ *     root-manifest    dsh-triage@0.3.5 is not on the registry
+ *     version:*        0.3.5 absent (latest=0.3.4)          × 4
+ *     dist-tags-agree  latest=0.3.4, expected 0.3.5
+ *
+ * for a release that had in fact published: `npm view dsh-triage dist-tags` said `0.3.5` minutes
+ * later, and the same run's install probe resolved at 315s. Waiting after the read is not a wait.
+ *
+ * `settled` is recorded either way, and the cap is the same one the install path uses: a budget that
+ * runs out is a real failure, not a near miss.
+ *
+ * @param {{ visible: boolean, elapsedMs: number, budgetMs: number, attempt: number }} state
+ * @returns {boolean}
+ */
+export function shouldRetryVisibility(state) {
+  if (state?.visible === true) return false
+  const budget = Number(state?.budgetMs)
+  if (!Number.isFinite(budget) || budget <= 0) return false
+  const attempt = Number(state?.attempt)
+  if (!Number.isFinite(attempt) || attempt >= MAX_ATTEMPTS) return false
+  const elapsed = Number(state?.elapsedMs)
+  if (!Number.isFinite(elapsed)) return false
+  return elapsed < budget
+}
+
+/**
+ * One sentence for the artifact: did the read side have to wait, and did the wait end in an answer?
+ *
+ * @param {{ attempts: number, waitedMs: number, settled?: boolean }} state
+ * @returns {string}
+ */
+export function describeVisibilityWait(state) {
+  const attempts = Number(state?.attempts ?? 1)
+  const waitedMs = Number(state?.waitedMs ?? 0)
+  if (attempts <= 1) return 'the packument carried the version on the first read (no propagation wait)'
+  if (state?.settled === false) {
+    return `the packument did not carry the version on ${attempts} read(s); after ${waitedMs}ms it still did not, so this is a real failure, not a wait`
+  }
+  return `the packument did not carry the version on ${attempts - 1} read(s); it appeared after ${waitedMs}ms`
+}
+
+/**
  * One sentence for the artifact: how long we waited, and whether that wait ended in an answer.
  *
  * `settled: false` is the honest branch — the budget ran out and the registry still said the version

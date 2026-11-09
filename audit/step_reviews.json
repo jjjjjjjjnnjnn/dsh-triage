@@ -13009,8 +13009,8 @@
         "packages/signals/package.json",
         "packages/probe/package.json",
         "packages/plugin/package.json",
-        "data/results/listing-2026-11-09T15-10-00.000Z.json",
-        "data/results/listing-2026-11-09T15-10-00.000Z.json.sha256"
+        "data/results/listing-2026-11-09T15-45-00.000Z.json",
+        "data/results/listing-2026-11-09T15-45-00.000Z.json.sha256"
       ],
       "review": {
         "correctness": "PASS：`check_listing --tests 844` 第一次跑红在 `version-matches-manifest :: stale: docs/market/submissions/README.md:dsh-triage@0.3.4, README.md:dsh-triage@0.3.4` —— 改了四包版本却没改这两句，检查器当场抓到；改完 **18/18 全绿**。三份入口文档的 D5 截止日从 `2026-11-13` 更新成脚本算出的 `2026-11-17`（`d5-window-deadline.test.ts` 复算）。 收尾时 `N9` 落进套件（844 → 845），于是重跑一次 `--tests 845`：`listing-2026-11-09T14-50-00`（绿）。旧的那份 844 绿件删除，红件（`…T14-10-00`）保留——它是\"检查器抓到我\"的现场，而这一份是\"改完之后\"的现场。 `M11-N10` 落进套件之后（845 → 846）再重跑一次：`listing-2026-11-09T15-10-00`（绿）；上一份 845 绿件删除，红件继续保留。",
@@ -13020,10 +13020,10 @@
         "adversary": "反例一：只改徽章 URL、不改 alt 文本 —— `test-count-matches` 读的是 alt 文本，这正是 R90 抓过我一次的地方，本轮先改两处再跑。反例二：把 `0.3.5` 写进 CHANGELOG 却让 `listing` 说 `0.3.4` —— `version-matches-manifest` 会对 10 份文档逐份比。反例三：手抄 D5 截止日 —— 治理断言按已提交产物复算，抄错就红。"
       },
       "real_test": {
-        "command": "node scripts/check_listing.mjs --stamp 2026-11-09T15:10:00.000Z --tests 846",
-        "artifact": "data/results/listing-2026-11-09T15-10-00.000Z.json",
-        "outcome": "passed（10 document(s) · version 0.3.5 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 846）；同轮第一次跑红在 version-matches-manifest（红产物 `listing-2026-11-09T14-10-00.000Z.json` 保留）",
-        "sha256": "7eb3244b17e1f5d354c8701448034db04b6efebe5c9e5a85a3cfd71486ea748c"
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-09T15:45:00.000Z --tests 852",
+        "artifact": "data/results/listing-2026-11-09T15-45-00.000Z.json",
+        "outcome": "passed（10 document(s) · version 0.3.5 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 852）；同轮第一次跑红在 version-matches-manifest（红产物 `listing-2026-11-09T14-10-00.000Z.json` 保留）",
+        "sha256": "47fa45b5255ef4ccccc06fd13df80c910a9681d728f82f2e738486d7b8ca2fc0"
       }
     },
     {
@@ -13090,6 +13090,32 @@
         "artifact": "data/results/listing-2026-11-09T14-10-00.000Z.json",
         "outcome": "FAIL（预期）· version-matches-manifest · docs/market/submissions/README.md:dsh-triage@0.3.4, README.md:dsh-triage@0.3.4（其余 17 项已绿）",
         "sha256": "ba40cebf73e34f2a001ee80654992b908b194472db154c8071ae5d1b7cae62d1"
+      }
+    },
+    {
+      "id": "R91-S7",
+      "batch": "R91",
+      "step": "发布取证把「还没同步」记成了「没发上去」：读完再等，等于没等",
+      "changed": [
+        "data/results/publish-2026-11-09T14-09-24.796Z.json",
+        "data/results/publish-2026-11-09T14-09-24.796Z.json.sha256",
+        "scripts/lib/registry-wait.mjs",
+        "scripts/record_publish.mjs",
+        "tests/unit/registry-wait.test.ts",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS（红是产品缺陷，不是误报）：HUMAN 跑 `pnpm run release:publish`，四包都发布了（输出里有四次 ✅ Published），但 `record_publish` 立刻判定 `root-manifest` / `version:*` ×4 / `dist-tags-agree` 六项红。几分钟后 `npm view dsh-triage dist-tags` 就是 `0.3.5`，而且同一次运行的匿名安装探针在 **315092ms / 21 次**后成功 —— 也就是说注册表一直有，只是我们把 packument **读在最前面、等却在后面**。R62 的 `registry-wait` 只护住了 install 那一步，读的那一步没有等价物。",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --stamp <ISO>`，红件就是同一台机器上那次运行的原样产物（`git_head 33e6afc`、`git_dirty false`）。修复后用新 stamp 重跑得到绿件；红绿两份都保留，谁都可以打开对比 `checks[]` 里同样六个 id。",
+        "licence": "PASS：只读 npm registry 与本仓产物，零第三方内容。",
+        "ssot": "PASS：红件保留（它是「发布成功但取证失败」的唯一现场），绿件另行记录；`registry-visibility` 这条 check 只在真的等过时才出现，所以平常的 18 项形状没有被撑大。判据/阈值一字未动 —— 变的只有**什么时候读**，不是**读到什么才算过**。",
+        "adversary": "反例一：把 `dist-tags-agree` 放宽成「允许 latest 落后一版」—— 那是把缺陷写进断言，本轮**没有**这么做。反例二：只加长 install 的预算 —— 读的那些 check 在预算之外，加多久都没用；本轮加的是读侧的等待，并把 `settled:false` 保留成真失败（6 条单测钉住方向）。反例三：把这段写成「偶发」—— 0.3.2 那晚红三次、0.3.5 又红一次，同一个形状出现了两次，已经是稳定复现的缺陷。"
+      },
+      "real_test": {
+        "command": "HUMAN 跑 pnpm run release:publish（preflight → pnpm -r publish → record_publish，stamp 2026-11-09T14:09:24.796Z）",
+        "artifact": "data/results/publish-2026-11-09T14-09-24.796Z.json",
+        "outcome": "FAIL：root-manifest + version ×4 + dist-tags-agree 六项红，而同一份产物里 anonymous-install 在 315092ms 后 PASS —— 发布是成功的，取证读早了",
+        "sha256": "26d51210992b1671d78cf92c69f89b55b84fce17fa3b71f21c7922772fe4fcaa"
       }
     }
   ]

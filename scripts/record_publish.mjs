@@ -33,7 +33,14 @@ import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { judgeClientBundle, resolveClientEntry } from './lib/client-bundle.mjs'
 import { judgeDistTags } from './lib/dist-tags.mjs'
 import { resolvePublishVersion } from './lib/publish-target.mjs'
-import { DEFAULT_REGISTRY_WAIT_MS, RETRY_INTERVAL_MS, describePropagationWait, shouldRetryInstall } from './lib/registry-wait.mjs'
+import {
+  DEFAULT_REGISTRY_WAIT_MS,
+  RETRY_INTERVAL_MS,
+  describePropagationWait,
+  describeVisibilityWait,
+  shouldRetryInstall,
+  shouldRetryVisibility,
+} from './lib/registry-wait.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -146,7 +153,48 @@ async function main() {
    * declares -- not a global `--version` applied to everything.
    */
   const rootEncoded = rootPackage.replace('/', '%2f')
-  const rootPackument = await fetchJson(`${registry}/${rootEncoded}`)
+  /*
+   * R91: WAIT BEFORE READING. Before this, every packument was fetched at the top and only the
+   * anonymous install sat inside the propagation wait — so a run started seconds after `publish`
+   * recorded `0.3.5 absent (latest=0.3.4)` for all four packages plus a dist-tags mismatch, while
+   * the same run's install probe resolved 315s later. The registry had the version; we asked too
+   * early and never asked again. `settled: false` still fails for real.
+   */
+  const visibilityStarted = Date.now()
+  let visibilityAttempts = 1
+  let visibilitySettled = false
+  let rootPackument = await fetchJson(`${registry}/${rootEncoded}`)
+  for (;;) {
+    const visible = rootPackument.ok && rootPackument.value?.versions?.[version] !== undefined
+    if (visible) {
+      visibilitySettled = true
+      const waitedMs = Date.now() - visibilityStarted
+      if (visibilityAttempts > 1) {
+        if (verbose) process.stderr.write(`  ${describeVisibilityWait({ attempts: visibilityAttempts, waitedMs, settled: true })}\n`)
+        check(
+          'registry-visibility',
+          true,
+          describeVisibilityWait({ attempts: visibilityAttempts, waitedMs, settled: true }),
+          { attempts: visibilityAttempts, waited_ms: waitedMs },
+        )
+      }
+      break
+    }
+    const elapsedMs = Date.now() - visibilityStarted
+    if (!shouldRetryVisibility({ visible, elapsedMs, budgetMs: registryWaitMs, attempt: visibilityAttempts })) break
+    if (verbose) process.stderr.write(`  packument does not carry ${rootPackage}@${version} yet (attempt ${visibilityAttempts}); re-reading in ${RETRY_INTERVAL_MS}ms\n`)
+    await new Promise((resolveWait) => setTimeout(resolveWait, RETRY_INTERVAL_MS))
+    visibilityAttempts += 1
+    rootPackument = await fetchJson(`${registry}/${rootEncoded}`)
+  }
+  if (!visibilitySettled && visibilityAttempts > 1) {
+    // The budget ran out and the version never appeared: report the wait, and let the checks below fail.
+    check(
+      'registry-visibility',
+      false,
+      describeVisibilityWait({ attempts: visibilityAttempts, waitedMs: Date.now() - visibilityStarted, settled: false }),
+    )
+  }
   const rootManifest = rootPackument.ok ? (rootPackument.value.versions?.[version] ?? null) : null
   if (rootManifest === null) {
     check('root-manifest', false, `${rootPackage}@${version} is not on the registry`)

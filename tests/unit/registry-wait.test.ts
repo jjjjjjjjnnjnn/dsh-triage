@@ -14,8 +14,10 @@ import {
   DEFAULT_REGISTRY_WAIT_MS,
   MAX_ATTEMPTS,
   describePropagationWait,
+  describeVisibilityWait,
   looksLikePropagationLag,
   shouldRetryInstall,
+  shouldRetryVisibility,
 } from '../../scripts/lib/registry-wait.mjs'
 
 const NOTARGET = 'npm error notarget No matching version found for dsh-triage@0.3.2.'
@@ -71,4 +73,48 @@ test('a wait that ended in the same answer is called a failure, not a wait', () 
   assert.match(spent, /still did/)
   assert.match(spent, /real failure, not a wait/)
   assert.doesNotMatch(spent, /got a real answer/)
+})
+
+/*
+ * R91: the read side had no wait at all.
+ *
+ * 0.3.5's first publish artifact recorded `root-manifest`, four `version:*` and `dist-tags-agree` as
+ * red while the same run's install probe resolved 315s later — the registry had the version the
+ * whole time. These cases pin the decision that was missing, and the direction that must NOT change:
+ * a spent budget is still a failure.
+ */
+
+test('the read side retries while the packument is behind and the budget lasts', () => {
+  assert.equal(shouldRetryVisibility({ visible: false, elapsedMs: 30_000, budgetMs: 300_000, attempt: 2 }), true)
+})
+
+test('a visible version never triggers a retry', () => {
+  assert.equal(shouldRetryVisibility({ visible: true, elapsedMs: 30_000, budgetMs: 300_000, attempt: 2 }), false)
+})
+
+test('a spent budget stops the read wait — the red artifact must still be possible', () => {
+  assert.equal(shouldRetryVisibility({ visible: false, elapsedMs: 300_001, budgetMs: 300_000, attempt: 3 }), false)
+})
+
+test('a zero budget means "read once", which is the shape the red 0.3.5 artifact had', () => {
+  assert.equal(shouldRetryVisibility({ visible: false, elapsedMs: 0, budgetMs: 0, attempt: 1 }), false)
+  assert.equal(shouldRetryVisibility({ visible: false, elapsedMs: 0, budgetMs: Number.NaN, attempt: 1 }), false)
+})
+
+test('the read wait obeys the same attempt cap as the install wait', () => {
+  assert.equal(
+    shouldRetryVisibility({ visible: false, elapsedMs: 1, budgetMs: 10 * 60 * 60 * 1000, attempt: MAX_ATTEMPTS }),
+    false,
+  )
+})
+
+test('the read sentence separates "it appeared" from "it never appeared"', () => {
+  assert.match(describeVisibilityWait({ attempts: 1, waitedMs: 0 }), /first read/)
+  const appeared = describeVisibilityWait({ attempts: 3, waitedMs: 30_000, settled: true })
+  assert.match(appeared, /2 read\(s\)/)
+  assert.match(appeared, /appeared after 30000ms/)
+  const never = describeVisibilityWait({ attempts: 4, waitedMs: 300_000, settled: false })
+  assert.match(never, /still did not/)
+  assert.match(never, /real failure, not a wait/)
+  assert.doesNotMatch(never, /appeared after/)
 })
