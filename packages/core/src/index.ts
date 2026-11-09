@@ -9,6 +9,7 @@
 export type {
   Conclusion,
   Confidence,
+  DshSource,
   EnvFingerprint,
   Evidence,
   EvidenceTier,

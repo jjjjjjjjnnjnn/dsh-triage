@@ -98,7 +98,7 @@ import { applyExemptionFixes, planFixes, readProfileDependencies, runtimeSupport
 import { applyRescue, classifyBundles, readProfileBundles, undoRescue } from './rescue.js'
 import { allowedHosts } from './host-allow.js'
 import { startPanel, type AuditSnapshot } from './serve.js'
-import { buildProfileSummary, formatProfileSummary } from './summary.js'
+import { buildProfileSummary, formatProfileSummary, runtimeLabel } from './summary.js'
 
 const EXIT_OK = 0
 const EXIT_FINDINGS = 1
@@ -569,7 +569,7 @@ async function commandWhy(flags: Flags): Promise<number> {
   }
 
   process.stdout.write(
-    `scanned ${composition.layers.length} bundles · ${claims.length} loader rows · ${rows.length} import targets · dsh ${env.dsh ?? 'unknown'} · profile ${env.profile}\n`,
+    `scanned ${composition.layers.length} bundles · ${claims.length} loader rows · ${rows.length} import targets · dsh ${runtimeLabel(env)} · profile ${env.profile}\n`,
   )
   for (const error of bannerErrors) process.stdout.write(`warn  ${error}\n`)
   if (findings.length === 0) {

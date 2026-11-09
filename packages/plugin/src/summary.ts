@@ -12,7 +12,23 @@
  */
 
 import { catalogFor, format, type Locale, type Verdict } from '@dsh-triage/core'
+import type { DshSource } from '@dsh-triage/core'
 import type { AuditData } from './audit-data.js'
+
+/**
+ * The runtime version plus the provenance that produced it (M11).
+ *
+ * A cached `0.1.0-rc.6` and a running `0.2.2-rc.1` are different facts, and telling them apart is
+ * the whole reason this number exists. An unlabelled fingerprint renders exactly as before, so
+ * hand-built environment objects and third-party callers keep their old output.
+ */
+export function runtimeLabel(env: { readonly dsh: string | null; readonly dshSource?: DshSource }): string {
+  if (env.dsh === null) return 'unknown'
+  if (env.dshSource === 'kernel') return `${env.dsh} (kernel)`
+  if (env.dshSource === 'inferred') return `${env.dsh} (inferred)`
+  return env.dsh
+}
+
 
 export type SummaryTone = 'ok' | 'attention' | 'broken'
 
@@ -178,10 +194,10 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
 }
 
 /** Render the summary as the text a person reads. Kept next to the data it prints. */
-export function formatProfileSummary(summary: ProfileSummary, options: { locale: Locale; env: { dsh: string | null; profile: string; platform: string; arch: string } }): string {
+export function formatProfileSummary(summary: ProfileSummary, options: { locale: Locale; env: { dsh: string | null; dshSource?: DshSource; profile: string; platform: string; arch: string } }): string {
   const copy = summaryCopy(options.locale)
   const lines: string[] = []
-  lines.push(`${copy.title} · dsh ${options.env.dsh ?? 'unknown'} · profile ${options.env.profile} · ${options.env.platform}/${options.env.arch}`)
+  lines.push(`${copy.title} · dsh ${runtimeLabel(options.env)} · profile ${options.env.profile} · ${options.env.platform}/${options.env.arch}`)
   lines.push('')
   lines.push(`${copy.headline}  ${summary.plain}`)
   lines.push(`  ${summary.headline}`)

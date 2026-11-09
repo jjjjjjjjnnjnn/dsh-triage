@@ -32,12 +32,31 @@ export interface AuditRouteDeps {
   readonly read: () => Promise<{ ok: true; payload: unknown } | { ok: false; message: string }>
 }
 
+/**
+ * The marker the settings tab sends (M10).
+ *
+ * WHY IT EXISTS: DSH Desktop renders the tab at `dsh-app://app` and forwards its fetches through
+ * `forwardWebRequest()`, which deletes `host`, `origin`, `cookie` and `sec-fetch-site` before the
+ * request reaches the Host. With both signals gone this guard could not tell a legitimate tab from
+ * a silent socket, so it refused the one caller it was written for (measured 2026-11-09: 403 bare,
+ * 200 with an explicit same-origin `Origin`).
+ *
+ * WHAT IT IS NOT: authentication. It is a caller label. What it buys is that a cross-site page
+ * cannot send it without a CORS preflight, and this route never answers `OPTIONS` — so the browser
+ * drops the request before it is ever made. Local non-browser processes were never in the threat
+ * model (they can read the profile directly). See `docs/specs/M10-desktop-bridge.md`.
+ */
+export const CLIENT_MARKER_HEADER = 'x-dsh-triage-client'
+export const CLIENT_MARKER_VALUE = 'settings-tab'
+
 /** What a request has to look like. Exported so the rules can be asserted without a socket. */
 export function auditRequestVerdict(input: {
   readonly method: string | undefined
   readonly origin: string | undefined
   readonly secFetchSite: string | undefined
   readonly host: string | undefined
+  /** Value of {@link CLIENT_MARKER_HEADER}, when the caller sent one. */
+  readonly clientMarker?: string | undefined
 }): { ok: true } | { ok: false; status: number; error: string } {
   if (input.method !== 'GET' && input.method !== 'HEAD') {
     return { ok: false, status: 405, error: 'only GET is allowed' }
@@ -50,10 +69,37 @@ export function auditRequestVerdict(input: {
     }
     return { ok: true }
   }
-  if (input.secFetchSite === 'same-origin') return { ok: true }
-  // No Origin and no same-origin hint: a browser tab always sends one of them. Refuse rather than
-  // serve because "it was probably fine".
+  if (input.secFetchSite !== undefined && input.secFetchSite !== '') {
+    // A browser that stated where it came from is taken at its word, and the marker has no say
+    // here: if `Sec-Fetch-Site` survived, this is not the desktop bridge's stripped request.
+    if (input.secFetchSite === 'same-origin') return { ok: true }
+    return input.secFetchSite === 'cross-site'
+      ? { ok: false, status: 403, error: 'cross-origin request refused' }
+      : { ok: false, status: 403, error: 'request carries no same-origin evidence' }
+  }
+  // Both signals were stripped — the desktop bridge's shape. Only the labelled caller is served.
+  if (input.clientMarker === CLIENT_MARKER_VALUE) return { ok: true }
   return { ok: false, status: 403, error: 'request carries no same-origin evidence' }
+}
+
+/**
+ * Read the guard's input from a real request.
+ *
+ * One extraction, shared by all three routes: three copies of "which header means what" is how one
+ * route ends up guarded slightly differently from its siblings.
+ */
+export function guardInputOf(request: IncomingMessage): Parameters<typeof auditRequestVerdict>[0] {
+  const header = (name: string): string | undefined => {
+    const value = request.headers[name]
+    return typeof value === 'string' ? value : undefined
+  }
+  return {
+    method: request.method,
+    origin: header('origin'),
+    secFetchSite: header('sec-fetch-site'),
+    host: header('host'),
+    clientMarker: header(CLIENT_MARKER_HEADER),
+  }
 }
 
 export function sendJson(response: ServerResponse, status: number, payload: unknown): void {
@@ -70,12 +116,7 @@ export function sendJson(response: ServerResponse, status: number, payload: unkn
 /** Build the route handler. It owns the response and never throws into the server. */
 export function createAuditRouteHandler(deps: AuditRouteDeps) {
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
-    const verdict = auditRequestVerdict({
-      method: request.method,
-      origin: typeof request.headers.origin === 'string' ? request.headers.origin : undefined,
-      secFetchSite: typeof request.headers['sec-fetch-site'] === 'string' ? request.headers['sec-fetch-site'] : undefined,
-      host: typeof request.headers.host === 'string' ? request.headers.host : undefined,
-    })
+    const verdict = auditRequestVerdict(guardInputOf(request))
     if (!verdict.ok) {
       sendJson(response, verdict.status, { error: verdict.error })
       return

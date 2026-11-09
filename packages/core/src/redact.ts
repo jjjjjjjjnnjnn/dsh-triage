@@ -45,9 +45,21 @@ export function redactPath(value: string, roots: readonly string[]): string {
   return value
 }
 
-/** Redact the one path a fingerprint carries. */
+/**
+ * Redact every path a fingerprint carries.
+ *
+ * `kernelRoots` was added by M11 and is an absolute path by construction. It leaked the temp root
+ * into `audit --json` immediately (three e2e tests, first run). The rule stays the same: anything
+ * that leaves the machine gets the same treatment, not just the field someone remembered.
+ */
 export function redactEnv(env: EnvFingerprint, roots: readonly string[]): EnvFingerprint {
-  return { ...env, profileDir: redactPath(env.profileDir, roots) }
+  return {
+    ...env,
+    profileDir: redactPath(env.profileDir, roots),
+    ...(env.kernelRoots === undefined
+      ? {}
+      : { kernelRoots: env.kernelRoots.map((root) => redactPath(root, roots)) }),
+  }
 }
 
 /**

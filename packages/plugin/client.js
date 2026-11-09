@@ -40,6 +40,15 @@ window.__ModuleLoader__.load({
     const SUMMARY_URL = '/compat-triage/summary'
     /** T-818: the on-demand four-bucket answer, selected by a query on the route that works. */
     const UPGRADE_URL = '/compat-triage/summary?upgrade=1'
+    /**
+     * M10: DSH Desktop forwards this tab's fetches through `forwardWebRequest()`, which deletes
+     * `origin` and `sec-fetch-site` before the request reaches the Host — so the route's same-origin
+     * guard saw "no evidence" and answered 403 to the one caller it exists for. This label is how a
+     * stripped request says which page it came from. It is not authentication (a cross-site page
+     * cannot send it without a CORS preflight, and the route never answers OPTIONS).
+     */
+    const CLIENT_MARKER_HEADER = 'x-dsh-triage-client'
+    const CLIENT_MARKER_VALUE = 'settings-tab'
     /** How many issues a settings tab may show before it stops being a settings tab. */
     const ISSUES_SHOWN = 3
     /** T-818: the four buckets and the count field each one reads. */
@@ -703,7 +712,7 @@ window.__ModuleLoader__.load({
           try {
             response = await fetch(SUMMARY_URL, {
               credentials: 'include',
-              headers: { accept: 'application/json' },
+              headers: { accept: 'application/json', [CLIENT_MARKER_HEADER]: CLIENT_MARKER_VALUE },
             })
           } catch (error) {
             // A dead route is a fact to report, not an exception to render: `load` never throws.
@@ -755,7 +764,7 @@ window.__ModuleLoader__.load({
           try {
             response = await fetch(UPGRADE_URL, {
               credentials: 'include',
-              headers: { accept: 'application/json' },
+              headers: { accept: 'application/json', [CLIENT_MARKER_HEADER]: CLIENT_MARKER_VALUE },
             })
           } catch (error) {
             return publishUpgrade({ ok: false, kind: 'thrown', upgrade: null, detail: String((error && error.message) || error) })

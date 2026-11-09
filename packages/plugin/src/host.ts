@@ -250,11 +250,15 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
           const scanned = await scan()
           if (!scanned.ok) return { ok: false, message: scanned.message }
           const env = scanned.payload.env ?? {}
+          const source = (env as { dshSource?: unknown }).dshSource
           return {
             ok: true,
             body: {
               env: {
                 dsh: typeof env.dsh === 'string' ? env.dsh : null,
+                // M11: the panel gets the provenance too, so it never has to guess whether the
+                // number came from the running kernel or from a cached copy.
+                dshSource: source === 'kernel' || source === 'inferred' ? source : null,
                 profile: typeof env.profile === 'string' ? env.profile : null,
                 platform: typeof env.platform === 'string' ? env.platform : null,
                 arch: typeof env.arch === 'string' ? env.arch : null,

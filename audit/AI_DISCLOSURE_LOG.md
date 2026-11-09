@@ -1054,3 +1054,13 @@
 - 结果：① 浏览器 stderr 与退出码进 `RenderCheck`，脱敏函数遮 home / tmp / 用户名 / DevTools session id / `token=`；`judgeRender` 的输入一个字节没动。② 三条负对照各自真红后还原：诊断必须出现 / 必须脱敏 / 把 `inconclusive` 改成 `blank` 立即红。③ 真机 blank / rendered / error 3/3。④ 测试 818 → **821**，两份 README 徽章、§3、规模行、两份 Stand 同步；`check_listing --tests 821` **17/17**（第一次跑红，红产物保留）。
 - 实测：`pnpm run verify` **821 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**
 - 边界（如实写）：本机三次真机跑都没制造出「端口未出现」，所以那条路径只有**单元测试**（假 `spawnImpl`）证据，没有真机现场；「浏览器为什么在 runner 上不开端口」**仍未归因**，下一次 CI 红才会带上 `browser_stderr`。启动参数（`--disable-dev-shm-usage` 等）**没动**。判据 / 阈值 / 冻结项一字未动。
+### 2026-11-09 R91｜桌面 403 + 版本真相源 + issue #1（判据/阈值一字未动）
+
+- 生成者：DeepSeek V4.1 Flash（主会话；未启用 subagent）
+- SessionID：主会话（`audit/step_reviews.json` R91-S1 / S2 / S3）
+- 人工决策：HUMAN「全部同意，开始根据流程依次进行，然后全部进行测试。确保高质量」（四个选项全部按推荐：加客户端标记头 / 以运行中的 Host 为版本真相源 / 一次发 0.3.5 / 允许装进 desktop profile 做一次真机验收）
+- 范围：`docs/specs/M10-desktop-bridge.md`（新）· `docs/specs/M11-kernel-resolution.md`（新）· `packages/core/src/{env,types,redact,index}.ts` · `packages/plugin/src/{host-audit-route,host-summary-route,host-upgrade-route,host,load,summary,cli}.ts` · `packages/plugin/client.js` · `tests/unit/{host-guard-desktop-bridge,kernel-resolution}.test.ts`（新）· `scripts/record_mutation_controls.mjs`（新）· 两份 README / `CHANGELOG.md` / `AGENTS.md` / `INDEX.md` / `docs/HANDOFF.md` / `docs/ROADMAP.md` / `docs/market/submissions/README.md` / 四份 `packages/*/package.json` · `audit/{step_reviews,blind_spots,AI_DISCLOSURE_LOG}` · 产物 `data/results/`（市场基线 / 窗口状态 / D5 证据 / 变异对照 / 上架检查红绿各一）
+- 结果：① **M10**：桌面桥转发前删掉 `origin` / `sec-fetch-site`，三条只读路由对设置页回 403；改成「两者都缺时才认 `x-dsh-triage-client: settings-tab`」，有任一标准证据在场则按原规则判。② **M11**：`loadEnv()` 读陈旧缓存 `0.1.0-rc.6` 而真实运行时是 asar 内 `0.2.2-rc.1`；`resolveKernelAnchor()` 以 `process.argv[1]` 为锚，只换取数来源，`admission.ts` 与金标逐字节未改。③ **issue #1**：bundle roots 补内核，本机 `layers 22` / `errors: []`。④ **13 条变异对照**由 `scripts/record_mutation_controls.mjs` 真跑：13/13 红 + 13/13 逐字节还原（第 13 条 `M11-N9` 是真机抓出来的：只修 layer 不修 row → 119 条假 blocked）。⑤ D5 第四跑：覆盖 `11-01..11-08`、截止 `2026-11-17`、`pending`（0/10 · 0/1 · 706 steady）。
+- 实测：`pnpm run verify` **844 测试 / 9 门 ALL GREEN**；`gate.mjs --mutate` **9/9**；`check_listing --tests 844` **18/18**（第一次红在 `version-matches-manifest`，红产物保留）
+- 边界（如实写）：① 标记头**不是认证**，它挡住的是跨站页面（自定义头触发预检、路由不回 `OPTIONS`），挡不住本机进程——本机进程本来就能直接读 profile。② CLI 在 desktop 形态下**只能**看到缓存副本，因此必然报 `(inferred)`；这是已登记边界（M11-C7），不是待修 bug。③ `kernel` 只说明「版本来自正在运行的那个包」，不说明「插件真的被加载」——那仍是 probe 的事。④ 本机 5 条 `dsh-experimental-*` 我一开始判成「真的缺失」，真实 asar 证明它们在内核里；N6 因此只能靠构造夹具。⑤ `collisions: 1` 与 `duplicateCopies: 13` **未解释**，本轮没有把它们算进任何结论。**没有**动任何判据 / 阈值 / 冻结项；**没有**开新功能（`T-855`–`T-858` 仍推迟）
+

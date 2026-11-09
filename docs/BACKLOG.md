@@ -6,6 +6,8 @@
 
 | ID | 任务 | 里程碑 | 角色 | 依赖 | 验收判据 | 状态 |
 |---|---|---|---|---|---|---|
+| T-866 | **传递依赖的「重复不同版本」现在会占据一屏「要看的地方」**：R91 修完版本真相源之后，本机 5 条 `duplicate`（`@anthropic-ai/sdk` / `@babel/runtime` / `@opentelemetry/api` / `@types/node` / `commander`）从「被 denied 压住」变成首屏可见 | M4 | researcher + implementer | — | 先取证再决定：这些是 npm 树里正常的传递副本，还是真的会让某个插件加载另一份；**在拿到证据之前不许直接把 `duplicate` 降级成 info**（那会掩盖 `T-844` 那类真复制） | ⬜ 未开始（R91 只是把它记下来，**没有**改任何判定） |
+| T-867 | **内核 layer 的 90 条 `unknown`**：修完 row 解析同根之后，本机 `judged 90 / unknown 90 / go 0`；这些是内核 bundle 自带的声明，不是用户装的插件 | M4 | researcher + implementer | T-866 | 判据问题：内核 layer 的声明要不要进「用户的」judged 分母？在写死规则之前要有一份能说清「这条 unknown 是谁的」的样本 | ⬜ 未开始（同上，先取证据） |
 | T-101 | 真实案例验收：把「插件静默消失」案例跑通 `why` 并落 SSOT | M1 | verifier + adversary | — | 点名行 = 真实根因；`data/results/why-case-*.json` 的 `hit.verdict=hit` | ✅ **D1 通过：10/10 例，9 命中 / 1 有意 miss**（`data/results/d1-2026-10-26T12-00-00.000Z.json` → `gate.passed=true`） |
 | T-104 | 再收 6 例真实案例（把 D1 门槛凑到 10 例 ≥8 命中） | M1 | researcher + verifier | — | 每例 `record_case` 可复现；命中率 ≥80% | ✅ 2026-10-26 收齐：CASE-10201/10759/10364/8751/8220（hit）+ CASE-7590（miss 负样本）；R6 审核见 `audit/AUDIT_2026-10-26_R6.md` |
 | T-107 | 行级 `unknown`：admission 为 indeterminate 的行不得静默 | M2-a | implementer | — | 不声明任何 `@deepseek-ai/dsh*` peer 的行产出 `unknown` + `missingEvidence`；负对照：静默即红 | ✅ **R9 完成**：`verdictsFromRowAdmission` 对 `unconstrained` 行出 `unknown` + `missing.peer-declaration`；CASE-7590 由 0 verdict 变 2 verdict（`data/results/why-case-CASE-7590-2026-10-27T15-00-00.000Z.json`） |

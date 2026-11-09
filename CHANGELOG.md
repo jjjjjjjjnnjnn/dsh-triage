@@ -6,6 +6,36 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.5] — 2026-11-09
+
+> **Two wrong answers, one of them the product's whole point, and no judgement change.** The admission
+> rules, the four buckets, the `improved` evidence thresholds, every threshold, every exit code and
+> `audit --json` are what `0.3.4` shipped. All four packages move together.
+
+- **The DSH Desktop settings tab opens again.** Desktop renders the tab at `dsh-app://app` and forwards
+  its fetches through the shell's `forwardWebRequest()`, which deletes `origin`, `sec-fetch-site`, `host`
+  and `cookie` before the request reaches the Host. Every read-only route in this package refused that
+  request with `403 · request carries no same-origin evidence` — the guard was refusing the one caller it
+  exists for. The tab now labels itself with `x-dsh-triage-client: settings-tab`, and a request with
+  **both** standard signals missing is served only when that label is present and exactly right.
+  This is a caller label, not authentication: a cross-site page cannot send a custom header without a
+  CORS preflight, and these routes never answer `OPTIONS`. A request that still carries `Origin` or
+  `Sec-Fetch-Site` is judged exactly as before — the label buys nothing there.
+- **The runtime version is read from the runtime that is running.** `loadEnv()` used to read
+  `@deepseek-ai/dsh` out of `~/.dsh/profiles/node_modules`, which is a shared dependency cache. On the
+  machine this was found on that copy said `0.1.0-rc.6` while the Host was executing `0.2.2-rc.1`, so
+  **every** plugin declaring `engines.dsh >= 0.2.x` was reported incompatible — a full screen of
+  confident, wrong answers. The version now comes from the package the Host was started from (resolved
+  from the process entry point), falling back to the profile and shared copies, and the verdict says
+  which one answered: `dsh 0.2.2-rc.1 (kernel)` versus `dsh 0.1.0-rc.6 (inferred)`. From a plain shell
+  the CLI can only see the cached copy, so it says `(inferred)` instead of asserting it as fact.
+- **Bundles that ship with the kernel are no longer reported as "not installed".** `@deepseek-ai/dsh-base`,
+  `@deepseek-ai/dsh-web-app` and the `dsh-experimental-*` bundles live inside the kernel's own
+  `node_modules`, which the bundle resolver never searched (reported upstream as issue #1). It searches
+  now, and each layer records whether it came from the kernel, the profile, or the shared layer. Bundles
+  that really are absent still warn — that check was not weakened.
+- **Test count on the npm page: 846** (badge and prose together). `0.3.4` claimed 760.
+
 ## [0.3.4] — 2026-11-03
 
 > **One visible fix, and no judgement change.** The four buckets, the `improved` evidence thresholds, every

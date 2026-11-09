@@ -19,7 +19,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { auditRequestVerdict, sendJson } from './host-audit-route.js'
+import { auditRequestVerdict, guardInputOf, sendJson } from './host-audit-route.js'
 
 /** The route path. Fixed and unparameterised, like the audit route. */
 export const SUMMARY_ROUTE_PATH = '/compat-triage/summary'
@@ -36,12 +36,7 @@ export interface SummaryRouteDeps {
 /** Build the route handler. It owns the response and never throws into the server. */
 export function createSummaryRouteHandler(deps: SummaryRouteDeps) {
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
-    const verdict = auditRequestVerdict({
-      method: request.method,
-      origin: typeof request.headers.origin === 'string' ? request.headers.origin : undefined,
-      secFetchSite: typeof request.headers['sec-fetch-site'] === 'string' ? request.headers['sec-fetch-site'] : undefined,
-      host: typeof request.headers.host === 'string' ? request.headers.host : undefined,
-    })
+    const verdict = auditRequestVerdict(guardInputOf(request))
     if (!verdict.ok) {
       sendJson(response, verdict.status, { error: verdict.error })
       return

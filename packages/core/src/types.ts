@@ -72,6 +72,15 @@ export interface Reason {
   readonly params?: Readonly<Record<string, string | number>>
 }
 
+/**
+ * Where the runtime version came from (M11).
+ *
+ * `kernel` = resolved from the package the running Host was started from, so it is the runtime
+ * that is actually executing. `inferred` = read from a profile or shared `node_modules` copy,
+ * which may be a stale cache. `unresolved` = nothing readable, so `dsh` is `null`.
+ */
+export type DshSource = 'kernel' | 'inferred' | 'unresolved'
+
 /** Environment the verdict was computed for. Answers "on whose machine?". */
 export interface EnvFingerprint {
   /** DSH runtime version, e.g. `0.2.1-rc.2`; `null` when it cannot be determined. */
@@ -87,6 +96,16 @@ export interface EnvFingerprint {
   readonly bundles: readonly string[]
   /** Resolved installed versions for `@deepseek-ai/*` packages, sorted by name. */
   readonly installed: readonly InstalledPackage[]
+  /**
+   * Provenance of `dsh` (M11). Optional so hand-built fingerprints keep working; an absent value
+   * means "not stated", which renders exactly like the old output.
+   */
+  readonly dshSource?: DshSource
+  /**
+   * `node_modules` directories that belong to the running kernel, in resolution order (M11).
+   * Kernel-provided bundles live here, not under the profile; see `docs/specs/M11-kernel-resolution.md`.
+   */
+  readonly kernelRoots?: readonly string[]
 }
 
 export interface InstalledPackage {

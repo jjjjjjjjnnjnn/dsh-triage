@@ -19,6 +19,11 @@ export interface BundleLayer {
   readonly version: string | null
   readonly dir: string
   /**
+   * Which root supplied this layer (M11). A kernel-provided bundle is not a user plugin and must
+   * not be reported as "not installed"; the provenance is what lets the diagnostic say so.
+   */
+  readonly provenance: 'kernel' | 'profile' | 'shared'
+  /**
    * Every patch file the bundle declares, in `dsh.bundle.patch` order.
    *
    * WHY THIS IS A LIST: upstream allows `patch` to be one file *or* an ordered list,
@@ -86,20 +91,56 @@ export async function loadComposition(env: EnvFingerprint, dshHome: string): Pro
   }
 }
 
+/**
+ * Every `node_modules` a profile resolves through, in the order Node would search them (M11).
+ *
+ * Kernel roots first: a stale shared copy of a kernel package must never answer for the kernel
+ * (N7), and a row that names `@deepseek-ai/dsh-agent@0.1.0-rc.6` while the kernel ships
+ * `0.2.2-rc.1` produces a denial about a package nobody installed. `loadBundleLayers()` and
+ * `resolveRows()` share this one list on purpose — two lists is how the layer and the row end up
+ * describing different versions of the same package.
+ */
+export function moduleRoots(
+  env: EnvFingerprint,
+): readonly { readonly root: string; readonly provenance: BundleLayer['provenance'] }[] {
+  const roots: Array<{ root: string; provenance: BundleLayer['provenance'] }> = []
+  const add = (root: string | undefined, provenance: BundleLayer['provenance']): void => {
+    if (root === undefined || root === '') return
+    if (roots.some((entry) => entry.root === root)) return
+    roots.push({ root, provenance })
+  }
+  for (const root of env.kernelRoots ?? []) add(root, 'kernel')
+  add(join(env.profileDir, 'node_modules'), 'profile')
+  // `profileDir` is `<dshHome>/profiles/<name>`, so the shared pnpm root a profile actually
+  // resolves through is its *parent* `node_modules`.
+  add(join(dirname(env.profileDir), 'node_modules'), 'shared')
+  return roots
+}
+
 export async function loadBundleLayers(
   env: EnvFingerprint,
   dshHome: string,
   errors: string[] = [],
 ): Promise<{ readonly layers: readonly BundleLayer[] }> {
-  const roots = [join(env.profileDir, 'node_modules'), join(dshHome, 'profiles', 'node_modules')]
+  /*
+   * M11 / issue #1: the kernel ships `@deepseek-ai/dsh-base` and `@deepseek-ai/dsh-web-app` as
+   * bundles, and they are not under the profile. Searching only the profile made the Host's own
+   * layers look "not installed" — a warning about a package that is demonstrably running.
+   */
+  const roots = moduleRoots(env)
+
   const layers: BundleLayer[] = []
 
   for (const name of env.bundles) {
-    const dir = await resolvePackageDir(name, roots)
-    if (dir === null) {
-      errors.push(`bundle ${name} is listed in dsh.profile.bundles but not installed under the profile`)
+    const found = await resolvePackageDir(name, roots)
+    if (found === null) {
+      // The old sentence said "under the profile"; once the kernel is searched that is no longer true.
+      errors.push(
+        `bundle ${name} is listed in dsh.profile.bundles but no copy was found in the profile, the shared layer, or the kernel`,
+      )
       continue
     }
+    const { dir, provenance } = found
     const manifestText = await readTextOrNull(join(dir, 'package.json'))
     if (manifestText === null) {
       errors.push(`bundle ${name} has no readable package.json at ${dir}`)
@@ -130,6 +171,7 @@ export async function loadBundleLayers(
       manifest,
       version: readVersion(manifest),
       dir,
+      provenance,
       patchFiles,
       patchPath: firstTree?.path ?? null,
       patchText: firstTree?.text ?? null,
@@ -192,11 +234,14 @@ export async function loadPatchText(path: string): Promise<string | null> {
   return readTextOrNull(path)
 }
 
-async function resolvePackageDir(name: string, roots: readonly string[]): Promise<string | null> {
-  for (const root of roots) {
+async function resolvePackageDir(
+  name: string,
+  roots: readonly { readonly root: string; readonly provenance: BundleLayer['provenance'] }[],
+): Promise<{ readonly dir: string; readonly provenance: BundleLayer['provenance'] } | null> {
+  for (const { root, provenance } of roots) {
     const dir = join(root, ...name.split('/'))
     const manifest = await readTextOrNull(join(dir, 'package.json'))
-    if (manifest !== null) return dir
+    if (manifest !== null) return { dir, provenance }
   }
   return null
 }
@@ -223,8 +268,7 @@ export async function resolveRows(
 ): Promise<readonly RowDeclaration[]> {
   // `profileDir` is `<dshHome>/profiles/<name>`, so the shared pnpm root that a
   // profile actually resolves through is its *parent* `node_modules`.
-  const sharedModules = join(dirname(env.profileDir), 'node_modules')
-  const roots = [join(env.profileDir, 'node_modules'), sharedModules]
+  const roots = moduleRoots(env).map((entry) => entry.root)
   const cache = new Map<string, { manifest: unknown; version: string | null } | null>()
   const out: RowDeclaration[] = []
 

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_d5_evidence.mjs",
+  "generated_at": "2026-11-09T13:24:00.000Z",
+  "spec": "docs/specs/D5-measurement.md",
+  "mode": "live",
+  "self_test": false,
+  "d5_verdict": "pending",
+  "counts_as_demand": false,
+  "window": {
+    "posted_on": "2026-11-01T20:24:37.000Z",
+    "ends_at": "2026-11-15T20:24:37.000Z",
+    "closed": false,
+    "days_left": 7
+  },
+  "numbers": {
+    "reactions": {
+      "value": 0,
+      "state": "measured",
+      "threshold": 10,
+      "met": false
+    },
+    "external_references": {
+      "value": 0,
+      "state": "measured",
+      "threshold": 1,
+      "entries": [],
+      "met": false
+    },
+    "weekly_downloads": {
+      "value": 706,
+      "state": "measured",
+      "shape": "steady",
+      "threshold": 20,
+      "met": true
+    }
+  },
+  "post": {
+    "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11813",
+    "number": 11813,
+    "author": ""
+  },
+  "sources": {
+    "reactions": "graphql",
+    "references": "search-api",
+    "downloads": "market-baseline-2026-11-09T13-21-11.540Z.json"
+  },
+  "inputs": {
+    "fixtures": null,
+    "baseline": "market-baseline-2026-11-09T13-21-11.540Z.json",
+    "baseline_kind": "explicit",
+    "reaction_types": {
+      "THUMBS_UP": 0,
+      "THUMBS_DOWN": 0,
+      "LAUGH": 0,
+      "HOORAY": 0,
+      "CONFUSED": 0,
+      "HEART": 0,
+      "ROCKET": 0,
+      "EYES": 0
+    },
+    "references_seen": 3
+  },
+  "limits": [
+    "reactions is totalCount: every reaction type counts 1, the breakdown is recorded but not weighted",
+    "the search API does not index discussions, so a reference written inside a discussion comment is invisible to this number",
+    "weekly downloads is read from a market-baseline artifact and re-checked against its own daily series; it is not fetched here",
+    "this artifact answers \"did the three numbers reach their thresholds by the window\", not \"is the product good\""
+  ]
+}
