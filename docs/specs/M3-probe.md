@@ -88,7 +88,7 @@
 | # | 事实 | 怎么测的 |
 |---|---|---|
 | F52 | **探针自己的临时目录失败会被判成插件失败**：`bootAndSampleHost` 里 `rmSync(probeDir)` 抛 `EPERM`（Windows 持有句柄）→ 异常逃出 → 执行器把它记成失败的 `boot` 步 → 判据只剩「没有样本 + 没打印 URL + 没 `startup failed`」这一条路 → `probe.boot-timeout` → **`blocked`**。真实见证：`real-unlag@1.12.5` 在一批 idle 矩阵里被记成 `blocked`，`boot.detail` 是 `EPERM, Permission denied: …\triage-live-…`。修法：scratch 的准备与删除失败都**记录不抛**（`setupError` / `scratchCleanupError`），执行器把 `boot` 步的异常也记成 `bootSetupError`，判据新增 `probe.measurement-unavailable` → `unknown` + `missing.probe`；顺手让「清理失败」不再销毁已经拿到的样本 | `data/results/probe-matrix-2026-10-29T15-30-00.000Z.json`（`real-unlag`，唯一见证；此后再没复现）· 单测 `tests/unit/probe-exec.test.ts` N24 / N24b |
-| F53 | **有载（8 个 CPU-busy worker / 24 逻辑核，实测 58–62% 占用）把 `boot→sample` 中位数从 5.1s 抬到 7.4s**（空载 4.4–11.8s / 有载 5.8–8.3s），**但没有一次越过 20s**，13 个真实候选的结论也没有变（唯一例外是上面那条探针自身故障）。同时有载批 40 次里出现 **1 次子进程直接崩掉（`0xC0000409`，635ms，无任何输出）**，空载 40 次里 0 次——所以「有载会不会让探针更不可靠」的答案是「会，但那一次没被归因」 | `record_probe_matrix.mjs --load 8` 的 `load.observed_busy_percent`（`os.cpus()` 累计时间差，`os.loadavg()` 在 Windows 恒为 0）· `data/results/stability-2026-10-29T16:30-00.000Z.json` 的 `conditions[]` |
+| F53 | **有载（8 个 CPU-busy worker / 24 逻辑核，实测 58–62% 占用）把 `boot→sample` 中位数从 5.1s 抬到 7.4s**（空载 4.4–11.8s / 有载 5.8–8.3s），**但没有一次越过 20s**，13 个真实候选的结论也没有变（唯一例外是上面那条探针自身故障）。同时有载批 40 次里出现 **1 次子进程直接崩掉（`0xC0000409`，635ms，无任何输出）**，空载 40 次里 0 次——所以「有载会不会让探针更不可靠」的答案是「会，但那一次没被归因」 | `record_probe_matrix.mjs --load 8` 的 `load.observed_busy_percent`（`os.cpus()` 累计时间差，`os.loadavg()` 在 Windows 恒为 0）· `data/results/stability-2026-10-29T16-30-00.000Z.json` 的 `conditions[]` |
 
 **F52 是产品级发现**：它证明「测量失败 ≠ 插件失败」这条纪律在**清理路径**上还没落地（R17 只覆盖了端口与 hook），而清理失败恰恰是 Windows 上最常见的一种。
 

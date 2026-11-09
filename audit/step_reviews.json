@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R91 (2026-11-09)",
+  "stand": "R92 (2026-11-09)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -12576,7 +12576,7 @@
         "correctness": "PASS：三处漂移各有可复算的定义。(a) §2 的五条「R67–R74 的批次行」逐字节相同（归档/合并脚本断言 `distinct.size === 1`），合并成一行后三个归档文件各被点名**一次**；(b) §2 实际有 16 条批次行，而它的自述口径是「只留最近十轮（R76–R86）」——那是 11 轮；按 R38 起的一贯口径真裁到 **R77–R86**（R85/R87 是交接轮，本来就没有批次行）；(c) 规模行写 611 测试 / 334 产物 / 355 步 / 53 盲区 / 6 角色卡，仓库实算 **805 / 486 / 509 / 60 / 7**。**算术与排版改动不改变任何结论**：判据、阈值、`admission.ts`、四桶、`improved` 五门槛、`data/gold/`、20s / settle / readiness / 9 门一字未动。",
         "reproducibility": "PASS：归档用脚本搬而不是手抄，守卫四条——四行各命中恰好一次且位置必须是 37..40；五条重复指针必须逐字节相同；搬走后行数恰好 −9；编辑块两侧逐字节不变。搬完对 `git show HEAD:docs/HANDOFF.md` 逐行比对 **4/4 IDENTICAL**（930 / 928 / 1098 / 1411 字符）。数字侧新增 `tests/governance/handoff-scale-line.test.ts`：从 README 徽章、`scripts/gate_*.mjs`、`.agents/roles`、`.agents/prompts`、`data/cases`、`data/gold`、`data/results`、`audit/step_reviews.json`、`audit/blind_spots.json` 实算九个计数并要求规模行逐项写出；`pnpm run verify` 复跑即复算。",
         "licence": "PASS：只动本仓自己的文档、归档与一个测试文件；没有引入第三方文本或数据，`quarantine/vendor-manifest.json` 无需登记（本轮没有外部产物）；归档内容是本仓历史原文，许可仍是 MIT。",
-        "ssot": "PASS：本轮唯一新 SSOT 是 `data/results/listing-2026-11-05T15-50-00.000Z.json`（+ `.sha256`）：`produced_by: scripts/check_listing.mjs`、`generated_at` 齐全、**17/17 PASS**，换一个 `--stamp` 即可重跑。**没有手填任何 `data/results` 数字**；规模行的每一个数字都由上面那条治理测试从仓库复算，不由人记。",
+        "ssot": "PASS：本轮唯一新 SSOT 是 `data/results/listing-2026-11-05T16-20-00.000Z.json`（+ `.sha256`）：`produced_by: scripts/check_listing.mjs`、`generated_at` 齐全、**17/17 PASS**，换一个 `--stamp` 即可重跑。**没有手填任何 `data/results` 数字**；规模行的每一个数字都由上面那条治理测试从仓库复算，不由人记。",
         "adversary": "三条负对照各自真红后逐字节还原：**N1** 把 486 改成 485 → 断言报「must say \"486 份 SSOT 产物\" — recomputed 486 from data/results/*.json」；**N2** 把整行删掉 → 报「must carry a \"| 规模 |\" row」（红的原因与 N1 不同，不是同一个断言兜住两种破坏）；**N3** 归档保真 → 对 `HEAD` 逐行比 **4/4 IDENTICAL**。**残留边界如实写**：归档之后没有任何门禁**持续**校验「归档文件 = 历史原文」，目前只有 git 本身能证明，这一条靠 `git show HEAD:` 手工复核；要机械化就得让门禁读 git，与「门禁零第三方依赖、零网络」的约束要另行设计。另：规模行的产物数会随 `gate.mjs --record` 增加，届时断言会红并逼着改这一行——这是设计意图（同步规则 8 机械化），不是抖动。"
       },
       "real_test": {
@@ -13139,6 +13139,63 @@
         "artifact": "data/results/publish-2026-11-09T15-55-00.000Z.json",
         "outcome": "ok true · 18/18 · latest=0.3.5 on all four · anonymous-install exit 0（944ms）· git_dirty=false",
         "sha256": "e5631e8dbfeb5790091fac0192ecea3989fc5d9c0d01e741be6733cf21f54e82"
+      }
+    },
+    {
+      "id": "R92-S1",
+      "batch": "R92",
+      "step": "T-866：一屏上的「重复不同版本」只留能撞的，13 条库副本不再占位（判据轮）",
+      "changed": [
+        "docs/specs/M12-surface-scope.md",
+        "packages/core/src/duplicates.ts",
+        "packages/plugin/src/load.ts",
+        "packages/plugin/src/audit-data.ts",
+        "tests/unit/duplicates.test.ts",
+        "scripts/record_mutation_controls.mjs",
+        "data/results/mutation-controls-2026-11-09T16-30-00.000Z.json",
+        "data/results/mutation-controls-2026-11-09T16-30-00.000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：真机 13 条 duplicate，**0 条 bundle、0 条 `@deepseek-ai/dsh*`**，于是新增 `surface` 判据并让扫描层与判定层各认一次（`M12-N1` / `M12-N2`）。真机结果：`duplicateCopies` 13 → 0、issues 从 5 条 duplicate 变成 5 条 `unknown`（含一条真问题：`cc-safety-net` 引用的 `./index.js` 不存在）。**没有**顺手改对外说过的话——嵌套的 `@deepseek-ai/dsh-*` 仍然报（`M12-N4`），既有 8 条 duplicate 单测一条未改。",
+        "reproducibility": "PASS：取证脚本只读、在 Electron in-Host 里跑；判据由 5 条新单测 + 1 条扫描层单测覆盖（`mkdtemp` 造两版三包）；变异对照 `node scripts/record_mutation_controls.mjs --stamp …` 一次跑完 18 条，逐字节还原。",
+        "licence": "PASS：只读本机 profile 与仓内代码，零网络、无第三方内容。",
+        "ssot": "PASS：`duplicates[]` 一条不删、每条带 `surface`；消失的只有一屏 issues 与 `why` 的 `collision-duplicate-copy`。`counts.duplicateCopies` 数 finding，与它下面那张表保持一致（否则就是「标题说 13、表里 0 行」）。",
+        "adversary": "反例一：直接删掉 duplicate 检测 —— 那会掩掉 #10364 那类真重复，本轮只是把「能不能撞」这一层加上。反例二：把 `surface:false` 也从 `duplicates[]` 移除 —— 那就变成删数据，本轮保留。反例三：只改扫描层不改判定层 —— `M12-N2` 就是这条，红。反例四：把缺省 `surface` 当成「不算」 —— `M12-N3` 红。"
+      },
+      "real_test": {
+        "command": "node scripts/record_mutation_controls.mjs --stamp 2026-11-09T16:30:00.000Z",
+        "artifact": "data/results/mutation-controls-2026-11-09T16-30-00.000Z.json",
+        "outcome": "NEGATIVE CONTROL PASSED · 18/18 · 18/18 restored byte-identical（M10 × 5 · M11 × 9 · M12 × 4）",
+        "sha256": "ceb67ce4ff3858ca2bc1cefd46af04b61f86eb36d96849fd8cf4c317d2c27bdd"
+      }
+    },
+    {
+      "id": "R92-S2",
+      "batch": "R92",
+      "step": "T-867 结案（前提被真机推翻）+ §2 裁到 R83–R92 + 指向修正与孤儿检查",
+      "changed": [
+        "docs/BACKLOG.md",
+        "docs/specs/M12-surface-scope.md",
+        "_archive/2026-11-09_HANDOFF-batch-rows-R80-R82.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "docs/HANDOFF.md",
+        "audit/step_reviews.json",
+        "data/results/listing-2026-11-09T16-50-00.000Z.json",
+        "data/results/listing-2026-11-09T16-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：`T-867` 的原假设是「那 90 条 unknown 来自内核 layer」。真机读数 `declared by kernel 0 · declared by profile 90`，全部是 `row-unconstrained`（89）/ `row-missing`（1）——**假设不成立**，结案为「不是缺陷」，不产生任何判据改动。归档按 R38 起的一贯口径：新增 R92 后 §2 覆盖 R80–R92 共 12 轮，裁到 **R83–R92**。",
+        "reproducibility": "PASS：归档是**逐行原文**抽取（脚本按前缀取整行，不重排、不摘要），`_archive/2026-11-09_HANDOFF-batch-rows-R80-R82.md` 可与 `git show <commit>:docs/HANDOFF.md` 逐字节比对；`ARCHIVE_MANIFEST` 新增一行说明来源与原因。",
+        "licence": "PASS：只搬本仓自己的文档与 `_archive/` 目录，无第三方内容、无网络请求、不涉及任何外部许可证。",
+        "ssot": "PASS：归档后 §2 只剩 1 条「归档口径」指针（列出所有归档文件），不再每轮叠一行；知识没有丢，位置变了。 收尾又做了一次全仓指向扫描（1867 个文件）：**markdown 孤儿 2 → 0**、**`data/results` 死指向 8 → 0**（多数是时间戳笔误：`16:30-00`、`…22-00-00.000Z` 少一个连字符；`listing-…15-50-00` 是 ledger 正文写错、它自己的 `real_test.artifact` 一直是对的）。修正只改字符串，不改任何结论；`check_listing --tests 857` 18/18 是这次修正后的证据。",
+        "adversary": "反例一：把 unknown 直接改成「不算问题」让一屏变绿 —— 那是对没测过的东西下结论，本轮**没有**这么做（unknown 仍是 unknown，只是被证明不是内核带来的）。反例二：归档时顺手改字数 —— 逐行抽取，没有改写。反例三：只删行不登记 MANIFEST —— 治理层会红，且等于丢证据。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-09T16:50:00.000Z --tests 857",
+        "artifact": "data/results/listing-2026-11-09T16-50-00.000Z.json",
+        "outcome": "passed（10 document(s) · version 0.3.5 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 857）",
+        "sha256": "5efea61dd43427cca021b83cfd1902095548f7445649ef52c83e8fd8379436a8"
       }
     }
   ]

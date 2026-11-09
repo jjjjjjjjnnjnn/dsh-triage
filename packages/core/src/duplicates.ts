@@ -36,6 +36,20 @@ export interface DuplicateCopy {
   readonly copies: readonly CopyLocation[]
   /** `different-versions` is the dangerous one; identical versions are the normal pnpm picture. */
   readonly kind: 'different-versions' | 'same-version'
+  /**
+   * Whether a second copy of THIS package can collide at all (T-866, R92).
+   *
+   * `false` for a plain library (`@babel/runtime`, `semver`, `ws`): two patch versions of a
+   * transitive dependency are what a hoisted node_modules looks like on every machine, and DSH's
+   * loader never sees them — it resolves bundles and their entry ids, not arbitrary packages.
+   * `true` for a package that is one of the profile's `dsh.profile.bundles`, or one of the
+   * harness's own `@deepseek-ai/dsh*` packages, because a second copy of those is exactly the
+   * identity-split failure in discussion #10364.
+   *
+   * Absent means "not stated" and is treated as a finding: a hand-built duplicate should not be
+   * silently downgraded by a missing field.
+   */
+  readonly surface?: boolean
 }
 
 export interface DuplicateCopyInput {
@@ -55,6 +69,13 @@ export interface DuplicateCopyInput {
 export function verdictsFromDuplicateCopies(input: DuplicateCopyInput): readonly Verdict[] {
   const out: Verdict[] = []
   for (const duplicate of [...input.duplicates].sort((left, right) => left.name.localeCompare(right.name))) {
+    /*
+     * T-866 / R92: a duplicate is only a finding when the package can collide at all. A library
+     * that merely happens to exist twice is counted in `audit --json#duplicates` but never becomes
+     * a reason — otherwise every real machine opens on five "issues" about `@babel/runtime` and
+     * learns to skip the list that exists to be read.
+     */
+    if (duplicate.surface === false) continue
     // Never trust the caller's classification: recompute from the copies. A single
     // copy is not a duplicate, and one version in two roots is the normal pnpm
     // picture (hard link), so neither may become a finding. An unknown version is

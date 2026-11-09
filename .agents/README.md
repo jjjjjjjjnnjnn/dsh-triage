@@ -26,6 +26,9 @@
 | `copywriter.md` | 把工程侧的事实包写成可发的文案（Gemini） | 禁发明数字、禁决定发布、禁改判据 |
 
 并发规则见 `.agents/rules/agent_collaboration.md`；对抗性要求见 `.agents/rules/adversarial_review.md`。
+**另两份常设规则**：`.agents/rules/integrity.md`（什么算证据、什么算没做）与
+`.agents/rules/reproducibility.md`（别人凭什么能重算出同一个数）。这两份不是可选读物——
+每一轮的产物都要按它们自检。
 
 ## 3. 三个模板（`.agents/prompts/`）
 

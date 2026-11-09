@@ -382,6 +382,7 @@ export async function findDeclarers(
  */
 export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly DuplicateCopy[]> {
   const sharedModules = join(dirname(env.profileDir), 'node_modules')
+  const bundles = new Set(env.bundles)
   const copies = new Map<string, CopyLocation[]>()
 
   const add = (pkg: InstalledManifest, scope: CopyLocation['scope']): void => {
@@ -413,9 +414,28 @@ export async function findDuplicateCopies(env: EnvFingerprint): Promise<readonly
       name,
       copies: [...list].sort((left, right) => left.path.localeCompare(right.path)),
       kind: 'different-versions',
+      /*
+       * T-866 / R92: measured on a real machine, 13 of 13 duplicates were plain libraries
+       * (`@babel/runtime`, `semver`, `ws`, …) and not one was a bundle or a harness package. They
+       * stay in the scan (the count is real) but they are not findings: two patch versions of a
+       * transitive dependency is what a hoisted node_modules looks like everywhere.
+       */
+      surface: canSurfaceInDsh(name, bundles),
     })
   }
   return duplicates
+}
+
+/**
+ * Can a second copy of this package actually collide inside DSH?
+ *
+ * Yes for the profile's own bundles (their entry ids are what the loader composes) and for the
+ * harness's `@deepseek-ai/dsh*` packages (a second copy of those is the identity-split failure in
+ * discussion #10364). No for anything else: DSH never resolves an arbitrary library by name.
+ */
+function canSurfaceInDsh(name: string, bundles: ReadonlySet<string>): boolean {
+  if (bundles.has(name)) return true
+  return name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-')
 }
 
 async function listInstalledPackages(root: string): Promise<readonly InstalledManifest[]> {

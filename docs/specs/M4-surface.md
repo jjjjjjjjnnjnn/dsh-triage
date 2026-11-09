@@ -37,7 +37,7 @@ CLI 已经能回答「装不装 / 为什么坏 / 实测结果」，但三个场�
 **一句话**：`dsh-triage serve` 起一个只在 `127.0.0.1` 上的小面板，把「已装集合 / 最近一次 probe / SSOT 证据」渲染成可点的页面，并能一键重跑某条命令。
 
 > **状态（R16）**：**v0 已交付** —— 零依赖、token 鉴权、跨源拒绝、POST 403（`--allow-execute` 也只回 501）；当前只列 `data/results` 的产物与 sha256，**还没有** `/api/audit`（见 T-406）。
-> 冒烟证据：`data/results/serve-smoke-2026-10-27T14-12-16.000Z.json`（8/8）；单测 `tests/unit/serve.test.ts`（6 条）。
+> 冒烟证据：`data/results/serve-smoke-2026-10-27T14-16-05.000Z.json`（8/8）；单测 `tests/unit/serve.test.ts`（6 条）。
 >
 > **状态（R19 / T-406）：v1** —— 新增 `GET /api/audit`（**默认关闭**，`--audit` 才开；关闭时回 **501**、读不到 profile 时回 **409**、绝不用空账本冒充「没有问题」）。数据来自**同一份** `loadAuditData()` + `auditJsonPayload()`（`packages/plugin/src/audit-data.ts`），所以面板与 `audit --json` 不是「两套实现」。冒烟 `serve-smoke-2026-10-28T10-20-00.000Z.json`（13/13，含 `/api/audit` 501 / 200 / 与 CLI 逐条一致 / token 与端口不入产物）。
 

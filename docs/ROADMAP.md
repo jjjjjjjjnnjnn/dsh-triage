@@ -1,6 +1,6 @@
 # ROADMAP · 分诊台（dsh-triage）
 
-> **Stand**: R91 (2026-11-09) | 上游基线 `@deepseek-ai/dsh`：`latest` = 0.2.1-rc.5 · `next` = **0.2.2-rc.1**（R79 实测；仓内沙盒仍停在 0.2.1-rc.4）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
+> **Stand**: R92 (2026-11-09) | 上游基线 `@deepseek-ai/dsh`：`latest` = 0.2.1-rc.5 · `next` = **0.2.2-rc.1**（R79 实测；仓内沙盒仍停在 0.2.1-rc.4）｜品牌：**分诊台 / Triage**｜仓库：`dsh-triage`
 > 本文件是**唯一**执行计划（R14 / T-110 起）：判据细节以 `docs/specs/*` 为准；原先并列的 `docs/06-roadmap.md` 已归档到 `_archive/2026-10-28_06-roadmap-merged-into-ROADMAP.md`，其增长阶梯/分发清单/指标并入本文件 §7。
 > **R47 重定向**：正门从「通用检查器」改为「**升级日**」。依据是外部取证（`data/results/market-baseline-2026-10-29T12-20-00.000Z.json`）：诊断类目周下载天花板 **1,988**（市场类 380,240 / 装饰类 411,844）；同时上游最近 842 条 Discussions 里故障帖 **49.2%**、其中 **67.2% 零回复**。痛点真、形态错 → 换触发时刻，不换判据。
 
@@ -96,7 +96,7 @@
 
 > **D3 现状（R53，2026-11-01）**：**1/2 家**。dsh.so **已收录**（三个 per-plugin JSON 端点 200，`indexedAt = 2026-10-29T09:49Z`，`L5 · Run tested`（`0.2.1-rc.5` passed）、security `audited` / `riskLevel: low`；`data/results/market-channels-2026-11-01T09-40-00.000Z.json`）——但**收录不等于有人用**，它不产生下载，D5 的判据里没有这一项。另外三家仍是 PR：**#65 现在 `DIRTY`**（与上游 `main` 冲突，`T-821` 要先 rebase，否则永远合不了）、#193 `APPROVED` + `CLEAN` 等维护者、#140 `CLEAN` 无 review。**读法边界**：L5 是 dsh.so 在它自己的干净沙盒里的一次实测，不能读成「在你的机器上能用」（`BS-06`）。
 
-> **D5 现状（R56，2026-11-01）**：**样本已投放，正在计时** —— 帖子 `https://github.com/deepseek-ai/deepseek-harness/discussions/11813`（Show Your Plugins!，`createdAt 2026-11-01T20:24:37Z`），窗口到 **`2026-11-15T20:24:37Z`**。首跑（`data/results/d5-evidence-2026-11-01T22-00-00.000Z.json`）**`pending`**：reactions **0/10** · 外部引用 **0/1** · 周下载 **634** 但 `download_shape = single-day-burst` → **不算需求**（`counts_as_demand = false`）。**读数口径已由 HUMAN 签字**（`audit/SIGNOFF.md` R54 行），窗口内任何一次重跑都用同一条命令、同一个口径。
+> **D5 现状（R56，2026-11-01）**：**样本已投放，正在计时** —— 帖子 `https://github.com/deepseek-ai/deepseek-harness/discussions/11813`（Show Your Plugins!，`createdAt 2026-11-01T20:24:37Z`），窗口到 **`2026-11-15T20:24:37Z`**。首跑（`data/results/d5-evidence-2026-11-01T22-00-00-000Z.json`）**`pending`**：reactions **0/10** · 外部引用 **0/1** · 周下载 **634** 但 `download_shape = single-day-burst` → **不算需求**（`counts_as_demand = false`）。**读数口径已由 HUMAN 签字**（`audit/SIGNOFF.md` R54 行），窗口内任何一次重跑都用同一条命令、同一个口径。
 >
 > **D5 下载项第一次读到 `steady`（R75-P1，2026-11-03）**：`data/results/market-baseline-2026-11-03T06-22-20.130Z.json` 里 `dsh-triage` **周下载 1035 · `download_shape = steady` · 4/7 天有下载 · 峰值 61.3%** → 按冻结口径 `threshold-met`。**这不是 D5 达标**，两条边界必须一起读：① 日序列 `0 0 0 / 634 / 192 / 17 / 192` 是 **10-29 爆发的回声**（两个 192 同值），`BS-48` 写明 `steady` 不等于人；② 这份基线的窗口是 **`10-26..11-01`**，只有 `11-01` 落在 D5 窗口内，reactions **0/10** 与外部引用 **0/1** 仍是 0，`verdict` 仍是 **`pending`**。**为什么必须在 11-08 之前再跑一次**：npm `last-week` 是滚动 7 天，关窗那天只能看见 `11-08..11-14`，窗口前 7 天会永久缺失。
 

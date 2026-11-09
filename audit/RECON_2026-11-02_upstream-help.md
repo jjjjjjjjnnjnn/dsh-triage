@@ -2,7 +2,7 @@
 
 > **样本**：12 条（`#11687 #11458 …` 见下表），来自 `deepseek-ai/deepseek-harness` Discussions 的关键词检索
 > （「插件消失 / 无法启动 / incompatible / plugin not found / 升级之后」五组查询，取并集，2026-10-11 至 11-01）。
-> **产物**：`data/results/discussion-triage-2026-11-02T11-30-00-000Z.json`（`5485b240…`）
+> **产物**：`data/results/discussion-triage-2026-11-02T12-10-00-000Z.json`（`5485b240…`）
 > **原始快照**：`data/fixtures/discussions/2026-11-02T11-30-00-000Z.json`（可 `--fixtures` 离线复算，rows/counts/answers 逐项相同）
 > **脚本**：`scripts/record_discussion_triage.mjs` + 纯函数 `scripts/lib/discussion-triage.mjs`（6 条单测）
 

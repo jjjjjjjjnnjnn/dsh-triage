@@ -95,7 +95,10 @@ export async function loadAuditData(input: AuditLoadInput): Promise<AuditLoad> {
   const collisions = findEntryIdCollisions(claims)
   const artifacts = await discoverLocalArtifacts({ root: input.env.profileDir })
   const duplicates = await findDuplicateCopies(input.env)
-  const duplicateFindings = duplicates.filter((duplicate) => duplicate.kind === 'different-versions')
+  // T-866: only copies that can collide are findings; the rest stay in `duplicates` as counts.
+  const duplicateFindings = duplicates.filter(
+    (duplicate) => duplicate.kind === 'different-versions' && duplicate.surface !== false,
+  )
   // Resolving rows here is what lets `audit` answer "who put this copy here" for
   // every row, not only for the denied ones (R8 adversary finding F11).
   const rows = await resolveRows(input.env, rowTargetsOf(claims))
@@ -199,6 +202,9 @@ export function auditJsonPayload(
     duplicates: data.duplicates.map((duplicate) => ({
       name: duplicate.name,
       kind: duplicate.kind,
+      // T-866: `surface: false` means "counted, not a finding" — said out loud so the JSON cannot
+      // be read as "13 problems" when 13 libraries merely exist twice.
+      surface: duplicate.surface !== false,
       copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
     })),
     preset_declarations: data.presetDeclarations.map((declaration) => ({
