@@ -83,10 +83,11 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **857 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 不满足即环境不可信——**先修基线，不叠加新功能**。
 
-**接手时的工作区预期**：**干净**，且 **`main` 与 `origin/main` 一致**。R91/R92 的五个提交已推上
-（`f620d9a..<本文件所在提交>`），交接快照 `backup/snapshots/snapshot-0.3.5-handoff-R92-final.json`
+**接手时的工作区预期**：**干净**，且 **`main` 与 `origin/main` 一致**（R91 三件 + R92 四件；最后一个提交就是这份交接文档）。
+交接快照 `backup/snapshots/snapshot-0.3.5-handoff-R92-final.json`
 （`version 0.3.5 · head be2c38d · dirty false · gates green · 9 · ssot 508`；同轮还有一份 `…-R92.json`，
-拍在文档提交之前，`head 4ddf82d`——两份都是真的，别以为其中一份是漂移）。
+拍在文档提交之前，`head 4ddf82d`——两份都是真的，别以为其中一份是漂移；快照的 `head` 永远比「装着快照的那个提交」
+早一步，这是构造使然，不是落后）。
 **下次接手先跑 `git log --oneline origin/main..HEAD`（预期空）**，不要只信这一行——R88/R89 曾经在本地停了
 两轮而这份文件写着「一致」，那句话当时是假的。若又出现未提交改动，**先问来源**：人类宣传物料
 （`docs/distribution/T-810/03-x-en.md`、`docs/distribution/reddit-and-hn-posts.md`、两份 README 与上架文案）
