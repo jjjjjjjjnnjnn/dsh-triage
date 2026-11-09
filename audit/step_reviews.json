@@ -13117,6 +13117,29 @@
         "outcome": "FAIL：root-manifest + version ×4 + dist-tags-agree 六项红，而同一份产物里 anonymous-install 在 315092ms 后 PASS —— 发布是成功的，取证读早了",
         "sha256": "26d51210992b1671d78cf92c69f89b55b84fce17fa3b71f21c7922772fe4fcaa"
       }
+    },
+    {
+      "id": "R91-S8",
+      "batch": "R91",
+      "step": "0.3.5 发布取证（修好读侧等待之后，干净树上重跑）",
+      "changed": [
+        "data/results/publish-2026-11-09T15-55-00.000Z.json",
+        "data/results/publish-2026-11-09T15-55-00.000Z.json.sha256",
+        "audit/step_reviews.json"
+      ],
+      "review": {
+        "correctness": "PASS：18/18，`git_dirty=false`，`git_head 33e6afc`。四包 `latest` 全部指向 `0.3.5`；匿名安装 exit 0（本次 944ms，因为上一轮已经等过副本，说明等待确实只需要一次）；`cli-runs` 16 命令行、`module-resolves` 五个导出、`client-bundle` 39911B + `slot=settings.plugins.tab` 都在。",
+        "reproducibility": "PASS：`node scripts/record_publish.mjs --stamp 2026-11-09T15:55:00.000Z`，只读 registry + 一个临时目录里的匿名 `npm install`；产物带 `registry` / `dist_tags` / `install`（含 `attempts` / `waited_ms` / `wait_budget_ms`）与 `.sha256`，换 stamp 即可重跑。",
+        "licence": "PASS：只读 npm registry 与本仓产物。",
+        "ssot": "PASS：与 `R91-S7` 的红件成对 —— 同一组 check id、同样的命令，一份红一份绿，区别只有「读之前等没等」。`git_dirty=false` 是因为这一次跑在干净的 `33e6afc` 上（红件那次也是）。",
+        "adversary": "反例一：拿 `R91-S7` 的红件当「发布失败」写进文档 —— 四包当时已经发出去了，写成失败就是误报，本轮明确写成「发布成功、取证读早了」。反例二：只保留绿件 —— 那会抹掉「等待装错了位置」这条唯一的现场，红件保留。反例三：把 `git_dirty` 改写成 false —— 没有改，它是脚本自己算的。"
+      },
+      "real_test": {
+        "command": "node scripts/record_publish.mjs --stamp 2026-11-09T15:55:00.000Z",
+        "artifact": "data/results/publish-2026-11-09T15-55-00.000Z.json",
+        "outcome": "ok true · 18/18 · latest=0.3.5 on all four · anonymous-install exit 0（944ms）· git_dirty=false",
+        "sha256": "e5631e8dbfeb5790091fac0192ecea3989fc5d9c0d01e741be6733cf21f54e82"
+      }
     }
   ]
 }
