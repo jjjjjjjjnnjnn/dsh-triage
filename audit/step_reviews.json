@@ -13553,6 +13553,27 @@
         "ssot": "PASS：S15 引用本产物；规模行随之为 523 / 547。**注意**：把这份产物提交进去之后，HEAD 又会前移一格，公开仓相对它又落后一提交——这是「证据在它描述的树里」的下界，R93 已在 HANDOFF 里写成构造而非漏推。",
         "adversary": "反例：① 想彻底消掉那一格 → 只能把产物排除在树外，等于让证据不可复算；② 把「public 比 origin/main 早一刀」读成有人 force push → 推的输出每次都是 `a..b` 的 fast-forward，历史未被改写；③ 认为 `in-sync` 覆盖容器仓 → 容器仓 `origin/main` 仍落后一整批，这是两件事。"
       }
+    },
+    {
+      "id": "R93-S16",
+      "batch": "R93",
+      "step": "把本轮「先切树后提交」的顺序错误与两次执行器故障如实写进披露台账，并说明它们是重试而非绕过",
+      "changed": [
+        "audit/AI_DISCLOSURE_LOG.md"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --fast",
+        "outcome": "ALL GREEN · 6 gates（含 governance / no-orphan-results / step-review 与 547 步台账）。披露条目本身没有可执行断言，它由这条门禁链保证「台账与人读到的文档同步」，而不是靠自证。",
+        "artifact": "data/results/listing-2026-11-10T20-02-00.000Z.json",
+        "sha256": "70d1ae003a8e7794e0266a5a49dbc245b251be0c961f58a5ea3c26f1acb38bc5"
+      },
+      "review": {
+        "correctness": "PASS：披露写的是可核对的事实——四次 `public-cut` 读数、每刀 `git push` 的 fast-forward 输出、以及 `EXECUTOR_UNAVAILABLE` 的重试处置；没有把「重试成功」写成「一次就成」。",
+        "reproducibility": "PASS：任何一条都能用 `git log` / `git reflog` / `data/results` 里的产物复核；披露里不含只有本机才看得见的状态。",
+        "licence": "PASS：只描述本轮操作，不引用第三方材料。",
+        "ssot": "PASS：复用了既有的 listing-20-02 产物作为 real_test（没有为了这条台账再造一份重复证据），`no-orphan-results` 仍全绿。",
+        "adversary": "反例：① 把顺序错误写成「环境问题」→ 那是我自己的顺序错误，环境没参与；② 把执行器故障写成「已绕过」→ 实际是按提示重试，绕过是不允许的；③ 用一条自证式 `echo` 当 real_test → 台账要求指向 `data/results/` 下带 sha256 的真实产物。"
+      }
     }
   ]
 }
