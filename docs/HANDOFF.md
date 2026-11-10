@@ -83,9 +83,14 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **876 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 不满足即环境不可信——**先修基线，不叠加新功能**。
 
-**接手时的工作区预期**：**`dsh-triage/` 干净**（R93 这批提交已经落在本地 `main` 上），但**容器仓 `origin/main` 仍落后一整批**（R93 收尾时 19 个，随后的提交会让它继续变大，别记死这个数）；**公开仓 `jjjjjjjjnnjnn/dsh-triage` 已经推到 `0bb3ef3`，那是 R93 收尾时 `dsh-triage/` 子树的切面**（`data/results/public-cut-2026-11-10T20-12-00.000Z.json` = `in-sync`、`trees_equal true`、`cut at 7d430ac`、`behind 0`；之前两份 `public-cut-18-50`（推前 `79a55cd`）与 `19-56`（`d8c7c6c`）各自是那一刻的真值，都在，别以为哪份漂移；**切面永远比「装着这份文档的那个提交」早一格**——`public-cut` 的产物自己也在树里，所以最后一次切+推只能在终稿提交之后发生，那一格差是构造使然，不是漏推），所以「两个仓都没 push」这句话已经过期，别再抄。容器仓里的 `dsh-remedy` 仍未 push，推不推是 HUMAN 的事。
+**接手时的工作区预期**：**`dsh-triage/` 干净**（R93 这批提交已经落在本地 `main` 上），但**容器仓 `origin/main` 仍落后一整批**（R93 收尾时 19 个，随后的提交会让它继续变大，别记死这个数）；**公开仓 `jjjjjjjjnnjnn/dsh-triage` 是 `dsh-triage/` 子树的切面，且每次都切在「当时最新那个提交」上**。
+不记 sha：记死的 sha 在下一行提交时就过期，R93 因此改了两次（读者拿旧 sha 去复算旧产物，两份都「真」却是两个时刻）。
+要现在到底一刀切在哪：跑 `node scripts/record_public_cut.mjs`，`data/results/` 里最新那份 `public-cut-*.json` 就是答案（`status: in-sync`、`cut at <commit>`、`behind 0`）；`git rev-parse origin/main^{tree}` 与 `git rev-parse <commit>:dsh-triage` 必须相等。
+**切面永远比「装着这份文档的那个提交」早一格**：产物在它描述的树里，所以最后一次「切+推」只能发生在终稿提交之后——那一格差是构造使然，不是漏推。
+另有一处历史：`public-cut-2026-11-10T18-50-00.000Z.json`（推前、`79a55cd`）、`19-56`（`d8c7c6c`）、`20-12`（`0bb3ef3`）三份各自是那一刻的真值，都在，别读成漂移。
+容器仓里的 `dsh-remedy` 仍未 push，推不推是 HUMAN 的事。
 交接快照 `backup/snapshots/snapshot-0.3.5-handoff-R93-final.json`
-（`version 0.3.5 · head 8533c59 · dirty true · gates green · 9 · ssot 515`；上一份是 `snapshot-0.3.5-handoff-R92-final.json`，
+（`version 0.3.5 · head 8533c59 · dirty true · gates green · 9 · ssot 515`——**515 是那一刻**，R93 收尾后现为 `规模` 行的 521 / 545，以规模行为准；上一份是 `snapshot-0.3.5-handoff-R92-final.json`，
 `head be2c38d` / `ssot 508` / `dirty false`——两份都是真的，别以为其中一份是漂移；快照的 `head` 永远比「装着快照的那个提交」
 早一步，这是构造使然，不是落后）。**R93 这份为什么是 `dirty true`**：脚本先量 `git status --porcelain` 再写文件，
 量的时候这份交接文档的改动还没提交、快照文件也还没进树；`head 8533c59` 用的是那一刻容器仓的 HEAD（当时 `dsh-remedy`
