@@ -13488,6 +13488,28 @@
         "ssot": "PASS：`passed: true` 是检查器写进产物的，不是我在台账里宣称的；旧那份 19:43 产物**没有删**，它是那一刻的真值，两份并存不构成漂移。",
         "adversary": "反例：① 只在台账写「重跑过了」而不落产物 → `no-orphan-results` 不红，但这份声明没有任何可复算的支撑，等于手填；② 把新 stamp 复用 19:43 → `writeEvidence` 拒绝覆盖，会静默得到旧读数；③ 认为「17/17 PASS」等于「维护者会接受」→ 产物 limits 里明确写着它只证明条目格式合法。"
       }
+    },
+    {
+      "id": "R93-S13",
+      "batch": "R93",
+      "step": "把「提交后的 HEAD」再切一次公开仓（前一刀切在提交之前，所以提交里记的 sha 会立刻落后一格），并用新的 public-cut 产物证明两侧等树",
+      "changed": [
+        "docs/HANDOFF.md",
+        "data/results/public-cut-2026-11-10T20-12-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree $(git rev-parse HEAD:dsh-triage) -p origin/main -m ... → git push origin <sha>:main → node scripts/record_public_cut.mjs --stamp 2026-11-10T20:12:00.000Z",
+        "outcome": "NEW=0bb3ef3 · push `d8c7c6c..0bb3ef3`（fast-forward）· public-cut · in-sync · subtree c30c3d8 · public 0bb3ef3 · cut at 7d430ac · behind 0 · exit 0；HEAD 7d430ac 的子树与公开仓 tree 同为 c30c3d8e089fe7525a0259d058044aa841fd391d。",
+        "artifact": "data/results/public-cut-2026-11-10T20-12-00.000Z.json",
+        "sha256": "642d0d69b6ad615ea679afccdfe39e436cf4a932fe06e6ce3998a4b757728621"
+      },
+      "review": {
+        "correctness": "PASS：先提交（7d430ac）再切树，切出来的是提交里的子树，所以产物记下的 `cut at 7d430ac` 与 HEAD 一致；若反过来先切后提交，公开仓会立刻落后一格，这正是上一刀（d8c7c6c，切在提交 0a974d8 之后、本次提交之前）暴露的顺序问题。",
+        "reproducibility": "PASS：两侧 tree 都是 c30c3d8e…，可用 `git rev-parse <sha>^{tree}` 与 `record_public_cut` 双向复算；`git push` 输出里是 `d8c7c6c..0bb3ef3`，没有 force。",
+        "licence": "PASS：切出的树只含本仓文件，未引入第三方源码，`quarantine/` / `sandbox/` 不在树内。",
+        "ssot": "PASS：文档里的公开仓 sha 现在是 `0bb3ef3` 而不是 `d8c7c6c`，产物指名 `20-12`；三份 public-cut 产物（18-50 / 19-56 / 20-12）各自对应一次真实推送，谁也不替代谁。",
+        "adversary": "反例：① 只改 HANDOFF 的 sha 不重跑 recorder → 新产物缺失、却被 `no-orphan-results` 逼着要么补引用要么删；② 用 `git push --force` 省一次提交 → 公开仓历史被改写，`public-cut` 看不出这件事（这正是它 limits 里写明的盲区）；③ 把 `trees-equal true` 读成「容器仓也同步了」→ 容器仓 `origin/main` 仍落后一整批。"
+      }
     }
   ]
 }
