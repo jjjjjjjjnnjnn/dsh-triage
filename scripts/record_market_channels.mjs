@@ -21,6 +21,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
+import { assertAscendingIds, insertByEntryId } from './lib/index-order.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
@@ -55,7 +56,7 @@ const scratch = mkdtempSync(join(tmpdir(), 'triage-channel-'))
 const community = {
   channel: 'dsh-community-plugins',
   entry_point: `https://github.com/${COMMUNITY_REPO}`,
-  how: 'append one object to community.json (single source of the Workshop store list and the dsh-market.com manifest)',
+  how: 'insert one object at its ascending id position in community.json (single source of the Workshop store list and the dsh-market.com manifest)',
   source: { tarball: tarballUrl, tarball_sha256: null, package_version: null },
   entry,
   validator: null,
@@ -75,12 +76,20 @@ try {
   const root = join(scratch, `${COMMUNITY_REPO.split('/')[1]}-main`)
   community.source.package_version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version ?? null
 
-  // Add the entry, then run THEIR gate: the same command their CONTRIBUTING names.
+  /*
+   * Insert the entry AT ITS ASCENDING-ID POSITION, then run THEIR gate: the same command their CONTRIBUTING names.
+   *
+   * WHY NOT `push`: on 2026-11-10 upstream switched `community.json` to "sorted by id" and their gate now answers
+   * `community.json: entries must be sorted by id: slumberpavilion comes before dsh-triage`. Appending therefore
+   * made this recorder report `rejected` for a perfectly legal entry — a red we caused ourselves (`scripts/lib/index-order.mjs`).
+   */
   const indexPath = join(root, 'community.json')
   const entries = JSON.parse(readFileSync(indexPath, 'utf8'))
-  if (entries.some((item) => item.id === entry.id)) throw new Error(`entry id ${entry.id} already present upstream`)
-  entries.push(entry)
-  writeFileSync(indexPath, `${JSON.stringify(entries, null, 2)}\n`, 'utf8')
+  const ordered = insertByEntryId(entries, entry)
+  assertAscendingIds(ordered)
+  const insertIndex = ordered.indexOf(entry)
+  if (insertIndex === -1) throw new Error(`inserted entry ${String(entry.id)} is missing from the ordered index`)
+  writeFileSync(indexPath, `${JSON.stringify(ordered, null, 2)}\n`, 'utf8')
   const check = spawnSync(process.execPath, [join(root, 'scripts', 'community-index.cjs'), '--check'], {
     encoding: 'utf8',
     windowsHide: true,
@@ -92,10 +101,20 @@ try {
   community.validator = {
     command: 'node scripts/community-index.cjs --check',
     exit: check.status,
-    stdout: String(check.stdout ?? '').trim().slice(-300),
-    stderr: String(check.stderr ?? '').trim().slice(-300),
-    entries_after: entries.length,
-    tests: { exit: test.status, summary: /# pass (\d+)[\s\S]*# fail (\d+)/.exec(String(test.stdout ?? ''))?.[0] ?? null },
+    stdout: String(check.stdout ?? '').trim().slice(0, 600),
+    stderr: String(check.stderr ?? '').trim().slice(0, 600),
+    entries_after: ordered.length,
+    insert_index: insertIndex,
+    tests: {
+      exit: test.status,
+      /*
+       * `node --test` now reports `(info) tests 10 / (info) pass 10 / (info) fail 0`; the old `# pass` regex recorded
+       * `summary: null` on a run that passed 10 of 10 (2026-11-10). A field that means "the tests passed" must not
+       * go null because the reporter changed its prefix, so both forms are accepted and the counts are kept too.
+       */
+      summary: /(?:#|\u2139) (?:pass \d+[\s\S]*?(?:#|\u2139) fail \d+)/.exec(String(test.stdout ?? ''))?.[0] ?? null,
+      counts: /(?:#|\u2139) pass (\d+)[\s\S]*?(?:#|\u2139) fail (\d+)/.exec(String(test.stdout ?? ''))?.slice(1).map(Number) ?? null,
+    },
   }
   community.status = check.status === 0 && test.status === 0 ? 'validated' : 'rejected'
   if (community.status === 'rejected') community.blocker = community.validator.stderr || community.validator.stdout
@@ -192,6 +211,36 @@ const others = [
   },
 ]
 
+/**
+ * Read one pull request WITHOUT the operator's token.
+ *
+ * WHY THIS EXISTS (R93): GitHub's computed mergeability depends on who asks. With our token, PR #65 in
+ * `zhu1090093659/dsh-community-plugins` answers `mergeable_state: "blocked"` (the repository's ruleset wants
+ * a status check plus the review it is waiting for); the anonymous call to the same URL answers `"clean"`.
+ * Recording only the authenticated word would make a vantage-dependent number look like a property of the
+ * pull request. Recording both makes the discrepancy visible, which is the honest artifact.
+ *
+ * Returns `{status, mergeable, mergeable_state, error}`; a failure is data (`error` string), never a throw,
+ * because a PR whose anonymous read fails should still be recorded with its authenticated reading.
+ */
+const readAnonymously = async (owner, repoName, number) => {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repoName}/pulls/${String(number)}`, {
+      headers: { accept: 'application/vnd.github+json', 'user-agent': 'dsh-triage' },
+    })
+    if (response.status !== 200) return { status: response.status, mergeable: null, mergeable_state: null, error: `HTTP ${String(response.status)}` }
+    const pull = await response.json()
+    return {
+      status: 200,
+      mergeable: typeof pull.mergeable === 'boolean' ? pull.mergeable : null,
+      mergeable_state: pull.mergeable_state ?? null,
+      error: null,
+    }
+  } catch (error) {
+    return { status: null, mergeable: null, mergeable_state: null, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
 /*
  * Submitted PRs (R38): `--pr channel=<pull-url>` records the LIVE state of each one. A submission is
  * not done because the command exited 0 — an OPEN pull request is, and a closed one is not.
@@ -202,8 +251,13 @@ for (const [index, value] of argv.entries()) {
   const spec = String(argv[index + 1] ?? '')
   const match = /^([^=]+)=https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(spec)
   if (match === null) {
-    submitted.push({ channel: spec.split('=')[0] ?? '?', url: spec, state: 'unparsed' })
-    continue
+    /*
+     * A MALFORMED `--pr` USED TO BE RECORDED INSTEAD OF REFUSED (R93): `--pr channel=` (value forgotten)
+     * wrote a row whose `channel` was the literal word "channel" and whose `state` was "unparsed", and the
+     * artifact still counted it — a wrong reading that looks like a measurement. Bad usage is exit 2 now.
+     */
+    process.stderr.write(`usage: --pr <channel>=https://github.com/<owner>/<repo>/pull/<number> (got "${spec}")\n`)
+    process.exit(2)
   }
   const [, channel, owner, repo, number] = match
   const url = `https://github.com/${owner}/${repo}/pull/${number}`
@@ -263,7 +317,26 @@ for (const [index, value] of argv.entries()) {
       review = { review_decision: null, merge_state_status: null, is_draft: null }
     }
   }
-  submitted.push({ channel, url, state, ...detail, ...review })
+  /*
+   * THE SAME PR CAN REPORT TWO DIFFERENT `mergeable_state`s (R93, measured): called with the operator's
+   * token, #65 answers `blocked`; called anonymously against the same URL, it answers `clean`. The
+   * authenticated view is the one merge actually consults (the ruleset's required status check and the
+   * review it demands), so `mergeable_state` stays the authenticated reading — but a reading whose
+   * vantage changes the answer must not look unconditional. Both are recorded, and when they disagree
+   * the disagreement itself is the field, not a footnote.
+   */
+  const anonymous = await readAnonymously(owner, repo, number)
+  const vantagesDiffer = anonymous.mergeable_state !== null && detail.mergeable_state !== null && anonymous.mergeable_state !== detail.mergeable_state
+  submitted.push({
+    channel,
+    url,
+    state,
+    ...detail,
+    ...review,
+    mergeable_state_by_vantage: { authenticated: detail.mergeable_state, anonymous: anonymous.mergeable_state },
+    mergeable_state_disagrees: vantagesDiffer,
+    anonymous_read: anonymous.error === null ? { mergeable: anonymous.mergeable, http_status: anonymous.status } : { error: anonymous.error },
+  })
 }
 
 /*

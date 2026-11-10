@@ -80,7 +80,15 @@ function runCli(args: readonly string[], fixture: Fixture) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd: repoRoot,
     encoding: 'utf8',
-    env: { ...process.env, DSH_TRIAGE_LOCALE: 'en', HOME: fixture.home, USERPROFILE: fixture.home },
+    // DSH_HOME must be pinned: a developer machine that exports it would otherwise send the
+    // bare-command tests at the real profile, and the fixture would never be read (R93).
+    env: {
+      ...process.env,
+      DSH_TRIAGE_LOCALE: 'en',
+      DSH_HOME: fixture.dshHome,
+      HOME: fixture.home,
+      USERPROFILE: fixture.home,
+    },
   })
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' }
 }

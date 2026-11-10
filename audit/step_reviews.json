@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R92 (2026-11-09)",
+  "stand": "R93 (2026-11-10)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -13196,6 +13196,181 @@
         "artifact": "data/results/listing-2026-11-09T16-50-00.000Z.json",
         "outcome": "passed（10 document(s) · version 0.3.5 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 857）",
         "sha256": "5efea61dd43427cca021b83cfd1902095548f7445649ef52c83e8fd8379436a8"
+      }
+    },
+    {
+      "id": "R93-S1",
+      "batch": "R93",
+      "step": "recorder 从「尾部追加」改为「按 id 升序插入」：新增零依赖 index-order 模块 + 10 条单测 + 真跑上游校验器",
+      "changed": [
+        "scripts/lib/index-order.mjs",
+        "scripts/lib/index-order.d.mts",
+        "scripts/record_market_channels.mjs",
+        "tests/unit/index-order.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-10T13:40:00.000Z --out ... --pr channel=https://github.com/zhu1090093659/dsh-community-plugins/pull/65",
+        "outcome": "channel dsh-community-plugins 从 rejected 变 validated：community-index: OK (120 entries) / exit 0 / entries_after 120 / insert_index 101 / node --test 10 pass 0 fail",
+        "artifact": "data/results/market-channels-2026-11-10T13-40-00.000Z.json",
+        "sha256": "6ea809b18dacdd28b4fafa1b6efc7a8adefe2ecd2af5e853b9913f906710b21e"
+      },
+      "review": {
+        "correctness": "插入位置与上游 assertSortedById 同口径：比较用原始码元序，插到首个 existing.id > id 之前，重复 id/无 id/非数组各自抛错；真跑上游校验器由 rejected 转 validated。",
+        "reproducibility": "产物带 sha256 与 generated_at，重跑同 stamp 同字节；10 条单测覆盖中间/最前/最后插入与两条乱序真红，插入结果必过上游断言。",
+        "licence": "未引入任何依赖（零 import 模块），上游校验器只在本地 clone 里以只读方式运行，未改动上游文件与许可声明。",
+        "ssot": "读数只来自这次真跑：OK (120 entries) / insert_index 101 / counts [10,0] 全部由脚本写入 data/results，没有一处手填数字。",
+        "adversary": "两次变异对照真红后逐字节还原：assertAscendingIds 用 >= 会让相邻同 id 被误拒；插入用 localeCompare 会让大小写顺序错位。"
+      }
+    },
+    {
+      "id": "R93-S2",
+      "batch": "R93",
+      "step": "新增 record_index_sync 证据脚本：把「fork 分支 = upstream main + 一条按 id 插入」变成逐字节可复算的断言",
+      "changed": [
+        "scripts/record_index_sync.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_index_sync.mjs --stamp 2026-11-10T14:05:00.000Z",
+        "outcome": "index-sync · in-sync · upstream 119 + 1 = 120 · fork 120 · byte-equal true · index 101，exit 0",
+        "artifact": "data/results/index-sync-2026-11-10T14-05-00.000Z.json",
+        "sha256": "3cc2bee14d8106b7dfcc959081923cfffffbf39e49cb6953b19e97eaa3c5cd78"
+      },
+      "review": {
+        "correctness": "自取两份 community.json 原始字节，取 fork 里的条目按 id 插入 upstream main，再比较序列化后是否与 fork 文件逐字节相同；修掉 readIndex 漏返回 text 导致 byte_equal 恒 false 的真 bug。",
+        "reproducibility": "产物记两侧 url/sha256/entries/entry_index/neighbours 与 rebuilt 的三份哈希，任何人重跑同 stamp 得同字节；status 只有 in-sync/drift/unmeasured 三态。",
+        "licence": "只读 GitHub raw 公共文件，不复制上游代码，新脚本零依赖、只 import 仓内 index-order 模块。",
+        "ssot": "「不需要 push」这个结论来自产物里的 byte_equal_to_fork true 与两份 head，不是口头判断；产物 sha256 与 .sha256 文件一致。",
+        "adversary": "反向构造已核：若 fork 条目内容被改过或插入位置错位，byte_equal 必为 false、status 落 drift 并 exit 1——这条断言不是恒真。"
+      }
+    },
+    {
+      "id": "R93-S3",
+      "batch": "R93",
+      "step": "分发文档四份同步 + check_listing 首跑：把 151/152/148 entries、9/9、「纯追加」全部换成 R93 实测读数",
+      "changed": [
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/community-plugins-pr.md",
+        "docs/distribution/pr-65-status.md",
+        "docs/BACKLOG.md",
+        "data/results/listing-2026-11-10T14-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T14:50:00.000Z --tests 867",
+        "outcome": "首跑 exit 1：16 项 PASS，唯一 FAIL 是 test-count-matches — stale: README.md:857, README.zh-CN.md:857（红产物保留作证据）",
+        "artifact": "data/results/listing-2026-11-10T14-50-00.000Z.json",
+        "sha256": "0ee5b536fcbe5898dc787cf07ca9a85e0b07b45eddb8de03c6a80a916527235b"
+      },
+      "review": {
+        "correctness": "四份文档的读数全部对齐两份 R93 产物：120 entries / idx 101 / 10 pass 0 fail / #65 CHANGES_REQUESTED / #193 已合并；过期数字只以「历史读数」形式保留并逐条标注。",
+        "reproducibility": "这份红产物保留在 data/results 里，任何人跑同命令会得到同一条 stale 报错；绿产物是随后用新 stamp 重跑的，两条都可离线复算。",
+        "licence": "只改中文文档措辞，未引入外部内容，未复制上游 CONTRIBUTING 之外的代码；引用的上游原话均为逐字引用并标来源。",
+        "ssot": "文档里每个数字都能指到 data/results 下带 sha256 的产物；check_listing 的 evidence-paths-exist 逐条解析通过（23 条证据路径）。",
+        "adversary": "故意保留红产物而不是删掉：它证明「README 还是 857 时这条断言真的会红」，也证明 test-count-matches 不是空转。"
+      }
+    },
+    {
+      "id": "R93-S4",
+      "batch": "R93",
+      "step": "入口文档与台账升到 R93：Stand 三处 + 两份台账 stand + 规模行 867 测试/512 产物 + §2 批次行裁到 R84–R93 + check_listing 绿",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "_archive/2026-11-10_HANDOFF-batch-rows-R83.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "README.md",
+        "README.zh-CN.md",
+        "data/results/listing-2026-11-10T15-10-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T15:10:00.000Z --tests 867",
+        "outcome": "17/17 PASS（含 test-count-matches 两处 867 / engines-range 4 处 / evidence 23 条），exit 0，落绿产物",
+        "artifact": "data/results/listing-2026-11-10T15-10-00.000Z.json",
+        "sha256": "af23840c2e0793d891cc08e4b57252f8245fc7958c8399a5120b1fea7e312d49"
+      },
+      "review": {
+        "correctness": "三份入口文档的 Stand 与两份台账一致（doc-stand 4/4），规模行九项由手算改为按仓库复算（handoff-scale-line 3/3），R83 批次行逐字节归档。",
+        "reproducibility": "读写每一步都用 git show 取原文再重建，归档文件的 R83 行与源行逐字节相同（1411 字节）；doc-stand 与 handoff-scale-line 两条治理测试可独立复跑。",
+        "licence": "只动本仓文档与台账，归档只增不删（ARCHE_MANIFEST 登记一行），未触碰第三方代码或许可文件。",
+        "ssot": "规模行里 867 测试取自 README 徽章复算、512 产物取自 data/results 实数、536 步取自本台账；绿产物 sha256 与 .sha256 一致。",
+        "adversary": "先让 handoff-scale-line 真红一次（产物数 511 时复算 512 报错）再修行，证明这条测试不是照着现状复读；Stand 也曾真红（actual 92 / expected 93）。"
+      }
+    },
+    {
+      "id": "R93-S5",
+      "batch": "R93",
+      "step": "复算推翻自己的读数：mergeable_state 是「谁问」的函数（认证 blocked / 匿名 clean），recorder 记两侧 + --pr 解析失败改成 exit 2",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "data/results/market-channels-2026-11-10T16-35-00.000Z.json",
+        "docs/distribution/pr-65-status.md",
+        "docs/market/submissions/README.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "docs/HANDOFF.md"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-10T16:35:00.000Z --pr channel=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr channel=https://github.com/walkinglabs/awesome-deepseek-harness/pull/193 --pr channel=https://github.com/walkinglabs/awesome-deepseek-harness/pull/140",
+        "outcome": "channels · validated 1 · ready 3 · live 2；#65 的 submitted 行两侧都记：authenticated blocked / anonymous clean、mergeable_state_disagrees true（#140 两侧 clean、#193 两侧 unknown，各自 false）",
+        "artifact": "data/results/market-channels-2026-11-10T16-35-00.000Z.json",
+        "sha256": "cc18221326062dca81f21ab824e3e8aaf19e55300950963c8069a69177b23722"
+      },
+      "review": {
+        "correctness": "同一 URL 连续四轮交替调用实测：带 token 读到 blocked（能看到 ruleset 24451027 的 required check「community index gate, typecheck, test and build」与待审 review），匿名读到 clean（看不到这些依赖），mergeable 两侧都是 true；所以单一读数不足以描述这个字段，产物必须记两侧并标 disagrees。",
+        "reproducibility": "readAnonymously() 只走 api.github.com 匿名 REST、失败返回 error 字符串不抛异常；负对照 --pr channel= 现在 exit 2 且不落盘（旧行为是写一条 state:unparsed 的假行）；产物带 .sha256，重跑只差 generated_at。",
+        "licence": "只读 GitHub 公共 API 与改本仓脚本/文档，未引入第三方代码、未触碰 fork 仓库、未推送任何提交（维护者明确要求不 force push）。",
+        "ssot": "产物字段 mergeable_state_by_vantage 与 mergeable_state_disagrees 是新增可复算字段；文档四处（pr-65-status / submissions README / BACKLOG / HANDOFF+INDEX）改引这一份新产物，不再引已删除的旧 stamp。",
+        "adversary": "--pr channel= 漏写确实会让旧版把渠道名写成 'channel' 并落一份看起来正常的产物（本轮实测复现后才改成 exit 2）；vantage 也一样：只读一侧会写出一个自洽但片面的 blocked。"
+      }
+    },
+    {
+      "id": "R93-S6",
+      "batch": "R93",
+      "step": "entry 出处纠偏：脚本插的是 fork 分支里的条目而非本地副本，产物加 taken_from / local_copy，docs 副本逐字对齐分支",
+      "changed": [
+        "scripts/record_index_sync.mjs",
+        "docs/market/submissions/community-plugins-entry.json",
+        "data/results/index-sync-2026-11-10T17-30-00.000Z.json",
+        "docs/distribution/pr-65-status.md"
+      ],
+      "real_test": {
+        "command": "node scripts/record_index_sync.mjs --stamp 2026-11-10T17:30:00.000Z",
+        "outcome": "index-sync · in-sync · upstream 119 + 1 = 120 · fork 120 · byte-equal true · index 101；entry.local_copy.identical_to_fork_entry true、differing_keys []；schema_version 保持 1，新增 artifact_revision 2 记录字段集扩展",
+        "artifact": "data/results/index-sync-2026-11-10T17-30-00.000Z.json",
+        "sha256": "4905252a91afee92daa9741bfc742d4a8708c8fd9f7d4f11c9b6e6f31cbd98df"
+      },
+      "review": {
+        "correctness": "复算指出原产物 entry.source 读起来像「把本地副本插进去了」，而脚本取的是 fork 分支条目；实测两边文案不同（docs 旧措辞 It never installs into your profile…、分支 It never installs, never removes…，差 description 与 descriptionEn 两键），用 docs 副本重建 sha256 是 bcdf8062… 而非 fork 的 d5aaaaf2…。",
+        "reproducibility": "schema_version 升到 2，entry.taken_from 写明分支、entry.local_copy 给出文件 sha256 与 identical_to_fork_entry/differing_keys；差异存在时自动 push 一条 limits。重建仍走 insertByEntryId + assertAscendingIds，字节比较用 JSON.stringify(arr,null,2)+LF。",
+        "licence": "只读两个公共 raw 分支文件；docs 副本是我们自己维护的投稿文案，改成与 PR 分支逐字一致，未改第三方内容。",
+        "ssot": "产物 .sha256 与实算一致（4905252a…）；docs 副本新 sha256 a82c0673… 与分支条目逐字相同，identical_to_fork_entry true 由脚本复算而非手写；schema_version 仍为 1（gate_ssot 只认 1），字段集扩展用 artifact_revision: 2 单独记，没有为放行而放宽门禁。",
+        "adversary": "首版把 docs 副本当成「就是插进去的那一条」并写 'identical'，若不复算就会在文档里留着一条错的溯源；本轮实测差异键后才对齐，且把自纠过程写进 pr-65-status §2⑤。"
+      }
+    },
+    {
+      "id": "R93-S7",
+      "batch": "R93",
+      "step": "文档改引新产物后重跑 listing 检查：换新 stamp 拿 17/17 绿产物，旧的 14-50 红产物与 15-10 绿产物作为历史保留",
+      "changed": [
+        "data/results/listing-2026-11-10T17-10-00.000Z.json",
+        "docs/market/submissions/README.md",
+        "docs/HANDOFF.md",
+        "INDEX.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T17:10:00.000Z --tests 867",
+        "outcome": "17/17 PASS：10 document(s)、23 evidence path(s) 带 sha256、version 0.3.5、engines 4 处、test-count 2 处 867、无占位与无据声称，exit 0",
+        "artifact": "data/results/listing-2026-11-10T17-10-00.000Z.json",
+        "sha256": "be778ab8e9ca80ed6443c19e4915b80e074cd1abaa53183b50108f4edfd5b087"
+      },
+      "review": {
+        "correctness": "改文档会牵动 listing 检查的 23 条证据路径与 counts；用新 stamp 重跑确认引用的新产物都被解析到且带 sha256，未留下指向已删除 stamp 的路径。",
+        "reproducibility": "同一命令换 stamp 可复跑；旧红产物 listing-2026-11-10T14-50-00 与旧绿 15-10 都保留在 data/results 并被 R93-S3/S4 引用，历史读数不删不改。",
+        "licence": "检查器只读本仓文档与 data/results，不联网、不碰第三方许可文件。",
+        "ssot": "17 条断言逐条 PASS 且产物 sha256 与 .sha256 文件一致（be778ab8…）；文档里 867 测试数与 README 徽章一致，由 test-count-is-not-vacuous 复算。",
+        "adversary": "演示过同 stamp 重跑会被拒（stamp 已存在），所以换 stamp 而不是覆盖；也验证过把文档里旧 stamp 留着会直接被 evidence-paths-exist 抓红。"
       }
     }
   ]

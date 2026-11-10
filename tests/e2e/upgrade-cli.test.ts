@@ -90,7 +90,16 @@ function runCli(
   const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, DSH_TRIAGE_LOCALE: 'en', HOME: fixture.home, USERPROFILE: fixture.home, ...extraEnv },
+    // Pinned for the same reason as cli.test.ts: an exported DSH_HOME outranks the fixture (R93).
+    // `extraEnv` still wins, so a test can deliberately re-point it.
+    env: {
+      ...process.env,
+      DSH_TRIAGE_LOCALE: 'en',
+      DSH_HOME: fixture.dshHome,
+      HOME: fixture.home,
+      USERPROFILE: fixture.home,
+      ...extraEnv,
+    },
   })
   return { status: result.status ?? -1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' }
 }

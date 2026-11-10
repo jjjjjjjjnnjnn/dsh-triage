@@ -27,20 +27,23 @@ the verdict vocabulary is `go` / `risky` / `blocked` / `unknown` with per-claim 
 - Repo: https://github.com/jjjjjjjjnnjnn/dsh-triage
 - npm: `dsh-triage`
 - DSH compatibility: `engines.dsh: >=0.2.0-rc.1 <0.3.0-0`; measured on 0.2.1-rc.4 (Windows).
+  (CONTRIBUTING.md prefers an open range; widening the upper bound is a declaration-surface change, handled separately.)
 - Licence: MIT.
 
 ## Checklist (from CONTRIBUTING.md)
 
-- [x] `pnpm community:check` → `community-index: OK (148 entries)`
-- [x] `node --test scripts/community-index.test.mjs` → 9 pass / 0 fail
+- [x] `pnpm community:check` → `community-index: OK (120 entries)`
+- [x] `node --test scripts/community-index.test.mjs` → 10 pass / 0 fail (the upstream repo's own suite; measured 2026-11-10: `ℹ pass 10 / ℹ fail 0`)
 - [x] required fields filled: `id`, `name`, `nameEn`, `author`, `description`, `descriptionEn`,
       `repo`, `npm`, `category`, `subcategory`
 - [x] one entry, one commit, Conventional Commit message, no emoji
+- [x] the entry sits at its ascending `id` position (`dsh-triage` → index 101, between `dsh-translate` and `dsh-tui`)
 
-## Note on `rank`
+## Note on ordering
 
-CONTRIBUTING.md step 1 says "append one object with the next free `rank`", but `rank` is neither in
-the required/optional field lists of `scripts/community-index.cjs` nor present in any current
-entry, so this PR follows the validator (the file's own shape) instead of adding a field nothing
-reads. Happy to add it if the intent is to introduce one.
+CONTRIBUTING.md step 1 now says to insert one object into the `community.json` array at its
+ascending `id` position, and states there is no `rank` field — the array order is the store order.
+This PR does exactly that: the entry is placed at index 101, between `dsh-translate` and `dsh-tui`,
+and introduces no new field. `node scripts/community-index.cjs --check` now asserts ascending order
+(`community.json: entries must be sorted by id: <a> comes before <b>`), and it passes.
 ```

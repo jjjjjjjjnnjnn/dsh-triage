@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_index_sync.mjs",
+  "generated_at": "2026-11-10T14:05:00.000Z",
+  "question": "is the fork branch exactly \"upstream main + one entry at its ascending id position\"?",
+  "upstream": {
+    "owner": "zhu1090093659",
+    "repo": "dsh-community-plugins",
+    "ref": "main",
+    "url": "https://raw.githubusercontent.com/zhu1090093659/dsh-community-plugins/main/community.json",
+    "sha256": "19ddc699f284aabe1237ea483fd1621c000768df9355795f10e5b6a8626fadbb",
+    "entries": 119,
+    "has_entry": false
+  },
+  "fork": {
+    "owner": "jjjjjjjjnnjnn",
+    "repo": "dsh-community-plugins",
+    "ref": "feat/community-plugins-dsh-triage",
+    "url": "https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-community-plugins/feat/community-plugins-dsh-triage/community.json",
+    "sha256": "d5aaaaf231297eb3b185fbe583a1de934f22565f79c3a2ec7a6c62d4a4e6115d",
+    "entries": 120,
+    "entry_index": 101,
+    "neighbours": {
+      "previous": "dsh-translate",
+      "next": "dsh-tui"
+    },
+    "ascending": true
+  },
+  "rebuilt": {
+    "entries": 120,
+    "sha256": "d5aaaaf231297eb3b185fbe583a1de934f22565f79c3a2ec7a6c62d4a4e6115d",
+    "byte_equal_to_fork": true,
+    "deep_equal_to_fork": true
+  },
+  "entry": {
+    "id": "dsh-triage",
+    "source": "community-plugins-entry.json"
+  },
+  "status": "in-sync",
+  "blocker": null,
+  "limits": [
+    "it compares two public branches, not a merge: an accepted entry is only proven by a merged pull request",
+    "it says nothing about whether the maintainer will accept the entry, only that our branch follows the current rule",
+    "the rule itself can change again; this artifact pins what the rule produced on this day"
+  ]
+}
