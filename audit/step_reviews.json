@@ -13445,6 +13445,49 @@
         "ssot": "PASS：`test-count-is-not-vacuous` 用 README 徽章复算，876 不是手填；规模行的 876 测试 / 517 份产物 / 541 步台账在 `handoff-scale-line` 里由仓库实算，本轮实测三者一致（本轮之后再加一条 step 与一份产物时它们会各自变成 518 / 542，届时同一条测试会替我们抓住漂移）。",
         "adversary": "反例：① 只改 README 不改 HANDOFF §3 的「当前 867 测试」→ 同一条测试仍红（徽章与正文必须同数）；② 用旧 stamp 19:40 重跑 → 前一次因运行时故障被拦下（EXECUTOR_UNAVAILABLE，未落盘），换新 stamp 才成功，说明 stamp 冲突与产物覆盖都不该靠重试掩盖；③ 把 17 PASS 读成「维护者会接受」→ 产物 limits 明确写着「running a channel's own validator proves the entry is well-formed, NOT that a maintainer will accept it」。"
       }
+    },
+    {
+      "id": "R93-S11",
+      "batch": "R93",
+      "step": "把 HEAD 的 dsh-triage 子树推成公开仓的新提交，再用同一条命令证明它现在是 in-sync（推之前它就该是 in-sync 于 79a55cd，推之后应 in-sync 于新 head）",
+      "changed": [
+        "docs/HANDOFF.md",
+        "data/results/public-cut-2026-11-10T19-56-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree $(git rev-parse HEAD:dsh-triage) -p origin/main -m ... → git push origin <sha>:main → node scripts/record_public_cut.mjs --stamp 2026-11-10T19:56:00.000Z",
+        "outcome": "public-cut · in-sync · subtree 8075002 · public d8c7c6c · trees-equal true · cut at 0a974d8 · behind 0；exit 0。推之前同一命令报 in-sync 于 79a55cd（产物 public-cut-18-50），推之后报 in-sync 于 d8c7c6c——两段前后各是一次实测，不是推断。",
+        "artifact": "data/results/public-cut-2026-11-10T19-56-00.000Z.json",
+        "sha256": "7ea992fe9dcf4b10e5f4af3f84b01464c23932ac581ecf6f12c7cfb9dc1639b9"
+      },
+      "review": {
+        "correctness": "PASS：推的提交不是新写一个树，而是 `git commit-tree $(git rev-parse HEAD:dsh-triage) -p origin/main`，所以公开仓的 tree 必须等于容器 HEAD 的子树；实测两侧都是 `8075002912ec5e648d76195c23e90e346f1d15e5`，`git push` 报 `79a55cd..d8c7c6c`（fast-forward，没有 force）。",
+        "reproducibility": "PASS：任何一台机器上 `git rev-parse HEAD:dsh-triage` + `commit-tree -p <public main>` + push 都得到同一棵树；快照与产物都在 `data/results/` 下带 .sha256，可用 `record_public_cut` 零网络复算。",
+        "licence": "PASS：切出去的树只含本仓文件（MIT），没有引入第三方源码；`quarantine/` 与 `sandbox/` 都不在树里。",
+        "ssot": "PASS：`public-cut` 的 `in-sync` 是脚本比对出来的，不是我说的；HANDOFF 里「公开仓已推到 79a55cd」这句现在过期，必须改成 `d8c7c6c` 并指名新的产物，否则读者会拿着旧 sha 去复算旧产物。",
+        "adversary": "反例：① 直接 `git push origin main` 推容器仓的 main → 树根会变成容器根，公开仓每个路径都多 `dsh-triage/` 前缀，`public_equals_container_root` 会抓成 drift；② 只改 HANDOFF 不重跑 recorder → 文档里的 sha 与最新产物对不上，`no-orphan-results` 又会因新产物无引用而红；③ 把 `trees-equal true` 读成「公开仓与容器仓同步」→ 公开仓只是容器一个子树，容器仓自己的 `origin/main` 仍落后。"
+      }
+    },
+    {
+      "id": "R93-S12",
+      "batch": "R93",
+      "step": "公开仓推进去之后重跑上架检查，确认文档里新增的那条产物引用没有被检查器读成断链（17/17 仍全绿）",
+      "changed": [
+        "data/results/listing-2026-11-10T20-02-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T20:02:00.000Z --tests 876",
+        "outcome": "17 checks / passed true（exit 0）。上一条 listing（19:43）之后新增了 public-cut-19-56 这份产物，HANDOFF 里对它的引用必须能被 evidence-paths-exist 找到且 sha256 对得上，这一跑就是那条断言的复验。",
+        "artifact": "data/results/listing-2026-11-10T20-02-00.000Z.json",
+        "sha256": "70d1ae003a8e7794e0266a5a49dbc245b251be0c961f58a5ea3c26f1acb38bc5"
+      },
+      "review": {
+        "correctness": "PASS：这一跑在「文档已改、产物已落」之后执行，17 条断言逐条 PASS，说明 HANDOFF 里指名的 `public-cut-2026-11-10T19-56-00.000Z.json` 确实存在且哈希一致。",
+        "reproducibility": "PASS：命令带 `--tests 876`，与 README 徽章同数；换一个未被占用的 stamp 即可重跑，产物自带 .sha256。",
+        "licence": "PASS：只读本仓文档与 data/results，不联网、不读第三方源码。",
+        "ssot": "PASS：`passed: true` 是检查器写进产物的，不是我在台账里宣称的；旧那份 19:43 产物**没有删**，它是那一刻的真值，两份并存不构成漂移。",
+        "adversary": "反例：① 只在台账写「重跑过了」而不落产物 → `no-orphan-results` 不红，但这份声明没有任何可复算的支撑，等于手填；② 把新 stamp 复用 19:43 → `writeEvidence` 拒绝覆盖，会静默得到旧读数；③ 认为「17/17 PASS」等于「维护者会接受」→ 产物 limits 里明确写着它只证明条目格式合法。"
+      }
     }
   ]
 }
