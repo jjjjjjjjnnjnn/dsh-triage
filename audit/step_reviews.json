@@ -13532,6 +13532,27 @@
         "ssot": "PASS：新产物 20-25 由 S14 引用，旧三份（18-50 / 19-56 / 20-12）仍各自被之前的 step 引用，`no-orphan-results` 无一漏。规模行随之改为 522 / 546。",
         "adversary": "反例：① 为了让 `behind` 变成负数而把产物从树里去掉 → 那就是伪造，且 `public-cut` 的输入就没了；② 把「切面晚一格」读成「还能再推一次补齐」→ 每补一次就多一个提交，永远差一格，环是构造的；③ 认为 `in-sync` 说明容器仓也推了 → 容器仓 `origin/main` 仍然落后一整批。"
       }
+    },
+    {
+      "id": "R93-S15",
+      "batch": "R93",
+      "step": "在一轮推完之后再取一次读数，确认「产物里的 public」与「origin/main」能指向同一个时刻（此前几次都早一刀）",
+      "changed": [
+        "data/results/public-cut-2026-11-10T20-38-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-10T20:38:00.000Z",
+        "outcome": "public-cut · in-sync · subtree 3a5766e · public 41692df · trees-equal true · cut at e7d4e88 · behind 0 · exit 0；这一次 `public` 与当时的 `origin/main` 同一个提交（此前 18-50/19-56/20-12/20-25 四份都是记录早于最后一推）。",
+        "artifact": "data/results/public-cut-2026-11-10T20-38-00.000Z.json",
+        "sha256": "88cba982e5531d461a64ff1f2eddc732872549eae01c59d7fe60e8a78bebd94a"
+      },
+      "review": {
+        "correctness": "PASS：`cut at e7d4e88` 是那一刻的 HEAD，`public 41692df` 是那一刻的 `origin/main`，两侧 tree 都是 3a5766efc2194becd6a23b8e65a3baf5aa0a3925，`behind 0`。此前四份读数的 `public` 都比 `origin/main` 早一刀，那是「记录写在最后一推之前」的顺序问题，不是漂移——这一跑把两者的差按顺序消掉了。",
+        "reproducibility": "PASS：任何人 clone 后跑同一命令得到同一对提交号；`git rev-parse <sha>^{tree}` 可逐字复核。",
+        "licence": "PASS：只读 git 与公开仓 ref，不取第三方源码。",
+        "ssot": "PASS：S15 引用本产物；规模行随之为 523 / 547。**注意**：把这份产物提交进去之后，HEAD 又会前移一格，公开仓相对它又落后一提交——这是「证据在它描述的树里」的下界，R93 已在 HANDOFF 里写成构造而非漏推。",
+        "adversary": "反例：① 想彻底消掉那一格 → 只能把产物排除在树外，等于让证据不可复算；② 把「public 比 origin/main 早一刀」读成有人 force push → 推的输出每次都是 `a..b` 的 fast-forward，历史未被改写；③ 认为 `in-sync` 覆盖容器仓 → 容器仓 `origin/main` 仍落后一整批，这是两件事。"
+      }
     }
   ]
 }
