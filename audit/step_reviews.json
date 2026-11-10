@@ -13574,6 +13574,27 @@
         "ssot": "PASS：复用了既有的 listing-20-02 产物作为 real_test（没有为了这条台账再造一份重复证据），`no-orphan-results` 仍全绿。",
         "adversary": "反例：① 把顺序错误写成「环境问题」→ 那是我自己的顺序错误，环境没参与；② 把执行器故障写成「已绕过」→ 实际是按提示重试，绕过是不允许的；③ 用一条自证式 `echo` 当 real_test → 台账要求指向 `data/results/` 下带 sha256 的真实产物。"
       }
+    },
+    {
+      "id": "R93-S17",
+      "batch": "R93",
+      "step": "本轮最后一跑上架检查：确认 17 条断言在「推送 + 披露 + 台账」全部落盘之后仍全绿，并留下可复算的收尾读数",
+      "changed": [
+        "data/results/listing-2026-11-10T20-55-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T20:55:00.000Z --tests 876",
+        "outcome": "17 checks / passed true（exit 0）；产物 sha256 e1767d9d77be7ef0510abc645c384f8590fee8d54248f02d2777c5e8d8972f5e。这是 R93 收尾时的上架口径读数，与 19:43 / 20:02 两次同数。",
+        "artifact": "data/results/listing-2026-11-10T20-55-00.000Z.json",
+        "sha256": "e1767d9d77be7ef0510abc645c384f8590fee8d54248f02d2777c5e8d8972f5e"
+      },
+      "review": {
+        "correctness": "PASS：三次 listing 读数（19:43、20:02、20:55）都 17/17，且都在「文档或产物刚改完」之后跑，说明 876 / 0.3.5 / engines 四处 / evidence paths 这些断言跟着仓库走而不是跟着记忆。",
+        "reproducibility": "PASS：`--tests 876` 与 README 徽章同数；stamp 一旦被占用，`writeEvidence` 会拒写而不是静默覆盖，所以第三次必须换 stamp。",
+        "licence": "PASS：只读本仓文档与 data/results。",
+        "ssot": "PASS：S17 引用本产物；规模行随之 524 / 549。三份 listing 都保留，因为 `drafts-cite-real-artifacts` 之类的断言是**在各自的文档状态下**成立的，删掉旧的等于抹掉中途的红绿转变。",
+        "adversary": "反例：① 认为「跑第三次」是刷绿 → 三次之间文档真的变过（新增 public-cut 引用、披露条目），每次都对应一个不同的树；② 复用 20:02 的 stamp → 拒写并拿到旧读数，会让台账指向一份不含最新文档状态的产物；③ 把 17/17 读成「可以上架了」→ 它只证明文案与证据一致，发布仍是 HUMAN 决定。"
+      }
     }
   ]
 }
