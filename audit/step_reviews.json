@@ -13372,6 +13372,79 @@
         "ssot": "17 条断言逐条 PASS 且产物 sha256 与 .sha256 文件一致（be778ab8…）；文档里 867 测试数与 README 徽章一致，由 test-count-is-not-vacuous 复算。",
         "adversary": "演示过同 stamp 重跑会被拒（stamp 已存在），所以换 stamp 而不是覆盖；也验证过把文档里旧 stamp 留着会直接被 evidence-paths-exist 抓红。"
       }
+    },
+    {
+      "id": "R93-S8",
+      "batch": "R93",
+      "step": "public-cut 判据四态化：新增零依赖 judgePublicCut + 记录器 + 9 条单测，把「公开仓是不是容器子树的切面」变成可复算产物",
+      "changed": [
+        "scripts/lib/public-cut.mjs",
+        "scripts/lib/public-cut.d.mts",
+        "scripts/record_public_cut.mjs",
+        "tests/unit/public-cut.test.ts",
+        "data/results/public-cut-2026-11-10T18-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-10T18:50:00.000Z",
+        "outcome": "public-cut · in-sync · subtree bbeba71 · public 79a55cd · trees-equal true；comparison.matching_container_commit a46f3aa8…、commits_behind 0；另 node --test tests/unit/public-cut.test.ts 9/9 pass",
+        "artifact": "data/results/public-cut-2026-11-10T18-50-00.000Z.json",
+        "sha256": "090b3028d210a4f7b2983660e918a583d966431c35f90c3858b3f40074bcac90"
+      },
+      "review": {
+        "correctness": "PASS：四态各自的判据是真条件而不是措辞——in-sync 只在 public tree 等于 HEAD 子树时给；behind 要求能指名一个更旧容器提交并给出落后提交数；drift 额外认「public tree 等于容器 root tree」这个真正会发生的事故形状（整棵树多了 dsh-triage 前缀）；unmeasured 覆盖 10 种读不到的输入。首版只有两态，把「两批提交之间的正常状态」误报成 drift，本轮已改为四态。",
+        "reproducibility": "PASS：产物由固定命令生成，字段含两侧 sha/tree、matching_container_commit 与 commits_behind，另有 3 条 limits（force-push 内容相同看不见、看不见公开仓独有提交、只代表本机 last fetch）。单测 9 条独立复算这四态，含 64 hex 接受与少一位必须 unmeasured 的边界。",
+        "licence": "PASS：只读本机 git 对象，不联网、不改公开仓、不推任何东西；`git rev-parse` 与 `git rev-list` 均为只读子命令。",
+        "ssot": "PASS：产物 sha256 与 .sha256 文件逐字节一致（090b3028…）；schema_version 保持 1 以满足 gate_ssot，drift/behind 的判定不写进文档而是由产物字段复算。被删掉的两份中间产物（18-21 两态版、18-40 paths 修前版）连 .sha256 一起删，不留会被引用成证据的孤儿。",
+        "adversary": "反例：① 把 candidates 写成 `git rev-list <branch> -- 'dsh-triage'` —— 在 dsh-triage/ 目录里运行会被 git 当相对 pathspec，候选集空 → 任何树都不匹配 → 印出 drift 而真实是 in-sync（本轮真踩过，改为路径 `.`）；② 空读 '' 当成 object id → ''==='' 假绿（R51/R52 形状），已由 isObjectId 在判据前拦住；③ 用短 hash 7 位渲染 drift 说明，测试拿完整 64 hex 找不到即红，已改为完整值。"
+      }
+    },
+    {
+      "id": "R93-S9",
+      "batch": "R93",
+      "step": "#65 回帖发出并入档 + 渠道读数用正确 owner 与 --site 复跑（19:00 那份是我命令写错，已作废删除）",
+      "changed": [
+        "docs/distribution/pr-65-status.md",
+        "docs/market/submissions/README.md",
+        "scripts/record_public_cut.mjs",
+        "data/results/market-channels-2026-11-10T19-35-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-10T19:35:00.000Z --site dsh.so=human --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140",
+        "outcome": "channels · validated 1 · ready 3 · live 2；#65 open（认证 blocked / 匿名 clean、disagrees true、CHANGES_REQUESTED）；#193 closed（merged，两侧 unknown）；#140 open clean；dsh.so listed（三端点 200）；site_submitted 1 / listed 1",
+        "artifact": "data/results/market-channels-2026-11-10T19-35-00.000Z.json",
+        "sha256": "558eb869adc8f3dd35590747e2f605878b2f6df0d46a45ad1299c50fb767e5b0"
+      },
+      "review": {
+        "correctness": "PASS：`gh api repos/zhu1090093659/dsh-community-plugins/issues/comments/6771980461` 实读 created_at 2026-11-10T15:49:44Z、作者 jjjjjjjjnnjnn、body 896 字符，与 pr-65-status §5 记的表逐项相同；渠道产物在回帖之后复读，#65 仍 open，`mergeable_state` 两侧分歧照旧记录。",
+        "reproducibility": "PASS：渠道读数由固定命令生成，产物 sha256 与 .sha256 一致（558eb869…）；三处命令错误（`--pr channel=` 把渠道名写成字面量 channel、#193 的 owner 写成 walkinglabs 得到 404、漏 --site 使 site_submitted 掉到 0）都是**命令自身**的问题，不是脚本缺陷——两份坏产物已连 .sha256 删除，留下的这一份才是能复算的读数。",
+        "licence": "PASS：gh 与 api.github.com 只读，dsh.so 三个端点只做 GET 探针并 drain body，不写第三方站点、不再发第二条评论。",
+        "ssot": "PASS：pr-65-status §4 第 4 条与 §5 从「待发」改成「已发 + URL + id + created_at + 逐字正文」，依据是 gh 实读而不是自己的记忆；两个仓的推送状态分开写（公开仓已到 79a55cd、容器仓仍落后），不再出现「都没 push」那句过期话。",
+        "adversary": "反例：① 把「已发」写成「已发且维护者已回」——产物里 #65 仍 CHANGES_REQUESTED 且无新 review，被拒；② 把 19:00 那份 `site_submitted 0 / listed 0` 当「dsh.so 掉线了」——真实原因是我漏了 `--site`，用正确命令重跑后 listed 1，坏产物删除；③ 把「已发一条」写成「可以继续催」——§4 明确此后不再发第二句，除非对方先回。"
+      }
+    },
+    {
+      "id": "R93-S10",
+      "batch": "R93",
+      "step": "测试数从 867 升到 876 后重跑上架检查，落 17/17 绿产物（文档里的 876 与 README 徽章一致才算数）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/HANDOFF.md",
+        "data/results/listing-2026-11-10T19-43-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-10T19:43:00.000Z --tests 876",
+        "outcome": "17/17 PASS（checks 17 / failed 0：10 document(s)、23 evidence path(s) 带 sha256、version 0.3.5、engines 4 处、test-count 2 处 876），exit 0",
+        "artifact": "data/results/listing-2026-11-10T19-43-00.000Z.json",
+        "sha256": "c124e01e2778317cb60537c4a633415805075e162eaf1e84fe2f04653b8337d6"
+      },
+      "review": {
+        "correctness": "PASS：public-cut 的 9 条新测试把总数从 867 推到 876，而 README 徽章与正文仍写着 867 → `test-count-matches` 会红；本轮同时改 README/README.zh-CN 的三处 867 与 HANDOFF 的规模行、§3 的「当前 867 测试」，再以 `--tests 876` 重跑，17 条断言逐条 PASS。",
+        "reproducibility": "PASS：同一命令换 stamp 可复跑，runbook 记了「同 stamp 会被 writeEvidence 拒绝覆盖」；产物 sha256 与 .sha256 文件一致（c124e01e…）。",
+        "licence": "PASS：检查器只读本仓文档与 data/results，不联网、不碰第三方许可文件。",
+        "ssot": "PASS：`test-count-is-not-vacuous` 用 README 徽章复算，876 不是手填；规模行的 876 测试 / 517 份产物 / 541 步台账在 `handoff-scale-line` 里由仓库实算，本轮实测三者一致（本轮之后再加一条 step 与一份产物时它们会各自变成 518 / 542，届时同一条测试会替我们抓住漂移）。",
+        "adversary": "反例：① 只改 README 不改 HANDOFF §3 的「当前 867 测试」→ 同一条测试仍红（徽章与正文必须同数）；② 用旧 stamp 19:40 重跑 → 前一次因运行时故障被拦下（EXECUTOR_UNAVAILABLE，未落盘），换新 stamp 才成功，说明 stamp 冲突与产物覆盖都不该靠重试掩盖；③ 把 17 PASS 读成「维护者会接受」→ 产物 limits 明确写着「running a channel's own validator proves the entry is well-formed, NOT that a maintainer will accept it」。"
+      }
     }
   ]
 }

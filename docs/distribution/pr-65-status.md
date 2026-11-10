@@ -131,22 +131,47 @@ required status check（`community index gate, typecheck, test and build`）与�
 3. **不要改条目内容去换合并**（R60 已定的口径）：冲突只能靠重建解，内容只能靠上游要求改；
    ②③④ 是声明面改动，按上游原文单独一轮处理，不在「求合并」的借口下动。
 4. **不要刷评论催**：每条 PR 只留**一次**礼貌的 review 请求，之后等。重复 ping 是这类仓库最常见的拉黑理由。
-   （R76 已发过一条，见 §5；本轮**没有**再发。）
+   R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）；R93 发的那条（`6771980461`，2026-11-10T15:49:44Z）**不是催**——它回答的是维护者 11-10 的索引结构变更（分支已逐字节等于「main + 1 条」、我们不需要 push），
+   顺带把 11-05 评审剩下几点的现状说清楚。**从那以后不要再发第二句**，除非维护者先回。
 
 ---
 
-## 5. 评论稿（**待发 · 未发**）
+## 5. 评论稿（**已发 · 2026-11-10T15:49:44Z**）
 
-R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）。下面是按 R93 实测**重写**的版本，
-**明确标注为待发（未发）**——这一轮没有发任何评论。发不发由 Lead / HUMAN 定。
+R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）。R93 的两条 PR 事实（分支逐字节等于「main + 1 条按 id 插入」、
+上游校验器 `OK (120 entries)` + 10/10）拿到 HUMAN 的「全部同意」后，把重写稿发了出去：
 
-正文（未发送）：
+| 项 | 值 |
+|---|---|
+| 评论 URL | https://github.com/zhu1090093659/dsh-community-plugins/pull/65#issuecomment-6771980461 |
+| comment id | `6771980461` |
+| `created_at` | **2026-11-10T15:49:44Z** |
+| 作者 | `jjjjjjjjnnjnn` |
+| 长度 | 896 字符 |
+| 复核命令 | `gh api repos/zhu1090093659/dsh-community-plugins/issues/comments/6771980461 --jq '{id, created_at, user: .user.login, len: (.body|length)}'` |
 
-> Hi — thanks for rebuilding the branch. Confirming from our side: the head `b79a17e8` is **byte-for-byte identical**
-> to "upstream `main` + our single entry inserted at its ascending `id` position" — 120 entries, our entry at
-> **index 101** (between `dsh-translate` and `dsh-tui`), verified by rebuilding from `main` with the same insertion
-> rule and diffing the bytes. The repo's own `community-index.cjs --check` reports `OK (120 entries)` and its
-> test suite passes **10/10**. Nothing for us to push, and we will not force push. Happy to wait for re-review — no rush.
+发出前先读了帖子状态（`scripts/record_discussion_state.mjs` 的口径：写之前先确认它还开着、且没有结论），
+`state: open` / 未合并 / head 仍 `b79a17e8`。**这是我们对自家 PR 的同步说明，不是 R58 那三条「暂不发」的外部回帖**，
+两件事别记混：`docs/distribution/T-810/registry.json` 记的是那三条外站帖子，`#65` 这条在 GitHub 上、贴的是我们自己的提交。
+
+已发正文（中文，896 字符，与 GitHub 上的逐字一致）：
+
+> 感谢重建，我这边确认同步情况（不发新 push）：
+> 
+> - 分支 head `b79a17e8` 与「当前 main + 我方一条按 id 插入」**逐字节相同**：120 条，条目在 **idx 101**（`dsh-translate` 之后、`dsh-tui` 之前）。做法是按同一条插入规则从 main 重建，然后比对**字节**（不是比 JSON 相等）。
+> - 用分支的原始字节跑仓库自带的 `scripts/community-index.cjs --check` → `community-index: OK (120 entries)`，`scripts/community-index.test.mjs` 10/10 通过。另外做了三条负对照（改回末尾追加 / 对调 100 与 101 / 还原），分别按预期红→绿，说明这个绿不是空转出来的。
+> - 结论：**我这边没有要推的东西，也不会 force push**。你的重建没有被我碰过，等你 re-review 就好。
+> 
+> 11-05 评审里剩下的几点，顺手说一下现状（都不阻挡这条合并）：
+> 
+> - 措辞那条（描述里「真装真启动」与同句「不安装」读起来打架）：分支里已经是改准的版本 ——「只读展示当前组合。不安装、不卸载、不判安全。」/ "It never installs, never removes, and never claims a plugin is safe."，PR 的 +12 行就是这版。
+> - 上界放宽到 `<0.4.0-0`、以及 `inject` 里 `@deepseek-ai/dsh-api-remotes` 的用途：这两处要动 `engines.dsh` 与注入声明，会牵动仓内多处同一个版本字符串和注入断言，我想单独提一个 PR 来改，不塞进这条条目 PR。你要是希望合并前就一起改，回一句我就在这条 PR 上补。
+> - 兼容性实测：真机目前只有 0.2.1-rc.4（Windows）一条，没测过的版本我不会写进声明；rc 下一版出来我补测再调区间。
+> 
+> 不着急，等你有空 re-review。
+
+**为什么不发英文**：这个仓库的维护者用中文留言（11-10 那条就是中文），用他写评论的语言更省他一次翻译；
+条目本身的 `description` / `descriptionEn` 仍是双语，没有因为评论语言改变任何上架文案。
 
 **什么时候放弃**：如果 2026-11-15 之后 #65 仍无 review，就把它记成「外部不可控」，写进交接，不再投入。
 三条 PR 都不是我们的技术债——合并权在别人手里（R45 起一直这么记）。
