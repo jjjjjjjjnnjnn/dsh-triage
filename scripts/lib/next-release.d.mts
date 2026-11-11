@@ -41,3 +41,34 @@ export function judgeNextChange(input: {
  * Entries with an unparseable `at` are ignored, not treated as newest or oldest.
  */
 export function pickNewestObservation(candidates: unknown): PreviousObservation | null
+
+/**
+ * R94: the default channel (`dist-tags.latest`), judged in the same registry read as `next`.
+ *
+ * Kept separate from `judgeNextChange` on purpose: the two verdicts have different question shapes
+ * ("did the canary move" vs "did the channel most users are on move, and does it now agree with the
+ * canary"), and merging them would have changed the wording `watch-upstream.yml` greps for.
+ */
+export const LATEST_TAG_STATES: string[]
+
+export interface LatestReading {
+  ok: boolean
+  version?: string | null
+  next?: string | null
+  detail?: string | null
+}
+
+export interface LatestTagVerdict {
+  state: 'baseline' | 'promoted' | 'latest-moved' | 'unchanged' | 'unmeasured'
+  changed: boolean
+  writesArtifact: boolean
+  from: string | null
+  to: string | null
+  agreesWithNext: boolean | null
+  detail: string
+}
+
+export function judgeLatestTag(input: {
+  previous: PreviousObservation | null,
+  current: LatestReading,
+}): LatestTagVerdict

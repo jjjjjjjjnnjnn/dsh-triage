@@ -7,9 +7,17 @@
  * people's plugins start disappearing — and a product whose trigger is "someone noticed" has a trigger
  * that fires whenever someone notices.
  *
- * This script does exactly one job: read `dist-tags.next` for `@deepseek-ai/dsh`, compare it with the
- * last observation recorded under `data/results/`, and answer `changed` / `unchanged` / `unmeasured`.
- * It does not run the card, does not post, does not decide anything about your profile.
+ * This script does exactly one job: read `dist-tags.next` **and `dist-tags.latest`** for
+ * `@deepseek-ai/dsh`, compare them with the last observation recorded under `data/results/`, and answer
+ * `changed` / `unchanged` / `unmeasured` for each. It does not run the card, does not post, does not
+ * decide anything about your profile.
+ *
+ * R94 — WHY `latest` IS READ TOO: until this round the watcher read `next` only, and on 2026-11-05T13:21:52Z
+ * upstream promoted `0.2.2-rc.1` to `latest` — the actual upgrade day for everyone on the default channel.
+ * `next` had not moved, so every six-hour run reported `unchanged` and the front door never fired. Both
+ * tags now come from **one** registry read, so the two verdicts describe the same instant.
+ * The `next` verdict keeps its four states, its wording and its exit-code rule; the `latest` verdict is
+ * additive (`promoted` / `latest-moved` / `baseline` / `unchanged` / `unmeasured`).
  *
  *   node scripts/watch_next_release.mjs
  *   node scripts/watch_next_release.mjs --stamp 2026-11-03T09:00:00.000Z
@@ -32,7 +40,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { isAbsolute, basename, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
-import { judgeNextChange, pickNewestObservation } from './lib/next-release.mjs'
+import { judgeLatestTag, judgeNextChange, pickNewestObservation } from './lib/next-release.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -68,12 +76,27 @@ async function main() {
     .filter((value) => value.length > 0)
     .map(pathFor)
   const scanDirs = [outDir, ...baselineDirs.filter((dir) => dir !== outDir)]
-  const { previous, ignored } = collectObservations(scanDirs)
+  const observations = collectObservations(scanDirs)
+  const { previous, previousLatest, ignored } = observations
   if (ignored > 0) process.stderr.write(`watch-next: ignored ${ignored} unparseable observation(s)\n`)
+  /*
+   * ONE registry read, two verdicts (R94). Two separate reads could straddle a publish and produce a
+   * "next and latest disagree" claim that never existed.
+   */
   const current = await readNextTag({ registry, upstream, tag })
+  const latestVersion = typeof current.distTags?.latest === 'string' ? current.distTags.latest : null
   const verdict = judgeNextChange({
     previous: previous === null ? null : { version: previous.version, at: previous.at },
     current,
+  })
+  const latestVerdict = judgeLatestTag({
+    previous: previousLatest === null ? null : { version: previousLatest.version, at: previousLatest.at },
+    current: {
+      ok: current.ok === true,
+      version: latestVersion,
+      next: typeof current.version === 'string' ? current.version : null,
+      detail: latestVersion === null && current.ok === true ? `no "latest" tag on ${upstream}` : current.detail,
+    },
   })
 
   if (verdict.state === 'unmeasured') {
@@ -83,9 +106,27 @@ async function main() {
     return
   }
 
-  if (verdict.state === 'unchanged') {
+  /*
+   * The default channel is the one most users are on. If it cannot be read, saying nothing about it is
+   * *also* a claim, so this run fails like the `next` half does — but only after the `next` half produced
+   * its evidence, which is why the artifact below is written first.
+   */
+  if (latestVerdict.state === 'unmeasured') {
+    process.stderr.write(`watch-next: ${latestVerdict.detail}\n`)
+    process.stderr.write('watch-next: the default channel was not measured — that is not "no change there"\n')
+  }
+
+  if (verdict.state === 'unchanged' && latestVerdict.state === 'unchanged') {
     process.stdout.write(`watch-next: ${verdict.detail}\n`)
+    process.stdout.write(`watch-latest: ${latestVerdict.detail}\n`)
     process.stdout.write('watch-next: nothing recorded, nothing to publish\n')
+    return
+  }
+  if (verdict.state === 'unchanged' && !latestVerdict.writesArtifact) {
+    process.stdout.write(`watch-next: ${verdict.detail}\n`)
+    process.stderr.write(`watch-latest: ${latestVerdict.detail}\n`)
+    process.stdout.write('watch-next: nothing recorded — a default channel that could not be read is not "no change"\n')
+    process.exitCode = 2
     return
   }
 
@@ -104,16 +145,39 @@ async function main() {
       detail: verdict.detail,
     },
     /*
+     * R94: the default channel, judged in the same read. `promoted` is the upgrade day; `agreesWithNext`
+     * answers "are the canary and the default channel the same build right now", which is the question a
+     * reader actually has and which neither tag alone can answer.
+     */
+    latest: { version: latestVerdict.to, tag: 'latest' },
+    previous_latest: previousLatest === null
+      ? null
+      : { version: previousLatest.version, at: previousLatest.at, artifact: previousLatest.file, source: displayPath(previousLatest.dir) },
+    change_latest: {
+      state: latestVerdict.state,
+      changed: latestVerdict.changed,
+      from: latestVerdict.from,
+      to: latestVerdict.to,
+      agrees_with_next: latestVerdict.agreesWithNext,
+      detail: latestVerdict.detail,
+    },
+    /*
      * The card is NOT run here on purpose: its numbers come from the profile on this machine, and running
      * it inside a watcher would make it look like a statement about everyone's machine. The command is the
      * output; a human (or the next agent) runs it and decides whether to publish.
      */
-    suggested: [`dsh-triage upgrade --to ${tag} --card`, `dsh-triage upgrade --to ${verdict.to} --card --out upgrade-${verdict.to}.md`],
+    suggested: latestVerdict.agreesWithNext === true
+      ? [
+          'dsh-triage upgrade --to latest --card',
+          `dsh-triage upgrade --to ${String(latestVerdict.to)} --card --out upgrade-${String(latestVerdict.to)}.md`,
+        ]
+      : [`dsh-triage upgrade --to ${tag} --card`, `dsh-triage upgrade --to ${String(verdict.to)} --card --out upgrade-${String(verdict.to)}.md`],
     limits: [
       'this is one registry read at one timestamp: it says what dist-tags said here and now, not what npm serves every region',
       'changed includes a rollback — the two versions are reported verbatim and no semver ordering is claimed',
       "the card numbers come from this machine's profile; re-run the card before quoting it anywhere",
       'this script posts nothing and writes nothing outside data/results',
+      '`promoted` says the `latest` tag now equals `next`; it does not say the upgrade is safe, nor that every user moved',
     ],
   }
 
@@ -130,7 +194,9 @@ async function main() {
   writeFileSync(`${target}.sha256`, sha256(text), 'utf8')
 
   process.stdout.write(`watch-next: ${verdict.detail}\n`)
+  process.stdout.write(`watch-latest: ${latestVerdict.detail}\n`)
   if (previous !== null) process.stdout.write(`watch-next: baseline ${previous.version} from ${displayPath(previous.dir) ?? 'unknown'}/${previous.file ?? 'unknown'}\n`)
+  if (previousLatest !== null) process.stdout.write(`watch-latest: baseline ${previousLatest.version} from ${displayPath(previousLatest.dir) ?? 'unknown'}/${previousLatest.file ?? 'unknown'}\n`)
   // Print the path that was actually written: the first version of this line hard-coded `data/results`
   // while honouring `--out`, so a control run pointed at a temp dir reported the wrong file (R64).
   const root = abs('.')
@@ -143,9 +209,16 @@ async function main() {
 /**
  * Every observation this script itself wrote, across the directories we were told to look in (R71).
  * Other artifacts are not a baseline: `produced_by` is checked, not assumed from the file name.
+ *
+ * R94: the same artifacts are read twice — once for `next` and once for `latest`. Artifacts written before
+ * this round have no `latest` block, and those are deliberately **not** a `latest` baseline: claiming
+ * "latest has not moved since 11-05" from an artifact that never looked at `latest` is the exact false
+ * calm this watcher exists to prevent. A missing `latest` observation therefore reads as `baseline` on
+ * the first run after this round, not as `unchanged`.
  */
 function collectObservations(dirs) {
   const candidates = []
+  const latestCandidates = []
   let ignoredCount = 0
   for (const dir of dirs) {
     if (!existsSync(dir)) continue
@@ -163,9 +236,17 @@ function collectObservations(dirs) {
         continue
       }
       candidates.push({ file: name, dir, at: value.generated_at, version: value.next.version })
+      const latest = value?.latest?.version
+      if (typeof latest === 'string' && latest.trim().length > 0) {
+        latestCandidates.push({ file: name, dir, at: value.generated_at, version: latest })
+      }
     }
   }
-  return { previous: withSource(candidates, pickNewestObservation(candidates)), ignored: ignoredCount }
+  return {
+    previous: withSource(candidates, pickNewestObservation(candidates)),
+    previousLatest: withSource(latestCandidates, pickNewestObservation(latestCandidates)),
+    ignored: ignoredCount,
+  }
 }
 
 /** Keep the file (and the directory it came from) attached: a baseline you cannot locate is not auditable. */

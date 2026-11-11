@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R93 (2026-11-10)",
+  "stand": "R94",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -13594,6 +13594,190 @@
         "licence": "PASS：只读本仓文档与 data/results。",
         "ssot": "PASS：S17 引用本产物；规模行随之 524 / 549。三份 listing 都保留，因为 `drafts-cite-real-artifacts` 之类的断言是**在各自的文档状态下**成立的，删掉旧的等于抹掉中途的红绿转变。",
         "adversary": "反例：① 认为「跑第三次」是刷绿 → 三次之间文档真的变过（新增 public-cut 引用、披露条目），每次都对应一个不同的树；② 复用 20:02 的 stamp → 拒写并拿到旧读数，会让台账指向一份不含最新文档状态的产物；③ 把 17/17 读成「可以上架了」→ 它只证明文案与证据一致，发布仍是 HUMAN 决定。"
+      }
+    },
+    {
+      "id": "R94-S1",
+      "batch": "R94",
+      "step": "把 PR #65 追平上游 main：按维护者要求普通 merge（不 force push），并证明「分支 = main + 一条按 id 插入」逐字节相同",
+      "changed": [
+        "data/results/index-sync-2026-11-11T11-20-00.000Z.json",
+        "docs/distribution/pr-65-status.md"
+      ],
+      "real_test": {
+        "command": "git merge up/main（%TEMP%\\pr65 真克隆）→ node scripts/community-index.cjs --check → node --test scripts/community-index.test.mjs → git push → node scripts/record_index_sync.mjs --stamp 2026-11-11T11:20:00.000Z",
+        "outcome": "上游 main 124 条、分支 125 条、`dsh-triage` idx 105（prev dsh-translate / next dsh-tui）；`community-index: OK (125 entries)`、`pass 10 / fail 0`；push `b79a17e..3e60635`（普通 push，非 force）；产物 `in-sync`、`byte_equal_to_fork true`、`deep_equal_to_fork true`。",
+        "artifact": "data/results/index-sync-2026-11-11T11-20-00.000Z.json",
+        "sha256": "87a2c7119dc5e40d2f7dbf125c27edfe4b66180f4bde7862c759115f70748ea1"
+      },
+      "review": {
+        "correctness": "PASS：merge 无冲突；条目落在它自己的 id 位置（105），前后邻居与上游排序一致——这说明化解方式不是「末尾追加」。校验器是上游自己的脚本，10 条单测含升序断言。",
+        "reproducibility": "PASS：`record_index_sync.mjs` 只读两份公开原始字节，重建后逐字节比；任何人重跑得到同一个 sha256。",
+        "licence": "PASS：只读两个 MIT 仓库的公开索引与自家分支；没有引入第三方代码。",
+        "ssot": "PASS：`index-sync` 是唯一产物，被本步引用；`pr-65-status.md` 的每处读数（125 / idx 105 / `3e60635`）都能在产物里找到同名字段。",
+        "adversary": "反例：① 顺手 force push 会更省事 → 会覆盖维护者的重建，明确禁止，本轮用的是普通 merge + 普通 push；② 只标 `mergeable: true` 就宣称同步 → 本步记的是**字节相等**，不是「GitHub 说能合」；③ 认为「main 一直在变所以永远追不上」→ 本轮证明一次 merge 即收敛（125 = 124 + 1）；④ 把 `live` 从 3 变 2 读成漂移 → #193 已合并所致，已在文档写明。"
+      }
+    },
+    {
+      "id": "R94-S2",
+      "batch": "R94",
+      "step": "重读三条渠道 PR 的 live 状态：修正上一轮漏写的 `--pr` 渠道名，并把 #65 的两种 `mergeable_state` vantage 都记下来",
+      "changed": [
+        "data/results/market-channels-2026-11-11T11-35-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-11T11:35:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140",
+        "outcome": "`validated 1 · ready 4 · live 2`；#65 `open` / 认证 `blocked` vs 匿名 `clean`（`mergeable_state_disagrees: true`）/ `CHANGES_REQUESTED` / +12 -0；#193 `closed`（merged 2026-11-04T01:00:47Z）；#140 `open` / `clean` / 无 review。",
+        "artifact": "data/results/market-channels-2026-11-11T11-35-00.000Z.json",
+        "sha256": "0d906da56a7cd5991f4c53dd1cfa6e5291f2601c400e0db0dfd5b562b46588f3"
+      },
+      "review": {
+        "correctness": "PASS：三条 PR 的 state / review / head 与 `gh pr view` 逐项一致；第一次跑漏写 `--pr` 渠道名让产物把 channel 记成字面量 \"channel\"，那份产物连同 .sha256 一起删了，不留会误导的读数。",
+        "reproducibility": "PASS：脚本只读 GitHub API；传入同样的三条 PR 就重算出同样的字段。",
+        "licence": "PASS：只读公开 PR 元数据。",
+        "ssot": "PASS：本步引用本产物；`pr-65-status.md` 与 `docs/market/listing_*.md` 引用的读数都能在这里找到。",
+        "adversary": "反例：① 把 `blocked` 写成「缺一个人类批准」→ ruleset 的 `required_approving_review_count` 是 0，卡住的是 required check 与那条未 dismiss 的 review；② 只记认证侧 → 匿名侧读数是 `clean`，两侧都记才说清「它不是 PR 的固有属性」；③ 把 `live 2` 当成「少了」→ #193 合并所致。"
+      }
+    },
+    {
+      "id": "R94-S3",
+      "batch": "R94",
+      "step": "把监听从「只看 next」扩成「一次读、两套判定」，并真跑确认「latest 已转正」这件事第一次被记录下来",
+      "changed": [
+        "scripts/lib/next-release.mjs",
+        "scripts/lib/next-release.d.mts",
+        "scripts/watch_next_release.mjs",
+        ".github/workflows/watch-upstream.yml",
+        "tests/unit/next-release.test.ts",
+        "data/results/next-release-2026-11-11T11-45-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/next-release.test.ts → node scripts/watch_next_release.mjs --stamp 2026-11-11T11:45:00.000Z",
+        "outcome": "单测 23 条全过（14 → 23，新增 `promoted` / `latest-moved` / 空白 trim / 缺块不基线 / 五态可达）；产物：`next is still 0.2.2-rc.1`、`first observation of \"latest\": 0.2.2-rc.1`、`change_latest.state = baseline`、suggested 改成 `--to latest --card`。",
+        "artifact": "data/results/next-release-2026-11-11T11-45-00.000Z.json",
+        "sha256": "48a20c41a682b85aed15a7345f56b2adb8e96741b244af252d155b2b17a09c66"
+      },
+      "review": {
+        "correctness": "PASS：`judgeNextChange` 的四态与措辞一行未动（workflow 靠 grep 那几句）；新增 `judgeLatestTag` 五态，`promoted` 只在「latest 变了且等于 next」时给出。",
+        "reproducibility": "PASS：纯函数无时钟无网络；真跑只读一次 registry，两套判定描述同一瞬间。",
+        "licence": "PASS：只读 npm dist-tags。",
+        "ssot": "PASS：产物被本步引用；`latest`/`previous_latest`/`change_latest` 三个字段与文档口径一致。",
+        "adversary": "反例：① 两次 registry 读 → 可能跨过一次发布，造出「两渠道不一致」的假事实，所以只读一次；② 拿 11-05 那份只有 `next` 的产物当 latest 基线 → 第一次跑就会说「latest 六天没动」，单测 `a 0.3.5-era artifact without a latest block is not a latest baseline` 钉住；③ 把 `unmeasured` 当 `unchanged` → 有专门的用例断言两者不同；④ 改 `judgeNextChange` 的措辞 → 会聋掉 CI 里那条 grep，本轮没碰。"
+      }
+    },
+    {
+      "id": "R94-S4",
+      "batch": "R94",
+      "step": "修掉卡片记录器的两处「把关键字当版本」：标题断言假红，以及 `inputs.target` 记的不是它判的版本",
+      "changed": [
+        "scripts/lib/card-target.mjs",
+        "scripts/lib/card-target.d.mts",
+        "scripts/record_upgrade_card.mjs",
+        "tests/unit/card-target.test.ts",
+        "data/results/upgrade-card-2026-11-11T12-30-00.000Z.json",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/card-target.test.ts → node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest --profile upstream --dsh-home sandbox/upstream/0.2.1-rc.4/home",
+        "outcome": "单测 6 条全过（含两条负对照）；卡片 **14/14**；`inputs.target = 0.2.2-rc.1`、`inputs.target_keyword = latest`；192 单元 → 119 会被拒 / 73 判不了 / 0 会变好 / 0 像没事；`--to latest` / `--to next` / `--to 0.2.2-rc.1` 三入口四桶计数完全相同。",
+        "artifact": "data/results/upgrade-card-2026-11-11T12-30-00.000Z.json",
+        "sha256": "8aedf239891312978231c624e8de30ab04384c94c6f55ecd27258988a7f57823"
+      },
+      "review": {
+        "correctness": "PASS：标题断言现在比的是 JSON 里解析出的版本；`inputs.target` 现在就是被判定过的版本，关键字另存 `target_keyword`——`check_listing` 的 `readme-shows-real-card` 因此从红转绿，而不是被放宽。",
+        "reproducibility": "PASS：同一命令两次渲染同 sha256（`card_sha256 9c25e378…`）；纯函数另由 6 条单测固定。",
+        "licence": "PASS：只读仓内沙盒 profile。",
+        "ssot": "PASS：产物被本步引用；两份 README 的卡片块指针、标题、结论行都与它一致。",
+        "adversary": "反例：① 「修假红」的省事做法是把这条检查删掉 → 两条负对照（写别的版本必须红、不是标题必须红）专门挡住；② 只修标题、不修 `inputs.target` → listing 仍会红，因为卡片标题永远不含 `latest`；③ 拿 `--to latest` 的产物去证明「0.2.2-rc.1 会被拒 119 条」而不说它等于显式版本 → 已用三条入口真跑对照，计数完全相同；④ 把峰值/计数当成「升级安全」→ 卡片明确只判声明层。"
+      }
+    },
+    {
+      "id": "R94-S5",
+      "batch": "R94",
+      "step": "D5 窗口内第五份现场基线：覆盖推进一天，并如实记录「第一次 counts_as_demand: true」及其时间巧合",
+      "changed": [
+        "data/results/market-baseline-2026-11-11T11-20-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-11T11:20:00.000Z",
+        "outcome": "`failures: []`、`offline: false`；窗口 `11-04..11-10`、周下载 **390**、日序列 `34/40/31/57/15/183/30`、7/7 天有下载、峰值占比 **46.9%** → `download_shape: steady` → `d5.verdict: threshold-met`、`counts_as_demand: true`；诊断类 2554 / 市场 448970 / 装饰 270735；831 条讨论 / 351 痛点 / 249 零回复。",
+        "artifact": "data/results/market-baseline-2026-11-11T11-20-00.000Z.json",
+        "sha256": "af5296e76892a42b26e6b9947fba401f59742bbe09a603ca47fd0c6217b1cf3d"
+      },
+      "review": {
+        "correctness": "PASS：`steady` 是 `download_shape` 的纯函数按 R52 已签规则算出来的（≥2 天有下载且无单日 >80%），没有任何人为调整；日序列原样落在产物里。",
+        "reproducibility": "PASS：原始响应缓存在 `data/fixtures/market-baseline/<stamp>`，`--fixtures` 可离线逐项复算。",
+        "licence": "PASS：只读 npm downloads API 与 GitHub Discussions。",
+        "ssot": "PASS：产物被本步引用；HANDOFF / AGENTS / Stand 里的 390、7/7、46.9%、`threshold-met` 都能在这里找到。",
+        "adversary": "反例：① 把 `threshold-met` 读成「需求稳定」→ 峰值日 11-09 正是 0.3.5 发布日，这是**每天都有下载**，不是趋势；② 只报周总量不报日序列 → 日序列就在产物里，`peak_share` 也一并给出；③ 认为「判据放宽了」→ 阈值 20 与形状规则一字未动；④ 把这份读数写进对外文案 → 必须带上「峰值日 = 发布日」这条边界，且写文案是 HUMAN 的动作。"
+      }
+    },
+    {
+      "id": "R94-S6",
+      "batch": "R94",
+      "step": "跑后重算 D5 窗口覆盖，把「下一跑最晚哪天」交给脚本算而不是靠记",
+      "changed": [
+        "data/results/d5-window-status-2026-11-11T11-25-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs --stamp 2026-11-11T11:25:00.000Z",
+        "outcome": "窗口 `2026-11-01..2026-11-15`；覆盖 **`11-01..11-10`**（10 天）；missing 5 · `collectible now 0` · `lost 0`；`next run by 2026-11-19`；verdict `not-yet`。",
+        "artifact": "data/results/d5-window-status-2026-11-11T11-25-00.000Z.json",
+        "sha256": "0470829633d13f360537c2697c96bb7820395c7dea9214eba0c51b5b86e0ec71"
+      },
+      "review": {
+        "correctness": "PASS：覆盖天数由已提交基线产物的窗口并集算出，不是手填；`collectible now 0` 与「今天不再跑第二份」一致。",
+        "reproducibility": "PASS：只读 `data/results` 与 `d5-evidence`，同一磁盘状态必得同一结论。",
+        "licence": "PASS：只读本仓已提交的产物与 `d5-evidence`，不访问外部服务，也不写入任何 profile。",
+        "ssot": "PASS：产物被本步引用；HANDOFF 的 `11-01..11-10` / `2026-11-19` 与它一致。",
+        "adversary": "反例：① 手工写截止日 → 漂移过一次，所以这个数字只能由脚本给；② 覆盖 10 天就说「窗口快满了」→ 还有 5 天未发布，都得等到 11-11 之后逐日采；③ 把 `lost 0` 读成「以后也不会丢」→ 它只说明现在没有错过采集日。"
+      }
+    },
+    {
+      "id": "R94-S7",
+      "batch": "R94",
+      "step": "上架文案与两份 README 对齐到 0.3.5 / 891 / 新卡片，然后跑 17 条断言",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "data/results/listing-2026-11-11T12-45-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T12:45:00.000Z --tests 891",
+        "outcome": "**17/17**（`passed: true`）；10 份文档 / version 0.3.5 / dsh `>=0.2.0-rc.1 <0.3.0-0` / 23 条证据路径带 sha256。",
+        "artifact": "data/results/listing-2026-11-11T12-45-00.000Z.json",
+        "sha256": "a9514127e2f4409c77aa7475852c232c96de729cfc48d7a64aa9121704e2418a"
+      },
+      "review": {
+        "correctness": "PASS：第一跑是 **16/17 红**（`readme-shows-real-card`：结论行不含 `latest`），根因是卡片产物把关键字记成 target；改记录器后转绿，**没有改断言**。",
+        "reproducibility": "PASS：`--tests 891` 与 README 徽章同数；stamp 被占用时脚本拒写而不是静默覆盖（12:40 那份就是因此删掉重跑的）。",
+        "licence": "PASS：只读本仓文档与产物。",
+        "ssot": "PASS：产物被本步引用；两份 README 的 891 徽章、0.3.5、卡片四桶都由它校验。",
+        "adversary": "反例：① 把 `--tests` 传旧数字让检查通过 → `test-count-matches` 会红，且徽章与 §3 也会不一致；② 改断言迁就文案 → 本轮改的是产物字段（`inputs.target`），不是断言；③ 只改 README 徽章忘了正文「876 个测试」→ 该断言扫的是三种写法，漏一处就红。"
+      }
+    },
+    {
+      "id": "R94-S8",
+      "batch": "R94",
+      "step": "跑门禁自身是否空转的 18 条变异对照，确认每条注入的违规都真的被抓到后被逐字节还原",
+      "changed": [
+        "data/results/mutation-controls-2026-11-11T12-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate → node scripts/record_mutation_controls.mjs --stamp 2026-11-11T12:50:00.000Z",
+        "outcome": "`NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation`；`mutation-controls` **18/18 RED** 后还原。",
+        "artifact": "data/results/mutation-controls-2026-11-11T12-50-00.000Z.json",
+        "sha256": "f2408da25d991547063ac64448c0da3975a8134d3af36f1cd33ae91deb85ed6c"
+      },
+      "review": {
+        "correctness": "PASS：18 条对照逐条 RED，且每条都记录了还原后的 sha256 与原文一致。",
+        "reproducibility": "PASS：每条对照 = 注入 → 断言必须红 → 逐字节还原；重跑结果相同。",
+        "licence": "PASS：只动本仓文件并还原。",
+        "ssot": "PASS：产物被本步引用；HANDOFF 的「18 条」与它一致。",
+        "adversary": "反例：① 只跑 `--mutate` 不跑 record → 没有落盘证据，下一轮无法复算；② 注入后忘记还原 → 还原断言会红；③ 把「18/18 RED」读成「产品正确」→ 它只证明**门禁会响**，不证明结论对。"
       }
     }
   ]

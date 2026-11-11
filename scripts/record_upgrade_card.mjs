@@ -26,6 +26,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { judgeCardTitle } from './lib/card-target.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -115,7 +116,16 @@ const titleLine = nonEmpty[0] ?? ''
 const conclusionLine = nonEmpty[1] ?? ''
 const counts = payload.counts ?? {}
 
-check('card-titles-the-target', titleLine.startsWith('# ') && titleLine.includes(target), titleLine.slice(0, 60))
+/*
+ * R94: `--to latest` / `--to next` are KEYWORDS, and the card titles the version they resolved to
+ * (`# 升级日 · 0.2.2-rc.1`), not the keyword. The old assertion compared the title against the keyword,
+ * so a keyword run recorded 13/14 with the only red being this check — a false red that would have
+ * taught the next reader to ignore `card-titles-the-target`. The product is right here and the
+ * assertion was wrong: the title must name the version the JSON says it resolved to.
+ * The judgement lives in `scripts/lib/card-target.mjs` so it can be negative-controlled by a unit test.
+ */
+const titleVerdict = judgeCardTitle({ title: titleLine, keyword: target, resolved: payload.target ?? null })
+check('card-titles-the-target', titleVerdict.ok, titleVerdict.detail)
 check('card-first-line-is-conclusion', conclusionLine.startsWith('**'), conclusionLine.slice(0, 80))
 const countsInLine = ['would_be_denied', 'cannot_tell', 'improved', 'likely_fine'].every((key) =>
   conclusionLine.includes(String(counts[key])),
@@ -160,7 +170,15 @@ const artifact = {
   produced_by: 'scripts/record_upgrade_card.mjs',
   generated_at: stamp,
   inputs: {
-    target,
+    /*
+     * R94: this used to record the `--to` argument, so `--to latest` wrote `target: "latest"` into an
+     * artifact whose card titles `0.2.2-rc.1` — the field named "target" did not say what was judged.
+     * `check_listing` then demanded the README name "latest", which a card title can never contain, and
+     * R94's first listing run went red for exactly that reason. The resolved version is the target;
+     * the keyword is a separate, named field.
+     */
+    target: typeof payload.target === 'string' && payload.target.length > 0 ? payload.target : target,
+    target_keyword: target,
     profile,
     dsh_home: '<dsh-home>',
     locale: 'zh',

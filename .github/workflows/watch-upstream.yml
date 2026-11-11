@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   watch:
-    name: upstream dist-tags.next
+    name: upstream dist-tags.next + latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
           restore-keys: |
             watch-state-
 
-      - name: read dist-tags.next and compare with the last observation
+      - name: read dist-tags.next and latest, compare with the last observation
         id: watch
         shell: bash
         run: |
@@ -58,7 +58,7 @@ jobs:
           status=$?
           cat "$RUNNER_TEMP/watch.log"
           {
-            echo "### upstream \`next\` at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "### upstream \`next\` / \`latest\` at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo '```'
             cat "$RUNNER_TEMP/watch.log"
             echo '```'
@@ -70,6 +70,13 @@ jobs:
           fi
           if grep -q "next moved" "$RUNNER_TEMP/watch.log"; then
             echo "::warning::upstream \`next\` moved — re-run the upgrade-day card on a real machine before quoting anything"
+          fi
+          # R94: `latest` moving is the upgrade day for everyone not on the canary channel, and until this
+          # round nothing watched it. A promotion (latest == next) is a *louder* event than next moving.
+          if grep -q "the default channel is serving this build" "$RUNNER_TEMP/watch.log"; then
+            echo "::warning::upstream promoted to \`latest\` — that is the upgrade day; re-run \`upgrade --to latest --card\` before quoting anything"
+          elif grep -q "the two channels disagree" "$RUNNER_TEMP/watch.log"; then
+            echo "::notice::\`latest\` moved but differs from \`next\` — the channels disagree, do not quote either value as 'the' runtime"
           fi
 
       - name: keep the observation (only a changed run writes one)

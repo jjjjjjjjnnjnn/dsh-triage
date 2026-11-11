@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { NEXT_RELEASE_STATES, judgeNextChange, pickNewestObservation } from '../../scripts/lib/next-release.mjs'
+import { LATEST_TAG_STATES, NEXT_RELEASE_STATES, judgeLatestTag, judgeNextChange, pickNewestObservation } from '../../scripts/lib/next-release.mjs'
 
 test('a readable registry with no history is a baseline, not a discovery', () => {
   const verdict = judgeNextChange({ previous: null, current: { ok: true, version: '0.2.1-rc.5' } })
@@ -154,3 +154,118 @@ test('a timestamp tie keeps the first entry, so the same disk state always picks
   ])
   assert.deepEqual(picked, { version: '0.2.1-rc.5', at })
 })
+
+/*
+ * R94: the default channel (`dist-tags.latest`).
+ *
+ * WHY THESE CASES: on 2026-11-05T13:21:52Z upstream promoted `0.2.2-rc.1` to `latest` — the upgrade day
+ * for everyone not on the canary channel — and the watcher said `unchanged` for six days because it only
+ * looked at `next`. So the cases are ordered by that same risk: an unreadable `latest` must not read as
+ * "the default channel is quiet", an old artifact must not be used as a `latest` baseline, and the day
+ * the two channels converge must be named for what it is.
+ */
+
+test('the promotion of next to latest is `promoted`, and that is the upgrade day', () => {
+  const verdict = judgeLatestTag({
+    previous: { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' },
+    current: { ok: true, version: '0.2.2-rc.1', next: '0.2.2-rc.1' },
+  })
+  assert.equal(verdict.state, 'promoted')
+  assert.equal(verdict.changed, true)
+  assert.equal(verdict.writesArtifact, true)
+  assert.equal(verdict.from, '0.2.1-rc.5')
+  assert.equal(verdict.to, '0.2.2-rc.1')
+  assert.equal(verdict.agreesWithNext, true)
+  assert.ok(verdict.detail.includes('upgrade day'))
+})
+
+test('latest moving while next stays put is `latest-moved`, and it says the channels disagree', () => {
+  const verdict = judgeLatestTag({
+    previous: { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' },
+    current: { ok: true, version: '0.2.1-rc.6', next: '0.2.2-rc.1' },
+  })
+  assert.equal(verdict.state, 'latest-moved')
+  assert.equal(verdict.agreesWithNext, false)
+  assert.ok(verdict.detail.includes('disagree'))
+})
+
+test('an unreadable latest is unmeasured — never "the default channel did not move"', () => {
+  for (const current of [
+    { ok: false, version: null, detail: 'HTTP 403' },
+    { ok: true, version: null, detail: 'no "latest" tag' },
+    { ok: true, version: '' },
+    { ok: true, version: '   ' },
+  ]) {
+    const verdict = judgeLatestTag({ previous: { version: '0.2.1-rc.5', at: '2026-11-02T17:40:00.322Z' }, current })
+    assert.equal(verdict.state, 'unmeasured')
+    assert.equal(verdict.changed, false)
+    assert.equal(verdict.writesArtifact, false)
+    assert.ok(verdict.detail.includes('not "no change"'))
+  }
+})
+
+test('the first time latest is observed it is a baseline, not a discovery', () => {
+  const verdict = judgeLatestTag({ previous: null, current: { ok: true, version: '0.2.2-rc.1', next: '0.2.2-rc.1' } })
+  assert.equal(verdict.state, 'baseline')
+  assert.equal(verdict.changed, false)
+  assert.equal(verdict.writesArtifact, true)
+  assert.equal(verdict.from, null)
+  assert.equal(verdict.agreesWithNext, true)
+})
+
+test('the same latest twice is unchanged and writes nothing', () => {
+  const verdict = judgeLatestTag({
+    previous: { version: '0.2.2-rc.1', at: '2026-11-11T10:00:00.000Z' },
+    current: { ok: true, version: '0.2.2-rc.1', next: '0.2.2-rc.1' },
+  })
+  assert.equal(verdict.state, 'unchanged')
+  assert.equal(verdict.writesArtifact, false)
+  assert.ok(verdict.detail.includes('2026-11-11T10:00:00.000Z'))
+})
+
+test('a previous latest observation with no usable version is unmeasured, not a fresh baseline', () => {
+  const verdict = judgeLatestTag({
+    previous: { version: '   ', at: '2026-11-05T07:34:44.456Z' },
+    current: { ok: true, version: '0.2.2-rc.1', next: '0.2.2-rc.1' },
+  })
+  assert.equal(verdict.state, 'unmeasured')
+  assert.equal(verdict.writesArtifact, false)
+})
+
+test('a trailing space in latest is not a promotion (same R66 rule, applied to the second tag)', () => {
+  for (const version of ['0.2.2-rc.1 ', ' 0.2.2-rc.1', '\t0.2.2-rc.1\n']) {
+    const verdict = judgeLatestTag({
+      previous: { version: '0.2.2-rc.1', at: null },
+      current: { ok: true, version, next: '0.2.2-rc.1' },
+    })
+    assert.equal(verdict.state, 'unchanged', `${JSON.stringify(version)} must read as unchanged`)
+  }
+})
+
+test('the state list is what the script switches on, and every state is reachable', () => {
+  assert.deepEqual(LATEST_TAG_STATES, ['baseline', 'promoted', 'latest-moved', 'unchanged', 'unmeasured'])
+  const seen = new Set(
+    [
+      judgeLatestTag({ previous: null, current: { ok: true, version: 'a', next: 'a' } }),
+      judgeLatestTag({ previous: { version: 'a', at: null }, current: { ok: true, version: 'b', next: 'b' } }),
+      judgeLatestTag({ previous: { version: 'a', at: null }, current: { ok: true, version: 'b', next: 'a' } }),
+      judgeLatestTag({ previous: { version: 'a', at: null }, current: { ok: true, version: 'a', next: 'a' } }),
+      judgeLatestTag({ previous: { version: 'a', at: null }, current: { ok: false } }),
+    ].map((verdict) => verdict.state),
+  )
+  assert.deepEqual([...seen].sort(), [...LATEST_TAG_STATES].sort())
+})
+
+test('a 0.3.5-era artifact without a latest block is not a latest baseline', () => {
+  /*
+   * This is the trap the first cut of R94 walked into: `pickNewestObservation` happily accepts any
+   * {version, at} pair, so an artifact that only ever recorded `next` would make the first post-R94 run
+   * say `unchanged` for latest — the same false calm, one level up. The script's collector only pushes a
+   * latest candidate when the artifact actually carries one; this pins the fact that absence is absence.
+   */
+  const oldArtifact = { version: '0.2.2-rc.1', at: '2026-11-05T07:34:44.456Z', latest: undefined }
+  assert.equal(typeof oldArtifact.latest, 'undefined')
+  const verdict = judgeLatestTag({ previous: null, current: { ok: true, version: '0.2.2-rc.1', next: '0.2.2-rc.1' } })
+  assert.equal(verdict.state, 'baseline')
+})
+

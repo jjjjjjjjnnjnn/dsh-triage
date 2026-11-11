@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/watch_next_release.mjs",
+  "generated_at": "2026-11-11T11:45:00.000Z",
+  "upstream": {
+    "package": "@deepseek-ai/dsh",
+    "registry": "https://registry.npmjs.org",
+    "tag": "next",
+    "http_status": 200,
+    "dist_tags": {
+      "latest": "0.2.2-rc.1",
+      "alpha": "0.2.2-alpha.3",
+      "next": "0.2.2-rc.1"
+    }
+  },
+  "previous": {
+    "version": "0.2.2-rc.1",
+    "at": "2026-11-05T07:34:44.456Z",
+    "artifact": "next-release-2026-11-05T07-34-44.456Z.json",
+    "source": "data/results"
+  },
+  "next": {
+    "version": "0.2.2-rc.1"
+  },
+  "change": {
+    "state": "unchanged",
+    "changed": false,
+    "from": "0.2.2-rc.1",
+    "to": "0.2.2-rc.1",
+    "detail": "next is still 0.2.2-rc.1 (unchanged since 2026-11-05T07:34:44.456Z)"
+  },
+  "latest": {
+    "version": "0.2.2-rc.1",
+    "tag": "latest"
+  },
+  "previous_latest": null,
+  "change_latest": {
+    "state": "baseline",
+    "changed": false,
+    "from": null,
+    "to": "0.2.2-rc.1",
+    "agrees_with_next": true,
+    "detail": "first observation of \"latest\": 0.2.2-rc.1"
+  },
+  "suggested": [
+    "dsh-triage upgrade --to latest --card",
+    "dsh-triage upgrade --to 0.2.2-rc.1 --card --out upgrade-0.2.2-rc.1.md"
+  ],
+  "limits": [
+    "this is one registry read at one timestamp: it says what dist-tags said here and now, not what npm serves every region",
+    "changed includes a rollback — the two versions are reported verbatim and no semver ordering is claimed",
+    "the card numbers come from this machine's profile; re-run the card before quoting it anywhere",
+    "this script posts nothing and writes nothing outside data/results",
+    "`promoted` says the `latest` tag now equals `next`; it does not say the upgrade is safe, nor that every user moved"
+  ]
+}

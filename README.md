@@ -7,7 +7,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
 [![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
-[![tests: 876 passed](https://img.shields.io/badge/tests-876%20passed-success.svg)](scripts/gate.mjs)
+[![tests: 891 passed](https://img.shields.io/badge/tests-891%20passed-success.svg)](scripts/gate.mjs)
 
 [English Overview / Documentation](#english-overview) | [简体中文版 (README.zh-CN.md)](README.zh-CN.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
 
@@ -46,12 +46,12 @@ npm 发布版本：`dsh-triage@0.3.5` · 包含独立命令行 CLI 与 DSH 设�
 
 每次上游 DSH 发布新候选版本时，提前推演：**你本地这套插件配置升上去，哪些会被拦截？**
 
-<!-- upgrade-card: data/results/upgrade-card-2026-10-31T09-00-00.000Z.json -->
+<!-- upgrade-card: data/results/upgrade-card-2026-11-11T12-30-00.000Z.json -->
 ```console
-$ dsh-triage upgrade --to next
-# 升级日 · 0.2.1-rc.5
+$ dsh-triage upgrade --to latest
+# 升级日 · 0.2.2-rc.1
 
-**upstream：192 个单元（2 bundle + 190 行）升到 0.2.1-rc.5 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
+**upstream：192 个单元（2 bundle + 190 行）升到 0.2.2-rc.1 → 119 会被拒 · 73 判不了 · 0 会变好 · 0 像没事**
 
 > profile `upstream`（live）· 当前 0.2.1-rc.4 · 目标比当前新
 > 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。
@@ -65,7 +65,7 @@ $ dsh-triage upgrade --to next
 ```
 <!-- /upgrade-card -->
 
-**数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.1-rc.5`，即录制时 npm `latest` 标签版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-10-31T09-00-00.000Z --to 0.2.1-rc.5`。
+**数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.2-rc.1`，即录制时 npm `latest` 标签解析出的版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest`。
 
 - `--to next` / `--to latest` 从 npm `dist-tags` 解析目标版本；`--to <指定版本>` 全程离线推演。
 - `--card --out card.md` 将 Markdown 格式卡片直接落盘，便于直接附在 GitHub Issue 或 Discussions 中交流。
@@ -228,7 +228,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、876 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、891 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |

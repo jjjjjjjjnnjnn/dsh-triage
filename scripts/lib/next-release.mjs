@@ -114,6 +114,114 @@ export function judgeNextChange(input) {
   }
 }
 
+/*
+ * R94: the watcher watched one tag and missed the upgrade day.
+ *
+ * `judgeNextChange` above answers "did `next` move". That is the canary channel. The *upgrade day* — the
+ * hour every user on the default channel starts loading a new runtime — is `dist-tags.latest` moving, and
+ * on 2026-11-05T13:21:52Z upstream promoted `0.2.2-rc.1` to `latest`. Our watcher reported `unchanged`
+ * every six hours for six days, because `next` had not moved since 11-05 and nothing looked at `latest`.
+ * A watcher that cannot see the channel most users are on is the same failure shape as R71's amnesiac
+ * watcher: a green run that does not mean what the reader thinks it means.
+ *
+ * This judges the SECOND tag without touching the first. `judgeNextChange` keeps its four states and its
+ * wording (`watch-upstream.yml` greps for "next moved"); this one is additive and its own four states are
+ * about the default channel plus one thing `next` alone can never express: **the two channels now agree**.
+ *
+ *   - unreadable / no `latest`             → `unmeasured` (**never** "no change on the default channel")
+ *   - first observation of `latest`        → `baseline`   (record it, claim nothing)
+ *   - `latest` moved and now equals `next` → `promoted`   (this IS the upgrade day)
+ *   - `latest` moved, channels disagree    → `latest-moved`
+ *   - same value twice                     → `unchanged`
+ */
+
+/** States a `latest` reading can end in. Only `baseline`/`promoted`/`latest-moved` are worth an artifact. */
+export const LATEST_TAG_STATES = ['baseline', 'promoted', 'latest-moved', 'unchanged', 'unmeasured']
+
+/**
+ * @param {{
+ *   previous: { version: string, at: string | null } | null,
+ *   current: { ok: boolean, version?: string | null, next?: string | null, detail?: string | null },
+ * }} input
+ * @returns {{ state: string, changed: boolean, writesArtifact: boolean, from: string | null, to: string | null, agreesWithNext: boolean | null, detail: string }}
+ */
+export function judgeLatestTag(input) {
+  const previous = input?.previous ?? null
+  const current = input?.current ?? { ok: false, version: null }
+  const isVersion = (value) => typeof value === 'string' && /^[!-~]+$/.test(value.trim())
+  const fromRaw = isVersion(previous?.version) ? String(previous?.version).trim() : ''
+  const from = fromRaw.length > 0 ? fromRaw : null
+  const toRaw = isVersion(current?.version) ? String(current?.version).trim() : ''
+  const to = toRaw.length > 0 ? toRaw : null
+  const next = isVersion(current?.next) ? String(current.next).trim() : null
+
+  if (current?.ok !== true || to === null) {
+    return {
+      state: 'unmeasured',
+      changed: false,
+      writesArtifact: false,
+      from,
+      to: null,
+      agreesWithNext: null,
+      detail: `the "latest" tag could not be read (${String(current?.detail ?? 'no reason given')}) — this is not "no change" on the default channel`,
+    }
+  }
+  if (previous !== null && from === null) {
+    const at = typeof previous?.at === 'string' && previous.at.length > 0 ? previous.at : 'no usable timestamp'
+    return {
+      state: 'unmeasured',
+      changed: false,
+      writesArtifact: false,
+      from: null,
+      to,
+      agreesWithNext: null,
+      detail: `the previous "latest" observation carries no usable version (${at}), so a change cannot be judged`,
+    }
+  }
+  if (from === null) {
+    return {
+      state: 'baseline',
+      changed: false,
+      writesArtifact: true,
+      from: null,
+      to,
+      agreesWithNext: next === to,
+      detail: `first observation of "latest": ${to}`,
+    }
+  }
+  if (from === to) {
+    return {
+      state: 'unchanged',
+      changed: false,
+      writesArtifact: false,
+      from,
+      to,
+      agreesWithNext: next === to,
+      detail: `latest is still ${to} (unchanged since ${String(previous?.at ?? 'the last observation')})`,
+    }
+  }
+  if (next === to) {
+    return {
+      state: 'promoted',
+      changed: true,
+      writesArtifact: true,
+      from,
+      to,
+      agreesWithNext: true,
+      detail: `latest moved ${from} → ${to} and now equals next — the default channel is serving this build: this is the upgrade day`,
+    }
+  }
+  return {
+    state: 'latest-moved',
+    changed: true,
+    writesArtifact: true,
+    from,
+    to,
+    agreesWithNext: false,
+    detail: `latest moved ${from} → ${to} while next is ${String(next ?? 'unreadable')} — the two channels disagree`,
+  }
+}
+
 /**
  * Which observation is "the previous one"? (R71)
  *

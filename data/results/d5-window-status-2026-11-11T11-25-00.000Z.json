@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/d5_window_status.mjs",
+  "generated_at": "2026-11-11T11:25:00.000Z",
+  "inputs": {
+    "post_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11813",
+    "posted_on": "2026-11-01T20:24:37.000Z",
+    "posted_on_source": "d5-evidence",
+    "post_agrees_with_registry": "same-instant",
+    "window_start": "2026-11-01",
+    "window_end": "2026-11-15",
+    "today": "2026-11-11",
+    "today_source": "clock",
+    "lag_days": 2,
+    "lag_days_source": "measured-default",
+    "lag_observed": [
+      1,
+      2
+    ],
+    "urgent_within_days": 1,
+    "baseline_dir": "data/results",
+    "baselines_seen": 11
+  },
+  "coverage": {
+    "verdict": "not-yet",
+    "urgent": false,
+    "window": {
+      "from": "2026-11-01",
+      "to": "2026-11-15",
+      "days": 15
+    },
+    "covered": [
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05",
+      "2026-11-06",
+      "2026-11-07",
+      "2026-11-08",
+      "2026-11-09",
+      "2026-11-10"
+    ],
+    "missing": [
+      {
+        "day": "2026-11-11",
+        "first_collectible": "2026-11-13",
+        "last_collectible": "2026-11-19",
+        "state": "upcoming"
+      },
+      {
+        "day": "2026-11-12",
+        "first_collectible": "2026-11-14",
+        "last_collectible": "2026-11-20",
+        "state": "upcoming"
+      },
+      {
+        "day": "2026-11-13",
+        "first_collectible": "2026-11-15",
+        "last_collectible": "2026-11-21",
+        "state": "upcoming"
+      },
+      {
+        "day": "2026-11-14",
+        "first_collectible": "2026-11-16",
+        "last_collectible": "2026-11-22",
+        "state": "upcoming"
+      },
+      {
+        "day": "2026-11-15",
+        "first_collectible": "2026-11-17",
+        "last_collectible": "2026-11-23",
+        "state": "upcoming"
+      }
+    ],
+    "counts": {
+      "covered": 10,
+      "missing": 5,
+      "collectible_now": 0,
+      "upcoming": 5,
+      "lost": 0
+    },
+    "next_run_by": "2026-11-19",
+    "days_until_next_run": 8,
+    "baselines_used": [
+      {
+        "file": "market-baseline-2026-10-31T05-30-00.000Z.json",
+        "from": "2026-10-23",
+        "to": "2026-10-29",
+        "days_in_window": 0
+      },
+      {
+        "file": "market-baseline-2026-10-31T06-20-00.000Z.json",
+        "from": "2026-10-23",
+        "to": "2026-10-29",
+        "days_in_window": 0
+      },
+      {
+        "file": "market-baseline-2026-10-31T06-40-00.000Z.json",
+        "from": "2026-10-23",
+        "to": "2026-10-29",
+        "days_in_window": 0
+      },
+      {
+        "file": "market-baseline-2026-11-03T06-22-20.130Z.json",
+        "from": "2026-10-26",
+        "to": "2026-11-01",
+        "days_in_window": 1
+      },
+      {
+        "file": "market-baseline-2026-11-03T15-11-10.030Z.json",
+        "from": "2026-10-27",
+        "to": "2026-11-02",
+        "days_in_window": 2
+      },
+      {
+        "file": "market-baseline-2026-11-05T07-35-31.003Z.json",
+        "from": "2026-10-28",
+        "to": "2026-11-03",
+        "days_in_window": 3
+      },
+      {
+        "file": "market-baseline-2026-11-05T10-45-00.000Z.json",
+        "from": "2026-10-29",
+        "to": "2026-11-04",
+        "days_in_window": 4
+      },
+      {
+        "file": "market-baseline-2026-11-09T13-21-11.540Z.json",
+        "from": "2026-11-02",
+        "to": "2026-11-08",
+        "days_in_window": 7
+      },
+      {
+        "file": "market-baseline-2026-11-11T11-20-00.000Z.json",
+        "from": "2026-11-04",
+        "to": "2026-11-10",
+        "days_in_window": 7
+      }
+    ],
+    "baselines_ignored": [
+      {
+        "file": "market-baseline-2026-10-29T12-20-00.000Z.json",
+        "reason": "window-unreadable"
+      },
+      {
+        "file": "market-baseline-2026-10-31T07-10-00.000Z.json",
+        "reason": "recompute-does-not-prove-collection"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "id": "window-days-still-measurable",
+      "statement": "10 of 15 D5 window days are already measured, 5 are missing (0 collectible now, 5 not published yet, 0 lost)",
+      "recompute": "coverage.counts / coverage.covered / coverage.missing"
+    },
+    {
+      "id": "next-baseline-run-deadline",
+      "statement": "the next market baseline must run on or before 2026-11-19 (8 day(s) of slack), or the earliest missing day can no longer be measured",
+      "recompute": "coverage.next_run_by / coverage.days_until_next_run"
+    }
+  ],
+  "limits": [
+    "coverage is a statement about days that have a rolling-window reading, not about demand: the D5 verdict still reads ONE baseline (scripts/lib/d5-score.mjs), and its three thresholds are frozen",
+    "days are UTC calendar days. The D5 window opens at a wall-clock instant (20:24:37Z), so the first and last day are only partly inside it — a day counts as covered when npm published a bucket for it, not when every hour was in the window",
+    "the publish lag is a measured property of api.npmjs.org/downloads/range, not a promise: three reads on 2026-11-03 saw **1 and 2** days (the previous day lands at some point mid-day). `lag_days: 2` is the conservative default — every deadline is then at most one day early, never late — and this artifact records what was observed (`lag_observed`) rather than trusting the constant",
+    "only artifacts that prove a live collection (`inputs.offline === false`) count as coverage. A `--fixtures` recompute re-derives a window; it does not prove anyone collected it (R72 / T-841)",
+    "a past day reported as `lost` is a fact about our sampling, never evidence that the product had no demand",
+    "this script reads the disk only: it does not refresh the baseline, does not read npm, and does not write a D5 verdict"
+  ]
+}

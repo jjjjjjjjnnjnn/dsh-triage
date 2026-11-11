@@ -1,16 +1,17 @@
-# 三条渠道 PR 的现状（R93，2026-11-10 实测）
+# 三条渠道 PR 的现状（R94，2026-11-11 实测）
 
 > **这一页解决一个问题**：同一句「PR 卡住了」，三条 PR 的**原因**各不相同，按错的原因去修会做无用功。
 > **R93 的事实**：上游在 2026-11-10 把 `community.json` 改成**按 `id` 升序**存放，登记要**插到自己 id 的位置**；
 > 维护者 `zhu1090093659` 在 `2026-11-10T05:05:48Z` 于 #65 下留言：他按新结构重建了这个分支（合入当前 `main`、条目插到 id 位置、
 > 内容与评审结论没改），要我们 `pull`/`fetch` 后 **merge**，**不要 force push**。
-> **实测结论**：我方 fork 分支已经**逐字节等于**「upstream `main` + 我方条目按 id 插入」→ **不需要 push**；
+> **R94 的动作**：上游 `main` 在 11-11 又前进到 **124 条**，分支落后了 → 按维护者要求**普通 merge**（`git merge up/main`，无冲突、无 force push），
+> 条目自动落到 **idx 105**（prev `dsh-translate` / next `dsh-tui`），分支 **125 条**，已 push（`b79a17e..3e60635`）。
 > #65 现在是 `MERGEABLE` + `CHANGES_REQUESTED`（1 条 review，作者是维护者本人），差的是 re-review，不是技术动作。
 > **`mergeable_state` 是「谁问」的函数，不是 PR 的属性**（R93 实测）：带 token 读是 `blocked`，匿名读同一 URL 是 `clean`。
 > 两种读数都写进产物（`mergeable_state_by_vantage` + `mergeable_state_disagrees`），本页一律标出用的是哪一种。
 > #193 已于 `2026-11-04T01:00:47Z` **合并**（merge commit `d944a40e`）；#140 仍是 `OPEN / MERGEABLE / CLEAN`、无 review。
-> 全部读数来自两份产物：`data/results/market-channels-2026-11-10T16-35-00.000Z.json`（三条 PR 的 live 字段 + 两种 vantage）
-> 与 `data/results/index-sync-2026-11-10T17-30-00.000Z.json`（索引结构对账 + 本地副本出处，脚本 `scripts/record_index_sync.mjs` 产出）。
+> 全部读数来自两份产物：`data/results/market-channels-2026-11-11T11-35-00.000Z.json`（三条 PR 的 live 字段 + 两种 vantage）
+> 与 `data/results/index-sync-2026-11-11T11-20-00.000Z.json`（索引结构对账 + 本地副本出处，脚本 `scripts/record_index_sync.mjs` 产出）。
 > 上一版只记了带 token 那一侧（那两份已被下面这两份取代、不再留在 `data/results` 里），本文 §2 的更正就是这么来的。
 
 ---
@@ -31,7 +32,7 @@ gh pr view 193 --repo awesome-deepseekharness/awesome-deepseek-harness --json st
 gh pr view 140 --repo walkinglabs/awesome-deepseek-harness-plugins --json state,mergeable,mergeStateStatus,reviewDecision,reviews,changedFiles
 ```
 
-产物：`data/results/market-channels-2026-11-10T16-35-00.000Z.json`（三条 live 状态 + dsh.so 收录探针）。
+产物：`data/results/market-channels-2026-11-11T11-35-00.000Z.json`（三条 live 状态 + dsh.so 收录探针）。
 **旧读数不再有效**：R53（`live 3 · merged 0`）、R60（`151 entries` / `9/9`）、R76（`152 entries` / `9/9` / `reviews 0 条`）都是各自那天的快照；
 `live` 从 3 变 2 是 #193 合并所致（OPEN 的只剩 #65 / #140），不是漂移。
 
@@ -55,28 +56,28 @@ community.json: entries must be sorted by id: <a> comes before <b>
 
 单测从 9 条变成 **10 条**（`node --test scripts/community-index.test.mjs`）。
 
-**对账结果**（`data/results/index-sync-2026-11-10T17-30-00.000Z.json`，`status: in-sync`）：
+**对账结果**（`data/results/index-sync-2026-11-11T11-20-00.000Z.json`，`status: in-sync`）：
 
 | 项 | 读数 |
 |---|---|
-| 上游 `community.json` | **119 条**（sha256 前缀 `19ddc699f284`） |
-| 我方 fork 分支 | **120 条**；`dsh-triage` 在 **idx 101**，prev `dsh-translate` / next `dsh-tui` |
-| 用 `scripts/lib/index-order.mjs#insertByEntryId` 把 fork 那条插进 upstream main 重建 | **120 条** · `byte_equal_to_fork: true` · `deep_equal_to_fork: true` |
-| 上游 `main` head | `5c9f645a`（`2026-11-10T04:57:39Z`，"test(community-plugins): assert the index stays in ascending id order"） |
-| fork head | `b79a17e8`（`2026-11-10T05:05:39Z`，"Merge main into feat/community-plugins-dsh-triage / Insert the index entry at its id position"），与 PR head 一致 |
+| 上游 `community.json` | **124 条** |
+| 我方 fork 分支 | **125 条**；`dsh-triage` 在 **idx 105**，prev `dsh-translate` / next `dsh-tui` |
+| 用 `scripts/lib/index-order.mjs#insertByEntryId` 把 fork 那条插进 upstream main 重建 | **125 条** · `byte_equal_to_fork: true` · `deep_equal_to_fork: true` |
+| 上游 `main` head | `6330a62`（"docs(notes): record the 2026-11-11 registration round"） |
+| fork head | `3e60635`（"Merge remote-tracking branch 'up/main' into feat/community-plugins-dsh-triage"），与 PR head 一致 |
 
-**结论**：分支已经逐字节等于「`main` + 1 条按 id 插入」。**这一轮不需要 push，尤其不能 force push**——
-维护者原话（`2026-11-10T05:05:48Z`，PR #65 下）要求 `pull`/`fetch` 后 **merge**：*"do not force push"*。
+**结论**：分支逐字节等于「`main` + 1 条按 id 插入」，且这次是**真的推上去了**（`b79a17e..3e60635`，普通 push，快进合并式的非 force push）。
+维护者原话（`2026-11-10T05:05:48Z`，PR #65 下）要求 `pull`/`fetch` 后 **merge**：*"do not force push"*——R94 就是照这句话做的。
 force push 会覆盖他的重建，把「逐字节相同」这个唯一剩余的技术优势也弄丢。
 （历史：R60 的冲突解法、R76 的「取上游文件逐字节 + 末尾追加一条」都建立在「两边往同一个数组末尾追加」这个前提上；
 那个前提在 2026-11-10 被「按 id 升序」取代了，所以那两轮的读数（151 / 152 entries、9/9）只能当历史事实看。）
 
 ### #65（community-plugins）——**等 re-review，不欠技术动作**
 
-R93 实测：`OPEN / MERGEABLE`，改动 1 个文件（`community.json`，**+12/-0**），
+R94 实测：`OPEN / MERGEABLE`，改动 1 个文件（`community.json`，**+12/-0**），
 `review_decision: CHANGES_REQUESTED`，**1 条 review**（`2026-11-05T16:15:37Z`，作者 `zhu1090093659`，即维护者本人）。
-分支侧读数（同一份产物）：`community-index: OK (120 entries)`（exit 0）+ `ℹ pass 10 / ℹ fail 0`（`node --test`）。
-所以「解冲突 / 追平 main」这两个动作**已经由维护者做完了**（他重建的分支就是 PR head `b79a17e8`）。
+分支侧读数（同一份产物）：`community-index: OK (125 entries)`（exit 0）+ `ℹ pass 10 / ℹ fail 0`（`node --test`）。
+「追平 main」这次由我们自己做（R94 的 merge），`CONFLICTING` 未出现过。
 
 **一处必须说清的读数陷阱（R93 复算发现）**：这一行原来写的是 `mergeable_state: blocked` / `mergeStateStatus: BLOCKED`，
 而同一时刻**匿名**读同一个 API 是 `clean`。两种都是真读数，差别在**谁问**：带 token 的调用会连带看到 ruleset 里那条
@@ -99,13 +100,13 @@ required status check（`community index gate, typecheck, test and build`）与�
 
 ### 评审的五点（#65 唯一那条 `CHANGES_REQUESTED`）逐条现状
 
-| # | 评审点 | 现状（R93，2026-11-10） |
+| # | 评审点 | 现状（R94，2026-11-11） |
 |---|---|---|
-| ① | 条目可收，但与 `main` 冲突 | **已解决**：R93 实测 `MERGEABLE`、无冲突；维护者重建的 `b79a17e8` 与「main + 1 条按 id 插入」**逐字节相同** |
+| ① | 条目可收，但与 `main` 冲突 | **已解决**：R94 再 merge 一次（`main` 从 120 → 124），`MERGEABLE`、无冲突；`3e60635` 与「main + 1 条按 id 插入」**逐字节相同** |
 | ② | 兼容性希望补**实测结论**，或写进已知边界 | **未处理（本轮不动）**：`engines.dsh` 仍是 `>=0.2.0-rc.1 <0.3.0-0`，实测只有「0.2.1-rc.4（Windows）」一条；补测量或写边界属声明面，需单独一轮 |
 | ③ | 建议把上界放宽到 `<0.4.0-0` | **未处理（本轮不动）**：会牵动 **277 处 `0.3.0-0` 字符串**与 client-tab 对 `inject` 的断言，属声明面 |
 | ④ | `inject` 里的 `@deepseek-ai/dsh-api-remotes` 正文没用到，补用途或去掉 | **技术上成立，未改**：`packages/plugin/client.js` 实际只 `inject ['slots','locale','modules']`，数据走 `fetch('/compat-triage/summary')`；改动要连带测试与 spec，同样单独一轮 |
-| ⑤ | 文案边界（`fix --apply` 会改 profile 的 `compatibility.json`） | **分支上已经是新文案**：中文「只读展示当前组合。不安装、不卸载、不判安全。」英文 "It never installs, never removes, and never claims a plugin is safe." 两处都在 `b79a17e8` 的 `community.json` 里（PR diff 的 +12 行就是这个版本）。**一处自纠**：R93 首版把这事写成「已改好」并引用我们 docs 里的副本，而那份副本当时还带着「不安装到你的 profile」的旧措辞——两处文案本就不是同一句（`index-sync` 复算指出差异键是 `description` 与 `descriptionEn`）；docs 副本已在 `2026-11-10T16:30` 的产物里与分支**逐字一致**（`identical_to_fork_entry: true`） |
+| ⑤ | 文案边界（`fix --apply` 会改 profile 的 `compatibility.json`） | **分支上已经是新文案**：中文「只读展示当前组合。不安装、不卸载、不判安全。」英文 "It never installs, never removes, and never claims a plugin is safe." 两处都在 `3e60635` 的 `community.json` 里（PR diff 的 +12 行就是这个版本）。**一处自纠**：R93 首版把这事写成「已改好」并引用我们 docs 里的副本，而那份副本当时还带着「不安装到你的 profile」的旧措辞——两处文案本就不是同一句（`index-sync` 复算指出差异键是 `description` 与 `descriptionEn`）；R94 的 `index-sync` 再算一次，`identical_to_fork_entry: true` |
 
 ---
 
@@ -124,8 +125,8 @@ required status check（`community index gate, typecheck, test and build`）与�
 
 ## 4. 不许做的四件事
 
-1. **不要为了「让它动起来」再 push**：前提是分支已与 `main` 逐字节一致、且 PR 已经 `MERGEABLE`（R93 实测就是）。
-   这时重新推送只会刷新 `updatedAt`，不产生 review。只有当实测是 `CONFLICTING/DIRTY` 时才轮到「重建」——先看字段，再决定。
+1. **只有「分支落后于 main」时才 push**（R94 就是这种）：先看 `index-sync` 的 `status`，落后才 merge + 普通 push；
+   已经一致时再推只会刷新 `updatedAt`、不产生 review。实测是 `CONFLICTING/DIRTY` 时才轮到「重建」——先看字段，再决定。
 2. **不要 force push**（R93 新增）：维护者已按新结构重建分支、并要求 `pull`/`fetch` 后 merge；
    force push 会覆盖他的提交，**毁掉**「fork = main + 1 条」这个已经证明过的状态。
 3. **不要改条目内容去换合并**（R60 已定的口径）：冲突只能靠重建解，内容只能靠上游要求改；
@@ -151,7 +152,7 @@ R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）。R93 的两条 P
 | 复核命令 | `gh api repos/zhu1090093659/dsh-community-plugins/issues/comments/6771980461 --jq '{id, created_at, user: .user.login, len: (.body|length)}'` |
 
 发出前先读了帖子状态（`scripts/record_discussion_state.mjs` 的口径：写之前先确认它还开着、且没有结论），
-`state: open` / 未合并 / head 仍 `b79a17e8`。**这是我们对自家 PR 的同步说明，不是 R58 那三条「暂不发」的外部回帖**，
+`state: open` / 未合并 / R93 时 head 是 `b79a17e8`，R94 之后是 `3e60635`（本轮 merge 已推上去）。**这是我们对自家 PR 的同步说明，不是 R58 那三条「暂不发」的外部回帖**，
 两件事别记混：`docs/distribution/T-810/registry.json` 记的是那三条外站帖子，`#65` 这条在 GitHub 上、贴的是我们自己的提交。
 
 已发正文（中文，896 字符，与 GitHub 上的逐字一致）：
@@ -195,6 +196,6 @@ R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）。R93 的两条 P
 3. **分支当时已经 `CONFLICTING/DIRTY`**（43 个提交落后上游）→ rebase 到 `upstream/main` 之上，冲突只在我们那一行，解法是**保留上游新增的 4 行 + 追加我们那一行**。
 4. 推送后实测：`MERGEABLE / CLEAN`，`curate` 检查 **pass**（它正是「两份 README 都要有」的那道检查）。
 5. 按维护者的话留了**一次**回复（不重复催）。
-6. **R93 复核：已合并**——`merged_at: 2026-11-04T01:00:47Z`，merge commit `d944a40e`，`changed_files 2`、**+2/-0**（`market-channels-2026-11-10T16-35-00.000Z.json`）。
+6. **R94 复核：已合并**——`merged_at: 2026-11-04T01:00:47Z`，merge commit `d944a40e`，`changed_files 2`、**+2/-0**（`market-channels-2026-11-11T11-35-00.000Z.json`）。
 
 **决定一**：这条渠道**已结案**（`merged` 才算收录）。#65 与 #140 仍只能写「已提交 / 待审」。
