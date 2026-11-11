@@ -18,6 +18,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { abs, fileUrl, isoStamp, sha256 } from './lib/kit.mjs'
+import { projectDuplicate, summariseDuplicates } from './lib/audit-projection.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -86,11 +87,13 @@ const payload = {
     version: row.version,
     declared_by: (row.declaredBy ?? []).map((origin) => ({ name: origin.name, version: origin.version, field: origin.field })),
   })),
-  duplicates: duplicates.map((duplicate) => ({
-    name: duplicate.name,
-    kind: duplicate.kind,
-    copies: duplicate.copies.map((copy) => ({ scope: copy.scope, path: copy.path, version: copy.version })),
-  })),
+  duplicates: duplicates.map(projectDuplicate),
+  /*
+   * R94: `findings` is the number the engine actually emitted, not a re-derivation — see
+   * `scripts/lib/audit-projection.mjs`. `groups - findings - downgraded` does not have to be zero:
+   * same-version groups and groups with one readable version are dropped by the engine as well.
+   */
+  duplicates_summary: summariseDuplicates({ groups: duplicates, findings: duplicateVerdicts.length }),
   verdicts: [...rowVerdicts, ...duplicateVerdicts].map((verdict) => core.redactVerdict(verdict, redactRoots)),
   // Composition errors can name files; redact them the same way as everything else.
   errors: composition.errors.map((error) =>

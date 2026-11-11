@@ -13949,6 +13949,75 @@
         "ssot": "PASS：产物被本步引用；事实包 `docs/copy/facts/2026-11-11-036-release.md` 的三个数字全部来自它或两份 publish 产物，草稿只在事实包范围内措辞。",
         "adversary": "反例：① 把「13 → 0」写成「重复问题消失了」→ 事实包与草稿都明确「副本一条都没被藏」；② 让文案 agent 自己编一个百分比 → 提示词禁止，且草稿里没有比例；③ 事实包引用一个不存在的 sha → `copy-channel` 测试会红（它逐个校验被引用的产物与 `.sha256`）；④ 顺手把 issue 回帖发了 → 发帖是 HUMAN 的动作，本轮只落事实包与草稿。"
       }
+    },
+    {
+      "id": "R94-S17",
+      "batch": "R94",
+      "step": "把事实包与草稿推进公开仓，并读回最后一刀",
+      "changed": [
+        "data/results/public-cut-2026-11-11T12-20-32.472Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree 9cef524 · public 91d6595 · trees-equal true · cut at 08d69a0 · behind 0`；普通 push（`f8a4b3d..91d6595`）。",
+        "artifact": "data/results/public-cut-2026-11-11T12-20-32.472Z.json",
+        "sha256": "9710daf1381f34fd87090ba19ac88490af105b89b8b74b7f715d4cb57e6476be"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`；公开仓此时带着 0.3.6 的 CHANGELOG、publish 取证、事实包与草稿，读者能逐条复算。",
+        "reproducibility": "PASS：切面用 `commit-tree` 从容器子树生成，父提交是旧 `origin/main`，同样的两条命令得到同一棵树。",
+        "licence": "PASS：只推本仓 MIT 子树，不含 `dsh-remedy` 的未提交改动。",
+        "ssot": "PASS：产物被本步引用；它与前两份 `public-cut` 各自是不同时刻的真值（`2a0366a` / `818f2cc` / `08d69a0`），不构成漂移。",
+        "adversary": "反例：① 认为「又落后 1 等于没切成」→ 产物在它描述的树里，这是构造使然；② 用 `--force` 省事 → 不必，且会覆盖别人的历史；③ 把公开仓当「发布」→ 发布是 npm 的事，这一步只让源码可读。"
+      }
+    },
+    {
+      "id": "R94-S18",
+      "batch": "R94",
+      "step": "修掉自己留下的一处「产物撑不住结论」：`record_audit` 的重复投影丢了 `surface`，于是「13 组 / 0 finding」在产物里无法复算",
+      "changed": [
+        "scripts/lib/audit-projection.mjs",
+        "scripts/lib/audit-projection.d.mts",
+        "scripts/record_audit.mjs",
+        "tests/unit/audit-projection.test.ts",
+        "data/results/audit-2026-11-11T12-40-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/audit-projection.test.ts → npx tsc -p tsconfig.tests.json --noEmit → node scripts/record_audit.mjs --profile desktop --stamp 2026-11-11T12:40:00.000Z",
+        "outcome": "单测 **6/6**（含两条负对照）；类型检查 exit 0；新产物 `duplicates_summary = { groups 13, findings 0, downgraded 13, unstated_surface 0, different_versions 13 }`，`duplicates[]` 每条都带 `surface: false`。旧产物 `audit-2026-11-11T12-30-00.000Z.json` 保留（它记的是修前的形状）。",
+        "artifact": "data/results/audit-2026-11-11T12-40-00.000Z.json",
+        "sha256": "bdb925942fd7075468a3d6e8ecafe31158bf92df822e63990d62f3bd2f193f95"
+      },
+      "review": {
+        "correctness": "PASS：`findDuplicateCopies()` 一直在算 `surface`（`packages/plugin/src/load.ts`），`audit-data.ts` 也一直在投影它——只有记录器另写了一份 `{name,kind,copies}` 把它丢了。修的是记录器的保真度，**判定一行未动**（`duplicates.ts` / `verdictsFromDuplicateCopies` 没碰）。",
+        "reproducibility": "PASS：投影是纯函数，单测固定三态（`true` / `false` / 缺省→`null`）；`findings` 直接取引擎发出的 verdict 数，不在记录器里重算，避免第二份规则漂移。",
+        "licence": "PASS：只读本机 profile 与仓内源码。",
+        "ssot": "PASS：新产物被本步引用；`duplicates_summary.groups` 与 `duplicates.length`、`findings` 与「重复来源的 verdict 数」逐项对得上，S16 里那句「13 组里没有一组是 bundle 或 `dsh-*`」现在有字段可查。",
+        "adversary": "反例：① 把缺省 `surface` 记成 `false` → 负对照会红，而且引擎按 `!== false` 判，记成 `false` 等于把未声明的组偷偷降级；② 在记录器里重算 `findings` → 另一条负对照要求「引擎说 7 就是 7」；③ 直接把旧产物改一遍 → 保留两份，修前修后各自为真；④ 顺手改 `duplicates.ts` 让投影「看起来一致」→ 那是判据轮的事，本轮没动。"
+      }
+    },
+    {
+      "id": "R94-S19",
+      "batch": "R94",
+      "step": "测试数上到 897 之后重跑上架检查",
+      "changed": [
+        "data/results/listing-2026-11-11T12-50-00.000Z.json",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T12:50:00.000Z --tests 897",
+        "outcome": "**17/17**；`--stamp 12:45` 先被拒写（那份已存在），换 stamp 后通过——「拒覆盖」这条守卫当场被用到一次。",
+        "artifact": "data/results/listing-2026-11-11T12-50-00.000Z.json",
+        "sha256": "deafcea371a2f1916383c5f21366fcd9d0adb95ae89a00260ce94603138c1960"
+      },
+      "review": {
+        "correctness": "PASS：徽章、正文、§3 与规模行四处同时改成 897；`test-count-matches` 扫三种写法，漏一处就红。",
+        "reproducibility": "PASS：同一文档状态重跑逐项相同；stamp 冲突时脚本拒写而不是覆盖。",
+        "licence": "PASS：只读本仓文档与产物。",
+        "ssot": "PASS：产物被本步引用；两份 README 的 897 与它一致。",
+        "adversary": "反例：① 拿旧 stamp 覆盖出一份「新」产物 → 脚本直接拒写；② 只改徽章不改正文 → 断言扫正文，会红；③ 把 897 写成「约 900」→ 断言要求精确相等。"
+      }
     }
   ]
 }
