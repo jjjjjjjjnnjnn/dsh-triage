@@ -26,6 +26,7 @@ import process from 'node:process'
 
 import { writeEvidence } from './lib/evidence.mjs'
 import { isoStamp } from './lib/kit.mjs'
+import { scrubAbsolutePaths } from './lib/scrub-paths.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -208,7 +209,9 @@ const payload = {
     third_party: plan.thirdParty,
     unresolved: plan.unresolved,
   },
-  plan,
+  // R94: a tarball install puts `file:C:/Users/<name>/...` in the plan; a published artifact
+  // names the profile, not the user (M8 C8; gate_governance/results-privacy enforces it).
+  plan: scrubAbsolutePaths(plan, dshHome),
   limits: [
     'a plan is computed from the profile manifest only: it does not prove the host boots, before or after a trim',
     'the CLI was invoked with --json; this artifact is that output plus the before/after manifest hashes',

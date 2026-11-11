@@ -14312,13 +14312,13 @@
         "CHANGELOG.md",
         "packages/plugin/README.md",
         "docs/market/listing_en.md",
-        "data/results/listing-2026-11-11T15-50-00.000Z.json"
+        "data/results/listing-2026-11-11T17-40-00.000Z.json"
       ],
       "real_test": {
-        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T15:50:00.000Z --tests 905 → node scripts/release_preflight.mjs",
-        "outcome": "`listing` **17/17**（version 0.3.7 / 905）；预检查四项全绿（`npm user` / `version 0.3.7` / `workspace:` 5 dep / `registry: 0.3.7 还没发过`）。",
-        "artifact": "data/results/listing-2026-11-11T15-50-00.000Z.json",
-        "sha256": "fa4b00900ec2b1cd8033c277c90a188f985503e929b6576f4986fb0929d1bcd7"
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T17:40:00.000Z --tests 911 → node scripts/release_preflight.mjs",
+        "outcome": "**17/17**（version 0.3.7 / tests 911 重跑）；预检查四项全绿。",
+        "artifact": "data/results/listing-2026-11-11T17-40-00.000Z.json",
+        "sha256": "a8b50ef34438ba229fe298c696978a2ae292c404555e531aea37a57b3b602ea6"
       },
       "review": {
         "correctness": "PASS：0.3.6 的 tarball 里 `packages/plugin/README.md` 仍是那句「绝不修改 `~/.dsh`」（实测 `staleClaim: true`），而 npm 页面用的就是这份文件——所以这条假话在 0.3.6 上仍然对用户可见。0.3.7 只发文档：四个 `package.json` 的 version 一起动，代码零改动（`git diff --stat packages/*/src` 为空）。",
@@ -14368,6 +14368,161 @@
         "licence": "PASS：只装自己发布的包。",
         "ssot": "PASS：产物被本步引用；两份 README 的四条命令与它一致。",
         "adversary": "反例：① 只验 `--help` → 用户真正跑的是 `status` / `audit` / `upgrade --card`；② 拿仓内 `packages/plugin/dist` 跑 → 那证明源码能跑，不证明包能用；③ 忘掉 0.3.7 已换 README → npm 页的新句子要在这份产物里也能对上（`upgrade-card` 那步会打印边界句）。"
+      }
+    },
+    {
+      "id": "R94-S36",
+      "batch": "R94",
+      "step": "0.3.7 的切面：公开仓与容器同树，npm 页与仓库 README 不再互相矛盾",
+      "changed": [
+        "data/results/public-cut-2026-11-11T14-18-35.886Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree 2d078fc · public 0977ca7 · trees-equal true · cut at cc05823 · behind 0`；普通 push（`16fcfe2..0977ca7`）。",
+        "artifact": "data/results/public-cut-2026-11-11T14-18-35.886Z.json",
+        "sha256": "83a3f7e6c73766bf8f16d6a68a771cec383f6608c6222e7c40fdb0ea0c9e018c"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`，公开仓此时既含 0.3.7 的 CHANGELOG 也含 `public-boundary` 用例；npm 页的 README 与仓库里的那份是同一段文字（都点名 `compatibility.json`）。",
+        "reproducibility": "PASS：切面由容器子树生成；`cut at cc05823` 与推送的树一一对应，任何人可重算。",
+        "licence": "PASS：只推本仓 MIT 子树，不带 `dsh-remedy` 的未提交改动。",
+        "ssot": "PASS：产物被本步引用；这是第七份 `public-cut`，每份 `cut at` 不同，是顺序不是抖动。",
+        "adversary": "反例：① 认为「发了 npm 就不用推源码」→ 产物链接指向 GitHub，仓库旧了链接就打不开；② 为了 behind 0 反复切 → 每切一次多一个提交，追不上；③ 把 0.3.7 说成修了 bug → 代码零改动，CHANGELOG 已写明。"
+      }
+    },
+    {
+      "id": "R94-S37",
+      "batch": "R94",
+      "step": "真机冒烟（写入路径）：`fix` 在一个一次性 profile 上走完 计划 → dry-run 不写 → --apply → 幂等 → --undo 逐字节还原",
+      "changed": [
+        "data/results/fix-2026-11-11T16-20-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_fix_plan.mjs --stamp 2026-11-11T16:20:00.000Z",
+        "outcome": "**14/14**：`dry-run-writes-nothing` 文件未变；`apply-adds-exemption` 写出上游格式；`apply-preserves-existing`；`apply-writes-backup` + `apply-writes-journal`；`apply-is-idempotent` 第二次仍只有一条；`undo-restores-bytes` `identical=true`。",
+        "artifact": "data/results/fix-2026-11-11T16-20-00.000Z.json",
+        "sha256": "9ad1a1ed92ef2f2c1f753e9909f6d0dd6e308b5c3fa81c4391be4a29955098e8"
+      },
+      "review": {
+        "correctness": "PASS：跑在一份一次性 profile 上（进程内建，跑完删除），不是本机 `~/.dsh`；`unsupported-*` 三条还验证了「不知道怎么装的就只给命令、不写盘」。",
+        "reproducibility": "PASS：同一 `--stamp` 重跑得到同样的 14 条；profile 是临时目录，不依赖本机状态。",
+        "licence": "PASS：只写临时目录里的 `compatibility.json`。",
+        "ssot": "PASS：产物被本步引用；README 新边界句里「先备份 → 原子写 → 回读 → journal → --undo」逐条对上。",
+        "adversary": "反例：① 只在单测里 mock 写盘 → 这条是唯一真写盘证据；② 跳过 dry-run → 「默认不写」就没被验；③ 用本机 profile 试 `--apply` → 会改用户配置，本脚本刻意用一次性 profile。"
+      }
+    },
+    {
+      "id": "R94-S38",
+      "batch": "R94",
+      "step": "真机冒烟（只读半边）：`rescue` 在本机 desktop profile 上计划，并证明一个字节都没写——同时修掉它把用户 home 路径写进产物的缺陷",
+      "changed": [
+        "data/results/rescue-2026-11-11T16-25-00-000Z.json",
+        "scripts/lib/scrub-paths.mjs",
+        "scripts/lib/scrub-paths.d.mts",
+        "scripts/record_rescue.mjs",
+        "tests/unit/scrub-paths.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/record_rescue.mjs --stamp 2026-11-11T16:25:00.000Z --kind measured --profile desktop --dsh-home <~/.dsh>",
+        "outcome": "`24 bundles · removable 17 · third-party 17 · unresolved 5`；`inputs.manifest_sha256 == manifest_sha256_after`（`a20cc701…`）、`read_only: true`。",
+        "artifact": "data/results/rescue-2026-11-11T16-25-00-000Z.json",
+        "sha256": "5ab1de38eadd01ecdbfe80b97497de156af2686e682e4b54ad845c431c08c947"
+      },
+      "review": {
+        "correctness": "PASS：只读由 $sha256 判，不由脚本自称——`manifest_sha256_after` 是命令跑完后重新读磁盘算出来的。",
+        "reproducibility": "PASS：只读 `package.json` 与磁盘上的安装位置；同一 profile 重跑给出同样分类。",
+        "licence": "PASS：只读本机已安装包，不写 `~/.dsh`。",
+        "ssot": "PASS：产物被本步引用；README / 上架文案里「`rescue --apply` 只改 `dsh.profile.bundles`」与它的 `removable` 计数一致。",
+        "adversary": "反例：① 拿 `--apply` 试真机 → 会删 bundle，必须用一次性 profile；② 「只读」写成声明而非测量 → this 用前后 sha256；③ 把 `unresolved 5`（官方 bundle 没装上）当成可裁 → 规则是「只报告不裁」。"
+      }
+    },
+    {
+      "id": "R94-S39",
+      "batch": "R94",
+      "step": "真机冒烟（面板）：`serve` 起真服务器，走一遍人工会点的路由，并把面板与 CLI 的数字逐项对账",
+      "changed": [
+        "data/results/serve-smoke-2026-11-11T16-35-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_serve_smoke.mjs --stamp 2026-11-11T16:35:00.000Z",
+        "outcome": "**18/18**：无 token `401` / 页面 `200`（38177B）/ 8 个控件 / 500 份产物列举与详情 / 穿越 `400` / 跨源 `403` / POST `403` / `--no-audit` 下 `501` 两处 / `summary-first-screen` / **`summary-parity-with-ledger`** / 脱敏 / **`audit-parity`** 与 `audit --json` 逐项相同。",
+        "artifact": "data/results/serve-smoke-2026-11-11T16-35-00.000Z.json",
+        "sha256": "48f76a296f018c972456ff0058c0867db8a87d46f4a60323fc9e8729b676e37b"
+      },
+      "review": {
+        "correctness": "PASS：`audit-parity` 是同一 profile 上的两次独立读取（面板 HTTP 与 CLI 子进程），不是同一次内存对象的复述。",
+        "reproducibility": "PASS：服务器随机端口、`--stamp` 固定；失败项会逐条给路由与状态码。",
+        "licence": "PASS：只起本地 HTTP，读取仓内产物。",
+        "ssot": "PASS：产物被本步引用；README「`serve` 只响 127.0.0.1、Token 鉴权」与 401/403/400 三条对上。",
+        "adversary": "反例：① 只测 `/` 200 就说面板能用 → 详情、穿越、跨源、POST、`--no-audit` 是四类不同失败；② 面板自己算一遍数字 → `audit-parity` 会红；③ 把「有 HTTP 200」当成「页面能用」→ `summary-first-screen` 要求 tone 与 issue 行真的渲染出来。"
+      }
+    },
+    {
+      "id": "R94-S40",
+      "batch": "R94",
+      "step": "真机冒烟（浏览器半边）：在沙盒 Host 里装本仓四包，打开设置页点进「分诊台」页签",
+      "changed": [
+        "data/results/client-serve-2026-11-11T16-45-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp 2026-11-11T16:45:00.000Z --lang zh",
+        "outcome": "11 passed / **2 failed** / 3 unmeasured：`bundle · install · boot · graph · upgrade-route · client · mount · visible · summary-visible · upgrade-visible · user-answer · cleanup` 全绿；`same-source` **failed**（tab judged 72 / unknown 72 vs cli judged 184 / unknown 184）；`upgrade-same-source` **failed**（would-be-denied tab 119 / cli 3、cannot-tell tab 74 / cli 190）。",
+        "artifact": "data/results/client-serve-2026-11-11T16-45-00.000Z.json",
+        "sha256": "668ab33c351c9b97af8ffede03035fe5d9888bf40498b1319c011893055dbefd"
+      },
+      "review": {
+        "correctness": "**FAIL — 必须如实说**：两条 `*-same-source` 红，说明**面板的数字与 CLI 的数字在这份沙盒里不一致**，而 README 与上架文案都写着「数据与 CLI 同源」。这是真缺陷，不是测量噪音：`visible` 与 `upgrade-visible` 都证明页面自己渲染出来了，所以差异来自两边的**读取**而不是渲染。",
+        "reproducibility": "PASS：脚本自己起 Host、自己装包、自己开浏览器；`sandbox.home` 与 `conditions.window` 都在产物里，任何人可重跑。",
+        "licence": "PASS：只在临时 `DSH_HOME` 里安装本仓四个包（`file:` 依赖），不动本机 profile。",
+        "ssot": "PASS（但结论与文档冲突）：产物被本步引用；冲突本身是本轮要记录的内容——文案说同源、产物说不同源，两者不能同时为真。",
+        "adversary": "反例：① 把 `failed` 当成「沙盒的怪现象」而不查 → 那就是这个仓最反感的形状（绿门禁 + 假话）；② 改断言让它通过 → 会毁掉唯一能发现这项差异的检查；③ 直接把文案改成「可能不同源」→ 那是拿文案迁就缺陷，正确做法是先定位读取差异。"
+      }
+    },
+    {
+      "id": "R94-S41",
+      "batch": "R94",
+      "step": "修掉 smoke 抓出来的第一处真缺陷：`record_rescue` 把 `file:C:/Users/<name>/…` 原样写进 SSOT",
+      "changed": [
+        "scripts/lib/scrub-paths.mjs",
+        "scripts/lib/scrub-paths.d.mts",
+        "scripts/record_rescue.mjs",
+        "tests/unit/scrub-paths.test.ts",
+        "data/results/rescue-2026-11-11T16-25-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/scrub-paths.test.ts → node scripts/record_rescue.mjs --stamp 2026-11-11T16:25:00.000Z --kind measured --profile desktop --dsh-home <~/.dsh> → node scripts/gate_governance.mjs",
+        "outcome": "单测 **6/6**（含两条负对照）；重录后 `governance/results-privacy` **PASS（no home paths in SSOT）**；`manifest_sha256 == manifest_sha256_after` 仍成立（只读没被这次改动破坏）。",
+        "artifact": "data/results/rescue-2026-11-11T16-25-00-000Z.json",
+        "sha256": "5ab1de38eadd01ecdbfe80b97497de156af2686e682e4b54ad845c431c08c947"
+      },
+      "review": {
+        "correctness": "PASS：缺陷是 `gate_governance/results-privacy` 抓到的（不是我发现后自报），根因是记录器只替换了 `inputs.dsh_home`、却把 CLI 输出里的 `plan` 原样嵌入；修法是纯函数 `scrubAbsolutePaths`，只改字符串里的 home 片段。",
+        "reproducibility": "PASS：同一份 profile 重录得到同样的 `removable 17 / third_party 17 / unresolved 5`，只有 home 片段不同（现在已被替换）。",
+        "licence": "PASS：只读本机 profile，不复制外部内容。",
+        "ssot": "PASS：产物被本步引用；README / M8 spec 的「产物只写 profile 名、不写用户绝对路径」现在由门禁而不是自律保证。",
+        "adversary": "反例：① 把 home 换成 `<home>` 但漏掉反斜杠写法 → 6 条用例里专门有正/反斜杠两种；② 顺手把 `spec` 整条删掉 → 用例要求 `pkg.tgz` 仍在，只去掉用户目录；③ 认为「只有一处字段泄漏」→ 第一次实测就是 `plan` 里漏的，不是 `inputs`。"
+      }
+    },
+    {
+      "id": "R94-S42",
+      "batch": "R94",
+      "step": "冒烟与文案都改完之后再跑一次门禁负对照",
+      "changed": [
+        "data/results/mutation-controls-2026-11-11T17-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate → node scripts/record_mutation_controls.mjs --stamp 2026-11-11T17:50:00.000Z",
+        "outcome": "`NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation`；`mutation-controls` **18/18 RED** 后逐字节还原。",
+        "artifact": "data/results/mutation-controls-2026-11-11T17-50-00.000Z.json",
+        "sha256": "0daae5fbc5d750c29b3457112d1610cf79e27937bd239411f5d34c7ea72a3f4b"
+      },
+      "review": {
+        "correctness": "PASS：18 条对照逐条 RED；这一轮新增的 `public-boundary` 与 `results-privacy` 都属于既有门禁的注入点，不是新门。",
+        "reproducibility": "PASS：每条 = 注入 → 断言必须红 → 逐字节还原；重跑相同。",
+        "licence": "PASS：只动本仓文件并还原。",
+        "ssot": "PASS：产物被本步引用；HANDOFF 的「18/18」与它一致。",
+        "adversary": "反例：① 只跑 `--mutate` 不落盘 → 下一轮无法复算；② 注入后忘还原 → 还原断言会红；③ 把 18/18 RED 读成「产品正确」→ 它只证明门禁会响。"
       }
     }
   ]

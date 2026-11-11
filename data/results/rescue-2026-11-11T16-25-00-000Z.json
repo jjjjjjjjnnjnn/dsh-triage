@@ -1,0 +1,536 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_rescue.mjs",
+  "generated_at": "2026-11-11T16:25:00.000Z",
+  "question": "if this host will not start, which dsh.profile.bundles entries would a rescue trim — and did asking change the profile?",
+  "sample": {
+    "kind": "measured",
+    "profile": "desktop"
+  },
+  "inputs": {
+    "dsh_home": "(dsh-home)",
+    "cli": "packages/plugin/dist/cli.js",
+    "cli_exit": 1,
+    "manifest_sha256": "a20cc701ecb8a7daa9b76a179e970f3639c2293f8a4343a4bd3b05ca49a19d51",
+    "manifest_sha256_after": "a20cc701ecb8a7daa9b76a179e970f3639c2293f8a4343a4bd3b05ca49a19d51",
+    "read_only": true
+  },
+  "counts": {
+    "bundles": 24,
+    "removable": 17,
+    "third_party": 17,
+    "unresolved": 5
+  },
+  "plan": {
+    "evidence": "scanned",
+    "profile": "desktop",
+    "manifestSha256": "a20cc701ecb8a7daa9b76a179e970f3639c2293f8a4343a4bd3b05ca49a19d51",
+    "bundles": [
+      {
+        "name": "@deepseek-ai/dsh-base",
+        "spec": null,
+        "version": "0.1.0-rc.6",
+        "origin": "official",
+        "removable": false,
+        "detail": "Official bundle: outside what a rescue would trim.",
+        "restore": {
+          "at": 0,
+          "entry": "@deepseek-ai/dsh-base"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-web-app",
+        "spec": null,
+        "version": "0.1.0-rc.6",
+        "origin": "official",
+        "removable": false,
+        "detail": "Official bundle: outside what a rescue would trim.",
+        "restore": {
+          "at": 1,
+          "entry": "@deepseek-ai/dsh-web-app"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-experimental-plugin-market-bundle",
+        "spec": null,
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 2,
+          "entry": "@deepseek-ai/dsh-experimental-plugin-market-bundle"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-experimental-agent-team-profile",
+        "spec": null,
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 3,
+          "entry": "@deepseek-ai/dsh-experimental-agent-team-profile"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-experimental-forge-bundle",
+        "spec": null,
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 4,
+          "entry": "@deepseek-ai/dsh-experimental-forge-bundle"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-experimental-inspector-profile",
+        "spec": null,
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 5,
+          "entry": "@deepseek-ai/dsh-experimental-inspector-profile"
+        }
+      },
+      {
+        "name": "@deepseek-ai/dsh-personalized-recommendations",
+        "spec": null,
+        "version": null,
+        "origin": "unresolved",
+        "removable": false,
+        "detail": "Listed in dsh.profile.bundles but not installed under this profile, and it is an official bundle: reported only — check the install before trimming a core bundle.",
+        "restore": {
+          "at": 6,
+          "entry": "@deepseek-ai/dsh-personalized-recommendations"
+        }
+      },
+      {
+        "name": "@michengai/dsh-pua",
+        "spec": "^1.0.8",
+        "version": "1.0.8",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 7,
+          "entry": "@michengai/dsh-pua"
+        }
+      },
+      {
+        "name": "dsh-triage",
+        "spec": "^0.3.4",
+        "version": "0.3.4",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 8,
+          "entry": "dsh-triage"
+        }
+      },
+      {
+        "name": "billion-context",
+        "spec": "^0.1.213",
+        "version": "0.1.213",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 9,
+          "entry": "billion-context"
+        }
+      },
+      {
+        "name": "dshmarket",
+        "spec": "1.73.16",
+        "version": "1.73.16",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 10,
+          "entry": "dshmarket"
+        }
+      },
+      {
+        "name": "@tt-a1i/archify-dsh",
+        "spec": "^1.0.0",
+        "version": "1.0.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 11,
+          "entry": "@tt-a1i/archify-dsh"
+        }
+      },
+      {
+        "name": "dsh-windows-mcp",
+        "spec": "^0.2.3",
+        "version": "0.2.3",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 12,
+          "entry": "dsh-windows-mcp"
+        }
+      },
+      {
+        "name": "dsh-ops",
+        "spec": "0.5.1",
+        "version": "0.5.1",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 13,
+          "entry": "dsh-ops"
+        }
+      },
+      {
+        "name": "@liustack/modsearch",
+        "spec": "5.10.12",
+        "version": "5.10.12",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 14,
+          "entry": "@liustack/modsearch"
+        }
+      },
+      {
+        "name": "dsh-notify-me",
+        "spec": "1.18.0",
+        "version": "1.18.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 15,
+          "entry": "dsh-notify-me"
+        }
+      },
+      {
+        "name": "@linxin666/dsh-client-ui-skill-explorer",
+        "spec": "0.4.16",
+        "version": "0.4.16",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 16,
+          "entry": "@linxin666/dsh-client-ui-skill-explorer"
+        }
+      },
+      {
+        "name": "dsh-free-search",
+        "spec": "0.9.39",
+        "version": "0.9.39",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 17,
+          "entry": "dsh-free-search"
+        }
+      },
+      {
+        "name": "@240xu/dsh-websearch",
+        "spec": "2.8.8",
+        "version": "2.8.8",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 18,
+          "entry": "@240xu/dsh-websearch"
+        }
+      },
+      {
+        "name": "dsh-browser",
+        "spec": "^0.1.0",
+        "version": "0.1.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 19,
+          "entry": "dsh-browser"
+        }
+      },
+      {
+        "name": "dsh-unlag",
+        "spec": "^1.17.5",
+        "version": "1.17.5",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 20,
+          "entry": "dsh-unlag"
+        }
+      },
+      {
+        "name": "cc-safety-net",
+        "spec": "2.7.6",
+        "version": "2.7.6",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 21,
+          "entry": "cc-safety-net"
+        }
+      },
+      {
+        "name": "dsh-remedy",
+        "spec": "file:<home>/Desktop/项目开发/DSH-Addition/dsh-remedy/.tmp/pack17/dsh-remedy-0.3.5.tgz",
+        "version": "0.3.5",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Installed from a local path, so it is your own code: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 22,
+          "entry": "dsh-remedy"
+        }
+      },
+      {
+        "name": "dsh-context",
+        "spec": "0.83.0",
+        "version": "0.83.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 23,
+          "entry": "dsh-context"
+        }
+      }
+    ],
+    "removable": [
+      {
+        "name": "@michengai/dsh-pua",
+        "spec": "^1.0.8",
+        "version": "1.0.8",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 7,
+          "entry": "@michengai/dsh-pua"
+        }
+      },
+      {
+        "name": "dsh-triage",
+        "spec": "^0.3.4",
+        "version": "0.3.4",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 8,
+          "entry": "dsh-triage"
+        }
+      },
+      {
+        "name": "billion-context",
+        "spec": "^0.1.213",
+        "version": "0.1.213",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 9,
+          "entry": "billion-context"
+        }
+      },
+      {
+        "name": "dshmarket",
+        "spec": "1.73.16",
+        "version": "1.73.16",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 10,
+          "entry": "dshmarket"
+        }
+      },
+      {
+        "name": "@tt-a1i/archify-dsh",
+        "spec": "^1.0.0",
+        "version": "1.0.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 11,
+          "entry": "@tt-a1i/archify-dsh"
+        }
+      },
+      {
+        "name": "dsh-windows-mcp",
+        "spec": "^0.2.3",
+        "version": "0.2.3",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 12,
+          "entry": "dsh-windows-mcp"
+        }
+      },
+      {
+        "name": "dsh-ops",
+        "spec": "0.5.1",
+        "version": "0.5.1",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 13,
+          "entry": "dsh-ops"
+        }
+      },
+      {
+        "name": "@liustack/modsearch",
+        "spec": "5.10.12",
+        "version": "5.10.12",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 14,
+          "entry": "@liustack/modsearch"
+        }
+      },
+      {
+        "name": "dsh-notify-me",
+        "spec": "1.18.0",
+        "version": "1.18.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 15,
+          "entry": "dsh-notify-me"
+        }
+      },
+      {
+        "name": "@linxin666/dsh-client-ui-skill-explorer",
+        "spec": "0.4.16",
+        "version": "0.4.16",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 16,
+          "entry": "@linxin666/dsh-client-ui-skill-explorer"
+        }
+      },
+      {
+        "name": "dsh-free-search",
+        "spec": "0.9.39",
+        "version": "0.9.39",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 17,
+          "entry": "dsh-free-search"
+        }
+      },
+      {
+        "name": "@240xu/dsh-websearch",
+        "spec": "2.8.8",
+        "version": "2.8.8",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 18,
+          "entry": "@240xu/dsh-websearch"
+        }
+      },
+      {
+        "name": "dsh-browser",
+        "spec": "^0.1.0",
+        "version": "0.1.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 19,
+          "entry": "dsh-browser"
+        }
+      },
+      {
+        "name": "dsh-unlag",
+        "spec": "^1.17.5",
+        "version": "1.17.5",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 20,
+          "entry": "dsh-unlag"
+        }
+      },
+      {
+        "name": "cc-safety-net",
+        "spec": "2.7.6",
+        "version": "2.7.6",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 21,
+          "entry": "cc-safety-net"
+        }
+      },
+      {
+        "name": "dsh-remedy",
+        "spec": "file:<home>/Desktop/项目开发/DSH-Addition/dsh-remedy/.tmp/pack17/dsh-remedy-0.3.5.tgz",
+        "version": "0.3.5",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Installed from a local path, so it is your own code: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 22,
+          "entry": "dsh-remedy"
+        }
+      },
+      {
+        "name": "dsh-context",
+        "spec": "0.83.0",
+        "version": "0.83.0",
+        "origin": "third-party",
+        "removable": true,
+        "detail": "Third-party bundle: reversible to trim, and the first thing to try when the host will not start.",
+        "restore": {
+          "at": 23,
+          "entry": "dsh-context"
+        }
+      }
+    ],
+    "thirdParty": 17,
+    "unresolved": 5,
+    "empty": false,
+    "field": "present"
+  },
+  "limits": [
+    "a plan is computed from the profile manifest only: it does not prove the host boots, before or after a trim",
+    "the CLI was invoked with --json; this artifact is that output plus the before/after manifest hashes",
+    "one machine, one profile, one moment: the counts describe this profile, not the ecosystem",
+    "evidence tier is `scanned` — dsh.profile.bundles is configuration read off disk, not something the package declares"
+  ],
+  "recompute": "node scripts/record_rescue.mjs --stamp 2026-11-11T16:25:00.000Z --dsh-home '(dsh-home)' --profile desktop --kind measured"
+}
