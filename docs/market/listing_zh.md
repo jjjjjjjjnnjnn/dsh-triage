@@ -59,7 +59,7 @@ dsh-triage env                     # 环境指纹
 ### 它不做什么
 
 - **不提供安全背书**（防恶意软件与供应链审计请用专门安全工具）；
-- **不修改你的 profile**：不安装到你的 profile、不卸载现有插件、不执行回滚（由上游 `plugin_manager` 原生管理）；
+- **默认只读，写入只在 `--apply`**：不安装、不卸载、不回滚（由上游 `plugin_manager` 原生管理）；`fix --apply` 只改 `<profile>/compatibility.json`，`rescue --apply` 只改 `dsh.profile.bundles` 那几行，均先备份、可 `--undo`；
 - 缺少证据如实判定为**未明确**（`unknown`），不作无事实依据的猜测。
 
 ### 为什么可信

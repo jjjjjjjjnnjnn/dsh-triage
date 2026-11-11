@@ -14169,6 +14169,115 @@
         "ssot": "PASS：产物被本步引用；两份 README 的 901 与它一致。",
         "adversary": "反例：① 只改徽章 → 正文那条断言会红（这个仓为此红过）；② 写「约 900」→ 断言要求精确相等；③ 把新增用例数凭印象相加 → 以 `node --test` 的实测计数为准（897 → 901）。"
       }
+    },
+    {
+      "id": "R94-S27",
+      "batch": "R94",
+      "step": "把答问的取证与事实包推进公开仓，并读回切面",
+      "changed": [
+        "data/results/public-cut-2026-11-11T13-18-19.016Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree 4757923 · public 8316879 · trees-equal true · cut at 1faec71 · behind 0`；普通 push（`122ea97..8316879`）。",
+        "artifact": "data/results/public-cut-2026-11-11T13-18-19.016Z.json",
+        "sha256": "ebb37e330080fe6a55ccdfbea3e7e876f535060a8a45391d683cd8f10dc61cd0"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`；公开仓此刻带着三条回帖的地址与取证产物，任何读者能按 `record_posted_replies` 的同一口径复核。",
+        "reproducibility": "PASS：切面由容器子树生成，父提交是旧 `origin/main`；`cut at` 指向的那个提交可以逐字节重建。",
+        "licence": "PASS：只推本仓 MIT 子树；`dsh-remedy` 的未提交改动不在切面里。",
+        "ssot": "PASS：产物被本步引用；它是第五份 `public-cut`（`2a0366a` / `818f2cc` / `08d69a0` / `a0ce6f7` / `1faec71`），各自是不同时刻的真值。",
+        "adversary": "反例：① 把五份 `public-cut` 读成抖动 → 每份 `cut at` 都不同，是顺序；② 为保持 `behind 0` 再切一次 → 每切一次都追加提交，永远追不上；③ 把推源码当成「发布」→ 发布是 npm 的事，这一步只让证据可读。"
+      }
+    },
+    {
+      "id": "R94-S28",
+      "batch": "R94",
+      "step": "陌生人 60 秒：匿名装 0.3.6 之后跑四条命令，确认发布出去的那个包真的能用",
+      "changed": [
+        "data/results/usability-2026-11-11T14-40-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-11T14:40:00.000Z",
+        "outcome": "**6/6**：`npm install dsh-triage@0.3.6` exit 0 · `dist/cli.js` 在装好的包里 · `--help` exit 0 · 无参（= `status`）16 行 · `audit` 18 行摘要 · `upgrade --to latest --card` 出卡片（边界句 + 四桶 + 目标 `0.2.2-rc.1`）。",
+        "artifact": "data/results/usability-2026-11-11T14-40-00.000Z.json",
+        "sha256": "f43f795c9b7f7947a6e4806da0bb1aabec4c9d863e75733ca983d46b433fb858"
+      },
+      "review": {
+        "correctness": "PASS：四条命令都在**装好的那个包**里跑（临时目录 + 空 userconfig），不是仓内源码，所以「本地能跑、发出去坏了」这种差别骗不过它。",
+        "reproducibility": "PASS：脚本每次从 registry 装 `@0.3.6` 再跑；`--stamp` 固定则产物可复算。",
+        "licence": "PASS：只从 registry 安装自己发布的 MIT 包，在临时目录里运行，不写任何用户 profile。",
+        "ssot": "PASS：产物被本步引用；README 的「快速上手」四条命令与本步逐条对应。",
+        "adversary": "反例：① 只跑 `--help` 就说「包能用」→ `status` / `audit` / `upgrade --card` 才是用户真正敲的三条；② 拿仓内 `dist/` 当证据 → 那证明的是源码，不是 tarball；③ 用本机已装的旧版本 → 装的是 `@0.3.6`，产物里记着版本。"
+      }
+    },
+    {
+      "id": "R94-S29",
+      "batch": "R94",
+      "step": "修掉一条从 R49 起就假的对外边界句：「只读、绝不修改 ~/.dsh」——`fix --apply` 与 `rescue --apply` 一直在写两处接缝",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/market/listing_zh.md",
+        "tests/governance/public-boundary.test.ts"
+      ],
+      "real_test": {
+        "command": "node --test tests/governance/public-boundary.test.ts",
+        "outcome": "**3/3**：三份对外文档都点名 `compatibility.json` 与 `dsh.profile.bundles`、都写 `--undo`、都不再出现「绝不修改 `~/.dsh` 配置」；第三条负对照要求「默认仍是不写盘」。",
+        "artifact": "data/results/listing-2026-11-11T15-15-00.000Z.json",
+        "sha256": "1eee5c690852105ca079ec18d7489e0131487bc18f126ea890a7d81f28fd24e0"
+      },
+      "review": {
+        "correctness": "PASS：新句子与代码一致——`fix.ts` 只写 `<profile>/compatibility.json`，`rescue.ts` 只写 `dsh.profile.bundles`，两者都有备份 + journal + `--undo`；`M7` / `M8` 的 `read_only` / `byte_exact_restore` 由 sha256 判。",
+        "reproducibility": "PASS：断言扫的是文件文本，任何人重跑都得到同一结果；措辞可改，token 不能丢。",
+        "licence": "PASS：只改本仓自己的文案；没有引入外部素材，也没有删除任何仍然成立的边界句。",
+        "ssot": "PASS：这条断言本身是唯一的「文案与代码对齐」门；产物被本步引用，`listing` 里也带着 17/17。",
+        "adversary": "反例：① 只删「绝不修改」而不补两处接缝 → 断言要求点名两个文件名，删了会红；② 顺手写成「可以随便写」→ 第三条负对照要求「默认只读/不写盘」仍在；③ 只改 README 不改上架文案 → 四份文档都在断言里。"
+      }
+    },
+    {
+      "id": "R94-S30",
+      "batch": "R94",
+      "step": "文案与测试数对齐后重跑上架检查（904 条断言下仍 17/17）",
+      "changed": [
+        "data/results/listing-2026-11-11T15-15-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T15:15:00.000Z --tests 905",
+        "outcome": "**17/17**；version 0.3.6 · dsh >=0.2.0-rc.1 <0.3.0-0 · tests 905（第一次 905 是红的因为 README 还写 902，第二次因新增三条反来也一致）。",
+        "artifact": "data/results/listing-2026-11-11T15-15-00.000Z.json",
+        "sha256": "1eee5c690852105ca079ec18d7489e0131487bc18f126ea890a7d81f28fd24e0"
+      },
+      "review": {
+        "correctness": "PASS：第一次跑 `--tests 905` 是红的（README 还是 902），改成实测的 904 才绿——这就是「以 `node --test` 为准、不靠加法」。",
+        "reproducibility": "PASS：同一文档状态重跑逐项相同。",
+        "licence": "PASS：只读本仓文档与 data/results 产物，不联网、不写外部状态。",
+        "ssot": "PASS：产物被本步引用；两份 README 的 904 与它一致。",
+        "adversary": "反例：① 把新增的三条民用断言算进别的数 → 以实跑计数为准；② 只改徽章 → 正文那条会红。"
+      }
+    },
+    {
+      "id": "R94-S31",
+      "batch": "R94",
+      "step": "文案与代码都改过之后重跑门禁负对照（9 道门 + 18 条变异各自真红）",
+      "changed": [
+        "data/results/mutation-controls-2026-11-11T15-20-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate → node scripts/record_mutation_controls.mjs --stamp 2026-11-11T15:20:00.000Z",
+        "outcome": "NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation；mutation-controls **18/18 RED** 后逐字节还原。",
+        "artifact": "data/results/mutation-controls-2026-11-11T15-20-00.000Z.json",
+        "sha256": "3180a7391f7dcca1afdb4801ff008ddcd6dc1d8935a8aba6480a355a5faa0633"
+      },
+      "review": {
+        "correctness": "PASS：18 条对照逐条 RED，且每条都记录还原后的 sha256 与原文一致。",
+        "reproducibility": "PASS：每条 = 注入 → 断言必须红 → 逐字节还原；重跑结果相同。",
+        "licence": "PASS：只动本仓文件并还原，不触碰外部仓库。",
+        "ssot": "PASS：产物被本步引用；HANDOFF 的「18/18」与它一致。",
+        "adversary": "反例：① 只跑 --mutate 不落盘 → 下一轮无法复算；② 注入后忘还原 → 还原断言会红；③ 把 18/18 RED 读成「产品正确」→ 它只证明门禁会响。"
+      }
     }
   ]
 }

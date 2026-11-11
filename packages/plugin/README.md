@@ -77,7 +77,7 @@ dsh plugin --profile web add dsh-triage
 ## 工具边界 / Boundaries
 
 - **不提供安全背书**：本工具聚焦于本地兼容性与准入规则推演，不替代恶意代码或供应链安全审计；
-- **不修改用户 Profile**：不安装到你的 profile、不卸载现有插件；除独立的临时测试沙盒外，绝不修改 `~/.dsh` 配置；
+- **默认只读，写入只在 `--apply`**：检查与预检不写盘；`fix --apply` 只改 `<profile>/compatibility.json`，`rescue --apply` 只改 `dsh.profile.bundles` 那几行，都是先备份、原子写、记 journal、可 `--undo` 逐字节还原；除独立的临时测试沙盒外不碰别的目录；
 - **无证据不猜**：信息不足时如实标为 `unknown`，每条结论均附带明确的证据类型。
 
 ---

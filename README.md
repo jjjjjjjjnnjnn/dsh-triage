@@ -7,7 +7,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
 [![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
-[![tests: 902 passed](https://img.shields.io/badge/tests-902%20passed-success.svg)](scripts/gate.mjs)
+[![tests: 905 passed](https://img.shields.io/badge/tests-905%20passed-success.svg)](scripts/gate.mjs)
 
 [English Overview / Documentation](#english-overview) | [简体中文版 (README.zh-CN.md)](README.zh-CN.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
 
@@ -20,7 +20,7 @@ DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截�
 - **静默失效归因**：查明插件安装后为何在界面中消失、无报错却无法加载的具体原因；
 - **命名冲突排查**：定位多个插件争抢同一 Entry ID 或服务名的加载冲突。
 
-所有判定均在本地计算并绑定证据来源；信息不足时不作无根据的推测，直接标为 `unknown`（未明确）。只读检查，不修改任何现有配置。
+所有判定均在本地计算并绑定证据来源；信息不足时不作无根据的推测，直接标为 `unknown`（未明确）。默认只读：检查与预检都不写盘；只有你显式加 `--apply` 的 `fix` / `rescue` 会改一处接缝（`compatibility.json` 或 `dsh.profile.bundles`），且先备份、写 journal、可 `--undo` 逐字节还原。
 
 npm 发布版本：`dsh-triage@0.3.6` · 包含独立命令行 CLI 与 DSH 设置页插件 · 本地只读 · 零远程数据上报。
 
@@ -215,7 +215,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 ## 设计边界与不做什么 / Honest Boundaries
 
-1. **不修改你的 profile**：不安装到你的 profile、不卸载现有插件、不执行回滚；除独立的临时测试沙盒外，绝不修改用户的 `~/.dsh` 配置。
+1. **默认零写盘，写盘只在 `--apply` 且只碰一处接缝**：检查、预检、`why`、`audit`、`status`、`serve` 都不写盘；`fix --apply` 只改 `<profile>/compatibility.json`，`rescue --apply` 只改 `dsh.profile.bundles` 的那几行。两者都**先备份 → 原子写 → 回读校验 → 记 journal**，`--undo` 逐字节还原；备份之外不安装、不卸载、不回滚，也不碰 lockfile 与 `dependencies`。
 2. **不做集中式市场或排行榜**：仅输出针对当前机器环境的本地诊断结论，不做全网评分或排位。
 3. **不提供安全背书**：本工具不提供安全背书。分诊台聚焦于本地兼容性与启动加载可用性，不代表对插件源码的防恶意软件或供应链安全审计。
 4. **无证据不猜**：未显式声明依赖区间的插件严格归入 `unknown`，绝不盲目判定为正常。
@@ -228,7 +228,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、902 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、905 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |
