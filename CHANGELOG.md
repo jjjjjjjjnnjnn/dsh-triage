@@ -6,6 +6,19 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.7] — 2026-11-11
+
+> **Documentation only: the installed README told you something untrue.** No code changed. The
+> admission rules, the four buckets, the `improved` thresholds, every threshold, every exit code and
+> `audit --json` are what `0.3.6` shipped.
+
+- **The boundary sentence now matches the code.** Every README said `dsh-triage` is read-only and
+  "never modifies `~/.dsh`". That was true until `0.3.0` added `fix --apply`, which writes
+  `<profile>/compatibility.json`, and `0.3.3` added `rescue --apply`, which writes
+  `dsh.profile.bundles`. Both take a backup, write a journal and undo byte-for-byte with `--undo` — but
+  the sentence never said so. Everything else is still read-only, and `--apply` is never the default.
+- **Test count on the npm page: 905.**
+
 ## [0.3.6] — 2026-11-11
 
 > **One visible fix: fewer confident accusations.** The admission rules, the four buckets, the

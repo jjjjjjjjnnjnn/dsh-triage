@@ -14278,6 +14278,97 @@
         "ssot": "PASS：产物被本步引用；HANDOFF 的「18/18」与它一致。",
         "adversary": "反例：① 只跑 --mutate 不落盘 → 下一轮无法复算；② 注入后忘还原 → 还原断言会红；③ 把 18/18 RED 读成「产品正确」→ 它只证明门禁会响。"
       }
+    },
+    {
+      "id": "R94-S32",
+      "batch": "R94",
+      "step": "把「文案与代码对齐」这一修推进公开仓，并读回切面",
+      "changed": [
+        "data/results/public-cut-2026-11-11T14-00-35.084Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree a8f0c80 · public 16fcfe2 · trees-equal true · cut at efd104d · behind 0`；普通 push（`8316879..16fcfe2`）。",
+        "artifact": "data/results/public-cut-2026-11-11T14-00-35.084Z.json",
+        "sha256": "6be67d55a2359b49a9543ed3cc76df400369ae74cc8f3ea5a583e581c2918996"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`；公开仓里现在能读到修正后的边界句与 `public-boundary` 用例本身，读者不必信任我们的转述。",
+        "reproducibility": "PASS：切面由容器子树生成，父提交是旧 `origin/main`；`cut at efd104d` 与实际推送的树一一对应。",
+        "licence": "PASS：只推本仓 MIT 子树，没有带上 `dsh-remedy` 的未提交改动。",
+        "ssot": "PASS：产物被本步引用；这是第六份 `public-cut`（`2a0366a` / `818f2cc` / `08d69a0` / `a0ce6f7` / `1faec71` / `efd104d`），各自是不同时刻的真值。",
+        "adversary": "反例：① 把六份 `public-cut` 读成抖动 → 每份 `cut at` 都不同，是顺序；② 认为「behind 1」是漏推 → 产物在它描述的树里；③ 用 `--force` 图省事 → 不需要，普通 push 就是快进。"
+      }
+    },
+    {
+      "id": "R94-S33",
+      "batch": "R94",
+      "step": "0.3.7 的票做好：四包同版本 + CHANGELOG 只说文档 + npm 页拿到同一份边界句，然后跑 17 条断言",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "packages/plugin/README.md",
+        "docs/market/listing_en.md",
+        "data/results/listing-2026-11-11T15-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T15:50:00.000Z --tests 905 → node scripts/release_preflight.mjs",
+        "outcome": "`listing` **17/17**（version 0.3.7 / 905）；预检查四项全绿（`npm user` / `version 0.3.7` / `workspace:` 5 dep / `registry: 0.3.7 还没发过`）。",
+        "artifact": "data/results/listing-2026-11-11T15-50-00.000Z.json",
+        "sha256": "fa4b00900ec2b1cd8033c277c90a188f985503e929b6576f4986fb0929d1bcd7"
+      },
+      "review": {
+        "correctness": "PASS：0.3.6 的 tarball 里 `packages/plugin/README.md` 仍是那句「绝不修改 `~/.dsh`」（实测 `staleClaim: true`），而 npm 页面用的就是这份文件——所以这条假话在 0.3.6 上仍然对用户可见。0.3.7 只发文档：四个 `package.json` 的 version 一起动，代码零改动（`git diff --stat packages/*/src` 为空）。",
+        "reproducibility": "PASS：`release_preflight` 自己会报 `version-skew` / `registry` 重复；`check_listing` 从 manifest 读版本、从 `--tests` 读测试数。",
+        "licence": "PASS：只改本仓文案与版本字段，未引入外部素材。",
+        "ssot": "PASS：产物被本步引用；CHANGELOG 的 0.3.7 段与 `listing_en.md` / `listing_zh.md` / 两份 README 的 0.3.7 全部来自同一次改动。",
+        "adversary": "反例：① 直接改已发布的 0.3.6 → npm 上不可变，只能发新版；② 顺手改代码一起发 → 那就不是「文档版本」，CHANGELOG 会撒谎；③ 只改 README 不改 npm 页 → npm 页用的是 `packages/plugin/README.md`，实测那份还是旧的；④ 把 0.3.7 写成「修了 bug」→ 本轮没有代码改动。"
+      }
+    },
+    {
+      "id": "R94-S34",
+      "batch": "R94",
+      "step": "0.3.7 发布取证：四包同版本、匿名装、CLI、import、client bundle",
+      "changed": [
+        "data/results/publish-2026-11-11T16-00-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "pnpm -r publish --no-git-checks → node scripts/record_publish.mjs --stamp 2026-11-11T16:00:00.000Z",
+        "outcome": "**18/18**：四包 `latest=0.3.7` 且互相一致；`npm install dsh-triage@0.3.7` exit 0；三个 workspace 依赖都改写成 0.3.7；CLI 16 条命令；`import()` 六个导出；`client.js` 39911B、`slot=settings.plugins.tab`。",
+        "artifact": "data/results/publish-2026-11-11T16-00-00.000Z.json",
+        "sha256": "1a41ac95777d1371e44ca9678e5570ffbaed1b27294354d461b8d1261d963ecc"
+      },
+      "review": {
+        "correctness": "PASS：这一版**只有文档与版本字段**改动；18 项全部是「装上去能不能用」，所以它们绿说明发布本身没坏，而不是说明文档改了。",
+        "reproducibility": "PASS：匿名安装与 `import()` 都在空 userconfig 的临时目录里真跑。",
+        "licence": "PASS：发布的是自己四包的 MIT 代码。",
+        "ssot": "PASS：产物被本步引用；`docs/market/submissions/README.md` 的 `latest=0.3.7` 与它一致。",
+        "adversary": "反例：① 认为「文档版本不用取证」→ 恰恰是文档才要验（npm 页就是 tarball 里的 README）；② 复用 0.3.6 的产物 → 版本字段对不上；③ 发布后立刻取证 → 会撞副本滞后（本轮先等 registry 可读再跑，且 `--no-git-checks` 只跳过脏树检查，不跳过预检查）。"
+      }
+    },
+    {
+      "id": "R94-S35",
+      "batch": "R94",
+      "step": "发出去之后用陌生人视角验一遍：装 0.3.7、跑四条命令",
+      "changed": [
+        "data/results/usability-2026-11-11T16-10-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-11T16:10:00.000Z",
+        "outcome": "**6/6**：`npm install dsh-triage@0.3.7` exit 0 · `--help` exit 0 · 无参 16 行 · `audit` 18 行 · `upgrade --card` 出 `0.2.2-rc.1` 四桶 + 边界句。",
+        "artifact": "data/results/usability-2026-11-11T16-10-00.000Z.json",
+        "sha256": "a87f295a62816bab35e01172723016b656146c403fd15f4149a55988bd9a272b"
+      },
+      "review": {
+        "correctness": "PASS：读的是 registry 上的 0.3.7，不是本地 `dist`；四条命令与 README「快速上手」逐条对应。",
+        "reproducibility": "PASS：每次从 registry 装、在临时目录跑；`--stamp` 固定则产物可复算。",
+        "licence": "PASS：只装自己发布的包。",
+        "ssot": "PASS：产物被本步引用；两份 README 的四条命令与它一致。",
+        "adversary": "反例：① 只验 `--help` → 用户真正跑的是 `status` / `audit` / `upgrade --card`；② 拿仓内 `packages/plugin/dist` 跑 → 那证明源码能跑，不证明包能用；③ 忘掉 0.3.7 已换 README → npm 页的新句子要在这份产物里也能对上（`upgrade-card` 那步会打印边界句）。"
+      }
     }
   ]
 }

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_usability_smoke.mjs",
+  "generated_at": "2026-11-11T16:10:00.000Z",
+  "subject": {
+    "package": "dsh-triage",
+    "version": "0.3.7",
+    "registry": "https://registry.npmjs.org",
+    "anonymous": true
+  },
+  "environment": {
+    "platform": "win32",
+    "node": "24.15.0",
+    "cwd": "<a scratch project, not the repository>"
+  },
+  "checks": [
+    {
+      "id": "install",
+      "ok": true,
+      "detail": "npm install dsh-triage@0.3.7 exit 0"
+    },
+    {
+      "id": "cli-present",
+      "ok": true,
+      "detail": "dist/cli.js exists in the installed package"
+    },
+    {
+      "id": "help",
+      "ok": true,
+      "detail": "exit 0 · dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 插件兼容性判定层",
+      "lines": 40
+    },
+    {
+      "id": "status-no-arguments",
+      "ok": true,
+      "detail": "exit 0 · 16 line(s) · 分诊台 · dsh 0.1.0-rc.6 (inferred) · profile web · win32/x64",
+      "lines": 16
+    },
+    {
+      "id": "audit-summary",
+      "ok": true,
+      "detail": "exit 0 · 18 line(s) · 分诊台 · dsh 0.1.0-rc.6 (inferred) · profile web · win32/x64",
+      "lines": 18
+    },
+    {
+      "id": "upgrade-card",
+      "ok": true,
+      "detail": "exit 0 · boundary=yes · buckets=yes · # 升级日 · 0.2.2-rc.1",
+      "lines": 71
+    }
+  ],
+  "ok": true,
+  "limits": [
+    "the last command reads THIS machine's default DSH profile, so the card's numbers describe this machine and nobody else's",
+    "this proves the four commands a new user types: it does not prove the Host loads the bundle (record_client_serve) nor the probe path (record_probe)",
+    "the install is anonymous, but the network path is whatever this machine has — a proxy that hides failures is not covered",
+    "exit codes and output shape are asserted, not the wording of every sentence"
+  ]
+}

@@ -21,7 +21,7 @@ import { test } from 'node:test'
 const root = new URL('../../', import.meta.url)
 const read = (path: string) => readFileSync(new URL(path, root), 'utf8')
 
-const DOCUMENTS = ['README.md', 'README.zh-CN.md', 'packages/plugin/README.md', 'docs/market/listing_zh.md']
+const DOCUMENTS = ['README.md', 'README.zh-CN.md', 'packages/plugin/README.md', 'docs/market/listing_zh.md', 'docs/market/listing_en.md']
 
 test('the boundary sentence names the two seams an explicit --apply may touch', () => {
   for (const file of DOCUMENTS) {
@@ -48,8 +48,9 @@ test('the boundary sentence no longer claims it never modifies ~/.dsh', () => {
 
 test('NEGATIVE CONTROL: the default mode is still described as read-only', () => {
   // A fix that made every command writable would also pass the checks above. This one refuses that.
+  const DEFAULT_READ_ONLY = /默认(只读|零写盘)|默认只读|不写盘|nothing is written by default|read-only by default|writes nothing by default/
   for (const file of DOCUMENTS) {
     const text = read(file)
-    assert.ok(/默认(只读|零写盘)|默认只读|不写盘/.test(text), `${file}: must still say the default writes nothing`)
+    assert.ok(DEFAULT_READ_ONLY.test(text), `${file}: must still say the default writes nothing`)
   }
 })

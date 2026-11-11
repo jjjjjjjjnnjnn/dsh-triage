@@ -64,6 +64,10 @@ touching anything.
 
 - **no security endorsement** (use a scanner for that);
 - no install / remove / rollback (upstream `plugin_manager` owns that);
+- **nothing is written by default** — check, audit, status, why, serve, probe (dry-run) and upgrade all leave
+  `~/.dsh` untouched; an explicit `--apply` is the only thing that writes: `fix --apply` touches only
+  `<profile>/compatibility.json` and `rescue --apply` only the `dsh.profile.bundles` lines, both with a backup,
+  a journal and a byte-exact `--undo`;
 - no score when the evidence is missing — the answer is `unknown`, never a plausible-looking number.
 
 ### Why you can check it
@@ -85,7 +89,7 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 
 ## Current status
 
-`0.3.6` is published on npm (four packages released together; adds the **升级预检 / upgrade pre-check**
+`0.3.7` is published on npm (four packages released together; adds the **升级预检 / upgrade pre-check**
 four-bucket screen to the settings tab and the M12 `surface` rule). Build side covers M0–M6. Distribution: two pull requests are open (#65 re-merged onto the new index layout and **`MERGEABLE`**; walkinglabs #140 clean and unreviewed; #193 was merged on 2026-11-04).so lists the plugin**: `L5 · Run tested` against `0.2.1-rc.5`,
 security tier `low`, first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
 machine; a listing is not usage.

@@ -22,7 +22,7 @@ DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截�
 
 所有判定均在本地计算并绑定证据来源；信息不足时不作无根据的推测，直接标为 `unknown`（未明确）。默认只读：检查与预检都不写盘；只有你显式加 `--apply` 的 `fix` / `rescue` 会改一处接缝（`compatibility.json` 或 `dsh.profile.bundles`），且先备份、写 journal、可 `--undo` 逐字节还原。
 
-npm 发布版本：`dsh-triage@0.3.6` · 包含独立命令行 CLI 与 DSH 设置页插件 · 本地只读 · 零远程数据上报。
+npm 发布版本：`dsh-triage@0.3.7` · 包含独立命令行 CLI 与 DSH 设置页插件 · 本地只读 · 零远程数据上报。
 
 ---
 
