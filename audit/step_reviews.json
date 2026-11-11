@@ -13779,6 +13779,48 @@
         "ssot": "PASS：产物被本步引用；HANDOFF 的「18 条」与它一致。",
         "adversary": "反例：① 只跑 `--mutate` 不跑 record → 没有落盘证据，下一轮无法复算；② 注入后忘记还原 → 还原断言会红；③ 把「18/18 RED」读成「产品正确」→ 它只证明**门禁会响**，不证明结论对。"
       }
+    },
+    {
+      "id": "R94-S9",
+      "batch": "R94",
+      "step": "切面前先读一次公开仓：确认它落后在哪个提交上，而不是凭记忆说「该切了」",
+      "changed": [
+        "data/results/public-cut-2026-11-11T11-32-44.419Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · behind · subtree 488f130 · public ece33ff · trees-equal false · cut at 4abe891 · behind 8`（exit 1）；脚本自己说「公开仓是容器 4abe891 的切面，不是 HEAD c638ce5 的」，于是才有下一步的切+推。",
+        "artifact": "data/results/public-cut-2026-11-11T11-32-44.419Z.json",
+        "sha256": "3c32d67104d751c356639a84677ce4a856304c396bba5c64dab4625eb009b225"
+      },
+      "review": {
+        "correctness": "PASS：`behind 8` 是脚本按提交图算出来的，不是估的；`trees-equal false` 与 `public ece33ff` 一起说明差异在树不在某一次误报。",
+        "reproducibility": "PASS：只读 `git rev-list` / `git ls-remote`；同一仓库状态下重跑得到同一 `behind`。",
+        "licence": "PASS：只读 git 元数据，不写远端。",
+        "ssot": "PASS：产物被本步引用；HANDOFF §3 的「先跑一次 recorder 看公开仓是不是子树的切面」与本步读数一致。",
+        "adversary": "反例：① 直接开切、不先读 → 切完仍可能落后（比如远端又动了），`behind` 是唯一的读数；② 把 `behind 8` 读成「公开仓坏了」→ 脚本原话是「它只是比容器旧」；③ 拿 `behind 8` 当最终读数写进交接 → 下一步就把 `behind` 变成 0，两次都是真的。"
+      }
+    },
+    {
+      "id": "R94-S10",
+      "batch": "R94",
+      "step": "把 dsh-triage/ 子树切一刀推到公开仓，并当场复算「公开仓的树 = 容器子树」",
+      "changed": [
+        "data/results/public-cut-2026-11-11T11-33-12.455Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · trees-equal true · cut at c638ce5 · behind 0`；公开仓 head `3118bb3`，其 tree `488f130` 与容器 `c638ce5:dsh-triage` 相同。普通 push（`ece33ff..3118bb3`），非 force。",
+        "artifact": "data/results/public-cut-2026-11-11T11-33-12.455Z.json",
+        "sha256": "8b14cf9febf50c201a3890d5c580d0acdc4d78dc009dafed763a664d5ae8cdac"
+      },
+      "review": {
+        "correctness": "PASS：比对的是**树**不是提交：`origin/main^{tree}` 与 `HEAD:dsh-triage` 必须逐字节相同，`status` 由脚本判定，不由人宣布。",
+        "reproducibility": "PASS：`record_public_cut.mjs` 只读 git 对象（`git rev-parse` / `git ls-remote`），任何人重跑得到同一个结论；切面本身用 `commit-tree` 生成，可复算。",
+        "licence": "PASS：只推本仓自己的 MIT 子树，不带 `dsh-remedy` 的未提交改动。",
+        "ssot": "PASS：产物被本步引用；HANDOFF §3 关于「切面永远比装着这份文档的提交早一步」的说法与本步的 `behind 0` 读数一致。",
+        "adversary": "反例：① `git push --force` 让「切面」变简单 → 明确不用，普通 push 且 fast-forward；② 只看 `git ls-remote` 的 sha 就宣称同步 → 换了提交但树可能不同，本步比的是 tree；③ 把「提交之后又落后 1」读成漏推 → 产物在它描述的树里，构造使然，§3 已写明；④ 顺手把 `dsh-remedy` 的改动一起带上 → 两个项目分开提交，本轮没碰。"
+      }
     }
   ]
 }
