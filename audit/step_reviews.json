@@ -14018,6 +14018,157 @@
         "ssot": "PASS：产物被本步引用；两份 README 的 897 与它一致。",
         "adversary": "反例：① 拿旧 stamp 覆盖出一份「新」产物 → 脚本直接拒写；② 只改徽章不改正文 → 断言扫正文，会红；③ 把 897 写成「约 900」→ 断言要求精确相等。"
       }
+    },
+    {
+      "id": "R94-S20",
+      "batch": "R94",
+      "step": "把「产物保住 surface」这一修推进公开仓，并读回切面",
+      "changed": [
+        "data/results/public-cut-2026-11-11T12-28-34.966Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree 56d7ba9 · public 122ea97 · trees-equal true · cut at a0ce6f7 · behind 0`；普通 push（`91d6595..122ea97`）。",
+        "artifact": "data/results/public-cut-2026-11-11T12-28-34.966Z.json",
+        "sha256": "572bb7c3efddb136fef03439bceb17f506a0ec386a566e4b9e28b1eb21e846c8"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`；公开仓里现在既能读到 13 组重复、也能读到每条 `surface: false` 与 `duplicates_summary.findings 0`，结论与证据在同一棵树里。",
+        "reproducibility": "PASS：切面由容器子树生成，父提交是旧 `origin/main`；任何人跑 `record_public_cut` 会看到同一个 `cut at`。",
+        "licence": "PASS：只推本仓 MIT 子树；`dsh-remedy` 的未提交改动不在里面。",
+        "ssot": "PASS：产物被本步引用；它与前三份 `public-cut`（`2a0366a` / `818f2cc` / `08d69a0` / `a0ce6f7`）各自是不同时刻的真值。",
+        "adversary": "反例：① 把四份 `public-cut` 读成抖动 → 每份的 `cut at` 都不同，是顺序不是漂移；② 为了「behind 0」再切一次 → 每切一次都会追加一个提交，永远追不上，停下才是正解；③ 认为这次修改变了判定 → 判定一行未动，改的是产物保真度。"
+      }
+    },
+    {
+      "id": "R94-S21",
+      "batch": "R94",
+      "step": "发帖前先把「会漂的那一格」变成事实包：三个帖子的目标运行时已经不是当天的 next 了",
+      "changed": [
+        "docs/copy/facts/2026-11-11-t810-registry-drift.md",
+        "data/results/discussion-state-2026-11-11T12-55-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --ids 8202,10849,11687 --stamp 2026-11-11T12:55:00.000Z → npm view @deepseek-ai/dsh-mcp-client dist-tags",
+        "outcome": "三条帖子 `open`（1 / 4 / 1 条回复、均 `isAnswered: false`）；现读 `latest 0.0.1-rc.1` / `next 0.2.2-rc.1` / `alpha 0.2.2-alpha.3`——**下一版草稿里「0.2.1-rc.5 就是现在的 next」已经不成立**。事实包把「哪一句失效、判定数字为什么可以不动」写清。",
+        "artifact": "data/results/discussion-state-2026-11-11T12-55-00-000Z.json",
+        "sha256": "9bd2bef479f26df8bdbdb7d291618d23612778cb15ea7474963c2560e47092d3"
+      },
+      "review": {
+        "correctness": "PASS：`open` 来自 GraphQL 的 `isAnswered: false` + `closed: false`，不是记忆；`next` 的现值是用 `npm view` 当场读的，而草稿里那句「就是现在的 next」正是它推翻的。",
+        "reproducibility": "PASS：`record_discussion_state` 只读 GraphQL 并落 fixtures；`npm view` 可随时重读。",
+        "licence": "PASS：只读公开 Discussions 与 npm 的 dist-tags，不写外部状态，也不缓存会过期的读数为「事实」。",
+        "ssot": "PASS：产物被本步引用；事实包里每个数字都能追到这份或它引用的两份产物。",
+        "adversary": "反例：① 按 11-02 的记忆直接发 → 三篇都会把旧 `next` 说成今天，实测反例就是 `next` 已是 `0.2.2-rc.1`；② 顺手把目标改成 `0.2.2-rc.1` → 等于拿旧测量冒充新目标，事实包明令禁止；③ 把「有人回过」当成「已答」→ `isAnswered: false`，两件事不同。"
+      }
+    },
+    {
+      "id": "R94-S22",
+      "batch": "R94",
+      "step": "三篇回帖只做「失效句修订」，由外部 agy 依事实包改写，工程侧用断言挡住数字被改",
+      "changed": [
+        "docs/distribution/T-810/06-reply-8202-mcp-client.md",
+        "docs/distribution/T-810/07-reply-10849-dist-tag.md",
+        "docs/distribution/T-810/08-reply-11687-not-declaration.md"
+      ],
+      "real_test": {
+        "command": "node <revise script>（agy --model gemini-3.8-flash-high → 逐篇校验 mustKeep 令牌）→ node scripts/check_listing.mjs --stamp 2026-11-11T13:00:00.000Z --tests 897",
+        "outcome": "三篇分别 1483→1549 / 1368→1431 / 1099→1176 字符；`mustKeep` 断言全部保留（`0.2.1-rc.5` / 两个点名版本 / `0.0.1-rc.1` / `0.4.13` / `0.28.2` / `等 13 项` / `判不了`）；`draft-claims-match-their-artifact` **绿**（17/17）。",
+        "artifact": "data/results/listing-2026-11-11T14-10-00.000Z.json",
+        "sha256": "145b3dee88f4d2ca8c3dbd24f1f9a81a359aad82ffe0cf9a6104053e5a0c12ad"
+      },
+      "review": {
+        "correctness": "PASS：三篇的判定数字（6 项 peer / 4 项 peer / 13 项）与包名版本对一个没动；改的只有「就是现在的 next」这一类句子 + 一句「换目标自己重跑 `check`」。`check_listing` 的 `draft-claims-match-their-artifact` 逐条重算 `admission_status` 与 `listing` 次数，绿。",
+        "reproducibility": "PASS：修订由外部 `agy` 依事实包生成，工程侧用 `mustKeep` 令牌断言 + 检查器双重把关；原文仍在 git 历史里。",
+        "licence": "PASS：只改本仓自己的文案，不复制他仓文字、不改他人内容，也没有引入新许可的素材。",
+        "ssot": "PASS：产物被本步引用；`registry.json` 的 `claims` 未改，因此「数字对得上」仍是同一套断言。",
+        "adversary": "反例：① 让模型「重写得更清楚」→ 会顺手改数字，所以工程侧先列 `mustKeep`；② 直接改成 `0.2.2-rc.1` 的读数 → 断言与事实包都不允许；③ 只改 06 不改 07/08 → 三篇都有同一句失效表述，漏一篇就是漏一条错。"
+      }
+    },
+    {
+      "id": "R94-S23",
+      "batch": "R94",
+      "step": "发帖：三条上游答问真的发出去了，并且逐条读回「是本账号发的、长度对、线程没有结论」",
+      "changed": [
+        "docs/distribution/T-810/registry.json",
+        "data/results/posted-replies-2026-11-11T13-40-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node <post script>（GraphQL 复读 isAnswered → addDiscussionComment）→ node scripts/record_posted_replies.mjs --stamp 2026-11-11T13:40:00.000Z --reply 8202=… --reply 10849=… --reply 11687=…",
+        "outcome": "三条全部 `POSTED`：#8202 `discussioncomment-19542005`（1549 字）、#10849 `-19542006`（1431）、#11687 `-19542007`（1176）；`posted-replies` 产物 **3/3**：作者 `jjjjjjjjnnjnn`、`unanswered 3/3`。",
+        "artifact": "data/results/posted-replies-2026-11-11T13-40-00.000Z.json",
+        "sha256": "0b7406f99d5c9edc4ee254364bdb5c0a98c7b35f61811f25ca2eb26ed027a147"
+      },
+      "review": {
+        "correctness": "PASS：发帖脚本在每次提交前重读一次 `isAnswered`；记录器再逐条校验「URL 可解析 / 作者是本账号 / 正文非空」。三条的 `databaseId` 与 URL 里的 id 逐一对上（第一次用 node id 匹配是**假阴性**，见 S23 的实现注记）。",
+        "reproducibility": "PASS：记录器只用 `gh api` 读，任何人重跑得到同样的三行；不可复核时按设计**不写产物**。",
+        "licence": "PASS：在本账号下对公开讨论作答问，内容全是我们自己写的；不修改、不删除他人内容。",
+        "ssot": "PASS：产物被本步引用；`registry.json` 三条转 `posted` 并写 `posted_url` / `posted_on`，与产物逐字一致。",
+        "adversary": "反例：① 拿自己的评论当「已答」→ 记录器只认 `isAnswered`，不认「有评论」；② 只贴 URL 不读回 → 一条不存在的 comment id 会被拒（实测 `-99999` 不写产物）；③ 把他人的评论记成我们的 → 实测 `-18655229` 被拒（作者 `JulienKervarrec`）；④ 靠 memory 填 `posted_on` → 用的是 API 返回的 `createdAt`。"
+      }
+    },
+    {
+      "id": "R94-S24",
+      "batch": "R94",
+      "step": "同一天重读 D5 三项（第三项换了新基线），确认发帖没有动 D5 的任何一个数",
+      "changed": [
+        "data/results/d5-evidence-2026-11-11T13-20-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --post https://github.com/deepseek-ai/deepseek-harness/discussions/11813 --posted-on 2026-11-01T20:24:37Z --stamp 2026-11-11T13:20:00.000Z",
+        "outcome": "`pending`：reactions **0/10** · 外部引用 **0/1** · 下载 **390（steady）/20**；窗口 `2026-11-01T20:24:37Z…2026-11-15T20:24:37Z`，`days_left 5`。",
+        "artifact": "data/results/d5-evidence-2026-11-11T13-20-00-000Z.json",
+        "sha256": "f4b39f5a4adaded2815856cdf019777919a648ee3205453f1da1c4cfd891fb4b"
+      },
+      "review": {
+        "correctness": "PASS：三项都重读了，没有沿用 11-05 的旧数（下载从 1598 换成这次基线的 390）；`pending` 的语义是「窗口没关」，不是「失败」。",
+        "reproducibility": "PASS：reactions 与外部引用只读 GitHub，下载读已落盘的基线产物。",
+        "licence": "PASS：只读 GitHub 的公开 discussion 与已落盘的下载基线，不写任何 profile，也不改外部数据。",
+        "ssot": "PASS：产物被本步引用；HANDOFF 与 ROADMAP 里的 `pending` / `0/10` / `0/1` / `390` 与它一致。",
+        "adversary": "反例：① 把三条答问的评论算进 reactions → `channels.json` 里它们 `d5_counts: false`，口径在 `D5-measurement.md §1`；② 认为「发了三条所以需求有了」→ 产物里外部引用仍是 0；③ 用旧基线报 1598 → `days_left 5` 与窗口都对不上。"
+      }
+    },
+    {
+      "id": "R94-S25",
+      "batch": "R94",
+      "step": "发完之后重跑上架检查：三篇从 draft 变 posted 之后 17 条仍全绿",
+      "changed": [
+        "data/results/listing-2026-11-11T14-10-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T14:10:00.000Z --tests 897",
+        "outcome": "**17/17**；`posted-drafts-carry-a-date` 验了三条「URL 的域与 channel 一致 + 带时区的 ISO 时刻」；两次中间红产物（13:50 缺 `id`/`evidence`、14:00 把答问写进发布台账）已删除，不留误导读数。",
+        "artifact": "data/results/listing-2026-11-11T14-10-00.000Z.json",
+        "sha256": "145b3dee88f4d2ca8c3dbd24f1f9a81a359aad82ffe0cf9a6104053e5a0c12ad"
+      },
+      "review": {
+        "correctness": "PASS：`posted-drafts-carry-a-date` 要求 `posted_on` 是带时区的 instant 且 URL 的域与 channel 一致；三条都写的是 API 返回的 `Z` 时刻，不是本地时间。",
+        "reproducibility": "PASS：同一文档状态重跑逐项相同；stamp 冲突时拒写。",
+        "licence": "PASS：只读本仓文档与 data/results 产物；没有复制第三方文本，也没有改任何已发布的草稿原文。",
+        "ssot": "PASS：产物被本步引用；`00-README.md` 的「答问不写进发布台账」与 `channels.json` 的七条一一对应。",
+        "adversary": "反例：① 把三条答问塞进 `channels.json` → 该台账口径是「一次发布一个 URL」，检查器当场红（14:00 那份就是这么红的，已删）；② 只改 `registry.json` 不改 `00-README` → 台账与表会对不上；③ 用本地时间 `13:57+01:00` 冒充 `12:57Z` → 两者是同一时刻，但写成 `13:57Z` 会把 D5 窗口挪早一小时。"
+      }
+    },
+    {
+      "id": "R94-S26",
+      "batch": "R94",
+      "step": "测试数上到 901 之后重跑上架检查（reply-spec 与 audit-projection 的用例都计入）",
+      "changed": [
+        "data/results/listing-2026-11-11T14-30-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-11T14:30:00.000Z --tests 902",
+        "outcome": "**17/17**；徽章 / 正文 / §3 / 规模行四处同改 902（实测计数，不是加法）。",
+        "artifact": "data/results/listing-2026-11-11T14-30-00.000Z.json",
+        "sha256": "807c4e7cffeb3c3cc0d5caa421264277ece846f7d477b18ffed859c3d9ae4ac2"
+      },
+      "review": {
+        "correctness": "PASS：`test-count-matches` 扫三种写法（徽章 / 「N 个测试」/ `tests: N`），四处同改；漏一处即红。",
+        "reproducibility": "PASS：同一文档状态重跑逐项相同；stamp 冲突时脚本拒写。",
+        "licence": "PASS：只读本仓文档与产物。",
+        "ssot": "PASS：产物被本步引用；两份 README 的 901 与它一致。",
+        "adversary": "反例：① 只改徽章 → 正文那条断言会红（这个仓为此红过）；② 写「约 900」→ 断言要求精确相等；③ 把新增用例数凭印象相加 → 以 `node --test` 的实测计数为准（897 → 901）。"
+      }
     }
   ]
 }

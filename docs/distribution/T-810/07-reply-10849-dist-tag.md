@@ -26,7 +26,7 @@
 
 要分清**谁能修**：
 
-1. **你这边能做的**：不要用裸名，显式指定**已经适配 0.2.x 的那个构建**——`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5`（就是现在的 `next`）。它把 8 项 peer 精确钉在 `0.2.1-rc.5` 上，同一个引擎判 `admitted`。
+1. **你这边能做的**：不要用裸名，显式指定**已经适配 0.2.x 的那个构建**——`@deepseek-ai/dsh-mcp-client@0.2.1-rc.5`。它把 8 项 peer 精确钉在 `0.2.1-rc.5` 上，同一个引擎判 `admitted`。
 2. **你这边做不了的**：`npm dist-tag add` 是上游的发版动作。在 `latest` 被修正之前，裸名安装会一直解析到那个老构建。
 
 装之前可以先看清裸名到底解析到哪、以及它会不会被放行：
@@ -37,7 +37,7 @@ $ dsh-triage check @deepseek-ai/dsh-mcp-client       # 裸名（= latest）的�
 $ dsh-triage check @deepseek-ai/dsh-mcp-client@0.2.1-rc.5
 ```
 
-**边界**：以上判的是 npm 上**已发布的版本**，不是你那台机器；标签是可变的，若上游之后 retag，以你执行 `check` 时读到的 registry 数据为准。声明层放行也不代表运行期一定无故障。
+**边界**：以上判的是 npm 上**已发布的版本**，不是你那台机器；标签是可变的，若上游之后 retag，以你执行 `check` 时读到的 registry 数据为准。声明层放行也不代表运行期一定无故障。判定用的是当时的 `0.2.1-rc.5`，上游之后把 `next` 与 `latest` 移到了更新的运行时，换目标请自己用 `check` 重跑一次。
 
 复算证据（公开仓，带 sha256）：`https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/discussion-triage-2026-11-02T12-10-00-000Z.json` · `https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/remedy-probe-2026-11-02T19-15-18-710Z.json`
 <!-- paste:end -->

@@ -23,7 +23,7 @@
 @deepseek-ai/dsh-invariants@^0.1.0-rc.7   @deepseek-ai/dsh-subprocess@^0.1.0-rc.7
 ```
 
-这些 0.1 线的 caret 区间在 SemVer 下不含任何 `0.2.x`，所以加载器在准入阶段就把这一行判掉了——它没有进到 import/apply，也就不会给你留下运行期堆栈。我按目标运行时 `0.2.1-rc.5`（今天的 `next`）用与加载器一致的规则跑了一遍，结论是 `denied`，未满足的正是上面这 6 项。
+这些 0.1 线的 caret 区间在 SemVer 下不含任何 `0.2.x`，所以加载器在准入阶段就把这一行判掉了——它没有进到 import/apply，也就不会给你留下运行期堆栈。我按目标运行时 `0.2.1-rc.5` 用与加载器一致的规则跑了一遍，结论是 `denied`，未满足的正是上面这 6 项。
 
 **可执行的出路**（按推荐顺序）：
 
@@ -37,7 +37,7 @@ $ dsh-triage check @deepseek-ai/dsh-mcp-client@0.1.0-rc.7   # 按这个版本判
 $ dsh-triage check @deepseek-ai/dsh-mcp-client@0.2.1-rc.5   # 推荐替换的那个构建
 ```
 
-**边界**：以上判的是 npm 上**已发布的版本**，不是你那台机器；如果你本地装的是改过的分支，请以本地 `package.json` 的实际声明为准。声明层放行也不等于运行期一定无故障。
+**边界**：以上判的是 npm 上**已发布的版本**，不是你那台机器；如果你本地装的是改过的分支，请以本地 `package.json` 的实际声明为准。声明层放行也不等于运行期一定无故障。判定用的是当时的 `0.2.1-rc.5`，上游之后把 `next` 与 `latest` 移到了更新的运行时，换目标请自己用 `check` 重跑一次。
 
 复算证据（公开仓，带 sha256）：`https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/discussion-triage-2026-11-02T12-10-00-000Z.json` · `https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/remedy-probe-2026-11-02T19-15-18-710Z.json`
 <!-- paste:end -->
