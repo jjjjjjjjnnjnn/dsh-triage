@@ -13905,6 +13905,50 @@
         "ssot": "PASS：产物被本步引用；两份 README 与两份上架文案的 `0.3.6` 都由这条断言校验。",
         "adversary": "反例：① 只改 README 徽章、不改上架文案 → `version-matches-manifest` 会红；② 沿用发布前的 12:45 那份当「发布后的读数」→ 那份的文档状态是 0.3.6 已写、包已发，但缺 `record_publish` 的产物引用，两份各是各的时刻；③ 把 17/17 读成「渠道都收录了」→ 它只检查文案与仓库一致。"
       }
+    },
+    {
+      "id": "R94-S15",
+      "batch": "R94",
+      "step": "0.3.6 落进公开仓之后重新切一刀，并当场复算树相等",
+      "changed": [
+        "data/results/public-cut-2026-11-11T12-09-32.415Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree a42a61a · public f8a4b3d · trees-equal true · cut at 818f2cc · behind 0`；普通 push（`0b1bf5c..f8a4b3d`）。",
+        "artifact": "data/results/public-cut-2026-11-11T12-09-32.415Z.json",
+        "sha256": "3fe070b94bf8c209e8a66c24a2d2ce0f6fcc0778b723e413e9102a3cea4ecada"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true` 是两棵树的直接比较；`cut at 818f2cc` 与本步之前那个容器提交一一对应，公开仓因此带着 0.3.6 的 CHANGELOG 与取证产物。",
+        "reproducibility": "PASS：切面由 `commit-tree` 生成，父提交是 `origin/main` 的旧头，任何人用同样两条命令得到同一棵树。",
+        "licence": "PASS：只推本仓 MIT 子树；`dsh-remedy` 的未提交改动没有进入切面。",
+        "ssot": "PASS：产物被本步引用；HANDOFF §3 的「切面永远比装着这份文档的提交早一步」与本步 `behind 0` 加上随后那次提交构成同一个不动点。",
+        "adversary": "反例：① 用 `push --force` → 不需要，`0b1bf5c..f8a4b3d` 是快进；② 认为「又落后 1 等于没切成」→ 产物在它描述的树里，最后一条记录必然晚于它所描述的那棵树；③ 把公开仓当成「发布」→ 发布是 npm 的事，这一步只让源码与文档可读。"
+      }
+    },
+    {
+      "id": "R94-S16",
+      "batch": "R94",
+      "step": "给「13 组重复、0 条 finding」这个对外说法补一份可复算的本机读数，再让 write 侧把事实包与草稿落到仓里",
+      "changed": [
+        "data/results/audit-2026-11-11T12-30-00.000Z.json",
+        "docs/copy/facts/2026-11-11-036-release.md",
+        "docs/copy/drafts/2026-11-11-036-issue1.md"
+      ],
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --profile desktop --stamp 2026-11-11T12:30:00.000Z",
+        "outcome": "`rows 160` · `verdicts 22`（`blocked 10` / `unknown 12`）· `duplicates 13` 组（全部照常列出）· **由重复产生的 verdict 0 条**——13 组里没有一组是 profile bundle 或 `@deepseek-ai/dsh*` 包。",
+        "artifact": "data/results/audit-2026-11-11T12-30-00.000Z.json",
+        "sha256": "957ec2d294ccaba08b562b43abf91bc2284433d0d3656d677493753fb5dfe1d4"
+      },
+      "review": {
+        "correctness": "PASS：`duplicates[]` 一条未删（副本仍然可见），变的是判定层——22 条 verdict 里没有一条来自重复组。这正是 CHANGELOG 里「13 → 0」所指的那件事，写清「消失的是 finding 不是副本」。",
+        "reproducibility": "PASS：`record_audit` 只读本机 profile 并脱敏路径；同一份 profile 重跑给出同样计数（`generated_at` 不同）。",
+        "licence": "PASS：只读本机已安装包，不写 `~/.dsh`。",
+        "ssot": "PASS：产物被本步引用；事实包 `docs/copy/facts/2026-11-11-036-release.md` 的三个数字全部来自它或两份 publish 产物，草稿只在事实包范围内措辞。",
+        "adversary": "反例：① 把「13 → 0」写成「重复问题消失了」→ 事实包与草稿都明确「副本一条都没被藏」；② 让文案 agent 自己编一个百分比 → 提示词禁止，且草稿里没有比例；③ 事实包引用一个不存在的 sha → `copy-channel` 测试会红（它逐个校验被引用的产物与 `.sha256`）；④ 顺手把 issue 回帖发了 → 发帖是 HUMAN 的动作，本轮只落事实包与草稿。"
+      }
     }
   ]
 }
