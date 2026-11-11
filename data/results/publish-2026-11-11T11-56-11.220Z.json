@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_publish.mjs",
+  "generated_at": "2026-11-11T11:56:11.220Z",
+  "release": {
+    "package": "dsh-triage",
+    "version": "0.3.6",
+    "version_source": "manifest",
+    "git_head": "9b5795bbcab2af271c24372d4ad067539b422ca9",
+    "git_dirty": true
+  },
+  "registry": {
+    "url": "https://registry.npmjs.org",
+    "tier": "measured-registry",
+    "fetched_at": "2026-11-11T11:56:11.220Z"
+  },
+  "dist_tags": {
+    "expected": "0.3.6",
+    "latest": {
+      "@dsh-triage/core": "0.3.6",
+      "@dsh-triage/signals": "0.3.6",
+      "@dsh-triage/probe": "0.3.6",
+      "dsh-triage": "0.3.5"
+    },
+    "agree": false,
+    "unreachable": [],
+    "dangling": [],
+    "extra": []
+  },
+  "published": [
+    {
+      "name": "@dsh-triage/core",
+      "ok": true,
+      "version": "0.3.6",
+      "latest": "0.3.6",
+      "published_at": "2026-11-11T11:57:04.707Z",
+      "integrity": "sha512-7GJcE/SawA2PbgII6WMHQ8E5JUnChL8Te6dMZNCTvv0OeOPn+csdz/DigTCz7hhXTl9xUsPJueAqL4niXKlWKA==",
+      "shasum": "5cff54c8ada84073c2be75dd6ecc3d33d1ec3619",
+      "file_count": 83,
+      "unpacked_size": 474670,
+      "dependencies": {
+        "yaml": "^2.8.1",
+        "semver": "^7.7.3"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.6"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/signals",
+      "ok": true,
+      "version": "0.3.6",
+      "latest": "0.3.6",
+      "published_at": "2026-11-11T11:57:29.102Z",
+      "integrity": "sha512-CQFRrC2w22Nqxzs3+atECciGHiOOXRwwWVK/F5gjgiD57G9IRzfCfI1SIjq2a0/4iMkabcX1Qj4dKjY3ZYCTPg==",
+      "shasum": "494be470f682e9f792e2d1468b412f0565bf55e3",
+      "file_count": 19,
+      "unpacked_size": 37167,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.6"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.6"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "@dsh-triage/probe",
+      "ok": true,
+      "version": "0.3.6",
+      "latest": "0.3.6",
+      "published_at": "2026-11-11T11:57:59.498Z",
+      "integrity": "sha512-GNX4X9l0+XTBx6O01cLxAKnYVQHsSTFLGopXVFc1zeuuLqX5TIu/rV1J0gRdGYuzf/1KYDsazA78xoEjg54d7w==",
+      "shasum": "d7ba1209595048d1edf229ad205291b7d519d356",
+      "file_count": 27,
+      "unpacked_size": 342974,
+      "dependencies": {
+        "@dsh-triage/core": "0.3.6"
+      },
+      "engines": {
+        "node": ">=22.19"
+      },
+      "dist_tags": {
+        "latest": "0.3.6"
+      },
+      "local_tarball": null
+    },
+    {
+      "name": "dsh-triage",
+      "ok": false,
+      "status": 200,
+      "detail": "version 0.3.6 is not published",
+      "latest": "0.3.5"
+    }
+  ],
+  "install": {
+    "anonymous": true,
+    "npm_config_userconfig": "<empty file under the scratch dir>",
+    "command": "npm install dsh-triage@0.3.6",
+    "exit_code": 1,
+    "attempts": 19,
+    "waited_ms": 300035,
+    "wait_budget_ms": 300000,
+    "tail": "npm error notarget No matching version found for dsh-triage@0.3.6. · npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist. · npm error A complete log of this run can be found in: <path>\\AppData\\Local\\npm-cache\\_logs\\2026-11-11T12_06_25_982Z-debug-0.log",
+    "client_bundle": {
+      "entry": null,
+      "bytes": 0,
+      "facts": {
+        "declared": false,
+        "platform": null,
+        "present": false,
+        "loader": false,
+        "slot": false
+      },
+      "ok": false
+    },
+    "dependency_trees": [
+      {
+        "name": "@dsh-triage/core",
+        "present": false,
+        "version": null,
+        "expected": "0.3.6"
+      },
+      {
+        "name": "@dsh-triage/signals",
+        "present": false,
+        "version": null,
+        "expected": "0.3.6"
+      },
+      {
+        "name": "@dsh-triage/probe",
+        "present": false,
+        "version": null,
+        "expected": "0.3.6"
+      }
+    ],
+    "cli": {
+      "exit_code": null,
+      "first_lines": "",
+      "commands": ""
+    },
+    "module_exports": null,
+    "scratch": "<path>"
+  },
+  "checks": [
+    {
+      "id": "registry-visibility",
+      "ok": false,
+      "detail": "the packument did not carry the version on 21 read(s); after 310606ms it still did not, so this is a real failure, not a wait"
+    },
+    {
+      "id": "root-manifest",
+      "ok": false,
+      "detail": "dsh-triage@0.3.6 is not on the registry"
+    },
+    {
+      "id": "rewritten:@dsh-triage/core",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/core",
+      "ok": true,
+      "detail": "latest=0.3.6"
+    },
+    {
+      "id": "rewritten:@dsh-triage/signals",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/signals",
+      "ok": true,
+      "detail": "latest=0.3.6"
+    },
+    {
+      "id": "rewritten:@dsh-triage/probe",
+      "ok": true,
+      "detail": "no workspace: protocol on the registry"
+    },
+    {
+      "id": "latest:@dsh-triage/probe",
+      "ok": true,
+      "detail": "latest=0.3.6"
+    },
+    {
+      "id": "version:dsh-triage",
+      "ok": false,
+      "detail": "0.3.6 absent (latest=0.3.5)"
+    },
+    {
+      "id": "dist-tags-agree",
+      "ok": false,
+      "detail": "dsh-triage: latest=0.3.5, expected 0.3.6 · the four packages disagree on latest: 0.3.5 on dsh-triage | 0.3.6 on @dsh-triage/core, @dsh-triage/signals, @dsh-triage/probe"
+    },
+    {
+      "id": "scratch-init",
+      "ok": true,
+      "detail": "npm init -y exit 0"
+    },
+    {
+      "id": "anonymous-install",
+      "ok": false,
+      "detail": "npm install dsh-triage@0.3.6 exit 1 · npm error notarget No matching version found for dsh-triage@0.3.6. · npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist. · npm error A complete log of this run can be found in: <path>\\AppData\\Local\\npm-cache\\_logs\\2026-11-11T12_06_25_982Z-debug-0.log · 19 attempt(s) over 300035ms"
+    },
+    {
+      "id": "registry-propagation",
+      "ok": true,
+      "detail": "the install answered \"not on the registry yet\" 18 time(s); after 300035ms it still did, so this is a real failure, not a wait"
+    },
+    {
+      "id": "installed-tree",
+      "ok": false,
+      "detail": "the package is absent after install"
+    },
+    {
+      "id": "dependency:@dsh-triage/core",
+      "ok": false,
+      "detail": "@dsh-triage/core@null (declared 0.3.6)"
+    },
+    {
+      "id": "dependency:@dsh-triage/signals",
+      "ok": false,
+      "detail": "@dsh-triage/signals@null (declared 0.3.6)"
+    },
+    {
+      "id": "dependency:@dsh-triage/probe",
+      "ok": false,
+      "detail": "@dsh-triage/probe@null (declared 0.3.6)"
+    },
+    {
+      "id": "cli-runs",
+      "ok": false,
+      "detail": "dist/cli.js is missing from the installed package"
+    },
+    {
+      "id": "module-resolves",
+      "ok": false,
+      "detail": "import('dsh-triage') → node:internal/modules/package_json_reader:301\r\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);"
+    },
+    {
+      "id": "client-bundle",
+      "ok": false,
+      "detail": "no dsh.client declaration · exports[\"./client\"] names no file"
+    }
+  ],
+  "ok": false,
+  "limits": [
+    "this proves the registry accepts the package and an anonymous npm install runs the CLI; it does not prove the DSH Host loads the bundle (that needs `probe` / `record_client_serve`)",
+    "the three scoped packages are implementation detail published so the plugin resolves; their own behaviour is covered by the repository tests, not by this artifact",
+    "a registry can serve different bytes to different regions; the integrity check compares against the copy fetched here, at this timestamp"
+  ]
+}

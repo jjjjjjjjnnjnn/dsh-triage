@@ -6,6 +6,24 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.6] — 2026-11-11
+
+> **One visible fix: fewer confident accusations.** The admission rules, the four buckets, the
+> `improved` evidence thresholds, every threshold, every exit code and `audit --json` are what
+> `0.3.5` shipped. All four packages move together.
+
+- **A duplicate copy is only a finding when it can actually collide.** `0.3.5` counted every
+  "same package, two versions" pair as a collision. On a real profile that produced **13 findings, all
+  of them ordinary libraries** (`@babel/runtime` 7.29.13 / 7.29.7, `semver`, `@types/node`), and
+  **none** of them was a `dsh.profile.bundles` entry or a `@deepseek-ai/dsh*` package — which is
+  what a hoisted `node_modules` looks like on every machine, not a compatibility risk. A pair is now
+  reported as a collision only when it can take part in DSH's own loading: it is a declared profile
+  bundle, or its name is under the `@deepseek-ai/dsh` scope. Everything else still appears in
+  `duplicates[]`, explicitly marked `surface: false`, so nothing is hidden — it just no longer
+  occupies the first screen. On the machine this was found on, the count went 13 → 0, and the screen
+  now shows the five genuinely undeclared entries instead.
+- **Test count on the npm page: 891** (badge and prose together). `0.3.5` claimed 876.
+
 ## [0.3.5] — 2026-11-09
 
 > **Two wrong answers, one of them the product's whole point, and no judgement change.** The admission
