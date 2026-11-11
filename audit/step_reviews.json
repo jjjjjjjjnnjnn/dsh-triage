@@ -14524,6 +14524,50 @@
         "ssot": "PASS：产物被本步引用；HANDOFF 的「18/18」与它一致。",
         "adversary": "反例：① 只跑 `--mutate` 不落盘 → 下一轮无法复算；② 注入后忘还原 → 还原断言会红；③ 把 18/18 RED 读成「产品正确」→ 它只证明门禁会响。"
       }
+    },
+    {
+      "id": "R94-S43",
+      "batch": "R94",
+      "step": "把冒烟结果、`BS-61` 与 scrub 修法推进公开仓，并读回切面",
+      "changed": [
+        "data/results/public-cut-2026-11-11T17-12-03.954Z.json"
+      ],
+      "real_test": {
+        "command": "git commit-tree <HEAD:dsh-triage> -p origin/main -m ... → git push origin <cut>:main → node scripts/record_public_cut.mjs",
+        "outcome": "`public-cut · in-sync · subtree a0f2c64 · public 6c8ec26 · trees-equal true · cut at 7c34dd0 · behind 0`；普通 push（`0977ca7..6c8ec26`）。",
+        "artifact": "data/results/public-cut-2026-11-11T17-12-03.954Z.json",
+        "sha256": "20176df3be2685609047a9d98fea1fe61ea8433353b375f43463339081473ec3"
+      },
+      "review": {
+        "correctness": "PASS：`trees-equal true`；公开仓里能读到 `BS-61` 的完整描述与那条红的 `client-serve` 产物，读者不必信任我们的转述。",
+        "reproducibility": "PASS：切面由容器子树生成；`cut at 7c34dd0` 与推送的树一一对应，可逐字节重建。",
+        "licence": "PASS：只推本仓 MIT 子树；`dsh-remedy` 的未提交改动不在里面。",
+        "ssot": "PASS：产物被本步引用；这是第八份 `public-cut`，每份 `cut at` 不同。",
+        "adversary": "反例：① 把八份 `public-cut` 读成抖动 → 每份 `cut at` 不同，是顺序；② 认为「有红产物就不该推」→ 恰恰要推，否则外部看不到缺陷。"
+      }
+    },
+    {
+      "id": "R94-S44",
+      "batch": "R94",
+      "step": "交接包：重写「接手预期」、写出下一件事的作业清单、把 R94 的坑补进 §4、落一份交接快照",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "backup/snapshots/snapshot-0.3.7-handoff-R94.json"
+      ],
+      "real_test": {
+        "command": "node scripts/snapshot_state.mjs --stamp 2026-11-11T18:02:00.000Z --name handoff-R94 → pnpm run verify",
+        "outcome": "快照 `version 0.3.7 · head d2e32e2 · dirty true · gates green · 9 · ssot 564`（`dirty true` 是构造使然：先量 `git status` 再写文件）；`pnpm run verify` **911 测试 / 9 门 ALL GREEN**；`gate_governance/index-references` 在修正 INDEX 的斜杠写法后 **352 references ok**。",
+        "artifact": "data/results/listing-2026-11-11T17-40-00.000Z.json",
+        "sha256": "a8b50ef34438ba229fe298c696978a2ae292c404555e531aea37a57b3b602ea6"
+      },
+      "review": {
+        "correctness": "PASS：交接文档里每一个数字都能在产物里复算（`911` 来自 `node --test`、`564` 来自 `data/results/*.json` 计数、快照 hash 由 `.sha256` 校验）；`BS-61` 的读数直接抄自那条红产物，没有重述成更好的样子。",
+        "reproducibility": "PASS：`snapshot_state.mjs` 会在生成时真跑一遍门禁并把结果写进快照；INDEX 的引用由 `gate_governance/index-references` 逐条验存。",
+        "licence": "PASS：只改本仓文档与快照。",
+        "ssot": "PASS：`INDEX.md` 新增两行把「未修的缺陷」与「写入路径的证据」都挂到可点开的产物上；HANDOFF §3 的作业清单与 §4 的坑一一对应。",
+        "adversary": "反例：① 交接只写绿的那三跑 → 下一轮会以为面板与 CLI 同源（`BS-61` 就是这么被漏了整整一轮的）；② 在 INDEX 里写 `72 / 184` → `index-references` 会把它读成四个路径并报缺失（本轮真踩过，已改成顿号）；③ 把快照的 `dirty true` 当成「仓库脏」→ 脚本先量后写，字段记的是生成那一刻。"
+      }
     }
   ]
 }

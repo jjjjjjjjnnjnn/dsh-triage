@@ -36,7 +36,7 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15/R16/R17）** · **D2 ✅（R18 首判 / R19 复算 / R29 新口径两批 12/12）** · **M3 稳定性分布 ✅（R31，36 次观测）** · **M4 形态 A ✅（`serve` v1）** · **M3 真实组合复制 ✅（T-304，R22）** · **M3 不可判等待收敛 ✅（`ADR-0008` E，R26）** · **M3 两阶段取样 ✅（T-312，R28）** · **M4-a ✅ 收口（R31 真机注册 / R33 可见性 + 同源结论）**；`namespace-diff`（T-303）仍缺（需 T-202a，`ADR-0009` 已签 A） · **M4-b ✅ 三件齐（R34 徽章 + 索引源；R36 `compat_verdict`）+ 索引源已托管（R38）** · **M5-a 本地半边 ✅（R41）**，上传/聚合待 `ADR-0012` · **M5-b ✅ 双边（R42 `upgrade --to`；R44 `improved` 真机 + registry 成功分支）**，`improved` 只有降级几何（`BS-42`） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**public**（R38 由 HUMAN 决定），`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **911 测试** · **9 门禁** · **7 角色卡**（6 + `copywriter`） · **4 模板**（3 任务包 + `kickoff`） · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **563 份 SSOT 产物** · **591 步台账** · **61 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** + **R59 Question 覆盖率（Q&A 1545 / General 5786；头条 74/1545 = 4.8%；抽检 9/20 + HUMAN 5/5；`check_listing` 14/14，含 3 条定向负对照）** + **R60 分类器 v2 实验（开发集 20/20 / 互斥留出集 12/20，v1 7/20；未达 80%，不采用；生产仍 v1）** |
+| 规模 | **911 测试** · **9 门禁** · **7 角色卡**（6 + `copywriter`） · **4 模板**（3 任务包 + `kickoff`） · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **564 份 SSOT 产物** · **593 步台账** · **61 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** + **R59 Question 覆盖率（Q&A 1545 / General 5786；头条 74/1545 = 4.8%；抽检 9/20 + HUMAN 5/5；`check_listing` 14/14，含 3 条定向负对照）** + **R60 分类器 v2 实验（开发集 20/20 / 互斥留出集 12/20，v1 7/20；未达 80%，不采用；生产仍 v1）** |
 | 证据（R60） | `data/results/classifier-v2-2026-11-02T11-20-00-000Z.json`（`3e357e063cfe…`：dev v1 **9/20** / v2 **20/20**；holdout v1 **7/20** / v2 **12/20**；`decision: not-adopted`）· 留出集标签 `data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/holdout-review.json`（种子 `20261103`，20 条，排除开发集）· 报告 `audit/RECON_2026-11-02_classifier-v2.md` · 盲区 `BS-53` |
 | 证据（R59） | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json`（`7354f39db3ab…`，8.1MB：Q&A 1545/1545 · General 5786/5786 · 头条 74/1545 = 4.8% · Wilson 3.8–6.0% · tier 47/27/89/164/90/178/950）· `question-coverage-recompute-2026-11-02T10-05-00-000Z.json`（`2d51b1666275…`，rows/counts/coverage 逐项相同）· `question-review-2026-11-02T10-10-00-000Z.json`（`285fc59e5ac5…`，agent 9/20 · HUMAN 5/5）· 快照 `data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/`（qa 4.4MB 全文 / general 6.0MB 投影 / packuments 0.7MB / **1393 包**）· **三条红产物保留**：`listing-2026-11-02T10-10-00.000Z.json`（改数 47→48）· `listing-2026-11-02T10-20-00.000Z.json`（删「不是你的机器」）· `listing-2026-11-02T10-30-00.000Z.json`（把复算产物当测量指针）· 终跑 `listing-2026-11-02T10-40-00.000Z.json`（**14/14**）；外部文案复核后 `listing-2026-11-02T11-00-00.000Z.json` 仍 **14/14** · 报告 `audit/RECON_2026-11-02_question-coverage.md` |
 | 证据（R53） | `data/results/listing-2026-11-01T10-10-00.000Z.json`（`237e80c0…`，**12/12**，version 0.3.1 / tests 529）· **三条红产物各自保留**：`listing-…T09-00-00`（`e11d9403…`，`submissions/README.md` 把 0.3.0 引到 0.2.0 的产物）· `listing-…T09-50-00`（`e66b8c5e…`，**我自己新写的那句话**把旧版本号写回正文）· `release-preflight-2026-11-01T10-20-00.000Z.json`（`30a998d9…`，`not-logged-in` 真 `E401`：version/workspace 两项绿）· `market-channels-2026-11-01T09-40-00.000Z.json`（`f992a029…`，`live 3` + **`listed 1`**：dsh.so 端点 200 / L5 / low，`#65 = DIRTY`）· **真机三跑**：`client-serve-2026-11-01T11-00-00`（`a33c8082…`，11/2）· `…T11-20-00`（`504b61b8…`，16/1，含 `break-after-install` 与真鼠标 `clipboard-copy`）· `…T11-40-00`（`faa502bf…`，12/1，`english-screen`） |
@@ -82,24 +82,37 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 9/
 **验收标准**：第二条输出 `ALL GREEN · 9 gates`（当前 **911 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 9/9`。
 不满足即环境不可信——**先修基线，不叠加新功能**。
 
-**接手时的工作区预期**：**`dsh-triage/` 干净**（R93 这批提交已经落在本地 `main` 上），但**容器仓 `origin/main` 仍落后一整批**（R93 收尾时 19 个，随后的提交会让它继续变大，别记死这个数）；**公开仓 `jjjjjjjjnnjnn/dsh-triage` 是 `dsh-triage/` 子树的切面，且每次都切在「当时最新那个提交」上**。
-不记 sha：记死的 sha 在下一行提交时就过期，R93 因此改了两次（读者拿旧 sha 去复算旧产物，两份都「真」却是两个时刻）。
-要现在到底一刀切在哪：跑 `node scripts/record_public_cut.mjs`，`data/results/` 里最新那份 `public-cut-*.json` 就是答案（`status: in-sync`、`cut at <commit>`、`behind 0`）；`git rev-parse origin/main^{tree}` 与 `git rev-parse <commit>:dsh-triage` 必须相等。
-**切面永远比「装着这份文档的那个提交」早一格**：产物在它描述的树里，所以最后一次「切+推」只能发生在终稿提交之后——那一格差是构造使然，不是漏推。
-**同理，最新那份产物记的 `public` 也可能比 `origin/main` 早一刀**：记录发生在最后一次推之前，读到「产物说 `public 0bb3ef3`、`origin/main` 其实是别的」不是漂移，是顺序。另有一处历史：`public-cut-2026-11-10T18-50-00.000Z.json`（推前、`79a55cd`）、`19-56`（`d8c7c6c`）、`20-12`（`0bb3ef3`）、`20-25`（`e5f1158`）四份各自是那一刻的真值，都在，别读成漂移。
-容器仓里的 `dsh-remedy` 仍未 push，推不推是 HUMAN 的事。
-交接快照 `backup/snapshots/snapshot-0.3.5-handoff-R93-final.json`
-（`version 0.3.5 · head 8533c59 · dirty true · gates green · 9 · ssot 515`——**515 是那一刻**，R93 收尾后现为 `规模` 行的 521 / 545，以规模行为准；上一份是 `snapshot-0.3.5-handoff-R92-final.json`，
-`head be2c38d` / `ssot 508` / `dirty false`——两份都是真的，别以为其中一份是漂移；快照的 `head` 永远比「装着快照的那个提交」
-早一步，这是构造使然，不是落后）。**R93 这份为什么是 `dirty true`**：脚本先量 `git status --porcelain` 再写文件，
-量的时候这份交接文档的改动还没提交、快照文件也还没进树；`head 8533c59` 用的是那一刻容器仓的 HEAD（当时 `dsh-remedy`
-的提交刚落在上面）。字段记的是**生成那一刻**，不是现在——把这份文档和快照一起提交之后，`git status` 就是干净的。要一份 `dirty false` 的快照，
-就得先把文档提交、再生成、再单独提交快照文件（那是 `writeEvidence` 拒绝覆盖同名产物的直接后果，不是设置错了）。
-**下次接手先跑 `git log --oneline origin/main..HEAD`（预期非空：容器仓这一批还没推，数字只会随时间变大；`dsh-remedy` 那批也在里面）**，再跑 `node scripts/record_public_cut.mjs` 看公开仓是不是还是 `dsh-triage/` 子树的切面，不要只信这一行——R88/R89 曾经在本地停了
-两轮而这份文件写着「一致」，那句话当时是假的。若又出现未提交改动，**先问来源**：人类宣传物料
-（`docs/distribution/T-810/03-x-en.md`、`docs/distribution/reddit-and-hn-posts.md`、两份 README 与上架文案）
-不要改、不要替人提交、更不要为了让树变干净删掉。真正发版时（`pnpm -r publish` 需要干净树）
-用 `git stash push -u -- <路径>`，用完 `git stash pop`。
+**下一件事，按顺序（这是 R94 留给下一轮的作业，不是建议）**
+
+0. **先读这两处**：`docs/HANDOFF.md` §4 的「R94 的真机冒烟抓到什么」+ `audit/blind_spots.json` 的 **`BS-61`**。
+   一句话：面板与 CLI 在同一个沙盒 profile 上给出不同的数字，而对外文案写着「同源」。**这不是噪音**——`visible` 全绿说明页面渲染是对的。
+1. **定位 `BS-61`**（唯一一条已知的真缺陷）：
+
+   ```powershell
+   node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/0.2.1-rc.4/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/0.2.1-rc.4/install --stamp <ISO> --lang zh
+   ```
+
+   本次读数：`same-source` 面板 `judged 72 / unknown 72` vs CLI `judged 184 / unknown 184`（`declared` 两边都是 219）；
+   `upgrade-same-source` 面板 `119 / 74` vs CLI `3 / 190`（目标 `0.2.2-rc.1`）。
+   要查的是 **`/compat-triage/summary` 的 `rowVerdicts` 来源**与 `audit --json` 的 `row_verdicts` 差在哪一层——两边都走 `loadAuditData()`，所以差异只可能在**入参**：`env`、`dshHome`、`snapshotPath`，或 Host 侧 `resolveProfileFromBaseUrl()` 解析出的 profile。
+
+   **修好的标志是同一条命令里两条同源断言同时变绿。** 在那之前：不要改断言、不要改文案迁就缺陷、不要对外说「同源」。
+
+2. 若定位出「Host 侧 profile 解析错了」（`resolveProfileFromBaseUrl()` 把宿主 config 当成 profile），**先写 spec 再动代码**（判据轮），因为它会影响「一屏该由谁占位」的既有结论。
+3. 修完之后：`pnpm run verify` → `gate --mutate` → 重跑 `record_client_serve` → 台账一条 → 提交 → 切面复推。
+4. **D5 窗口**：覆盖到 `11-01..11-10`，**下一跑最晚 `2026-11-19`**（`d5_window_status` 算出来的）；`11-15` 关窗后按 `docs/d5-close-runbook.md` 出判定。
+5. **不要做的**：为了绿而放宽阈值 / 删掉 `client-serve` 的两条同源断言 / 在 `#65` 再发第二句催促。
+
+**两处「看起来像 drift、其实不是」**（R94 已写清，这里只提醒读法）
+
+- `data/results/` 里有 **8 份 `public-cut-*.json`**（`cut at` 依次是 `2a0366a` / `818f2cc` / `08d69a0` / `a0ce6f7` / `1faec71` / `efd104d` / `cc05823` / `7c34dd0`），每份都不同——那是顺序，不是抖动。
+- 同一天有 **两份 `publish` 产物**（`11-56` 红 8/20、`12-10` 绿 18/18）：红的那份记的是「四包发上去了、但第 5 分钟 registry 还没同步」，**别当成发布失败，也别删**。
+
+**接手时的工作区预期**：**`dsh-triage/` 干净**，容器仓 `origin/main` 落后一整批（`git log --oneline origin/main..HEAD` 预期非空、且数字只会变大）。先跑 `node scripts/record_public_cut.mjs`：`data/results/` 里最新那份 `public-cut-*.json` 就是「切在哪一刀」的答案（`status: in-sync` / `cut at <commit>` / `behind 0`），别信手记的 sha——**切面永远比「装着这份文档的那个提交」早一步**，那是构造使然，不是漏推。同理，最新那份产物记的 `public` 可能比现在的 `origin/main` 早一刀，那是顺序不是漂移。
+
+**R94 交接快照**：`backup/snapshots/snapshot-0.3.7-handoff-R94.json`（`version 0.3.7 · head d2e32e2 · dirty true · gates green · 9 · ssot 564`）。**`dirty true` 是构造使然**：脚本先量 `git status` 再写文件，量的时候这份文档的改动还没提交、快照也还没进树；字段记的是**生成那一刻**，不是现在。要一份 `dirty false` 的快照，就先把文档提交、再生成、再单独提交快照文件（`writeEvidence` 拒绝覆盖同名产物，这是直接后果，不是设置错了）。上一份 `snapshot-0.3.5-handoff-R93-final.json`（`ssot 515`）也是真的，别当漂移。
+
+**容器仓里的 `dsh-remedy` 仍未 push**，推不推是 HUMAN 的事；两个项目各自 `pnpm run verify`，不要混提交。
 
 ### R91 / R92 交接要点（2026-11-09，比读到上面任何一行都更该先看这几条）
 
@@ -1154,6 +1167,14 @@ node scripts/d2_report.mjs --matrix data/results/probe-matrix-<新 stamp>.json -
 | CI 报找不到 `scripts/lib/kit.mjs` | `.gitignore` 的 `lib/` 匹配任意层级 | 已改 `**/dist/` + `packages/*/lib/` |
 | `probe` 测试在 Linux 全红 | 硬编码 `C:/Temp`，POSIX 下非绝对路径 | 用 `tmpdir()` + `join()` |
 | 误以为 `gate.mjs --mutate` 要 exit 1 | 单门才 exit 1；套件全 CAUGHT 才 exit 0 | 认最后一行 `NEGATIVE CONTROL PASSED` |
+| `client-serve` 的 `same-source` / `upgrade-same-source` 红 | 面板与 CLI 在**同一份**沙盒 profile 上给出不同数字（`judged 72` vs `184`；四桶 `119/74` vs `3/190`），而文案写着「同源」 | **R94 未修**，登记为 `BS-61`。修好的标志是同一条命令里两条同源断言同时绿；在那之前不要改断言、不要改文案迁就 |
+| `rescue` 产物里出现 `C:/Users/<name>/…` | 记录器只替换 `inputs.dsh_home`，却把 CLI 的 `plan` 原样嵌入（tarball 安装的 `spec` 自带 home 路径） | R94 已修：纯函数 `scrubAbsolutePaths()` + 6 条单测；抓到它的是 `gate_governance/results-privacy` |
+| `--tests` 传了个比实际大的数 | 手算出来的（905 vs 实测 904），`test-count-matches` 当场红 | 以 `node --test` 实测为准；徽章 / 正文 / §3 / 规模行四处同改 |
+| `pnpm -r publish` 报 `ERR_PNPM_GIT_UNCLEAN` | pnpm 的 git 检查是**全仓**的，容器仓里 `dsh-remedy` 有未提交改动就会拦 | 发布用 `pnpm -r publish --no-git-checks`；**不要**为了发布去提交另一个项目 |
+| `check_listing` 说结论行不含 `latest` | 卡片产物把 `--to` 的**关键字**写进了 `inputs.target`，而标题写的是解析出来的版本 | R94 已修：产物记 `target`（解析值）与 `target_keyword`；断言没动 |
+| 卡片 `--to latest` 只有 `card-titles-the-target` 红 | 断言拿标题去比关键字 | R94 已修：判定抽成 `judgeCardTitle()` + 6 条单测（含两条负对照） |
+| 监听连续六天报「上游没变」 | 只读 `dist-tags.next`，而 `latest` 在 2026-11-05T13:21:52Z 已经转正 | R94 已修：一次 registry 读、两套判定；**缺 `latest` 块的旧产物不当基线** |
+| `channels.json` 里塞进「答问」 | 那份台账的口径是「每条 = 一次发布 = 一个 URL」 | 答问记在 `T-810/00-README.md` 的独立小节 + `posted-replies` 产物里；塞进发布台账会让「发了很多地方」看起来像需求（检查器当场红过） |
 | SSOT 里出现 `C:\Users\<名>` | 只脱敏了 `env.profileDir`，漏了 `evidence[].source` | 已修 `redactVerdict` + `results-privacy` 门 |
 | `npm` 命令刷 `Unknown project config` | `.npmrc` 放了 pnpm 专属键 | 已迁到 `pnpm-workspace.yaml` |
 | Windows 上 `spawn('npm')` 报 EINVAL | 不能直接 spawn `.cmd` | 走 `ComSpec /c`（见 `gate_release_pack.mjs`） |
