@@ -21,7 +21,20 @@ import { test } from 'node:test'
 const root = new URL('../../', import.meta.url)
 const read = (path: string) => readFileSync(new URL(path, root), 'utf8')
 
-const DOCUMENTS = ['README.md', 'README.zh-CN.md', 'packages/plugin/README.md', 'docs/market/listing_zh.md', 'docs/market/listing_en.md']
+const DOCUMENTS = [
+  'README.md',
+  'README.zh-CN.md',
+  'packages/plugin/README.md',
+  'docs/market/listing_zh.md',
+  'docs/market/listing_en.md',
+  /*
+   * R97: `CONTRIBUTING.md` said「绝不允许修改用户的实际配置 `~/.dsh`」 and "Never mutate user files in
+   * `~/.dsh`" — the same claim that was already retired for the four documents above. A contributor
+   * reading it would believe `--apply` does not exist. Being outside the marketing set is not a reason
+   * to be allowed to state the retired fact.
+   */
+  'CONTRIBUTING.md',
+]
 
 test('the boundary sentence names the two seams an explicit --apply may touch', () => {
   for (const file of DOCUMENTS) {
@@ -37,6 +50,12 @@ test('the boundary sentence no longer claims it never modifies ~/.dsh', () => {
     '绝不修改用户的 `~/.dsh` 配置',
     '绝不修改 `~/.dsh` 配置',
     '只读检查，不修改任何现有配置',
+    // R97: the English forms were never checked, so both READMEs' "English Overview" and
+    // CONTRIBUTING's English summary kept stating the retired fact for four rounds after the
+    // Chinese was fixed. Same claim, different language, same lie.
+    'without mutating `~/.dsh`',
+    'Never mutate user files',
+    'never modifies `~/.dsh`',
   ]
   for (const file of DOCUMENTS) {
     const text = read(file)

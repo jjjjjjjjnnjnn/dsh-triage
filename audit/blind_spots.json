@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R94",
+  "stand": "R99 (2026-11-12)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -483,10 +483,43 @@
     {
       "id": "BS-61",
       "area": "M4 面板 / 同源断言（真机）",
-      "cannot_see": "R94 的真机浏览器冒烟（`data/results/client-serve-2026-11-11T16-45-00.000Z.json`）在沙盒 Host 上装本仓四包并打开设置页「分诊台」页签：渲染半边**全绿**（`visible` / `summary-visible` / `upgrade-visible` / `user-answer`），但两条同源断言**红**——`same-source` 面板 `judged 72 / unknown 72` vs CLI `judged 184 / unknown 184`（`declared` 两边都是 219，所以分母对得上、分子对不上）；`upgrade-same-source` 目标 `0.2.2-rc.1` 面板 `would-be-denied 119 / cannot-tell 74` vs CLI `3 / 190`。**没有归因**：两条红说明「面板的数字与 CLI 的数字来自不同的读取路径」，而 README 与上架文案都写着「数据与 CLI 同源」。这是本轮**未修**的真缺陷，不是测量噪音：页面确实渲染出来了（`visible` 绿），所以差异在读而不是渲染。下一次要做的不是改断言，而是把面板那条读路径（`/compat-triage/summary` 的 `rowVerdicts` 来源）与 CLI 的 `audit --json` 逐层对齐，然后重跑同一条命令看这两步是否转绿。",
-      "mitigation": "负面结果已进产物与 README 前先不要引用「同源」；下一次重跑 `record_client_serve` 并把 `/compat-triage/summary` 的 rowVerdicts 来源与 `audit --json` 逐层对齐，两条同源断言都绿才算修好。",
-      "owner": "implementer（M4 面板读路径）+ verifier（独立复算同一沙盒）",
-      "what_would_show_it": "同一份沙盒 home 上跑 `record_client_serve`：`same-source` 与 `upgrade-same-source` 同时绿才算修好。修前禁止把「同源」写进任何对外文案。"
+      "cannot_see": "**R95 已修（判据 M13，`docs/specs/M13-row-resolution.md`）**。根因不是「面板与 CLI 各读了一份」，而是「CLI 侧看不见那棵树」：`resolveRows()` 只做 `<root>/<name>/package.json` 的扁平查找，而 pnpm 默认的 `isolated` 布局把整棵树放在 `node_modules/.pnpm/<pkg>@<ver>/node_modules/`，三个扁平 root（kernel / profile / 共享）没有一个落得进去。实测（`row-resolution-2026-11-11T19-50-00.000Z.json`）：扁平查找 **2/190** 行、184 条假 `row-missing`；按声明者解析 **190/190**、72 verdicts（与面板逐项相同）。面板一直是对的——它被 `install/` 那份 hoisted 内核启起来，`kernelRoots` 让它看得见。剩下的诚实边界：① 本机真实 profile 是 `hoisted`，缺陷在那里**不复现**（0 行变化），所以这条缺陷只在 pnpm 默认布局上可观测；② 兜底按 Node 的搜索路径走，被手工挪过的 `node_modules` 仍返回 `null`；③ 只测声明层，不是运行期读数。",
+      "mitigation": "已修，不再是「不许说同源」的阻塞项：`same-source` 与 `upgrade-same-source` 在 `client-serve-2026-11-11T19-30-00.000Z.json` 里同时绿（`declared 219 / judged 72`、四桶 `119/74/0/2` 两边逐项相同）。**回归判据**：任何改动 `resolveRows()` / `moduleRoots()` / 沙盒 pnpm 布局的轮次，必须重跑这条命令且两条断言同时绿；`M13-N3` 变异（把兜底放到扁平查找之前）会真红，说明「只做加法」没有被悄悄改成「覆盖」。",
+      "owner": "implementer（R95 已交付）+ verifier（独立复算同一沙盒）",
+      "what_would_show_it": "`node scripts/record_client_serve.mjs --dsh-main sandbox/upstream/<ver>/install/node_modules/@deepseek-ai/dsh/lib/bin.js --install sandbox/upstream/<ver>/install --stamp <ISO> --lang zh` → `same-source` 与 `upgrade-same-source` 同时 `passed`；`node scripts/record_row_resolution.mjs …` → `A resolved 2/190` 而 `C resolved 190/190`、`no-rewrite: passed`。",
+      "fixed_in": "R95 (2026-11-11)"
+    },
+    {
+      "id": "BS-62",
+      "area": "M13 行解析 / 只在 isolated 布局上可观测",
+      "cannot_see": "`M13` 的兜底只在 pnpm 默认的 `isolated` 布局上有效，而维护者本机（`~/.dsh` 的 `desktop` / `web`）用的是 `nodeLinker: hoisted` —— 实测两份 profile 上「修前 / 修后」**0 行变化**（`row-resolution` 的对照只在沙盒上分叉）。所以：① 这条修复在真实用户身上是否有效，**取决于他们怎么装**，而仓库里没有一份真实用户的 isolated profile 可测；② `record_client_serve` 建的沙盒因为 `SANDBOX_PNPM_WORKSPACE` 没写 `nodeLinker`，恰好是 isolated —— 这不是刻意构造，是 pnpm 的默认值，但**如果 pnpm 改了默认值，这两条同源断言会静默地回到「怎么都对」**（因为两边都看不见树，或两边都看得见），那时 `same-source` 仍绿却不再证明任何事。",
+      "mitigation": "`record_row_resolution.mjs` 的 `layout` 步会读出 `store_entries` 与 `top_level_entries` 并在非 isolated 形状下把该步记成 `unmeasured` —— 读那份产物就知道这次对照是否真的构成了对照。**要一份真实用户的 isolated profile** 之前，对外只能说「在 pnpm 默认布局上实测」，不能说「在用户机器上修复了」。",
+      "owner": "researcher（找一份真实 isolated profile 的样本）+ implementer",
+      "what_would_show_it": "任何一轮 `record_client_serve` 的 `row-resolution` 产物里 `layout.isolated === true` 且 `A resolved < C resolved`；若 `layout.isolated === false`，这一轮不构成对 M13 的回归证据，必须换沙盒形状重跑。"
+    },
+    {
+      "id": "BS-63",
+      "area": "分发 / 渠道读数是「谁问」的函数 + dsh.so 的排期不由我们决定",
+      "cannot_see": "渠道那一栏里有两件事我们**无法**从本机证明：① `mergeable_state` 依赖观察者的权限（#65 认证侧 `blocked` / 匿名侧 `clean`，R93 实测、R96 复读仍是如此），所以「能不能合」这句话必须永远带上是哪一侧读的；② dsh.so 页面上的 `install.command` 仍写 `0.3.5`，我们**没有**任何接口能让它更新，也读不到它下次索引的时间——它重新索引到 `0.3.7` 之前，任何「页面上写着 0.3.7」的说法都是错的。",
+      "mitigation": "文案两处都写清「那是它的排期，不是我们的动作」，并要求复读时带上 `checkedAt`；渠道产物每次重跑都同时记两个 vantage。**对外只说**：L5 是它自己干净沙盒里的一次实测（`BS-06`）、收录不产生下载、页面上可能仍是旧版本。",
+      "owner": "arbiter（对外措辞）+ HUMAN（若要催 dsh.so 重新索引）",
+      "what_would_show_it": "`node scripts/record_market_channels.mjs --pr … --site dsh.so=human` 的产物里 `submitted[].mergeable_state_by_vantage` 两侧不同、且 `site_submissions[0].index_probe` 的读数与文案逐字对得上；拿到 `install.command` 变成 `0.3.7` 的那一天，才有资格改文案。"
+    },
+    {
+      "id": "BS-64",
+      "area": "门禁 / 断言只匹配它见过的形状（T-835 的第二形状）",
+      "cannot_see": "R67 加的治理断言是 `/ssot data\\/results\\//`，它只认「打印串里直接写了 SSOT 目录」这一种写法。同一个缺陷还有第二种写法——用 `join('data/results', fileName)` 把路径**拼**出来——四个记录器（`check_listing` / `record_outcomes` / `record_upgrade_impact` / `scan_upgrade_declarations`）都是这一种，于是三轮全绿。R97 用 `--out %TEMP%` 真跑一次才看见：工具打印 `data\\results\\listing-….json`，而文件落在 `%TEMP%`。**这说明「断言跑绿」证明的是「没有这一种写法」，不是「没有这个缺陷」**；同一类缺陷换一种表达（拼路径、`path.join` 的别名、先赋值给变量再打印、`console.log` 而不是 `process.stdout.write`）都能从缝里过去。",
+      "mitigation": "① 断言改成「形状」而不是「字面量」：任何 `--out` 记录器只要源码里出现 `join('data/results'` 就红，另加一条正向断言要求至少有一处记录器走 `displayPath`/`writeEvidence`（证明 helper 不是死代码）；② 修法收敛到一个纯函数 `displayPath(target, root)`，让「打印 = 写入」由构造保证，而不是靠每处自觉；③ 真跑负对照必须用**非默认** `--out`（默认值下这类缺陷完全不可见）；④ 仍不覆盖的表达：把路径交给第三方 logger、或用变量间接拼装——这类只能靠 code review，不假装有机器断言。",
+      "owner": "tests/governance/evidence-and-dates.test.ts · scripts/lib/evidence.mjs · 所有收 `--out` 的 scripts/*.mjs",
+      "what_would_show_it": "`node scripts/check_listing.mjs --stamp <ISO> --tests <n> --out %TEMP%/x` → 打印的路径必须等于实际落盘的路径；把 `displayPath(targetPath)` 改回 `join('data/results', fileName)` → `evidence-and-dates` 的 `T-835` 那条必须真红。"
+    },
+    {
+      "id": "BS-65",
+      "area": "文档 / 「上游基线」这句话只被四份文档 + 两个 tag 覆盖",
+      "cannot_see": "`tests/governance/upstream-baseline.test.ts` 只约束 `AGENTS.md` / `docs/ROADMAP.md` / `docs/HANDOFF.md` / `docs/07-environment.md` 这四行与 `latest` / `next` 这两个 tag。它**看不见**：① `alpha` 通道（上游有 `0.2.2-alpha.3`，我们不判也不引用）；② 其他写着版本号的文档（`docs/specs/*` 里的「上游基线」是**当年那轮的**基线，改它就是把历史读数写成今天的事实）；③ `dsh-base` / `dsh-tools` 等其他上游包的 tag；④ 一句话是不是**用别的措辞**说了同一个问题（例如「本机落后 8 个 rc」这种没有版本号的断言 —— 本轮靠人读发现，断言抓不到）。",
+      "mitigation": "新写给「上游现在是什么版本」的句子时，把它放进这四份之一（或扩 DOCUMENTS 列表）；带版本号的历史句子不要改，改成「当年那轮」的措辞。`docs/07-environment.md` 那张表已经把「运行时（kernel）」与「陈旧共享缓存」分成两行，别再退回一行。",
+      "owner": "arbiter（每轮改「上游基线」句子的那个人）",
+      "what_would_show_it": "一条真实的用户机器读数：`dsh-triage why --profile <名字>` 打印的 `dsh 0.2.2-rc.1 (kernel)` 与用户自己 `npm ls` 的版本一致，且四份入口文档没有一处与它相干；或者一次上游换版本（`watch-upstream` 给 `changed` / `promoted`）之后，纪律真的被执行（四份文档跟着改、`upstream-baseline.test.ts` 保持绿）——那证明「这个事实只有四个家」这句话成立。"
     }
   ]
 }

@@ -101,7 +101,9 @@ export async function loadAuditData(input: AuditLoadInput): Promise<AuditLoad> {
   )
   // Resolving rows here is what lets `audit` answer "who put this copy here" for
   // every row, not only for the denied ones (R8 adversary finding F11).
-  const rows = await resolveRows(input.env, rowTargetsOf(claims))
+  // M13: layers come from the composition we just loaded, so a row the flat roots cannot see is
+  // retried from the bundle that declared it (BS-61's CLI half; see docs/specs/M13-row-resolution.md).
+  const rows = await resolveRows(input.env, rowTargetsOf(claims), { layers: composition.layers })
   // T-105: `why` and `audit` must reach the SAME row-level admission conclusion.
   // A profile can exempt an exact plugin@version for an exact runtime. The loader honours it at
   // boot, so judging the row blind would make this tool disagree with the running profile.

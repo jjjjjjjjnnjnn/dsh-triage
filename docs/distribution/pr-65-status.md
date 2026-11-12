@@ -1,4 +1,4 @@
-# 三条渠道 PR 的现状（R94，2026-11-11 实测）
+# 三条渠道 PR 的现状（R96，2026-11-11 实测）
 
 > **这一页解决一个问题**：同一句「PR 卡住了」，三条 PR 的**原因**各不相同，按错的原因去修会做无用功。
 > **R93 的事实**：上游在 2026-11-10 把 `community.json` 改成**按 `id` 升序**存放，登记要**插到自己 id 的位置**；
@@ -10,9 +10,10 @@
 > **`mergeable_state` 是「谁问」的函数，不是 PR 的属性**（R93 实测）：带 token 读是 `blocked`，匿名读同一 URL 是 `clean`。
 > 两种读数都写进产物（`mergeable_state_by_vantage` + `mergeable_state_disagrees`），本页一律标出用的是哪一种。
 > #193 已于 `2026-11-04T01:00:47Z` **合并**（merge commit `d944a40e`）；#140 仍是 `OPEN / MERGEABLE / CLEAN`、无 review。
-> 全部读数来自两份产物：`data/results/market-channels-2026-11-11T11-35-00.000Z.json`（三条 PR 的 live 字段 + 两种 vantage）
+> 全部读数来自两份产物：`data/results/market-channels-2026-11-11T20-40-00.000Z.json`（**R96 复读**：三条 PR 的 live 字段 + 两种 vantage + dsh.so 收录探针）
 > 与 `data/results/index-sync-2026-11-11T11-20-00.000Z.json`（索引结构对账 + 本地副本出处，脚本 `scripts/record_index_sync.mjs` 产出）。
-> 上一版只记了带 token 那一侧（那两份已被下面这两份取代、不再留在 `data/results` 里），本文 §2 的更正就是这么来的。
+> **R96 复读结论：三条 PR 的状态与 R94 逐项相同**（#65 `OPEN / MERGEABLE`（认证 `blocked` / 匿名 `clean`）/ `CHANGES_REQUESTED` / +12-0；#193 已合并；#140 `OPEN / CLEAN` / 零 review）。
+> 变的只有读取时间与 dsh.so 那一栏：它的 `L5` 当前记录改挂 **`0.2.2-rc.1`**（构建 `0.3.5`），页面上的安装行仍写 `0.3.5`。
 
 ---
 
@@ -32,7 +33,7 @@ gh pr view 193 --repo awesome-deepseekharness/awesome-deepseek-harness --json st
 gh pr view 140 --repo walkinglabs/awesome-deepseek-harness-plugins --json state,mergeable,mergeStateStatus,reviewDecision,reviews,changedFiles
 ```
 
-产物：`data/results/market-channels-2026-11-11T11-35-00.000Z.json`（三条 live 状态 + dsh.so 收录探针）。
+产物：`data/results/market-channels-2026-11-11T20-40-00.000Z.json`（三条 live 状态 + dsh.so 收录探针；R96 复读）。
 **旧读数不再有效**：R53（`live 3 · merged 0`）、R60（`151 entries` / `9/9`）、R76（`152 entries` / `9/9` / `reviews 0 条`）都是各自那天的快照；
 `live` 从 3 变 2 是 #193 合并所致（OPEN 的只剩 #65 / #140），不是漂移。
 
@@ -196,6 +197,6 @@ R76 于 2026-11-03 发过一条（`issuecomment-6607329040`）。R93 的两条 P
 3. **分支当时已经 `CONFLICTING/DIRTY`**（43 个提交落后上游）→ rebase 到 `upstream/main` 之上，冲突只在我们那一行，解法是**保留上游新增的 4 行 + 追加我们那一行**。
 4. 推送后实测：`MERGEABLE / CLEAN`，`curate` 检查 **pass**（它正是「两份 README 都要有」的那道检查）。
 5. 按维护者的话留了**一次**回复（不重复催）。
-6. **R94 复核：已合并**——`merged_at: 2026-11-04T01:00:47Z`，merge commit `d944a40e`，`changed_files 2`、**+2/-0**（`market-channels-2026-11-11T11-35-00.000Z.json`）。
+6. **R94 复核：已合并**——`merged_at: 2026-11-04T01:00:47Z`，merge commit `d944a40e`，`changed_files 2`、**+2/-0**（`market-channels-2026-11-11T20-40-00.000Z.json`）。
 
 **决定一**：这条渠道**已结案**（`merged` 才算收录）。#65 与 #140 仍只能写「已提交 / 待审」。

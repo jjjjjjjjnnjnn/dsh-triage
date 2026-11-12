@@ -70,9 +70,10 @@
   - `default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; img-src data:;`
   - 严禁引入任何未经审查的第三方 CDN、外部图片或脚本资源；
 - **请求源 Origin 校验（两个半边不一样，别混读）**：
-  - `dsh-triage serve` 面板：**只拒绝「有且非空且不匹配」的 Origin**（`serve.ts:277-281`），空 / 无 Origin 的请求**放行**（token 仍然必需）——浏览器直接导航打开面板就是这种情况，挡掉它会把正常用法判成攻击；
-  - Host 侧只读路由（`host-audit-route.ts:45-56`）：有 Origin 就必须同源；**没有 Origin 时必须带 `sec-fetch-site: same-origin`**，否则 `403 request carries no same-origin evidence`。
-  - 因此「空 Origin 一律拒绝」只对 Host 侧成立，对 `serve` 不成立。DNS rebinding 借的正是 `serve` 这一侧的空 Origin，补法见 `docs/adr/0014-host-header-allowlist.md`（**accepted**，R75 已实施：Host 不匹配 → 421）；
+  - `dsh-triage serve` 面板：**只拒绝「有且非空且不匹配」的 Origin**（`serve.ts`，`429` 行附近的正则），空 / 无 Origin 的请求**放行**（token 仍然必需）——浏览器直接导航打开面板就是这种情况，挡掉它会把正常用法判成攻击；
+  - Host 侧只读路由（`host-audit-route.ts#auditRequestVerdict`）：有 Origin 就必须同源；**没有 Origin 时必须带 `sec-fetch-site: same-origin`**，否则 `403 request carries no same-origin evidence`。
+  - **例外：桌面桥接的调用方自报（R96 / `M10-desktop-bridge`）**。DSH Desktop 把页签渲染在 `dsh-app://app`，并在 `forwardWebRequest()` 里把 `host` / `origin` / `cookie` / `sec-fetch-site` 全部删掉再转发 —— 于是「两条标准信号都缺失」这唯一形状，旧规则一律 403，把守卫本来要保护的那个调用方挡在门外（2026-11-09 实测：裸请求 403、补 `Origin` 200）。现在当 **`Origin` 与 `Sec-Fetch-Site` 同时缺失**时，只有带 `x-dsh-triage-client: settings-tab` 这个**调用方标签**的请求才被放行。**它不是认证**：跨站页面要发自定义头必须先过 CORS 预检，而这三条路由**从不回 `OPTIONS`**，浏览器会在发请求之前就丢掉它。只要有任一条标准信号在场，标记**不产生任何作用**（`cross-site` 仍然 403、非 GET 仍然 405），这一点由 `tests/unit/host-guard-desktop-bridge.test.ts` 的逐条负对照钉住。同机同用户的本地进程本来就不在威胁模型内（它们能直接读 profile）。
+  - 因此「空 Origin 一律拒绝」对 Host 侧也不完全成立：**有标记的、两条信号都缺失的请求除外**。DNS rebinding 借的是 `serve` 那一侧的空 Origin，补法见 `docs/adr/0014-host-header-allowlist.md`（**accepted**，R75 已实施：Host 不匹配 → 421）；
 - **输出转义**：所有进入 DOM 的动态数据统一通过 `esc()` 针对 `& < > " '` 进行编码转义，脚本内联 JSON 对 `<` 进行统一替换（`\u003c`）。
 
 ---

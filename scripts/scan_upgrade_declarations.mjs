@@ -28,6 +28,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { displayPath } from './lib/evidence.mjs'
 import { evaluateAdmission } from '../packages/core/dist/admission.js'
 
 const argv = process.argv.slice(2)
@@ -201,16 +202,17 @@ const text = `${JSON.stringify(artifact, null, 2)}\n`
 mkdirSync(outDir, { recursive: true })
 const fileName = `upgrade-declarations-${stamp.replaceAll(':', '-')}.json`
 const targetPath = join(outDir, fileName)
+const shown = displayPath(targetPath)
 if (existsSync(targetPath)) {
-  process.stderr.write(`refusing to overwrite existing evidence: ${join('data/results', fileName)}\n`)
+  process.stderr.write(`refusing to overwrite existing evidence: ${shown}\n`)
   process.exit(2)
 }
 writeFileSync(targetPath, text, 'utf8')
 writeFileSync(`${targetPath}.sha256`, sha256(text), 'utf8')
 
-process.stdout.write(`upgrade declaration scan · ${join('data/results', fileName)}\n`)
+process.stdout.write(`upgrade declaration scan · ${shown}\n`)
 process.stdout.write(`  scanned ${names.size} · denied at ${CURRENT}: ${denied.length}\n`)
 process.stdout.write(`  forward ${forward.length} · downgrade-only ${downgradeOnly.length} · stuck ${stuck.length}\n`)
 for (const entry of checks) process.stdout.write(`  ${entry.ok ? 'PASS' : 'FAIL'}  ${entry.id} — ${entry.detail}\n`)
-process.stdout.write(`ssot ${join('data/results', fileName)} sha256=${sha256(text).slice(0, 12)}…\n`)
+process.stdout.write(`ssot ${shown} sha256=${sha256(text).slice(0, 12)}…\n`)
 process.exit(passed ? 0 : 1)

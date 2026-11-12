@@ -6,6 +6,28 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.8] — 2026-11-12
+
+> **Documentation only: the installed README and the help text were both incomplete.** No code changed.
+> The admission rules, the four buckets, the `improved` thresholds, every threshold, every exit code and
+> `audit --json` are what `0.3.7` shipped.
+
+- **The installed README's flag table listed 8 of 37 flags.** `packages/plugin/README.md` is the page
+  `npm view dsh-triage readme` serves, and its table quietly omitted `--results`, `--out`, `--snapshot`,
+  `--explain`, the whole probe-tuning group and the entire `outcomes` verb set. Anyone who never ran
+  `--help` formed their idea of the CLI from that table. It now documents all 37, and a governance
+  assertion keeps it that way.
+- **The Chinese help text listed 18 of 37 flags.** `HELP_ZH` had not received a flag since R15, so a
+  `--locale zh` reader could not discover `--execute` at all — `probe` did not exist for them. Both help
+  texts now agree, and a test pins the two sets equal in both directions.
+- **Four recorders printed a path they did not write.** With `--out %TEMP%` they reported
+  `data/results/…` while writing elsewhere. Same bug class as `0.3.2`'s registry-wait fix: one helper
+  (`displayPath`) now derives the printed path from the written one, and the assertion matches the shape
+  rather than one literal.
+- **The English half of the boundary sentence is gone.** Both READMEs' English overview and
+  `CONTRIBUTING` still said nothing is ever written to `~/.dsh`; `0.3.6` had already retired that claim.
+- **Test count on the npm page: 924.**
+
 ## [0.3.7] — 2026-11-11
 
 > **Documentation only: the installed README told you something untrue.** No code changed. The

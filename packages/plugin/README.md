@@ -5,7 +5,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![tests: 905 passed](https://img.shields.io/badge/tests-911%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
+[![tests: 933 passed](https://img.shields.io/badge/tests-933%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
 
 DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截、升级后哪些插件会失效，原生日志往往不会直接给出归因。
 
@@ -46,7 +46,7 @@ dsh-triage serve
 dsh plugin --profile web add dsh-triage
 ```
 
-装入当前 Profile 后，即可在 DSH **“设置页 → 兼容性分析”** 查看可视化体检结论、问题列表与复制修复命令，或作为 Agent 工具（`compat_verdict`）供 AI 助手自检。
+装入当前 Profile 后，即可在 DSH **设置页 → 「分诊台」** 查看可视化体检结论、问题列表与复制修复命令，或作为 Agent 工具（`compat_verdict`）供 AI 助手自检。
 
 ---
 
@@ -70,8 +70,36 @@ dsh plugin --profile web add dsh-triage
 | `--profile <name>` | 指定分析的 Profile 名称（默认为 `web`） |
 | `--dsh-home <path>` | 覆盖默认的 `$DSH_HOME` 路径 |
 | `--to <version|next>` | `upgrade` 命令中指定推演的目标版本 |
+| `--all` | `audit` 下打印全量台账（默认只打摘要） |
+| `--apply` | `fix` 真正执行修复写入；`rescue` 把列出的 bundle 从配置中移除 |
+| `--undo <journal>` | `fix` / `rescue` 依日志逐字节回滚 |
+| `--locale <en\|zh>` | 输出语言（默认 `zh`，或读 `$DSH_TRIAGE_LOCALE`） |
+| `--no-redact` | `--json` 里保留绝对路径（默认脱敏成 `~`） |
+| `--stamp <iso>` | 固定时间戳，让输出可复现 |
+| `--snapshot <file>` | `audit` 按 `pluginInventory` 快照判相位；`upgrade` 判冻结的组合快照 |
+| `--explain` | `check` 显示判定背后的 registry 标签事实 |
+| `--to <version\|next\|latest>` | `upgrade` 的目标版本；`next` / `latest` 才联网 |
+| `--registry` | `upgrade` 标注声明了目标版本的已发布构建；`audit` 补发布顺序证据 |
 | `--card` | 输出 Markdown 格式的升级摘要卡片 |
+| `--out <file>` | `badge` 写 SVG；`upgrade --card` 写卡片并打印路径 |
 | `--execute` | `probe` 命令中实际拉起隔离沙盒进程执行实测 |
+| `--dsh-main <path>` | `probe --execute` 沙盒启动用的 DSH launcher 入口 |
+| `--no-http` | `probe --execute` profile 不提供 web 面时跳过就绪等待 |
+| `--browser <path>` | `probe --execute` 渲染检查用的 Chromium 系浏览器 |
+| `--readiness-timeout <ms>` | `probe --execute` 树已稳定时的就绪预算（默认 5000） |
+| `--unsettled-timeout <ms>` | `probe --execute` 树仍在组合时的就绪窗口（默认 20000） |
+| `--copy-profile <name>` | `probe` 在该 profile 声明的副本里实测 |
+| `--port <n>` | `serve` 绑定端口（0 = 自动选空闲端口） |
+| `--host <addr>` | `serve` 绑定地址（默认 `127.0.0.1`） |
+| `--allow-host <name>` | `serve` 额外允许的 Host 名（`--host 0.0.0.0` 时必须给） |
+| `--results <dir>` | `serve` / `badge` 读取的证据目录（默认 `./data/results`） |
+| `--allow-execute` | `serve` 允许面板执行动作；不给就是纯只读 |
+| `--no-audit` | `serve` 只列出产物，不读当前 profile |
+| `--audit` | `serve` 暴露 `GET /api/audit`（与 CLI 同一条引擎） |
+| `--outcomes <off\|local>` | `check` / `probe` 本地记录本次判定 |
+| `--enable` / `--disable` | `outcomes` 打开 / 关闭本地回流存储 |
+| `--purge` | `outcomes` 删除本工具存过的所有记录与目录 |
+| `--status` | `outcomes` 现有记录条数（不给动词时的默认行为） |
 
 ---
 
@@ -85,4 +113,5 @@ dsh plugin --profile web add dsh-triage
 
 ## 开源许可 / License
 
-MIT License. 引用自 [dsh.so](https://www.dsh.so) 的注册表事实数据遵循 CC BY 4.0 协议并已在引用处注明。
+MIT License. `@dsh-triage/signals` 带有 dsh.so 适配器（`packages/signals/src/dshso.ts`），该数据接口遵循 CC BY 4.0，
+适配器在显示该类记录时附带署名；本包自身只读 npm registry 元数据，不显示 dsh.so 数据。

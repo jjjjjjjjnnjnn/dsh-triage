@@ -146,7 +146,7 @@ check(
 check('card-keeps-boundary', card.includes('目标版本会放行它'), 'the BS-42 boundary sentence survives')
 const promiseHits = FORBIDDEN.filter((phrase) => card.toLowerCase().includes(phrase.toLowerCase()))
 check('card-makes-no-promise', promiseHits.length === 0, promiseHits.join(', ') || 'no forbidden promise')
-check('card-is-deterministic', sha256(card) === sha256(cardAgain.stdout), `sha256 ${sha256(card).slice(0, 12)}…`)
+check('card-is-deterministic', sha256(card) === sha256(cardAgain.stdout), `card hash ${sha256(card).slice(0, 12)}…`)
 const homeHits = HOME_PATTERNS.filter((pattern) => pattern.test(card)).map((pattern) => pattern.source)
 check('card-carries-no-home-path', homeHits.length === 0, homeHits.join(', ') || 'clean')
 check('card-names-units', card.includes('`row:') || card.includes('`bundle:'), 'at least one unit line')
@@ -211,6 +211,14 @@ writeFileSync(`${targetPath}.sha256`, `${sha256(text)}\n`, 'utf8')
 
 process.stdout.write(`upgrade card · ${fileName}\n`)
 process.stdout.write(`  ${conclusionLine.replaceAll('*', '').slice(0, 140)}\n`)
-process.stdout.write(`  ${checks.filter((entry) => entry.ok).length}/${checks.length} checks · sha256 ${sha256(card).slice(0, 12)}…\n`)
+/*
+ * T-868: two different hashes used to be printed under one bare `sha256=` label — the card TEXT's hash
+ * (what a reader can recompute by pasting the card) next to a `.sha256` file that hashes the whole
+ * ARTIFACT JSON. Both numbers are right; one label for two objects is how a reader ends up verifying the
+ * wrong one. The field names below say which object each number belongs to.
+ */
+process.stdout.write(`  ${checks.filter((entry) => entry.ok).length}/${checks.length} checks\n`)
+process.stdout.write(`  card sha256=${sha256(card)}\n`)
+process.stdout.write(`  artifact sha256=${sha256(text)}\n`)
 for (const entry of checks.filter((candidate) => !candidate.ok)) process.stdout.write(`  FAIL ${entry.id} — ${entry.detail}\n`)
 process.exit(passed ? 0 : 1)

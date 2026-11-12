@@ -33,6 +33,7 @@ import { tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, fileUrl, isoStamp, sha256 } from './lib/kit.mjs'
+import { displayPath } from './lib/evidence.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -283,8 +284,9 @@ const text = `${JSON.stringify(artifact, null, 2)}\n`
 mkdirSync(outDir, { recursive: true })
 const fileName = `outcomes-${stamp.replaceAll(':', '-')}.json`
 const target = join(outDir, fileName)
+const shown = displayPath(target)
 if (existsSync(target)) {
-  process.stderr.write(`refusing to overwrite existing evidence: ${join('data/results', fileName)}\n`)
+  process.stderr.write(`refusing to overwrite existing evidence: ${shown}\n`)
   process.exit(2)
 }
 writeFileSync(target, text, 'utf8')
@@ -296,14 +298,14 @@ rmSync(dataRoot, { recursive: true, force: true })
 
 if (asJson) process.stdout.write(text)
 else {
-  process.stdout.write(`M5-a local reflow · ${join('data/results', fileName)}\n`)
+  process.stdout.write(`M5-a local reflow · ${shown}\n`)
   for (const entry of runs) process.stdout.write(`  ${entry.exit === 0 ? 'ok  ' : 'FAIL'} ${entry.id.padEnd(16)} exit ${entry.exit} · ${entry.ms}ms\n`)
   process.stdout.write(`  store    ${storeShapes.records} record(s) · ${JSON.stringify(storeShapes.by_source)} · ${storeShapes.distinct_keys} key(s)\n`)
   process.stdout.write(`  purge    ${String(artifact.purge.deleted_records)} deleted · dir removed ${String(artifact.purge.directory_removed)}\n`)
   process.stdout.write(`  N3       byte-identical ${String(byteIdentical)} · prior visible only with --explain ${String(priorPresent)}\n`)
   for (const entry of checks) process.stdout.write(`  ${entry.ok ? 'PASS' : 'FAIL'}  ${entry.id} — ${entry.detail}\n`)
   process.stdout.write(`  verdict  ${passed ? 'all checks passed' : 'CHECK FAILED (artifact written anyway)'}\n`)
-  process.stdout.write(`ssot ${join('data/results', fileName)} sha256=${sha256(text).slice(0, 12)}…\n`)
+  process.stdout.write(`ssot ${shown} sha256=${sha256(text).slice(0, 12)}…\n`)
 }
 
 process.exit(passed ? 0 : 1)

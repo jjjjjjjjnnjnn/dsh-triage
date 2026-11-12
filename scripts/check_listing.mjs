@@ -31,6 +31,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 import { judgeChannels } from './lib/channels.mjs'
+import { displayPath } from './lib/evidence.mjs'
 import { judgePosting } from './lib/posting.mjs'
 import { formatInterval, formatPercent, TIERS } from './lib/question-coverage.mjs'
 
@@ -67,6 +68,13 @@ const DOCUMENTS = [
   'docs/market/submissions/awesome-lists.md',
   'README.md',
   'README.zh-CN.md',
+  /*
+   * R96: `packages/plugin/README.md` is in the package's `files` array, so `npm view dsh-triage readme`
+   * serves it — it IS the npm page. It was not in this list, and its badge said `905` while the URL said
+   * `911`: a stale test count on the page users actually read, with every gate green. A document
+   * nobody checks is a document that drifts, so it joins the checked set.
+   */
+  'packages/plugin/README.md',
   ...readdirSync(abs('docs/posts')).filter((name) => name.endsWith('.md')).map((name) => `docs/posts/${name}`),
 ]
 
@@ -842,15 +850,16 @@ const text = `${JSON.stringify(artifact, null, 2)}\n`
 mkdirSync(outDir, { recursive: true })
 const fileName = `listing-${stamp.replaceAll(':', '-')}.json`
 const targetPath = join(outDir, fileName)
+const shown = displayPath(targetPath)
 if (existsSync(targetPath)) {
-  process.stderr.write(`refusing to overwrite existing evidence: ${join('data/results', fileName)}\n`)
+  process.stderr.write(`refusing to overwrite existing evidence: ${shown}\n`)
   process.exit(2)
 }
 writeFileSync(targetPath, text, 'utf8')
 writeFileSync(`${targetPath}.sha256`, sha256(text), 'utf8')
 
-process.stdout.write(`listing check · ${join('data/results', fileName)}\n`)
+process.stdout.write(`listing check · ${shown}\n`)
 process.stdout.write(`  ${texts.size} document(s) · version ${version} · dsh ${dshRange} · tests ${testCount ?? 'n/a'}\n`)
 for (const entry of checks) process.stdout.write(`  ${entry.ok ? 'PASS' : 'FAIL'}  ${entry.id} — ${entry.detail}\n`)
-process.stdout.write(`ssot ${join('data/results', fileName)} sha256=${sha256(text).slice(0, 12)}…\n`)
+process.stdout.write(`ssot ${shown} sha256=${sha256(text).slice(0, 12)}…\n`)
 process.exit(passed ? 0 : 1)

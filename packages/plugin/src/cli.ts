@@ -278,13 +278,31 @@ const HELP_ZH = `dsh-triage · 本地插件兼容分诊台 — DeepSeek Harness 
   --locale <en|zh>      输出语言（默认：zh，或读取 $DSH_TRIAGE_LOCALE）
   --no-redact           在 --json 输出中保留原始绝对路径（默认脱敏为 ~）
   --stamp <iso时间戳>    指定固定时间戳以获得确定性输出
+  --snapshot <文件>     (audit) 按 pluginInventory 快照判运行时相位；(upgrade) 对冻结的组合快照判定（schema_version 1）
+  --explain             (check) 显示判定背后的 registry 标签事实
   --to <版本>           (upgrade) 目标 DSH 版本：精确 semver（如 0.2.1-rc.5）或 next / latest
   --registry            (upgrade) 标注哪些已发布构建声明了目标版本；(audit) 为每个已装包补「发布顺序」证据
   --card                (upgrade) 输出格式化 Markdown 升级卡片
   --execute             (probe) 在独立隔离临时 DSH_HOME 中真正拉起沙盒执行实测
+  --dsh-main <路径>      (probe --execute) 沙盒启动用的 DSH launcher 入口
+  --no-http             (probe --execute) profile 不提供 web 面，就跳过就绪等待
+  --browser <路径>      (probe --execute) 渲染检查要用的 Chromium 系浏览器（T-302）
+  --readiness-timeout <毫秒>   (probe --execute) 树已稳定时的就绪预算（默认 5000）
+  --unsettled-timeout <毫秒>   (probe --execute) 树仍在组合时的就绪窗口（默认 20000）
+  --copy-profile <名称>  (probe) 在该 profile 声明的副本里实测（T-304）
   --port <端口>          (serve) 本地面板绑定的端口（默认自动选取空闲端口）
   --host <地址>          (serve) 绑定地址（默认 127.0.0.1；ADR-0014）
   --allow-host <名字>    (serve) 额外允许的 Host 名（可重复；--host 0.0.0.0 时必须给）
+  --results <目录>       (serve, badge) 要读取的证据目录（默认 ./data/results）
+  --out <文件>          (badge) SVG 写到这里；(upgrade --card) 卡片写到这里并打印路径
+  --allow-execute       (serve) 允许面板执行动作；不给就是纯只读
+  --no-audit            (serve) 只列产物，不读当前 profile
+  --audit               (serve) 暴露 GET /api/audit（当前组合，与 CLI 同一条引擎）
+  --outcomes <模式>      (check, probe) 本地记录本次判定：off | local（每次运行，不落库）
+  --enable              (outcomes) 打开本地回流存储
+  --disable             (outcomes) 关闭；已有记录保留到 --purge
+  --purge               (outcomes) 删除本工具存过的所有记录与目录
+  --status              (outcomes) 现有记录条数（不给动词时的默认行为）
   --help                显示帮助信息
 
 退出状态码: 0 正常 · 1 存在异常（audit 始终生效，其他命令需加 --strict） · 2 参数错误 · 3 元数据不可用
@@ -546,7 +564,7 @@ async function commandWhy(flags: Flags): Promise<number> {
   // Row-level admission (CASE-11080): upstream disables the *row's module*, not
   // the bundle, so a pinned peer that the new runtime no longer satisfies turns a
   // working profile into a silent one. Bundles alone answered "no denials" here.
-  const rows = await resolveRows(env, rowTargets(claims))
+  const rows = await resolveRows(env, rowTargets(claims), { layers: composition.layers })
   verdicts.push(...verdictsFromRowAdmission({ env, rows, generatedAt: stamp }))
 
   // Same name, two physical copies (Maven `dependencyConvergence` logic): the
@@ -669,7 +687,7 @@ async function commandUpgrade(flags: Flags): Promise<number> {
     const claims = collectClaims(composition, warnings)
     env = liveEnv
     bundles = composition.layers.map((layer) => ({ name: layer.name, version: layer.version, manifest: layer.manifest }))
-    rows = await resolveRows(liveEnv, rowTargets(claims))
+    rows = await resolveRows(liveEnv, rowTargets(claims), { layers: composition.layers })
     profileSource = 'live'
   }
 

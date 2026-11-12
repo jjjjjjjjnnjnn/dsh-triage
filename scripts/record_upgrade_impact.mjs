@@ -40,6 +40,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { displayPath } from './lib/evidence.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -568,9 +569,10 @@ mkdirSync(outDir, { recursive: true })
 const filePrefix = expectImproved ? 'upgrade-mixed' : registryLive ? 'upgrade-registry-live' : 'upgrade'
 const fileName = `${filePrefix}-${stamp.replaceAll(':', '-')}.json`
 const targetPath = join(outDir, fileName)
+const shown = displayPath(targetPath)
 if (existsSync(targetPath)) {
   process.stderr.write(
-    `refusing to overwrite existing evidence: ${join('data/results', fileName)}\n` +
+    `refusing to overwrite existing evidence: ${shown}\n` +
       '  a stamp identifies an artifact; pick a stamp this round has not used yet\n',
   )
   process.exit(2)
@@ -581,7 +583,7 @@ writeFileSync(`${targetPath}.sha256`, sha256(text), 'utf8')
 if (asJson) {
   process.stdout.write(text)
 } else {
-  process.stdout.write(`M5-b upgrade impact · ${join('data/results', fileName)}\n`)
+  process.stdout.write(`M5-b upgrade impact · ${shown}\n`)
   process.stdout.write(`  profile  ${impact.profile} · dsh ${String(current)} → ${impact.target} (${impact.target_relation})\n`)
   process.stdout.write(
     `  counts   ${impact.counts.total} unit(s) · would-be-denied ${impact.counts.would_be_denied} · cannot-tell ${impact.counts.cannot_tell} · improved ${impact.counts.improved} · likely-fine ${impact.counts.likely_fine}\n`,
@@ -591,7 +593,7 @@ if (asJson) {
   }
   for (const entry of checks) process.stdout.write(`  ${entry.ok ? 'PASS' : 'FAIL'}  ${entry.id} — ${entry.detail}\n`)
   process.stdout.write(`  verdict  ${passed ? 'all checks passed' : 'CHECK FAILED (artifact written anyway)'}\n`)
-  process.stdout.write(`ssot ${join('data/results', fileName)} sha256=${sha256(text).slice(0, 12)}…\n`)
+  process.stdout.write(`ssot ${shown} sha256=${sha256(text).slice(0, 12)}…\n`)
 }
 
 process.exit(passed ? 0 : 1)

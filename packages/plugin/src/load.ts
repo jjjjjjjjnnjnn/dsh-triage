@@ -8,8 +8,8 @@
  * first, then the shared `profiles/node_modules` (pnpm `nodeLinker: hoisted`).
  */
 
-import { readFile, readdir, stat } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { readFile, readdir, realpath, stat } from 'node:fs/promises'
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path'
 import type { CopyLocation, DuplicateCopy, EnvFingerprint, InstallOrigin, RowDeclaration, RowTarget } from '@dsh-triage/core'
 
 export interface BundleLayer {
@@ -256,28 +256,100 @@ async function readTextOrNull(path: string): Promise<string | null> {
 
 /* --------------------------- row-level attribution --------------------------- */
 
+/** A layer the caller already loaded, which is all the fallback needs to name a declarer. */
+export interface RowResolutionContext {
+  /**
+   * `dsh.profile.bundles` layers as `loadComposition()` read them.
+   *
+   * WHY THE CALLER PASSES THEM: a row's `source` is a human label (`bundle:<name>`,
+   * `bundle:<name>/<file>`, `patch:profile`), and turning a label into a path by parsing the string is
+   * how a longest-prefix miss silently falls back to the profile directory (measured R95: doing that
+   * made "resolve from the declaring bundle" look identical to the broken flat lookup).
+   */
+  readonly layers: readonly Pick<BundleLayer, 'name' | 'dir'>[]
+}
+
 /**
- * Resolve each row's module to the `package.json` that a real import would use:
- * the profile's own `node_modules` first, then the shared `profiles/node_modules`
- * (pnpm `nodeLinker: hoisted`). A miss stays a miss — we never guess a version,
- * because a guessed version would turn "unknown" into a confident answer.
+ * Which loaded layer declared this row? `null` means "the profile or the home patch did" — those
+ * rows belong to no bundle, so the caller resolves them from the profile directory.
+ *
+ * Longest prefix wins on purpose: `@deepseek-ai/dsh-base` is a prefix of no other layer today, but
+ * `dsh-web-app` and a future `dsh-web-app/extra` would both match `bundle:dsh-web-app/…`, and the
+ * more specific layer is the one that actually wrote that file.
+ */
+export function declarerDirOf(
+  source: string,
+  layers: readonly Pick<BundleLayer, 'name' | 'dir'>[],
+): string | null {
+  if (!source.startsWith('bundle:')) return null
+  const rest = source.slice('bundle:'.length)
+  let best: Pick<BundleLayer, 'name' | 'dir'> | null = null
+  for (const layer of layers) {
+    if (rest !== layer.name && !rest.startsWith(`${layer.name}/`)) continue
+    if (best === null || layer.name.length > best.name.length) best = layer
+  }
+  return best === null ? null : best.dir
+}
+
+/**
+ * Node's own `NODE_MODULES_PATHS(START)`, as the Node docs state it: walk up from the starting
+ * directory, append `node_modules` at every level, and skip levels that are already `node_modules`.
+ *
+ * WHY NOT `createRequire().resolve()`: admission only needs `package.json`, while Node's resolver
+ * also demands a loadable entry (and honours `exports`, which can refuse a subpath that has a
+ * manifest). A pure function of the path is the same search order without those extra refusals, and
+ * it can be pinned by unit tests instead of by whichever Node build happens to run.
+ */
+export function nodeModulesSearchPath(fromDir: string): readonly string[] {
+  const parts = fromDir.split(sep)
+  const dirs: string[] = []
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    if (parts[index] === 'node_modules') continue
+    const prefix = parts.slice(0, index + 1).join(sep)
+    if (prefix === '') continue
+    dirs.push(join(prefix, 'node_modules'))
+  }
+  return dirs
+}
+
+/**
+ * Resolve each row's module to the `package.json` that a real import would use.
+ *
+ * M13 (R95): a flat root list is not enough. pnpm's default `isolated` layout keeps the whole tree
+ * under `node_modules/.pnpm/<pkg>@<ver>/node_modules/`, so `<root>/<name>/package.json` finds only the
+ * profile's DIRECT dependencies — measured on a sandbox built the way `record_client_serve` builds one:
+ * **2 of 190 rows** resolved, and the other 188 were reported as "not installed under this profile"
+ * while the running Host loaded every one of them. That is `BS-61`'s CLI half.
+ *
+ * ORDER (M13-C2): the flat roots run first and keep every answer they already give — `M11-N9` ("a
+ * kernel copy outranks a stale shared copy") survives untouched. Only a row the flat lookup cannot
+ * find is retried, from the directory of the bundle that declared it, following Node's search path
+ * (M13-C1). A miss on both stays a miss: no version is ever guessed.
  */
 export async function resolveRows(
   env: EnvFingerprint,
   targets: readonly RowTarget[],
+  context?: RowResolutionContext,
 ): Promise<readonly RowDeclaration[]> {
   // `profileDir` is `<dshHome>/profiles/<name>`, so the shared pnpm root that a
   // profile actually resolves through is its *parent* `node_modules`.
   const roots = moduleRoots(env).map((entry) => entry.root)
-  const cache = new Map<string, { manifest: unknown; version: string | null } | null>()
+  const flatCache = new Map<string, ResolvedManifest | null>()
+  /** Keyed by module + the declarer's real directory: the same name can answer differently per bundle. */
+  const declarerCache = new Map<string, ResolvedManifest | null>()
   const out: RowDeclaration[] = []
 
   const declarers = await findDeclarers(env, new Set(targets.map((target) => target.module)))
 
   for (const target of targets) {
-    const cached = cache.get(target.module)
-    const resolved = cached === undefined ? await resolveModuleManifest(env.profileDir, target.module, roots) : cached
-    cache.set(target.module, resolved)
+    let resolved = flatCache.get(target.module)
+    if (resolved === undefined) {
+      resolved = await resolveModuleManifest(env.profileDir, target.module, roots)
+      flatCache.set(target.module, resolved)
+    }
+    if (resolved === null && context !== undefined) {
+      resolved = await resolveFromDeclarer(env, target, context, declarerCache)
+    }
     const declaredBy = declarers.get(target.module)
     out.push({
       rowId: target.rowId,
@@ -289,6 +361,39 @@ export async function resolveRows(
     })
   }
   return out
+}
+
+/** One row, resolved from the bundle that declared it. Never throws: an unreadable declarer is a miss. */
+async function resolveFromDeclarer(
+  env: EnvFingerprint,
+  target: RowTarget,
+  context: RowResolutionContext,
+  cache: Map<string, ResolvedManifest | null>,
+): Promise<ResolvedManifest | null> {
+  const declared = declarerDirOf(target.source, context.layers)
+  const start = declared ?? env.profileDir
+  /*
+   * SYMLINKS ARE THE POINT: under pnpm `isolated` a layer directory is a symlink into
+   * `.pnpm/<pkg>@<ver>/node_modules/<pkg>`, and Node resolves through the real path (default
+   * `--preserve-symlinks=false`). Searching from the symlink path reaches nothing; searching from the
+   * real path lands on the very tree the loader uses — measured: 2 → 190 rows resolved, 0 rows changed.
+   */
+  let real = start
+  try {
+    real = await realpath(start)
+  } catch {
+    // An unreadable declarer directory stays a miss (M13-N5); we never substitute another layer.
+  }
+  const isRelative = target.module.startsWith('.') || isAbsolute(target.module)
+  if (!isRelative) {
+    const key = `${target.module}\u0000${real}`
+    const cached = cache.get(key)
+    if (cached !== undefined) return cached
+    const found = await resolveModuleManifest(real, target.module, nodeModulesSearchPath(real))
+    cache.set(key, found)
+    return found
+  }
+  return await resolveModuleManifest(real, target.module, [])
 }
 
 /* ---------------------------- install provenance ---------------------------- */
@@ -513,11 +618,14 @@ async function readManifestRecord(dir: string): Promise<Record<string, unknown> 
   }
 }
 
+/** What a resolved row needs: the raw manifest (admission reads it) plus the version it states. */
+type ResolvedManifest = { manifest: unknown; version: string | null }
+
 async function resolveModuleManifest(
   profileDir: string,
   specifier: string,
   roots: readonly string[],
-): Promise<{ manifest: unknown; version: string | null } | null> {
+): Promise<ResolvedManifest | null> {
   const dirs: string[] = []
   if (specifier.startsWith('.') || resolve(specifier) === specifier) {
     // Relative/absolute rows point inside the profile tree; walk up to the

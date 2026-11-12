@@ -95,7 +95,7 @@ verdicts.push(...core.verdictsFromCollisions({ env: fingerprint, collisions, gen
 
 // Row-level admission: the same attribution the CLI does, so the SSOT and the
 // interactive output can never disagree about why a row was disabled.
-const rows = await plugin.resolveRows(realEnv, core.rowTargets(claims))
+const rows = await plugin.resolveRows(realEnv, core.rowTargets(claims), { layers: composition.layers })
 verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generatedAt: stamp }))
 
 const summary = verdicts.reduce(

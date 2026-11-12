@@ -64,7 +64,7 @@ for (const [text, label] of [
   claims.push(...core.extractEntryClaims(patch.value, label))
 }
 
-const rows = await plugin.resolveRows(env, core.rowTargets(claims))
+const rows = await plugin.resolveRows(env, core.rowTargets(claims), { layers: composition.layers })
 const duplicates = await plugin.findDuplicateCopies(env)
 const rowVerdicts = core.verdictsFromRowAdmission({ env, rows, generatedAt: stamp })
 const duplicateVerdicts = core.verdictsFromDuplicateCopies({ env, duplicates, generatedAt: stamp })

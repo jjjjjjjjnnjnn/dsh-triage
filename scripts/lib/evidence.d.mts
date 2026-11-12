@@ -2,6 +2,8 @@
  * Types for `scripts/lib/evidence.mjs`, which a governance test imports directly.
  */
 
+export function displayPath(target: string, root?: string): string
+
 export function writeEvidence(input: {
   outDir: string,
   fileName: string,

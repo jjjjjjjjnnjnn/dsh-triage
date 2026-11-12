@@ -85,3 +85,29 @@ test('the §3 acceptance criterion names the same test count as the badge', () =
     'the §3 acceptance criterion and the README badge disagree on the test count',
   )
 })
+
+test('the npm page (`packages/plugin/README.md`) is inside the checked document set', () => {
+  /*
+   * R96: that file is in the package's `files` array, so `npm view dsh-triage readme` serves it. It
+   * said `tests: 905` in the label and `tests-911` in the badge URL while the suite was 918 — with all
+   * nine gates green, because no check read it. Two homes for one number is how it drifted; one
+   * checker for both is the fix. This assertion exists so the fix cannot be reverted quietly.
+   */
+  const checker = read('scripts/check_listing.mjs')
+  assert.ok(
+    checker.includes("'packages/plugin/README.md'"),
+    'check_listing.mjs must read the file npm serves as the package page',
+  )
+  const page = read('packages/plugin/README.md')
+  const badges = [...page.matchAll(/badge\/tests-(\d{2,4})/g)].map((match_) => Number(match_[1]))
+  assert.ok(badges.length > 0, 'the npm page must carry a test badge the badge-count check can read')
+  for (const badge of badges) {
+    assert.equal(badge, testCount(), 'the npm page badge must equal the root README badge (one number, one truth)')
+  }
+  // The visible label and the badge URL must agree with each other, not just with the file next door.
+  const labels = [...page.matchAll(/\[!\[tests:\s*(\d+)\s*passed\]/g)].map((match_) => Number(match_[1]))
+  for (const label of labels) {
+    assert.equal(label, testCount(), 'the npm page label and its badge URL must name the same count')
+  }
+})
+

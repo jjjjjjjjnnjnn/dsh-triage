@@ -1,0 +1,534 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_client_serve.mjs",
+  "generated_at": "2026-11-11T18:27:00.000Z",
+  "label": "client-serve",
+  "outcome": {
+    "served": true,
+    "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=5f4812a0ca07",
+    "tab_visible": "passed"
+  },
+  "conditions": {
+    "cpu": {
+      "source": "os.cpus() cumulative times, delta over the run",
+      "cores": 24,
+      "observed_busy_percent": 49.8,
+      "loadavg_usable": false
+    },
+    "window": {
+      "started_at": "2026-11-11T18:25:53.544Z",
+      "ended_at": "2026-11-11T18:27:23.059Z"
+    },
+    "limits": [
+      "CPU only: memory, disk and network pressure are not sampled",
+      "other users and other processes are invisible to this reading",
+      "one number over a multi-minute run cannot say when the load peaked"
+    ]
+  },
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-client\\client-serve-mwcg9g22\\home",
+    "profile": "web",
+    "bundle": "file:packages/* (workspace rewritten)"
+  },
+  "steps": [
+    {
+      "id": "bundle",
+      "status": "passed",
+      "detail": "3 workspace deps rewritten to file:",
+      "dependencies": {
+        "@dsh-triage/core": "file:../core",
+        "@dsh-triage/probe": "file:../probe",
+        "@dsh-triage/signals": "file:../signals"
+      }
+    },
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": "+ dsh-triage file:.client-bundle/plugin ·  · Done in 29.7s using pnpm v12.15.0"
+    },
+    {
+      "id": "boot",
+      "status": "passed",
+      "detail": "host printed http://127.0.0.1:64308/"
+    },
+    {
+      "id": "graph",
+      "status": "passed",
+      "detail": "composed as /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek…",
+      "html_bytes": 38207,
+      "client_module_listed": true,
+      "composed_url": "/plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.js,@deepseek-ai/dsh-client-ui-trajectory/client.js,@deepseek-ai/dsh-api-remote-access/client.js,@deepseek-ai/dsh-session-log-export/client.js,@deepseek-ai/dsh-client-file-upload/client.js,@deepseek-ai/dsh-api-remotes/client.js,@deepseek-ai/dsh-client-ui-deliverables/client.js,dsh-triage/client.js,@deepseek-ai/dsh-typert-registry/client.js,@deepseek-ai/dsh-client-connection/client.js,@deepseek-ai/dsh-api-workspace-controller/client.js,@deepseek-ai/dsh-api-session-controller/client.js,@deepseek-ai/dsh-client-ui-directory-picker-native/client.js&rev=5f4812a0ca07"
+    },
+    {
+      "id": "upgrade-route",
+      "status": "passed",
+      "detail": "GET /compat-triage/summary?upgrade=1 -> 200 in 673ms",
+      "http_status": 200,
+      "ms": 673,
+      "error": null,
+      "body": "{\"target\":{\"tag\":\"next\",\"version\":\"0.2.2-rc.1\",\"relation\":\"newer\"},\"profile\":\"web\",\"current\":\"0.2.1-rc.4\",\"counts\":{\"bundles\":3,\"rows\":191,\"would_be_denied\":119,\"cannot_tell\":73,\"improved\":0,\"likely_fine\":2,\"total\":194},\"buckets\":[{\"bucket\":\"would-be-denied\",\"count\":119},{\"bucket\":\"cannot-tell\",\"count\":73},{\"bucket\":\"improved\",\"count\":0},{\"bucket\":\"likely-fine\",\"count\":2}],\"units\":[{\"bucket\":\"woul"
+    },
+    {
+      "id": "client",
+      "status": 200,
+      "detail": "GET /plugins/??@deepseek-ai/dsh-client-ui-user-questions/client.… -> 200 · 2049879B · loader=true · id=true · tab=true",
+      "bytes": 2049879,
+      "sha256": "7f5970772b02f3bc2666e0bdb0be064f1d0a2ccdc997e613ba5f0b8af693495d",
+      "has_loader": true,
+      "declares_id": true,
+      "mentions_tab_slot": true,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "id": "mount",
+      "status": "passed",
+      "detail": "the client runner called apply and the settings slot accepted the tab",
+      "browser": "msedge.exe",
+      "registered": true,
+      "slot": "settings.plugins.tab",
+      "tab_id": "compat-triage",
+      "reason": null
+    },
+    {
+      "id": "visible",
+      "status": "passed",
+      "detail": "the settings page rendered \"分诊台\" and the summary view (attention · 3 issue(s) shown)",
+      "tab_registered": true,
+      "hops": [
+        {
+          "action": "dismiss-intro",
+          "name": "继续",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:更多",
+          "name": "更多",
+          "clicked": true
+        },
+        {
+          "action": "open-menu:账号菜单",
+          "name": "账号菜单",
+          "clicked": true
+        },
+        {
+          "action": "open-settings",
+          "name": "设置Ctrl+Alt+,",
+          "clicked": true
+        },
+        {
+          "action": "open-plugin-settings-section:内置插件",
+          "name": "内置插件",
+          "clicked": true
+        },
+        {
+          "action": "open-tab",
+          "name": "分诊台",
+          "clicked": true
+        }
+      ],
+      "page_url": "http://127.0.0.1:64308/",
+      "controls_before": [
+        "打开侧边栏",
+        "新建会话",
+        "全局面板",
+        "插件",
+        "自动化任务",
+        "更多",
+        "添加工作区",
+        "搜索会话",
+        "账号菜单",
+        "选择工作区",
+        "选择新任务使用的 Agent 预设",
+        "选择工作区",
+        "添加文件或调用指令",
+        "发送消息",
+        "预览版说明",
+        "继续"
+      ],
+      "text_head": "探索未至之境 预览版 选择工作区 标准模式 选择一个工作区开始 预览版说明 DeepSeek Harness 目前的 0.2 版本仍处于预览阶段，还有许多地方需要持续改进和打磨，希望听取广大开发者和用户的反馈建议。现在，新的桌面端面向广泛用户，开发者相关的进阶功能可在配置中开启使用。预计 DeepSeek Harness 的产品功能以及插件 API 都会继续快速迭代、持续演化，并逐渐趋于稳定。 我",
+      "intro_dismissed": "继续",
+      "settings_entry": "设置Ctrl+Alt+,",
+      "plugin_section": "内置插件",
+      "controls_after": [
+        "打开侧边栏",
+        "新建会话",
+        "全局面板",
+        "插件",
+        "自动化任务",
+        "更多",
+        "添加工作区",
+        "搜索会话",
+        "账号菜单",
+        "打开右侧边栏",
+        "选择工作区",
+        "选择新任务使用的 Agent 预设",
+        "描述你想要构建的内容, / 调用指令, @ 文件或对话",
+        "添加文件或调用指令",
+        "访问模式，当前：工作区内修改",
+        "请选择模型",
+        "发送消息",
+        "新标签页",
+        "分栏",
+        "退出全屏",
+        "收起右侧边栏",
+        "开始使用",
+        "关闭",
+        "添加 API Key",
+        "登录",
+        "浏览更多插件",
+        "创建你的插件",
+        "通用设置",
+        "模型",
+        "内置插件",
+        "Agent 预设",
+        "打开配置文件",
+        "插件视图",
+        "插件列表",
+        "分诊台"
+      ],
+      "tab_ms": 1943,
+      "tab_probe": {
+        "present": true,
+        "mode": "summary",
+        "kind": null,
+        "tone": "attention",
+        "counts_text": "配置项总数 219 · 已分析 72 · 正常 0 · 存在异常 0 · 未明确 72",
+        "count_rows": [
+          {
+            "key": "rows",
+            "label": "配置项总数",
+            "value": "219"
+          },
+          {
+            "key": "judged",
+            "label": "已分析",
+            "value": "72"
+          },
+          {
+            "key": "go",
+            "label": "正常",
+            "value": "0"
+          },
+          {
+            "key": "denied",
+            "label": "存在异常",
+            "value": "0"
+          },
+          {
+            "key": "unknown",
+            "label": "未明确",
+            "value": "72"
+          }
+        ],
+        "issues": 3,
+        "copy_fix_buttons": 0,
+        "text": "插件分诊台 · 本地兼容性诊断\n\n由本地诊断引擎提供分析结果，与终端 CLI 输出保持同源。\n\n当前环境未发现已知拦截项，有 72 项未明确声明版本区间。\n\n诊断项\t数量\t说明\n配置项总数\t219\t已在 Profile 中声明的插件配置条目\n已分析\t72\t具备依赖声明并已完成推演的条目\n正常\t0\t版本规则匹配正常，可正常加载\n存在异常\t0\t依赖版本不满足，启动加载时将被拦截\n未明确\t72\t未显式声明依赖区间（不作盲目推断）\n待处理问题\n#\t插件\t结论\t修复\n1\t@deepseek-ai/cordis-plugin-timer\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n2\t@deepseek-ai/dsh-api-gateway\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row typert-gateway 引入的 @deepseek-ai/dsh-api-gateway 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n3\t@deepseek-ai/dsh-api-job-controller\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row job-controller 引入的 @deepseek-ai/dsh-api-job-controller 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n\n另有 67 项未在当前摘要中显示。\n\n注：未显式声明依赖区间的插件按规则归入“未明确”，不盲目推定为兼容。\n\n下一步建议\n操作项\t执行命令\n逐项排查原因\tdsh-triage why\n预检新版本兼容性\tdsh-triage upgrade --to next\n启动本地可视化面板\tdsh-triage serve\n\n数据来源于本地只读接口 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n升级预检刷新"
+      },
+      "tab_judged": {
+        "decided": true,
+        "state": "answer",
+        "reason": "the summary view is on screen"
+      },
+      "upgrade_probe": {
+        "clicked": {
+          "clicked": true
+        },
+        "probe": {
+          "view": "answer",
+          "kind": null,
+          "counts": [
+            {
+              "bucket": "would-be-denied",
+              "count": 119
+            },
+            {
+              "bucket": "cannot-tell",
+              "count": 74
+            },
+            {
+              "bucket": "improved",
+              "count": 0
+            },
+            {
+              "bucket": "likely-fine",
+              "count": 2
+            }
+          ],
+          "text": "升级预检 · 目标 0.2.2-rc.1\n\n点击后才读取 npm 的 next 标签；只判声明层，不是运行期实测。\n\n桶\t数量\t意思\n会被拒\t119\t目标版本的准入规则会拒绝这一行/包\n判不了\t74\t声明不足或目标还没发布，证据不够\n会变好\t0\t今天被拒、目标放行——目标版本会放行它\n像没事\t2\t声明上不冲突——不等于升级后能跑\n\n另有 175 个单元未列出。\n\n只判声明层；不是运行期实测，也不改你的 profile。\n\n数据来源于本地只读接口 /compat-triage/upgrade（点击后读取 npm next）。\n\n返回现状"
+        },
+        "judged": {
+          "decided": true,
+          "state": "answer",
+          "reason": "four buckets, each with a count"
+        },
+        "waited_ms": 1019,
+        "marker": {
+          "ok": true,
+          "kind": null,
+          "target": "0.2.2-rc.1",
+          "counts": {
+            "bundles": 3,
+            "rows": 192,
+            "would_be_denied": 119,
+            "cannot_tell": 74,
+            "improved": 0,
+            "likely_fine": 2,
+            "total": 195
+          }
+        },
+        "direct": {
+          "status": 200,
+          "body": "{\"target\":{\"tag\":\"next\",\"version\":\"0.2.2-rc.1\",\"relation\":\"newer\"},\"profile\":\"web\",\"current\":\"0.2.1-rc.4\",\"counts\":{\"bundles\":3,\"rows\":192,\"would_be_denied\":119"
+        }
+      },
+      "tab_body": "passed",
+      "clipboard": {
+        "status": "unmeasured",
+        "detail": "no copy button rendered (the engine produced no command for these rows)",
+        "evidence": {}
+      },
+      "marker_after_tab": {
+        "registered": true,
+        "slot": "settings.plugins.tab",
+        "id": "compat-triage",
+        "route": "/compat-triage/summary",
+        "upgrade": {
+          "ok": true,
+          "kind": null,
+          "target": "0.2.2-rc.1",
+          "counts": {
+            "bundles": 3,
+            "rows": 192,
+            "would_be_denied": 119,
+            "cannot_tell": 74,
+            "improved": 0,
+            "likely_fine": 2,
+            "total": 195
+          }
+        },
+        "data": {
+          "ok": true,
+          "kind": null,
+          "tone": "attention",
+          "counts": {
+            "rows": 219,
+            "judged": 72,
+            "go": 0,
+            "denied": 0,
+            "unknown": 72,
+            "collisions": 0,
+            "duplicateCopies": 0,
+            "errors": 0
+          }
+        }
+      },
+      "tab_match": "分诊台"
+    },
+    {
+      "id": "screenshot",
+      "status": "unmeasured",
+      "detail": "no --screenshot was passed, so no image is claimed by this run"
+    },
+    {
+      "id": "summary-visible",
+      "status": "passed",
+      "detail": "the tab rendered the summary: tone attention, 3 issue row(s) on screen, 0 copy-fix button(s)",
+      "present": true,
+      "mode": "summary",
+      "kind": null,
+      "tone": "attention",
+      "counts_text": "配置项总数 219 · 已分析 72 · 正常 0 · 存在异常 0 · 未明确 72",
+      "count_rows": [
+        {
+          "key": "rows",
+          "label": "配置项总数",
+          "value": "219"
+        },
+        {
+          "key": "judged",
+          "label": "已分析",
+          "value": "72"
+        },
+        {
+          "key": "go",
+          "label": "正常",
+          "value": "0"
+        },
+        {
+          "key": "denied",
+          "label": "存在异常",
+          "value": "0"
+        },
+        {
+          "key": "unknown",
+          "label": "未明确",
+          "value": "72"
+        }
+      ],
+      "issues": 3,
+      "copy_fix_buttons": 0,
+      "text": "插件分诊台 · 本地兼容性诊断\n\n由本地诊断引擎提供分析结果，与终端 CLI 输出保持同源。\n\n当前环境未发现已知拦截项，有 72 项未明确声明版本区间。\n\n诊断项\t数量\t说明\n配置项总数\t219\t已在 Profile 中声明的插件配置条目\n已分析\t72\t具备依赖声明并已完成推演的条目\n正常\t0\t版本规则匹配正常，可正常加载\n存在异常\t0\t依赖版本不满足，启动加载时将被拦截\n未明确\t72\t未显式声明依赖区间（不作盲目推断）\n待处理问题\n#\t插件\t结论\t修复\n1\t@deepseek-ai/cordis-plugin-timer\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row timer 引入的 @deepseek-ai/cordis-plugin-timer 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n2\t@deepseek-ai/dsh-api-gateway\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row typert-gateway 引入的 @deepseek-ai/dsh-api-gateway 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n3\t@deepseek-ai/dsh-api-job-controller\t未声明支持的 DSH 版本区间，无法预先评估兼容性。\n原因: row job-controller 引入的 @deepseek-ai/dsh-api-job-controller 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过\n\t—\n\n另有 67 项未在当前摘要中显示。\n\n注：未显式声明依赖区间的插件按规则归入“未明确”，不盲目推定为兼容。\n\n下一步建议\n操作项\t执行命令\n逐项排查原因\tdsh-triage why\n预检新版本兼容性\tdsh-triage upgrade --to next\n启动本地可视化面板\tdsh-triage serve\n\n数据来源于本地只读接口 /compat-triage/summary，与 `dsh-triage status` 同源。\n\n升级预检刷新"
+    },
+    {
+      "id": "upgrade-visible",
+      "status": "passed",
+      "detail": "the upgrade screen rendered 4 bucket row(s) in 1019ms",
+      "clicked": {
+        "clicked": true
+      },
+      "probe": {
+        "view": "answer",
+        "kind": null,
+        "counts": [
+          {
+            "bucket": "would-be-denied",
+            "count": 119
+          },
+          {
+            "bucket": "cannot-tell",
+            "count": 74
+          },
+          {
+            "bucket": "improved",
+            "count": 0
+          },
+          {
+            "bucket": "likely-fine",
+            "count": 2
+          }
+        ],
+        "text": "升级预检 · 目标 0.2.2-rc.1\n\n点击后才读取 npm 的 next 标签；只判声明层，不是运行期实测。\n\n桶\t数量\t意思\n会被拒\t119\t目标版本的准入规则会拒绝这一行/包\n判不了\t74\t声明不足或目标还没发布，证据不够\n会变好\t0\t今天被拒、目标放行——目标版本会放行它\n像没事\t2\t声明上不冲突——不等于升级后能跑\n\n另有 175 个单元未列出。\n\n只判声明层；不是运行期实测，也不改你的 profile。\n\n数据来源于本地只读接口 /compat-triage/upgrade（点击后读取 npm next）。\n\n返回现状"
+      },
+      "judged": {
+        "decided": true,
+        "state": "answer",
+        "reason": "four buckets, each with a count"
+      },
+      "waited_ms": 1019,
+      "marker": {
+        "ok": true,
+        "kind": null,
+        "target": "0.2.2-rc.1",
+        "counts": {
+          "bundles": 3,
+          "rows": 192,
+          "would_be_denied": 119,
+          "cannot_tell": 74,
+          "improved": 0,
+          "likely_fine": 2,
+          "total": 195
+        }
+      },
+      "direct": {
+        "status": 200,
+        "body": "{\"target\":{\"tag\":\"next\",\"version\":\"0.2.2-rc.1\",\"relation\":\"newer\"},\"profile\":\"web\",\"current\":\"0.2.1-rc.4\",\"counts\":{\"bundles\":3,\"rows\":192,\"would_be_denied\":119"
+      }
+    },
+    {
+      "id": "user-answer",
+      "status": "passed",
+      "detail": "the first screen answers will-it-break / which-row / what-to-type (conclusion:yes · which_row:yes · what_to_type:yes) · answered in 1943ms",
+      "answers": {
+        "conclusion": true,
+        "which_row": true,
+        "what_to_type": true
+      },
+      "ms_to_answer": 1943,
+      "text_chars": 933
+    },
+    {
+      "id": "english-screen",
+      "status": "unmeasured",
+      "detail": "no --lang en was passed, so the English screen is not claimed by this run"
+    },
+    {
+      "id": "clipboard-copy",
+      "status": "unmeasured",
+      "detail": "no copy button rendered (the engine produced no command for these rows)"
+    },
+    {
+      "id": "same-source",
+      "status": "failed",
+      "detail": "the tab and the CLI disagree on the same profile",
+      "tab_data": {
+        "ok": true,
+        "kind": null,
+        "tone": "attention",
+        "counts": {
+          "rows": 219,
+          "judged": 72,
+          "go": 0,
+          "denied": 0,
+          "unknown": 72,
+          "collisions": 0,
+          "duplicateCopies": 0,
+          "errors": 0
+        }
+      },
+      "cli_data": {
+        "rows": 192,
+        "declared": 219,
+        "judged": 184,
+        "verdicts": {
+          "go": 0,
+          "blocked": 0,
+          "risky": 0,
+          "unknown": 184
+        }
+      },
+      "tab_dom_counts": "配置项总数 219 · 已分析 72 · 正常 0 · 存在异常 0 · 未明确 72"
+    },
+    {
+      "id": "upgrade-same-source",
+      "status": "failed",
+      "detail": "the tab and the CLI disagree on 0.2.2-rc.1: would-be-denied tab=119 cli=3 · cannot-tell tab=74 cli=190",
+      "comparison": {
+        "same": false,
+        "pairs": [
+          {
+            "bucket": "would-be-denied",
+            "tab": 119,
+            "cli": 3,
+            "agree": false
+          },
+          {
+            "bucket": "cannot-tell",
+            "tab": 74,
+            "cli": 190,
+            "agree": false
+          },
+          {
+            "bucket": "improved",
+            "tab": 0,
+            "cli": 0,
+            "agree": true
+          },
+          {
+            "bucket": "likely-fine",
+            "tab": 2,
+            "cli": 2,
+            "agree": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "cleanup",
+      "status": "passed",
+      "detail": "sandbox removed",
+      "removed": true
+    }
+  ],
+  "host_log": [
+    "dsh-triage: compat_verdict tool registered (profile web)",
+    "dsh-triage: read-only /compat-triage/audit + /compat-triage/summary (with ?upgrade=1) registered (profile web)",
+    "dsh web: http://127.0.0.1:64308/?token=<redacted>"
+  ],
+  "limits": [
+    "the workspace packages are installed from local directories with their workspace deps rewritten to file: — no registry and no credentials are involved",
+    "this proves the Host serves /plugins/dsh-triage/client.js and that the settings page renders the tab label; it does not prove the tab content matches the CLI (that needs a host-side read-only Remote)",
+    "the visibility assertion looks for the tab label after opening the settings UI in a headless browser; it is not a visual regression test, and an unmeasured result means the entry was not reachable, not that the tab is missing",
+    "outcome.served is a HOST fact (the composed asset answered 200, exposed the loader and our id) and says nothing about any browser: with --browser <path>, a browser-side step that is unmeasured means the browser was never successfully asked. The exit code is 0 when served is true and tab_visible is not failed, so exit 0 means \"this run finished\", not \"a browser witnessed the tab\"",
+    "one sandbox runtime (0.2.1-rc.4) on one Windows machine"
+  ]
+}

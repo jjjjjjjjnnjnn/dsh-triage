@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/watch_next_release.mjs",
+  "generated_at": "2026-11-12T06:50:44.469Z",
+  "upstream": {
+    "package": "@deepseek-ai/dsh",
+    "registry": "https://registry.npmjs.org",
+    "tag": "next",
+    "http_status": 200,
+    "dist_tags": {
+      "alpha": "0.2.2-alpha.3",
+      "next": "0.2.2-rc.2",
+      "latest": "0.2.2-rc.1"
+    }
+  },
+  "previous": {
+    "version": "0.2.2-rc.1",
+    "at": "2026-11-11T11:45:00.000Z",
+    "artifact": "next-release-2026-11-11T11-45-00.000Z.json",
+    "source": "data/results"
+  },
+  "next": {
+    "version": "0.2.2-rc.2"
+  },
+  "change": {
+    "state": "changed",
+    "changed": true,
+    "from": "0.2.2-rc.1",
+    "to": "0.2.2-rc.2",
+    "detail": "next moved 0.2.2-rc.1 → 0.2.2-rc.2; this includes a rollback, which changes what the card would say"
+  },
+  "latest": {
+    "version": "0.2.2-rc.1",
+    "tag": "latest"
+  },
+  "previous_latest": {
+    "version": "0.2.2-rc.1",
+    "at": "2026-11-11T11:45:00.000Z",
+    "artifact": "next-release-2026-11-11T11-45-00.000Z.json",
+    "source": "data/results"
+  },
+  "change_latest": {
+    "state": "unchanged",
+    "changed": false,
+    "from": "0.2.2-rc.1",
+    "to": "0.2.2-rc.1",
+    "agrees_with_next": false,
+    "detail": "latest is still 0.2.2-rc.1 (unchanged since 2026-11-11T11:45:00.000Z)"
+  },
+  "suggested": [
+    "dsh-triage upgrade --to next --card",
+    "dsh-triage upgrade --to 0.2.2-rc.2 --card --out upgrade-0.2.2-rc.2.md"
+  ],
+  "limits": [
+    "this is one registry read at one timestamp: it says what dist-tags said here and now, not what npm serves every region",
+    "changed includes a rollback — the two versions are reported verbatim and no semver ordering is claimed",
+    "the card numbers come from this machine's profile; re-run the card before quoting it anywhere",
+    "this script posts nothing and writes nothing outside data/results",
+    "`promoted` says the `latest` tag now equals `next`; it does not say the upgrade is safe, nor that every user moved"
+  ]
+}

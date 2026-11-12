@@ -27,6 +27,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 
 import { assertAscendingIds, insertByEntryId } from './lib/index-order.mjs'
+import { displayPath } from './lib/evidence.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
 
 const argv = process.argv.slice(2)
@@ -173,5 +174,5 @@ process.stdout.write(
     `fork ${String(payload.fork.entries)} · byte-equal ${String(payload.rebuilt.byte_equal_to_fork)} · index ${String(payload.fork.entry_index)}\n`,
 )
 if (payload.status === 'drift') process.stdout.write(`  ${String(payload.blocker)}\n`)
-process.stdout.write(`  ${target.replaceAll('\\', '/').split('/data/results/').pop()}\n`)
+process.stdout.write(`  ${displayPath(target)}\n`)
 process.exitCode = payload.status === 'drift' ? 1 : 0

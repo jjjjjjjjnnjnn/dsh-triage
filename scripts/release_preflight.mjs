@@ -30,9 +30,10 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { displayPath } from './lib/evidence.mjs'
 import { classifyWhoami, npmInvocation } from './lib/npm-auth.mjs'
 
 const argv = process.argv.slice(2)
@@ -225,11 +226,14 @@ if (outPath !== null) {
     ],
   }
   const text = `${JSON.stringify(payload, null, 2)}\n`
-  const target = abs(outPath)
+  // R97: the path is used as given — absolute stays absolute, relative is resolved against the repo
+  // root. Before this, an absolute `--out` was joined onto the repo root and the write failed with
+  // ENOENT on a path that looked like `<repo>/C:\Users\…`.
+  const target = isAbsolute(outPath) ? outPath : resolve(abs('.'), outPath)
   mkdirSync(dirname(target), { recursive: true })
   writeFileSync(target, text, 'utf8')
   writeFileSync(`${target}.sha256`, sha256(text), 'utf8')
-  process.stdout.write(`ssot ${outPath} sha256=${sha256(text).slice(0, 12)}…\n`)
+  process.stdout.write(`ssot ${displayPath(target)} sha256=${sha256(text).slice(0, 12)}…\n`)
 }
 
 if (json) {

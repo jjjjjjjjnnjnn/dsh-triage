@@ -89,10 +89,11 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 
 ## Current status
 
-`0.3.7` is published on npm (four packages released together; adds the **升级预检 / upgrade pre-check**
-four-bucket screen to the settings tab and the M12 `surface` rule). Build side covers M0–M6. Distribution: two pull requests are open (#65 re-merged onto the new index layout and **`MERGEABLE`**; walkinglabs #140 clean and unreviewed; #193 was merged on 2026-11-04).so lists the plugin**: `L5 · Run tested` against `0.2.1-rc.5`,
-security tier `low`, first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
-machine; a listing is not usage.
+`0.3.8` is published on npm (four packages released together; adds the **升级预检 / upgrade pre-check**
+four-bucket screen to the settings tab and the M12 `surface` rule). Build side covers M0–M6. Distribution: two pull requests are open (#65 re-merged onto the new index layout and **`MERGEABLE`**, waiting on re-review; walkinglabs #140 clean and unreviewed; #193 was merged on 2026-11-04), and **dsh.so lists the plugin**: `L5 · Run tested` against `0.2.2-rc.1` (the current runtime),
+security tier `low` (0 critical / 0 warning), first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
+machine; a listing is not usage. Its own install line still names `0.3.5`; it re-indexes on its own schedule, and that is
+its fact about us, not ours about it.
 
 - format-1 index source (public URL, byte-verified): `https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - Badge: `dsh-triage badge <pkg>` renders an SVG from recorded measurements; no measurement renders `not measured`.
@@ -112,5 +113,7 @@ Requires Node ≥ 22.19 and DSH `>=0.2.0-rc.1 <0.3.0-0` (measured on 0.2.1-rc.4)
 
 ## Licence and data attribution
 
-MIT. This repository does **not** use dsh.so data (the index source reads npm registry metadata only), so no CC BY
-attribution is required; if that changes, attribution will be added here first.
+MIT. `@dsh-triage/signals` ships a **dsh.so adapter** (`packages/signals/src/dshso.ts`); dsh.so data is
+CC BY 4.0 and `dshSoEvidence()` attaches the required attribution wherever such a record is displayed.
+Nothing displayed today does: the format-1 index source and every default path read npm registry
+metadata only, so no CC BY obligation is in force — if that changes, attribution ships with it first.

@@ -23,6 +23,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 import { assertAscendingIds, insertByEntryId } from './lib/index-order.mjs'
 import { abs, isoStamp, sha256 } from './lib/kit.mjs'
+import { displayPath } from './lib/evidence.mjs'
 
 const argv = process.argv.slice(2)
 const argOf = (name, fallback) => {
@@ -431,5 +432,5 @@ process.stdout.write(`channels · validated ${payload.summary.validated_locally}
 for (const channel of payload.channels) {
   process.stdout.write(`  ${String(channel.status).padEnd(20)} ${channel.channel}${channel.blocker === null ? '' : ` — ${String(channel.blocker).slice(0, 120)}`}\n`)
 }
-process.stdout.write(`  ${target.replaceAll('\\', '/').split('/data/results/').pop()}\n`)
+process.stdout.write(`  ${displayPath(target)}\n`)
 process.exitCode = channels.some((channel) => channel.status === 'rejected') ? 1 : 0

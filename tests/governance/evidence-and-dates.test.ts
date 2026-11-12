@@ -27,11 +27,29 @@ test('a recorder that takes --out never prints a hard-coded data/results path (T
   for (const name of listScripts()) {
     const source = read(`scripts/${name}`)
     if (!source.includes("'--out'")) continue
-    // The literal `ssot data/results/` in a template string is the bug: the path was not derived.
+    // Two shapes of the same bug, both invisible with the default `--out`:
+    //   1. the printed path is a template literal that starts with the SSOT directory;
+    //   2. the printed path is BUILT from the literal SSOT directory (`join('data/results', fileName)`)
+    //      instead of from `outDir`, so `--out <temp dir>` reports a file that was never written.
+    // R97: shape 2 slipped through the first version of this test for three rounds — four recorders
+    // printed `data/results/...` while writing to `%TEMP%`, and `gate --mutate` stayed green because
+    // the pattern only matched shape 1. The building form is now what is checked.
     if (/ssot data\/results\//.test(source)) offenders.push(name)
+    else if (/join\(['"]data\/results['"]/.test(source)) offenders.push(name)
   }
-  assert.deepEqual(offenders, [], `these recorders accept --out but print a fixed data/results path: ${offenders.join(', ')}`)
+  assert.deepEqual(offenders, [], `these recorders accept --out but build a fixed data/results path: ${offenders.join(', ')}`)
 })
+
+test('R97: a recorder that takes --out derives every printed path from the file it wrote', () => {
+  // The positive form of T-835: those scripts must go through the one helper, not hand-roll a split.
+  const scripts = listScripts().filter((name) => read(`scripts/${name}`).includes("'--out'"))
+  const usingHelper = scripts.filter((name) => /displayPath|writeEvidence/.test(read(`scripts/${name}`)))
+  assert.ok(
+    usingHelper.length >= 1,
+    'at least one --out recorder must print through displayPath/writeEvidence (otherwise the helper is dead code)',
+  )
+})
+
 
 test('writeEvidence derives the printed path from the file it actually wrote', () => {
   const root = process.cwd()

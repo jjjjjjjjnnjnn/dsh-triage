@@ -25,6 +25,21 @@ import process from 'node:process'
 const sha256 = (text) => createHash('sha256').update(text).digest('hex')
 
 /**
+ * How a written path should be shown in a transcript.
+ *
+ * Repo-relative when inside the repo; absolute (with forward slashes) only when the caller wrote
+ * outside it, because a `%TEMP%` control run and a SSOT run must not look alike afterwards.
+ *
+ * @param {string} target absolute path that was actually written
+ * @param {string} [root] repo root the display should be relative to
+ * @returns {string}
+ */
+export function displayPath(target, root = process.cwd()) {
+  const rel = relative(root, String(target))
+  return rel.startsWith('..') || isAbsolute(rel) ? String(target).replaceAll('\\', '/') : rel.replaceAll('\\', '/')
+}
+
+/**
  * @param {{
  *   outDir: string,
  *   fileName: string,
@@ -47,9 +62,7 @@ export function writeEvidence(input) {
   const digest = sha256(text)
   writeFileSync(`${target}.sha256`, digest, 'utf8')
 
-  const rel = relative(root, target)
   // Repo-relative when it is inside the repo; absolute only when the caller wrote outside it (a control
   // run into %TEMP%), because those two cases must not look alike in a transcript.
-  const display = rel.startsWith('..') || isAbsolute(rel) ? target.replaceAll('\\', '/') : rel.replaceAll('\\', '/')
-  return { ok: true, target, display, sha256: digest }
+  return { ok: true, target, display: displayPath(target, root), sha256: digest }
 }

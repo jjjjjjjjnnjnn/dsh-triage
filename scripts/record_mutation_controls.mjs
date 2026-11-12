@@ -232,6 +232,36 @@ const CASES = [
     to: "    for (const root of env.kernelRoots ?? [])\n        add(root, 'profile');",
     test: 'tests/unit/kernel-resolution.test.ts',
   },
+  {
+    id: 'M13-N1',
+    judgement: 'M13',
+    rule: 'C1 — 行按声明它的那个包解析（pnpm isolated 的整棵树只在 .pnpm 里）',
+    why: '删掉 per-declarer 兜底：沙盒上 190 行只解析 2 行，188 条假 row-missing（BS-61 的 CLI 半边）',
+    file: 'packages/plugin/dist/load.js',
+    from: '        if (resolved === null && context !== undefined) {',
+    to: '        if (false) {',
+    test: 'tests/unit/row-resolution.test.ts',
+  },
+  {
+    id: 'M13-N2',
+    judgement: 'M13',
+    rule: 'C1 — 声明者的**真实路径**才是搜索起点（软链不算）',
+    why: '不解析 realpath：起点停在软链上，整棵树看不见，与「没修」等价',
+    file: 'packages/plugin/dist/load.js',
+    from: '        real = await realpath(start);',
+    to: '        real = start;',
+    test: 'tests/unit/row-resolution.test.ts',
+  },
+  {
+    id: 'M13-N3',
+    judgement: 'M13',
+    rule: 'C2 — 只做加法：扁平 roots 已经有答案的行不许被改写',
+    why: '先查声明者再查扁平：今天能解析的行被换成另一个副本（金标与 M11-N9 一起作废）',
+    file: 'packages/plugin/dist/load.js',
+    from: '        if (resolved === null && context !== undefined) {',
+    to: '        if (resolved !== null && context !== undefined) {',
+    test: 'tests/unit/row-resolution.test.ts',
+  },
 ]
 
 const sha256 = (text) => createHash('sha256').update(text).digest('hex')

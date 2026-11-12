@@ -136,7 +136,7 @@ if (mode === 'profile') {
   )
   collisions = core.findEntryIdCollisions(claims)
   verdicts.push(...core.verdictsFromCollisions({ env: fingerprint, collisions, generatedAt: stamp }))
-  rows = await plugin.resolveRows(realEnv, core.rowTargets(claims))
+  rows = await plugin.resolveRows(realEnv, core.rowTargets(claims), { layers: composition.layers })
   verdicts.push(...core.verdictsFromRowAdmission({ env: fingerprint, rows, generatedAt: stamp }))
 } else {
   // Candidate mode: no installation exists, so there is no profile to read.

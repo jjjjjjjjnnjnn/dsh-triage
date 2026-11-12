@@ -6,7 +6,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
 [![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
-[![tests: 911 passed](https://img.shields.io/badge/tests-911%20passed-success.svg)](scripts/gate.mjs)
+[![tests: 933 passed](https://img.shields.io/badge/tests-933%20passed-success.svg)](scripts/gate.mjs)
 
 [English Overview](#english-overview) | [English README](README.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
 
@@ -21,7 +21,7 @@ DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截�
 
 所有判定均在本地计算并绑定证据来源；信息不足时不作无根据的推测，直接标为 `unknown`（未明确）。默认只读：检查与预检都不写盘；只有你显式加 `--apply` 的 `fix` / `rescue` 会改一处接缝（`compatibility.json` 或 `dsh.profile.bundles`），且先备份、写 journal、可 `--undo` 逐字节还原。
 
-npm 发布版本：`dsh-triage@0.3.7` · 包含独立 CLI 与 DSH 设置页插件 · 本地只读 · 仅在使用 registry 查询命令时发起必要网络请求。
+npm 发布版本：`dsh-triage@0.3.8` · 包含独立 CLI 与 DSH 设置页插件 · 本地只读 · 仅在使用 registry 查询命令时发起必要网络请求。
 
 ---
 
@@ -144,7 +144,7 @@ dsh-triage serve
 dsh plugin --profile web add dsh-triage
 ```
 
-安装后在 DSH **“设置页 → 兼容性分析”** 即可查看诊断视图与修复命令。
+安装后在 DSH **设置页 → 「分诊台」** 即可查看诊断视图与修复命令。
 
 ---
 
@@ -231,7 +231,7 @@ $ dsh-triage probe dsh-status-rotator --execute
 
 | 验证项 | 复现命令 / 证据源 | 说明 |
 |---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、911 个测试、9 道零依赖门禁 |
+| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、933 个测试、9 道零依赖门禁 |
 | 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
 | 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
 | 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |
@@ -265,7 +265,7 @@ dsh-triage status
 ```
 
 ### Safety & Integrity Boundaries
-- **Local & Read-only**: Analyzes local configurations without mutating `~/.dsh` files.
+- **Read-only by default**: Analysis, pre-flight and `status` write nothing. The only writes happen when you explicitly pass `--apply`: `fix --apply` touches `<profile>/compatibility.json`, `rescue --apply` touches the `dsh.profile.bundles` rows — both take a backup, write a journal and restore byte-for-byte with `--undo`.
 - **Explicit Unknowns**: Silence is not a pass. Undeclared ranges yield `unknown` instead of false positives.
 - **Security Boundary**: We do **not** provide security assurances — no verdict in this tool means "safe to run" (本工具不提供安全背书).
 
@@ -282,4 +282,6 @@ dsh-triage status
 
 ## 开源许可
 
-本项目基于 [MIT License](LICENSE) 开源。引用自 [dsh.so](https://www.dsh.so) 的注册表事实数据遵循 CC BY 4.0 协议并已在引用处注明。
+本项目基于 [MIT License](LICENSE) 开源。`@dsh-triage/signals` 带有 dsh.so 适配器（`packages/signals/src/dshso.ts`），
+其数据接口遵循 CC BY 4.0，适配器会在显示该类记录时附带署名；**当前索引源与所有默认路径只读 npm registry 元数据**，
+因此没有任何界面显示 dsh.so 数据。

@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_row_resolution.mjs",
+  "generated_at": "2026-11-11T19:50:00.000Z",
+  "judgement": "M13-row-resolution",
+  "sandbox": {
+    "home": "~\\AppData\\Local\\Temp\\dsh-triage-rows\\mwcjkbcg\\home",
+    "profile": "web",
+    "runtime": "0.2.1-rc.4",
+    "bundle_in_profile": false
+  },
+  "steps": [
+    {
+      "id": "install",
+      "status": "passed",
+      "detail": " · Done in 19.7s using pnpm v12.15.0"
+    },
+    {
+      "id": "layout",
+      "status": "passed",
+      "detail": "pnpm installed into a store: 568 entr(ies) under .pnpm, 5 at the profile's top level",
+      "top_level_entries": 5,
+      "store_entries": 568,
+      "isolated": true
+    },
+    {
+      "id": "composition",
+      "status": "passed",
+      "detail": "2 bundle layer(s) read",
+      "layers": [
+        {
+          "name": "@deepseek-ai/dsh-base",
+          "version": "0.2.1-rc.4",
+          "provenance": "profile"
+        },
+        {
+          "name": "@deepseek-ai/dsh-web-app",
+          "version": "0.2.1-rc.4",
+          "provenance": "profile"
+        }
+      ]
+    },
+    {
+      "id": "rows",
+      "status": "passed",
+      "detail": "217 declared rows, 190 import targets"
+    },
+    {
+      "id": "measurements",
+      "status": "passed",
+      "detail": "the flat roots resolved 2/190; resolving from the declaring bundle resolves 190/190"
+    },
+    {
+      "id": "no-rewrite",
+      "status": "passed",
+      "detail": "every row the flat roots already resolved kept its exact version (M13-C2, \"add only\")"
+    }
+  ],
+  "measurements": {
+    "A_flat_roots": {
+      "rows": 190,
+      "resolved": 2,
+      "verdicts": 184,
+      "by_conclusion": {
+        "unknown": 184
+      },
+      "row_missing": 184,
+      "row_unconstrained": 0
+    },
+    "B_with_store_root": {
+      "rows": 190,
+      "resolved": 190,
+      "verdicts": 72,
+      "by_conclusion": {
+        "unknown": 72
+      },
+      "row_missing": 0,
+      "row_unconstrained": 72
+    },
+    "C_per_declarer": {
+      "rows": 190,
+      "resolved": 190,
+      "verdicts": 72,
+      "by_conclusion": {
+        "unknown": 72
+      },
+      "row_missing": 0,
+      "row_unconstrained": 72
+    },
+    "upgrade_to": "not measured here (see `upgrade --to <version>`)"
+  },
+  "store_ambiguity": {
+    "names": 296,
+    "names_with_multiple_versions": 16,
+    "names_where_the_link_points_elsewhere": 11,
+    "examples": [
+      {
+        "name": "@aws-sdk/token-providers",
+        "link_version": "3.1127.0",
+        "versions": [
+          "3.1127.0",
+          "3.1166.0"
+        ]
+      },
+      {
+        "name": "@opentelemetry/api",
+        "link_version": "1.10.0",
+        "versions": [
+          "1.10.0",
+          "1.9.1"
+        ]
+      },
+      {
+        "name": "@smithy/node-http-handler",
+        "link_version": "4.12.1",
+        "versions": [
+          "4.12.1",
+          "4.14.2"
+        ]
+      },
+      {
+        "name": "agent-base",
+        "link_version": "9.0.0",
+        "versions": [
+          "7.1.4",
+          "9.0.0"
+        ]
+      },
+      {
+        "name": "debug",
+        "link_version": "2.6.9",
+        "versions": [
+          "2.6.9",
+          "4.4.3"
+        ]
+      },
+      {
+        "name": "fflate",
+        "link_version": "0.8.3",
+        "versions": [
+          "0.8.2",
+          "0.8.3"
+        ]
+      }
+    ],
+    "rows_pointing_at_an_ambiguous_name": 0
+  },
+  "judgements": {
+    "reading": "B-and-C-agree-and-A-does-not"
+  },
+  "limits": [
+    "one sandbox runtime on one Windows machine: the isolated shape is pnpm default, not a property of DSH",
+    "the numbers compare three WAYS OF READING the same installed tree; they do not say which rows a running Host would mount",
+    "a profile installed with nodeLinker: hoisted does not reproduce the defect at all (measured: 0 rows changed on the maintainer profile)",
+    "declaration layer only: admission reads package.json, so a resolved row is not a runtime measurement"
+  ]
+}
