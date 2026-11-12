@@ -1,6 +1,6 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R62 (2026-11-02)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.8`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> **Stand**: R62 (2026-11-02)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.9`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
 > 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话
@@ -75,7 +75,7 @@ dsh-triage env                     # 环境指纹
 
 ## 当前状态（提交前看一眼）
 
-`0.3.8` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升；含设置页的「升级预检」四桶页签与 M12 的 `surface` 判据）。M0–M6 的**构建侧**已完成；**分发侧**：两条 PR 待审（#65 已按上游新索引结构 merge、**`MERGEABLE`**，`blocked` 是仓库要求 review、不是冲突；#140 clean、无 review；#193 已于 2026-11-04 合并），而 **dsh.so 已收录本插件**：`L5 · Run tested`（当前运行时 `0.2.2-rc.1`，它那次实测的是构建 `0.3.5`）、安全档 `low`（0 Critical / 0 Warning）、2026-10-29 首次收录。那个 L5 是 dsh.so 在自己的干净沙盒里跑的一次结果，不是「你的机器上能用」；收录也不等于有人用，它不产生下载。**它页面上的安装行仍写着 `0.3.5`**，等它自己重新索引——那是它对我们的读数，不是我们对它的承诺。详见 `docs/market/submissions/README.md`。
+`0.3.9` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升；含设置页的「升级预检」四桶页签与 M12 的 `surface` 判据）。M0–M6 的**构建侧**已完成；**分发侧**：两条 PR 待审（#65 已按上游新索引结构 merge、**`MERGEABLE`**，`blocked` 是仓库要求 review、不是冲突；#140 clean、无 review；#193 已于 2026-11-04 合并），而 **dsh.so 已收录本插件**：`L5 · Run tested`（当前运行时 `0.2.2-rc.1`，它那次实测的是构建 `0.3.5`）、安全档 `low`（0 Critical / 0 Warning）、2026-10-29 首次收录。那个 L5 是 dsh.so 在自己的干净沙盒里跑的一次结果，不是「你的机器上能用」；收录也不等于有人用，它不产生下载。**它页面上的安装行仍写着 `0.3.5`**，等它自己重新索引——那是它对我们的读数，不是我们对它的承诺。详见 `docs/market/submissions/README.md`。
 
 - format-1 索引源（公开 URL，已逐字节校验）：`https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/index.json`
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

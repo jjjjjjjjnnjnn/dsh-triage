@@ -6,6 +6,33 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.9] — 2026-11-12
+
+> **Behaviour: the command line stopped reporting blockers that were not there, and it stopped
+> judging a composition it had not read.** No admission rule, threshold, bucket or exit code changed.
+
+- **Installed plugins are no longer reported as blocked because of a stale cache.** On a DSH Desktop
+  install the CLI read `@deepseek-ai/dsh` from the pnpm hoisted shared cache (`0.1.0-rc.6`) while the
+  Host was running `0.2.2-rc.1` out of `app.asar`. Eight plugins — including `dsh-triage` itself —
+  were denied confidently and wrongly. The version and the `@deepseek-ai/*` manifests now come from the
+  archive the Host actually loads; a package the archive does not ship is reported as "cannot be
+  verified" instead of "not installed" (`docs/specs/M14-kernel-asar.md`).
+- **The composition now comes from the same archive as the version.** The row set was still read from
+  the cached bundle patches, so a row id present in both the cached and the running `dsh-base` patch was
+  reported as an entry-id collision (`llm-deepseek`). Every kernel-owned bundle now contributes its
+  `package.json` and all of its `dsh.bundle.patch` files from the archive; bundles the archive does not
+  ship are read from disk exactly as before (`docs/specs/M16-composition-source.md`). Measured on one
+  real desktop profile: collisions 1 → 0, judged rows 55 → 93, exit code 1 → 0.
+- **The one screen says zero when there is nothing to do.** `status` used to print "detected N
+  compatibility anomalies" counting rows that merely never declared a range. It now separates
+  `actionable` (denied + collision + duplicate copy + unreadable) from `unjudged`, and the word
+  "anomaly" is not used when nothing is actionable (M15).
+- **What this does NOT claim**: the archive is only probed on the desktop shell with this account's
+  default home. A global npm install, a Linux desktop build and CI have no archive, so they keep the
+  previous behaviour — and the previous numbers. `docs/specs/M14-kernel-asar.md` §6 and
+  `M16-composition-source.md` §7 state the three blind spots (`BS-67`, `BS-69`, `BS-70`).
+- **Test count on the npm page: 971.**
+
 ## [0.3.8] — 2026-11-12
 
 > **Documentation only: the installed README and the help text were both incomplete.** No code changed.

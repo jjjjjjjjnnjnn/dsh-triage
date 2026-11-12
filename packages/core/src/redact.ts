@@ -53,12 +53,32 @@ export function redactPath(value: string, roots: readonly string[]): string {
  * that leaves the machine gets the same treatment, not just the field someone remembered.
  */
 export function redactEnv(env: EnvFingerprint, roots: readonly string[]): EnvFingerprint {
+  const { kernelManifests, ...rest } = env
   return {
-    ...env,
+    ...rest,
     profileDir: redactPath(env.profileDir, roots),
     ...(env.kernelRoots === undefined
       ? {}
       : { kernelRoots: env.kernelRoots.map((root) => redactPath(root, roots)) }),
+    /*
+     * R101/M14: `kernelProbe.path` is an absolute path by construction (it names the desktop archive),
+     * and `results-privacy` caught it in `audit --json` on the first attempt. Same rule as `kernelRoots`:
+     * anything that leaves the machine gets redacted.
+     */
+    ...(env.kernelProbe === undefined
+      ? {}
+      : {
+          kernelProbe: {
+            ...env.kernelProbe,
+            path: env.kernelProbe.path === null ? null : redactPath(env.kernelProbe.path, roots),
+          },
+        }),
+    /*
+     * R101/M14: `env` is published verbatim into `audit --json`, and a `Map` serializes to `{}` — which is
+     * a lie of the same shape as a missing field. The manifests belong to the reading, not to the answer:
+     * they are handed to `resolveRows` in memory and then dropped here.
+     */
+    ...(kernelManifests === undefined ? {} : {}),
   }
 }
 

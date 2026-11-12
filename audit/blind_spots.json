@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R99 (2026-11-12)",
+  "stand": "R103 (2026-11-12)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -520,6 +520,69 @@
       "mitigation": "新写给「上游现在是什么版本」的句子时，把它放进这四份之一（或扩 DOCUMENTS 列表）；带版本号的历史句子不要改，改成「当年那轮」的措辞。`docs/07-environment.md` 那张表已经把「运行时（kernel）」与「陈旧共享缓存」分成两行，别再退回一行。",
       "owner": "arbiter（每轮改「上游基线」句子的那个人）",
       "what_would_show_it": "一条真实的用户机器读数：`dsh-triage why --profile <名字>` 打印的 `dsh 0.2.2-rc.1 (kernel)` 与用户自己 `npm ls` 的版本一致，且四份入口文档没有一处与它相干；或者一次上游换版本（`watch-upstream` 给 `changed` / `promoted`）之后，纪律真的被执行（四份文档跟着改、`upstream-baseline.test.ts` 保持绿）——那证明「这个事实只有四个家」这句话成立。"
+    },
+    {
+      "id": "BS-66",
+      "area": "门禁 / D5 截止日的断言「出现过就算」，分不出活的话与引用的话",
+      "cannot_see": "`tests/governance/d5-window-deadline.test.ts` 只断言「文档里出现了这个日期字符串」。R100 第一次跑到红时才发现：`INDEX.md` **本来已经是绿的** —— 它满足断言靠的是 §2 里一条**历史批次行**（R97 那一行里写着 `2026-11-19`）。等基线推进、截止日变成 `11-20` 时，那份历史行不再匹配，测试才红。换句话说：**当历史行恰好与当前截止日同值时，断言可以在没有一句「活的话」的情况下通过**。",
+      "mitigation": "① R100 给 `INDEX.md` 加了一行显式标注「R100 现算」的活行；② 写新截止日时先确认它出现在**当前**段落，不是只出现在批次行/证据行里；③ 若将来把 `AGENTS.md` 那条超长 Stand 行拆开，这个断言可以改成「至少一处不落在 `（R<n>…` 段落内」，但**不要**为了让它更严就先去改断言 —— 先看它现在能不能抓到东西（本轮它确实抓到了一次真漂移）。",
+      "owner": "arbiter（每轮更新截止日的那个人）",
+      "what_would_show_it": "一次截止日变化（基线推进或滞后参数变化）之后，三份文档里**只有历史行**含新日期而当前段落不含 —— 那一刻断言仍然绿，这就是它看不见的东西。反向的见证是：本轮它红了三次（AGENTS / INDEX / HANDOFF），说明在「日期真的变了」时它是有效的。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-67",
+      "area": "M14 内核读取 / 只在「桌面壳 + 本账户默认 home」上实测",
+      "cannot_see": "asar 读取在这台机器的 **DeepSeek Harness 桌面版**（`%LOCALAPPDATA%/Programs/DeepSeek Harness/resources/app.asar`）上实测成立，且只在 **`$DSH_HOME` 未设置、home = 本账户 `~/.dsh`** 时启用。看不见：① npm 全局安装的 DSH（没有 asar，也没有 `dsh-runtimes/`）；② Linux / macOS 的桌面壳（路径与归档结构可能不同，`LOCALAPPDATA` 那两条候选路径在别的平台不存在）；③ CI 与 probe 沙盒（那里刻意不探测，否则夹具会被本机 asar 改判 —— 实测 6 条 e2e 正是因为这一点先红后修）；④ 上游某个版本把内核包移出 `dsh/node_modules` 的话，`asarKernelPackages()` 的固定路径会返回空，表现为 `unknown` 而不是报错。",
+      "mitigation": "`kernelProbe.state` 三态（`read` / `absent` / `unreadable`）如实落进产物与一屏，读者能看出「这次到底有没有探到内核」；测试对真实 asar 的那条用 `existsSync` 守卫，所以缺桌面壳的环境不会假绿也不会假红。新增平台时要先跑 `probeKernelArchive` 并记录 `probe.state`。",
+      "owner": "arbiter（改 `kernel-probe.ts` 候选路径或判定顺序的那个人）",
+      "what_would_show_it": "一份 Linux 或 npm-global 的产物里 `dshSource: kernel-asar` 而版本与 `node_modules` 里的不一致——那说明候选路径猜错了；或 `probe.state: read` 但 `packages.size === 0`——那说明内核目录结构变了。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-68",
+      "area": "M15 一屏 / 「0 项需要处理」不等于「一切正常」",
+      "cannot_see": "一屏现在把「没声明版本区间」从异常里剥离，于是它能在**没有任何可动手项**时说出「0 项需要处理」。它看不见的是：① 一个有问题的插件如果**恰好也不声明任何区间**，会和「只是没声明」完全同形（两者都是 `unknown`），而一屏不再区分；② `unjudged` 的 55 条里到底有几条其实是坏的，没有任何证据能回答；③ 交互层（设置页按钮）仍只渲染前 N 条，第 52 条以后的问题依旧要开 `audit --json`。",
+      "mitigation": "一屏永远同时写两个数（`{n} 项需要处理` 与 `{u} 项无法判定`），不让「0」单独出现；`unknown` 的 `missingEvidence` 仍逐条落进 `audit --json`；文案里「不代表不兼容」是硬编码的，不随数量变化。",
+      "owner": "arbiter + copywriter",
+      "what_would_show_it": "一条真实的用户报告：「面板说 0 项需要处理，但我的 X 插件没工作」——且该插件的 manifest 里没有 `engines.dsh` 也没有 DSH peer。那就是这条盲区的现场。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-69",
+      "area": "M16 组合层同源 / 只在桌面壳 + 默认 home 上成立",
+      "cannot_see": "组合层从 `app.asar` 读只在**这台机器的桌面壳**上实测成立。npm 全局安装、Linux 桌面壳、CI 上都没有归档 → 走 M16-N2，行为与改前相同（包括那条 phantom collision 会在没有归档的机器上重新出现）。它看不见的是：「同源」是一个**按环境成立**的性质，不是一个产品性质。",
+      "mitigation": "N2/N3/N5 三条负对照钉住「没有归档就逐条退回旧行为」；产物里 `env.dshSource` 与 `kernelProbe.state` 必须一起读，只有 `kernel-asar` 才代表组合层同源；对外文案不得写成「CLI 与设置页永远一致」。",
+      "owner": "arbiter（每轮读真机读数的人）",
+      "what_would_show_it": "在一台没有桌面壳的机器（或 CI）上跑同一个 profile：`dshSource` 不是 `kernel-asar`，而 CLI 的 collisions 又出现 1 条 —— 那一刻「同源」没有生效，但没有任何断言会红。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-70",
+      "area": "M16 / 归档被读两次，且没有跨调用缓存",
+      "cannot_see": "一次 `status` 里 `loadEnv()` 与 `loadBundleLayers()` 各打开一次 213 MB 的 `app.asar`（本机 99–110ms / 次，RSS ≈ 483MB）。它看不见的是：① 同一进程里两次判定之间归档**可能已经换了**（桌面壳升级），两次读会得到两份不同的「内核」；② 大归档在低内存机器上的代价没有测过。刻意不做缓存，因为缓存会在「同一时刻读两次」之上再造一种假事实。",
+      "mitigation": "记录器与 CLI 都是一次命令一次读数，不做长驻缓存；产物里 `kernelProbe.path` 会被脱敏但保留，所以两次产物的归档路径可对比；如果将来出现「同一进程两次判定不一致」，先看 `kernelProbe.state`。",
+      "owner": "implementer",
+      "what_would_show_it": "在同一进程里连续两次 `loadEnv` + `loadBundleLayers`，中间把 `app.asar` 换掉：两次得到的 `dsh` 版本不同，而没有任何字段记录「这是两次读盘」。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-71",
+      "area": "M16-C6 / 真机两侧 judged 差 3，未逐条点名",
+      "cannot_see": "真机上设置页 `judged 90` 与 CLI `judged 93`，差 3。原因归到 Host 的运行期 sample 会把一部分 preset 行过滤掉，但**没有逐条点名**是哪 3 行。它看不见的是：那 3 行里如果有真的声明问题，两侧的「0 denied」都可能漏掉它。",
+      "mitigation": "两侧的 `rows` 与 `collisions` 已逐项一致（289 / 0）；`judged` 的差写进产物（`desktop-panel-*`），并登记在 `audit/RECON_2026-11-12_composition-source.md` §5；下一轮 `client-serve` 用 `same-source` 在自建 Host 上继续钉住总数。**不要把 90 与 93 写成同一个数**。",
+      "owner": "verifier",
+      "what_would_show_it": "把 CRON/live sample 换成「声明层-only」的两个调用（面板路由与 CLI 各一次），如果仍有差，说明差不在运行期 sample 上 —— 那时这条盲区的解释就是错的。",
+      "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-72",
+      "area": "文案通道 / 写稿与审稿是同一个模型（R102 起不调外部模型 CLI）",
+      "cannot_see": "HUMAN 2026-11-12 停止外部模型调用后，对外文案由**当前会话的同一个模型**写，也由它审。它看不见的是：① 「措辞有没有把一个真数字讲成假的结论」这件事没有第二双眼睛；② 同一段文字里，作者与审阅者的盲区会重合（例如把「声明层放行」讲成「运行期能用」这种话，写它的人最容易看不出来）；③ 旧的独立检查（`agy` / 另一个供应商）交出的是**文字**，而文字本身无法被机器复算，只有数字可以。",
+      "mitigation": "把「谁来复核」从**另一个模型**换成**证据**：草稿里的每个数字必须指到 `data/results/` 里带 `.sha256` 的产物（`tests/governance/copy-channel.test.ts` 校验事实包与草稿结构），T-810 系草稿还要过 `check_listing` 的 `draft-claims-match-their-artifact`（从产物与粘贴块两边复算）；边界句必须原样在正文里；发布由 HUMAN 决定。`tests/governance/model-channel.test.ts` 保证「不再有任何操作性文档教人去调外部模型 CLI」，同时保留历史记录。",
+      "owner": "arbiter + HUMAN（发布前的人读是唯一剩下的外部视角）",
+      "what_would_show_it": "一份草稿的每个数字都对、`check_listing` 全绿，但正文把它们串成了一个越界的结论（例如「所以在你的机器上也不会坏」），而**没有任何断言会红** —— 那一刻剩下的只有 HUMAN 读一遍。",
+      "opened_at": "2026-11-12"
     }
   ]
 }

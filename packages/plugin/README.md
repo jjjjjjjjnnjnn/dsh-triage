@@ -5,7 +5,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![tests: 933 passed](https://img.shields.io/badge/tests-933%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
+[![tests: 971 passed](https://img.shields.io/badge/tests-971%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
 
 DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截、升级后哪些插件会失效，原生日志往往不会直接给出归因。
 

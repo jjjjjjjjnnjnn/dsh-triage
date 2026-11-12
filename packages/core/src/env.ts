@@ -13,7 +13,8 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { CoreError, Result } from './result.js'
 import { err, ok } from './result.js'
-import type { DshSource, EnvFingerprint, InstalledPackage } from './types.js'
+import { probeKernelArchive } from './kernel-probe.js'
+import type { DshSource, EnvFingerprint, InstalledPackage, KernelProbe } from './types.js'
 
 export interface LoadEnvInput {
   /** `$DSH_HOME`, defaults to `~/.dsh`. */
@@ -31,6 +32,13 @@ export interface LoadEnvInput {
    * See `docs/specs/M11-kernel-resolution.md`.
    */
   readonly anchorEntry?: string | null
+  /**
+   * Explicit `app.asar` path for the kernel probe (M14). Production leaves it unset so the probe looks at
+   * the documented desktop locations; tests point it at a fixture.
+   */
+  readonly asarPath?: string | null
+  /** Skip the asar probe entirely (offline callers, and hand-built fingerprints). */
+  readonly skipKernelProbe?: boolean
 }
 
 export interface ProfileManifest {
@@ -234,7 +242,23 @@ export async function loadEnv(input: LoadEnvInput = {}): Promise<Result<EnvFinge
    * `@deepseek-ai/dsh` happens to sit under the profile. On the maintainer's machine those two
    * disagreed by a minor version (0.1.0-rc.6 cached vs 0.2.2-rc.1 running) and every `engines.dsh
    * >=0.2.x` plugin was reported BLOCKED, confidently and wrongly.
+   *
+   * R101/M14: on a desktop install the CLI's entry-point walk lands on the SHARED pnpm cache, so even
+   * the anchor above answered with 0.1.0-rc.6. The Host, meanwhile, loads `app.asar`. The archive is
+   * therefore probed FIRST (M14-C1): it is the copy that is really executing, and it can be read with
+   * plain `node:fs` (see `asar.ts`). When no archive answers, behaviour is exactly what it was before
+   * (M14-C4/N2).
    */
+  const kernel = probeKernelArchive({
+    asarPath: input.asarPath ?? null,
+    dshHome,
+    disabled: input.skipKernelProbe === true,
+  })
+  const kernelVersion =
+    kernel.probe.state === 'read' && typeof kernel.manifest?.['version'] === 'string'
+      ? String(kernel.manifest['version']).trim()
+      : null
+
   const anchor = await resolveKernelAnchor({
     anchorEntry: input.anchorEntry,
     profileNodeModules,
@@ -248,8 +272,20 @@ export async function loadEnv(input: LoadEnvInput = {}): Promise<Result<EnvFinge
   const kernelRoots = anchor.source === 'kernel' ? kernelAnchorRoots(anchor) : []
   const paths = [...kernelRoots, profileNodeModules, sharedNodeModules]
 
-  const runtime = await readRuntimeVersion(paths)
+  const runtime = kernelVersion !== null ? kernelVersion : await readRuntimeVersion(paths)
   const installed = await readInstalledVersions(manifest.value, paths)
+
+  /*
+   * M14-C3 (同源): a version read from the archive is only allowed to judge rows whose manifest ALSO
+   * came from the archive. `kernelProbe.packagesHashed` is what `load.ts` consults; here we only mark
+   * the provenance so no caller can mix the two by accident.
+   */
+  const source: DshSource =
+    runtime === null
+      ? 'unresolved'
+      : kernelVersion !== null
+        ? 'kernel-asar'
+        : anchor.source
 
   return ok({
     dsh: runtime,
@@ -260,8 +296,10 @@ export async function loadEnv(input: LoadEnvInput = {}): Promise<Result<EnvFinge
     profileDir,
     bundles: manifest.value.bundles,
     installed,
-    dshSource: runtime === null ? 'unresolved' : anchor.source,
+    dshSource: source,
     kernelRoots,
+    kernelProbe: kernel.probe,
+    kernelManifests: kernelVersion !== null ? kernel.packages : undefined,
   })
 }
 

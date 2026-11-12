@@ -140,7 +140,10 @@ test('an entry-id collision outranks a duplicate copy, which outranks "cannot te
 test('unknown rows alone are "attention", not "broken"', () => {
   const summary = buildProfileSummary(data({ claims: [claim('hmr')], rowVerdicts: [verdict('hmr', 'unknown')] }), { locale: 'zh' })
   assert.equal(summary.tone, 'attention')
-  assert.match(summary.headline, /未明确/)
+  // R101/M15: the wording changed on purpose. It used to say「未明确」, which read as an anomaly; it now
+  // names the actionable count (0) first and explains that an undeclared range is not incompatibility.
+  assert.match(summary.headline, /0 项需要处理/)
+  assert.match(summary.headline, /不代表不兼容/)
   assert.equal(summary.issues[0]?.kind, 'unknown')
 })
 

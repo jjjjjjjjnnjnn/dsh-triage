@@ -1144,3 +1144,51 @@
 - **三种负对照各自真红并还原**：① 在 `AGENTS.md` 注入 R98 遗留的 `next = 0.2.2-rc.1` → `next: the line says 0.2.2-rc.1, the artifact measured 0.2.2-rc.2`；② 一行只剩一个裸版本（`07-environment` 修前的形状）→ 两个 `names no version after the marker`；③ 行里没有 marker → 仍然失败，不是跳过。**另外三次是我自己被门禁抓到的**：ROADMAP 整行判定把**我们自己的** `latest=0.3.8` 读成上游 `latest`（修成从 marker 起截断）· `BS-65` 少写 `owner` / `what_would_show_it` 两字段（`ledgers.test.ts` 红）· `ARCHIVE_MANIFEST` 新行给路径加了反引号（`gate_governance` 的 `archive-manifest` 红）。
 - **删掉的两份产物**：`listing-2026-11-12T12-10-00.000Z.json` 与 `listing-12-12` 都是 `test-count-matches — stale: README…924`，起因是我先加测试再改徽章。它们记的是**同一轮里的执行顺序错误**，不是任何测量 —— 按 R77 起「保留来自测量的红」的口径删除，终跑 `12-20` 进 SSOT。**另删**了一份我先跑 `d5_window_status`（默认写 SSOT）时生成的 `d5-window-status-2026-11-12T11-36-53.685Z.json`：那只是读覆盖，不是本轮新结论。
 - **边界（如实写）**：① 新增断言只覆盖四份文档 + `latest` / `next` 两个 tag，**看不见** `alpha` 通道、其他上游包、以及「用别的措辞说同一个问题」的句子（记入 `BS-65`）；② `docs/specs/*` 里写着旧版本的「上游基线」是**当年那轮**的历史读数，本轮**没有**改；③ D5 仍 `pending`（0/10 · 0/1 · 390 `steady`/20），关窗 `2026-11-15T20:24:37Z`，下一份基线最晚 `2026-11-19` —— 本轮不动判据。
+
+### 2026-11-12 R100｜把 D5 窗口往前推一天，并把「现在为什么不能判」跑成一次可复算的彩排（采证轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「开始进行」后由 agent 执行。SessionID：`lead@dsh-triage-r100`。**没有**起 subagent。
+- **为什么今天要动**：上一份基线（`market-baseline-2026-11-11T11-20-00.000Z.json`）覆盖 `11-04..11-10`；今天 npm 才发布 `11-11` 的桶（实测 `api.npmjs.org/downloads/range/last-week` 返回 `2026-11-05..2026-11-11`）。**这一份的价值只有一天**，但「多覆盖一天」是不可补的，所以宁可今天跑。
+- **真跑读数**：基线 `market-baseline-2026-11-12T14-30-00.000Z.json`（`offline: false`、`failures: []`）→ 窗口 `11-05..11-11`、周下载 **675**（`steady`，7/7 天，峰值 `11-11` **319** / 47.26%）；D5 `d5-evidence-2026-11-12T14-40-00-000Z.json` → **`pending`**（0/10 · 0/1 · 675/20）、`days_left: 4`；覆盖 `d5-window-status-2026-11-12T14-35-00.000Z.json` → 11 天、今天可采 **0**、**截止 `2026-11-20`**。
+- **「为什么现在判不了」是跑出来的**：`judgeD5` 纯函数四个时刻各判一次 —— 关窗前一秒 `pending`、`2026-11-15T20:24:37Z` 整点 `fail`、关窗后 `fail`；「三数提前达标」实测 `pass`、「读不到」实测 `unmeasurable`（不是 `fail`）。
+- **两个反证/边界都记着**：① `--lag-days 1` 会把「可采 0」变成 1、截止推到 `11-18` —— 说明「今天可采 0 天」是**保守滞后假设**下的结论，不是物理事实；② 675 里 **+285 全部来自 11-11 一天**（319 − 掉出窗口的 34），不该写成「需求涨了 73%」。
+- **彩排**：抓取 → 离线复算 `d5_verdict`/`numbers`/`window` **逐项 SAME**；基线也用 11-11 的 fixtures 离线重建，`d5`/`categories`/`downloads`/`discussions` 四块**逐项相同**；**彩排产物全在 `%TEMP%`**，不进 SSOT。
+- **自己抓到的三个问题（都已修）**：① **`BS-66`** —— 截止日断言只查字符串出现，`INDEX.md` 原先靠一条**历史批次行**（R97 里写着 `11-19`）恰好满足，「活的话」一句都没有；补了一行显式「R100 现算」的活行，并把这条盲区写进 `blind_spots.json`；② `INDEX` 那行先写成 `d5-window-status-<最新>.json` → `gate_governance` 的 `index-references` 当场红（引用必须指到存在的文件）；③ 台账 `changed[]` 写了 fixtures **目录** → `ledgers.test.ts` 读目录报 `EISDIR`，改成指向目录里的具体文件。
+- **删掉一份中间件**：基线刷新前跑的 `d5-window-status-2026-11-12T14-15-00.000Z.json`（截止 `11-19`、覆盖 10 天）—— 它被 14-35 取代，留着会让「当前截止日」有两个答案。删的是同一轮的中间态，不是测量。
+- **边界**：本轮**没有**跑 D5 判定（`fail` 只存在于关窗后）、**没有**开新功能、**没有**动 `admission.ts` / 三个阈值 / 四桶 / `data/gold/`。关窗时间点仍是 `2026-11-15T20:24:37Z`（本地 `21:24:37`，UTC+1）。
+
+### 2026-11-12 R101｜桌面设置页 8 条假「兼容异常」+ 一屏说人话（判据轮，阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN 报「这个插件没有作用」并附设置页截图后由 agent 取证与修复。SessionID：`lead@dsh-triage-r101`。**没有**起 subagent。
+- **HUMAN 的原话与我的更正**：他说「90，未明确 90」——实测一屏是 **202 项配置 / 20 项已分析 / 8 存在异常 / 12 未明确 / 1 冲突**，他的 90 更可能来自版本号或别的屏；**但这不改变问题本身**：8 条「异常」全是误报。
+- **根因（可复算）**：CLI 从 `<home>/profiles/<name>/node_modules/dsh-triage/dist/cli.js` 向上找第一个含 `@deepseek-ai/dsh` 的 `node_modules`，命中 **pnpm hoisted 共享缓存 0.1.0-rc.6**；而 Host 进程加载的是 `app.asar` 里的 **0.2.2-rc.1**（`~/.dsh/dsh-runtimes/dsh-primary-runtime/runtime.json` 的 `desktopVersion` 也是 0.2.2-rc.1）。把 8 条 blocked 的 `reasons[].params.range` 原样喂给项目自己的 `evaluateRange(…, '0.2.2-rc.1')` → **8/8 satisfied**，其中包括 **`dsh-triage` 自己**。
+- **R91 那条结论被推翻**：R91 写「普通 Node 读不到 asar」——那是测 **挂载路径**（`app.asar/…`，Electron FS 专属）。容器本身是普通文件（16 字节头 + 5.7 MB JSON 目录 + 4 字节对齐数据区），`node:fs` 直接读得到：实测 `dsh/node_modules/@deepseek-ai/dsh/package.json` → **0.2.2-rc.1**，内核 scope **329** 个 `@deepseek-ai/*` 包。
+- **半修有数（这就是为什么必须判据轮）**：只换版本、manifest 仍来自缓存 → **125 条**假 blocked；只换 manifest、版本不动 → 8 条原样。所以 M14-C3 把「同源」写成硬判据。
+- **做了什么**：`docs/specs/M14-kernel-asar.md`（C1–C7 / N1–N8）· `packages/core/src/asar.ts`（纯解析，零依赖）· `packages/core/src/kernel-probe.ts`（三态 read/absent/unreadable，Scope 限定本账户默认 home）· `env.ts` 接线（新标签 `kernel-asar`，M11 三个旧标签语义不变）· `load.ts#resolveRows` 只做加法 · `verdict.ts` 新增 `admission.row-unverifiable`（把「判不了」与「未安装」拆开）· `summary.ts` 的 `actionable` / `unjudged` 分开计 + 文案重写 · `redact.ts` 对 `kernelProbe.path` 脱敏并丢弃 `kernelManifests`（Map 序列化成 `{}` 会撒谎）。
+- **真机读数（修前 → 修后）**：`dsh 0.1.0-rc.6 (inferred)` → **`dsh 0.2.2-rc.1 (kernel-asar)`**；`20 已分析 / 8 异常 / 12 未明确` → **`55 已分析 / 0 异常 / 55 未明确`**；一屏 **「检测到 9 项兼容异常」→「检测到 1 项兼容异常」**（剩下那条是 `llm-deepseek` 的 Entry ID 同名：`bundle:@deepseek-ai/dsh-base` vs `patch:profile`，**真事**）；`audit --json` 的 `verdicts` **55 条全 unknown、0 blocked**。
+- **四个被自己抓到的错误（都已修）**：① 探针最初按「路径 == 默认 home」判断，而 `os.homedir()` 跟随 `$USERPROFILE`，导致 **6 条 e2e 夹具**被本机 asar 改判 → 改成「`$DSH_HOME` 未设置 且 home 是本账户 `~/.dsh`」；② 把 `@deepseek-ai/*` 且 asar 没有的包一律标 unverifiable，把 e2e 里**真的**死行软化成 unknown（CASE-11080 形状）→ 收窄为「仅当版本确实来自 asar」；③ `kernelProbe.path` 绝对路径进了 `audit --json` → `results-privacy` 真红，已脱敏；④ 台账三步的 `licence` 备注不足 12 字符、`changed[]` 里写了 `data/results` 快照的旧 stamp —— 门禁逐条抓到。
+- **边界**：`BS-67`（只在桌面壳 + 本账户默认 home 上实测；npm 全局 / Linux / CI 没有）· `BS-68`（「0 项需要处理」不等于「一切正常」）。**阈值、`admission.ts` 的四桶、`data/gold/` 一字未动**；**954 测试 / 9 门 / 9-9**。
+
+### 2026-11-12 R102｜组合层同源：CLI 与设置页第一次读到同一个组合（判据轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN 选择「先做真机设置页验证」后由 agent 执行。SessionID：`lead@dsh-triage-r102`。**没有**起 subagent。
+- **为什么这一轮存在**：用户问的是「设置页对不对」。要回答它，唯一诚实的办法是**直接读那条路由**，而不是读上一轮的报告。第一次读就推翻了报告里的主语：路由返回 `0.2.2-rc.1 (kernel)` / **0 denied / 0 collisions**，「9 项兼容异常」是 **CLI** 打的。
+- **第二个发现**：M14 之后 CLI 仍报 1 条 `llm-deepseek` `conflicting-definitions`，而**它是假的** —— 缓存 `dsh-base@0.1.0-rc.6` 的 patch 说 `@deepseek-ai/dsh-llm-deepseek`，内核 `0.2.2-rc.1` 的 patch 与 profile patch 都说 `-api-key`。面板看到后两份 → 不冲突。根因是 `kernelRoots` 在 `kernel-asar` 下为空：版本与 manifest 从归档读、**patch 从缓存读**。
+- **做了什么**：`docs/specs/M16-composition-source.md`（C1–C6 / N1–N6）· `loadBundleLayers()` 增加 asar 分支（`readBundleFromArchive` / `kernelArchiveOf` / `archivePatchPath`，只从 `env.kernelProbe.path` 读，不从 `kernelRoots` 猜）· `core/index.ts` 导出同一个 `asar.ts`（不写第二份解析器）· `host.ts` 把 `kernel-asar` 也透传给面板 · `scripts/record_desktop_panel.mjs` + `scripts/lib/panel-agreement.mjs`（真机双侧读数与一致性判定）· `record_audit.mjs` 改成读全 `patchFiles`（漏了 `dsh-web-app` 的四条 `presets/*.patch.yml`，96 行）。
+- **真机读数（修前 → 修后）**：CLI **1 → 0** collision、`judged 55 → 93`、`rows 158 → 242`、**exit 1 → 0**；一屏「检测到 1 项兼容异常」→「0 项需要处理 · 93 项无法判定」。双侧产物 `desktop-panel-2026-11-12T22-20-00.000Z.json`：`panel 289/0/0` 与 `cli 289/0/0`、`agree: version=true actionable=true`。
+- **三个被自己抓到的问题（都已修）**：① 第一版记录器把 `--out` 的绝对路径又拼了一次仓根 → `ENOENT`（`writeEvidence` 自己会 resolve，调用方不该再 `abs()`）；② 第一版把「行数不同」当成不一致 → 会把「Host 看得见内核层」这件正常的事报成缺陷（改成单独记 `row_counts_differ`）；③ 负对照 `M11-N2` 的 `from` 是源码形态，`dist/` 里早已是另一行 → `SETUP-FAIL` 静默失效（已改成分支内的那一行）。
+- **一个顺序错误（门禁抓到）**：先写台账、后跑 `check_listing` → `step-review/no-orphan-results` 红（`listing-2026-11-12T22-30-00.000Z.json` 未入账）。补 `R102-S4` 后 9 门全绿。
+- **同轮的第二件事：模型通道（HUMAN 2026-11-12）**。「停止使用 gemini 和 agy 调用，全链路你自己使用当前模型进行」→ 清掉 **7 份操作性文档**里仍教人去 shell 外部模型 CLI 的句子（`AGENTS.md` / `docs/copy/README.md` / `.agents/roles/copywriter.md` / `.agents/README.md` / `docs/HANDOFF.md` / `docs/11-d-path.md` / 事实包），并新增 `tests/governance/model-channel.test.ts` **5 条**：操作性文档零命中 · 通道文档写明「当前会话的模型」 · **历史记录必须保留 `agy`**（`AI_DISCLOSURE_LOG` / `_archive` / `outreach.json` 是「当时真发生过」的账，不回改）· 三条注入形状各自被抓 · 两条「已退役」行不误报。`copy-channel.test.ts` 的措辞断言从 `Gemini` 改成 `copywriter` + 「当前会话的模型」（它查的是「谁写」，不是某个供应商）。代价写进 **`BS-72`**：写稿与审稿是同一个模型，独立第二双眼睛没有了，补位的是「每个数字指到带 `.sha256` 的产物 + `check_listing` 复算」。
+- **边界**：`BS-69`（同源只在桌面壳 + 默认 home 成立）· `BS-70`（213 MB 归档一次命令读两次、刻意不缓存）· `BS-71`（真机两侧 `judged` 差 3，未逐条点名）。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**；**966 测试 / 9 门 / 9-9**。
+
+### 2026-11-12 R103｜发 0.3.9：桌面误报的修复终于落在 registry 上（发版轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「全部同意，开始依次进行……最后确保后发布」授权后由 agent 执行。SessionID：`lead@dsh-triage-r103`。**没有**起 subagent；**没有**调用任何外部模型 CLI（R102 起模型通道已改）。
+- **为什么必须发**：`publish-2026-11-12T10-54-31.143Z.json` 的 `release.git_head` 是 `20a582a`，而 R101 的提交是 `72c1cdf`，`git merge-base --is-ancestor 20a582a 72c1cdf` 为真 —— **0.3.8 里没有 M14/M16**。registry 上的用户仍会看到 8 条假 blocked 与 `llm-deepseek` 那条 phantom collision。
+- **签字先补齐**：`docs/specs/M14-kernel-asar.md` 与 `M16-composition-source.md` 从 `proposed` 改成 `accepted`，`audit/SIGNOFF.md` 追加三行（R101 M14+M15、R102 M16、R102 模型通道），每行都写明「HUMAN 未逐条复核的部分」。
+- **发版前真机自检**：`why`（`0.2.2-rc.1 / kernel-asar`、285 行、116 verdicts、0 blocked）与升级日卡片（165 单元 → 134 拒 / 110 判不了 / 0 变好 / 21 像没事、14/14）。**第一跑是红的并如实记**：`record_upgrade_card` 不带 `--dsh-home` 会落回仓内沙盒，那里没有 `desktop` profile。
+- **发布与取证**：`pnpm -r publish --no-git-checks --access public` → 四包 `Published`；`record_publish` 第一次 **26 项 3 红**（`version:@dsh-triage/core/signals/probe` 与 `dist-tags-agree`），同一份里 `registry-visibility` 写着「5 次读之后才出现，**76343ms**」、`anonymous-install` 已 exit 0 → **读早了，不是发布失败**；七分钟后重跑 **18/18**。**红产物保留**（`publish-2026-11-12T20-57-27.649Z.json`）。
+- **已发布的字节自证**：临时目录 `npm install dsh-triage@0.3.9` 读本机 desktop profile → `status` 打「0 项需要你处理；另有 93 项没写版本区间」、`audit --json` 报 `0.2.2-rc.1 / kernel-asar` / 242 rows / 289 claims / 0 collisions，**与仓内 HEAD 逐项相同**；`record_usability_smoke --version 0.3.9` **6/6**；`npm view dsh-triage@0.3.9 readme` 与 `packages/plugin/README.md` **逐字节相同**（徽章 971）。
+- **三个被门禁抓到的顺序错误（按顺序发生，都没放宽门禁）**：① 两份产物塞进同一条台账步 → `step-review` 只允许一步一个 `real_test.artifact`，`no-orphan-results` 红两次 → 拆成 `R103-S2` / `R103-S3`；② 发布红产物没入账 → 再红 → 单列 `R103-S6`；③ 「先写 971 的断言、后改徽章」→ `test-count-matches` 红（`listing-22:35` 中间态已删）。
+- **顺序纪律（R98 的老坑）**：`publish-*.json` 出现之前，README 与两份 listing 写的是「本次发版的构建」；产物落盘后才改成「已发布，`latest=0.3.9`」并指向那个产物。**先有产物、后有声明**。
+- **边界**：`BS-67` / `BS-69` / `BS-70`（只在桌面壳 + 默认 home 实测）· `BS-71`（真机两侧 judged 差 3）· `BS-72`（写稿与审稿同一个模型）。**D5 一个数都没动**（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**；**971 测试 / 9 门 / 9-9**。

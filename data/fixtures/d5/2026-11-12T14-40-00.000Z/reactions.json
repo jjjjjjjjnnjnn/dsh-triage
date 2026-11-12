@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-11-12T14:40:00.000Z",
+  "source": "graphql",
+  "totalCount": 0,
+  "byType": {
+    "THUMBS_UP": 0,
+    "THUMBS_DOWN": 0,
+    "LAUGH": 0,
+    "HOORAY": 0,
+    "CONFUSED": 0,
+    "HEART": 0,
+    "ROCKET": 0,
+    "EYES": 0
+  },
+  "title": "DSH | dsh-triage | 本地插件兼容分诊台：排查插件静默失效、一键预检升级风险"
+}

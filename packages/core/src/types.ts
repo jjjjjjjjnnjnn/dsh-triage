@@ -73,13 +73,33 @@ export interface Reason {
 }
 
 /**
- * Where the runtime version came from (M11).
+ * Where the runtime version came from (M11, extended by M14).
  *
- * `kernel` = resolved from the package the running Host was started from, so it is the runtime
- * that is actually executing. `inferred` = read from a profile or shared `node_modules` copy,
- * which may be a stale cache. `unresolved` = nothing readable, so `dsh` is `null`.
+ * `kernel-asar` = read out of the desktop shell's `app.asar` (R101/M14): the Host loads that copy, so it
+ * is the runtime that is actually executing even when nothing Electron is in this process. `kernel` =
+ * resolved from the package the running Host was started from. `inferred` = read from a profile or
+ * shared `node_modules` copy, which may be a stale cache. `unresolved` = nothing readable, so `dsh` is
+ * `null`.
  */
-export type DshSource = 'kernel' | 'inferred' | 'unresolved'
+export type DshSource = 'kernel-asar' | 'kernel' | 'inferred' | 'unresolved'
+
+/**
+ * What the asar probe saw (M14-C4/C5). Present only when a probe ran; a hand-built fingerprint has no
+ * `kernelProbe` and renders exactly as before.
+ */
+export interface KernelProbe {
+  /** `read` = a manifest answered; `absent` = no archive at that path; `unreadable` = present but broken. */
+  readonly state: 'read' | 'absent' | 'unreadable'
+  readonly path: string | null
+  readonly detail: string | null
+  /**
+   * `desktopVersion` from the shell's own `runtime.json` under `dsh-runtimes`. Recorded but never used as
+   * a version source (M14-C5).
+   */
+  readonly runtimeJsonVersion: string | null
+  /** True when the runtime manifest and the archive disagree — both are kept, neither is chosen. */
+  readonly disagrees: boolean
+}
 
 /** Environment the verdict was computed for. Answers "on whose machine?". */
 export interface EnvFingerprint {
@@ -106,6 +126,19 @@ export interface EnvFingerprint {
    * Kernel-provided bundles live here, not under the profile; see `docs/specs/M11-kernel-resolution.md`.
    */
   readonly kernelRoots?: readonly string[]
+  /**
+   * How the kernel probe went (M14). Absent on hand-built fingerprints, which keeps every existing
+   * caller byte-identical.
+   */
+  readonly kernelProbe?: KernelProbe
+  /**
+   * `@deepseek-ai/*` manifests read out of the same archive the version came from (M14-C3).
+   *
+   * Present ONLY when `dshSource === 'kernel-asar'`: the spec forbids judging rows against a version from
+   * one source and manifests from another (RECON §4: that mix reported 125 false denials). A `Map` is not
+   * JSON, so callers must treat this as an in-memory hand-off, not something to serialize.
+   */
+  readonly kernelManifests?: ReadonlyMap<string, Record<string, unknown>>
 }
 
 export interface InstalledPackage {

@@ -145,7 +145,7 @@ function summaryFixture(): ProfileSummary {
     tone: 'attention',
     headline: 'nothing is denied, but 1 thing has no evidence either way',
     plain: 'Nothing is broken, but 1 thing we could not judge.',
-    counts: { rows: 3, judged: 1, go: 0, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0 },
+    counts: { rows: 3, judged: 1, go: 0, denied: 0, unknown: 1, collisions: 0, duplicateCopies: 0, errors: 0, actionable: 0, unjudged: 0 },
     issues: [{ id: 'hmr', kind: 'unknown', line: 'no dsh range declared', plain: 'It never says which versions it supports.', fix: null }],
     more: 0,
     next: [{ label: 'row-by-row attribution', command: 'dsh-triage why' }],

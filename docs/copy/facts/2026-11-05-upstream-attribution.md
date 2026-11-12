@@ -1,7 +1,7 @@
 # upstream-attribution · 上游 issue 的事实包：admission 拒绝时缺少归因
 
 > **用途**：`docs/11-d-path.md` 的 D-1（上游贡献）。**只在 D5 判定为 `fail` 之后才发**。
-> 工程侧只给事实；英文措辞由外部 `agy --model gemini-3.8-flash-high` 写，HUMAN 决定发不发。
+> 工程侧只给事实；英文措辞由**当前会话的模型**读本事实包写（R102 起不调外部模型 CLI），HUMAN 决定发不发。
 
 - **渠道 / 语言 / 受众**：`deepseek-ai/deepseek-harness` 的 issue（不是 discussion），英文，维护者与插件作者
 - **帖子状态**：**未发**（这不是对某条帖子的回复；`judgeReplyGate` 不适用）

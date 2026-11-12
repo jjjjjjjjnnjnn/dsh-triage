@@ -42,7 +42,7 @@ const summary = {
   tone: 'ok' as const,
   headline: 'nothing will break',
   plain: 'nothing to fix',
-  counts: { rows: 1, judged: 1, go: 1, denied: 0, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0 },
+  counts: { rows: 1, judged: 1, go: 1, denied: 0, unknown: 0, collisions: 0, duplicateCopies: 0, errors: 0, actionable: 0, unjudged: 0 },
   issues: [],
   more: 0,
   next: [],

@@ -234,6 +234,15 @@ export interface RowDeclaration {
   readonly manifest: unknown | null
   readonly version: string | null
   /**
+   * `manifest` is null for a reason that is NOT "not installed" (M14-C3, R101).
+   *
+   * A kernel-scope package that the desktop archive does not ship has a manifest on disk that belongs to
+   * a *different* runtime, so it cannot be cross-checked against the version we judged. Reporting that as
+   * "not installed" is a false statement about the user's disk, and reporting a denial is worse; the
+   * honest answer is `unknown` + this flag.
+   */
+  readonly unverifiable?: boolean
+  /**
    * Installed packages whose *dependency* fields pulled this module's copy into
    * the profile (the `npm explain` / Maven "paths to dependency" idea).
    *
@@ -315,6 +324,15 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
     }
 
     if (first.manifest === null) {
+      /*
+       * R101/M14-C3: two different things can land here, and conflating them was the 9-false-denial bug.
+       *   - `unverifiable`: the module IS installed, but its manifest belongs to a different runtime than
+       *     the kernel archive we judged against, so cross-checking is impossible (kernel-scope package the
+       *     archive does not ship).
+       *   - `missing`: nothing installed it.
+       * Saying "not installed" for the first case is a wrong statement about the user's disk.
+       */
+      const unverifiable = first.unverifiable === true
       out.push(
         finish({
           subject,
@@ -324,21 +342,23 @@ export function verdictsFromRowAdmission(input: RowAdmissionInput): readonly Ver
           reasons: [
             scopeReason,
             {
-              code: 'admission-row-missing',
+              code: unverifiable ? 'admission-row-unverifiable' : 'admission-row-missing',
               severity: 'warn',
-              messageId: 'admission.row-missing',
+              messageId: unverifiable ? 'admission.row-unverifiable' : 'admission.row-missing',
               params: { rows: rowIds, module },
             },
           ],
           evidence: [rowEvidence, runtimeEvidence],
-          remediation: [
-            {
-              kind: 'remove-plugin',
-              messageId: 'remediation.remove-plugin',
-              note: `row(s) ${rowIds} import ${module}, which is not installed under this profile`,
-            },
-          ],
-          missingEvidence: ['missing.row-module'],
+          remediation: unverifiable
+            ? []
+            : [
+                {
+                  kind: 'remove-plugin',
+                  messageId: 'remediation.remove-plugin',
+                  note: `row(s) ${rowIds} import ${module}, which is not installed under this profile`,
+                },
+              ],
+          missingEvidence: [unverifiable ? 'missing.cross-runtime-manifest' : 'missing.row-module'],
           generatedAt: input.generatedAt,
         }),
       )

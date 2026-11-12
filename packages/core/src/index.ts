@@ -177,3 +177,11 @@ export {
 } from './upgrade-target.js'
 
 export { redactEnv, redactPath, redactVerdict } from './redact.js'
+
+/*
+ * M14/M16: the desktop archive reader. `env.ts` uses it for the runtime version and the kernel
+ * manifests; `load.ts` (plugin) uses the same functions for the kernel's own bundle patches. Exporting
+ * them here keeps one parser: a second implementation would eventually disagree with the first.
+ */
+export type { AsarArchive, AsarDirectoryEntry, AsarError, AsarFileEntry, AsarHeader, AsarNode } from './asar.js'
+export { asarKernelPackages, asarLookup, asarReadFile, asarReadManifest, openAsar, parseAsarArchive } from './asar.js'

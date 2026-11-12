@@ -258,7 +258,9 @@ export function apply(ctx: HostContext, config: HostConfig = {}): void {
                 dsh: typeof env.dsh === 'string' ? env.dsh : null,
                 // M11: the panel gets the provenance too, so it never has to guess whether the
                 // number came from the running kernel or from a cached copy.
-                dshSource: source === 'kernel' || source === 'inferred' ? source : null,
+                // M14: `kernel-asar` is the label the CLI now prints; dropping it here would make the
+                // panel say less than the CLI about the same scan (M16-C6).
+                dshSource: source === 'kernel-asar' || source === 'kernel' || source === 'inferred' ? source : null,
                 profile: typeof env.profile === 'string' ? env.profile : null,
                 platform: typeof env.platform === 'string' ? env.platform : null,
                 arch: typeof env.arch === 'string' ? env.arch : null,

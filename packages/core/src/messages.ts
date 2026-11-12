@@ -30,6 +30,8 @@ const EN: MessageCatalog = {
     'admission.exempted': 'this exact version was exempted for {runtime} in compatibility.json ({module}@{version}) — the loader admits it, but the behaviour is unproven',
     'admission.row-declared-by': 'the "{module}" copy in this profile is there because {by} lists it under {fields}',
     'admission.row-missing': 'row {rows} imports {module}, which is not installed under this profile',
+    'admission.row-unverifiable':
+      'row {rows} imports {module}, which this runtime does not ship and whose on-disk copy belongs to a different runtime — it cannot be cross-checked, so it is unjudged rather than denied',
     'admission.row-unconstrained': 'row {rows} imports {module}, which declares no @deepseek-ai/dsh* range — silence here is not a pass',
     'admission.compat-channel': 'secondary evidence only: the manifest declares {claim} through dsh.compatibility, not through a peer range (runtime {runtime})',
     'admission.compat-channel-mismatch': 'secondary evidence only: the manifest declares {claim} through dsh.compatibility and that does not include the running {runtime}',
@@ -165,6 +167,8 @@ const ZH: MessageCatalog = {
     'admission.exempted': '这个精确版本已在 compatibility.json 里对 {runtime} 记录过豁免（{module}@{version}）——加载器会放行，但行为未经验证',
     'admission.row-declared-by': 'profile 里的「{module}」这份副本来自 {by} 的 {fields} 声明',
     'admission.row-missing': 'row {rows} 引入的 {module} 在本 profile 下未安装',
+    'admission.row-unverifiable':
+      'row {rows} 引入的 {module} 不在本运行时里，磁盘上那份属于另一个运行时——无法交叉核对，因此判不了而不是判为缺失',
     'admission.row-unconstrained': 'row {rows} 引入的 {module} 没有声明任何 @deepseek-ai/dsh* 区间——沉默不等于通过',
     'admission.compat-channel': '仅次要证据：清单通过 dsh.compatibility 声明了 {claim}，而不是 peer 区间（运行时 {runtime}）',
     'admission.compat-channel-mismatch': '仅次要证据：清单通过 dsh.compatibility 声明了 {claim}，其中不含当前运行的 {runtime}',

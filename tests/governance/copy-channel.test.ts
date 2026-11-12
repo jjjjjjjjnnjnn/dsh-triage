@@ -29,9 +29,18 @@ test('the copywriter role card and the channel contract exist', () => {
     assert.ok(role.includes(section), `the copywriter role card must keep ${section}`)
   }
   const channel = read('docs/copy/README.md')
-  for (const phrase of ['事实包', '产物', 'Gemini', 'paste:start']) {
+  /*
+   * R102: the phrase list used to require `Gemini` — the writer was an external model CLI. That is now
+   * retired (HUMAN 2026-11-12: no `agy` / `gemini` calls), so the assertion names the role instead of a
+   * vendor. What it is really checking has not changed: the channel document must name **who writes**.
+   */
+  for (const phrase of ['事实包', '产物', 'copywriter', 'paste:start']) {
     assert.ok(channel.includes(phrase), `docs/copy/README.md must state ${phrase}`)
   }
+  assert.ok(
+    channel.includes('当前会话的模型'),
+    'docs/copy/README.md must name the in-session model as the writer (the external channel is retired)',
+  )
 })
 
 test('every fact pack cites artifacts that exist and are hash-locked', () => {

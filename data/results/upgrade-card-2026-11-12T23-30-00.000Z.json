@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_card.mjs",
+  "generated_at": "2026-11-12T23:30:00.000Z",
+  "inputs": {
+    "target": "0.2.2-rc.2",
+    "target_keyword": "next",
+    "profile": "desktop",
+    "dsh_home": "<dsh-home>",
+    "locale": "zh",
+    "counts": {
+      "bundles": 23,
+      "rows": 242,
+      "would_be_denied": 134,
+      "cannot_tell": 110,
+      "improved": 0,
+      "likely_fine": 21,
+      "total": 265
+    },
+    "card_sha256": "2b39acbc9caab226e9e8ad7c73837e5466404208af759eeceab5ca835322dffa",
+    "card_bytes": 5914,
+    "card_lines": 95
+  },
+  "card": "# 升级日 · 0.2.2-rc.2\n\n**desktop：265 个单元（23 bundle + 242 行）升到 0.2.2-rc.2 → 134 会被拒 · 110 判不了 · 0 会变好 · 21 像没事**\n\n> profile `desktop`（live）· 当前 0.2.2-rc.1 · 目标比当前新\n> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。\n\n| 桶 | 数量 | 意思 |\n|---|---|---|\n| `would-be-denied` | 134 | 升上去会被摘掉 —— 目标版本的 admission 会拒绝这一行/包 |\n| `cannot-tell` | 110 | 判不了 —— 声明不足或目标还没发布，证据不够 |\n| `improved` | 0 | 今天被拒、目标放行 —— 今天是坏的，目标版本会放行它 |\n| `likely-fine` | 21 | 声明上不冲突 —— 不等于升级后能跑，只表示没有声明冲突 |\n\n## 升上去会被摘掉（134）\n\n- `bundle:@deepseek-ai/dsh-web-app` · @deepseek-ai/dsh-web-app@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-shell-env@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：降级或钉住插件版本：1 条要求排除了 0.2.2-rc.2\n- `row:action-cards` · @deepseek-ai/dsh-action-cards@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-session@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「action-cards」设为 disabled（占用方：bundle:@deepseek-ai/dsh-personalized-recommendations）\n- `row:agent` · @deepseek-ai/dsh-agent@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-scope@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-default-model` · @deepseek-ai/dsh-agent-default-model@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-default-model」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-default-model` · @deepseek-ai/dsh-agent-default-model@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-default-model」设为 disabled（占用方：patch:profile）\n- `row:agent-instructions` · @deepseek-ai/dsh-agent-instructions@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-fs@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-instructions」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:agent-loop` · @deepseek-ai/dsh-agent-loop@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-agent@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 原因：peer @deepseek-ai/dsh-llm@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「agent-loop」设为 disabled（占用方：bundle:@deepseek-ai/dsh-base）\n- `row:preset-cordis` · @deepseek-ai/dsh-agent-preset@0.2.2-rc.1\n  - 原因：peer @deepseek-ai/dsh-agent-preset-registry@0.2.2-rc.1 不含 0.2.2-rc.2\n  - 修复：为这个精确版本对记录一次显式豁免\n  - 修复：在后置 patch 层把 entry「preset-cordis」设为 disabled（占用方：bundle:@deepseek-ai/dsh-web-app/./presets/cordis.patch.yml）\n- … 另外 126 个\n\n## 判不了（110）\n\n- `bundle:@deepseek-ai/dsh-base` · @deepseek-ai/dsh-base@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-agent-team-profile` · @deepseek-ai/dsh-experimental-agent-team-profile@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-forge-bundle` · @deepseek-ai/dsh-experimental-forge-bundle@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-inspector-profile` · @deepseek-ai/dsh-experimental-inspector-profile@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-plugin-market-bundle` · @deepseek-ai/dsh-experimental-plugin-market-bundle@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-personalized-recommendations` · @deepseek-ai/dsh-personalized-recommendations@0.2.2-rc.1\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@liustack/modsearch` · @liustack/modsearch@5.10.12\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@tt-a1i/archify-dsh` · @tt-a1i/archify-dsh@1.1.0\n  - 修复：豁免只绕过声明；行为仍未实测\n- … 另外 102 个\n\n## 声明上不冲突（21）\n\n- `bundle:@240xu/dsh-websearch` · @240xu/dsh-websearch@2.8.8\n- `bundle:@linxin666/dsh-client-ui-skill-explorer` · @linxin666/dsh-client-ui-skill-explorer@0.4.16\n- `bundle:dsh-context` · dsh-context@0.83.1\n- `bundle:dsh-free-search` · dsh-free-search@0.9.43\n- `bundle:dsh-notify-me` · dsh-notify-me@1.19.0\n- `bundle:dsh-ops` · dsh-ops@0.5.4\n- `bundle:dsh-remedy` · dsh-remedy@0.3.6\n- `bundle:dsh-triage` · dsh-triage@0.3.7\n- … 另外 13 个\n\n## 边界（请一起读）\n\n- `improved` 只说明「**目标版本会放行它**」；今天没有「升到更新版本变好」的真实样本（`BS-42`）。\n- 声明层判不了运行期行为；`likely-fine` 不等于升级后能跑。\n\n**复算**：`dsh-triage upgrade --to 0.2.2-rc.2 --card`\n",
+  "checks": [
+    {
+      "id": "card-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "json-parses",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "card-titles-the-target",
+      "ok": true,
+      "detail": "# 升级日 · 0.2.2-rc.2 (expected 0.2.2-rc.2, keyword next)"
+    },
+    {
+      "id": "card-first-line-is-conclusion",
+      "ok": true,
+      "detail": "**desktop：265 个单元（23 bundle + 242 行）升到 0.2.2-rc.2 → 134 会被拒 · 110 判不了 · 0 会变好 · "
+    },
+    {
+      "id": "card-repeats-the-json-counts",
+      "ok": true,
+      "detail": "json counts {\"bundles\":23,\"rows\":242,\"would_be_denied\":134,\"cannot_tell\":110,\"improved\":0,\"likely_fine\":21,\"total\":265}"
+    },
+    {
+      "id": "buckets-are-a-partition",
+      "ok": true,
+      "detail": "265 total"
+    },
+    {
+      "id": "card-table-matches-counts",
+      "ok": true,
+      "detail": "four bucket rows present"
+    },
+    {
+      "id": "card-keeps-boundary",
+      "ok": true,
+      "detail": "the BS-42 boundary sentence survives"
+    },
+    {
+      "id": "card-makes-no-promise",
+      "ok": true,
+      "detail": "no forbidden promise"
+    },
+    {
+      "id": "card-is-deterministic",
+      "ok": true,
+      "detail": "card hash 2b39acbc9caa…"
+    },
+    {
+      "id": "card-carries-no-home-path",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "id": "card-names-units",
+      "ok": true,
+      "detail": "at least one unit line"
+    },
+    {
+      "id": "json-wins-over-card",
+      "ok": true,
+      "detail": "json only on stdout"
+    },
+    {
+      "id": "json-says-card-was-ignored",
+      "ok": true,
+      "detail": "target   next → 0.2.2-rc.2 (npm @deepseek-ai/dsh)"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the card judges the declaration layer only: declared ranges against the target runtime, not runtime behaviour",
+    "`improved` is only witnessed in the downgrade geometry today (BS-42), so the card says \"the target admits it\"",
+    "the profile is the in-repo sandbox (0.2.1-rc.4), not a user machine",
+    "card text is the zh rendering; the en rendering is covered by tests/unit/upgrade-card.test.ts"
+  ]
+}

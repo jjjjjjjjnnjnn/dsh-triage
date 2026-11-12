@@ -49,10 +49,19 @@ const redactRoots = [homedir(), tmpdir(), dshHome]
 const composition = await plugin.loadComposition(env, dshHome)
 const claims = []
 for (const layer of composition.layers) {
-  if (layer.patchText === null) continue
-  const patch = core.parsePatchYaml(layer.patchText)
-  if (!patch.ok) continue
-  claims.push(...core.extractEntryClaims(patch.value, `bundle:${layer.name}`))
+  /*
+   * R102/M16: read every patch file the bundle declares, exactly as the engine's own `collectClaims`
+   * does. The old single-`patchText` loop silently dropped the four `presets/*.patch.yml` files of
+   * `dsh-web-app` (96 rows), so this recorder judged a thinner tree than the CLI it was recording.
+   */
+  const multi = layer.patchFiles.length > 1
+  for (const file of layer.patchFiles) {
+    const text = file.text
+    if (text === null) continue
+    const patch = core.parsePatchYaml(text)
+    if (!patch.ok) continue
+    claims.push(...core.extractEntryClaims(patch.value, multi ? `bundle:${layer.name}/${file.relative}` : `bundle:${layer.name}`))
+  }
 }
 for (const [text, label] of [
   [composition.profilePatch.text, 'patch:profile'],

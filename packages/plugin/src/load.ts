@@ -10,7 +10,20 @@
 
 import { readFile, readdir, realpath, stat } from 'node:fs/promises'
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path'
-import type { CopyLocation, DuplicateCopy, EnvFingerprint, InstallOrigin, RowDeclaration, RowTarget } from '@dsh-triage/core'
+import {
+  asarReadFile,
+  asarReadManifest,
+  openAsar,
+} from '@dsh-triage/core'
+import type {
+  AsarArchive,
+  CopyLocation,
+  DuplicateCopy,
+  EnvFingerprint,
+  InstallOrigin,
+  RowDeclaration,
+  RowTarget,
+} from '@dsh-triage/core'
 
 export interface BundleLayer {
   readonly name: string
@@ -21,6 +34,9 @@ export interface BundleLayer {
   /**
    * Which root supplied this layer (M11). A kernel-provided bundle is not a user plugin and must
    * not be reported as "not installed"; the provenance is what lets the diagnostic say so.
+   *
+   * M16: a bundle read out of the desktop archive is `kernel` too — it is the copy the Host is
+   * running, and the three existing values stay the only values (M16-C5).
    */
   readonly provenance: 'kernel' | 'profile' | 'shared'
   /**
@@ -128,10 +144,28 @@ export async function loadBundleLayers(
    * layers look "not installed" — a warning about a package that is demonstrably running.
    */
   const roots = moduleRoots(env)
+  /*
+   * M16-C1: on a desktop install the VERSION and the kernel manifests already come from `app.asar`
+   * (M14). The patches did not, and that is what made the CLI judge a different composition than the
+   * Host: the shared cache still ships `dsh-base@0.1.0-rc.6`, whose `llm-deepseek` row names
+   * `@deepseek-ai/dsh-llm-deepseek` while the running `dsh-base@0.2.2-rc.1` names
+   * `@deepseek-ai/dsh-llm-deepseek-api-key`. Same row id, two modules, one phantom collision
+   * (`audit/RECON_2026-11-12_composition-source.md`).
+   *
+   * The archive is consulted FIRST for any bundle it contains; a bundle it does not contain is read
+   * from disk exactly as before (M16-C2/N3). No path is synthesized: `dir` stays a real directory so
+   * row-level resolution keeps working.
+   */
+  const archive = kernelArchiveOf(env)
 
   const layers: BundleLayer[] = []
 
   for (const name of env.bundles) {
+    const fromArchive = archive === null ? null : readBundleFromArchive(archive, name, errors)
+    if (fromArchive !== null) {
+      layers.push(fromArchive)
+      continue
+    }
     const found = await resolvePackageDir(name, roots)
     if (found === null) {
       // The old sentence said "under the profile"; once the kernel is searched that is no longer true.
@@ -179,6 +213,80 @@ export async function loadBundleLayers(
   }
 
   return { layers }
+}
+
+/* ---------------------- M16: the kernel's own bundle patches ---------------------- */
+
+/**
+ * The archive M14 already read, or `null`.
+ *
+ * WHY THIS IS NOT A PATH WALK: `env.kernelProbe` records where the archive was and whether it was
+ * readable. If it was, this function opens the same file; if it was `absent` / `unreadable`, the
+ * whole M16 branch is skipped and the old behaviour is preserved byte for byte (M16-C2/N5). The
+ * archive path is never guessed from `kernelRoots` — those are directories, and treating one of them
+ * as an archive would turn "not found" into a different wrong answer.
+ */
+function kernelArchiveOf(env: EnvFingerprint): AsarArchive | null {
+  if (env.dshSource !== 'kernel-asar') return null
+  const probe = env.kernelProbe
+  if (probe === undefined || probe.state !== 'read' || probe.path === null) return null
+  const opened = openAsar(probe.path)
+  return 'code' in opened ? null : opened
+}
+
+/** `dsh/node_modules/<bundle>/…` — the archive's own layout for kernel packages. */
+function archiveBundlePath(name: string): readonly string[] {
+  return ['dsh', 'node_modules', ...name.split('/')]
+}
+
+/** Normalise a patch path written in a manifest (`./x.yml`, `x.yml`, `a/b.yml`). */
+function archivePatchPath(relative: string): readonly string[] {
+  return relative
+    .replaceAll('\\', '/')
+    .split('/')
+    .filter((part) => part !== '' && part !== '.')
+}
+
+/**
+ * Read one bundle out of the archive, or `null` when it is not there.
+ *
+ * C3 (same source) is enforced by construction: the manifest and every patch file come from this one
+ * archive. A declared patch that the archive does not contain becomes `text: null` plus a readable
+ * error — it is **never** filled in from the disk copy (M16-C3/N4). `dir` is deliberately left `''`:
+ * there is no real directory for this layer, and inventing one would make `resolveFromDeclarer`
+ * search a path that cannot exist.
+ */
+function readBundleFromArchive(archive: AsarArchive, name: string, errors: string[]): BundleLayer | null {
+  const base = archiveBundlePath(name)
+  const manifest = asarReadManifest(archive, [...base, 'package.json'])
+  if (manifest === null) return null
+  const relatives = readBundlePatchPaths(manifest)
+  if (relatives.length === 0 && declaresBundlePatch(manifest)) {
+    // The archive has a manifest whose `dsh.bundle.patch` is malformed: say so instead of shipping a
+    // quietly thinner tree, then fall through to the disk copy (which will report the same problem).
+    errors.push(`bundle ${name} says dsh.bundle.patch is neither a string nor a list of strings (inside the desktop archive)`)
+    return null
+  }
+  const patchFiles: BundlePatchFile[] = []
+  for (const relative of relatives) {
+    const bytes = asarReadFile(archive, [...base, ...archivePatchPath(relative)])
+    const text = bytes === null ? null : bytes.toString('utf8')
+    if (text === null) {
+      errors.push(`bundle ${name} declares patch ${relative} but the desktop archive does not contain it`)
+    }
+    patchFiles.push({ relative, path: '', scope: patchScopeOf(relative), text })
+  }
+  const firstTree = patchFiles.find((file) => file.scope === 'tree') ?? null
+  return {
+    name,
+    manifest,
+    version: readVersion(manifest),
+    dir: '',
+    provenance: 'kernel',
+    patchFiles,
+    patchPath: firstTree?.path ?? null,
+    patchText: firstTree?.text ?? null,
+  }
 }
 
 /** The composition a patch file belongs to. Upstream ships preset files under `presets/`. */
@@ -288,7 +396,12 @@ export function declarerDirOf(
     if (rest !== layer.name && !rest.startsWith(`${layer.name}/`)) continue
     if (best === null || layer.name.length > best.name.length) best = layer
   }
-  return best === null ? null : best.dir
+  /*
+   * M16: a layer read out of the desktop archive carries `dir: ''` — there is no directory on disk to
+   * search from. Returning `null` keeps the caller's old fallback (`env.profileDir`) instead of handing
+   * `realpath('')` a path that cannot exist.
+   */
+  return best === null || best.dir === '' ? null : best.dir
 }
 
 /**
@@ -341,7 +454,57 @@ export async function resolveRows(
 
   const declarers = await findDeclarers(env, new Set(targets.map((target) => target.module)))
 
+  /*
+   * M14-C3 (同源): when the runtime version came out of the desktop archive, the kernel's OWN packages
+   * must be judged against the manifests from that same archive. Mixing a `0.2.2-rc.1` runtime with
+   * `0.1.0-rc.6` cached manifests turns every kernel package into a false denial (RECON §4: 125 of them).
+   *
+   * Scope is deliberately narrow: this only applies to `@deepseek-ai/*` names the archive knows about.
+   * Third-party plugins (dsh-remedy, dshmarket, …) keep the old resolution — their manifests really do
+   * live under the profile, and pretending otherwise would invent a second failure mode (M14-N3).
+   */
+  const kernelManifests = env.dshSource === 'kernel-asar' ? env.kernelManifests : undefined
+
   for (const target of targets) {
+    const fromKernel = kernelManifests?.get(target.module)
+    if (fromKernel !== undefined) {
+      const declaredBy = declarers.get(target.module)
+      out.push({
+        rowId: target.rowId,
+        module: target.module,
+        source: target.source,
+        manifest: fromKernel,
+        version: typeof fromKernel['version'] === 'string' ? fromKernel['version'] : null,
+        ...(declaredBy === undefined ? {} : { declaredBy }),
+      })
+      continue
+    }
+
+    /*
+     * M14-C3 (同源): a kernel-scope package the archive does NOT ship has a manifest on disk from the OLD
+     * runtime (peers pinned `^0.1.0-rc.6`). Judging it against `0.2.2-rc.1` reports a denial about a shape
+     * nobody installed; calling it "not installed" is also false. It is *unverifiable*, so it is `unknown`
+     * with that word attached (R101 measured 9 of these on the maintainer's machine).
+     *
+     * Scoped to `@deepseek-ai/*` only, and only when the version itself came from the archive — otherwise a
+     * genuine dead row in a fixture would be softened into `unknown` (that regression was caught by
+     * `tests/e2e/cli.test.ts` CASE-11080 on the first attempt).
+     */
+    const kernelScoped = kernelManifests !== undefined && target.module.startsWith('@deepseek-ai/')
+    if (kernelScoped) {
+      const declaredBy = declarers.get(target.module)
+      out.push({
+        rowId: target.rowId,
+        module: target.module,
+        source: target.source,
+        manifest: null,
+        version: null,
+        unverifiable: true,
+        ...(declaredBy === undefined ? {} : { declaredBy }),
+      })
+      continue
+    }
+
     let resolved = flatCache.get(target.module)
     if (resolved === undefined) {
       resolved = await resolveModuleManifest(env.profileDir, target.module, roots)

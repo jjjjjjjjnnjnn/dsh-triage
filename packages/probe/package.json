@@ -1,6 +1,6 @@
 {
   "name": "@dsh-triage/probe",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "Isolated probe planning for dsh-triage: composes a deterministic sandbox plan (own DSH_HOME, own port) and refuses to touch the real profile.",
   "type": "module",
   "main": "./dist/index.js",

@@ -48,7 +48,7 @@ reactions 只数 `#11813` 这一个 discussion，下载项是机器在数。**�
     → `data/results/question-coverage-2026-11-02T09-57-53-229Z.json`
   - 876 条最近讨论里 **379** 条是故障（43.3%）、零回复占比 **67.6%**
     → `data/results/market-baseline-2026-11-05T10-45-00.000Z.json`
-- **形态**：先 issue，视回复再决定要不要 PR。**文案走 copy 通道**（事实包 → 外部 `agy` 写稿 → HUMAN 发），
+- **形态**：先 issue，视回复再决定要不要 PR。**文案走 copy 通道**（事实包 → **会话内同一个模型**写稿 → HUMAN 发；R102 起不调外部模型 CLI），
   事实包见 `docs/copy/facts/2026-11-05-upstream-attribution.md`。
 - **完成判据**：上游有实质回应（含「不做」），或 PR 进入 review。**不以合并为成功判据**——
   合并与否在别人手里，那是 `D3` 已经教过一次的事。

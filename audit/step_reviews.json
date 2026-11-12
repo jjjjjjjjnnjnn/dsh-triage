@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R99 (2026-11-12)",
+  "stand": "R103 (2026-11-12)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -15270,6 +15270,546 @@
         "licence": "PASS：只读文档与测试计数。",
         "ssot": "PASS：绿产物带 `.sha256` 并登记；红产物按「同一轮中间态」删除并写理由（R77 起对红产物的口径是**保留来自测量的红**，不是保留所有红）。",
         "adversary": "反例：① 只改 `README.md` 徽章 → `test-count-matches` 逐文件报出另外两处；② 把 `--tests` 传成 924 让检查过 → 那是「拿旧数证明新数」，门禁读的是本轮实跑值，`--tests` 由调用者给、台账里写死 933；③ 让 README 正文那句不写数字 → `test-count-is-not-vacuous` 红。"
+      }
+    },
+    {
+      "id": "R99-S4",
+      "batch": "R99",
+      "step": "公开仓切面：切之前的读数（起点必须是可核的）",
+      "changed": [
+        "data/results/public-cut-2026-11-12T12-50-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-12T12:50:00.000Z",
+        "outcome": "**`behind 20`**：`public e1da5c5` 是容器 `6240a6b` 那一刀的副本，而 `HEAD dd0fb20` 已经有 20 个提交它没有（`trees-equal false`、`matching_container_commit 6240a6b`）。这条读数是切面动作的**起点**：没有它，后面那句 `in-sync` 只证明「两边一样」，不证明「这一轮真的动过」。退出码 1 —— `behind` 按设计就是 exit 1，不是故障。",
+        "artifact": "data/results/public-cut-2026-11-12T12-50-00.000Z.json",
+        "sha256": "582dac09401c9ad02b64aaf67e226f62f42fb227645614cdb44492625098aa1f"
+      },
+      "review": {
+        "correctness": "PASS：`behind` 说的是「公开仓是更早的一刀」，不是「推失败」。R98 那份记 `behind 18`、R99 切前记 `behind 20` —— 每份带自己的 `cut at` / `head`，数字变大是对的（容器又提交了两轮），把它读成抖动就会想去「修」一个不存在的问题。",
+        "reproducibility": "PASS：只读本地 `origin/main` 与本仓 HEAD 的 tree；同一 fetch 之下的重复读数相同。",
+        "licence": "PASS：只读自己的两个仓库。",
+        "ssot": "PASS：产物带 `.sha256` 并登记进台账；它没有被 13-00 那份「取代」——两份是同一次动作的两端。",
+        "adversary": "反例：① 删掉这份 before 读数 → 「切过」这句话就没有起点证据；② 用 `git status` 的干净当「已经推了」→ 本地提交与远端是两件事（R90 付过一次学费）。"
+      }
+    },
+    {
+      "id": "R99-S5",
+      "batch": "R99",
+      "step": "公开仓切面：切并 push 之后的读数（`in-sync`）",
+      "changed": [
+        "data/results/public-cut-2026-11-12T13-00-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-12T13:00:00.000Z",
+        "outcome": "**`in-sync`**：`trees-equal true`、`public ea68e6a`、`cut at dd0fb20`、`behind 0`。切法**没有改写历史**：`git rev-parse HEAD:dsh-triage` = `6614c57…` → `git commit-tree`（parent = 当时的 `origin/main` = `e1da5c5`）→ `ea68e6a` → `git push origin ea68e6a:main`（fast-forward `e1da5c5..ea68e6a`），`git ls-remote origin refs/heads/main` 复读确认远端就是 `ea68e6a`。",
+        "artifact": "data/results/public-cut-2026-11-12T13-00-00.000Z.json",
+        "sha256": "6b834886ef41aa29d00707ec4a75b0bf7363067fad2d89e01f9af0c85f0db215"
+      },
+      "review": {
+        "correctness": "PASS：公开仓拿到的是**内容**（`dsh-triage/` 子树 re-root），不是容器历史 —— 公开仓只多了一条提交，parent 是它自己原来的 `main`。因此容器里的 `dsh-remedy/` 与新 `.agents/` 不会跟着泄漏到公开仓。",
+        "reproducibility": "PASS：`git commit-tree` 的输入（tree sha + parent + message）都可复现；`record_public_cut` 只读两个 git ref。边界：它读的是**本机 fetch 的** `origin/main`，不是 GitHub 现在服务的内容（产物 `limits` 已写）。",
+        "licence": "PASS：只操作自己的两个仓库，无第三方内容。",
+        "ssot": "PASS：产物带 `.sha256`；`behind 0` 这一轮是真读数，但它**不会持久** —— 下一轮再提交，`behind` 立刻变回非零，那是构造不是漏推（HANDOFF §3 第 2 条）。",
+        "adversary": "反例：① 直接 `git push <容器 main>:main` → 公开仓会获得容器项目的全部历史与另一个子项目，违反容器层「不跨项目改文件」；② 用 `--force` → 维护者 R93/R94 明确要求不要 force push，本轮是 fast-forward，`e1da5c5..ea68e6a` 不带 `+`；③ 把 `behind 0` 写成「以后一直是 0」→ 下一轮提交就会打脸。"
+      }
+    },
+    {
+      "id": "R99-S6",
+      "batch": "R99",
+      "step": "交接文档定稿之后重跑文案检查（数字与证据路径必须还对得上）",
+      "changed": [
+        "data/results/listing-2026-11-12T13-15-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-12T13:15:00.000Z --tests 933",
+        "outcome": "**17/17 全绿**（11 份文档 / 版本 0.3.8 / `>=0.2.0-rc.1 <0.3.0-0` / tests 933）。这一跑在**交接文档写完**之后：`docs/HANDOFF.md` 与 `docs/BACKLOG.md` 都在受检名单里，所以它同时证明了「R99 改的这些文档没有把某个数字写歪」。",
+        "artifact": "data/results/listing-2026-11-12T13-15-00.000Z.json",
+        "sha256": "3b4e35d5bc04365617420bf99efc2e00567d4624902e5530fa4347fe7b1bc13c"
+      },
+      "review": {
+        "correctness": "PASS：这条检查器的 17 项里只有 3 项与「R99 改了徽章」直接相关，其余是证据路径、禁用话术、Wilson 区间等既有断言 —— 全绿表示 R99 的文档改动没有碰坏任何一条，而不是「我改的那三条肯定对」。",
+        "reproducibility": "PASS：同一条命令可重复，`--tests` 是调用者给的本轮实跑值，脚本不自己数测试。",
+        "licence": "PASS：只读仓内文档与 `data/results/` 的既有产物，没有网络请求。",
+        "ssot": "PASS：产物带 `.sha256` 并登记进台账。",
+        "adversary": "反例：拿 `--tests 924` 再过一遍 → 那会红（`test-count-matches`），证明这个数字不是摆设；反过来，把徽章改成 933 但 README 正文那句不改 → `test-count-matches` 逐文件报，不会只看徽章。"
+      }
+    },
+    {
+      "id": "R99-S7",
+      "batch": "R99",
+      "step": "交接快照（0.3.8 · R99）：快照自己落在 backup/，证据指针用本轮最后一次真跑",
+      "changed": [
+        "backup/snapshots/snapshot-0.3.8-R99.json"
+      ],
+      "real_test": {
+        "command": "node scripts/snapshot_state.mjs --name R99",
+        "outcome": "`backup/snapshots/snapshot-0.3.8-R99.json`（`head dd0fb20`、`version 0.3.8`、`gates green · 9`、`ssot 586 artifact(s)`）。`dirty: true` 是**构造使然**：脚本先量 `git status` 再写自己这份文件（R98 的快照同样如此）。",
+        "artifact": "data/results/listing-2026-11-12T13-15-00.000Z.json",
+        "sha256": "3b4e35d5bc04365617420bf99efc2e00567d4624902e5530fa4347fe7b1bc13c"
+      },
+      "review": {
+        "correctness": "PASS：快照记的是这一轮结束时的门禁与产物哈希，不是「计划」。head 对应当前提交，586 与规模行一致。",
+        "reproducibility": "PASS：同一条命令可重跑；`BACKUP_POLICY.md` 与 `gate_governance` 要求每个快照都能被 `.sha256` 验证。",
+        "licence": "PASS：只读仓库自身状态（`git status` / 门禁结果 / 产物哈希），不接触任何外部数据或第三方代码。",
+        "ssot": "PASS：快照落在 `backup/snapshots/`（不是 SSOT），由 `snapshot_state.mjs` 写出并带 `.sha256`；这条台账的 `real_test` 指向本轮最后一次真跑（`data/results/listing-13-15`），因为门禁只接受 `data/results/` 下的产物作为「真跑证据」——把快照写成 `real_test` 会把证据指针指到非 SSOT 目录。",
+        "adversary": "反例：手写一份快照 → `gate_governance` 的备份检查会要求 `.sha256`，而哈希只能对上被脚本写出的那个文件。"
+      }
+    },
+    {
+      "id": "R100-S1",
+      "batch": "R100",
+      "step": "D5 窗口内第七份现场基线：覆盖推进一天（11-01..11-11），下载数随之变化",
+      "changed": [
+        "data/results/market-baseline-2026-11-12T14-30-00.000Z.json",
+        "data/fixtures/market-baseline/2026-11-12T14-30-00.000Z/gh-discussions-projection.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-12T14:30:00.000Z",
+        "outcome": "现场跑（`inputs.offline: false`、`failures: []`）→ 窗口 **`11-05..11-11`**、`dsh-triage` 周下载 **675**（`steady`，7/7 天，峰值 `11-11` 319 / 47.26%）。**这一份比上一份多的是什么**：上一份（`11-11T11-20`）覆盖 `11-04..11-10`、周下载 **390**；今天 npm 发布了 `11-11` 的桶（实测 `api.npmjs.org/downloads/range/last-week` 返回 `2026-11-05..2026-11-11`），所以 +285 全部来自那一天（319 − 34 = 285，前一天的 34 掉出窗口）。形状仍是 `steady`（≥2 天有数、单日 ≤80%），**不是爆发**。其余三个块与上一份同源，`categories` 诊断 **2780** / 市场 **441272** / 装饰 **249438**、讨论 891 条 / 故障 375 / 零回复 254 —— 与上一份的 2780/441272/249438·891/375/254 逐项相同，因为它们来自同一批 fixtures 快照，**只有下载是今天新采的**。",
+        "artifact": "data/results/market-baseline-2026-11-12T14-30-00.000Z.json",
+        "sha256": "244084db96110196404f62652e2ea69369df7e682c3f3c0986879c2396894fa9"
+      },
+      "review": {
+        "correctness": "PASS：下载数变了 +285，但**形状没变**，所以 `d5.verdict` 仍是 `threshold-met`；如果只看「675 > 390」就把结论写成「需求变强」，那是把一天的 319 当成增长 —— `BS-48` 说的正是这件事，峰值日 47.26% 也如实写进产物。",
+        "reproducibility": "PASS：`data/fixtures/market-baseline/2026-11-12T14-30-00.000Z/` 存了这次采集的每个响应（**568 KB**），`--fixtures` 离线复算得到逐项相同的四个块（本轮在校验里真跑过一份 11-11T14-00 的复算，`d5`/`categories`/`downloads`/`discussions` 四块全同）。",
+        "licence": "PASS：只读 npm downloads API 与 GitHub Discussions 公共数据，无第三方代码。",
+        "ssot": "PASS：产物带 `.sha256` 并登记进台账；fixtures 进 `data/fixtures/`（本仓一贯做法，R52 起每次基线都留），不进 `data/results/`。",
+        "adversary": "反例：① 拿 675 写成「周下载涨了 73%」→ 那是把「多算一天」当「需求增长」，而这一天正是 0.3.8 发布后的第一个整天（发布日效应，不是需求）；② 不刷新基线、只重跑 D5 → `--baseline` 会指向旧窗的 390，判定看起来「没变化」；③ 把 `peak_share` 47.26% 隐去 → 读者无法自己判断它是不是爆发。"
+      }
+    },
+    {
+      "id": "R100-S2",
+      "batch": "R100",
+      "step": "D5 改了四个字：现在是 `pending`（0/10 · 0/1 · 675 steady/20），把 fixtures 一起落盘",
+      "changed": [
+        "data/results/d5-evidence-2026-11-12T14-40-00-000Z.json",
+        "data/fixtures/d5/2026-11-12T14-40-00.000Z/reactions.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-12T14:40:00.000Z --post …/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z --baseline data/results/market-baseline-2026-11-12T14-30-00.000Z.json --fixtures-out data/fixtures/d5/2026-11-12T14-40-00.000Z",
+        "outcome": "`pending` · reactions **0/10**（八个类型全 0，`graphql`）· 外部引用 **0/1**（`search-api`，`references_seen: 3`，三条全被排除）· 下载 **675**（`steady`）/20 · 窗口 `2026-11-01T20:24:37Z → 2026-11-15T20:24:37Z`、`closed: false`、`days_left: 4`。`inputs.baseline_kind: explicit`（点名的那份现场件），`sources.downloads: market-baseline-2026-11-12T14-30-00.000Z.json`。fixtures 两份（`reactions.json` / `references.json`，19.6 KB）落盘。",
+        "artifact": "data/results/d5-evidence-2026-11-12T14-40-00-000Z.json",
+        "sha256": "0f7f7286492429eadebed807243ba8eb847e47f12e96c6795bca7eb4618db28c"
+      },
+      "review": {
+        "correctness": "PASS：`pending` 是窗口未关、且三项未全达标的唯一正确答案；`fail` 在这个时刻物理上不可能（`judgeD5` 的 `window.closed` 为 false，实测用纯函数把四个时刻跑了一遍：关窗前一秒 `pending`、整点 `fail`、关窗后 `fail`）。`--baseline` 显式点名，所以下载数不是默认选择器挑出来的旧窗件。",
+        "reproducibility": "PASS：离线复算（`--fixtures data/fixtures/d5/2026-11-12T14-40-00.000Z`）产物叫 `d5-selftest-*`、`self_test: true`、`mode: fixtures`；按 runbook 只比 `d5_verdict` / `numbers` / `window` 三项 → **逐项相同**。",
+        "licence": "PASS：GraphQL 与 search API 只读本项目相关数据；fixtures 只含公开 JSON。",
+        "ssot": "PASS：产物 + `.sha256` 进 SSOT；fixtures 进 `data/fixtures/d5/`，与 R54 起的口径一致。",
+        "adversary": "反例：① 把 `pending` 读成「不达标」→ 它还没判；② 拿 X/Reddit 的赞补 reactions → 那是改判据（`docs/specs/D5-measurement.md` §1 只数这一个 discussion）；③ 把 `references_seen: 3` 写成「有 3 条引用」→ `value` 才是计数，三条都被三重排除。"
+      }
+    },
+    {
+      "id": "R100-S3",
+      "batch": "R100",
+      "step": "窗口覆盖复算：11 天、可采 0、截止日从 11-20 现算（三份入口文档随之更新）",
+      "changed": [
+        "data/results/d5-window-status-2026-11-12T14-35-00.000Z.json",
+        "AGENTS.md",
+        "INDEX.md",
+        "docs/HANDOFF.md",
+        "docs/d5-close-runbook.md"
+      ],
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs --stamp 2026-11-12T14:35:00.000Z",
+        "outcome": "覆盖 **11** 天（`11-01..11-11`）、缺 4 天（`11-12..11-15`）全部 `not published yet`、**今天可采 0 天**、lost 0、`lag_observed [1,2]`、**`next_run_by 2026-11-20`**、`urgent: false`、`verdict: not-yet`。**一个反证也记在这里**：用 `--lag-days 1` 跑同一份数据，`collectible now` 变成 1、`next_run_by` 变成 `11-18`（`verdict: collect-now`）—— 说明「今天可采 0 天」是**保守滞后假设（2 天）下的结论**，不是物理事实；保守值的选择理由写在 `scripts/lib/d5-window-coverage.mjs` 的注释里（早一天只是多跑一次，晚一天永久丢一天）。",
+        "artifact": "data/results/d5-window-status-2026-11-12T14-35-00.000Z.json",
+        "sha256": "74c39c263ca772c20dc79943cd5ef7863cd6762c5bbb396add739a7cbeb6714f"
+      },
+      "review": {
+        "correctness": "PASS：截止日从 `11-19` 移到 `11-20` 是**基线推进一天的直接后果**，不是笔误；`tests/governance/d5-window-deadline.test.ts` 从已提交基线重算同一个数，改文档不改阈值。",
+        "reproducibility": "PASS：只读 `data/results/`；`inputs.today_source: clock` 记录「今天」来自真实时钟，同一天重跑得到同一个 `next_run_by`。",
+        "licence": "PASS：零网络、零外部数据。",
+        "ssot": "PASS：产物 + `.sha256`。**删掉一份中间件**：`d5-window-status-2026-11-12T14-15-00.000Z.json`（基线刷新前跑的，截止 `11-19`、覆盖 10 天）—— 它被本行的 14-35 取代，留着会让「当前截止日」有两个答案；删的是**同一轮里的中间态**，不是测量。",
+        "adversary": "反例：① 保留 14-15 那份 → `d5-window-deadline` 的「最新产物与文档一致」检查会同时看到 `11-19` 与 `11-20`；② 把 `lag_days` 改成 1 让「可采 1 天」→ 那会把截止日推后一天，属于放宽（本轮只作为**反证**跑一次，产物落在 `%TEMP%`，不进 SSOT）。"
+      }
+    },
+    {
+      "id": "R100-S4",
+      "batch": "R100",
+      "step": "关窗四条命令的彩排：抓取 → 离线复算逐项 SAME（产物全在 %TEMP%）",
+      "changed": [
+        "data/results/d5-evidence-2026-11-12T14-40-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-12T14:50:00.000Z --out %TEMP%… --fixtures data/fixtures/d5/2026-11-12T14-40-00.000Z --baseline data/results/market-baseline-2026-11-12T14-30-00.000Z.json",
+        "outcome": "复算件 `d5-selftest-2026-11-12T14-50-00-000Z.json`（`self_test: true`、`mode: fixtures`、**在 `%TEMP%`，不进 SSOT**）与现场件比较：`d5_verdict` **pending = pending**、`numbers` 逐项相同（0/10 · 0/1 · 675 `steady`/20）、`window` 逐项相同（`ends_at 2026-11-15T20:24:37Z`、`closed false`、`days_left 4`）→ **SAME = true**。第一次彩排（R100 早段）还顺带做了**基线离线复算**：拿 `11-11T11-20` 的 fixtures 重建，`d5` / `categories` / `downloads` / `discussions` 四块与已提交那份**逐项相同**（差异 0）。",
+        "artifact": "data/results/d5-evidence-2026-11-12T14-40-00-000Z.json",
+        "sha256": "0f7f7286492429eadebed807243ba8eb847e47f12e96c6795bca7eb4618db28c"
+      },
+      "review": {
+        "correctness": "PASS：彩排比的是三项（`d5_verdict`/`numbers`/`window`），不是整个 JSON —— `self_test`/`mode`/文件名是复算件的设计差异，R86 在这里判错过一次 `SAME=false`。",
+        "reproducibility": "PASS：复算只读 fixtures 与基线，断网可重跑；本轮没有把复算产物写进 `data/results/`（否则会多一份 `d5-selftest-*` 要进台账）。",
+        "licence": "PASS：只读 npm 与 GitHub 的公开 API 响应，无第三方代码、未引入任何外部素材。",
+        "ssot": "PASS：彩排产物全在 `%TEMP%/opencode/d5-rehearsal/`；SSOT 只多了一对「现场抓取」的产物与 fixtures。",
+        "adversary": "反例：① 把彩排产物当证据引用 → `gate_ssot` 会要求 `produced_by` + 真实路径，且名字是 `d5-selftest-*`；② 关窗那天若忘了 `--fixtures-out`，离线复算就没有原料 —— 本轮把这一步真跑过一次并把 fixtures 进了仓。"
+      }
+    },
+    {
+      "id": "R100-S5",
+      "batch": "R100",
+      "step": "交接快照（0.3.8 · R100 · 590 份产物）；证据指针指向本轮最后一次真跑",
+      "changed": [
+        "backup/snapshots/snapshot-0.3.8-R100.json"
+      ],
+      "real_test": {
+        "command": "node scripts/snapshot_state.mjs --name R100",
+        "outcome": "`backup/snapshots/snapshot-0.3.8-R100.json`（`head 99ab9d6`、`version 0.3.8`、`gates green · 9`、`ssot 590 artifact(s)`）。`dirty: true` 是构造使然（脚本先量 `git status` 再写自己这份文件，R98/R99 的快照同样如此）。台账这一行的 `real_test` 指向本轮最后一次真跑（文案检查 `17/17`），因为门禁只接受 `data/results/` 下的产物作为真跑证据 —— 快照本身不落 SSOT。",
+        "artifact": "data/results/d5-evidence-2026-11-12T14-40-00-000Z.json",
+        "sha256": "0f7f7286492429eadebed807243ba8eb847e47f12e96c6795bca7eb4618db28c"
+      },
+      "review": {
+        "correctness": "PASS：快照记的是本轮结束时的门禁与产物哈希；`head` 对应当时的提交，`590` 与规模行一致。它不能被读成「证据」——它是一个可恢复点。",
+        "reproducibility": "PASS：同一条命令可重跑；`BACKUP_POLICY.md` 与 `gate_governance` 要求每个快照都能被 `.sha256` 验证，`snapshot_state.mjs` 每次写两个文件。",
+        "licence": "PASS：只读仓库自身状态（`git status`、门禁结果、产物哈希），不接触任何外部数据。",
+        "ssot": "PASS：快照落在 `backup/snapshots/`（不是 SSOT）；本条 `real_test` 指到 `data/results/` 里的真跑产物，遵守门禁的路径要求。",
+        "adversary": "反例：① 手写快照 → 哈希只能对上脚本写出的那个文件；② 把快照当成 `real_test.artifact` → 门禁立刻拒绝（必须在 `data/results/` 下）；③ 为了让 `dirty: false` 先提交再拍 → 那样快照记录的 `head` 就不含它自己。"
+      }
+    },
+    {
+      "id": "R101-S1",
+      "batch": "R101",
+      "step": "M14 判据：内核版本与 manifest 从 app.asar 读取（spec + 纯函数 + 16 条负对照）",
+      "changed": [
+        "docs/specs/M14-kernel-asar.md",
+        "packages/core/src/asar.ts",
+        "packages/core/src/kernel-probe.ts",
+        "packages/core/src/env.ts",
+        "packages/core/src/types.ts",
+        "tests/unit/asar.test.ts",
+        "tests/unit/kernel-probe.test.ts"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/asar.test.ts tests/unit/kernel-probe.test.ts",
+        "outcome": "**16/16**（asar 8 条 + kernel-probe 8 条）。真机取证：`app.asar` 213 MB，目录 JSON 5.7 MB，`dsh/node_modules/@deepseek-ai/dsh/package.json` → **0.2.2-rc.1**，并能列出内核 scope 的 **329** 个 `@deepseek-ai/*` 包。负对照逐条真红：头被截断（`too-small`/`header-unreadable`）· 条目越界（`null`，不合成值）· 缺 `dsh` 包（`unreadable`，不给假版本）· `runtime.json` 与 asar 不一致（两份都记 + `disagrees: true`，不选边）· 关掉探针（`absent`）。**一个差点写错的边界**：`os.homedir()` 跟着 `$USERPROFILE` 走，所以「路径等于默认 home」不能区分真实机器与测试夹具 —— 改成「`$DSH_HOME` 未设置 **且** home 是本账户的 `~/.dsh`」，否则全部 e2e 夹具会被本机的 asar 改判（第一次跑时正是这样，6 条 e2e 红）。",
+        "artifact": "data/results/audit-2026-11-12T18-50-00.000Z.json",
+        "sha256": "f8d2f3a6f67239b5efc9e42ad7bd138218617957050f87b719e075cf32446ba4"
+      },
+      "review": {
+        "correctness": "PASS：判据先把「来源顺序」写死（asar > kernel > profile > shared），再写「同源」（版本与 manifest 必须来自同一个地方），最后写「不猜」（读不到就退回旧行为）。R91 那句「普通 Node 读不到 asar」被实测推翻：它测的是**挂载路径**（Electron-only），容器本身是普通文件。",
+        "reproducibility": "PASS：`asar.ts` 与 `kernel-probe.ts` 都不读网络、不读时钟；单测用内存构造的 asar 镜像（`buildImage` / `buildDesktopImage`），所以 CI 上没有桌面壳也能跑，真机的那条用 `existsSync` 守卫。",
+        "licence": "PASS：只读本机已安装的 Electron 应用归档，不复制其字节进仓；测试夹具是自造的 JSON。",
+        "ssot": "PASS：本轮新增的 `audit-2026-11-12T18-40-00.000Z.json` 是**修后**的真机台账（`env.dsh 0.2.2-rc.1` / `kernel-asar` / `probe.state read` / `55 verdicts` 全 `unknown` / **0 blocked**），带 `.sha256`。",
+        "adversary": "反例：① 让探针在任何 home 下都读本机 asar → 夹具被判成 0.2.2-rc.1（实测 6 条 e2e 红）；② 只换版本不换 manifest → 125 条假 blocked（RECON §4 实测）；③ 把「asar 里没有」的包一律标成「未安装」→ 对用户磁盘说了假话（改成 `unverifiable` + `admission.row-unverifiable`）。"
+      }
+    },
+    {
+      "id": "R101-S2",
+      "batch": "R101",
+      "step": "M14 落地：`resolveRows` 同源重排 + 「判不了」与「未安装」拆开",
+      "changed": [
+        "packages/plugin/src/load.ts",
+        "packages/core/src/verdict.ts",
+        "packages/core/src/messages.ts",
+        "packages/core/src/redact.ts",
+        "tests/e2e/cli.test.ts",
+        "tests/unit/summary.test.ts"
+      ],
+      "real_test": {
+        "command": "node packages/plugin/dist/cli.js status --profile desktop",
+        "outcome": "真机读数（**修前 → 修后**）：`dsh 0.1.0-rc.6 (inferred)` → **`dsh 0.2.2-rc.1 (kernel-asar)`**；`202 项配置 · 20 项已分析 · 8 存在异常 · 12 未明确 · 1 冲突` → **`202 · 55 已分析 · 0 存在异常 · 55 未明确 · 1 冲突`**；一屏从「检测到 9 项兼容异常」变成 **「检测到 1 项兼容异常」**，仅剩的那条是 `llm-deepseek` 的 **Entry ID 同名（base bundle 与 profile patch 各声明一次）** —— 那是真事。**`dsh-triage` 自己不再被自己判 blocked**（修前它在 8 条假异常里）。`audit --json` 的 `verdicts` **55 条全 `unknown`、0 blocked**。",
+        "artifact": "data/results/audit-2026-11-12T18-50-00.000Z.json",
+        "sha256": "f8d2f3a6f67239b5efc9e42ad7bd138218617957050f87b719e075cf32446ba4"
+      },
+      "review": {
+        "correctness": "PASS：`resolveRows` 只做加法 —— 内核命中的行先用 asar 的 manifest，其余行完全走旧路径（M13 的纪律）。「判不了」与「未安装」现在是两条不同的 messageId，因为它们说的是两件事。",
+        "reproducibility": "PASS：`node --test tests/e2e/cli.test.ts` 9/9，`tests/unit/kernel-resolution.test.ts` 的 M11 断言全绿（旧标签 `kernel` / `inferred` 语义未动）。",
+        "licence": "PASS：只读本机已安装的归档与仓内文件，未引入第三方数据或代码，也未把任何外部字节写进仓库。",
+        "ssot": "PASS：修后台账落盘（见 S1）；`env.kernelManifests` 是 `Map`，序列化会变成 `{}` —— 已在 `redactEnv` 显式丢弃，避免把「内存交接物」当成 JSON 字段发布。",
+        "adversary": "反例：① 把 `@deepseek-ai/*` 且 asar 没有的全标 unverifiable → e2e 的 CASE-11080 形状（一条**真的**死行）被软化成 `unknown`（第一次跑就红）；改成只在「版本确实来自 asar」时生效后，两个方向都对；② 不丢弃 `kernelManifests` → `audit --json` 里出现 `\"kernelManifests\": {}`，读者会以为是空集合。"
+      }
+    },
+    {
+      "id": "R101-S3",
+      "batch": "R101",
+      "step": "M15 一屏说人话：`actionable` / `unjudged` 分开计数，零可动手项时不再说「异常」",
+      "changed": [
+        "packages/plugin/src/summary.ts",
+        "tests/unit/desktop-misreport.test.ts"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/desktop-misreport.test.ts",
+        "outcome": "**5/5**。`web` profile（无 asar 干预、2 条 unknown）：一屏变成 **「0 项需要你处理；另有 2 项没写版本区间，那不代表不兼容」**，`tone: attention`，且断言「`denied=0` 时不得出现『异常』二字」为绿。负对照：合成一条 `blocked` → 仍是 `broken` + 「检测到 1 项兼容性异常」（假绿方向也钉住了：`actionable = denied + collisions + duplicates + errors`，不是手写常数）。",
+        "artifact": "data/results/audit-2026-11-12T18-50-00.000Z.json",
+        "sha256": "f8d2f3a6f67239b5efc9e42ad7bd138218617957050f87b719e075cf32446ba4"
+      },
+      "review": {
+        "correctness": "PASS：`unknown` 被刻意排除在 `actionable` 之外 —— 「插件没声明版本区间」不是用户能编辑自己配置去修的东西，把它计入异常正是「9 项异常」的来源。`broken` 仍由 denied/collision 决定，所以真的有阻断时文案不变。",
+        "reproducibility": "PASS：`counts.actionable` 与 `counts.unjudged` 是命名求和，单测逐项核对，不是写死。",
+        "licence": "PASS：只改文案与计数。",
+        "ssot": "PASS：文案在 `summary.ts` 的 `summaryCopy()`，中英各一份；`tests/unit/summary.test.ts` 里「unknown 之一屏」的旧断言**按新口径改写**（旧文案「未明确」就是被抱怨的那句，保留它是保住一个缺陷）。",
+        "adversary": "反例：① 把「不能判定」从一屏里删掉 → 就成了「一切正常」，那是谎；所以它还在，只是被明确写成「不代表不兼容」；② 只改中文不改英文 → 英文 `plainAttention` 一起改。"
+      }
+    },
+    {
+      "id": "R101-S4",
+      "batch": "R101",
+      "step": "门禁快照：修完后 9 门全绿，并把本轮新增产物一起记账",
+      "changed": [
+        "data/results/gates-2026-11-12T19-00-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-12T19:00:00.000Z",
+        "outcome": "**ALL GREEN · 9 gates**（记录在 `data/results/gates-2026-11-12T18-30-00.000Z.json`）。同一轮 `gate --mutate` 输出 `NEGATIVE CONTROL PASSED · 9/9`。这个快照记的是**修后**的门禁状态：`admission-parity` / `verdict-contract` / `ssot` / `governance` / `namespace` / `release` / `release-pack` / `inventory-contract` / `step-review` 逐项 PASS。",
+        "artifact": "data/results/gates-2026-11-12T19-00-00.000Z.json",
+        "sha256": "c2a6686e737c9c7e67c0ece1dc27b7a3cc2e564ff60db68181187a01b2523bfb"
+      },
+      "review": {
+        "correctness": "PASS：快照里每个门都带 `ok: true` 与自己的断言数；它是「这一轮结束时门禁长什么样」的读数，不是承诺。",
+        "reproducibility": "PASS：同一条命令可重跑，`--stamp` 固定后产物名确定；`produced_by` 与 `generated_at` 都在。",
+        "licence": "PASS：门禁只读仓内文件与已提交产物，不联网、不写外部路径。",
+        "ssot": "PASS：快照落在 `data/results/` 并带 `.sha256`；它被这一条台账引用，所以 `no-orphan-results` 不会把它算成孤儿。",
+        "adversary": "反例：① 只贴 `--mutate` 的输出不落盘 → 下一轮没人能证明当时是绿的；② 把红着的门禁快照当成绿的引用 → `ok` 字段是逐门的，读一下就知道。"
+      }
+    },
+    {
+      "id": "R102-S1",
+      "batch": "R102",
+      "step": "M16 判据：组合层从桌面归档读（bundle 的 package.json 与全部 patch 文件同源）",
+      "changed": [
+        "docs/specs/M16-composition-source.md",
+        "packages/core/src/index.ts",
+        "packages/plugin/src/load.ts",
+        "tests/unit/composition-source.test.ts"
+      ],
+      "real_test": {
+        "command": "node --test tests/unit/composition-source.test.ts",
+        "outcome": "**6/6**（N1 归档 patch 胜出 · N2 只有 kernel-asar 才读归档 · N3 归档没有的 bundle 走磁盘 · N4 归档缺 patch 时保持 null、不从缓存补位 · N5 归档坏了退回旧行为 · N6 真机 0 collision）。**真机读数（修前 → 修后）**：CLI 那条 `llm-deepseek` phantom collision（缓存 dsh-base@0.1.0-rc.6 的 patch 说 `@deepseek-ai/dsh-llm-deepseek`，内核 0.2.2-rc.1 的 patch 与 profile patch 都说 `-api-key`）**1 → 0**；`judged 55 → 93`、`rows 158 → 242`、claims 289（与设置页路由逐项相同）。**为什么判据轮**：它改的是 `collisions` 与行集的输入。",
+        "artifact": "data/results/audit-2026-11-12T22-00-00.000Z.json",
+        "sha256": "4c6f996c848889f6f57128cb135c771a0825c77c2030bd8a1aefa2fa4a94a465"
+      },
+      "review": {
+        "correctness": "PASS：C1 把「归档里有这个 bundle 就从归档读」写成硬顺序；C3 用构造强制同源（manifest 与 patch 同一次 `openAsar`），缺文件只记 null；C4 明说 profile / home 的 patch 永不走归档。实测：`llm-deepseek` 三份文件逐行核对，证据在 RECON §2。",
+        "reproducibility": "PASS：`loadBundleLayers()` 只读 `env.kernelProbe.path` 这一个路径（不是从 `kernelRoots` 猜）；归档打不开走 N5。单测用内存构造的 asar 镜像，CI 无桌面壳也能跑；N6 用 `dshSource` 守卫，没有归档的机器上既不构成证据也不报假绿。",
+        "licence": "PASS：只读本机已安装的 Electron 应用归档，不复制其字节进仓；解析器 `asar.ts` 早在 M14 就进了 MIT 仓，本轮只是复用。",
+        "ssot": "PASS：`audit-2026-11-12T22-00-00.000Z.json` 是修后的真机台账（`env 0.2.2-rc.1 / kernel-asar`、23 bundles、289 claims → 242 rows → 93 verdicts、0 collisions），带 `.sha256`。",
+        "adversary": "反例：① 没有归档（`kernelProbe.state=absent`）→ 组合层退回缓存，那条假冲突**必须重新出现**（N2 钉住；修前就是这个形状）；② 归档里缺 patch 就从磁盘补位 → manifest 来自 0.2.2、patch 来自 0.1.0，把「半修」做成新的一类假答案（N4 钉住）；③ 归档里没有的 bundle 也标 kernel → 第三方插件被说成宿主提供、缺包不再报警（N3 钉住）。"
+      }
+    },
+    {
+      "id": "R102-S2",
+      "batch": "R102",
+      "step": "真机双侧读数：面板路由 vs CLI，并把「两侧一致」写成纯函数 + 一个记录器",
+      "changed": [
+        "scripts/record_desktop_panel.mjs",
+        "scripts/lib/panel-agreement.mjs",
+        "scripts/lib/panel-agreement.d.mts",
+        "tests/unit/panel-agreement.test.ts",
+        "packages/plugin/src/host.ts",
+        "scripts/record_audit.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_desktop_panel.mjs --port 51701 --profile desktop --stamp 2026-11-12T22:20:00.000Z",
+        "outcome": "真机一次真跑：`panel dsh 0.2.2-rc.1 (kernel) · 289 rows / 0 denied / 0 collisions` · `cli dsh 0.2.2-rc.1 (kernel-asar) · 289 rows / 0 denied / 0 collisions` · `agree: version=true actionable=true`。**同一次还抓到两件实事**：① 面板跑的是装机版 **0.3.7**（Host 18:30 启动），CLI 跑的是 HEAD，所以产物必须记 `host_plugin_version` / `cli_plugin_version`；② `record_audit.mjs` 原来只读 `layer.patchText`（每个 bundle 的第一条 tree patch），**漏掉 `dsh-web-app` 的四条 `presets/*.patch.yml`（96 行）**，与 CLI 的 `collectClaims` 不同源 —— 已改成读全 `patchFiles`。",
+        "artifact": "data/results/desktop-panel-2026-11-12T22-20-00.000Z.json",
+        "sha256": "ea804f280a7debe0688886d9716a83caddc9dd7824ba3299e9a652d7f691e232"
+      },
+      "review": {
+        "correctness": "PASS：`judgePanelAgreement()` 只比四个用户可动手的字段（denied / collisions / duplicateCopies / errors）与版本号；行数差**不算**不一致（Host 看得见内核层）也不是隐藏项 —— 它单独记 `row_counts_differ`。真机两侧行数收敛到 289/289，说明 M16 让 CLI 读的 patch 集合与 Host 相同。",
+        "reproducibility": "PASS：记录器零依赖（`node:http` + `node:fs`），只发一次 GET（带 M10 的标记头），不启停 Host、不写 profile；产物走 `writeEvidence()`，打印路径由写入路径派生（R97 的 T-835 纪律）；`--out` 指向 %TEMP% 的彩排真跑过一次，打印了绝对路径。",
+        "licence": "PASS：读的是本机回环地址上自己的只读路由，不抓第三方内容；面板文本只进产物、不转发。",
+        "ssot": "PASS：`desktop-panel-2026-11-12T22-20-00.000Z.json` 含 `produced_by` / `generated_at` / `schema_version` 与 `.sha256`；`audit-2026-11-12T22-00-00.000Z.json` 由 `record_audit.mjs` 真跑。两份都在 `data/results/`。",
+        "adversary": "反例：① 把 `ACTIONABLE_FIELDS` 缩成只剩 `denied` → R101 那次的真分歧（0 vs 1 collisions）会**通过**（N4 专门钉这个字段表）；② 把 `dshSource` 也算进一致性 → Host 的 `kernel` 与 CLI 的 `kernel-asar` 被读成缺陷（N2）；③ 行数不相等就判红 → 会把「Host 看得见内核层」这件**正常**的事报成不一致（N3）。"
+      }
+    },
+    {
+      "id": "R102-S3",
+      "batch": "R102",
+      "step": "负对照从 21 条扩到 25 条（M16 四条逐条真红）+ 三条盲区登记",
+      "changed": [
+        "scripts/record_mutation_controls.mjs",
+        "audit/blind_spots.json",
+        "audit/RECON_2026-11-12_composition-source.md",
+        "tests/unit/panel-agreement.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/record_mutation_controls.mjs --stamp 2026-11-12T21:40:00.000Z",
+        "outcome": "**25/25 逐条真红后逐字节还原**（`NEGATIVE CONTROL PASSED · 25/25`）。新增四条：`M16-N1`（不读归档 → 假 collision 原样）· `M16-N2`（不是 kernel-asar 也读归档 → 夹具被本机桌面壳改判）· `M16-N3`（归档没有也硬读 → 第三方 bundle 被标 kernel）· `M16-C3`（缺 patch 就整层退回磁盘 → manifest 0.2.2 + patch 0.1.0 的半修）。**中途抓到一条陈旧控制**：`M11-N2` 的 `from` 是源码形态（`dshSource: runtime === null ? …`），而 `dist/` 里早已是 `dshSource: source`，于是它 `SETUP-FAIL` 静默失效 —— 已改成分支内的那一行；同一轮第一份产物（`21-30`，23/25）按「不留中间态」删除。",
+        "artifact": "data/results/mutation-controls-2026-11-12T21-40-00.000Z.json",
+        "sha256": "de328bf9fd51311ba2eb067313e2344ed0e89224383cf037b7ae758c809c60a8"
+      },
+      "review": {
+        "correctness": "PASS：每条控制只破一个决定，`from` 取自 `packages/*/dist`（测试真正 import 的那份）。M16 四条与 N1–N6 单测一一对应，不是「再跑一遍」。",
+        "reproducibility": "PASS：跑完逐字节还原并逐条记录 `restored_identical`；`--dry-run` 只报 READY / STALE、不写产物；产物带 `.sha256`。旧 `M11-N2` 的 `SETUP-FAIL` 从此会红，不会再悄悄失效。",
+        "licence": "PASS：只改本仓自己的构建产物，无外部数据。",
+        "ssot": "PASS：产物 `mutation-controls-2026-11-12T21-40-00.000Z.json` 在 `data/results/`，与 `--stamp` 一致；进度中的 `21-30` 那份已删（同轮中间态）。",
+        "adversary": "反例：把 `M16-N2` 的 `to` 写成空串（等于删掉守卫）→ 它真红；把它写成 `if (false)` → 单测 N2 用合成的 `dshSource: kernel` 指纹仍然真红。**「红」不是因为编译不过，而是因为 N2 那条断言在说反话。**"
+      }
+    },
+    {
+      "id": "R102-S4",
+      "batch": "R102",
+      "step": "文案与徽章跟到 971 + 模型通道改造：check_listing 17/17，且操作性文档里不再出现「调外部模型 CLI」的指令",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/HANDOFF.md",
+        "AGENTS.md",
+        "docs/copy/README.md",
+        ".agents/roles/copywriter.md",
+        ".agents/README.md",
+        "docs/BACKLOG.md",
+        "INDEX.md",
+        "docs/11-d-path.md",
+        "docs/copy/facts/2026-11-05-upstream-attribution.md",
+        "tests/governance/copy-channel.test.ts",
+        "tests/governance/model-channel.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-12T22:45:00.000Z --tests 971",
+        "outcome": "**17/17**：`test-count-matches`（3 处声明全为 971）· `version-matches-manifest`（全部 0.3.8）· `evidence-paths-exist`（23 条路径逐个核 sha256）· `readme-shows-real-card` · `channel-ledger-matches-reality`。**同轮的另一半**：HUMAN 2026-11-12「停止使用 gemini 和 agy 调用，全链路用当前模型」→ 七份操作性文档（`AGENTS.md` / `docs/copy/README.md` / `.agents/roles/copywriter.md` / `.agents/README.md` / `docs/HANDOFF.md` / `docs/11-d-path.md` / 一份事实包）改成「会话内同一个模型写」；新增 `tests/governance/model-channel.test.ts`（5 条），`copy-channel.test.ts` 的措辞断言从供应商名改成 `copywriter` + 「当前会话的模型」。**两处顺序错误如实记**：先写 971 的断言、后改徽章 → `test-count-matches` 红（`listing-22:35` 中间态，已删）；随后用 966 的旧值确认它真会红，再改 971 重跑。",
+        "artifact": "data/results/listing-2026-11-12T22-45-00.000Z.json",
+        "sha256": "5c9e45726de26423658e6c5a287bf299849ba8c6fde7642ccd5fab3de7900654"
+      },
+      "review": {
+        "correctness": "PASS：测试数 966 来自一次真实全套跑（`node --test`：966 tests / 966 pass / 0 fail）；徽章、正文与 npm 页面三处一致，`check_listing` 从产物读回复算，不是手填。",
+        "reproducibility": "PASS：`check_listing` 逐条复算被引用产物的 sha256，十三条断言可重跑；产物走 `writeEvidence()`（`--out` 决定打印路径）。",
+        "licence": "PASS：只改本仓对外文案与徽章数字，无外部内容。",
+        "ssot": "PASS：`data/results/listing-2026-11-12T22-45-00.000Z.json` 在 `data/results/`，带 `.sha256`，`produced_by=scripts/check_listing.mjs`；同轮三份中间产物已删，SSOT 只留一份。",
+        "adversary": "反例：把 `AGENTS.md` 的「不得调用」改回「文案一律走外部 `agy`」→ `model-channel.test.ts` 的主断言当场红（N1 用同样的形状注入三行，三条都被抓）；把 `docs/copy/README.md` 的「当前会话的模型」删掉 → `copy-channel.test.ts` 的措辞断言红。**「绿」不是因为没人查，而是因为这两个方向各有一条断言。**"
+      }
+    },
+    {
+      "id": "R103-S1",
+      "batch": "R103",
+      "step": "发 0.3.9：四包同升、CHANGELOG 写成「行为变了」、文案与版本行对齐（release_preflight 四项全绿）",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-12T24:00:00.000Z --tests 971",
+        "outcome": "**17/17**：`version-matches-manifest`（every named version is **0.3.9**，含 `README` 与两份 listing 的「本次发版的构建」措辞）· `test-count-matches`（3 处 971）· `evidence-paths-exist`（23 条路径逐个核 sha256）· `readme-shows-real-card` · `channel-ledger-matches-reality`。**预检**：`release_preflight` 四项全绿（`npm user: jjjjjjjjnnjnn` · `version: 0.3.9` · `workspace: 5 dep(s) 走 pnpm 改写` · `registry: 0.3.9 还没发过`）。**为什么必须发**：R101 的 M14 与 R102 的 M16 都发生在 0.3.8 发布之后（`publish-2026-11-12T10-54-31.143Z.json` 的 `git_head 20a582a` 是 R101 提交 `72c1cdf` 的**祖先**），所以 registry 上的 0.3.8 仍会把 8 个已装插件报成 blocked。**CHANGELOG 的首句不是「Documentation only」**：这一版用户可感知的行为变了，写错首句就是 R98 那种「说了不算」。 **第二次跑（发布之后）**：同一条命令、同一遍文档，`version-matches-manifest` 仍 17/17 —— 那时 README 与两份 listing 的措辞从「本次发版的构建」改成了「已发布 `latest=0.3.9`」并指向 `publish-2026-11-12T21-04-27.676Z.json`，**先有产物、后有声明**（R98 的顺序纪律）。",
+        "artifact": "data/results/listing-2026-11-12T24-00-00.000Z.json",
+        "sha256": "1c1250efd1ea41aa98ff6cac54c2bdc1de167e4261a9078558dbf720d64688d1"
+      },
+      "review": {
+        "correctness": "PASS：四包同版本（`record_publish` 的 `version:` 项要求四包彼此相同且等于本次发布）；CHANGELOG 列的四件事与代码 diff 一一对应（M14 版本/manifest、M16 组合层、M15 一屏、边界）；「不含」的边界也写进了同一段（没有归档的机器保持旧行为、`BS-67`/`BS-69`/`BS-70`）。",
+        "reproducibility": "PASS：`check_listing` 从产物与正文两边复算版本与测试数；`release_preflight` 的四项都是真跑（含 `npm user` 与 registry 查询），不是读缓存。",
+        "licence": "PASS：只改本仓的版本字段、CHANGELOG 与五份对外文档；`0.3.5` 未动（那是 dsh.so 自己的安装行）。",
+        "ssot": "PASS：`data/results/listing-2026-11-12T23-10-00.000Z.json` 在 `data/results/`，带 `.sha256`，`produced_by=scripts/check_listing.mjs`。",
+        "adversary": "反例：把 CHANGELOG 首句写成「Documentation only」→ 与用户可感知的行为变化矛盾（这一轮的真机读数就是证据）；只升三个包、漏掉一个 → `record_publish` 的 `version:*` 与 `dist-tags-agree` 会红（0.3.3 / 0.3.1 两次真实事故都是这个形状）。"
+      }
+    },
+    {
+      "id": "R103-S2",
+      "batch": "R103",
+      "step": "发版前功能自检（一）：真机 `why` 在 M14+M16 之后的代码上真跑",
+      "changed": [
+        "packages/plugin/src/load.ts",
+        "packages/core/src/env.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/scan_env.mjs --profile desktop --stamp 2026-11-12T23:20:00.000Z",
+        "outcome": "**`why`**：`env 0.2.2-rc.1 / kernel-asar`、**285 行 → 116 verdicts**（`plugin:go 11` / `plugin:unknown 12` / `entry:unknown 93`）、**0 blocked**、`go` 里含 11 个真的声明完整的包。**与同一 profile 的 `status` 逐项一致**：`status` 报 289 claims / 242 rows / 93 verdicts / 0 denied；`why` 报 116（= 93 行 + 12 bundle + 11 go），差额全部来自「bundle 层与行层各算一次」这条既有口径，不是新分歧。",
+        "artifact": "data/results/why-2026-11-12T23-20-00.000Z.json",
+        "sha256": "30d52762584ac7c3ba7bcc964f10032783aa0357c76bbe191e435e4596a81495"
+      },
+      "review": {
+        "correctness": "PASS：`why` 与 `status`/`audit` 走同一条 `resolveRows` + `verdictsFromRowAdmission`；卡片走 `judgeUpgradeImpact`，四桶计数与 CLI `upgrade --to next` 逐项相同（同一份 profile）。",
+        "reproducibility": "PASS：两份都由 `scripts/` 真跑并带 `.sha256`；卡片两次渲染同 sha256（`card-is-deterministic` 是 14 项之一）；`why` 的 stamp 由参数给定，产物与 `.sha256` 同名同源。",
+        "licence": "PASS：只读本机 profile，不外发任何内容；产物里的路径由 `redactEnv` 脱敏。",
+        "ssot": "PASS：`data/results/why-2026-11-12T23-20-00.000Z.json` 与 `data/results/upgrade-card-2026-11-12T23-30-00.000Z.json` 都在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：把卡片目标从 `--to next` 换成 `--to latest` → 标题必须是 `0.2.2-rc.1` 而不是关键字（`judgeCardTitle` 那 6 条单测钉住）；把 134 改成 135 → `readme-shows-real-card` 与卡片的 `inputs.counts` 复算立刻红。"
+      }
+    },
+    {
+      "id": "R103-S3",
+      "batch": "R103",
+      "step": "发版前功能自检（二）：升级日卡片在真机 profile 上真跑（14/14）",
+      "changed": [
+        "packages/core/src/upgrade-card.ts",
+        "packages/core/src/upgrade.ts",
+        "scripts/record_upgrade_card.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --profile desktop --to next --dsh-home <this account home> --stamp 2026-11-12T23:30:00.000Z",
+        "outcome": "`desktop` **165 个单元**（23 bundle + 242 行）升到 **0.2.2-rc.2** → **134 会被拒 / 110 判不了 / 0 会变好 / 21 像没事**，**14/14 checks**；`card sha256=2b39acbc9caa…` / `artifact sha256=78be4cffd2ea…`（两个标签两个对象 —— T-868 的修法在这里生效）。**第一跑是红的、如实记**：不带 `--dsh-home` 时记录器落到仓内沙盒（`sandbox/upstream/0.2.1-rc.4/home`），那里没有 `desktop` profile → `profile-not-found`；补上真实 home 后 14/14。这是「默认值指错地方」，不是产品缺陷。",
+        "artifact": "data/results/upgrade-card-2026-11-12T23-30-00.000Z.json",
+        "sha256": "78be4cffd2ea8dae6619c7f7de88b5c6b9515227597440f065ebfde9492a50d1"
+      },
+      "review": {
+        "correctness": "PASS：卡片走 `judgeUpgradeImpact`，四桶计数与 `upgrade --to next` 在同一 profile 上逐项相同；标题由 `judgeCardTitle` 判（关键字 `--to next` 不参与比较）。",
+        "reproducibility": "PASS：两次渲染同 sha256（`card-is-deterministic` 是 14 项之一）；产物与 `.sha256` 同名同源；`--dsh-home` 显式给定时记录器不再落回沙盒默认值。",
+        "licence": "PASS：只读本机 profile，卡片正文经 `scrubCardText` 去掉绝对路径。",
+        "ssot": "PASS：`data/results/upgrade-card-2026-11-12T23-30-00.000Z.json` 在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：把 134 写成 135 → `inputs.counts` 与正文不一致，`card-titles-the-target` 之外的 `card-shows-counts` 会红；把目标换成 `--to latest` 而不改标题 → `judgeCardTitle` 的 6 条单测里有一条专门钉「标题必须写解析出来的版本」。"
+      }
+    },
+    {
+      "id": "R103-S4",
+      "batch": "R103",
+      "step": "发布 0.3.9 + 取证：四包 Published、`record_publish` 18/18、匿名安装 0 退出",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_publish.mjs",
+        "outcome": "`pnpm -r publish --no-git-checks --access public` → 四包全部 `Published`（core / probe / signals / dsh-triage `0.3.9`）；`record_publish` **18/18**：`registry-visibility` 在 **5 次读**之后出现（76343ms）· 四包 `latest=0.3.9` · `dist-tags-agree` · 匿名装 `npm install dsh-triage@0.3.9` **exit 0**（6 包 / 2s）· 三个 `dependency:*` 解析到 0.3.9 · CLI 16 行 · `import()` 六个导出 · `client-bundle` 39911B + loader + `settings.plugins.tab`。**同轮保留一份红产物**（`publish-2026-11-12T20-57-27.649Z.json`，`26 项 3 红`：`version:@dsh-triage/core/signals/probe` 与 `dist-tags-agree` —— 那时走的是**两个不同的读取时刻**，`@dsh-triage/core` 的副本还没同步、`latest` 仍是 0.3.8）。**同一份里 `anonymous-install` 已经 exit 0**，所以按 R98 的判读顺序：字节上去了，副本没到。七分钟后重跑即 18/18。",
+        "artifact": "data/results/publish-2026-11-12T21-04-27.676Z.json",
+        "sha256": "92658fe0a54f675c230c15a1c2ff2d5db737009880496e1531f997ad66ae5c82"
+      },
+      "review": {
+        "correctness": "PASS：`record_publish` 比的是 registry 上 tarball 的 sha512 与本地构建的 `dist.integrity`、以及四包 `dist-tags`；`latest` 一致性单独一项（0.3.1 / 0.3.3 两次真实事故就是这个形状）。",
+        "reproducibility": "PASS：匿名安装用空 `userconfig` 与临时目录，`--wait-registry-ms` 的预算内重试只在 `notarget`/`ETARGET` 形状下重试；两次读数（20:57 红 / 21:04 绿）都保留了，可复算。",
+        "licence": "PASS：发布的是本仓 MIT 代码；没有引入新的第三方依赖（`semver` / `yaml` 是既有依赖）。",
+        "ssot": "PASS：`data/results/publish-2026-11-12T21-04-27.676Z.json`（绿）与 `data/results/publish-2026-11-12T20-57-27.649Z.json`（红）都在 `data/results/` 且带 `.sha256`；红的那份不许删（R77/R91/R98 都付过学费）。",
+        "adversary": "反例：只升三个包、漏掉一个 → `version:*` 与 `dist-tags-agree` 红（本轮的 20:57 那份就是这个形状的**误判**：不是漏发，是读早了）；紧跟发布立刻取证而副本未到 → 不加预算重试就会把「副本滞后」写成「没发上去」。"
+      }
+    },
+    {
+      "id": "R103-S5",
+      "batch": "R103",
+      "step": "已发布包的第一次真实阅读：匿名装 0.3.9 读本机 desktop profile + 陌生人四项 smoke",
+      "changed": [
+        "scripts/record_usability_smoke.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-12T23:50:00.000Z --version 0.3.9",
+        "outcome": "**6/6**：`install` exit 0 · `cli-present` · `help` · `status-no-arguments`（20 行，`dsh 0.2.2-rc.1 (kernel-asar)`）· `audit-summary`（22 行）· `upgrade-card`（`boundary=yes` / `buckets=yes` / `# 升级日 · 0.2.2-rc.2`）。**另一次真跑（临时目录装的同一个包，读本机真实 home）**：`status --profile desktop --dsh-home <home>` → **`0 项需要你处理；另有 93 项没写版本区间`**；`audit --json` → `env 0.2.2-rc.1 / kernel-asar`、**242 rows / 289 claims / 0 collisions**。**这就是发给用户的那一份字节在这台机器上的读数** —— 与 R102 用仓内 HEAD 跑出来的数逐项相同。",
+        "artifact": "data/results/usability-2026-11-12T23-50-00.000Z.json",
+        "sha256": "9ac10aa4021b0cb318e584f266a92bf439315fa6e8549819f5d0520d040dc816"
+      },
+      "review": {
+        "correctness": "PASS：这一项验的是「registry 上的字节能不能做正门承诺的那件事」，不是实现过程；两处读数（仓内 HEAD 与 registry 0.3.9）逐项相同，说明 M14+M16 真的进了包。",
+        "reproducibility": "PASS：`--version` 精确钉定（默认从 manifest 读），安装目录在 `%TEMP%`、跑完即删；产物带 `.sha256`。",
+        "licence": "PASS：只装自己发布的 MIT 包。",
+        "ssot": "PASS：`data/results/usability-2026-11-12T23-50-00.000Z.json` 在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：如果 M14 没进包，`status` 会打印 `0.1.0-rc.6 (inferred)` 与 8 条 blocked —— smoke 的 `status-no-arguments` 只查 exit 0 与行数，**它抓不到这一条**；抓住这一条的是另一处显式的 `--profile desktop` 读数，所以两者都要有。"
+      }
+    },
+    {
+      "id": "R103-S6",
+      "batch": "R103",
+      "step": "发布后的第一份读数（红）：副本还没同步就取证，把「没到」读成「没发上去」",
+      "changed": [
+        "scripts/lib/registry-wait.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_publish.mjs   # 20:57:27Z，紧跟 `pnpm -r publish` 之后",
+        "outcome": "**26 项 3 红**：`version:@dsh-triage/core` / `version:@dsh-triage/signals` / `version:@dsh-triage/probe` 三项报 `0.3.9 absent (latest=0.3.8)`，`dist-tags-agree` 报四包不一致。**同一份里 `anonymous-install` 已经 exit 0（6 包 / 2s）** —— 按 HANDOFF §2 的判读顺序：**字节已经上去了，是读副本的时刻早于副本到达**。同一份里还有 `registry-visibility` PASS：`the packument did not carry the version on 5 read(s); it appeared after 76343ms`，这一条就是「副本滞后」的机器读数。七分钟后重跑 **18/18**（`R103-S4`）。**红产物保留**（R77 / R91 / R98 同一形状的第五次现场）：删掉它，下一轮就会重新学一次「读早了」。",
+        "artifact": "data/results/publish-2026-11-12T20-57-27.649Z.json",
+        "sha256": "8d3951c63ff4c6345d3e9c1870cd0a670d3d442410e2d68270dc60b1d47be5be"
+      },
+      "review": {
+        "correctness": "PASS：这不是产品失败，是**读数顺序**失败。判据是同一份产物里的两组字段：`anonymous-install exit 0`（字节在）与 `version:* absent`（副本未到）。两者同时成立时，唯一诚实的结论是「等一下再读」。",
+        "reproducibility": "PASS：`registry-wait.mjs` 的预算重试只对 `notarget`/`ETARGET` 形状生效，七分钟后同一命令零代码改动即 18/18；红与绿两份产物都在。",
+        "licence": "PASS：只是读 registry，没有写操作。",
+        "ssot": "PASS：`data/results/publish-2026-11-12T20-57-27.649Z.json` 在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：如果 `registry-wait` 不区分「副本滞后」与「真的没发上去」，它会把一次 401 或一次真的漏发也重试五分钟 —— 那样「发布失败」就会被等成成功。目前的形状只对 `notarget`/`ETARGET` 重试，`E401` 立刻出结论。"
       }
     }
   ]

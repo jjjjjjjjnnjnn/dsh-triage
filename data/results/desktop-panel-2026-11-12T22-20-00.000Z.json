@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_desktop_panel.mjs",
+  "generated_at": "2026-11-12T22:20:00.000Z",
+  "command": "desktop-panel",
+  "inputs": {
+    "host": {
+      "address": "127.0.0.1:51701",
+      "route": "/compat-triage/summary",
+      "marker_header": "x-dsh-triage-client",
+      "profile": "desktop"
+    },
+    "dsh_home": "~/.dsh",
+    "host_plugin_version": "0.3.7",
+    "cli_plugin_version": "0.3.8"
+  },
+  "panel": {
+    "env": {
+      "dsh": "0.2.2-rc.1",
+      "dshSource": "kernel",
+      "profile": "desktop",
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "zh": {
+      "tone": "attention",
+      "headline": "未发现阻断项，存在 90 项未明确版本声明",
+      "counts": {
+        "rows": 289,
+        "judged": 90,
+        "go": 0,
+        "denied": 0,
+        "unknown": 90,
+        "collisions": 0,
+        "duplicateCopies": 0,
+        "errors": 0,
+        "actionable": null,
+        "unjudged": null
+      },
+      "issues": 5
+    },
+    "en": {
+      "tone": "attention",
+      "headline": "Nothing is denied, but 90 thing(s) have no evidence either way"
+    },
+    "ms": 3367
+  },
+  "cli": {
+    "env": {
+      "dsh": "0.2.2-rc.1",
+      "dshSource": "kernel-asar",
+      "profile": "desktop",
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "zh": {
+      "tone": "attention",
+      "headline": "0 项需要处理 · 93 项无法判定（未声明版本区间，不代表不兼容）",
+      "counts": {
+        "rows": 289,
+        "judged": 93,
+        "go": 0,
+        "denied": 0,
+        "unknown": 93,
+        "collisions": 0,
+        "duplicateCopies": 0,
+        "errors": 0,
+        "actionable": 0,
+        "unjudged": 93
+      },
+      "issues": 5
+    },
+    "en": {
+      "tone": "attention",
+      "headline": "0 thing(s) need you · 93 could not be judged (no version range declared — that is not \"incompatible\")"
+    }
+  },
+  "judgement": {
+    "agree_on_version": true,
+    "agree_on_actionable": true,
+    "mismatches": [],
+    "row_counts_differ": false,
+    "row_counts_note": "The Host composes the kernel layer, the CLI only the profile layer; M16-C6 requires the actionable fields to agree and requires this difference to be explained, not removed."
+  },
+  "limits": [
+    "One scan per side, taken seconds apart. A profile edited in between is a different fact.",
+    "The route is read with the marker header the desktop bridge forwards; this is the page's call path, not a browser click.",
+    "The Host is not started, stopped or modified by this script: whoever owns the desktop app decides when it restarts."
+  ]
+}

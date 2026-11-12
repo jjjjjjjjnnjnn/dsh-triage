@@ -24,6 +24,7 @@ import type { AuditData } from './audit-data.js'
  */
 export function runtimeLabel(env: { readonly dsh: string | null; readonly dshSource?: DshSource }): string {
   if (env.dsh === null) return 'unknown'
+  if (env.dshSource === 'kernel-asar') return `${env.dsh} (kernel-asar)`
   if (env.dshSource === 'kernel') return `${env.dsh} (kernel)`
   if (env.dshSource === 'inferred') return `${env.dsh} (inferred)`
   return env.dsh
@@ -68,6 +69,15 @@ export interface ProfileSummary {
     readonly collisions: number
     readonly duplicateCopies: number
     readonly errors: number
+    /**
+     * R101 (M15): things the user can ACT on — denials, entry-id collisions, duplicate copies, unreadable
+     * config. `unknown` is deliberately excluded: "this plugin never said which versions it supports" is
+     * not something a user can fix by editing their setup, and counting it as an anomaly is what made the
+     * one-screen answer read as "9 problems" when nothing was broken.
+     */
+    readonly actionable: number
+    /** Things we could not judge: no declaration, or a manifest from another runtime (M14-C3). */
+    readonly unjudged: number
   }
   readonly issues: readonly SummaryIssue[]
   /** Issues that did not fit in `issues` (the summary is capped, not exhaustive). */
@@ -141,12 +151,22 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
     issues.push({ id: 'profile', kind: 'unreadable', line: error, plain: copy.plainUnreadable, fix: null })
   }
 
+  /*
+   * R101/M15: the tone used to be `broken` whenever anything was denied OR collided, and the sentence
+   * said「检测到 N 项兼容异常」counting denied + collisions. With `unknown` items in the mix, a profile with
+   * nothing actionable read as "9 compatibility problems". Actionable is now a named number, and a profile
+   * whose only items are `unknown` is `attention`, never `broken`.
+   */
+  const actionable = denied.length + data.collisions.length + data.duplicateFindings.length + data.errors.length
+  const unjudged = unknown.length
   const tone: SummaryTone =
     denied.length > 0 || data.collisions.length > 0
       ? 'broken'
-      : unknown.length > 0 || data.duplicateFindings.length > 0 || data.errors.length > 0
+      : actionable > 0
         ? 'attention'
-        : 'ok'
+        : unjudged > 0
+          ? 'attention'
+          : 'ok'
 
   // An empty composition is not a clean one. Saying "no problems" for a profile that yielded
   // zero rows would turn "I looked at the wrong home" into a passing grade — the same mistake
@@ -157,7 +177,7 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       : tone === 'broken'
         ? copy.broken.replace('{n}', String(denied.length + data.collisions.length))
         : tone === 'attention'
-          ? copy.attention.replace('{n}', String(unknown.length + data.duplicateFindings.length + data.errors.length))
+          ? copy.attention.replace('{n}', String(actionable)).replace('{u}', String(unjudged))
           : copy.ok
 
   const plain =
@@ -166,7 +186,7 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       : tone === 'broken'
         ? copy.plainBroken.replace('{n}', String(denied.length + data.collisions.length))
         : tone === 'attention'
-          ? copy.plainAttention.replace('{n}', String(unknown.length + data.duplicateFindings.length + data.errors.length))
+          ? copy.plainAttention.replace('{n}', String(actionable)).replace('{u}', String(unjudged))
           : copy.plainOk
 
   return {
@@ -182,6 +202,8 @@ export function buildProfileSummary(data: AuditData, options: SummaryOptions): P
       collisions: data.collisions.length,
       duplicateCopies: data.duplicateFindings.length,
       errors: data.errors.length,
+      actionable,
+      unjudged,
     },
     issues: issues.slice(0, limit),
     more: Math.max(0, issues.length - limit),
@@ -293,7 +315,7 @@ function summaryCopy(locale: Locale): SummaryCopy {
       more: 'more (the summary is capped; `audit --json` has the full list)',
       next: 'Next',
       broken: '{n} thing(s) are actually broken',
-      attention: 'Nothing is denied, but {n} thing(s) have no evidence either way',
+      attention: '{n} thing(s) need you · {u} could not be judged (no version range declared — that is not "incompatible")',
       ok: 'No problems found in this composition',
       emptyProfile:
         'this profile yielded no rows at all — usually the wrong --dsh-home or --profile, not a clean profile',
@@ -301,7 +323,7 @@ function summaryCopy(locale: Locale): SummaryCopy {
       duplicate: 'the same package is installed at more than one version ({versions})',
       deniedFallback: 'denied by admission',
       plainOk: 'All good — nothing in this setup needs fixing.',
-      plainAttention: 'Nothing is broken, but there is (are) {n} thing(s) we could not judge. It usually still starts.',
+      plainAttention: '{n} thing(s) need you; {u} more never declare a version range, which is not incompatibility.',
       plainBroken: 'Some of this setup will break: {n} row(s) may vanish when DSH starts.',
       plainEmpty: 'No plugins were found — the folder is probably wrong, not empty.',
       plainDenied: 'It gets blocked, so it may vanish when DSH starts.',
@@ -325,14 +347,14 @@ function summaryCopy(locale: Locale): SummaryCopy {
     more: '条未显示（查看完整明细请使用 `audit --json`）',
     next: '后续建议',
     broken: '检测到 {n} 项兼容性异常',
-    attention: '未发现阻断项，存在 {n} 项未明确版本声明',
+    attention: '{n} 项需要处理 · {u} 项无法判定（未声明版本区间，不代表不兼容）',
     ok: '当前环境配置均正常，未发现兼容性问题',
     emptyProfile: '当前 Profile 未检索到任何插件配置：通常是主目录或 Profile 路径指定有误。',
     collision: 'Entry ID 标识冲突（涉及 {owners}），可能导致启动失败',
     duplicate: '检测到重复安装不同版本（{versions}）',
     deniedFallback: '不满足准入条件',
     plainOk: '运行环境良好：所有已分析插件均兼容当前版本。',
-    plainAttention: '当前环境未发现已知拦截项，有 {n} 项未明确声明版本区间。',
+    plainAttention: '{n} 项需要你处理；另有 {u} 项没写版本区间，那不代表不兼容。',
     plainBroken: '检测到 {n} 项兼容异常：启动后相关功能可能无法正常加载。',
     plainEmpty: '当前配置中未检索到插件，请检查目录配置。',
     plainDenied: '依赖版本不满足，启动加载时将被拦截。',

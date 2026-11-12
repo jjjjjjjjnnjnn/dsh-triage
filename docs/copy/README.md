@@ -1,6 +1,6 @@
 # 文案通道 · Copy channel
 
-> **谁写**：Gemini（外部文案 agent）。**谁给事实**：工程侧（DeepSeek agent）。
+> **谁写**：`copywriter` 角色，由**当前会话的同一个模型**写（R102 起不再调用外部模型 CLI）。**谁给事实**：工程侧。
 > **为什么分开**：文案最贵的错误不是「不好看」，是**数字好看但不对**。所以本仓的规则是
 > **事实先于文字**：没有事实包的文案不写，没有产物指针的数字不出现。
 
@@ -10,20 +10,21 @@
 
 | 角色 | 负责 | 不负责 |
 |---|---|---|
-| **Gemini**（`copywriter`） | 措辞 / 结构 / 标题 / 中英转换 / 截图说明 / 设计草稿 | 发明数字、改判据、决定发不发、回填 `data/results` |
+| **`copywriter`（会话内，同一个模型）** | 措辞 / 结构 / 标题 / 中英转换 / 截图说明 / 设计草稿 | 发明数字、改判据、决定发不发、回填 `data/results` |
 | **工程 agent**（DeepSeek） | 真跑产物 / 算出数字 / 给命令与边界 / 机器校验 | 在没有事实包时写对外文案 |
 | **HUMAN / arbiter** | 决定发不发、以谁的身份发 | 替模型猜一个数字 |
 
-**模型纪律（HUMAN 2026-11-05）**：opencode 里**只用 DeepSeek**；文案由外部 `agy` 调用
-`gemini-3.8-flash-high` 生成（`agy --model gemini-3.8-flash-high --print=<prompt>`），prompt 里只给事实包与规则。
-不要把 opencode 的 Gemini 供应商当文案通道（实测会因余额失败，见 `BS-58`）。
+**模型纪律（HUMAN 2026-11-05；2026-11-12 修订）**：opencode 里**只用当前会话的模型**（DeepSeek）；文案
+**在本会话内**读事实包写，**不得**调用 `agy` / `gemini` / 任何外部模型 CLI（也不调用 opencode 里的其他供应商）。
+这条的代价必须和收益一起写：写稿与审稿是**同一个模型**，所以「第二双眼睛」由**证据**替代 —— 每个数字指到带 `.sha256`
+的产物、每条断言由 `check_listing` 与 `copy-channel.test.ts` 复算；`BS-72` 记录这条边界。
 
 ## 2. 流向（只有一条）
 
 ```
 工程侧：docs/copy/facts/<ticket>.md        事实包（产物路径 + sha256 + 精确数字 + 边界 + 命令）
    ↓
-Gemini：docs/copy/drafts/<ticket>.md       草稿（paste 块 + 声明 claims）
+会话内（同一个模型）：docs/copy/drafts/<ticket>.md   草稿（paste 块 + 声明 claims）
    ↓
 机器：node scripts/check_listing.mjs ...    对 T-810 系草稿复算声明
       npx node --test tests/governance/copy-channel.test.ts   对事实包/草稿做结构校验
@@ -51,7 +52,7 @@ Gemini：docs/copy/drafts/<ticket>.md       草稿（paste 块 + 声明 claims�
 - 边界句（必须原样进正文）：`以上判的是 npm 上已发布的版本，不是你那台机器。`
 ```
 
-## 4. 草稿的格式（Gemini 写）
+## 4. 草稿的格式（`copywriter` 在会话内写）
 
 - 顶部一行 `<!-- facts: docs/copy/facts/<ticket>.md -->`；
 - 正文放在 `<!-- paste:start -->` 与 `<!-- paste:end -->` 之间，**块内只放将粘贴的字**；
