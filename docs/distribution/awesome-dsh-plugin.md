@@ -5,11 +5,23 @@
 > **状态**：**`MERGED`（2026-11-13T17:46:06Z，merge commit `e68d7bc`）** / `+6-0` / `changed_files 1` / **0 reviews**（维护者直接合了，没有留 review）。合并前是 `open` / `MERGEABLE` / `CLEAN` / 两个 check 全绿（R104 记载）
 > **渠道台账**：`docs/distribution/channels.json` 的 `awesome-dsh-plugin-14880`（`d5_counts: false`）
 >
-> **两件不同的事（R109 实测，2026-11-13T18:55Z）**：
+> **两件不同的事（R109 实测 18:55Z；R110 复读 19:05Z：第二件也发生了）**：
 > ① **仓库收录 = 已发生**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 在 `main`（`c004b4c`），`README.md` / `README.zh.md` 都有这一条（17:50Z 由 `sync-readme` 重生成）。
 > ② **网站在线 = 还没发生**：`https://awesome-dsh-plugin.com/plugins.json`（10,778 条）里**没有**这一条；最近一次 `github-pages` 部署是 `4bf5ca5`（**17:44:13Z**，早于合并），而 `Build site from README` 的 `workflow_run`（**run 43477377365**，17:54:17Z）一直 `pending`、**0 job**。
 > ③ **不是我们这一条的问题**：同一批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）在 `/plugins.json` 里**同样缺席**，而更早合并的 `ai-terminal-pet` 在 —— 说明是构建卡住，不是条目被拒。
 > ④ **已留言**：#14880 的 [issuecomment-6861985619](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880#issuecomment-6861985619)（一条，只报构建状态，并给出 `workflow_dispatch` + `skip_probes: true` 的捷径）。**对方不 dispatch 就只能等** —— 我们没有任何能触发它构建的权限。
+
+> ⑤ **R110 复读（同日 19:05Z）：站点已上线** —— `/plugins.json` 里已经有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`），`/p/…` 与 `/zh/p/…` 两个详情页都 200。R109 那条「还没发生」只在那几分钟里成立。
+> ⑥ **「详情页没有 README」不是缺陷**：README 由 `probe-readmes.mjs` 在**夜间 `PROBE_ALL`** 里抓（`MAX_BYTES 48KB`，monorepo 取子目录的 README → 我们的是 `packages/plugin/README.md`，5.8KB），push 构建只部署、不探针；同批 17:50 合并的三条当时都没有 README 面板，02:23 那次跑完才补。
+> ⑦ **描述改短（PR #15073）**：`contributing.md` 要求「一行、以句号结尾」，而我们的条目写了四句。现在的中英各一句（en 253 / zh 101 字符），事实一条不减。**这一行是维护义务（`T-871`）**：
+>
+> ```yaml
+> description:
+>   en: 'Will your plugins survive the next DSH upgrade? One command answers row by row — who gets refused, who silently disappears — and can boot a candidate in a throwaway DSH_HOME. Read-only by default; --apply writes after a backup, with a byte-exact --undo.'
+>   zh: '下次 DSH 升级，你的插件还活着吗？一条命令逐行回答：谁会被拒、谁会悄悄消失，也能把候选装进一次性 DSH_HOME 真跑一遍。默认只读，`--apply` 才写，先备份、可逐字节 `--undo`。'
+> ```
+>
+> 改命令、改默认行为、改能力边界，都要回头核这一行；对不上就再提一个只改这一条的 PR（README 用 `node scripts/generate-readme.mjs` 重生成，`--check` 必须绿）。
 
 ---
 

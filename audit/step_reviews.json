@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R109 (2026-11-13)",
+  "stand": "R110 (2026-11-13)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16472,6 +16472,27 @@
         "licence": "PASS：只推本仓子树，不带 `dsh-remedy/`。",
         "ssot": "PASS：`data/results/` + `.sha256`，`trees-equal` 是复算结果。",
         "adversary": "反例：把绿 CI 当成「这次上游更新我们有办法验证」—— CI 只证明本仓的测试在 runner 上绿；「在 rc.3 上真跑」是 `R108-S5` 那份 audit 产物证明的，两者不能互相替代。"
+      }
+    },
+    {
+      "id": "R109-S1",
+      "batch": "R109",
+      "step": "公开仓切到含 R109 的提交（「合并 ≠ 市场上看得见」这一条也进公开镜像）",
+      "changed": [
+        "data/results/public-cut-2026-11-13T18-55-35.090Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at 843aa02` / `behind 0`**（那一刻）。上一刀是 `aa3ad51`（R108，`run 43483498827` 六 job 全绿）。",
+        "artifact": "data/results/public-cut-2026-11-13T18-55-35.090Z.json",
+        "sha256": "6b917a2a5f4da51faaa8782349d654c76e5b2f1d138f4fb0ee89af3c206315a4"
+      },
+      "review": {
+        "correctness": "PASS：切的是 `HEAD:dsh-triage` 子树本身，parent = 当时的 `origin/main`；`trees-equal` 由脚本比出来。",
+        "reproducibility": "PASS：切面由「容器提交 + 公开仓父提交」重算；`behind` 是构造。",
+        "licence": "PASS：只推本仓子树，不带 `dsh-remedy/`。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把这一刀当成「市场上已经能看到」—— 公开仓镜像与 `awesome-dsh-plugin.com` 是两回事；前者我们说了算，后者由他们的 `build-site` 决定（`BS-75`）。"
       }
     }
   ]
