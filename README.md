@@ -65,6 +65,8 @@ $ dsh-triage upgrade --to latest
 ```
 <!-- /upgrade-card -->
 
+**当前实测（2026-11-13）**：本机桌面运行时已升到 `0.2.2-rc.3`（`next` 标签的值；`latest` 仍是 `0.2.2-rc.1`），`dsh-triage status` 读作 `0.2.2-rc.3 (kernel-asar)`，一屏是「0 项需要你处理；另有 93 项没写版本区间」。声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对 `0.2.2-rc.3` 判定为 **satisfied**。产物：`data/results/audit-2026-11-13T18-25-00.000Z.json`（246 行 / 93 条判定 / 0 错误）。
+
 **数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.2-rc.1`，即录制时 npm `latest` 标签解析出的版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest`。
 
 - `--to next` / `--to latest` 从 npm `dist-tags` 解析目标版本；`--to <指定版本>` 全程离线推演。

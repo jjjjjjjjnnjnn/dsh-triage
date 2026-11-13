@@ -109,7 +109,7 @@ npm i -g dsh-triage                       # CLI only
 dsh plugin --profile web add dsh-triage   # into a profile: settings tab + agent tool
 ```
 
-Requires Node ≥ 22.19 and DSH `>=0.2.0-rc.1 <0.3.0-0` (measured on 0.2.1-rc.4).
+Requires Node ≥ 22.19 and DSH `>=0.2.0-rc.1 <0.3.0-0` (measured on 0.2.2-rc.3).
 
 ## Licence and data attribution
 

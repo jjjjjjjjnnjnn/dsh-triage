@@ -98,8 +98,8 @@ if (!existsSync(abs(mutateFile))) {
 }
 
 /* --- 6. The archive that holds the trimmed rows exists and is registered -------------------- */
-const archive = '_archive/2026-11-13_HANDOFF-batch-rows-R95.md'
-if (existsSync(abs(archive)) && read('_archive/ARCHIVE_MANIFEST.md').includes('R95')) {
+const archive = '_archive/2026-11-13_HANDOFF-batch-rows-R96.md'
+if (existsSync(abs(archive)) && read('_archive/ARCHIVE_MANIFEST.md').includes('R96')) {
   pass('归档', archive)
 } else {
   fail('归档', `${archive} is missing, or ARCHIVE_MANIFEST does not register it`)

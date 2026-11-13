@@ -282,6 +282,15 @@ test('N6: on this machine the CLI and the settings route agree on collisions', a
   assert.deepEqual(collisions.map((collision) => collision.id), [], 'the real desktop profile has no entry-id collision')
   // The one bundle whose manifest and patch the archive ships must have answered from the archive.
   const base = layers.find((layer) => layer.name === '@deepseek-ai/dsh-base')
-  assert.equal(base?.version, '0.2.2-rc.1')
+  /*
+   * R108: this used to pin `'0.2.2-rc.1'`, i.e. whichever runtime happened to be installed when the
+   * test was written. Upstream moved to 0.2.2-rc.3 and the assertion went red for a reason that has
+   * nothing to do with the rule it defends: M16-C3 says the layer and the runtime come from ONE place,
+   * so the version to compare against is the one the probe read — pinned to a literal, the test rots
+   * on every rc while still "passing" the moment someone edits the literal. Comparing against
+   * `env.dsh` keeps the stale-cache failure caught (cache says 0.1.0-rc.6) and stops asking a
+   * version-specific question the test cannot know.
+   */
+  assert.equal(base?.version, env.dsh, `the base layer must be the archive copy (${env.dsh}), not the stale cache`)
   assert.equal(base?.patchText !== null, true)
 })

@@ -18,8 +18,8 @@
 |---|---|---|
 | `DSH_HOME` | `C:\Users\rongj\.dsh` | 未设置环境变量时的默认值 |
 | 开发用 profile | `web` | `profiles/web`（含 `package.json` / `cordis.patch.yml`） |
-| **本机已装 DSH 版本** | **0.2.2-rc.1（kernel）/ 0.1.0-rc.6（陈旧共享缓存）** | 正在运行的 Host 从 `app.asar` 读（R91 的 `ELECTRON_RUN_AS_NODE=1` 实测）；`profiles/node_modules/@deepseek-ai/dsh/package.json` 那份只是共享依赖缓存，**不是**运行时版本 |
-| 上游基线（开发目标） | **`latest` 0.2.2-rc.1 · `next` 0.2.2-rc.2** | npm dist-tags（`data/results/next-release-<最新>.json` 逐字复算）；admission 语义与 CLI 行为以 `latest` 为准，`next` 是「升级日」的候选目标 |
+| **本机已装 DSH 版本** | **0.2.2-rc.3（kernel-asar）/ 0.1.0-rc.6（陈旧共享缓存）** | 正在运行的 Host 从 `app.asar` 读（R91 首次实测；R108 用 `status` 与 `audit-2026-11-13T18-25-00.000Z.json` 复读为 `0.2.2-rc.3 (kernel-asar)`）；`profiles/node_modules/@deepseek-ai/dsh/package.json` 那份只是共享依赖缓存，**不是**运行时版本 |
+| 上游基线（开发目标） | **`latest` 0.2.2-rc.1 · `next` 0.2.2-rc.3** | npm dist-tags（`data/results/next-release-<最新>.json` 逐字复算）；admission 语义与 CLI 行为以 `latest` 为准，`next` 是「升级日」的候选目标 |
 | 本机已装 bundle | `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` | `profiles/web/package.json#dsh.profile.bundles` |
 
 > ⚠️ **别再按「本机落后 N 个 rc」读这张表**（R99 更正）：那句话来自把 `profiles/node_modules` 的缓存副本当成运行时版本，R91 已用真实 asar 证伪。**写代码按 `latest` = `0.2.2-rc.1` 的语义**（`engines.dsh` 优先、`plugin_manager`、Discover 索引源、`compatibility.json` 豁免）；那两份缓存副本只作为「旧基线兼容」的观测样本。

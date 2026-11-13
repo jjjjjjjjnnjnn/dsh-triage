@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_upgrade_card.mjs",
+  "generated_at": "2026-11-13T18:06:00.000Z",
+  "inputs": {
+    "target": "0.2.2-rc.3",
+    "target_keyword": "next",
+    "profile": "desktop",
+    "dsh_home": "<dsh-home>",
+    "locale": "zh",
+    "counts": {
+      "bundles": 22,
+      "rows": 246,
+      "would_be_denied": 0,
+      "cannot_tell": 109,
+      "improved": 0,
+      "likely_fine": 159,
+      "total": 268
+    },
+    "card_sha256": "a8ebfbdf4e5596fa982ff979684be562679ae107cece331ef96e54c7537766ae",
+    "card_bytes": 2810,
+    "card_lines": 53
+  },
+  "card": "# 升级日 · 0.2.2-rc.3\n\n**desktop：268 个单元（22 bundle + 246 行）升到 0.2.2-rc.3 → 0 会被拒 · 109 判不了 · 0 会变好 · 159 像没事**\n\n> profile `desktop`（live）· 当前 0.2.2-rc.3 · 目标等于当前\n> 判的是**声明层**：只看「声明区间 vs 目标运行时」，不是运行期实测。\n\n| 桶 | 数量 | 意思 |\n|---|---|---|\n| `would-be-denied` | 0 | 升上去会被摘掉 —— 目标版本的 admission 会拒绝这一行/包 |\n| `cannot-tell` | 109 | 判不了 —— 声明不足或目标还没发布，证据不够 |\n| `improved` | 0 | 今天被拒、目标放行 —— 今天是坏的，目标版本会放行它 |\n| `likely-fine` | 159 | 声明上不冲突 —— 不等于升级后能跑，只表示没有声明冲突 |\n\n## 判不了（109）\n\n- `bundle:@deepseek-ai/dsh-base` · @deepseek-ai/dsh-base@0.2.2-rc.3\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-forge-bundle` · @deepseek-ai/dsh-experimental-forge-bundle@0.2.2-rc.3\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-inspector-profile` · @deepseek-ai/dsh-experimental-inspector-profile@0.2.2-rc.3\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-experimental-plugin-market-bundle` · @deepseek-ai/dsh-experimental-plugin-market-bundle@0.2.2-rc.3\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@deepseek-ai/dsh-personalized-recommendations` · @deepseek-ai/dsh-personalized-recommendations@0.2.2-rc.3\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@liustack/modsearch` · @liustack/modsearch@5.10.12\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:@tt-a1i/archify-dsh` · @tt-a1i/archify-dsh@1.1.0\n  - 修复：豁免只绕过声明；行为仍未实测\n- `bundle:billion-context` · billion-context@0.1.213\n  - 修复：豁免只绕过声明；行为仍未实测\n- … 另外 101 个\n\n## 声明上不冲突（159）\n\n- `bundle:@240xu/dsh-websearch` · @240xu/dsh-websearch@2.8.8\n- `bundle:@deepseek-ai/dsh-web-app` · @deepseek-ai/dsh-web-app@0.2.2-rc.3\n- `bundle:@linxin666/dsh-client-ui-skill-explorer` · @linxin666/dsh-client-ui-skill-explorer@0.4.16\n- `bundle:dsh-context` · dsh-context@0.83.1\n- `bundle:dsh-free-search` · dsh-free-search@0.9.43\n- `bundle:dsh-notify-me` · dsh-notify-me@1.19.0\n- `bundle:dsh-ops` · dsh-ops@0.5.4\n- `bundle:dsh-remedy` · dsh-remedy@0.4.2\n- … 另外 151 个\n\n## 边界（请一起读）\n\n- `improved` 只说明「**目标版本会放行它**」；今天没有「升到更新版本变好」的真实样本（`BS-42`）。\n- 声明层判不了运行期行为；`likely-fine` 不等于升级后能跑。\n\n**复算**：`dsh-triage upgrade --to 0.2.2-rc.3 --card`\n",
+  "checks": [
+    {
+      "id": "card-exit-0",
+      "ok": true,
+      "detail": "exit 0"
+    },
+    {
+      "id": "json-parses",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "id": "card-titles-the-target",
+      "ok": true,
+      "detail": "# 升级日 · 0.2.2-rc.3 (expected 0.2.2-rc.3, keyword next)"
+    },
+    {
+      "id": "card-first-line-is-conclusion",
+      "ok": true,
+      "detail": "**desktop：268 个单元（22 bundle + 246 行）升到 0.2.2-rc.3 → 0 会被拒 · 109 判不了 · 0 会变好 · 15"
+    },
+    {
+      "id": "card-repeats-the-json-counts",
+      "ok": true,
+      "detail": "json counts {\"bundles\":22,\"rows\":246,\"would_be_denied\":0,\"cannot_tell\":109,\"improved\":0,\"likely_fine\":159,\"total\":268}"
+    },
+    {
+      "id": "buckets-are-a-partition",
+      "ok": true,
+      "detail": "268 total"
+    },
+    {
+      "id": "card-table-matches-counts",
+      "ok": true,
+      "detail": "four bucket rows present"
+    },
+    {
+      "id": "card-keeps-boundary",
+      "ok": true,
+      "detail": "the BS-42 boundary sentence survives"
+    },
+    {
+      "id": "card-makes-no-promise",
+      "ok": true,
+      "detail": "no forbidden promise"
+    },
+    {
+      "id": "card-is-deterministic",
+      "ok": true,
+      "detail": "card hash a8ebfbdf4e55…"
+    },
+    {
+      "id": "card-carries-no-home-path",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "id": "card-names-units",
+      "ok": true,
+      "detail": "at least one unit line"
+    },
+    {
+      "id": "json-wins-over-card",
+      "ok": true,
+      "detail": "json only on stdout"
+    },
+    {
+      "id": "json-says-card-was-ignored",
+      "ok": true,
+      "detail": "target   next → 0.2.2-rc.3 (npm @deepseek-ai/dsh)"
+    }
+  ],
+  "passed": true,
+  "limits": [
+    "the card judges the declaration layer only: declared ranges against the target runtime, not runtime behaviour",
+    "`improved` is only witnessed in the downgrade geometry today (BS-42), so the card says \"the target admits it\"",
+    "the profile is the in-repo sandbox (0.2.1-rc.4), not a user machine",
+    "card text is the zh rendering; the en rendering is covered by tests/unit/upgrade-card.test.ts"
+  ]
+}

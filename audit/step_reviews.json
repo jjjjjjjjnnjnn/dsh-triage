@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R107 (2026-11-13)",
+  "stand": "R108 (2026-11-13)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16299,6 +16299,158 @@
         "licence": "PASS：注入只改本仓自己的断言或判定输入，不触碰外部仓库与凭据。",
         "ssot": "PASS：另一份独立产物（不覆盖 S4），`sha256` 可重算，「跑绿」与「抓得住」不是一个数字。",
         "adversary": "反例：只留绿的那份（S4）—— 下一轮会以为门禁仍然有效，而 `--mutate` 可能早已抓不住（R105 的 `M11-N2` 就是这样静默失效的，控制串早就不存在）。"
+      }
+    },
+    {
+      "id": "R107-S7",
+      "batch": "R107",
+      "step": "公开仓切到含 R106 修复的提交：让「0.3.9 的测试基线」在独立环境上可点（评审第二条的唯一解法）",
+      "changed": [
+        "data/results/public-cut-2026-11-13T13-54-45.189Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "切面 **`in-sync` / `trees-equal true` / `cut at 19fd375` / `behind 0`**（那一刻）。公开仓 CI **`run 43437794176`**：`verify (node 22)` / `verify (node 24)` / `verify (windows, node 24)` **三个 job 全绿**、`gates can fail` 绿；`render controls` **首次红在 Chromium 起不来**（`dbus/bus.cc` + `exit=still running`），**重跑即绿** —— 如实记，它不是这次改动的证据，也不是它的反面。`release readiness` 按设计只在 tag 时跑。",
+        "artifact": "data/results/public-cut-2026-11-13T13-54-45.189Z.json",
+        "sha256": "66f146d2a59bf52c0418837249ae13d6ddc37773c913c370c188ac1f99cdbe52"
+      },
+      "review": {
+        "correctness": "PASS：切的是 `HEAD:dsh-triage` 的子树本身（`rev-parse` → `commit-tree`，parent 是当时的 `origin/main`），不是重新导出的副本；`record_public_cut` 自己再比一次 `trees-equal`。",
+        "reproducibility": "PASS：切面可由「容器提交 + 公开仓父提交」重算；`public-cut-*.json` 记录 `subtree` / `public` / `cut at`，`behind` 是构造（这个产物提交之后必然变 1）。",
+        "licence": "PASS：推的是本仓自己的 `dsh-triage/` 子树；不带 `dsh-remedy/`（另一个项目，未提交改动不跨项目）。",
+        "ssot": "PASS：`data/results/` + `.sha256`；产物里的 `trees-equal` 是复算结果，不是「我推上去了」这句话。",
+        "adversary": "反例：把「CI 绿」当成「已收录」—— 绿只说明代码能跑，收录仍由维护者决定（#65 的 `CHANGES_REQUESTED` 未被这次切面改变）。另一个反例：只切文档不切测试 —— 那正是切前的状态（`35d48c2`），也是本次评审第二条的来源。"
+      }
+    },
+    {
+      "id": "R108-S1",
+      "batch": "R108",
+      "step": "上游 `next` 从 0.2.2-rc.2 推到 0.2.2-rc.3：先读，再判，不猜",
+      "changed": [
+        "data/results/next-release-2026-11-13T18-04-04.427Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/watch_next_release.mjs",
+        "outcome": "**`changed`**：`next` rc.2 → **rc.3**（`2026-11-13T08:05:45Z`）；`latest` 仍 **rc.1**（`change_latest.state: unchanged`），`change_latest.agrees_with_next: false` —— 两个渠道**不一致**，产物里两条都记，不合并成一个数。",
+        "artifact": "data/results/next-release-2026-11-13T18-04-04.427Z.json",
+        "sha256": "e6217f75e66d1ef575f77db6a398979e610da2a2be08aac454ae23a9d91bfa97"
+      },
+      "review": {
+        "correctness": "PASS：只读 npm `dist-tags`，把两个渠道分别判（`judgeNextChange` / `judgeLatestTag`），`changed` 的措辞明确说「两种方向都可能」，没有做 semver 排序的承诺。",
+        "reproducibility": "PASS：产物带 `generated_at` 与 `inputs.registry`；同一时间窗重跑给出同一对 tag。",
+        "licence": "PASS：只读公开 registry，不写别人的数据、不读凭据。",
+        "ssot": "PASS：`data/results/` + `.sha256`；`tests/governance/upstream-baseline.test.ts` 以「已提交的最新 next-release」为期望值，四份入口文档必须逐字复述。",
+        "adversary": "反例：把 `next` 变了当成「升级日」—— 真正的升级日是 `latest` 转正（R94 的教训）；这次 `latest` 没动，卡片要说的是「候选在动」。"
+      }
+    },
+    {
+      "id": "R108-S2",
+      "batch": "R108",
+      "step": "隔离装一遍 0.2.2-rc.3：新运行时能不能装、能不能起、profile 能不能挂载",
+      "changed": [
+        "data/results/upstream-0.2.2-rc.3-2026-11-13T18-20-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/bootstrap_upstream.mjs --version 0.2.2-rc.3 --with-profile-deps",
+        "outcome": "**10/10 PASS**：registry 200、npm install、`installed-version 0.2.2-rc.3`、`plugin-inventory` 存在、`fiberPhase` = `| failed | pending | active | loading | unloading`、`dsh --version 0.2.2-rc.3`、profile 组合 **202 条**、`profile-dependencies mounted-ready`。沙盒 `sandbox/upstream/0.2.2-rc.3`。**第一次跑漏了 `--with-profile-deps`**（8/9，`profile-dependencies` 如实报 `no node_modules (compose-only)`）—— 那是「没要可启动的 profile」，不是 rc.3 的问题，产物已删、按真命令重跑。",
+        "artifact": "data/results/upstream-0.2.2-rc.3-2026-11-13T18-20-00.000Z.json",
+        "sha256": "2bf54900ea134f6c426be53359de70ddeb8bc96d758f607ef43b025548edbfbb"
+      },
+      "review": {
+        "correctness": "PASS：每一项都读安装后的真实文件（版本、inventory 子路径、`fiberPhase` 联合、profile 条目数），不是「npm 说装好了」。",
+        "reproducibility": "PASS：`--version` 钉死版本、`--stamp` 命名；同一命令可重放，产物记录 `outcome` 与逐项 detail。",
+        "licence": "PASS：装进 `sandbox/`（git 忽略），不碰 `~/.dsh`、不读凭据、不 vendor 源码。",
+        "ssot": "PASS：`data/results/upstream-0.2.2-rc.3-*.json` + `.sha256`，`produced_by = scripts/bootstrap_upstream.mjs`。",
+        "adversary": "反例：把「装上了」当成「我们的插件在 rc.3 上能跑」—— 下一步（audit/status）才回答后者；这一步只说运行时本身可装可挂载。"
+      }
+    },
+    {
+      "id": "R108-S3",
+      "batch": "R108",
+      "step": "「跳一个 rc 就要重新钉」：同一个 client 的五个 pin 在 0.2.2-rc.3 上的准入",
+      "changed": [
+        "data/results/remedy-probe-2026-11-13T18-12-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --target 0.2.2-rc.3 --pins \"@deepseek-ai/dsh-mcp-client@0.0.1-rc.1,@deepseek-ai/dsh-mcp-client@0.2.1-rc.5,@deepseek-ai/dsh-mcp-client@0.2.2-rc.1,@deepseek-ai/dsh-mcp-client@0.2.2-rc.2,@deepseek-ai/dsh-mcp-client@0.2.2-rc.3\"",
+        "outcome": "五行里**只有 `@0.2.2-rc.3` admitted（9 peer）**；`@0.0.1-rc.1` denied(4)、`@0.2.1-rc.5` denied(8)、`@0.2.2-rc.1` denied(8)、`@0.2.2-rc.2` denied(9)。**同一个包、同一个目标运行时，上一版就是 denied** —— peer 是精确钉定，所以每跳一个 rc 都要重新 pin。",
+        "artifact": "data/results/remedy-probe-2026-11-13T18-12-00-000Z.json",
+        "sha256": "eb53ca7ad1a977f0c5d5097c7a15249298face5138c3c89e08dde34a78351922"
+      },
+      "review": {
+        "correctness": "PASS：走的还是 `evaluateAdmission` 那一条链（没有第二条规则）；每个 pin 单独判、逐行给 peer 数。",
+        "reproducibility": "PASS：pin 写全版本、目标显式；产物逐行给结论与理由，可离线重算。",
+        "licence": "PASS：只读 npm 元数据，不装、不跑候选代码。",
+        "ssot": "PASS：`data/results/remedy-probe-*.json` + `.sha256`。",
+        "adversary": "反例：把「最新那个 admitted」写成「这个包一直能用」—— 前四行正好是反例，所以五行一起记。"
+      }
+    },
+    {
+      "id": "R108-S4",
+      "batch": "R108",
+      "step": "升级日卡片打在真机（0.2.2-rc.3）：目标等于当前时卡片要说出来，而不是假装在升级",
+      "changed": [
+        "data/results/upgrade-card-2026-11-13T18-06-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --stamp 2026-11-13T18:06:00.000Z --to next --dsh-home C:\\Users\\rongj\\.dsh --profile desktop ; （对照）--to 0.2.2-rc.2 --out %TEMP%",
+        "outcome": "**14/14**：268 单元（22 bundle + 246 行）→ **0 会被拒 / 109 判不了 / 0 会变好 / 159 像没事**，卡片第二行如实写「profile desktop（live）· 当前 0.2.2-rc.3 · **目标等于当前**」。对照跑（`--to 0.2.2-rc.2`，落在 `%TEMP%`）给 **138 会被拒** —— 那是**降级**方向，两行并排才解释得清这个 0 不是「什么都没判」。",
+        "artifact": "data/results/upgrade-card-2026-11-13T18-06-00.000Z.json",
+        "sha256": "2ba4a872a2ca8c4b6e309c2e9d5b5361c4e04c9c48f2764916132e032b415c1d"
+      },
+      "review": {
+        "correctness": "PASS：卡片由同一条引擎链（`loadAuditData` → 四桶）产出；「目标等于当前」是宿主读出来的事实，不是参数回显。",
+        "reproducibility": "PASS：`--stamp` 固定，卡片正文 sha256 与产物 sha256 分开两行打印（R99 的 `T-868`）；同一命令重放给出同一份四桶。",
+        "licence": "PASS：只读本机 profile，不装、不跑。",
+        "ssot": "PASS：`data/results/upgrade-card-*.json` + `.sha256`；对照跑落在 `%TEMP%`，不进 SSOT。",
+        "adversary": "反例（本轮真遇到）：把「0 会被拒」当成「升级很安全」—— 卡片自己标了「目标等于当前」，而且 109 条是判不了；声称「一切没问题」就是把 unknown 读成了 ok（`BS-68`）。"
+      }
+    },
+    {
+      "id": "R108-S5",
+      "batch": "R108",
+      "step": "本机真的跑到 0.2.2-rc.3 上：`status` 与 `audit --json` 的读数（不是「已安装」这一句）",
+      "changed": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node packages/plugin/dist/cli.js status --dsh-home C:\\Users\\rongj\\.dsh --profile desktop ; node scripts/record_audit.mjs --stamp 2026-11-13T18:25:00.000Z --dsh-home C:\\Users\\rongj\\.dsh --profile desktop",
+        "outcome": "`status` 打出 **`dsh 0.2.2-rc.3 (kernel-asar)`**，一屏「**0 项需要你处理**；另有 93 项没写版本区间」；`audit` 产物：**246 行 / 93 条判定 / 0 错误**，289 项配置里 93 项已分析、0 异常、0 冲突，13 条「同名不同版本」全是普通库（`surface:false`，M12）。",
+        "artifact": "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "sha256": "9b4ee49403fcaa90362dbf73b71ba32e0134c57f5f5dfeabb4bed1d52a8bfe94"
+      },
+      "review": {
+        "correctness": "PASS：版本来自 `app.asar`（M14），不是 `profiles/node_modules` 的陈旧缓存；「0 项需要处理」与 93 条 unknown 分开计（M15）。",
+        "reproducibility": "PASS：`--stamp` 固定；同一命令重算给出同一份 `env.dsh` 与判定数。",
+        "licence": "PASS：只读；13 条 duplicate 只是同名不同版本，没有被当成 finding。",
+        "ssot": "PASS：`data/results/audit-*.json` + `.sha256`；README 首屏直接引用这份产物。",
+        "adversary": "反例：把「0 项需要处理」读成「一切正常」—— 93 条 unknown 是「没声明区间」，不是「兼容」（`BS-68`）；这一行的正确读法是「没有可动手的事，另有 93 件判不了」。"
+      }
+    },
+    {
+      "id": "R108-S6",
+      "batch": "R108",
+      "step": "对外表述跟到最新实测版本（两条市场文案 + 两份 README 首屏）",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/awesome-lists.md",
+        "docs/market/submissions/community-plugins-pr.md",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-13T18:30:00.000Z",
+        "outcome": "**17/17**：`engines-range-matches-manifest` 4 条全等于 `>=0.2.0-rc.1 <0.3.0-0`（未改区间）；`readme-shows-real-card` 仍指向原卡片产物；新增的证据路径（`audit-2026-11-13T18-25-00.000Z.json`）能解析到 `.sha256`；`test-count-matches` 3 条全等于 995。",
+        "artifact": "data/results/listing-2026-11-13T18-30-00.000Z.json",
+        "sha256": "85624a05189cb8ddbcb3ecf28ea8f5bd572500ae0ef36c0d96380f1a0eac87b9"
+      },
+      "review": {
+        "correctness": "PASS：四处「measured on」由 0.2.1-rc.4 改成 0.2.2-rc.3；README 首屏新增的一段只写产物里读得到的数字（0.2.2-rc.3 / 0 需要处理 / 93 判不了 / 246 行 / 93 条判定）。",
+        "reproducibility": "PASS：检查器只读仓库文件 + `--stamp`，同一提交重跑 17/17。",
+        "licence": "PASS：没有引入任何第三方文案；区间与版本都指向本仓 manifest。",
+        "ssot": "PASS：`data/results/listing-*.json` + `.sha256`。",
+        "adversary": "反例：把 `engines.dsh` 上界顺手放宽到 `<0.4.0-0`（维护者在 #65 提过）—— 0.3.x 一个都没发布过，那就是给不存在的版本做承诺；这次只改「实测版本」，不动区间。"
       }
     }
   ]

@@ -8,6 +8,8 @@
 > 分支按 11-10 的要求 `fetch + merge` 上游 main（**无冲突、零 force push**），对方仓库自带 `community-index.cjs --check` 报 `OK (133 entries)`、索引单测 **10/10**。
 > `data/results/index-sync-2026-11-13T13-49-43.817Z.json` 复算：**`in-sync`**、`byte_equal true`、idx **111**、`identical_to_fork_entry: true`（R93 记的「分支与 docs 副本不同」消掉了）。
 > 第二条卡点的修法不是改 PR：**公开仓切面比 R106 的修复早一步**，切到含修复的提交之后 CI 才可能绿 —— 那是 `docs/HANDOFF.md` §3 第 3 条的动作。
+> **已执行**：公开仓 `main` 切到 `49d942f`（`cut at 19fd375`），CI **`run 43437794176`** 三个 `verify` job 全绿（`render controls` 首次红在 Chromium 起不来，重跑即绿，已如实写进回帖）；
+> 回帖：<https://github.com/zhu1090093659/dsh-community-plugins/pull/65#issuecomment-6855157306>（一条，不是催）。**下一条只在他再开口时出现。**
 >
 > 以下是 R96 的上下文，仍然有效（除 #65 的 head 与文案）。
 

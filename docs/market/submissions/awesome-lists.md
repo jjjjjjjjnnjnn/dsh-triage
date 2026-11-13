@@ -21,7 +21,7 @@
 条目行（放进插件区的字母序位置）：
 
 ```markdown
-- [dsh-triage (分诊台)](https://github.com/jjjjjjjjnnjnn/dsh-triage) - Pre-install judgement and post-mortem attribution for DSH profiles: says why a plugin disappeared, measures a candidate in an isolated DSH_HOME, and shows the current composition read-only. DSH `>=0.2.0-rc.1 <0.3.0-0` (measured on 0.2.1-rc.4).
+- [dsh-triage (分诊台)](https://github.com/jjjjjjjjnnjnn/dsh-triage) - Pre-install judgement and post-mortem attribution for DSH profiles: says why a plugin disappeared, measures a candidate in an isolated DSH_HOME, and shows the current composition read-only. DSH `>=0.2.0-rc.1 <0.3.0-0` (measured on 0.2.2-rc.3).
 ```
 
 PR 标题/正文：

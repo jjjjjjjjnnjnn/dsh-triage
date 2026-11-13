@@ -13,7 +13,7 @@
 
 ```sh
 dsh-triage upgrade --to next      # 目标从 npm dist-tags 解析（读一次），然后走同一条判定
-dsh-triage upgrade --to 0.2.2-rc.1
+dsh-triage upgrade --to 0.2.2-rc.3
 ```
 
 输出是一张**按你本地已装集合**推演的诊断卡片，四桶分区：`would-be-denied`（存在版本拦截）、`cannot-tell`（未明确声明区间）、`improved`（目标版本放行）、`likely-fine`（无声明冲突）。每个被拦截的条目均附带**具体原因与修复命令**，附一句能直接复制到 Issue/Discussions 的摘要卡片；`--card --out card.md` 把同一份摘要原样落到文件并打印路径。不带 `--to` 时不作判定，仅提示**当前版本**与**可选目标**。
@@ -91,7 +91,7 @@ npm i -g dsh-triage                       # 只用 CLI
 dsh plugin --profile web add dsh-triage   # 装进 profile：设置页标签 + Agent 工具
 ```
 
-要求 Node ≥ 22.19、DSH `>=0.2.0-rc.1 <0.3.0-0`（本机实测 0.2.1-rc.4）。
+要求 Node ≥ 22.19、DSH `>=0.2.0-rc.1 <0.3.0-0`（本机实测 0.2.2-rc.3；0.2.1-rc.4 与 0.2.2-rc.1 也各实测过）。
 
 ## 许可与数据署名
 

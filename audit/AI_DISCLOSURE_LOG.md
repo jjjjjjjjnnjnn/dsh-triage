@@ -1247,3 +1247,15 @@
 - **两处自己造成的缺陷，都如实记**：① PowerShell 的 `Set-Content -Encoding utf8` 把三份 README 读成 GBK 再写回，整份变乱码 —— 用 `git checkout` 还原后改用 Node 脚本改数字（本仓已有一次同类教训，又踩了一次）；② 第一次 `gate.mjs --record` 立刻被 `step-review/no-orphan-results` 判红（四份新产物还没进台账），两份中间产物**已删**、按「先补台账、后录门禁」的顺序重录。
 - **第三处，更该记**：第一轮产物的 `--stamp` 我按本地时间当 UTC 写（`Europe/Berlin` +1），**`generated_at` 比真实时钟早 5–6 小时**，文件名也一起错。没有任何断言会红（`gate_ssot` 只查字段存在与格式），发现它的方式是人看了一眼时钟。处理：七份产物全部按真实时刻重录（旧名不再存在），台账、`handover_check` 的门禁基线指针、四份入口文档的 Stand、`pr-65-status.md` 的引用一起改写，并写进 `R107-S4` 的对抗性一栏。
 - **边界**：D5 一个数都没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`，还剩 2 天）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动；npm 上 0.3.9 的字节没有变（这一轮不含发布，也不打算为测试读法发版）。**995 测试 / 10 门 / 10-10**。
+
+### 2026-11-13 R108｜上游 0.2.2-rc.3 + 本机已经跑上它（采证 + 交付轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「我看到DSH版本更新了，查看，测试，全部更新」后由 agent 执行。SessionID：`lead@dsh-triage-r108`。没有 subagent、没有外部模型 CLI。
+- **先读后判**：`watch_next_release` 给 `changed`（`next` rc.2 → **rc.3**，`2026-11-13T08:05:45Z`；`latest` 仍 rc.1，两渠道不一致）；然后才发现**本机桌面已经升到 rc.3**（`status` 读作 `0.2.2-rc.3 (kernel-asar)`），所以「适配」这件事有真机读数可看，不必靠断言。
+- **读数**：`audit-2026-11-13T18-25-00.000Z.json` → 246 行 / 93 条判定 / 0 错误；一屏「0 项需要处理 · 93 项无法判定」；`engines.dsh >=0.2.0-rc.1 <0.3.0-0` 对 rc.3 实测 **satisfied**（所以**不改上界** —— 0.3.x 还没发布，放宽到 `<0.4.0-0` 是给不存在的版本做承诺）。
+- **隔离与准入**：`bootstrap_upstream --version 0.2.2-rc.3 --with-profile-deps` **10/10**；`record_remedy_probe --target 0.2.2-rc.3` 五行里只有 `@0.2.2-rc.3` admitted（每跳 rc 都要重新钉）。
+- **升级日卡片**：真机 `--to next` **14/14**（268 单元），卡片如实标「目标等于当前」；对照 `--to 0.2.2-rc.2` 是 **138 会被拒**（降级方向）。
+- **自己抓到的一处测试陈旧**：`composition-source` N6 把 `base.version` 钉成字面量 `0.2.2-rc.1`，上游跳一个 rc 就红 —— 而它要防的是「拿到缓存那份而不是归档那份」。改成与 `env.dsh` 比（同源），既保住原意又不随版本腐烂。`gate_clean_home` 是第一个把它抓出来的门（`with_home: 1 test(s) failed`）。
+- **对外表述**：两份 listing + `awesome-lists` + `community-plugins-pr` 的「measured on」→ **0.2.2-rc.3**；两份 README 首屏新增「当前实测（2026-11-13）」段（指向 audit 产物）；`docs/07-environment` 与 `AGENTS.md` 的「实际运行」→ rc.3。`check_listing` **17/17**。
+- **顺带一条外部进展**：`awesome-dsh-plugin` **PR #14880 已合并**（`2026-11-13T17:46:06Z`，`e68d7bc`，0 reviews）—— `T-871` 从承诺变成维护义务。
+- **边界**：D5 一个数没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动。**995 测试 / 10 门 / 10-10**。

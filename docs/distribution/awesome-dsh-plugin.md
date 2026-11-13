@@ -2,7 +2,7 @@
 
 > **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880
 > **提交形状**：一个文件 —— `data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml`
-> **状态**：`open` / `MERGEABLE` / **`CLEAN`** / `+6-0` / `changed_files 1` · **两个 check 全绿**（`check` 27m51s，`Submission gate` pass）· 零 review、零评论、无 `held: author` 标签（2026-11-13 复读）
+> **状态**：**`MERGED`（2026-11-13T17:46:06Z，merge commit `e68d7bc`）** / `+6-0` / `changed_files 1` / **0 reviews**（维护者直接合了，没有留 review）。合并前是 `open` / `MERGEABLE` / `CLEAN` / 两个 check 全绿（R104 记载）
 > **渠道台账**：`docs/distribution/channels.json` 的 `awesome-dsh-plugin-14880`（`d5_counts: false`）
 
 ---
@@ -73,4 +73,4 @@ description:
 
 这条 PR **不计入 D5**：`docs/specs/D5-measurement.md` §1 只数三样 —— `#11813` 的 reactions、GitHub search 找到的**第三方**引用、市场基线的周下载。一个 awesome-list 的收录 PR 三者都不是，把它算进去等于**改判据**。
 
-它真正的作用是：让**别人**有可能引用我们——那是 D5 的「外部引用」那一项唯一合理的来源。**截至 2026-11-13 05:45Z 之后**：CI 已全绿、`mergeStateStatus` 从 `UNSTABLE` 变 **`CLEAN`**，但**合并没有发生**（等维护者读代码，`0 reviews`）。所以它**现在仍然什么都没换成** —— 「CI 绿」是前置条件，不是收录。
+它真正的作用是：让**别人**有可能引用我们——那是 D5 的「外部引用」那一项唯一合理的来源。**2026-11-13T17:46:06Z：合并发生了**（merge commit `e68d7bc`，`+6-0` / 1 文件，**没有 review**）。所以「CI 绿」确实是前置条件而不是收录 —— 但这一次它真的被收录了。生效之后 `T-871` 从「承诺」变成「义务」：描述与代码必须长期一致（见 §4 五条），否则 decay 扫描会把它移掉。

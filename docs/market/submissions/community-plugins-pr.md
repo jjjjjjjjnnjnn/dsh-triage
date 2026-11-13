@@ -26,7 +26,7 @@ the verdict vocabulary is `go` / `risky` / `blocked` / `unknown` with per-claim 
 
 - Repo: https://github.com/jjjjjjjjnnjnn/dsh-triage
 - npm: `dsh-triage`
-- DSH compatibility: `engines.dsh: >=0.2.0-rc.1 <0.3.0-0`; measured on 0.2.1-rc.4 (Windows).
+- DSH compatibility: `engines.dsh: >=0.2.0-rc.1 <0.3.0-0`; measured on 0.2.2-rc.3 (Windows).
   (CONTRIBUTING.md prefers an open range; widening the upper bound is a declaration-surface change, handled separately.)
 - Licence: MIT.
 
