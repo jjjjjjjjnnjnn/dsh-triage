@@ -16177,10 +16177,10 @@
         "audit/gate_ledger.json"
       ],
       "real_test": {
-        "command": "node scripts/record_ci_shape.mjs --stamp 2026-11-13T19:05:00.000Z ; node scripts/gate_clean_home.mjs ; node scripts/gate_clean_home.mjs --mutate",
+        "command": "node scripts/record_ci_shape.mjs --stamp 2026-11-13T13:49:38.582Z ; node scripts/gate_clean_home.mjs ; node scripts/gate_clean_home.mjs --mutate",
         "outcome": "**typecheck green · with_home 11/11 · without_home 7/11 · 4 skipped · 0 failed**。门本身：`node scripts/gate_clean_home.mjs` 三项 PASS（`shapes-green` / `readings-not-deleted` / `tap-readable`），`--mutate` 把 2026-11-12 的 CI 形状（11/7/4/0）喂给判定后 exit 1。三条针对**真实文件**的负对照都真红后逐字节还原：① 把 `desktop-misreport` 的 skip 改回 `assert.equal(env.ok, true)` + 空 home 跑门 → `without_home: 1 test(s) failed`；② 给 `composition-source` N6 加一条无条件 `t.skip` → `with_home: 1 test(s) skipped on the machine that HAS the profile`；③ 删掉一条读数（11 → 10）→ `readings-not-deleted` FAIL。",
-        "artifact": "data/results/ci-shape-2026-11-13T19-05-00.000Z.json",
-        "sha256": "93059ee32460f9c4d08546265fdffea305e07410720599a9ebc81c0c04a42b97"
+        "artifact": "data/results/ci-shape-2026-11-13T13-49-38.582Z.json",
+        "sha256": "6bfbe0eff45bd07a4214cd68e6707f2f2e1e02f53133c34011aa6add72756c38"
       },
       "review": {
         "correctness": "PASS：门判的是 `judgeShapes`，两条边都要满足（有 profile 时读数必须真跑、无 profile 时必须 skip 而不是 fail）；「无 profile 却零 skip」是删读数而不是适配，照样红。空 home 时**不**要求 `with_home` 零 skip —— 否则门会在每台 CI runner 上红，正是 R106 事故的镜像。",
@@ -16198,10 +16198,10 @@
         "docs/market/submissions/community-plugins-entry.json"
       ],
       "real_test": {
-        "command": "git -C %TEMP%/dsh-community-plugins merge up/main ; node scripts/community-index.cjs --check ; node --test scripts/community-index.test.mjs ; node scripts/record_index_sync.mjs --stamp 2026-11-13T18:40:00.000Z",
+        "command": "git -C %TEMP%/dsh-community-plugins merge up/main ; node scripts/community-index.cjs --check ; node --test scripts/community-index.test.mjs ; node scripts/record_index_sync.mjs --stamp 2026-11-13T13:49:43.817Z",
         "outcome": "分支 push 前：`community-index: OK (133 entries)`、索引单测 **10/10**、`git diff --stat` 只动 `community.json`（2 行）。push 后 GitHub 侧 `additions 12 / deletions 0 / changedFiles 1`，head `139dd26`。`record_index_sync` → **`in-sync`**（upstream 132 + 1 = 133、`byte_equal_to_fork true`、`deep_equal true`、idx **111**、prev `dsh-translate` / next `dsh-tui`），且 `local_copy.identical_to_fork_entry: true`（R93 记过的「分支与 docs 副本不同」这次消掉了）。",
-        "artifact": "data/results/index-sync-2026-11-13T18-40-00.000Z.json",
-        "sha256": "5a6e870ebe250487a82c73a048cbd9ff185fcb0fef76323387f42e38de396826"
+        "artifact": "data/results/index-sync-2026-11-13T13-49-43.817Z.json",
+        "sha256": "12b59d63480febf4a69266ea652043787eae1737c96c7ee05c1167ebffc587da"
       },
       "review": {
         "correctness": "PASS：新句中英各一句，逐项对应代码事实 —— 默认只读、不装进 profile、不卸载、不判安全；只有显式 `--apply` 才写 `compatibility.json`（`fix`）或 `dsh.profile.bundles`（`rescue`），先备份、`--undo` 逐字节还原。旧句「不安装、不卸载、不判安全」自 0.3.0 起就是不完整的描述。",
@@ -16216,13 +16216,14 @@
       "batch": "R107",
       "step": "渠道状态复读：#65 两次评审之后的三条 PR + dsh.so 收录（含 `github-pull` 第四条）",
       "changed": [
-        "data/results/market-channels-2026-11-13T18-45-00.000Z.json"
+        "docs/market/submissions/community-plugins-entry.json",
+        "data/results/market-channels-2026-11-13T13-49-52.310Z.json"
       ],
       "real_test": {
-        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-13T18:45:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 --pr awesome-dsh-plugin=https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880 --site dsh.so=human",
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-13T13:49:52.310Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 --pr awesome-dsh-plugin=https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880 --site dsh.so=human",
         "outcome": "**validated 1 · ready 4 · live 3 · site_submitted 1 · listed 1**。#65 `open` / `review_decision: CHANGES_REQUESTED` / +12-0 / 认证侧 `blocked` 与匿名侧 `clean`（`mergeable_state_disagrees: true`，两种 vantage 都写进产物）；#193 `closed` 且 `merged_at 2026-11-04T01:00:47Z`；#140 `open/clean`、零 review；#14880 `open/clean`、+6-0；dsh.so `listed`。",
-        "artifact": "data/results/market-channels-2026-11-13T18-45-00.000Z.json",
-        "sha256": "3c9779f8e7799a04be1da41a436b13deff95c20399b709a8bae24408509abb52"
+        "artifact": "data/results/market-channels-2026-11-13T13-49-52.310Z.json",
+        "sha256": "6309876d1f847da27f6e06cb1688ea6ea083ca8d425e9a3b170842f4319eda01"
       },
       "review": {
         "correctness": "PASS：第一次跑漏了 `--pr`，产物 `submitted: []`、`live 0` —— 与 R96 第 ⑤ 条同一种错（把「没问」写成「没有」）。已连同 `.sha256` 删除、按真 URL 重跑；本次三条 open / 一条 merged 与 `gh pr view` 逐项相同。",
@@ -16230,50 +16231,6 @@
         "licence": "PASS：只读公开仓库的元数据；不评论、不投票、不写别人的仓库。",
         "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；渠道 lane 仍只有 `github-discussion` 能进 D5，`github-pull` 记 `d5_counts: false`（R104 的 lane 约束未动）。",
         "adversary": "反例：把 #193 已合并读成「live 少了一条，PR 被撤了」—— 产物同时记 `state: closed` 与 `merged_at`，两条一起看才成立；只记 state 会把「合并」写成「关闭」。"
-      }
-    },
-    {
-      "id": "R107-S4",
-      "batch": "R107",
-      "step": "本轮十门快照（--record）：把「R107 结束时门是绿的」写成可复算的产物",
-      "changed": [
-        "scripts/gate_clean_home.mjs",
-        "audit/gate_ledger.json"
-      ],
-      "real_test": {
-        "command": "node scripts/gate.mjs --record --stamp 2026-11-13T19:10:00.000Z ; node scripts/gate.mjs --mutate --record --stamp 2026-11-13T19:15:00.000Z",
-        "outcome": "**10 门 ALL GREEN**，其中 `clean-home` 是新加的第 10 道。第一次 `--record`（`18-50`）如实判红（`step-review` 的 `no-orphan-results`：四份新产物还没进台账），已按规矩**删除那两份中间产物**、先把台账补齐再重录 —— 不是放宽门，是顺序错了。",
-        "artifact": "data/results/gates-2026-11-13T19-10-00.000Z.json",
-        "sha256": "ee4730866161bb0dabed415541f35ff270e6bec05e14980d8919368c81cda988"
-      },
-      "review": {
-        "correctness": "PASS：`--record` 写的是同一次运行的逐门 `ok` 与 `exitCode`，不重跑、不推断；门的清单由 `audit/gate_ledger.json` 决定，新增的 `clean-home` 在 `gates[]` 里可见。",
-        "reproducibility": "PASS：同一 `--stamp` 重跑给出同一份清单；耗时字段被有意排除，`sha256` 可重算。",
-        "licence": "PASS：十道门全部只读本仓文件；`clean-home` 只跑本仓两个测试文件，不联网。",
-        "ssot": "PASS：`data/results/` 下带 `.sha256`；`produced_by = scripts/gate.mjs`，`generated_at` 与 `--stamp` 一致。",
-        "adversary": "反例：把交接基线指向 `gates-2026-11-13T03-00-00.000Z`（R105 的九门）—— 那份在「新增第 10 道门」之后不再代表当前门集合；`handover_check` 的「门禁基线」一项读的是文件里的 `gates.length`，不写死 9，所以指向旧文件会显示 9 gates，与 `scripts/gate_*.mjs` 实算的 10 不一致。"
-      }
-    },
-    {
-      "id": "R107-S5",
-      "batch": "R107",
-      "step": "本轮负对照快照（--mutate --record）：证明第 10 道门真的抓得住它声称要抓的东西",
-      "changed": [
-        "scripts/gate_clean_home.mjs",
-        "audit/gate_ledger.json"
-      ],
-      "real_test": {
-        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-11-13T19:15:00.000Z",
-        "outcome": "**NEGATIVE CONTROL PASSED · 10/10 gates caught their injected violation**。`clean-home` 的注入不是编出来的数字，而是 `run 43315617523`（2026-11-12）的原始读数（11 tests / 7 pass / 4 fail / 0 skipped）；另外三条文件级负对照（改回 `assert.equal(env.ok,true)` / 无条件 `t.skip` / 删一条读数）各自真红后逐字节还原，见 `R107-S1`。",
-        "artifact": "data/results/gates-mutate-2026-11-13T19-15-00.000Z.json",
-        "sha256": "fcfe3542f51719938debe0ac4bec6c0fb73cc88b574ec46f60a73c7e33419ab7"
-      },
-      "review": {
-        "correctness": "PASS：十道门逐一在 `--mutate` 下 exit 1；套件只有在全部 CAUGHT 时才 exit 0（`gate.mjs` 的规则未改）。",
-        "reproducibility": "PASS：注入发生在门内部、可重复；产物带 `mode: mutate`，与 S4 的 `mode: normal` 分列。",
-        "licence": "PASS：注入只改本仓自己的断言或判定输入，不触碰外部仓库与凭据。",
-        "ssot": "PASS：另一份独立产物（不覆盖 S4），`sha256` 可重算，「跑绿」与「抓得住」不是一个数字。",
-        "adversary": "反例：只留绿的那份（S4）—— 下一轮会以为门禁仍然有效，而 `--mutate` 可能早已抓不住（R105 的 `M11-N2` 就是这样静默失效的，控制串早就不存在）。"
       }
     },
     {
@@ -16287,10 +16244,10 @@
         "docs/market/submissions/community-plugins-entry.json"
       ],
       "real_test": {
-        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-13T19:20:00.000Z",
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-13T13:50:10.000Z",
         "outcome": "**17/17**：`documents-exist` 11 份、`evidence-paths-exist` 23 条、`version-matches-manifest` 全部 0.3.9、`test-count-matches` 3 条声明全等于 995、`channel-ledger-matches-reality` 5 个渠道（`github-pull` 那条仍记 `d5_counts: false`）。",
-        "artifact": "data/results/listing-2026-11-13T19-20-00.000Z.json",
-        "sha256": "eb9d16368309de0e6ff8bc1def21897ed848f2e0848d699548033387d2693f25"
+        "artifact": "data/results/listing-2026-11-13T13-50-10.000Z.json",
+        "sha256": "670a0f2c06dc5c34af2be25bf4114dce899f21913515aee9702572e84a55815f"
       },
       "review": {
         "correctness": "PASS：三个徽章（根 README / 中文 README / npm 页面）与正文「995 个测试、10 道零依赖门禁」在同一轮改成同一个数；改数用的是 Node 脚本，因为 PowerShell 的 `Set-Content -Encoding utf8` 会把这三份 UTF-8 文件读成 GBK 再写回（本轮实际发生一次，已 `git checkout` 还原）。",
@@ -16298,6 +16255,50 @@
         "licence": "PASS：只读本仓文档与 `packages/plugin/package.json`；不联网、不改发布包。",
         "ssot": "PASS：产物进 `data/results/` 并带 `.sha256`；`produced_by = scripts/check_listing.mjs`。",
         "adversary": "反例：只改徽章不跑检查器 —— 正文里「995 个测试」与 npm 页面标签会各说各话，而它们都是同一句话的副本（R96 起 `packages/plugin/README.md` 被纳入受检集合就是因为这个）。另一头：把 `--tests` 传成 988（上一轮的数）会**如实**判 stale，不会因为「看着差不多」放过。"
+      }
+    },
+    {
+      "id": "R107-S4",
+      "batch": "R107",
+      "step": "本轮十门快照（--record）：把「R107 结束时门是绿的」写成可复算的产物",
+      "changed": [
+        "scripts/gate_clean_home.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record ; node scripts/gate.mjs --mutate --record",
+        "outcome": "**10 门 ALL GREEN**，其中 `clean-home` 是新加的第 10 道。第一次 `--record` 如实判红（`step-review` 的 `no-orphan-results`：四份新产物还没进台账），已按规矩**删除那两份中间产物**、先把台账补齐再重录 —— 不是放宽门，是顺序错了。**第二轮还有一处自己的缺陷**：第一版产物把本地时间当 UTC 写进 `--stamp`，`generated_at` 比真实时钟早 5–6 小时；全部按真实时刻重录，文件名与 `generated_at` 一起换掉（旧名不再存在，台账与文档同步改写）。",
+        "artifact": "data/results/gates-2026-11-13T13-51-35.259Z.json",
+        "sha256": "47b34403911a084a7f9044ce9012b060e010255193d67fa2a1fccb5127aaeac4"
+      },
+      "review": {
+        "correctness": "PASS：`--record` 写的是同一次运行的逐门 `ok` 与 `exitCode`，不重跑、不推断；门的清单由 `audit/gate_ledger.json` 决定，新增的 `clean-home` 在 `gates[]` 里可见。",
+        "reproducibility": "PASS：stamp 是真实时刻，重跑同一提交给出同一份清单；耗时字段被有意排除，`sha256` 可重算。",
+        "licence": "PASS：十道门全部只读本仓文件；`clean-home` 只跑本仓两个测试文件，不联网。",
+        "ssot": "PASS：`data/results/` 下带 `.sha256`；`produced_by = scripts/gate.mjs`，`generated_at` 与文件名一致且不晚于真实时钟。",
+        "adversary": "反例（本轮实际发生）：拿本地时间当 UTC 写 `--stamp` —— 没有任何断言会红（`gate_ssot` 只要求字段存在且格式合法），但产物从此声称自己在 5 小时后生成；谁用 `generated_at` 去算「这份读数有多新」都会算错。这类错误只能靠人看时钟发现，所以在此写明。"
+      }
+    },
+    {
+      "id": "R107-S5",
+      "batch": "R107",
+      "step": "本轮负对照快照（--mutate --record）：证明第 10 道门真的抓得住它声称要抓的东西",
+      "changed": [
+        "scripts/gate_clean_home.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record",
+        "outcome": "**NEGATIVE CONTROL PASSED · 10/10 gates caught their injected violation**。`clean-home` 的注入不是编出来的数字，而是 `run 43315617523`（2026-11-12）的原始读数（11 tests / 7 pass / 4 fail / 0 skipped）；另外三条文件级负对照（改回 `assert.equal(env.ok,true)` / 无条件 `t.skip` / 删一条读数）各自真红后逐字节还原，见 `R107-S1`。",
+        "artifact": "data/results/gates-mutate-2026-11-13T13-51-44.525Z.json",
+        "sha256": "54f521a57a134530264217450175c23688022a663b045192661113e04e44c9de"
+      },
+      "review": {
+        "correctness": "PASS：十道门逐一在 `--mutate` 下 exit 1；套件只有在全部 CAUGHT 时才 exit 0（`gate.mjs` 的规则未改）。",
+        "reproducibility": "PASS：注入发生在门内部、可重复；产物带 `mode: mutate`，与 S4 的 `mode: normal` 分列。",
+        "licence": "PASS：注入只改本仓自己的断言或判定输入，不触碰外部仓库与凭据。",
+        "ssot": "PASS：另一份独立产物（不覆盖 S4），`sha256` 可重算，「跑绿」与「抓得住」不是一个数字。",
+        "adversary": "反例：只留绿的那份（S4）—— 下一轮会以为门禁仍然有效，而 `--mutate` 可能早已抓不住（R105 的 `M11-N2` 就是这样静默失效的，控制串早就不存在）。"
       }
     }
   ]

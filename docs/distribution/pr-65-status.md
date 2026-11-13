@@ -1,12 +1,12 @@
 # 三条渠道 PR 的现状（R107，2026-11-13 实测）
 
-> **R107 最新读数**（`data/results/market-channels-2026-11-13T18-45-00.000Z.json`）：`validated 1 · ready 4 · live 3 · site_submitted 1 · listed 1`。
+> **R107 最新读数**（`data/results/market-channels-2026-11-13T13-49-52.310Z.json`）：`validated 1 · ready 4 · live 3 · site_submitted 1 · listed 1`。
 > #65 `open` / `MERGEABLE` / 认证侧 `blocked` vs 匿名侧 `clean` / **`CHANGES_REQUESTED`** / **+12-0** / head **`139dd26`**；
 > #193 `closed` + `merged_at 2026-11-04T01:00:47Z`；#140 `open/clean`、零 review；**#14880 `open/clean`、+6-0**（11-12 新增的那一条）。
 > **R107 对 #65 做了什么**：维护者在 `2026-11-13T12:26:17Z` 第二次 `CHANGES_REQUESTED`，两条都属实（商店文案没吸收 `--apply` 的写盘；上游 0.3.9 的 CI 三个 job 全红）。
 > 文案已按建议改成「默认只读……只有显式 `--apply` 才改配置，先备份、可 `--undo` 逐字节还原」；
 > 分支按 11-10 的要求 `fetch + merge` 上游 main（**无冲突、零 force push**），对方仓库自带 `community-index.cjs --check` 报 `OK (133 entries)`、索引单测 **10/10**。
-> `data/results/index-sync-2026-11-13T18-40-00.000Z.json` 复算：**`in-sync`**、`byte_equal true`、idx **111**、`identical_to_fork_entry: true`（R93 记的「分支与 docs 副本不同」消掉了）。
+> `data/results/index-sync-2026-11-13T13-49-43.817Z.json` 复算：**`in-sync`**、`byte_equal true`、idx **111**、`identical_to_fork_entry: true`（R93 记的「分支与 docs 副本不同」消掉了）。
 > 第二条卡点的修法不是改 PR：**公开仓切面比 R106 的修复早一步**，切到含修复的提交之后 CI 才可能绿 —— 那是 `docs/HANDOFF.md` §3 第 3 条的动作。
 >
 > 以下是 R96 的上下文，仍然有效（除 #65 的 head 与文案）。

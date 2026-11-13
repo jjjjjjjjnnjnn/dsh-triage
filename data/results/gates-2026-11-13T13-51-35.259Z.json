@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/gate.mjs",
-  "generated_at": "2026-11-13T19:10:00.000Z",
+  "generated_at": "2026-11-13T13:51:35.259Z",
   "mode": "normal",
   "fast": false,
   "ok": true,

@@ -79,8 +79,8 @@ if (snapshotNamed === null) {
 }
 
 /* --- 5. The gate baseline it points at is green, and the negative control really ran --------- */
-const gatesFile = 'data/results/gates-2026-11-13T19-10-00.000Z.json'
-const mutateFile = 'data/results/gates-mutate-2026-11-13T19-15-00.000Z.json'
+const gatesFile = 'data/results/gates-2026-11-13T13-51-35.259Z.json'
+const mutateFile = 'data/results/gates-mutate-2026-11-13T13-51-44.525Z.json'
 if (!existsSync(abs(gatesFile))) {
   fail('门禁基线', `${gatesFile} is gone`)
 } else {

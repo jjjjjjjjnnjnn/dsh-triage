@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/snapshot_state.mjs",
-  "generated_at": "2026-11-13T19:45:00.000Z",
+  "generated_at": "2026-11-13T13:53:57.819Z",
   "release": {
     "package": "dsh-triage",
     "version": "0.3.9",
-    "git_head": "91654c8c18c334209b3023150e67cd2e9a87cbf4",
+    "git_head": "42f625bd39292165b74f60ed9619eef162729db9",
     "git_branch": "main",
     "git_dirty": true
   },
@@ -151,8 +151,8 @@
         "sha256": "2e5fbfe2e6aa3991e01d0676f481f2f4250efb92ff7e120f220aced64d515627"
       },
       {
-        "file": "ci-shape-2026-11-13T19-05-00.000Z.json",
-        "sha256": "93059ee32460f9c4d08546265fdffea305e07410720599a9ebc81c0c04a42b97"
+        "file": "ci-shape-2026-11-13T13-49-38.582Z.json",
+        "sha256": "6bfbe0eff45bd07a4214cd68e6707f2f2e1e02f53133c34011aa6add72756c38"
       },
       {
         "file": "classifier-v2-2026-11-02T11-20-00-000Z.json",
@@ -847,8 +847,8 @@
         "sha256": "9fffceee09e8b0da79692ac4ff4568aefe28bbe003412fe90c79e36aa7cdf362"
       },
       {
-        "file": "gates-2026-11-13T19-10-00.000Z.json",
-        "sha256": "ee4730866161bb0dabed415541f35ff270e6bec05e14980d8919368c81cda988"
+        "file": "gates-2026-11-13T13-51-35.259Z.json",
+        "sha256": "47b34403911a084a7f9044ce9012b060e010255193d67fa2a1fccb5127aaeac4"
       },
       {
         "file": "gates-mutate-2026-10-26T00-00-00.000Z.json",
@@ -907,8 +907,8 @@
         "sha256": "122a8ed6161ca353e2239235a077b3d2a1f2542d0955adc823e479e6537ca48f"
       },
       {
-        "file": "gates-mutate-2026-11-13T19-15-00.000Z.json",
-        "sha256": "fcfe3542f51719938debe0ac4bec6c0fb73cc88b574ec46f60a73c7e33419ab7"
+        "file": "gates-mutate-2026-11-13T13-51-44.525Z.json",
+        "sha256": "54f521a57a134530264217450175c23688022a663b045192661113e04e44c9de"
       },
       {
         "file": "index-hosting-2026-10-29T18-10-00.000Z.json",
@@ -939,8 +939,8 @@
         "sha256": "87a2c7119dc5e40d2f7dbf125c27edfe4b66180f4bde7862c759115f70748ea1"
       },
       {
-        "file": "index-sync-2026-11-13T18-40-00.000Z.json",
-        "sha256": "5a6e870ebe250487a82c73a048cbd9ff185fcb0fef76323387f42e38de396826"
+        "file": "index-sync-2026-11-13T13-49-43.817Z.json",
+        "sha256": "12b59d63480febf4a69266ea652043787eae1737c96c7ee05c1167ebffc587da"
       },
       {
         "file": "inventory-2026-10-27T00-00-00.000Z.json",
@@ -1491,8 +1491,8 @@
         "sha256": "5b991888cfb00ee02bc5ae908a1e057d19aff72f87154ebe64dda2f436852c79"
       },
       {
-        "file": "listing-2026-11-13T19-20-00.000Z.json",
-        "sha256": "eb9d16368309de0e6ff8bc1def21897ed848f2e0848d699548033387d2693f25"
+        "file": "listing-2026-11-13T13-50-10.000Z.json",
+        "sha256": "670a0f2c06dc5c34af2be25bf4114dce899f21913515aee9702572e84a55815f"
       },
       {
         "file": "market-baseline-2026-10-29T12-20-00.000Z.json",
@@ -1615,8 +1615,8 @@
         "sha256": "ffa7f274f8fa9ffddb88dd3f0ff828a284a499c063c7428faee03fb0265c01ca"
       },
       {
-        "file": "market-channels-2026-11-13T18-45-00.000Z.json",
-        "sha256": "3c9779f8e7799a04be1da41a436b13deff95c20399b709a8bae24408509abb52"
+        "file": "market-channels-2026-11-13T13-49-52.310Z.json",
+        "sha256": "6309876d1f847da27f6e06cb1688ea6ea083ca8d425e9a3b170842f4319eda01"
       },
       {
         "file": "mutation-controls-2026-11-09T15-00-00.000Z.json",

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/record_market_channels.mjs",
-  "generated_at": "2026-11-13T18:45:00.000Z",
+  "generated_at": "2026-11-13T13:49:52.310Z",
   "prerequisites": {
     "repo": {
       "name": "jjjjjjjjnnjnn/dsh-triage",
@@ -99,11 +99,11 @@
       "submission": {
         "channel": "dsh.so",
         "submitted_by": "human",
-        "submitted_at": "2026-11-13T18:45:00.000Z",
+        "submitted_at": "2026-11-13T13:49:52.310Z",
         "entry_point": "https://dsh.so/submit/",
         "indexed": true,
         "index_probe": {
-          "checked_at": "2026-11-13T18:45:00.000Z",
+          "checked_at": "2026-11-13T13:49:52.310Z",
           "endpoints": [
             {
               "endpoint": "https://www.dsh.so/plugin/@jjjjjjjjnnjnn/dsh-triage.json",
@@ -231,11 +231,11 @@
     {
       "channel": "dsh.so",
       "submitted_by": "human",
-      "submitted_at": "2026-11-13T18:45:00.000Z",
+      "submitted_at": "2026-11-13T13:49:52.310Z",
       "entry_point": "https://dsh.so/submit/",
       "indexed": true,
       "index_probe": {
-        "checked_at": "2026-11-13T18:45:00.000Z",
+        "checked_at": "2026-11-13T13:49:52.310Z",
         "endpoints": [
           {
             "endpoint": "https://www.dsh.so/plugin/@jjjjjjjjnnjnn/dsh-triage.json",

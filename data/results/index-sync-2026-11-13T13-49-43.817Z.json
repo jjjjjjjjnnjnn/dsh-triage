@@ -2,7 +2,7 @@
   "schema_version": 1,
   "artifact_revision": 2,
   "produced_by": "scripts/record_index_sync.mjs",
-  "generated_at": "2026-11-13T18:40:00.000Z",
+  "generated_at": "2026-11-13T13:49:43.817Z",
   "question": "is the fork branch exactly \"upstream main + one entry at its ascending id position\"?",
   "upstream": {
     "owner": "zhu1090093659",

@@ -1245,4 +1245,5 @@
 - **整机读数**：995 条测试在**空 HOME** 上 `991 pass / 0 fail / 4 skipped`；`gate.mjs` 10/10 全绿，`--mutate` **10/10 CAUGHT**；`check_listing --tests 995` **17/17**。
 - **一处旧账被自己的检查器抓到**：R106 建了 `_archive/2026-11-13_HANDOFF-batch-rows-R95.md` 与 `ARCHIVE_MANIFEST` 行，却**没有把 R95 从 §2 删掉**（口径写 R96–R106，盘上仍是 R95–R104）。`handover_check` 只数「§2 恰好 10 行」，所以两边都绿。R107 补删、口径改到 R96–R107，并把「归档文件存在」写成「这一行真的不在 §2 里」。
 - **两处自己造成的缺陷，都如实记**：① PowerShell 的 `Set-Content -Encoding utf8` 把三份 README 读成 GBK 再写回，整份变乱码 —— 用 `git checkout` 还原后改用 Node 脚本改数字（本仓已有一次同类教训，又踩了一次）；② 第一次 `gate.mjs --record` 立刻被 `step-review/no-orphan-results` 判红（四份新产物还没进台账），两份中间产物**已删**、按「先补台账、后录门禁」的顺序重录。
+- **第三处，更该记**：第一轮产物的 `--stamp` 我按本地时间当 UTC 写（`Europe/Berlin` +1），**`generated_at` 比真实时钟早 5–6 小时**，文件名也一起错。没有任何断言会红（`gate_ssot` 只查字段存在与格式），发现它的方式是人看了一眼时钟。处理：七份产物全部按真实时刻重录（旧名不再存在），台账、`handover_check` 的门禁基线指针、四份入口文档的 Stand、`pr-65-status.md` 的引用一起改写，并写进 `R107-S4` 的对抗性一栏。
 - **边界**：D5 一个数都没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`，还剩 2 天）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动；npm 上 0.3.9 的字节没有变（这一轮不含发布，也不打算为测试读法发版）。**995 测试 / 10 门 / 10-10**。

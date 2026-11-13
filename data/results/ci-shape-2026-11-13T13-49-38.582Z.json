@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/record_ci_shape.mjs",
-  "generated_at": "2026-11-13T19:05:00.000Z",
+  "generated_at": "2026-11-13T13:49:38.582Z",
   "ok": true,
   "problems": [],
   "typecheck": {
@@ -17,7 +17,7 @@
       "fail": 0,
       "skipped": 0,
       "readable": true,
-      "tail": "# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 2303.9379"
+      "tail": "# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 2520.4121"
     },
     "without_home": {
       "exit_code": 0,
@@ -26,7 +26,7 @@
       "fail": 0,
       "skipped": 4,
       "readable": true,
-      "tail": "# pass 7\n# fail 0\n# cancelled 0\n# skipped 4\n# todo 0\n# duration_ms 255.714",
+      "tail": "# pass 7\n# fail 0\n# cancelled 0\n# skipped 4\n# todo 0\n# duration_ms 280.5455",
       "home": "<fresh empty HOME/USERPROFILE, removed after the run>"
     }
   },
