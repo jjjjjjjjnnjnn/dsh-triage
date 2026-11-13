@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R108 (2026-11-13)",
+  "stand": "R109 (2026-11-13)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -600,6 +600,15 @@
       "mitigation": "两条：① 交接五分钟检查与每一轮的 `verify` 都在本机跑，`with_home 11/11 · 0 skipped` 写进 `ci-shape-*.json` 与交接快照；② `judgeShapes` 在「无 profile 且零 skip」时直接判红，所以「把读数删掉」这一种在 CI 上仍会响 —— 漏掉的只有「改成永久 skip」这一种。",
       "owner": "process + 每轮在本机跑 verify 的人",
       "what_would_show_it": "把 `desktop-misreport` 的三条读数一起改成无条件 `t.skip(...)`：本机 `pnpm run verify` 仍然 995/995 全绿、`gate_clean_home` 的 `with_home` 那侧会红 —— 但若只跑 CI，它会绿到底，而产物里 `with_home` 那栏是空的。",
+      "opened_at": "2026-11-13"
+    },
+    {
+      "id": "BS-75",
+      "area": "第三方市场 / 「合并」与「市场上看得见」是两个状态（R109）",
+      "cannot_see": "收录进 `awesome-dsh-plugin` 之后，条目先落在他们的仓库（`data/plugins/*.yml` + 两份 README 由 `sync-readme` 重生成），再由 `build-site` 部署到 `awesome-dsh-plugin.com` 并从 `/plugins.json` 提供数据。第二步是**他们的** CI：run 43477377365 从 2026-11-13T17:54Z 起 `pending`、0 job，已经一个多小时，而同批合并的另外两条（#15040 / #15036）也一起缺席。**从外面看，「合并了但没部署」与「被拒绝」长得一模一样** —— 我们能看到的只有「网站上没有」。D5 的「外部引用」同样读不到这一步。",
+      "mitigation": "把「收录」拆成三个可复核的读数并各自记时间：① 仓库里有没有那个 yml（`contents` API）；② README（en/zh）里有没有那一行；③ `/plugins.json` 里有没有这个 `url`，以及最近一次 `github-pages` 部署的 sha/时间与 `build-site` 的运行状态。**只有第 ③ 项为真时才能对外说「已在市场上」**；前两项只能写成「已被仓库收录」。R109 已按这三条写进 `docs/distribution/awesome-dsh-plugin.md`，并在 #14880 留了一条只报构建状态的说明。",
+      "owner": "process + distribution",
+      "what_would_show_it": "条目已合并、README 已重生成、`/plugins.json` 里仍然没有 —— 今天就是这样；反过来，部署成功但 `build-site` 的过滤把条目丢掉（例如分类不在 `CAT_IDS`）时，也只有第 ③ 项能看出来。",
       "opened_at": "2026-11-13"
     }
   ]

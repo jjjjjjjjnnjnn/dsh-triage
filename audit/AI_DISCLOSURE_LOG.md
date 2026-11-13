@@ -1259,3 +1259,11 @@
 - **对外表述**：两份 listing + `awesome-lists` + `community-plugins-pr` 的「measured on」→ **0.2.2-rc.3**；两份 README 首屏新增「当前实测（2026-11-13）」段（指向 audit 产物）；`docs/07-environment` 与 `AGENTS.md` 的「实际运行」→ rc.3。`check_listing` **17/17**。
 - **顺带一条外部进展**：`awesome-dsh-plugin` **PR #14880 已合并**（`2026-11-13T17:46:06Z`，`e68d7bc`，0 reviews）—— `T-871` 从承诺变成维护义务。
 - **边界**：D5 一个数没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动。**995 测试 / 10 门 / 10-10**。
+
+### 2026-11-13 R109｜「市场里没有我的项目」：查清是第三方构建卡住，不是条目被拒
+
+- **谁**：主会话 `lead`，HUMAN 贴了仓库链接后由 agent 执行。SessionID：`lead@dsh-triage-r109`。
+- **分开读三件事**：① 仓库条目 **在**（`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml`，`c004b4c`）；② README(en/zh) **有这一行**（17:50Z `sync-readme` 重生成）；③ 网站 `/plugins.json`（10,778 条）**没有** —— 最近部署 `4bf5ca5` 是 **17:44:13Z**，早于合并；`Build site from README` 的 run **43477377365** 自 17:54:17Z 起 `pending`、**0 job**。
+- **不是我们这一条**：同批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）同样缺席，而更早的 `ai-terminal-pet` 在 —— 构建卡住，不是条目被拒。
+- **处理**：在 #14880 留一条只报构建状态的评论（给出 `workflow_dispatch` + `skip_probes: true` 的捷径）；本地文档把「已合并」与「网站上已发布」拆成两个状态，并新增 `BS-75`。**没有**再推任何东西，也没有催 review。
+- **边界**：能不能部署由他们的 CI 决定，我们没有任何触发权限；这条只影响「是否已可被市场用户看到」，不影响条目本身。

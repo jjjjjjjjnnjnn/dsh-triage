@@ -4,6 +4,12 @@
 > **提交形状**：一个文件 —— `data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml`
 > **状态**：**`MERGED`（2026-11-13T17:46:06Z，merge commit `e68d7bc`）** / `+6-0` / `changed_files 1` / **0 reviews**（维护者直接合了，没有留 review）。合并前是 `open` / `MERGEABLE` / `CLEAN` / 两个 check 全绿（R104 记载）
 > **渠道台账**：`docs/distribution/channels.json` 的 `awesome-dsh-plugin-14880`（`d5_counts: false`）
+>
+> **两件不同的事（R109 实测，2026-11-13T18:55Z）**：
+> ① **仓库收录 = 已发生**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 在 `main`（`c004b4c`），`README.md` / `README.zh.md` 都有这一条（17:50Z 由 `sync-readme` 重生成）。
+> ② **网站在线 = 还没发生**：`https://awesome-dsh-plugin.com/plugins.json`（10,778 条）里**没有**这一条；最近一次 `github-pages` 部署是 `4bf5ca5`（**17:44:13Z**，早于合并），而 `Build site from README` 的 `workflow_run`（**run 43477377365**，17:54:17Z）一直 `pending`、**0 job**。
+> ③ **不是我们这一条的问题**：同一批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）在 `/plugins.json` 里**同样缺席**，而更早合并的 `ai-terminal-pet` 在 —— 说明是构建卡住，不是条目被拒。
+> ④ **已留言**：#14880 的 [issuecomment-6861985619](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880#issuecomment-6861985619)（一条，只报构建状态，并给出 `workflow_dispatch` + `skip_probes: true` 的捷径）。**对方不 dispatch 就只能等** —— 我们没有任何能触发它构建的权限。
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R108 (2026-11-13)",
+  "stand": "R109 (2026-11-13)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16451,6 +16451,27 @@
         "licence": "PASS：没有引入任何第三方文案；区间与版本都指向本仓 manifest。",
         "ssot": "PASS：`data/results/listing-*.json` + `.sha256`。",
         "adversary": "反例：把 `engines.dsh` 上界顺手放宽到 `<0.4.0-0`（维护者在 #65 提过）—— 0.3.x 一个都没发布过，那就是给不存在的版本做承诺；这次只改「实测版本」，不动区间。"
+      }
+    },
+    {
+      "id": "R108-S7",
+      "batch": "R108",
+      "step": "公开仓切到含 0.2.2-rc.3 证据的提交（`behind 0` 那一刻，之后每一次新提交都会变回非零）",
+      "changed": [
+        "data/results/public-cut-2026-11-13T18-31-47.691Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at e2737d5` / `behind 0`**（那一刻）。公开仓 CI **`run 43483498827`**：`verify (node 22)` / `verify (node 24)` / `verify (windows, node 24)` 三个 job 全绿、`gates can fail` 绿、`render controls` 也绿（这次一次过，没有 R107 那次 Chromium 起不来的抖动）；`release readiness` 按设计只在 tag 时跑。",
+        "artifact": "data/results/public-cut-2026-11-13T18-31-47.691Z.json",
+        "sha256": "48937dd6de9c7a10bb82b363a556c40941ef0398123e47d206eb03d5657f7926"
+      },
+      "review": {
+        "correctness": "PASS：切的是 `HEAD:dsh-triage` 子树本身（`rev-parse` → `commit-tree`，parent = 当时的 `origin/main`），`record_public_cut` 再比一次 `trees-equal`。",
+        "reproducibility": "PASS：切面由「容器提交 + 公开仓父提交」重算；`behind` 是构造，不写进文档。",
+        "licence": "PASS：只推本仓子树，不带 `dsh-remedy/`。",
+        "ssot": "PASS：`data/results/` + `.sha256`，`trees-equal` 是复算结果。",
+        "adversary": "反例：把绿 CI 当成「这次上游更新我们有办法验证」—— CI 只证明本仓的测试在 runner 上绿；「在 rc.3 上真跑」是 `R108-S5` 那份 audit 产物证明的，两者不能互相替代。"
       }
     }
   ]
