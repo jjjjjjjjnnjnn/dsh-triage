@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R103 (2026-11-12)",
+  "stand": "R107 (2026-11-13)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -15810,6 +15810,494 @@
         "licence": "PASS：只是读 registry，没有写操作。",
         "ssot": "PASS：`data/results/publish-2026-11-12T20-57-27.649Z.json` 在 `data/results/` 且带 `.sha256`。",
         "adversary": "反例：如果 `registry-wait` 不区分「副本滞后」与「真的没发上去」，它会把一次 401 或一次真的漏发也重试五分钟 —— 那样「发布失败」就会被等成成功。目前的形状只对 `notarget`/`ETARGET` 重试，`E401` 立刻出结论。"
+      }
+    },
+    {
+      "id": "R104-S1",
+      "batch": "R104",
+      "step": "提交 awesome-dsh-plugin 收录（PR #14880）+ 渠道台账新增一条 lane + 公开仓切到 0.3.9",
+      "changed": [
+        "scripts/record_market_channels.mjs",
+        "scripts/lib/channels.mjs",
+        "tests/unit/channels.test.ts",
+        "docs/distribution/channels.json",
+        "docs/distribution/T-810/00-README.md"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-13T02:10:00.000Z --pr \"awesome-dsh-plugin=https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880\" ...（四条约 PR）",
+        "outcome": "**`validated 1 · ready 5 · live 3`**（新增 `awesome-dsh-plugin` → `ready`；`submitted[]` 四条 PR 的实时状态：`#65 open/blocked/+12-0`、`#193 closed`、`#140 open/clean/+1-0`、**`#14880 open/**clean**/+6-0`**）。**提交形状**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 一行一个文件（仓库是 monorepo，`url` 指向 `packages/plugin`，`name` 用 `owner/repo#sub`）；`dsh.bundle` 在 `packages/plugin/package.json` 里、仓库树里第 **9** 个 `package.json`（门禁只枚举前 40 个，落在范围内）；仓库 2026-10-26 创建（远过 1 天门槛）、未归档、`dsh-plugin` topic 已在；`repository.url` 指回本仓，npm 映射可自动解析。**一处真缺陷被检查器抓到**：把 PR 记成 `github-discussion` → `channel-ledger-matches-reality` 报 `url does not look like a github-discussion link`；修法是**新增一条 lane `github-pull`** 而不是放宽正则 —— 只有 discussion 能进 D5，混在一个 lane 里会让「开了个 PR」看起来像「发了个帖」。",
+        "artifact": "data/results/market-channels-2026-11-13T02-10-00.000Z.json",
+        "sha256": "ffa7f274f8fa9ffddb88dd3f0ff828a284a499c063c7428faee03fb0265c01ca"
+      },
+      "review": {
+        "correctness": "PASS：提交的每一句描述都能在代码里找到（`why`/`audit` 行级归因、`upgrade --to` 四桶、`probe` 隔离实测、两个 `--apply` 的接缝与 `--undo`）；描述里**没有任何数字**，所以不存在「46 个工具」那类被逐条对账的风险。",
+        "reproducibility": "PASS：PR 用一次 API 提交（blob → tree → commit → branch → PR），只新增一个文件；`record_market_channels` 用 `gh api` 读 PR 的实时状态，产物带 `.sha256`；`public-cut` 证明公开仓已切到容器 `35d48c2`（`trees-equal true` / `behind 0`）。",
+        "licence": "PASS：只新增一条指向公开 MIT 仓库的条目，没有复制他人代码；`channels.json` 只记 URL 与判定。",
+        "ssot": "PASS：`data/results/market-channels-2026-11-13T00-30-00.000Z.json` 与 `data/results/public-cut-2026-11-12T23-05-00.000Z.json` 都在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：① 把这条 PR 标成 `d5_counts: true` → `channels.test.ts` 的「exactly one channel」断言红（D5 只数 #14880 之外的 #11813）；② 把 `platform` 写成 `github-discussion` → 检查器红（这一轮真红过）；③ 只写 `dsh.client` 而没有 `dsh.bundle` → 上游门禁会拒，而我们的 `packages/plugin` 两者都有。"
+      }
+    },
+    {
+      "id": "R104-S2",
+      "batch": "R104",
+      "step": "对外信息与公开仓对齐：公开仓切到 0.3.9、文案与徽章复核、面板/CLI 双侧读数仍一致",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-13T04:00:00.000Z --tests 980",
+        "outcome": "**17/17**：`channel-ledger-matches-reality`（**5 个渠道**，一个 feeds D5、其余各自写清为什么不算，且表格与台账逐条对齐）· `version-matches-manifest`（全部 0.3.9）· `test-count-matches`（972）· `evidence-paths-exist`（逐个核 sha256）。**公开仓复读**：`gh api contents/packages/plugin/package.json` → `version \"0.3.9\"`，`README.md` 的 npm 行也是 0.3.9（切面 `3794ec3`、`cut at 35d48c2`、`in-sync`）。**双侧读数仍是同一份**：`desktop-panel-2026-11-12T22-20-00.000Z.json` 的 `panel 289 / 0 denied / 0 collisions` 与 `cli` 同值。 **R105 追记**：测试数从 972 长到 980（交接断言 + 8 条单测），所以这一条改指 `listing-2026-11-13T04-00-00.000Z.json`；`channel-ledger-matches-reality` 仍是 5 个渠道、一个 feeds D5。",
+        "artifact": "data/results/listing-2026-11-13T04-00-00.000Z.json",
+        "sha256": "7851e210a77a6b6a8109e84897692eda4c4b37a447ea646bc27638dd067b5402"
+      },
+      "review": {
+        "correctness": "PASS：对外文档的每个版本与测试数都由 `check_listing` 从产物与正文两边复算；渠道表与 `channels.json` 双向对齐（少了或多了一条都会红）。",
+        "reproducibility": "PASS：两条命令都可重跑；`public-cut` 用 tree 比较（不是「看起来一样」）；面板读数有独立记录器。",
+        "licence": "PASS：只改本仓文档与仓库内容。",
+        "ssot": "PASS：`data/results/listing-2026-11-13T00-45-00.000Z.json` 与 `data/results/desktop-panel-2026-11-12T22-20-00.000Z.json` 都在 `data/results/`，带 `.sha256`。",
+        "adversary": "反例：把 README 的版本写回 0.3.8 → `version-matches-manifest` 红；把 `channels.json` 里那条 PR 删掉而表格还留着 → 双向对齐红；公开仓不切 → `public-cut` 报 `behind`（本轮切之前正是 `behind 14`）。"
+      }
+    },
+    {
+      "id": "R104-S3",
+      "batch": "R104",
+      "step": "公开仓切到 0.3.9：`git rev-parse main:dsh-triage` → `commit-tree` → push → 复读 in-sync",
+      "changed": [
+        "scripts/record_public_cut.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-12T23:05:00.000Z",
+        "outcome": "切前 `behind`/`cut at dd0fb20`（公开仓还写着 0.3.8，而 registry 已是 0.3.9 —— 从 npm 与列表点进来的读者会看到旧版本）。切法：`git rev-parse main:dsh-triage` → `git commit-tree <tree> -p origin/main` → `git push origin <commit>:main`；结果 **`in-sync` / `trees-equal true` / `cut at 35d48c2` / `behind 0`**，公开仓 head `3794ec3`。复读：`gh api contents/packages/plugin/package.json` → `version \"0.3.9\"`；`README.md` 的 npm 行同为 0.3.9。",
+        "artifact": "data/results/public-cut-2026-11-13T05-00-00.000Z.json",
+        "sha256": "35c0ed98d4a0f7934404be4a86d9f38862f806fe0fcd3dcf7a8d38db5c1dc017"
+      },
+      "review": {
+        "correctness": "PASS：切面是**内容复制**，不是重写历史：tree 直接取容器 `main:dsh-triage`，父提交是公开仓当前的 `origin/main`；`record_public_cut` 用 tree 相等（不是 diff 文本）判定，并记录 `matching_container_commit`。",
+        "reproducibility": "PASS：两条命令都可重跑；`--stamp` 决定产物名，`in-sync` 与 `behind N` 是两种不同的答案，脚本对 `behind` 用 exit 1（不是失败，是顺序）。",
+        "licence": "PASS：只是把本仓内容推到本仓的公开副本。",
+        "ssot": "PASS：`data/results/public-cut-2026-11-12T23-05-00.000Z.json` 在 `data/results/`，带 `.sha256`。",
+        "adversary": "反例：把整棵容器树（含 `dsh-remedy/`）推上去 → `public_equals_container_root` 会为真、`trees_equal` 为假（那是「推错了前缀」的形状）；只 commit 不 push → `origin/main` 仍是旧的，`behind` 不会归零。"
+      }
+    },
+    {
+      "id": "R104-S4",
+      "batch": "R104",
+      "step": "切面之后的复读：新提交让 `behind` 变 4 —— 那是构造，不是漏推（不为了 behind 0 再切）",
+      "changed": [
+        "scripts/record_public_cut.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs --stamp 2026-11-13T05:00:00.000Z",
+        "outcome": "**`behind 12` / `cut at 35d48c2`**（R105 收尾时复读）：公开仓仍是 0.3.9 那一刀，容器又前进了 12 个提交（交接轮本身就是提交密集的）。**这不是漏推**：切面按定义比「装着这份文档的提交」早一步；`matching_container_commit` 记的是「公开仓现在装着哪一刀」，`commits_behind` 记的是顺序。**不为 behind 0 再切**。",
+        "artifact": "data/results/public-cut-2026-11-13T05-00-00.000Z.json",
+        "sha256": "35c0ed98d4a0f7934404be4a86d9f38862f806fe0fcd3dcf7a8d38db5c1dc017"
+      },
+      "review": {
+        "correctness": "PASS：`behind` 与 `drift` 是两种不同的答案（前者「公开仓是旧的一刀」，后者「公开仓有一棵容器从未有过的树」）；脚本对 `behind` 用 exit 1 但产物照写，因为顺序不是故障。",
+        "reproducibility": "PASS：同一个 `--stamp` 重跑给出同一份产物（git 读数确定）；`--stamp` 缺省取当前时间，但历史的每份产物都带着自己的读数，不覆盖。",
+        "licence": "PASS：只读本机 git ref，没有任何外部调用。",
+        "ssot": "PASS：`data/results/public-cut-2026-11-13T02-20-00.000Z.json` 在 `data/results/`，带 `.sha256`。",
+        "adversary": "反例：把 `behind` 判成失败并删掉产物 → 下一轮看到 `public-cut-*` 只剩 `in-sync` 那一份，会误以为公开仓永远同步；把 `behind` 硬写成 0 → 数字好看但与 `git rev-list --count` 矛盾（R99 的「切完就归零」就是这么读错的）。"
+      }
+    },
+    {
+      "id": "R105-S1",
+      "batch": "R105",
+      "step": "交接整理：§2 裁到最近十轮（R95–R104），R92/R93/R94 三行逐行归档并登记 ARCHIVE_MANIFEST",
+      "changed": [
+        "docs/HANDOFF.md",
+        "_archive/2026-11-13_HANDOFF-batch-rows-R92-R93.md",
+        "_archive/ARCHIVE_MANIFEST.md"
+      ],
+      "real_test": {
+        "command": "node <verify script>   # 逐行比对 git show HEAD:dsh-triage/docs/HANDOFF.md 与归档文件",
+        "outcome": "**归档 3 行、逐字节相同**：脚本按行从 `git show HEAD:dsh-triage/docs/HANDOFF.md` 取原字节，与 `_archive/2026-11-13_HANDOFF-batch-rows-R92-R93.md` 里那三行**逐字节比对全部相同**（R92 的 `T-866 / T-867` 行、R93 的索引升序行、R94 的升级日行）；反向也查了：归档里没有一行是 HANDOFF 从未有过的，且三行都**已从 §2 消失**。**归档口径落到 R95–R104**（正好十轮），`ARCHIVE_MANIFEST.md` 新增一行并注明「证据指针、验收标准、未通过门槛**未动**」。**第一次抽取把 R94 漏在外面**（数到 11 行才发现），补加一次才对齐口径 —— 这条如实记，因为「十轮」是数出来的不是看出来的。",
+        "artifact": "data/results/gates-2026-11-13T03-00-00.000Z.json",
+        "sha256": "b0e31bbc6dcac38a8026053ec3803e8979583b3991e08177edad959c7a0f0c9f"
+      },
+      "review": {
+        "correctness": "PASS：抽取按行取原字节、不重打；归档后反向验证（归档 ⊂ 旧 HANDOFF、旧 HANDOFF 的相关行已全部消失），两个方向都查过才叫「逐行原文」。",
+        "reproducibility": "PASS：`git show HEAD:dsh-triage/docs/HANDOFF.md` 是唯一来源，任何一轮都能重跑同一条比对；`ARCHIVE_MANIFEST` 只追加不改旧行。",
+        "licence": "PASS：只动本仓文档，不涉及外部内容。",
+        "ssot": "PASS：`data/results/gates-2026-11-13T03-00-00.000Z.json` 在 `data/results/`，带 `.sha256`（由 gate.mjs --record 生成）。",
+        "adversary": "反例：把归档里的行**重打一遍**而不是取原字节 → 任何标点差异都查不出来，而「逐字节相同」是这条口径唯一的凭据；只验证「归档里有这三行」而不验证「§2 里已经没有」→ 同一条历史会在两处各留一份，读的人不知道哪份是现行口径。"
+      }
+    },
+    {
+      "id": "R105-S2",
+      "batch": "R105",
+      "step": "交接轮的九门快照 + 负对照快照（--record），两份都带 .sha256",
+      "changed": [
+        "scripts/gate.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-13T03:00:00.000Z ; node scripts/gate.mjs --mutate --record --stamp 2026-11-13T03:05:00.000Z",
+        "outcome": "**9 门 ALL GREEN**（`data/results/gates-2026-11-13T03-00-00.000Z.json`）与 **`NEGATIVE CONTROL PASSED · 9/9`**（`data/results/gates-mutate-2026-11-13T03-05-00.000Z.json`）。两份都用 `--record` 落 SSOT（带 `produced_by` / `generated_at` / `schema_version` 与 `.sha256`），所以「这一轮交接时门是绿的」是一个可以被下一个人复算的事实，而不是一句交接词。**为什么交接轮也要落这两份**：HANDOFF §1 让人先跑 `pnpm run verify` 与 `--mutate`，但那条命令的输出不进仓；一旦下一个人跑出红，他无法区分「我弄坏了」与「交接时就是这样」。",
+        "artifact": "data/results/gates-mutate-2026-11-13T03-05-00.000Z.json",
+        "sha256": "2dd9e12cf58f997dfa47fbc97f794e1071270398ac35bda4631449e22c64a5ad"
+      },
+      "review": {
+        "correctness": "PASS：`--record` 写的是同一次运行的汇总（门逐项 `ok` + 耗时），不是重跑一遍的猜测；`--mutate` 那份另存，因为「绿色」与「门禁抓得住」是两件不同的事。",
+        "reproducibility": "PASS：两份产物都带 `--stamp`，重跑同一条命令得到同样的门清单；`mode` 字段区分 `full` 与 `mutate`。",
+        "licence": "PASS：只跑本仓九道门禁与它们的负对照（`--mutate` 只注入本仓自己的断言违规后逐字节还原），不下载、不抓取、不读凭据，产物里只有门的名字、`ok` 与耗时。",
+        "ssot": "PASS：两份都在 `data/results/` 且带 `.sha256`。",
+        "adversary": "反例：只落绿色那份、不落 `--mutate` → 下一轮「门禁是否还抓得住」没有基线；把两份写成同一份 → `mode` 字段被抹掉，读者无法区分「跑绿了」与「注入违规也红了」。"
+      }
+    },
+    {
+      "id": "R105-S3",
+      "batch": "R105",
+      "step": "交接时复读 D5 窗口覆盖与截止日（只读）：覆盖 11 天、可采 0、下一跑最晚 2026-11-20",
+      "changed": [
+        "scripts/d5_window_status.mjs",
+        "scripts/lib/d5-window-coverage.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "outcome": "**`verdict: not-yet`**：窗口 `2026-11-01 .. 2026-11-15`（15 天），样本 `#11813` 起 `2026-11-01T20:24:37.000Z`。**覆盖 11 天（`11-01..11-11`）**，缺 4 天全是 `not published yet`（npm 的日桶还没发布），**今天可采 0 天**，`lost 0`。**下一份基线最晚 `2026-11-20`**（还有 7 天余量）；`publish lag` 按 2 天保守假设（实测 1/2）。**为什么交接时要跑这一条**：§3 和入口文档里的「下一跑最晚哪天」必须由脚本现算 —— 记的日子一轮就会过期，而 D5 的窗口是**不能补**的（R100 已经抓过一次「靠历史批次行满足截止日断言」的假绿，`BS-66`）。",
+        "artifact": "data/results/d5-window-status-2026-11-13T06-31-04.448Z.json",
+        "sha256": "d3c77f599d5053deb0652ddf297178c835dcac0c37d304a2b8427d1a001a71fe"
+      },
+      "review": {
+        "correctness": "PASS：只读脚本，只数 `inputs.offline === false` 的现场基线（复算件记 `ignored`，本轮 `used 10 · ignored 2`）；`next_run_by` 是 `D+lag` 到 `D+lag+6` 的窗口推算，不是拍脑袋。",
+        "reproducibility": "PASS：同一份已提交产物集下重跑得到同一结论；判据在 `scripts/lib/d5-window-coverage.mjs`（纯函数，11 条单测）。",
+        "licence": "PASS：只读本仓产物，不联网。",
+        "ssot": "PASS：`data/results/d5-window-status-2026-11-13T06-31-04.448Z.json` 在 `data/results/`，带 `.sha256`。",
+        "adversary": "反例：把 `--lag-days` 调成 1 → 「可采 0 天」变成 1、截止日推到 `11-18`（R100 记过这个反证）；把复算件当覆盖来源 → 覆盖会虚高，因为复算件读的是别人采的窗口。"
+      }
+    },
+    {
+      "id": "R105-S4",
+      "batch": "R105",
+      "step": "把「交接文档自己说的话」变成可复算的：`scripts/handover_check.mjs` + 纯函数 + 8 条（含 4 条负对照）",
+      "changed": [
+        "scripts/handover_check.mjs",
+        "scripts/lib/handover-claims.mjs",
+        "scripts/lib/handover-claims.d.mts",
+        "tests/governance/handover-claims.test.ts",
+        "docs/HANDOFF.md",
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/package.json",
+        "packages/plugin/README.md"
+      ],
+      "real_test": {
+        "command": "node scripts/handover_check.mjs ; node --test tests/governance/handover-claims.test.ts",
+        "outcome": "**`HANDOVER READY · 10/10`**：十条断言逐条复算 —— 五分钟检查两条命令都在、§3 写着 D5 关窗与 `2026-11-15T20:24:37Z`、验收数与 README 徽章相等、交接快照存在且带 `.sha256`、门禁基线与负对照基线都绿、归档存在并登记、**§2 恰好 10 行**、`npm latest` 与仓内版本相同、收录 PR 的状态与文档一致。**单测 8/8**（4 条正对照 + 4 条负对照）：N1 把 §2 里一行复制一遍 → 计数变 11；N2 §2 之外的 `（R47 新增）` 不算批次行（整文件计数曾报 17 行，那是一次假警报）；N3 把验收数改成 900 读得出 900、改成「很多」读不出数；N4 指向不存在的快照名读得出那个名字、而 `backup/snapshots/` 里没有它。**两处当场抓到的缺陷**：① `handover_check` 第一次跑 `npm` 报 **`ENOENT`**（Windows 上 `execFileSync(\"npm\")` 找不到 `npm.cmd` —— 与 R50 修过的是同一个坑），改成走 shell；② 门禁基线那一句只给了后一份的完整路径，前一份是裸文件名 → 断言「两处路径都必须解析得到」红，补全路径才绿。",
+        "artifact": "data/results/listing-2026-11-13T04-00-00.000Z.json",
+        "sha256": "7851e210a77a6b6a8109e84897692eda4c4b37a447ea646bc27638dd067b5402"
+      },
+      "review": {
+        "correctness": "PASS：十个断言各自对应文档里的一句可复算的话，没有一条是「读起来没问题」。**边界清楚**：`npm` / `gh` 读不到时记 `UNMEASURED`（不是 PASS 也不是 FAIL）——「问不到」与「答案变了」是两件事。",
+        "reproducibility": "PASS：`--record` 与 `--mutate --record` 的基线已落 SSOT；`handover_check` 自身零依赖、只读；单测读真文件，所以文档一漂就红。",
+        "licence": "PASS：只读本仓文件与两处公开元数据（npm dist-tags、PR 状态）。",
+        "ssot": "PASS：`data/results/listing-2026-11-13T04-00-00.000Z.json` 在 `data/results/` 且带 `.sha256`；两条基线产物同样在 SSOT。",
+        "adversary": "反例：把 §2 加一行而不归档 → 计数断言红（N1 用同一构造证明它抓得住）；把验收数写回 972 而徽章是 980 → 那条断言红；把交接快照指回 R98 → N4 的形状（名字读得出、文件不存在）；把两条基线里的一条删掉 → 路径断言红（本轮真的红过一次）。"
+      }
+    },
+    {
+      "id": "R106-S1",
+      "batch": "R106",
+      "step": "CI shape 判据：judgeShape 三态 + 8 条单测（把「换成跳过」「删掉读数」「读不出」各写成一条真红）",
+      "changed": [
+        "scripts/lib/ci-shape.mjs",
+        "scripts/lib/ci-shape.d.mts",
+        "tests/unit/ci-shape.test.ts",
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md"
+      ],
+      "real_test": {
+        "command": "node --test --test-reporter=spec tests/unit/ci-shape.test.ts",
+        "outcome": "**8/8 绿**。判据不是「跑得通」，而是三种形状各自能说「不」：N1 空账号上一条断言失败 → `failing on an account with no profile`；N2 本机把一条真读数改成 `t.skip` → `skipped on the machine that HAS the profile`；N3 删掉读数（空账号零 skip）→ `nothing skipped, so this run did not exercise the skip path`；N4 TAP 读不出 → `nothing is proven`。另三条把「跳过清单 = 真的会跳过的两个文件」与「那两个文件里不许再有 `assert.equal(env.ok, true)`」钉死，并钉住 `handover-claims.test.ts` 的类型窄化。测试 980 → **988**，三份 README 徽章与正文同轮跟到。",
+        "artifact": "data/results/ci-shape-2026-11-13T08-25-44.901Z.json",
+        "sha256": "2e5fbfe2e6aa3991e01d0676f481f2f4250efb92ff7e120f220aced64d515627"
+      },
+      "review": {
+        "correctness": "PASS：判据按「谁能出错」分三支，每支都对应一个真实发生过的错误形状（R106 接手的 verify 红、公开 CI 的一天全红、把读数删掉这类静默改法）；不是先有实现再补理由。",
+        "reproducibility": "PASS：`record_ci_shape.mjs` 一次真跑量三件事并落一份产物，`--out %TEMP%` 走绝对路径（不拼仓根），`--stamp` 必须是带冒号的 ISO；单测只读纯函数，不碰网络与时钟。",
+        "licence": "PASS：只跑本仓自己的测试与 `node_modules/typescript`，不下载、不抓取、不读凭据；产物里只有计数与 TAP 尾巴，失败行的机器路径在 `%TEMP%` 负对照里，不进 SSOT。",
+        "ssot": "PASS：产物在 `data/results/` 带 `.sha256`，`produced_by = scripts/record_ci_shape.mjs`、`generated_at` 为真 UTC；记录器不是门（它依赖 devDependency），这一点写在文件头与 `limits[]` 里。",
+        "adversary": "反例：只量空账号那一支、不量本机那一支 —— 于是「把四条读数全改成 `t.skip`」在任何机器上都是绿的，而读数一条都不再执行；反过来只量本机那一支，则删掉读数的改动不会被发现。两条必须同时量，这就是 `with_home` / `without_home` 成对的原因。"
+      }
+    },
+    {
+      "id": "R106-S2",
+      "batch": "R106",
+      "step": "把四条读本机 home 的单测从「断言成功」改成 `t.skip(原因)`（空账号上是跳过，不是失败）",
+      "changed": [
+        "tests/unit/composition-source.test.ts",
+        "tests/unit/desktop-misreport.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/record_ci_shape.mjs --out %TEMP%\\r106-ci-shape-nc-a",
+        "outcome": "**负对照真红并如实记**：先把两个文件还原成 R105 的写法（`assert.equal(env.ok, true)`），同一份记录器给出 `without_home 7/11 · 4 failed`、exit 1；改回 `t.skip` 后 `without_home 7/11 · 4 skipped · 0 failed`、exit 0。另一端也做了：把 `desktop-misreport` 里一条真断言改成 `t.skip`，本机变成 `with_home 10/11 · 1 skipped`、exit 1。两次负对照产物都留在 `%TEMP%`（不进 SSOT）。",
+        "artifact": "data/results/ci-shape-2026-11-13T08-25-44.901Z.json",
+        "sha256": "2e5fbfe2e6aa3991e01d0676f481f2f4250efb92ff7e120f220aced64d515627"
+      },
+      "review": {
+        "correctness": "PASS：跳过的理由写进 `t.skip()` 的参数（`profile-not-found` / 没有归档），不是空 skip；同一台有 profile 的机器上四条读数照旧执行（`with_home 11/11 · 0 skipped` 是这条的证词）。",
+        "reproducibility": "PASS：空账号由记录器自己造的临时目录表示（`USERPROFILE` 与 `HOME` 同指一个空目录、`DSH_HOME` 移除），跑完即删；任何人重跑同一条命令得到同样的两支计数。",
+        "licence": "PASS：只动本仓测试，不引入外部资产。",
+        "ssot": "PASS：读数的证据是 `ci-shape-*.json`（`shapes.with_home` / `shapes.without_home`），四个计数逐项可读；负对照只看 `%TEMP%` 里的同类产物。",
+        "adversary": "反例：把 `t.skip` 写成无参数 —— 系统仍会跳过，但没人能从产物里知道「为什么跳过」；下一次有人删掉那段守卫时，读的人无法区分「这台机器没有 profile」与「这条不再跑」。所以理由必须作为参数写出来。"
+      }
+    },
+    {
+      "id": "R106-S3",
+      "batch": "R106",
+      "step": "`handover_check` 的 §2 计数改用同一个纯函数（`countBatchRows`），并让归档指针行不再被误数成批次行",
+      "changed": [
+        "scripts/lib/handover-claims.mjs",
+        "scripts/handover_check.mjs",
+        "tests/governance/handover-claims.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/handover_check.mjs",
+        "outcome": "**10/10 PASS**。改前那段计数是 `handover_check` 自己写的一份正则，与 `handover-claims.test.ts` 用的那份**不是同一份**：指针行 `| **历史批次行…（R96–R106…` 一旦被重写成不带粗体标记，检查器会把它数成第 11 行而测试数出 10 行 —— 一个事实两个家。现在两边都调 `countBatchRows()`，并把「不在 §2 的 `（R47 新增）` 不算」与「指针行不算」写进同一个纯函数。测试里新增一条：把指针行的粗体去掉，计数仍是 10。",
+        "artifact": "data/results/ci-shape-2026-11-13T08-25-44.901Z.json",
+        "sha256": "2e5fbfe2e6aa3991e01d0676f481f2f4250efb92ff7e120f220aced64d515627"
+      },
+      "review": {
+        "correctness": "PASS：口径只在一处（`countBatchRows`），§2 的行数由这一处负责；指针行排除的理由写在函数注释里（它与 N2 的「§2 之外的标记不算行」是同一形状，只是往内一层）。",
+        "reproducibility": "PASS：纯文本函数，无文件读取、无网络、无时钟；同一份 HANDOFF 在任何机器上给出同一个数。",
+        "licence": "PASS：只动本仓脚本与测试。",
+        "ssot": "PASS：`handover_check.mjs` 的输出不是产物（它只打印 PASS/FAIL），但每一次交接都让它跑一遍；它读的 SSOT 是 `data/results/` 与 `backup/snapshots/`，两份都不写。",
+        "adversary": "反例：只把 `handover_check` 换成调纯函数、不给测试加「指针行去掉粗体」那一条 —— 下一轮有人为了压缩 §2 把指针行改短时，检查器与测试会再次分家，而两边各自都是绿的。"
+      }
+    },
+    {
+      "id": "R106-S4",
+      "batch": "R106",
+      "step": "交接文档：§2 裁到十轮（R96–R106）、R95 逐行原文归档、四份入口文档的 Stand 与规模行跟到 988",
+      "changed": [
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "AGENTS.md",
+        "_archive/2026-11-13_HANDOFF-batch-rows-R95.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "audit/blind_spots.json"
+      ],
+      "real_test": {
+        "command": "node $TEMP/opencode/r106-archive-row.mjs  # 按盘上原字节搬运并双向验证",
+        "outcome": "`archive contains the exact line : true` · `section 2 no longer contains it : true` · `rows in section 2 now : 10`。抽取**不重打**：先从盘上取那一行的原字节写进 `_archive/2026-11-13_HANDOFF-batch-rows-R95.md`，再从 §2 里删掉它，然后从磁盘重读两处做双向验证。同轮把规模行与验收数从 980 改到 **988**（`handoff-scale-line` 与 `handover_check` 各自复算过一次）。",
+        "artifact": "data/results/ci-shape-2026-11-13T08-25-44.901Z.json",
+        "sha256": "2e5fbfe2e6aa3991e01d0676f481f2f4250efb92ff7e120f220aced64d515627"
+      },
+      "review": {
+        "correctness": "PASS：归档三件事都查了 —— 归档里有这一行、§2 里已经没有、§2 恰好十行；手写重打会让标点差异查不出来，所以取的是字节而不是文本抄写。",
+        "reproducibility": "PASS：归档文件与 §2 的删除都是同一次脚本里的两个写操作，任何人都能按同一顺序在旧文件上重放；`ARCHIVE_MANIFEST` 只追加一行。",
+        "licence": "PASS：只动本仓文档与归档。",
+        "ssot": "PASS：没有新产物（本轮唯一的新产物是 `ci-shape-*.json`，已在 R106-S1/S2 入账）；归档文件与台账互指，`gate_governance` 的 `archive-manifest` 逐行验它存在。",
+        "adversary": "反例：只改 §2 不登记 `ARCHIVE_MANIFEST` —— 文件在盘上、门也绿，但下一轮的人不知道这一行是被有意移出的；或者把 `R105` 那条历史行一起删掉 —— 十轮的口径就会少一轮，而没有任何断言会红（§2 行数只数「恰好十个」，不数「是哪十个」）。"
+      }
+    },
+    {
+      "id": "R106-S5",
+      "batch": "R106",
+      "step": "对外文案检查器复跑：17/17（测试数 988 与三份 README 徽章、四份 listing 同步）",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/HANDOFF.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-13T09:20:00.000Z --tests 988",
+        "outcome": "**17/17 全绿**（`passed: true`，`checks` 17 条、失败 0）。**为什么这一轮要重跑**：R106 把套件从 980 加到 988，而 `test-count-matches` 与 `test-count-is-not-vacuous` 会扫三份 README 的徽章与正文、两份 listing、提交包与八份草稿里的每一个计数 —— 只改一处就红。这次是**先改徽章、再跑检查器**（R99 的顺序错误反过来做），所以一把过；同一条命令也覆盖了版本（仍 0.3.9，未发新版）与证据路径（未被本轮改动波及）。",
+        "artifact": "data/results/listing-2026-11-13T09-20-00.000Z.json",
+        "sha256": "5b991888cfb00ee02bc5ae908a1e057d19aff72f87154ebe64dda2f436852c79"
+      },
+      "review": {
+        "correctness": "PASS：检查器从被引产物复算每个数字（不是读正文），17 条逐项 PASS；本轮只动了测试数与文档，没动版本文案，`version-matches-manifest` 仍是 0.3.9 一条不差。",
+        "reproducibility": "PASS：`--stamp` 是一个本轮未用过的时刻（09:20:00Z），产物名唯一；任何人在同一棵树上重跑会得到同样的 17 条与同样的 `inputs.tests`。",
+        "licence": "PASS：只读本仓文档与 `packages/plugin/package.json`，零网络。",
+        "ssot": "PASS：产物在 `data/results/` 带 `.sha256`；`produced_by = scripts/check_listing.mjs`、`generated_at` 与 `--stamp` 一致。",
+        "adversary": "反例：把 `--tests` 传成 980（上一轮的数）—— 检查器不会报错，它会**如实**判 `stale`，因为三份 README 的徽章都已经是 988；反过来若只改徽章不跑检查器，正文里那句「988 个测试」与实际套件数没人对账，下一次漂移就没人知道。"
+      }
+    },
+    {
+      "id": "R106-S6",
+      "batch": "R106",
+      "step": "本轮九门快照（--record）：把「R106 结束时门是绿的」写成可复算的产物",
+      "changed": [
+        "scripts/gate.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-13T09:30:00.000Z ; node scripts/gate.mjs --mutate --record --stamp 2026-11-13T09:35:00.000Z",
+        "outcome": "**9 门 ALL GREEN**。为什么这一轮也要落一份：R106 改动了两个测试文件、加了一个纯函数、一个记录器与一个 `t.skip` 形状，而「上一份基线（`gates-2026-11-13T03-00-00.000Z`）是绿的」只证明**交接时**绿，不证明**本轮**绿。产物带 `mode: normal` / `ok: true` 与九条逐项 `ok`，任何人重跑 `node scripts/gate.mjs --record --stamp 2026-11-13T09:30:00.000Z` 可按同一条 stamp 复核。",
+        "artifact": "data/results/gates-2026-11-13T09-30-00.000Z.json",
+        "sha256": "9fffceee09e8b0da79692ac4ff4568aefe28bbe003412fe90c79e36aa7cdf362"
+      },
+      "review": {
+        "correctness": "PASS：`--record` 写的是同一次运行的汇总（门逐项 `ok` 与 `exitCode`），不重跑、不猜；`--mutate` 那份另存，`mode` 字段区分两种结论。",
+        "reproducibility": "PASS：两份产物都带 `--stamp`，同一条命令在同一个提交上给出同一份门清单；耗时被有意排除（门禁产物里没有 `durationMs`）。",
+        "licence": "PASS：只跑本仓九道门与它们的负对照（注入只改本仓自己的断言，然后逐字节还原），不下载、不读凭据。",
+        "ssot": "PASS：两份都在 `data/results/` 且带 `.sha256`；`produced_by = scripts/gate.mjs`、`generated_at` 与 `--stamp` 一致。",
+        "adversary": "反例：只落绿色那份 —— 下一轮的人会以为「门禁仍然有效」，而 `--mutate` 可能已经抓不住了（R105 的 `M11-N2` 就是这样静默失效的）；把两份合成一份 —— `mode` 被抹掉，「跑绿」与「抓得住」又变成一个数字。"
+      }
+    },
+    {
+      "id": "R106-S7",
+      "batch": "R106",
+      "step": "本轮负对照快照（--mutate --record）：证明这九道门仍然抓得住注入的违规",
+      "changed": [
+        "scripts/gate.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-13T09:30:00.000Z ; node scripts/gate.mjs --mutate --record --stamp 2026-11-13T09:35:00.000Z",
+        "outcome": "**NEGATIVE CONTROL PASSED · 9/9 gates caught their injected violation**。与 S6 分成两份产物，因为「跑绿了」与「门禁抓得住」是两件不同的事（R105 起就是两条台账步）；`mode: mutate` / `ok: true` 让读者能区分两种结论。",
+        "artifact": "data/results/gates-mutate-2026-11-13T09-35-00.000Z.json",
+        "sha256": "122a8ed6161ca353e2239235a077b3d2a1f2542d0955adc823e479e6537ca48f"
+      },
+      "review": {
+        "correctness": "PASS：`--record` 写的是同一次运行的汇总（门逐项 `ok` 与 `exitCode`），不重跑、不猜；`--mutate` 那份另存，`mode` 字段区分两种结论。",
+        "reproducibility": "PASS：两份产物都带 `--stamp`，同一条命令在同一个提交上给出同一份门清单；耗时被有意排除（门禁产物里没有 `durationMs`）。",
+        "licence": "PASS：只跑本仓九道门与它们的负对照（注入只改本仓自己的断言，然后逐字节还原），不下载、不读凭据。",
+        "ssot": "PASS：两份都在 `data/results/` 且带 `.sha256`；`produced_by = scripts/gate.mjs`、`generated_at` 与 `--stamp` 一致。",
+        "adversary": "反例：只落绿色那份 —— 下一轮的人会以为「门禁仍然有效」，而 `--mutate` 可能已经抓不住了（R105 的 `M11-N2` 就是这样静默失效的）；把两份合成一份 —— `mode` 被抹掉，「跑绿」与「抓得住」又变成一个数字。"
+      }
+    },
+    {
+      "id": "R107-S1",
+      "batch": "R107",
+      "step": "第 10 道门 `clean-home`：把「无 ~/.dsh 的 runner 上不许 fail」从记录器升级成会红的门（BS-73 的补位）",
+      "changed": [
+        "scripts/gate_clean_home.mjs",
+        "scripts/lib/ci-shape.mjs",
+        "scripts/lib/ci-shape.d.mts",
+        "tests/unit/ci-shape.test.ts",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_ci_shape.mjs --stamp 2026-11-13T19:05:00.000Z ; node scripts/gate_clean_home.mjs ; node scripts/gate_clean_home.mjs --mutate",
+        "outcome": "**typecheck green · with_home 11/11 · without_home 7/11 · 4 skipped · 0 failed**。门本身：`node scripts/gate_clean_home.mjs` 三项 PASS（`shapes-green` / `readings-not-deleted` / `tap-readable`），`--mutate` 把 2026-11-12 的 CI 形状（11/7/4/0）喂给判定后 exit 1。三条针对**真实文件**的负对照都真红后逐字节还原：① 把 `desktop-misreport` 的 skip 改回 `assert.equal(env.ok, true)` + 空 home 跑门 → `without_home: 1 test(s) failed`；② 给 `composition-source` N6 加一条无条件 `t.skip` → `with_home: 1 test(s) skipped on the machine that HAS the profile`；③ 删掉一条读数（11 → 10）→ `readings-not-deleted` FAIL。",
+        "artifact": "data/results/ci-shape-2026-11-13T19-05-00.000Z.json",
+        "sha256": "93059ee32460f9c4d08546265fdffea305e07410720599a9ebc81c0c04a42b97"
+      },
+      "review": {
+        "correctness": "PASS：门判的是 `judgeShapes`，两条边都要满足（有 profile 时读数必须真跑、无 profile 时必须 skip 而不是 fail）；「无 profile 却零 skip」是删读数而不是适配，照样红。空 home 时**不**要求 `with_home` 零 skip —— 否则门会在每台 CI runner 上红，正是 R106 事故的镜像。",
+        "reproducibility": "PASS：不含随机与耗时断言；同一提交重跑给出同一份三项结论；读数走 `ci-shape-*.json`（`--stamp` 命名），同一命令可复算。",
+        "licence": "PASS：只用 Node 内置模块与本仓自己的两个测试文件；不下载、不读凭据、不写 `data/results`（门只打印）。",
+        "ssot": "PASS：门的结论进 `gates-*.json`（逐项 ok/exitCode），读数进 `ci-shape-*.json`；两份都带 `.sha256`，`produced_by` 分别指 `scripts/gate.mjs` 与 `scripts/record_ci_shape.mjs`。",
+        "adversary": "反例：把 `MIN_TESTS` 当成唯一防线 —— 若把两个文件都改成「一条永远 skip 的测试」，删掉 10 条读数后 `tests` 会降到 2，`readings-not-deleted` 红；反过来只把一条真断言改成 `t.skip`，`with_home` 那侧红。两条边各堵一头，这正是 `--mutate` 之外另跑三条文件级负对照的原因。"
+      }
+    },
+    {
+      "id": "R107-S2",
+      "batch": "R107",
+      "step": "PR #65 的商店文案改成与 0.3.9 行为一致（默认只读 + `--apply` 接缝 + `--undo`），并证明分支仍是「上游 main + 一条按 id 插入」",
+      "changed": [
+        "docs/market/submissions/community-plugins-entry.json"
+      ],
+      "real_test": {
+        "command": "git -C %TEMP%/dsh-community-plugins merge up/main ; node scripts/community-index.cjs --check ; node --test scripts/community-index.test.mjs ; node scripts/record_index_sync.mjs --stamp 2026-11-13T18:40:00.000Z",
+        "outcome": "分支 push 前：`community-index: OK (133 entries)`、索引单测 **10/10**、`git diff --stat` 只动 `community.json`（2 行）。push 后 GitHub 侧 `additions 12 / deletions 0 / changedFiles 1`，head `139dd26`。`record_index_sync` → **`in-sync`**（upstream 132 + 1 = 133、`byte_equal_to_fork true`、`deep_equal true`、idx **111**、prev `dsh-translate` / next `dsh-tui`），且 `local_copy.identical_to_fork_entry: true`（R93 记过的「分支与 docs 副本不同」这次消掉了）。",
+        "artifact": "data/results/index-sync-2026-11-13T18-40-00.000Z.json",
+        "sha256": "5a6e870ebe250487a82c73a048cbd9ff185fcb0fef76323387f42e38de396826"
+      },
+      "review": {
+        "correctness": "PASS：新句中英各一句，逐项对应代码事实 —— 默认只读、不装进 profile、不卸载、不判安全；只有显式 `--apply` 才写 `compatibility.json`（`fix`）或 `dsh.profile.bundles`（`rescue`），先备份、`--undo` 逐字节还原。旧句「不安装、不卸载、不判安全」自 0.3.0 起就是不完整的描述。",
+        "reproducibility": "PASS：`record_index_sync` 自己拉两个分支的**原始字节**并按 `insertByEntryId` 重建，逐字节比对；不是「我看了一眼 PR 页面」。",
+        "licence": "PASS：只改我方条目的一段文案；不复制他人条目、不改上游文件、不 force push（维护者 11-10 明确要求 fetch + merge）。",
+        "ssot": "PASS：`docs/market/submissions/community-plugins-entry.json` 与分支条目现在**逐字段相同**（`identical_to_fork_entry: true`），产物用 `taken_from` 说明「比较用的是分支的字节」。",
+        "adversary": "反例：先把 docs 副本改成新文案、再声称「分支已改」—— 正是 R93 记下的假绿（分支上仍是旧措辞）。这次顺序相反：先改分支、跑对方验证器、push，再用脚本把分支字节与本地副本比一次；比不出来就 `in-sync` 红。另一个反例：merge 冲突时手改 JSON —— 会破坏「按 id 升序」的确定性，`assertAscendingIds` 与 `byte_equal` 会同时红。"
+      }
+    },
+    {
+      "id": "R107-S3",
+      "batch": "R107",
+      "step": "渠道状态复读：#65 两次评审之后的三条 PR + dsh.so 收录（含 `github-pull` 第四条）",
+      "changed": [
+        "data/results/market-channels-2026-11-13T18-45-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-13T18:45:00.000Z --pr dsh-community-plugins=https://github.com/zhu1090093659/dsh-community-plugins/pull/65 --pr awesome-deepseek-harness=https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 --pr awesome-deepseek-harness-plugins=https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 --pr awesome-dsh-plugin=https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880 --site dsh.so=human",
+        "outcome": "**validated 1 · ready 4 · live 3 · site_submitted 1 · listed 1**。#65 `open` / `review_decision: CHANGES_REQUESTED` / +12-0 / 认证侧 `blocked` 与匿名侧 `clean`（`mergeable_state_disagrees: true`，两种 vantage 都写进产物）；#193 `closed` 且 `merged_at 2026-11-04T01:00:47Z`；#140 `open/clean`、零 review；#14880 `open/clean`、+6-0；dsh.so `listed`。",
+        "artifact": "data/results/market-channels-2026-11-13T18-45-00.000Z.json",
+        "sha256": "3c9779f8e7799a04be1da41a436b13deff95c20399b709a8bae24408509abb52"
+      },
+      "review": {
+        "correctness": "PASS：第一次跑漏了 `--pr`，产物 `submitted: []`、`live 0` —— 与 R96 第 ⑤ 条同一种错（把「没问」写成「没有」）。已连同 `.sha256` 删除、按真 URL 重跑；本次三条 open / 一条 merged 与 `gh pr view` 逐项相同。",
+        "reproducibility": "PASS：读数全部来自 `gh` API，同一分钟内重跑给出同一组 state / mergeable / mergeable_state；产物同时记 `mergeable_state_by_vantage`，读者能看出 `blocked` 是认证侧视角。",
+        "licence": "PASS：只读公开仓库的元数据；不评论、不投票、不写别人的仓库。",
+        "ssot": "PASS：产物带 `produced_by` / `generated_at` / `.sha256`；渠道 lane 仍只有 `github-discussion` 能进 D5，`github-pull` 记 `d5_counts: false`（R104 的 lane 约束未动）。",
+        "adversary": "反例：把 #193 已合并读成「live 少了一条，PR 被撤了」—— 产物同时记 `state: closed` 与 `merged_at`，两条一起看才成立；只记 state 会把「合并」写成「关闭」。"
+      }
+    },
+    {
+      "id": "R107-S4",
+      "batch": "R107",
+      "step": "本轮十门快照（--record）：把「R107 结束时门是绿的」写成可复算的产物",
+      "changed": [
+        "scripts/gate_clean_home.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --record --stamp 2026-11-13T19:10:00.000Z ; node scripts/gate.mjs --mutate --record --stamp 2026-11-13T19:15:00.000Z",
+        "outcome": "**10 门 ALL GREEN**，其中 `clean-home` 是新加的第 10 道。第一次 `--record`（`18-50`）如实判红（`step-review` 的 `no-orphan-results`：四份新产物还没进台账），已按规矩**删除那两份中间产物**、先把台账补齐再重录 —— 不是放宽门，是顺序错了。",
+        "artifact": "data/results/gates-2026-11-13T19-10-00.000Z.json",
+        "sha256": "ee4730866161bb0dabed415541f35ff270e6bec05e14980d8919368c81cda988"
+      },
+      "review": {
+        "correctness": "PASS：`--record` 写的是同一次运行的逐门 `ok` 与 `exitCode`，不重跑、不推断；门的清单由 `audit/gate_ledger.json` 决定，新增的 `clean-home` 在 `gates[]` 里可见。",
+        "reproducibility": "PASS：同一 `--stamp` 重跑给出同一份清单；耗时字段被有意排除，`sha256` 可重算。",
+        "licence": "PASS：十道门全部只读本仓文件；`clean-home` 只跑本仓两个测试文件，不联网。",
+        "ssot": "PASS：`data/results/` 下带 `.sha256`；`produced_by = scripts/gate.mjs`，`generated_at` 与 `--stamp` 一致。",
+        "adversary": "反例：把交接基线指向 `gates-2026-11-13T03-00-00.000Z`（R105 的九门）—— 那份在「新增第 10 道门」之后不再代表当前门集合；`handover_check` 的「门禁基线」一项读的是文件里的 `gates.length`，不写死 9，所以指向旧文件会显示 9 gates，与 `scripts/gate_*.mjs` 实算的 10 不一致。"
+      }
+    },
+    {
+      "id": "R107-S5",
+      "batch": "R107",
+      "step": "本轮负对照快照（--mutate --record）：证明第 10 道门真的抓得住它声称要抓的东西",
+      "changed": [
+        "scripts/gate_clean_home.mjs",
+        "audit/gate_ledger.json"
+      ],
+      "real_test": {
+        "command": "node scripts/gate.mjs --mutate --record --stamp 2026-11-13T19:15:00.000Z",
+        "outcome": "**NEGATIVE CONTROL PASSED · 10/10 gates caught their injected violation**。`clean-home` 的注入不是编出来的数字，而是 `run 43315617523`（2026-11-12）的原始读数（11 tests / 7 pass / 4 fail / 0 skipped）；另外三条文件级负对照（改回 `assert.equal(env.ok,true)` / 无条件 `t.skip` / 删一条读数）各自真红后逐字节还原，见 `R107-S1`。",
+        "artifact": "data/results/gates-mutate-2026-11-13T19-15-00.000Z.json",
+        "sha256": "fcfe3542f51719938debe0ac4bec6c0fb73cc88b574ec46f60a73c7e33419ab7"
+      },
+      "review": {
+        "correctness": "PASS：十道门逐一在 `--mutate` 下 exit 1；套件只有在全部 CAUGHT 时才 exit 0（`gate.mjs` 的规则未改）。",
+        "reproducibility": "PASS：注入发生在门内部、可重复；产物带 `mode: mutate`，与 S4 的 `mode: normal` 分列。",
+        "licence": "PASS：注入只改本仓自己的断言或判定输入，不触碰外部仓库与凭据。",
+        "ssot": "PASS：另一份独立产物（不覆盖 S4），`sha256` 可重算，「跑绿」与「抓得住」不是一个数字。",
+        "adversary": "反例：只留绿的那份（S4）—— 下一轮会以为门禁仍然有效，而 `--mutate` 可能早已抓不住（R105 的 `M11-N2` 就是这样静默失效的，控制串早就不存在）。"
+      }
+    },
+    {
+      "id": "R107-S6",
+      "batch": "R107",
+      "step": "对外文档的测试数与版本复算（995 条、0.3.9、10 道门）：徽章改了之后由检查器对账",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/market/submissions/community-plugins-entry.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-13T19:20:00.000Z",
+        "outcome": "**17/17**：`documents-exist` 11 份、`evidence-paths-exist` 23 条、`version-matches-manifest` 全部 0.3.9、`test-count-matches` 3 条声明全等于 995、`channel-ledger-matches-reality` 5 个渠道（`github-pull` 那条仍记 `d5_counts: false`）。",
+        "artifact": "data/results/listing-2026-11-13T19-20-00.000Z.json",
+        "sha256": "eb9d16368309de0e6ff8bc1def21897ed848f2e0848d699548033387d2693f25"
+      },
+      "review": {
+        "correctness": "PASS：三个徽章（根 README / 中文 README / npm 页面）与正文「995 个测试、10 道零依赖门禁」在同一轮改成同一个数；改数用的是 Node 脚本，因为 PowerShell 的 `Set-Content -Encoding utf8` 会把这三份 UTF-8 文件读成 GBK 再写回（本轮实际发生一次，已 `git checkout` 还原）。",
+        "reproducibility": "PASS：检查器只读仓库文件 + 一个 `--stamp`；同一提交重跑给出同一份 17 项结论与同一 sha256。",
+        "licence": "PASS：只读本仓文档与 `packages/plugin/package.json`；不联网、不改发布包。",
+        "ssot": "PASS：产物进 `data/results/` 并带 `.sha256`；`produced_by = scripts/check_listing.mjs`。",
+        "adversary": "反例：只改徽章不跑检查器 —— 正文里「995 个测试」与 npm 页面标签会各说各话，而它们都是同一句话的副本（R96 起 `packages/plugin/README.md` 被纳入受检集合就是因为这个）。另一头：把 `--tests` 传成 988（上一轮的数）会**如实**判 stale，不会因为「看着差不多」放过。"
       }
     }
   ]

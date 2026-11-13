@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_ci_shape.mjs",
+  "generated_at": "2026-11-13T19:05:00.000Z",
+  "ok": true,
+  "problems": [],
+  "typecheck": {
+    "ok": true,
+    "exit_code": 0,
+    "errors": []
+  },
+  "shapes": {
+    "with_home": {
+      "exit_code": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0,
+      "readable": true,
+      "tail": "# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 2303.9379"
+    },
+    "without_home": {
+      "exit_code": 0,
+      "tests": 11,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 4,
+      "readable": true,
+      "tail": "# pass 7\n# fail 0\n# cancelled 0\n# skipped 4\n# todo 0\n# duration_ms 255.714",
+      "home": "<fresh empty HOME/USERPROFILE, removed after the run>"
+    }
+  },
+  "inputs": {
+    "files": [
+      "tests/unit/composition-source.test.ts",
+      "tests/unit/desktop-misreport.test.ts"
+    ],
+    "tsc": "node_modules/typescript/bin/tsc",
+    "home_policy": "USERPROFILE and HOME point at one empty temp dir; DSH_HOME removed"
+  },
+  "limits": [
+    "not a gate: it needs node_modules/typescript, and the gate suite must stay dependency-free",
+    "`pnpm run verify` is still the authority; this records the two shapes that verify does not separate: a runner without the maintainer profile, and typecheck",
+    "the with_home run uses whatever `~/.dsh` this machine has; the numbers describe THIS account, not a clean install",
+    "skips are counted, not explained: which test skipped is in the TAP output of the run, not in this artifact"
+  ]
+}

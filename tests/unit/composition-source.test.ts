@@ -249,10 +249,27 @@ test('N5: an unreadable archive falls back to the old composition, and says so t
   assert.equal(layers[0]?.version, '0.1.0-rc.6', 'the disk composition is still what answers')
 })
 
-test('N6: on this machine the CLI and the settings route agree on collisions', async () => {
+test('N6: on this machine the CLI and the settings route agree on collisions', async (t) => {
   const home = `${process.env['USERPROFILE'] ?? process.env['HOME']}/.dsh`
-  const env = await envFor(home, null)
-  if (env.dshSource !== 'kernel-asar') return // no desktop build here: not evidence either way
+  /*
+   * R106: ON A CLEAN RUNNER THERE IS NO PROFILE, AND THAT USED TO BE A FAILURE.
+   *
+   * `envFor` asserts that `loadEnv` succeeds, so the "not evidence either way" guard below was
+   * unreachable: every machine that is not the maintainer's went red at this test. All three public
+   * CI jobs (node 22 / node 24 / windows) failed on it from 2026-11-12 (`run 43315617523`), while
+   * `pnpm run verify` stayed green here. A test that needs THIS machine's home must say so and stop —
+   * "could not look" is not "agrees" (the same rule the project applies to `unmeasured` everywhere else).
+   */
+  const result = await loadEnv({ dshHome: home, profile: 'desktop' })
+  if (result.ok === false) {
+    t.skip(`no desktop profile under ${home} (${result.error.code}): nothing to compare on this machine`)
+    return
+  }
+  const env = result.value
+  if (env.dshSource !== 'kernel-asar') {
+    t.skip('no desktop archive on this machine: the two sides cannot be compared')
+    return
+  }
   const { layers } = await loadBundleLayers(env, home, [])
   const claims = layers.flatMap((layer) =>
     claimsOf(

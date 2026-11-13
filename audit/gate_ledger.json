@@ -78,6 +78,14 @@
       "negative_control": "node scripts/gate_step_review.mjs --mutate → 必须 exit 1（把产物的 sha256 换成不可能命中的值）",
       "requires_build": false,
       "owner": "process"
+    },
+    {
+      "id": "clean-home",
+      "script": "scripts/gate_clean_home.mjs",
+      "enforces": "读本机 home 的两个套件在有 profile 的机器上必须真跑（0 failed / 0 skipped），在空 HOME 上必须 skip 而不是 fail；空 home 却零 skip = 读数被删掉。R106 的记录器只记不判，这道门把它变成会红的",
+      "negative_control": "node scripts/gate_clean_home.mjs --mutate → 必须 exit 1（把 2026-11-12 的 CI 形状 11/7/4/0 喂给判定）",
+      "requires_build": true,
+      "owner": "process"
     }
   ]
 }

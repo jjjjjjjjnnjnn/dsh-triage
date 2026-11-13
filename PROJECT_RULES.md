@@ -43,7 +43,7 @@
 
 | 阶段 | 名字 | 交付物 | 出口门禁 | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
-| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（现为 **9 门 / 9-9 CAUGHT**） |
+| **M0** | 骨架 | 目录/治理/门禁/pnpm 工作区/core+signals+probe+plugin 空壳可构建 | `pnpm run verify` 全绿；门禁可分别 FAIL（负对照） | ✅ 已交付（现为 **10 门 / 10-10 CAUGHT**） |
 | **M1** | admission 对等 | `core/admission` + `data/gold/admission-cases.json`（27 条） | 金标 100% 对等；负对照可复现 FAIL | ✅ 对等锁死；D1 机器可复算 9/10（label 自签，见 `BS-14`） |
 | **M2** | `why` 归因 + 运行时台账 | `why` / `audit` 行级归因 + 能力层事实与差分 | 真实「工具消失」案例一次命中根因 | ✅（P3 Remote 与 agent 作用域按 `ADR-0009` A 不做） |
 | **M3** | 隔离实测 | `probe`：独立 `DSH_HOME` 装候选 → boot/http/render/inventory | 单次 ≤20s；失败自动清理；默认 dry-run | ✅（`namespace-diff` 仍 `unmeasured`，`ADR-0009` A） |

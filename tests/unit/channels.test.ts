@@ -99,6 +99,22 @@ test('an unknown platform, a missing evidence level and an empty ledger are all 
 })
 
 test('the lane and evidence names are the ones the ledger may use, and nothing else', () => {
-  assert.deepEqual(Object.keys(CHANNEL_PLATFORMS).sort(), ['github-discussion', 'reddit', 'x'])
+  /*
+   * R104 added `github-pull`: an awesome-list submission is a pull request, not a discussion. Keeping it
+   * in its own lane is what stops "we have a PR open" from being read as "we posted in a discussion" —
+   * only the latter can feed D5.
+   */
+  assert.deepEqual(Object.keys(CHANNEL_PLATFORMS).sort(), ['github-discussion', 'github-pull', 'reddit', 'x'])
   assert.deepEqual([...CHANNEL_EVIDENCE].sort(), ['declared', 'declared-url-reachable', 'measured'])
+})
+
+test('a submission PR is accepted in its own lane, and still cannot feed D5', () => {
+  const PR = 'https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880'
+  const ok = judge([counted(), notCounted({ id: 'awesome-pr', platform: 'github-pull', url: PR })])
+  assert.deepEqual(ok.problems, [])
+  // A PR counted toward D5 would move a frozen number: the spec counts reactions on #11813.
+  const miscounted = judge([counted(), notCounted({ id: 'awesome-pr', platform: 'github-pull', url: PR, d5_counts: true, posted_on: '2026-11-13T05:30:00.000Z' })])
+  assert.equal(miscounted.ok, false)
+  // And the lanes stay separate in both directions.
+  assert.equal(judge([counted(), notCounted({ id: 'x', platform: 'github-discussion', url: PR })]).ok, false)
 })

@@ -23,6 +23,12 @@ import { parseInstant } from './posting.mjs'
 /** The lanes this project publishes in. A URL on any other host cannot be recorded as one of ours. */
 export const CHANNEL_PLATFORMS = Object.freeze({
   'github-discussion': /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+$/,
+  /*
+   * A submission into somebody else's list is a pull request, not a discussion: `awesome-dsh-plugin`
+   * takes one file per plugin via PR (R104). Keeping it in its own lane means "we have a PR open" can
+   * never be read as "we posted in a discussion", which matters because only the latter can feed D5.
+   */
+  'github-pull': /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/,
   x: /^https:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/status\/\d+$/,
   reddit: /^https:\/\/(?:www\.)?reddit\.com\/r\/[A-Za-z0-9_]+\/comments\/[A-Za-z0-9]+(?:\/[^?#]*)?\/?$/,
 })

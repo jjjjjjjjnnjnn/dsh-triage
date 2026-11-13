@@ -1192,3 +1192,57 @@
 - **三个被门禁抓到的顺序错误（按顺序发生，都没放宽门禁）**：① 两份产物塞进同一条台账步 → `step-review` 只允许一步一个 `real_test.artifact`，`no-orphan-results` 红两次 → 拆成 `R103-S2` / `R103-S3`；② 发布红产物没入账 → 再红 → 单列 `R103-S6`；③ 「先写 971 的断言、后改徽章」→ `test-count-matches` 红（`listing-22:35` 中间态已删）。
 - **顺序纪律（R98 的老坑）**：`publish-*.json` 出现之前，README 与两份 listing 写的是「本次发版的构建」；产物落盘后才改成「已发布，`latest=0.3.9`」并指向那个产物。**先有产物、后有声明**。
 - **边界**：`BS-67` / `BS-69` / `BS-70`（只在桌面壳 + 默认 home 实测）· `BS-71`（真机两侧 judged 差 3）· `BS-72`（写稿与审稿同一个模型）。**D5 一个数都没动**（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**；**971 测试 / 9 门 / 9-9**。
+
+### 2026-11-13 R104｜提交进 `awesome-dsh-plugin` 收录（PR #14880）+ 公开仓切到 0.3.9（分发行，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN 给了一个具体目标（「加入收录到这个里面中，用于推广。注意维护」）后由 agent 执行。SessionID：`lead@dsh-triage-r104`。**没有**起 subagent；**没有**调用外部模型 CLI。
+- **先读它的规则，再提交**：那份 `contributing.md` 明确「一个插件一个 YAML 文件、两个 README 由脚本生成」，所以一个 PR 只新增一个文件、**永不与别人的 PR 冲突**；门槛是 `dsh.bundle`（只写 `dsh.client` 会被拒）、仓库 ≥1 天、`dsh-plugin` topic、**描述必须与代码一致**（夸大是打回的主因）、一个 PR ≤3 条、不是元包。逐条核对结果写在 `docs/distribution/awesome-dsh-plugin.md` §3。
+- **提交形状**：仓库是 monorepo，`dsh.bundle` 只在 `packages/plugin/package.json` 里 → `url` 指 `.../tree/main/packages/plugin`、`name` 写 `owner/repo#dsh-triage`、文件名 `…--packages-plugin.yml`。描述**没有一个数字**（所以没有「46 个工具」那类需要逐条对账的声明），四件事各自能指到命令。**没写 `tarball:`**：npm 已发布、`repository.url` 指回本仓，列表会自动解析 npm 映射（手写 `npm:` 反而会被校验拒绝）。
+- **提交过程**：blob → tree（`base_tree` = 上游 main）→ commit（parent = 上游 main `891b3e37d`）→ fork 分支 → PR **#14880**。之后 `gh repo sync` 把 fork 追平上游。读数：`open` / `MERGEABLE` / `+6-0` / `changed_files 1` / `UNSTABLE`（**在等 CI，不是被拒**）。
+- **一处真缺陷被自己的检查器抓到**：把这条 PR 记成 `github-discussion` → `channel-ledger-matches-reality` 报 `url does not look like a github-discussion link`。修法**不是放宽正则**，而是新增 lane `github-pull`，并补两条单测：PR 可以记录，但**不许** `d5_counts: true` —— 只有 `#11813` 能进 D5，混成一条会让「开了个 PR」看起来像「发了个帖」。
+- **公开仓切到 0.3.9**：按 R98/R99 的读法 `git rev-parse main:dsh-triage` → `commit-tree`（父 = `origin/main`）→ push `3794ec3`；`record_public_cut` 复读 **`in-sync` / `trees-equal true` / `cut at 35d48c2` / `behind 0`**。切前 `cut at dd0fb20`（公开仓还是 0.3.8），而 npm 已是 0.3.9 —— 从 npm 与列表点进来的读者会看到旧版本，这才是切的理由。
+- **三处顺序错误（都是门禁抓的，都没放宽门禁）**：① 把切面产物塞进 `R104-S1` 的同一 artifact 槽 → `no-orphan-results` 红 → 单列 `R104-S3`；② `changed[]` 写了不存在的 `docs/tools/record_public_cut.mjs` → `step-review` 红 → 改成真实路径；③ `INDEX.md` 一行里写了别人仓库的 `data/plugins/…yml` → `index-references` 把「引用必须指到仓内存在的文件」照常执行 → 改成不带路径的措辞。
+- **顺带修的**：`channels.test.ts` 的 lane 清单与一条「PR 不许计入 D5」的负对照；`record_market_channels.mjs` 的渠道清单新增 `awesome-dsh-plugin`（`ready`）。测试 971 → **972**，徽章与文案同轮跟到（R99 的老坑）。
+- **边界**：PR 仍 open、CI 仍跑 —— **它现在什么都没换成**；这条 PR 不计入 D5（`channels.json` 的 `d5_counts: false` 写明理由）。维护义务记进 `T-871`（那张表有 decay 扫描，描述被当作对代码的声明核对）。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**；**972 测试 / 9 门 / 9-9**。
+
+### 2026-11-13 R105｜交接整理：入口裁到十轮、把「交接时门是绿的」落成产物（交接轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「进行项目交接，整理，维护。即将切换会话并继续项目」之后由 agent 执行。SessionID：`lead@dsh-triage-r105`。**没有**起 subagent；**没有**调用外部模型 CLI。
+- **做了什么（三件，全是可复算的）**：
+  1. **§2 裁到最近十轮（R95–R104）**：R92 / R93 / R94 三行逐行进 `_archive/2026-11-13_HANDOFF-batch-rows-R92-R93.md`，并登记 `ARCHIVE_MANIFEST`。抽取按行取 `git show HEAD:dsh-triage/docs/HANDOFF.md` 的**原字节**（不重打），然后**双向验证**：归档里每一行都能在旧 §2 里找到（逐字节相同），且这三行都**已从现 §2 消失**，归档里也没有一行是 HANDOFF 从未有过的。
+  2. **交接轮也落门禁快照**：`gate.mjs --record` → `gates-2026-11-13T03-00-00.000Z.json`（9 门全绿）· `--mutate --record` → `gates-mutate-2026-11-13T03-05-00.000Z.json`（9/9）。§1 让人先跑这两条命令，但它们的输出原本不进仓 —— 下一个人跑出红的时候无法区分「我弄坏了」与「交接时就是这样」。现在有两份可直接比的基线。
+  3. **§3 的「下一件事」整段重写**：旧的那段还是 R99 留的（写 `next = 0.2.2-rc.1`、写「`--out` 只许 `$RUNNER_TEMP`」这类早已落地的作业）。新的七条只写**当前状态**：D5 关窗、PR #14880 只读不催、公开仓切面是构造、#65 只读、npm 页面测试数是发布快照、`record_upgrade_card` 要带 `--dsh-home`、以及七条「不要做的」。
+- **第一次抽取数漏了一轮**：先只搬了 R92 / R93（以为「十轮」是 R94–R104 之外的边界），数了一遍才发现 §2 里是 11 行，补搬 R94 才对齐。**口径是数出来的，不是看出来的** —— 这条如实记，因为「十轮」在旧文档里也写成过 11 行（R76 那次）。
+- **三处被自己的门禁抓到的顺序错误**：① 台账里写 `` `gate.mjs --record` `` 嵌在模板字符串里 → 语法错，脚本站不起来（改成分开写）；② `R105` 的两个产物一开始没入账 → `step-review/no-orphan-results` 红；③ `INDEX.md` 之前那行引用了别人仓库的路径 → `index-references` 红（已在 R104 修掉，本轮没重犯）。
+- **边界**：`behind 4` 是构造（切面之后又提交了）· npm 页面 971 vs 仓内 972 是发布快照 · PR #14880 `CLEAN` 但 `0 reviews` 仍不是收录。
+- **同一轮的后半段：把交接文档自己说的话变成可复算的（R105-S4）**。新脚本 `scripts/handover_check.mjs` **10 项**、纯函数 `scripts/lib/handover-claims.mjs` + `tests/governance/handover-claims.test.ts` **8 条**（含 4 条负对照）。**为什么必须做**：那份文档让人信十个数字与七个指针，而历轮每一次都是「读一遍」发现某一条过期 —— 读不是控制。
+- **两处当场抓到的缺陷**：① `execFileSync("npm", …)` 在 Windows 上签 `ENOENT`（`npm` 是 `npm.cmd`）—— 与 R50 修过的是同一个坑，改走 `execSync`（参数是固定字面量，不经用户输入）；② 门禁基线那句话说「`gates-…json` 与 `gates-mutate-…json`」，前一份是**裸文件名** → 断言「两处路径都解析得到」红，补全 `data/results/` 前缀才绿。
+- **一处被自己的检查抓到的结构性错误**：Stand 的原地重写把轮次分隔符 `｜R104 (2026-11-13，` 吃掉了，四份文档的 R104 条目都从「`13，**分发行…`」开始 —— `doc-stand` 的 `**Stand**: R<n>` 断言没红（它只看 R105 那一段），是 `handover_check` 与人工对读才发现的。**这说明「断言通过」与「文档可读」是两件事**，已写进 R105 的边界。
+- **收尾整理**：`public-cut` 一天里产生过三份读数（`cut at 35d48c2` → `behind 4` → `behind 12`），只留最新那份并让两条台账步指向它 —— 两个「切在哪」的答案是 HANDOFF 自己点名的 drift；`d5-window-status` 同日重复跑的一份也删了（同一状态一次读数）。**D5 一个数没动**（`pending`，关窗 `2026-11-15T20:24:37Z`）。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**；**972 测试 / 9 门 / 9-9**。
+
+### 2026-11-13 R106｜「`pnpm run verify` 在干净账号上是否成立」变成一条能红的读数（判据轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「开始进行」后由 agent 执行。SessionID：`lead@dsh-triage-r106`。**没有**用 subagent、**没有**调用任何外部模型 CLI。
+- **接手时第一件事就是红的**：`pnpm install --frozen-lockfile` 通过，`pnpm run verify` **exit 2** —— `tsc -p tsconfig.tests.json` 在 `tests/governance/handover-claims.test.ts:101` 报 `Argument of type 'string | undefined' is not assignable to parameter of type 'string'`（`noUncheckedIndexedAccess` 下 `match[1]` 可能是 `undefined`），而 `node --test` 只剥类型不查类型 → 980 条测试全过、九道门 9/9、交接文档让人跑的那条命令是红的。修法一行：`.map(...).filter((file): file is string => file !== undefined)`。
+- **第二个洞（同一形状，在别人的机器上）**：公开 CI `run 43315617523`（2026-11-12）三个 job 全红，`--log-failed` 里四处 `loadEnv must succeed` —— `composition-source` N6 与 `desktop-misreport` 三条读本机 `~/.dsh`，在没有 profile 的 runner 上 `assert.equal(env.ok, true)`。「这台机器上没有可读的东西」被写成了缺陷。修法是 `t.skip(具体原因)`，并给两种形状各留一道闸。
+- **判据先行**：`scripts/lib/ci-shape.mjs#judgeShape` 把三种错误形状写成可判 —— `with_home` 出现 skip = 把读数换成了跳过；`without_home` 零 skip = 把读数删了；TAP 读不出 = 什么也没证明。`tests/unit/ci-shape.test.ts` **8 条**，另加「跳过清单必须等于真的会跳过的两个文件」与「那两个文件里不许再有 `assert.equal(env.ok, true)`」两条正向钉子。
+- **落地**：新记录器 `scripts/record_ci_shape.mjs`（一次真跑量 **typecheck** + **有 home 的套件** + **空 home 的套件**，写成一份带 sha256 的产物）；四条读数改成 `t.skip`；`handover-claims` 的匹配器加窄化。**记录器不是门**（它需要 `node_modules/typescript`，门禁必须永远能跑），这一点写在文件头与 `limits[]` 里。
+- **真机读数**：`ci-shape-2026-11-13T08-25-44.901Z.json` → `typecheck green` · `with_home 11/11 · 0 skipped` · `without_home 7/11 · 4 skipped · 0 failed`。
+- **两条负对照都在 `%TEMP%` 真跑过**：把两个文件还原成 R105 的写法 → `without_home 7/11 · 4 failed`、记录器 exit 1；把一条真断言改成 `t.skip` → `with_home 10/11 · 1 skipped`、exit 1。两份读数在临时目录，不进 SSOT。
+- **顺带修掉一个「一个事实两个家」**：`handover_check` 自己写了一份 §2 行数正则，与 `handover-claims.test.ts` 用的不是同一份；归档指针行（`| **历史批次行…（R96–R106…`）在检查器眼里能被数成第 11 行，在测试眼里不能。现在两边都调 `countBatchRows()`，并把指针行排除写进同一个纯函数。
+- **顺序错误（门禁两次抓到，都没放宽门禁）**：① 台账 `changed[]` 写了目录 `data/results/` → `ledgers.test.ts` 读目录报 `EISDIR`；② 两份门禁快照先落盘、后入账 → `step-review/no-orphan-results` 红。两次都是补台账 / 改字段后恢复，没有动门禁。
+- **规模与文档**：980 → **988 测试**（8 条新单测），徽章 / 三份 README / 规模行（609→612 产物、657→660 步、72→73 盲区、27 金标）同轮跟到；§2 裁到 **R96–R106**，R95 逐行原文进 `_archive/2026-11-13_HANDOFF-batch-rows-R95.md`（按盘上字节搬运、双向验证）；四份入口文档的 Stand 一起换成 R106。
+- **新增盲区 `BS-73`**：九道门按设计只用 Node 内置模块，**没有一道能跑 tsc**；本次只让这个洞有读数，没有关闭它。
+- **边界**：D5 一个数都没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）；对外三条线仍停在等别人（#14880 `OPEN/CLEAN/0 reviews`、#65 等 re-review、#140 零 review）；`pnpm run verify` 仍是权威。**判据/阈值、`admission.ts`、四桶、`data/gold/` 一字未动**。**988 测试 / 9 门 / 9-9**。
+
+### 2026-11-13 R107｜#65 的两条卡点：一条是已经修好的 CI 没送出去，一条是对外文案没改准（分发轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`，HUMAN「全部同意，开始依次进行」后由 agent 执行。SessionID：`lead@dsh-triage-r107`。**没有**用 subagent、**没有**调用任何外部模型 CLI。
+- **接手时收到的信息**：维护者 `zhu1090093659` 在 2026-11-13T12:26:17Z 对 #65 再次 `CHANGES_REQUESTED`，两条：① 商店文案仍写「不安装、不卸载、不判安全」，而 0.3.0 起 `fix --apply`、0.3.3 起 `rescue --apply` 一直会写 `compatibility.json` 与 `dsh.profile.bundles`；② 上游 0.3.9（`3794ec3`）的 `verify` 三个 job 全红，测试基线无法确认。**第二条是 R106 已经修好、公开仓切面（`35d48c2`）还没带上的那四条** —— 不是新缺陷。
+- **文案**：中英各一句改成「默认只读——不安装到你的 profile、不卸载、不判安全；只有显式 `--apply` 才改配置，先备份、可 `--undo` 逐字节还原」。分支按维护者 11-10 的要求 `fetch + merge`（无冲突、**零 force push**），push `139dd26`；对方仓库自带 `community-index.cjs --check` → `OK (133 entries)`，索引单测 **10/10**，GitHub 侧 **+12-0 / 1 文件**。
+- **同源复算**：`record_index_sync` → `in-sync`（upstream 132 + 1、`byte_equal true`、idx 111），且 `local_copy.identical_to_fork_entry: true` —— R93 记过的「分支与 docs 副本不是同一句」消掉了。
+- **那个洞变成第 10 道门**：`scripts/gate_clean_home.mjs` + `judgeShapes`（有 profile 时读数必须真跑；无 profile 时必须 skip 而不是 fail；空 home 零 skip = 读数被删）＋ 7 条单测。三条**文件级**负对照各自真红后逐字节还原：改回 `assert.equal(env.ok, true)` → `without_home 1 failed`；无条件 `t.skip` → `with_home 1 skipped`；删一条读数 → `readings-not-deleted` FAIL。**这不是「为了让 CI 绿而放宽」**：门在 CI 上把 `with_home` 记为 not-applicable（runner 没有 profile），而 `without_home` 那侧照样判。
+- **整机读数**：995 条测试在**空 HOME** 上 `991 pass / 0 fail / 4 skipped`；`gate.mjs` 10/10 全绿，`--mutate` **10/10 CAUGHT**；`check_listing --tests 995` **17/17**。
+- **一处旧账被自己的检查器抓到**：R106 建了 `_archive/2026-11-13_HANDOFF-batch-rows-R95.md` 与 `ARCHIVE_MANIFEST` 行，却**没有把 R95 从 §2 删掉**（口径写 R96–R106，盘上仍是 R95–R104）。`handover_check` 只数「§2 恰好 10 行」，所以两边都绿。R107 补删、口径改到 R96–R107，并把「归档文件存在」写成「这一行真的不在 §2 里」。
+- **两处自己造成的缺陷，都如实记**：① PowerShell 的 `Set-Content -Encoding utf8` 把三份 README 读成 GBK 再写回，整份变乱码 —— 用 `git checkout` 还原后改用 Node 脚本改数字（本仓已有一次同类教训，又踩了一次）；② 第一次 `gate.mjs --record` 立刻被 `step-review/no-orphan-results` 判红（四份新产物还没进台账），两份中间产物**已删**、按「先补台账、后录门禁」的顺序重录。
+- **边界**：D5 一个数都没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`，还剩 2 天）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动；npm 上 0.3.9 的字节没有变（这一轮不含发布，也不打算为测试读法发版）。**995 测试 / 10 门 / 10-10**。

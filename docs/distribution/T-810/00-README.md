@@ -39,6 +39,7 @@
 | **X (Twitter)** | 个人开发者账号 | https://x.com/jjjj1955714/status/2117306628227940741 | ✅ 已发布（4 连推线程） |
 | **Reddit** | `r/DeepSeek` | https://www.reddit.com/r/DeepSeek/comments/1xm84py/understanding_deepseek_harness_plugin_admission/ | ✅ 已发布（Resource 规范帖） |
 | **Reddit** | `r/DeepSeekHarness` | https://www.reddit.com/r/DeepSeekHarness/comments/1xm88ex/understanding_deepseek_harness_plugin_admission/ | ✅ 已发布（定向专属圈子） |
+| **awesome 列表** | `awesome-dsh-plugin/awesome-dsh-plugin`（收录 PR） | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880 | 已提交（CI 进行中；**不计入 D5**） |
 
 > **R58 交接注记（HUMAN 决定 · R94 已改变）**：第 6/7/8 篇（三条回帖）**原本不发**——对应帖子已经有人答过。
 > 三份文件当时**保留作样例**（它们演示了「按帖内点名版本判」与「反向排除声明层」两种回答形状）。

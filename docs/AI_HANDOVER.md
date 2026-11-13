@@ -1,14 +1,16 @@
 # AI_HANDOVER · 接手清单
 
-> **Stand**: R49 (2026-10-30)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
+> **Stand**: R105 (2026-11-13)｜读我 → 读 `PROJECT_RULES.md` → 读 `INDEX.md`｜**状态以 `docs/HANDOFF.md` §2 为准**（本文件只保留真相源清单与防幻觉规则）
+> **R105 起**：这四条命令之外，还有 `node scripts/handover_check.mjs` —— 它复算 `docs/HANDOFF.md` 自己说的十件事（验收数 / 交接快照 / 门禁基线 / 归档 / §2 行数 / npm 版本 / 收录 PR …）。读不到 npm 或 GitHub 时它记 `UNMEASURED`，不记 PASS。
 
 ## 1. 五分钟检查（禁跳过）
 
 ```powershell
-git status --short            # 必须干净
-pnpm install
-pnpm run verify               # 基线必须全绿
-node scripts/gate.mjs --mutate  # 每道门都必须 CAUGHT
+git status --short                # 必须干净
+pnpm install --frozen-lockfile
+pnpm run verify                   # 基线必须全绿
+node scripts/gate.mjs --mutate    # 每道门都必须 CAUGHT
+node scripts/handover_check.mjs   # 交接文档自己说的话是否还成立（10 项）
 ```
 
 基线不绿 → 先修基线，**不叠加新功能**。

@@ -192,6 +192,15 @@ const others = [
     blocker: publicSourceMissing,
   },
   {
+    channel: 'awesome-dsh-plugin/awesome-dsh-plugin',
+    entry_point: 'https://github.com/awesome-dsh-plugin/awesome-dsh-plugin',
+    how: 'one PR adding one file: data/plugins/<owner>__<repo>.yml (the two READMEs are generated from it, so a PR never conflicts)',
+    requirement:
+      'quoted from its contributing.md: package.json must declare `dsh.bundle` (dsh.client alone is not installable), repo at least 1 day old, the `dsh-plugin` topic set, description must be accurate against the code (no superlatives, no counts that do not exist), at most 3 entries per PR, and no meta-packages',
+    status: publicSourceMissing === null ? 'ready' : 'blocked',
+    blocker: publicSourceMissing,
+  },
+  {
     channel: 'walkinglabs/awesome-deepseek-harness-plugins',
     entry_point: 'https://github.com/walkinglabs/awesome-deepseek-harness-plugins',
     how: 'add one line `- [Project](url) - what it provides and its DSH compatibility.`',

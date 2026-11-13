@@ -49,6 +49,16 @@
       "d5_counts": false,
       "why_not_counted": "同 r/DeepSeek：这一条的作用是接触面，不是需求证据。D5 只认那三个数，渠道数量不在里面",
       "evidence": "declared-url-reachable"
+    },
+    {
+      "id": "awesome-dsh-plugin-14880",
+      "platform": "github-pull",
+      "url": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880",
+      "label": "awesome-dsh-plugin · 收录提交（PR）",
+      "posted_on": "2026-11-13T05:30:00.000Z",
+      "d5_counts": false,
+      "why_not_counted": "D5 只数 #11813 的 reactions、GitHub search 找到的第三方引用、以及市场基线的周下载；一个 awesome-list 的收录 PR 三者都不是，把它算进去等于改判据",
+      "evidence": "measured"
     }
   ]
 }

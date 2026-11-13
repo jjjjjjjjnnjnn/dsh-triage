@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "artifact_revision": 2,
+  "produced_by": "scripts/record_index_sync.mjs",
+  "generated_at": "2026-11-13T18:40:00.000Z",
+  "question": "is the fork branch exactly \"upstream main + one entry at its ascending id position\"?",
+  "upstream": {
+    "owner": "zhu1090093659",
+    "repo": "dsh-community-plugins",
+    "ref": "main",
+    "url": "https://raw.githubusercontent.com/zhu1090093659/dsh-community-plugins/main/community.json",
+    "sha256": "1e979515dd063ae2338f05b533a2c0790996832d07fbacd7adc34e8ba58d454d",
+    "entries": 132,
+    "has_entry": false
+  },
+  "fork": {
+    "owner": "jjjjjjjjnnjnn",
+    "repo": "dsh-community-plugins",
+    "ref": "feat/community-plugins-dsh-triage",
+    "url": "https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-community-plugins/feat/community-plugins-dsh-triage/community.json",
+    "sha256": "aa9d9d2e86c216544f0b7a836ca371304fe464578cc4cb1020d97fb37c5987e3",
+    "entries": 133,
+    "entry_index": 111,
+    "neighbours": {
+      "previous": "dsh-translate",
+      "next": "dsh-tui"
+    },
+    "ascending": true
+  },
+  "rebuilt": {
+    "entries": 133,
+    "sha256": "aa9d9d2e86c216544f0b7a836ca371304fe464578cc4cb1020d97fb37c5987e3",
+    "byte_equal_to_fork": true,
+    "deep_equal_to_fork": true
+  },
+  "entry": {
+    "id": "dsh-triage",
+    "taken_from": "jjjjjjjjnnjnn/feat/community-plugins-dsh-triage community.json",
+    "local_copy": {
+      "file": "submissions/community-plugins-entry.json",
+      "sha256": "b62aa7de88f045827c6b5e326d821090266d8c5630327d80d0a26d9b9e91f3b1",
+      "identical_to_fork_entry": true,
+      "differing_keys": []
+    }
+  },
+  "status": "in-sync",
+  "blocker": null,
+  "limits": [
+    "it compares two public branches, not a merge: an accepted entry is only proven by a merged pull request",
+    "it says nothing about whether the maintainer will accept the entry, only that our branch follows the current rule",
+    "the rule itself can change again; this artifact pins what the rule produced on this day"
+  ]
+}

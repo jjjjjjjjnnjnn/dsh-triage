@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R103 (2026-11-12)",
+  "stand": "R107 (2026-11-13)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -583,6 +583,24 @@
       "owner": "arbiter + HUMAN（发布前的人读是唯一剩下的外部视角）",
       "what_would_show_it": "一份草稿的每个数字都对、`check_listing` 全绿，但正文把它们串成了一个越界的结论（例如「所以在你的机器上也不会坏」），而**没有任何断言会红** —— 那一刻剩下的只有 HUMAN 读一遍。",
       "opened_at": "2026-11-12"
+    },
+    {
+      "id": "BS-73",
+      "area": "类型检查 / 门禁不跑 tsc（R106；R107 只补上了「无 home」那一半）",
+      "cannot_see": "九道门按设计只用 Node 内置模块（`scripts/gate_*.mjs` 零依赖，这是硬规则），所以**没有任何一道门能跑 `tsc`**。本地唯一的类型检查在 `pnpm run verify` 里，CI 里在 `verify` job 里；一个人只跑 `gate.mjs --record` 就交出去，能把一棵「类型检查是红的」树写成「9 门全绿」。R106 接手时就是这一种：`verify` exit 2，而 980 条测试全过、9 门 9/9。R107 之后门禁里多了一道 `clean-home`（它跑两个测试文件、判两种 home 形状），但**仍然没有一道门跑 `tsc`** —— 这条的一半还开着。",
+      "mitigation": "新增 `scripts/record_ci_shape.mjs`：一次真跑同时量 **typecheck** + **有 home 的套件** + **空 home 的套件**，写成一份带 sha256 的产物（`ci-shape-*.json`），并把「把读数换成跳过」与「把读数删掉」两种形状做成纯函数 `judgeShape` + 8 条单测。记录器本身仍**明确不是门**（它需要 `node_modules/typescript`，而门禁必须永远能跑）。R107 把「无 home 那一半」升级成真门 `scripts/gate_clean_home.mjs`（`judgeShapes` + 7 条单测 + 文件级负对照），所以现在只有 `tsc` 这一半还靠记录器与 `pnpm run verify`。",
+      "owner": "process + implementer",
+      "what_would_show_it": "只跑一次 `node scripts/gate.mjs`（或 `--record`）然后据此宣称「这一轮是绿的」，而 `pnpm run verify` 的类型检查是红的 —— 那一刻九门全绿、产物齐全、台账可重算，**没有任何断言会红**，只有真跑一次 `verify` 才看得见。",
+      "opened_at": "2026-11-13"
+    },
+    {
+      "id": "BS-74",
+      "area": "无 home 门禁的半边 / `gate_clean_home` 在 CI 上永远只验一半（R107）",
+      "cannot_see": "`gate_clean_home` 有两条边：有 profile 时「读数真的跑了」（`with_home` 必须 0 skipped）、无 profile 时「读数停下而不是失败」（`without_home` 必须 0 failed 且有 skip）。CI runner 上没有 `~/.dsh`，所以那一侧**永远是 not-applicable**：一个把真断言改成无条件 `t.skip()` 的改动，在 CI 上仍然全绿（两种形状都只剩 skip），只有在一台有 profile 的机器上跑才看得见。",
+      "mitigation": "两条：① 交接五分钟检查与每一轮的 `verify` 都在本机跑，`with_home 11/11 · 0 skipped` 写进 `ci-shape-*.json` 与交接快照；② `judgeShapes` 在「无 profile 且零 skip」时直接判红，所以「把读数删掉」这一种在 CI 上仍会响 —— 漏掉的只有「改成永久 skip」这一种。",
+      "owner": "process + 每轮在本机跑 verify 的人",
+      "what_would_show_it": "把 `desktop-misreport` 的三条读数一起改成无条件 `t.skip(...)`：本机 `pnpm run verify` 仍然 995/995 全绿、`gate_clean_home` 的 `with_home` 那侧会红 —— 但若只跑 CI，它会绿到底，而产物里 `with_home` 那栏是空的。",
+      "opened_at": "2026-11-13"
     }
   ]
 }
