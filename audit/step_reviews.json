@@ -16494,6 +16494,27 @@
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把这一刀当成「市场上已经能看到」—— 公开仓镜像与 `awesome-dsh-plugin.com` 是两回事；前者我们说了算，后者由他们的 `build-site` 决定（`BS-75`）。"
       }
+    },
+    {
+      "id": "R110-S1",
+      "batch": "R110",
+      "step": "公开仓切到含 R110 的提交（公开镜像里那句「网站还没上线」必须改成「已上线」）",
+      "changed": [
+        "data/results/public-cut-2026-11-13T20-51-47.992Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at 1beb3e8` / `behind 0`**（那一刻）。上一刀 `571c280`（R109）。",
+        "artifact": "data/results/public-cut-2026-11-13T20-51-47.992Z.json",
+        "sha256": "4803f8d3bd278235cbffd00137577ed00790f4a0a8ca5a1610193271b04275d3"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `HEAD:dsh-triage`，parent = 当时的 `origin/main`；`trees-equal` 由脚本比出来。",
+        "reproducibility": "PASS：切面可按「容器提交 + 公开仓父提交」重算。",
+        "licence": "PASS：只推本仓自己的 dsh-triage/ 子树；不带 dsh-remedy/（另一个项目），不触碰第三方仓库。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把这一刀当成「市场条目也更新了」—— 站点读的是他们仓库里的 yml 与 README，不是我们的镜像；条目文案的更新走的是 PR #15073。"
+      }
     }
   ]
 }
