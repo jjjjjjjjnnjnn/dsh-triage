@@ -16515,6 +16515,30 @@
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把这一刀当成「市场条目也更新了」—— 站点读的是他们仓库里的 yml 与 README，不是我们的镜像；条目文案的更新走的是 PR #15073。"
       }
+    },
+    {
+      "id": "R111-S1",
+      "batch": "R111",
+      "step": "接手容器根 `.agents/` 的两份 packet，并把公开仓切到含它们的提交",
+      "changed": [
+        ".agents/tasks/TASK-20261112-009-HARNESS-BOOT-DIAGNOSTICS.md",
+        ".agents/tasks/TASK-20261112-013-RENDER-CONTROLS-CI.md",
+        ".agents/tasks/RESULTS-2026-11-14.md",
+        "data/results/public-cut-2026-11-14T20-10-20.145Z.json"
+      ],
+      "real_test": {
+        "command": "node .tmp/verify-committed-packets.mjs → git -C .. rev-parse main:dsh-triage → git commit-tree -p origin/main → git push origin <new>:main → node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at 7c6ad98` / `behind 0`**；公开仓 CI run `43635778132` 随后 success。",
+        "artifact": "data/results/public-cut-2026-11-14T20-10-20.145Z.json",
+        "sha256": "e2bc380c387ffe7f05248f4ca11a0ac3a7e94272d7a933a21d12db2be916ad69"
+      },
+      "review": {
+        "correctness": "PASS：两份 packet 的正文一字未改，只把账号段换成 `<home>\\`；`verify-committed-packets.mjs` 用「还原 + LF→CRLF」把仓里这份对回源文件并比 sha256（`equals_redacted_original_with_lf: true`），所以 `-8 B` 与 CRLF 归一都有账。",
+        "reproducibility": "PASS：切面按「容器提交 + 公开仓父提交」重算；packet 的每条断言都指向 GitHub run id 或本机只读读数，`RESULTS-2026-11-14.md` 里写明怎么复算。",
+        "licence": "PASS：只搬本仓自己的 `.agents/tasks/`；packet 正文里的上游源码引用仍是引用，没有抄代码；容器根的 `.agents/` 已删除，未脱敏原件留在 gitignored `.tmp/`。",
+        "ssot": "PASS：`data/results/` + 同名 `.sha256`，由 `scripts/record_public_cut.mjs` 现算。",
+        "adversary": "反例一：把这两份 packet 当作「已实现的二分排查」—— 那是 `T-114`，未领取，本仓不做功能轮。反例二：以为 `render controls` 的红是端口没开 —— 产物里 `DevTools listening on ws://…` 与 `readyState: loading` 同时存在，所以 R90 那条「只在端口未开时重试」覆盖不到。"
+      }
     }
   ]
 }
