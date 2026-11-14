@@ -1260,6 +1260,16 @@
 - **顺带一条外部进展**：`awesome-dsh-plugin` **PR #14880 已合并**（`2026-11-13T17:46:06Z`，`e68d7bc`，0 reviews）—— `T-871` 从承诺变成维护义务。
 - **边界**：D5 一个数没动（仍 `pending`，关窗 `2026-11-15T20:24:37Z`）；`admission.ts` / 四桶 / `data/gold/` / 三阈值一字未动。**995 测试 / 10 门 / 10-10**。
 
+### 2026-11-14 R111｜容器根的 `.agents/` 不该在这里：两份 packet 搬进它们真正的归属
+
+- **谁**：主会话 `opencode`（DeepSeek V4.1 Flash），HUMAN 直接授权「全部权力，你自己调软件」。SessionID：`opencode@dsh-triage-r111`。
+- **先看归属再动手**：容器根的 `.agents/` 里只有两张 2026-11-12 由 Personal Hub 派发的 packet，两张都是关于 `dsh-triage` 的；而 `.agents/tasks/` 本来就是本仓的投递入口（`.agents/README.md` §3.5），容器根的 `AGENTS.md` / `INDEX.md` 里从来没有 `.agents`。所以搬，不删内容。
+- **搬法**：正文一字未改，只把知识库路径的账号段换成 `<home>\`（P-0028 的规则）。`.tmp/verify-committed-packets.mjs` 用「还原 + LF→CRLF」把仓里这份对回源文件并比 sha256（`equals_redacted_original_with_lf: true`），所以 `-8 B` 与 25 处 CRLF 归一都有账；未脱敏原件留在容器 gitignored 的 `.tmp/removed-root-agents-2026-11-14/tasks/`。
+- **逐条核对，不是转述**：TSK-013 说的 `render controls` 红在 `0b1bf5c` 上属实（另外三个 job 绿），但它让对账的 `scripts/gate_render.mjs` **不存在** —— 真入口是 `ci.yml` 的 `render-control:` job；失败产物给出 R90 没有的名字：`DevTools listening on ws://…` 与 `readyState: loading` 同时存在。TSK-009 引的 `:1128` / `:1144` / `:1118` / `:1135` 在 `app.asar` 里逐行对得上，包路径是旧的 monorepo 布局；它要的「二分排查」已挂号为 `T-114`（⬜ 未领取）。
+- **没有做的事**：没有实现 `bisect`（本仓不做功能轮）、没有改 `packages/probe/src/render.ts`（那要动判定，属判据轮且需 HUMAN 点头）、没有把 `expect blank` 放宽成「没观察到也算 blank」。
+- **产物边界**：本轮**没有**新增反映外部流水线的 `data/results/` 读数；唯一新增的是 `public-cut`（本仓自己的切面），由 `scripts/record_public_cut.mjs` 现算并带 `.sha256`。
+- **验收**：`pnpm run verify` → **995 tests / 10 gates ALL GREEN**；`node scripts/gate.mjs --mutate` → **10/10**；公开仓切到 `d3c7002`，CI run `43637723156` success。
+
 ### 2026-11-13 R109｜「市场里没有我的项目」：查清是第三方构建卡住，不是条目被拒
 
 - **谁**：主会话 `lead`，HUMAN 贴了仓库链接后由 agent 执行。SessionID：`lead@dsh-triage-r109`。
