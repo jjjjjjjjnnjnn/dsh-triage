@@ -16524,13 +16524,13 @@
         ".agents/tasks/TASK-20261112-009-HARNESS-BOOT-DIAGNOSTICS.md",
         ".agents/tasks/TASK-20261112-013-RENDER-CONTROLS-CI.md",
         ".agents/tasks/RESULTS-2026-11-14.md",
-        "data/results/public-cut-2026-11-14T20-30-02.145Z.json"
+        "data/results/public-cut-2026-11-14T20-34-17.152Z.json"
       ],
       "real_test": {
         "command": "node .tmp/verify-committed-packets.mjs → git -C .. rev-parse main:dsh-triage → git commit-tree -p origin/main → git push origin <new>:main → node scripts/record_public_cut.mjs",
-        "outcome": "**`in-sync` / `trees-equal true` / `cut at 3e6a47e` / `behind 0`**（R111 收尾那一刀；公开仓 `d3c7002`）。",
-        "artifact": "data/results/public-cut-2026-11-14T20-30-02.145Z.json",
-        "sha256": "f5f1e8d3f461cf4b1272cfce9d0767131f5ef3773a05366c7d6a9e2baa4b535c"
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at 004080d` / `behind 0`**（R111 最后一刀，含披露台账那一行；公开仓 `bff48b5`）。",
+        "artifact": "data/results/public-cut-2026-11-14T20-34-17.152Z.json",
+        "sha256": "2c3c1ac79803f87d8d1b2ac4a4ea2d16b36ccb1ee77ef5d2cc137e1d43733cd4"
       },
       "review": {
         "correctness": "PASS：两份 packet 的正文一字未改，只把账号段换成 `<home>\\`；`verify-committed-packets.mjs` 用「还原 + LF→CRLF」把仓里这份对回源文件并比 sha256（`equals_redacted_original_with_lf: true`），所以 `-8 B` 与 CRLF 归一都有账。",
