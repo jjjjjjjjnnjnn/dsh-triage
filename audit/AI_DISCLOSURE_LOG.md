@@ -1277,3 +1277,12 @@
 - **不是我们这一条**：同批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）同样缺席，而更早的 `ai-terminal-pet` 在 —— 构建卡住，不是条目被拒。
 - **处理**：在 #14880 留一条只报构建状态的评论（给出 `workflow_dispatch` + `skip_probes: true` 的捷径）；本地文档把「已合并」与「网站上已发布」拆成两个状态，并新增 `BS-75`。**没有**再推任何东西，也没有催 review。
 - **边界**：能不能部署由他们的 CI 决定，我们没有任何触发权限；这条只影响「是否已可被市场用户看到」，不影响条目本身。
+
+### 2026-11-15 R112｜#65 合并，按维护者的两条要求收尾（分发轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`。SessionID：`lead@dsh-triage-r112`。没有 subagent、没有外部模型 CLI。
+- **事件**：#65 被合并（`2026-11-15T03:50:20Z`，merge `df77660`，+12-0）。维护者在复审里逐行对着 npm 上的 0.3.9 核了每个写盘点（`dist/fix.js:106/153/207`、`dist/rescue.js:167/180/253`、两处 `dryRun`），结论是「文案与实现一致」；同时提了两条：**这次修复没有随新版本发出去**（建议出 0.4.x），以及**新文案舍掉了 probe 那句，建议在 README 补**。
+- **处理**：四包升 **0.3.10**（testing and copy only，运行时字节与 0.3.9 相同），CHANGELOG 首句写明并逐条列出；`release_preflight` 四项全绿（`version: 0.3.10` / `registry: 还没发过`）；`packages/plugin/README.md`（市场详情页与 npm 页渲染的那份）新增「真机实测是可选的」一条。
+- **门禁**：`check_listing` **17/17**（0.3.10 / 995）；`verify` ALL GREEN · 10 gates。
+- **未完成（等 HUMAN）**：`pnpm run release:publish` 需要 npm 6 位 OTP，agent 不持有；发布后由 `record_publish` 落 18 项取证，`handover_check` 的「版本一致」一项才会转绿。
+- **边界**：这一轮没有改任何判据、阈值、四桶或金标；市场站点上那条描述与 README 的最终形态由维护者合并后重建，不归我们控制。

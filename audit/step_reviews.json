@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R110 (2026-11-13)",
+  "stand": "R112 (2026-11-15)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16538,6 +16538,100 @@
         "licence": "PASS：只搬本仓自己的 `.agents/tasks/`；packet 正文里的上游源码引用仍是引用，没有抄代码；容器根的 `.agents/` 已删除，未脱敏原件留在 gitignored `.tmp/`。",
         "ssot": "PASS：`data/results/` + 同名 `.sha256`，由 `scripts/record_public_cut.mjs` 现算。",
         "adversary": "反例一：把这两份 packet 当作「已实现的二分排查」—— 那是 `T-114`，未领取，本仓不做功能轮。反例二：以为 `render controls` 的红是端口没开 —— 产物里 `DevTools listening on ws://…` 与 `readyState: loading` 同时存在，所以 R90 那条「只在端口未开时重试」覆盖不到。"
+      }
+    },
+    {
+      "id": "R112-S1",
+      "batch": "R112",
+      "step": "0.3.10 的对外文案复算：版本、测试数、区间三类声明必须一起跟到",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md",
+        "CHANGELOG.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-15T04:20:00.000Z",
+        "outcome": "**17/17**：`version-matches-manifest` 全部 0.3.10（四包同升）、`engines-range-matches-manifest` 4 条仍等于 `>=0.2.0-rc.1 <0.3.0-0`（本轮没动区间）、`test-count-matches` 3 条全等于 995。",
+        "artifact": "data/results/listing-2026-11-15T04-20-00.000Z.json",
+        "sha256": "9db93095ef185adaf32544704524f7c86fa60ba3143b8893801788467e42c752"
+      },
+      "review": {
+        "correctness": "PASS：版本号只改 `dsh-triage@…` 与反引号写法，`0.3.5`（dsh.so 的排期）一个字没动；测试数仍是 995（本轮没有加测试）。CHANGELOG 首句写 **Testing and copy only**，明写运行时字节与 0.3.9 相同。",
+        "reproducibility": "PASS：检查器只读仓库文件 + `--stamp`；同一提交重跑 17/17。",
+        "licence": "PASS：只读本仓文档与 manifest；不联网、不改发布包。",
+        "ssot": "PASS：`data/results/listing-*.json` + `.sha256`。",
+        "adversary": "反例：只升 `packages/*/package.json` 不改文案 —— `version-matches-manifest` 会把六份文档里的每一个版本声明逐条挑出来；另一头，把 CHANGELOG 首句写成「Documentation only」也是**假话**（本轮还加了门与测试/README 改动），所以写的是「Testing and copy only」并逐条列出。"
+      }
+    },
+    {
+      "id": "R112-S2",
+      "batch": "R112",
+      "step": "渠道复读：#65 已合并，三条 PR 只剩一条开着",
+      "changed": [
+        "data/results/market-channels-2026-11-15T05-50-56.095Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --pr dsh-community-plugins=…/pull/65 --pr awesome-deepseek-harness=…/pull/193 --pr awesome-deepseek-harness-plugins=…/pull/140 --pr awesome-dsh-plugin=…/pull/14880 --site dsh.so=human",
+        "outcome": "**validated 0 · ready 3 · live 1 · site_submitted 1 · listed 1**。#65 `closed` + `merged_at 2026-11-15T03:50:20Z`（+12-0）；#193 已合并；#14880 已合并；**只剩 #140 `open`**。dsh.so `listed`。",
+        "artifact": "data/results/market-channels-2026-11-15T05-50-56.095Z.json",
+        "sha256": "cfd6a7b3475fcca21daa2d44f2dd6c450f56279acd24431dcde7beff35491217"
+      },
+      "review": {
+        "correctness": "PASS：读数全部来自 `gh` API；`merged_at` 与 PR 页面一致。`validated 0` 是本地校验器对「已合并条目」的如实读数（那条索引已经不是待合并状态），不是失败。",
+        "reproducibility": "PASS：同一分钟重跑给出同一组 state / merged_at / mergeable。",
+        "licence": "PASS：只读公开元数据，不评论、不投票。",
+        "ssot": "PASS：`data/results/` + `.sha256`；`d5_counts: false` 的 lane 约束未动。",
+        "adversary": "反例：把「merged」写成「listed」—— 仓库收录与网站上线是两个状态（`BS-75`）；这条产物只记 PR 状态，站点那一条在 `docs/distribution/awesome-dsh-plugin.md` 里单独记。"
+      }
+    },
+    {
+      "id": "R112-S3",
+      "batch": "R112",
+      "step": "发 0.3.10 并取证：发布物与绿灯对齐（第一份红，第二份 18/18）",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md"
+      ],
+      "real_test": {
+        "command": "pnpm -r publish --no-git-checks ; node scripts/record_publish.mjs",
+        "outcome": "四包 **0.3.10 Published**（**无 OTP**：本机 token 配了 2FA bypass，HUMAN 已多次说明，本轮写进 AGENTS 与 HANDOFF §3）。第一份 `publish-2026-11-15T06-18-55.194Z.json` **17/18** —— 两条红都是副本滞后（`version:@dsh-triage/core` 仍 0.3.9、`dist-tags-agree`），同一份里 `anonymous-install` 已 exit 0；**红产物保留**。150 秒后重跑 `publish-2026-11-15T06-27-56.379Z.json` **18/18**（四包 `latest=0.3.10`、匿名装 exit 0、`client-bundle` 39911B + loader + `settings.plugins.tab`）。",
+        "artifact": "data/results/publish-2026-11-15T06-27-56.379Z.json",
+        "sha256": "1bfaee242ed982fade4cf69f64bba7eecdd667ce8d7a60cc18d9c8b076772f01"
+      },
+      "review": {
+        "correctness": "PASS：18 项包括 registry 字节、四包 `latest`、`workspace:` 残留、匿名装、依赖版本、CLI 16 条命令、`import()` 六个导出、浏览器半边。第一份的两条红是「副本没到」而不是「没发上去」——判读顺序写在 §3。",
+        "reproducibility": "PASS：`--stamp` 命名，同一 tarball 可复算；`record_publish` 自己会等 registry 可见性。",
+        "licence": "PASS：只发本仓四包（MIT），不读凭据、不触碰第三方仓库。",
+        "ssot": "PASS：两份产物都在 `data/results/` 且带 `.sha256`，`produced_by = scripts/record_publish.mjs`。",
+        "adversary": "反例：把第一份红当成「发布失败」并重发 —— 会撞 `E409` 或制造第二个同名版本；正确读法是先看 `anonymous-install` 是否 exit 0（它已是 0），再等副本。"
+      }
+    },
+    {
+      "id": "R112-S4",
+      "batch": "R112",
+      "step": "第一份发布的红产物单独入账（副本滞后 60.8s，不许删）",
+      "changed": [
+        "data/results/publish-2026-11-15T06-18-55.194Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（第一次）",
+        "outcome": "**17/18**：`registry-visibility` 记「4 次读都没有，60.8s 后出现」；红的两条是 `version:@dsh-triage/core`（latest=0.3.9）与 `dist-tags-agree`；同一份 `anonymous-install` exit 0、`registry-propagation` 308.8s。",
+        "artifact": "data/results/publish-2026-11-15T06-18-55.194Z.json",
+        "sha256": "fd75d335c9196af16ebe46cf100a6a1bae4dccb775e7735803371c3b17080a55"
+      },
+      "review": {
+        "correctness": "PASS：这份如实记的是「字节上去了、副本没到」，与 R77/R91/R98/R103 同形；保留它是为了下一次不再把副本滞后读成发布失败。",
+        "reproducibility": "PASS：`--stamp` 命名、逐项 detail 可复算。",
+        "licence": "PASS：只记录本仓四包的读取结果。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：删掉红产物只留绿的 —— 下一轮会重新学错（本项目已有四次同形教训）。"
       }
     }
   ]

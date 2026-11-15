@@ -6,7 +6,25 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.10] — 2026-11-15
+
+> **Testing and copy only.** The runtime bytes a user runs are the same as 0.3.9: no admission rule,
+> threshold, bucket, exit code or verdict changed. This release exists because the repository's green
+> CI and the published tarball should name the same commit.
+
+- **The suite now skips where it cannot look.** Four readings need this machine's `~/.dsh`; on a
+  runner without a profile they used to assert that the profile existed and fail. They now skip with a
+  reason, so `verify` is green on a clean account — and the new tenth gate, `clean-home`, fails the
+  build if a reading is turned into an unconditional skip or deleted instead.
+- **Type-checking is part of the gate again**, on the machine and in CI: the tests are compiled, not
+  just stripped.
+- **Docs say which runtime was measured** (`0.2.2-rc.3`, the `next` tag at the time), and the
+  marketplace entry now states the write boundary in one line instead of four.
+- **README: the isolated probe is described** next to the write boundary — it installs a candidate
+  into a throwaway `DSH_HOME`, boots it, and deletes it.
+
 ## [0.3.9] — 2026-11-12
+
 
 > **Behaviour: the command line stopped reporting blockers that were not there, and it stopped
 > judging a composition it had not read.** No admission rule, threshold, bucket or exit code changed.
