@@ -1286,3 +1286,14 @@
 - **门禁**：`check_listing` **17/17**（0.3.10 / 995）；`verify` ALL GREEN · 10 gates。
 - **未完成（等 HUMAN）**：`pnpm run release:publish` 需要 npm 6 位 OTP，agent 不持有；发布后由 `record_publish` 落 18 项取证，`handover_check` 的「版本一致」一项才会转绿。
 - **边界**：这一轮没有改任何判据、阈值、四桶或金标；市场站点上那条描述与 README 的最终形态由维护者合并后重建，不归我们控制。
+
+### 2026-11-16 R113｜D5 判定：`fail` —— 关窗读数落盘，D 线开启（判定轮，判据/阈值一字未动）
+
+- **谁**：主会话 `lead`。SessionID：`lead@dsh-triage-r113`。没有 subagent、没有外部模型 CLI。
+- **先算时间**：`ends_at = posted_on + 14d = 2026-11-15T20:24:37Z`，判定时 `2026-11-16T06:55Z` → 窗口已关。
+- **按 runbook §0 四条依次跑**：① 刷新基线（`market-baseline-2026-11-16T07-00-00.000Z.json`，`inputs.offline: false`、`failures: []`，下载 **1212** / `steady`）→ ② 读 D5 并落 fixtures → ③ 离线复算（`d5_verdict` / `numbers` / `window` **逐项 SAME**）→ ④ 登记。
+- **判定**：**`fail`**。reactions **0/10**、外部引用 **0/1**（`seen 3`，三条全被三重排除）、周下载 **1212**（过 20）。`counts_as_demand: false`，退出码 1（有意可被自动化看见，不是故障）。
+- **按 R47 的出口执行 D 线**：`docs/11-d-path.md` 从「备用，未执行」改成「已执行」；作品集 + 上游 issue/PR，不加功能；`T-802` 标 `fail`、`T-803` / `T-804` 关闭。
+- **对外文案四处**（两份 listing + 两份 README）：分发侧从「两条 PR 待审」改成「三条已合并、只剩 #140」；并明写这个形态没有被需要。
+- **三处自己抓到的旧账**：listing 的分发状态停在 #65 未合并；`00-vision` 的 D5 行仍是「正在计时」；`handover_check` 第 2 项与 `d5-window-deadline` 的两条断言仍要求「窗口开着 / 有截止日」—— 窗口一关，正确页面被判红。改法是**让断言跟着状态走**（关窗后要求「判定词 + 窗口时刻」仍在页面上），不是放宽。
+- **边界**：判据、阈值（10/1/20）、判定顺序、`admission.ts`、四桶、`data/gold/` 一字未动；`fail` 只说明**这一个形态**在这个生态里没被需要，不等于工具坏了。

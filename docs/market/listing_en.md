@@ -90,7 +90,9 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 ## Current status
 
 `0.3.10` is published on npm (four packages released together; adds the **升级预检 / upgrade pre-check**
-four-bucket screen to the settings tab and the M12 `surface` rule). Build side covers M0–M6. Distribution: two pull requests are open (#65 re-merged onto the new index layout and **`MERGEABLE`**, waiting on re-review; walkinglabs #140 clean and unreviewed; #193 was merged on 2026-11-04), and **dsh.so lists the plugin**: `L5 · Run tested` against `0.2.2-rc.1` (the current runtime),
+four-bucket screen to the settings tab and the M12 `surface` rule). Build side covers M0–M6. Distribution, as of 2026-11-16: **merged** into `dsh-community-plugins` (#65), `awesome-deepseek-harness` (#193) and `awesome-dsh-plugin` (#14880); only `walkinglabs/awesome-deepseek-harness-plugins` (#140) is still open; dsh.so lists it (`L5 · Run tested`).
+
+**The public sample failed (2026-11-16).** In the fourteen-day window `#11813` collected **0/10** reactions and **0/1** external references, with **1212** weekly downloads (`steady`, above the 20 floor) — so the frozen rule returns **`fail`**. The honest reading: this shape of the product was not wanted. The repository moves to the D line (portfolio plus upstream contributions) and stops adding features (`docs/11-d-path.md`).
 security tier `low` (0 critical / 0 warning), first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your
 machine; a listing is not usage. Its own install line still names `0.3.5`; it re-indexes on its own schedule, and that is
 its fact about us, not ours about it.

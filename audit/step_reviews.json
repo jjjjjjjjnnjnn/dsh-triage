@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R112 (2026-11-15)",
+  "stand": "R113 (2026-11-16)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16632,6 +16632,138 @@
         "licence": "PASS：只记录本仓四包的读取结果。",
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：删掉红产物只留绿的 —— 下一轮会重新学错（本项目已有四次同形教训）。"
+      }
+    },
+    {
+      "id": "R112-S5",
+      "batch": "R112",
+      "step": "公开仓切到含 0.3.10 与 R112 的提交",
+      "changed": [
+        "data/results/public-cut-2026-11-15T06-31-18.847Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at ac4c8a8` / `behind 0`**（那一刻）。上一刀是 `d1c87d8`（R111，11-14 那一轮）。",
+        "artifact": "data/results/public-cut-2026-11-15T06-31-18.847Z.json",
+        "sha256": "7f8e14caac8b4c410d5f9d006d86634652c5c3b9dc51a1897d043b333abdd8b1"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `HEAD:dsh-triage`，parent = 当时的 `origin/main`；`trees-equal` 由脚本比出来。",
+        "reproducibility": "PASS：切面可按「容器提交 + 公开仓父提交」重算；`behind` 是构造。",
+        "licence": "PASS：只推本仓 dsh-triage 子树，不带 dsh-remedy。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把「公开仓绿」当成「npm 上 0.3.10 可用」—— 发布取证是另一条链（`record_publish` 18/18），两者不互相替代。"
+      }
+    },
+    {
+      "id": "R113-S1",
+      "batch": "R113",
+      "step": "D5 关窗第 1 步：刷新市场基线（下载项的唯一来源，不刷新就是拿旧窗的数判新窗）",
+      "changed": [
+        "data/results/market-baseline-2026-11-16T07-00-00.000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_market_baseline.mjs --stamp 2026-11-16T07:00:00.000Z",
+        "outcome": "`inputs.offline: false`（现场采集）、`failures: []`；`dsh-triage` 周下载 **1212**、`download_shape = steady`（31/31 个包都是 steady）。诊断类 **2712** / 市场类 **393287** / 装饰类 **198525**；讨论 845 条、故障 345、零回复 242。",
+        "artifact": "data/results/market-baseline-2026-11-16T07-00-00.000Z.json",
+        "sha256": "96b2ecf37f9104a914b0be1575c173b9b5f7a894baa642d245abf52ef5c59312"
+      },
+      "review": {
+        "correctness": "PASS：下载项只从这一份取（runbook §0 第 1 步的理由）；`download_shape` 由形状规则判，不是人读。1212 是 7 天都有的真桶，不是单日爆发。",
+        "reproducibility": "PASS：现场件带 fixtures 与 `--stamp`；同一份可离线重建（R100 的彩排已证明四块逐项相同）。",
+        "licence": "PASS：只读 npm / GitHub 公共 API，不写别人的数据。",
+        "ssot": "PASS：`data/results/` + `.sha256`，`produced_by = scripts/record_market_baseline.mjs`。",
+        "adversary": "反例：跳过这一步直接用上个月的基线 —— `d5_window_status` 的警告原文就是「不刷新 = 用旧窗的数判新窗」，而产物长得完全一样，只有 `inputs.offline` 与窗口能区分。"
+      }
+    },
+    {
+      "id": "R113-S2",
+      "batch": "R113",
+      "step": "D5 关窗第 2 步：读判定并落 fixtures（`fail` 的退出码是 1，不是故障）",
+      "changed": [
+        "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-16T07:05:00.000Z --post …/discussions/11813 --posted-on 2026-11-01T20:24:37.000Z --baseline data/results/market-baseline-2026-11-16T07-00-00.000Z.json --fixtures-out data/fixtures/d5/2026-11-16T07-05-00.000Z",
+        "outcome": "**`fail`**：reactions **0/10** · 外部引用 **0/1**（`seen 3`，三条全被三重排除）· 周下载 **1212**（`steady`）/20。`window.closed: true`、`days_left: 0`、`counts_as_demand: false`。退出码 **1**（判定完成，不是脚本坏了）。fixtures 与产物同 stamp 落盘。",
+        "artifact": "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json",
+        "sha256": "8cc46fda0c74fbb1b4fe1f07af81dbd63163bc5c253a64c57fe969cbbabe9781"
+      },
+      "review": {
+        "correctness": "PASS：三个数都是 `measured`，没有 `unmeasurable`；判定顺序按 `judgeD5`（先看窗口是否关闭，再逐个比阈值）。**没有一个数是「读不到」被写成 0**。",
+        "reproducibility": "PASS：fixtures 与产物同时落盘，任何人可离线复算（下一步真跑了）。",
+        "licence": "PASS：只读公开 discussion 与 search API。",
+        "ssot": "PASS：`data/results/` + `.sha256`；fixtures 在 `data/fixtures/d5/` 便于复算。",
+        "adversary": "反例：把下载项 1212 说成「有需求」 —— 判据要的是**三个都达标**，两个为零就是 `fail`；拿过门槛的那一项去改写整体结论，正是 spec §3 禁止的读法。"
+      }
+    },
+    {
+      "id": "R113-S3",
+      "batch": "R113",
+      "step": "D5 关窗第 3 步：离线复算只从 fixtures 推导，三项必须逐项相同",
+      "changed": [
+        "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json",
+        "docs/11-d-path.md"
+      ],
+      "real_test": {
+        "command": "node scripts/record_d5_evidence.mjs --stamp 2026-11-16T07:15:00.000Z --out %TEMP%/d5-recompute --post …/11813 --posted-on 2026-11-01T20:24:37.000Z --fixtures data/fixtures/d5/2026-11-16T07-05-00.000Z --baseline data/results/market-baseline-2026-11-16T07-00-00.000Z.json",
+        "outcome": "产物是 `d5-selftest-*`（`self_test: true`，**不是证据**）；`d5_verdict` / `numbers` / `window` 与现场件**逐项 SAME**；同样是 `fail`、exit 1。复算产物写在 `%TEMP%`，不进 SSOT。",
+        "artifact": "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json",
+        "sha256": "8cc46fda0c74fbb1b4fe1f07af81dbd63163bc5c253a64c57fe969cbbabe9781"
+      },
+      "review": {
+        "correctness": "PASS：复算只读 fixtures，不重新抓网络 —— 两边相同说明抓取无损（R59 的 `undefined` 快照就是在这里被抓住的）。",
+        "reproducibility": "PASS：断网机器也能重跑出同一个判定。",
+        "licence": "PASS：只读本地 fixtures。",
+        "ssot": "PASS：自检产物带 `self_test` 且落在临时目录，不会被当成测量指针。",
+        "adversary": "反例：把 `self_test` 一起算进比较键（runbook §0.5 记过的坑）—— 那会得到 SAME=false，而抓取其实是好的；比较键只能是三项。"
+      }
+    },
+    {
+      "id": "R113-S4",
+      "batch": "R113",
+      "step": "对外文案按判定改写：分发侧状态 + 「这个形态没有被需要」",
+      "changed": [
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/00-vision.md",
+        "docs/BACKLOG.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp 2026-11-16T07:30:00.000Z",
+        "outcome": "**17/17**：`evidence-paths-exist` 25 条（新增的 D5 产物与基线都解析得到 `.sha256`）、`version-matches-manifest` 全部 0.3.10、`test-count-matches` 3 条全等于 995、`channel-ledger-matches-reality` 5 个渠道。",
+        "artifact": "data/results/listing-2026-11-16T07-30-00.000Z.json",
+        "sha256": "8f749da405ea6593c844cdf19ab86a392d0857787ad0ede3d2659ed3e43b3e9b"
+      },
+      "review": {
+        "correctness": "PASS：四处改动都只写产物里读得到的词：三条收录已合并、#140 仍开着、D5 三个数、`fail`、D 线。**没有一句「之后会有人用」**（R47 的出口要求把这类措辞重写）。",
+        "reproducibility": "PASS：检查器只读仓库文件 + `--stamp`，同一提交重跑 17/17。",
+        "licence": "PASS：只改本仓文案，不引用第三方未公开数据。",
+        "ssot": "PASS：`data/results/listing-*.json` + `.sha256`。",
+        "adversary": "反例：把 `fail` 写成「暂时还没起量」—— 那是把判定结论软化；spec 的口径是 `fail` 即「这个形态没有被需要」，文案必须照这个写。"
+      }
+    },
+    {
+      "id": "R113-S5",
+      "batch": "R113",
+      "step": "判定前先算窗口覆盞：覆盖了哪几天、缺的能不能补（只读脚本）",
+      "changed": [
+        "data/results/d5-window-status-2026-11-16T06-56-18.458Z.json"
+      ],
+      "real_test": {
+        "command": "node scripts/d5_window_status.mjs",
+        "outcome": "覆盖 **11** 天（`11-01..11-11`）、缺 4 天（可采 3 / 未发布 1 / lost 0）、`verdict: collect-now`、`next_run_by 2026-11-20`。**这一项只回答「缺的天能不能补」，不改判定**：D5 判的是窗口内的三个数，缺的日子是要如实记的事实。",
+        "artifact": "data/results/d5-window-status-2026-11-16T06-56-18.458Z.json",
+        "sha256": "cbb46611b687c4f1689e500b7c6c97f91328d8ec177167738004ef4254d9512a"
+      },
+      "review": {
+        "correctness": "PASS：只读已提交的基线产物与 npm 发布节奏，现算「今天能采几天」，不猜。",
+        "reproducibility": "PASS：同一份已提交产物集合重跑给出同一天数与同一个截止日。",
+        "licence": "PASS：只读本仓已提交的基线产物与本地文件，不联网、不读凭据、不写任何外部路径。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把 `collect-now` 读成「判定还没完成」—— 判定用的是窗口内的三数，补采改变的是后续基线，不改变这一判。"
       }
     }
   ]

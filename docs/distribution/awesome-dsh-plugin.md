@@ -15,7 +15,7 @@
 > ⑥ **「详情页没有 README」不是缺陷**：README 由 `probe-readmes.mjs` 在**夜间 `PROBE_ALL`** 里抓（`MAX_BYTES 48KB`，monorepo 取子目录的 README → 我们的是 `packages/plugin/README.md`，5.8KB），push 构建只部署、不探针；同批 17:50 合并的三条当时都没有 README 面板，02:23 那次跑完才补。
 > ⑦ **描述改短（PR #15073）→ 63 秒后被回滚，如实记**：#15073 `2026-11-13T23:19:07Z` 合并（en 253 / zh 101 字符），**23:20:10Z** 维护者用 `155f3cee`「Keep functional descriptions for remedy, triage and ai-terminal-pet」把三条（我们 / dsh-remedy / ai-terminal-pet）一起改回原文。**现在的线上文案仍是那四句长文**。
 > 为什么被回滚：他们把「一句话」理解为**功能陈述**，问句钩子（「下次 DSH 升级，你的插件还活着吗？」）被当成营销；`contributing.md` 的原话是「Descriptions state what the plugin does — no superlatives or marketing」。**再提只能提「更短的功能句」，不能有钩子。**
-> ⑧ **可选的下一步（未提交，HUMAN 定）**：`en: Judges one DSH profile: why a plugin was refused or silently disappeared, what an upgrade would break, and a candidate measured in a throwaway DSH_HOME. Read-only by default; --apply backs up first and --undo restores the bytes.` / `zh: 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 DSH_HOME 里实测。默认只读，--apply 先备份，--undo 逐字节还原。` —— 纯功能、无钩子、比原文短约一半。：`contributing.md` 要求「一行、以句号结尾」，而我们的条目写了四句。现在的中英各一句（en 253 / zh 101 字符），事实一条不减。**这一行是维护义务（`T-871`）**：
+> ⑧ **已提再一版（纯功能、无钩子）：PR #15458** —— en 228 / zh 88 字符，四条事实一条不减，README 由脚本重生成、`--check` 绿。原文：`en: Judges one DSH profile: why a plugin was refused or silently disappeared, what an upgrade would break, and a candidate measured in a throwaway DSH_HOME. Read-only by default; --apply backs up first and --undo restores the bytes.` / `zh: 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 DSH_HOME 里实测。默认只读，--apply 先备份，--undo 逐字节还原。` —— 纯功能、无钩子、比原文短约一半。：`contributing.md` 要求「一行、以句号结尾」，而我们的条目写了四句。现在的中英各一句（en 253 / zh 101 字符），事实一条不减。**这一行是维护义务（`T-871`）**：
 >
 > ```yaml
 > description:

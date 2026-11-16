@@ -65,6 +65,8 @@ $ dsh-triage upgrade --to latest
 ```
 <!-- /upgrade-card -->
 
+**公开样本结果（2026-11-16，判据事先冻结）**：`#11813` 的 14 天窗口里 reactions **0/10**、外部引用 **0/1**、周下载 **1212**（`steady`，过 20 门槛）—— 两个数为零，所以判定 **`fail`**。这说的是**这个产品形态**没有被需要，不是「工具坏了」。仓库从此按 D 线走：作品集 + 给上游提 issue/PR，**不再加功能**。证据 `data/results/d5-evidence-2026-11-16T07-05-00-000Z.json`（`counts_as_demand: false`），离线复算与现场逐项相同。
+
 **当前实测（2026-11-13）**：本机桌面运行时已升到 `0.2.2-rc.3`（`next` 标签的值；`latest` 仍是 `0.2.2-rc.1`），`dsh-triage status` 读作 `0.2.2-rc.3 (kernel-asar)`，一屏是「0 项需要你处理；另有 93 项没写版本区间」。声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对 `0.2.2-rc.3` 判定为 **satisfied**。产物：`data/results/audit-2026-11-13T18-25-00.000Z.json`（246 行 / 93 条判定 / 0 错误）。
 
 **数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.2-rc.1`，即录制时 npm `latest` 标签解析出的版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest`。

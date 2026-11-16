@@ -52,10 +52,16 @@ if (handoff.includes('pnpm run verify') && handoff.includes('gate.mjs --mutate')
 }
 
 /* --- 2. Section 3 names the current next action ---------------------------------------------- */
-if (handoff.includes('D5 关窗') && handoff.includes('2026-11-15T20:24:37Z')) {
-  pass('§3 第一件事', 'D5 close-out and its instant are stated')
+/*
+ * R113: D5 is judged, so the next action is the D line, not the close-out. Both facts have to stay
+ * on the page: the verdict AND the window instant the verdict rests on. Requiring only the verdict
+ * would let the instant vanish; requiring only the instant would let a stale "window is still open"
+ * page pass.
+ */
+if (handoff.includes('D5 已判定') && handoff.includes('fail') && handoff.includes('2026-11-15T20:24:37Z')) {
+  pass('§3 第一件事', 'D5 verdict and the window instant it rests on are both stated')
 } else {
-  fail('§3 第一件事', 'the next action is not stated (or the close-out instant was dropped)')
+  fail('§3 第一件事', 'the next action does not name the D5 verdict and the window instant it rests on')
 }
 
 /* --- 3. The acceptance number equals the badge, which is what the suite reports --------------- */
