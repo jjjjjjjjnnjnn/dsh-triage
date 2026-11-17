@@ -1,7 +1,8 @@
 # D-1 · 上游 issue 草稿（英文）· admission 拒绝后的归因
 
 > **渠道**：`deepseek-ai/deepseek-harness` 的 issue（**不是** discussion）
-> **状态**：**draft —— 未发**。发不发、以谁的身份发，由 HUMAN 决定（`docs/copy/README.md` §1）。
+> **状态**：**已发（2026-11-17）** —— https://github.com/deepseek-ai/deepseek-harness/discussions/13608（**Ideas** 分类；上游把 issue 关掉了，所以投的是 discussion）。
+> 发之前由 HUMAN 授权；正文与下面 paste 块 **逐字相同**，发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
 > **事实来源**：`docs/copy/facts/2026-11-17-d1-attribution.md`（本文不提供事实包以外的数字）
 > **投放规则**：`docs/distribution/posting-runbook.md`；发完回填 `docs/copy/outreach.json`（`d5_counts: false`）
 

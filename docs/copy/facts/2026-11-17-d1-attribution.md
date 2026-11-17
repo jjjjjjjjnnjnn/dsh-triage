@@ -7,7 +7,9 @@
 > 同一句话里的数字必须来自同一份产物。
 
 - **渠道 / 语言 / 受众**：`deepseek-ai/deepseek-harness` 的 **issue**（不是 discussion），英文，维护者与插件作者
-- **帖子状态**：**未发**（不是对某条帖子的回复，`judgeReplyGate` 不适用）
+- **帖子状态**：**已发 —— `deepseek-ai/deepseek-harness` 的 Discussions #13608（Ideas 分类，`2026-11-17T14:20Z`）**。
+  计划里写的是 issue，但上游**把 issue 关掉了**（`gh issue create` 回 `repository has disabled issues`），所以投的是 discussion。
+  发布前 `judgeReplyGate` 不适用（这是我们自己开的帖，不是对别人的回复）；发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
 - **这次要做什么**：把「拒绝是正确的，但拒绝之后没有可行动的归因」说清楚，并给出**最小**改法；
   **不提我们的安装命令、不要求他们采用我们的代码、不出现 D5 或「没人用」**
 - **产物**（本文所有数字只允许来自这里）：

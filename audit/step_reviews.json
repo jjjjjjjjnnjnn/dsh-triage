@@ -16980,15 +16980,16 @@
     {
       "id": "R117-S1",
       "batch": "R117",
-      "step": "D-1 备稿：把 admission 拒绝后的归因缺口写成事实包与英文草稿（只备不发，发布由 HUMAN 决定）",
+      "step": "D-1：把 admission 拒绝后的归因缺口写成事实包与英文草稿，并按 HUMAN 授权投到上游（上游 issue 已关，改投 Ideas discussion）",
       "changed": [
         "docs/copy/facts/2026-11-17-d1-attribution.md",
         "docs/copy/drafts/2026-11-17-d1-attribution.md",
+        "docs/copy/outreach.json",
         "docs/11-d-path.md"
       ],
       "real_test": {
         "command": "node scripts/check_listing.mjs --tests 995 --stamp <UTC> ; node --test tests/governance/copy-channel.test.ts",
-        "outcome": "listing 17/17（11 份文档 / 版本 0.3.11 / 22 条证据路径全部带 .sha256）；copy-channel 3/3（事实包引用的产物都存在且带哈希，草稿带 facts 指针、paste 块与边界句）。",
+        "outcome": "listing 17/17（11 份文档 / 版本 0.3.11 / 22 条证据路径全部带 .sha256）；copy-channel 3/3（事实包引用的产物都存在且带哈希，草稿带 facts 指针、paste 块与边界句）。 发布：`deepseek-ai/deepseek-harness` 的 issue 功能已关闭（`gh issue create` 回 `disabled issues`），改投 **Ideas discussion #13608**（2026-11-17T14:20Z）；发帖本身不产生 `data/results` 产物，它是一次外部动作，记录在 `docs/copy/outreach.json`（`thread 13608` / `d5_counts: false`）。",
         "artifact": "data/results/listing-2026-11-17T13-58-20.849Z.json",
         "sha256": "a35147842897c9eba3987df1648555e5ae5efd09cdaf80b690e27332e4233a9c"
       },
@@ -16997,7 +16998,29 @@
         "reproducibility": "PASS：事实包里每个 data/results 引用都有 .sha256，copy-channel 逐条复算；草稿里的数字在文末「自检」表逐行对回产物。",
         "licence": "PASS：正文不含安装命令、不含自荐包名、不复制第三方文本；issue #1 用公开链接与时间戳，不当成数字。",
         "ssot": "PASS：listing-2026-11-17T13-58-20.849Z.json 由 scripts/check_listing.mjs 产出并带 .sha256，落在 data/results/。",
-        "adversary": "反例一：copy-channel 只证明「引用的产物存在且带哈希」，不证明正文数字等于产物数字 —— 那一步靠人工自检表。反例二：草稿未发布，所以它不产生任何外部证据；把「备稿完成」读成「D-1 已交付」就是把准备当结果。"
+        "adversary": "反例一：copy-channel 只证明「引用的产物存在且带哈希」，不证明正文数字等于产物数字 —— 那一步靠人工自检表。反例二：草稿未发布，所以它不产生任何外部证据；把「备稿完成」读成「D-1 已交付」就是把准备当结果。 反例三：把「发出去了」读成「D-1 完成」——完成判据是上游实质回应或 PR 进 review，不是我们自己开了帖；把开帖当完成，会让下一轮去重发而不是去等回应。"
+      }
+    },
+    {
+      "id": "R117-S2",
+      "batch": "R117",
+      "step": "把含市场图标的子树切到公开仓，并在图标 URL 可取之后才开市场 PR",
+      "changed": [
+        "data/results/public-cut-2026-11-17T14-11-14.968Z.json",
+        "data/results/public-cut-2026-11-17T14-11-14.968Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC> ; fetch <icon raw url>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at e84e531` / `behind 0`（public `692df38`）；raw URL 返回 200、2,760 字节，与仓内 `docs/market/icon.png` 的 sha256 相同。市场 PR 在这一步之后才开（#16311）。",
+        "artifact": "data/results/public-cut-2026-11-17T14-11-14.968Z.json",
+        "sha256": "2b02b48e527bbef4fb254060934b5546dd0e5aafafd73d44cfb8c62bb03cf3b0"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`，父提交是当时的 `origin/main`；图标字节在公开仓与本地逐字节相同（fetch 回来的缓冲与本地文件同 sha256）。",
+        "reproducibility": "PASS：`record_public_cut` 用「容器提交 + 公开仓父提交」重算，`behind` 是构造；`iconProblem()` 由上游自己的 `scripts/lib/entries.mjs` 判过。",
+        "licence": "PASS：图标是自绘 SVG（三条线，无第三方素材），只推 `dsh-triage/` 子树；市场侧只改我们那一行 yml。",
+        "ssot": "PASS：`public-cut-2026-11-17T14-11-14.968Z.json` + `.sha256` 落在 `data/results/`，由脚本产出。",
+        "adversary": "反例：把「PR 已开」读成「卡片上已经有图标」。合并在别人手里，`/plugins.json` 在合并并重建站点之前仍然没有 `icon`；本轮只证明「URL 可取 + 条目通过他们自己的校验」。"
       }
     }
   ]

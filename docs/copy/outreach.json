@@ -198,6 +198,25 @@
       "d5_counts": false,
       "why_not_counted": "This is a reply, not the D5 sample. D5 counts only the #11813 discussion (its reactions and third-party references); a reply on someone else's thread is not a signal by the frozen measurement.",
       "state_at_post": "open · 1 comment · not answered (re-read immediately before posting)"
+    },
+    {
+      "thread": 13608,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13608",
+      "status": "posted",
+      "posted_kind": "discussion-start",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13608",
+      "posted_on": "2026-11-17T14:20:15.412Z",
+      "language": "en",
+      "category": "Ideas",
+      "draft": "docs/copy/drafts/2026-11-17-d1-attribution.md",
+      "facts": "docs/copy/facts/2026-11-17-d1-attribution.md",
+      "cites": [
+        "data/results/market-baseline-2026-11-16T07-00-00.000Z.json",
+        "data/results/d1-2026-10-26T12-00-00.000Z.json",
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A proposal thread we opened ourselves is contact, not a measured signal — and the source of the reference is us."
     }
   ],
   "read_not_posted": [

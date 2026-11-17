@@ -53,11 +53,13 @@ reactions 只数 `#11813` 这一个 discussion，下载项是机器在数。**�
   事实包见 `docs/copy/facts/2026-11-05-upstream-attribution.md`。
 - **完成判据**：上游有实质回应（含「不做」），或 PR 进入 review。**不以合并为成功判据**——
   合并与否在别人手里，那是 `D3` 已经教过一次的事。
-- **状态**：🟨 **草稿已备（R117，2026-11-17），未发**。事实包 `docs/copy/facts/2026-11-17-d1-attribution.md`
-  （窗口刷新到 `2026-11-08..11-16`：845 条讨论 / 345 条故障簇 40.83% / 其中 242 条零回复 70.14%，
-  并把 issue #1 这条真实案例写进去）；草稿 `docs/copy/drafts/2026-11-17-d1-attribution.md`
-  （英文 issue 正文 + paste 块 + 边界句）。机器读数：`copy-channel` 3/3、`check_listing` **17/17**
-  （`data/results/listing-2026-11-17T13-58-20.849Z.json`）。**发不发、以谁的身份发，由 HUMAN 决定。**
+- **状态**：✅ **已发（2026-11-17，R117）** —— `https://github.com/deepseek-ai/deepseek-harness/discussions/13608`
+  （**Ideas** 分类；上游**把 issue 关掉了**，所以投的是 discussion，与原先计划的形状不同，如实记）。
+  事实包 `docs/copy/facts/2026-11-17-d1-attribution.md`（窗口 `2026-11-08..11-16`：845 条讨论 / 345 条故障簇 40.83% /
+  其中 242 条零回复 70.14%，并写入 issue #1 这条真实案例）；草稿 `docs/copy/drafts/2026-11-17-d1-attribution.md`。
+  发布前读数：`copy-channel` 3/3、`check_listing` **17/17**（`data/results/listing-2026-11-17T13-58-20.849Z.json`）；
+  发完回填 `docs/copy/outreach.json`（`thread: 13608` / `d5_counts: false`）。
+  **现在的完成判据没变**：上游有实质回应（含「不做」），或 PR 进入 review —— **发帖本身不是完成**。
 
 ### D-2 作品集：一页说清做了什么、证明了什么、没做到什么
 

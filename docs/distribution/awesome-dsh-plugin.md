@@ -59,6 +59,25 @@ description:
 
 **门禁的枚举深度也核过**：它的 `check-submission.mjs` 最多看 `MAX_TREE_PKGS = 40` 个 `package.json`，而我们的树里只有 **26** 个，`packages/plugin/package.json` 排在**第 9**——不会被漏掉。
 
+## 3b. 图标（R117）
+
+`contributing.md` 的原话：`icon` **可选**，用「GitHub 托管的位图」作市场卡片，**不写就回退到作者头像**。
+它自己的校验在 `scripts/lib/entries.mjs`：主机必须是 `raw.githubusercontent.com` / `user-images.githubusercontent.com` /
+`camo.githubusercontent.com` / `github.com`，扩展名必须是 `.png` / `.jpg` / `.jpeg` / `.webp`。
+
+| 项 | 我们的读数（2026-11-17） |
+|---|---|
+| 文件 | `docs/market/icon.png` —— **180×180**，PNG 8-bit RGB，2,760 字节 |
+| 来源 | 手写 SVG（一条主线分叉成两支）→ 本机 Chrome 无头渲染；**不是**第三方素材 |
+| URL | `https://raw.githubusercontent.com/jjjjjjjjnnjnn/dsh-triage/main/docs/market/icon.png` |
+| 可取性 | `200`，2,760 字节，与仓内文件 **sha256 相同**（切面 `public-cut-2026-11-17T14-11-14.968Z.json` / `behind 0`） |
+| 上游校验 | `readEntries()` + `validateEntries()` 跑全部 **11,519** 条 → **0 problems**；`iconProblem(ours)` → `null` |
+| PR | **#16311**（只加 `icon:` 一行；等 CI 与维护者，**不催**） |
+
+**顺序是硬的**：图必须先进公开仓、raw URL 能取到，**才**提 PR —— 否则对方校验时读不到。
+**长期义务**：`icon.png` 一旦移动或改名，同一轮里必须改 yml 的 URL（否则卡片静默回退到头像，而这**不会**让任何门变红）。
+`/plugins.json` 在合并并重建站点之前**没有** `icon` —— 「PR 已开」不等于「卡片上有图」。
+
 ## 4. 维护义务（这张表会长期被扫）
 
 它的 `contributing.md` 与 `scan-decay.mjs` 定期扫：
