@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R117 (2026-11-17)",
+  "stand": "R118 (2026-11-17)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17021,6 +17021,56 @@
         "licence": "PASS：图标是自绘 SVG（三条线，无第三方素材），只推 `dsh-triage/` 子树；市场侧只改我们那一行 yml。",
         "ssot": "PASS：`public-cut-2026-11-17T14-11-14.968Z.json` + `.sha256` 落在 `data/results/`，由脚本产出。",
         "adversary": "反例：把「PR 已开」读成「卡片上已经有图标」。合并在别人手里，`/plugins.json` 在合并并重建站点之前仍然没有 `icon`；本轮只证明「URL 可取 + 条目通过他们自己的校验」。"
+      }
+    },
+    {
+      "id": "R117-S3",
+      "batch": "R117",
+      "step": "把 D-1 发出之后的文档切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-17T14-24-56.622Z.json",
+        "data/results/public-cut-2026-11-17T14-24-56.622Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at 71b8782` / `behind 0`（public `8df960d`）。本轮第二次也是最后一次切：第一次是为了让图标 URL 可取（S2），这一次是把 D-1 的文档与台账推上线。**不再为 `behind 0` 追加切面** —— 记录本身要提交，切完必然再老一步。",
+        "artifact": "data/results/public-cut-2026-11-17T14-24-56.622Z.json",
+        "sha256": "7ee37646ca44d038ab749d927ab1202419560cbf77dded1bcca0a1d8289b6e75"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`（71b8782），父提交是当时的 `origin/main`（692df38）。",
+        "reproducibility": "PASS：`record_public_cut` 重算容器提交与公开仓父提交；`behind 0` 是那一刻的读数，不是承诺。",
+        "licence": "PASS：只推 `dsh-triage/` 子树，不碰容器里另一个项目的改动。",
+        "ssot": "PASS：data/results/public-cut-2026-11-17T14-24-56.622Z.json + .sha256 落在 data/results/，由脚本产出。",
+        "adversary": "反例：把「公开仓与容器同树」读成「公开仓历史干净」。脚本看不见 force-push，也看不见公开仓独有的提交；它只证明这一刻的内容一致。"
+      }
+    },
+    {
+      "id": "R118-S1",
+      "batch": "R118",
+      "step": "回答轮：给上游三条零回复的故障帖各写一条可核对的答案，并按 HUMAN 授权发出",
+      "changed": [
+        "docs/copy/facts/2026-11-17-three-replies.md",
+        "docs/copy/drafts/2026-11-17-13609-bundle-missing.md",
+        "docs/copy/drafts/2026-11-17-13374-registration-dropped.md",
+        "docs/copy/drafts/2026-11-17-13292-pinned-peers.md",
+        "docs/copy/outreach.json",
+        "docs/copy/facts/2026-11-17-traffic-post.md",
+        "docs/copy/drafts/2026-11-17-devto-launch-in-numbers.md",
+        "docs/copy/assets/2026-11-17-npm-downloads.png"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp <UTC> ; node --test tests/governance/copy-channel.test.ts ; gh api graphql addDiscussionComment ×3",
+        "outcome": "listing 17/17；copy-channel 3/3；三条回复已发（#13609 comment-19690584 / #13374 comment-19690589 / #13292 comment-19690590，2026-11-17T21:01:59Z–21:02:12Z），发帖前逐条确认 `comments.totalCount = 0`。发布是外部动作，不产生 SSOT 产物，记录在 `docs/copy/outreach.json`（三条 `d5_counts: false`）。 同一轮还备好了 dev.to 数据帖（事实包 `2026-11-17-traffic-post.md` + 正文 + 封面图 `docs/copy/assets/2026-11-17-npm-downloads.png`，图由 `traffic-*.json` 的日序列生成）；**没有发**，因为本机没有 dev.to 凭据。",
+        "artifact": "data/results/listing-2026-11-17T21-05-00.000Z.json",
+        "sha256": "8dd0d3d87aa1f9ae9b158d0dd3e37ce7a1d238432913aeb21027071588bab91c"
+      },
+      "review": {
+        "correctness": "PASS：两条机制在代码里核过 —— `dsh.profile.bundles` 是 profile `package.json` 的 `dsh.profile.bundles`（`packages/core/src/env.ts#parseProfileManifest`），组合按该数组顺序取层（`packages/plugin/src/load.ts:83`）；`^0.1.0-rc.3` 对 `0.2.2-rc.3` 由本仓 `evaluateRange` 实测不满足。",
+        "reproducibility": "PASS：事实包引用的四份产物都带 `.sha256`，`copy-channel` 逐条复算；每条回复里的命令都是只读的 `node -e` / `npm view` / `ls`，读者可自证。",
+        "licence": "PASS：没有复制原帖正文，只引用字段名；三条里只有一条带本仓链接（`#13609`），其余纯给方法。",
+        "ssot": "PASS：`listing-2026-11-17T21-05-00.000Z.json` + `.sha256` 落 `data/results/`；帖子本身按外部动作记在 `outreach.json`。",
+        "adversary": "反例一：把「发出去了」读成「有人会回」。三条都是别人 0 回复的帖子，回不回、标不标 answered 都不由我们决定；本轮只证明「发了、可复算、没违规」。反例二：`#13292` 的作者已经自己修好并验证，我们的回复只补机制，**不能**被读成「我们帮他修好了」。"
       }
     }
   ]

@@ -217,6 +217,64 @@
       ],
       "d5_counts": false,
       "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A proposal thread we opened ourselves is contact, not a measured signal — and the source of the reference is us."
+    },
+    {
+      "thread": 13609,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13609",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13609#discussioncomment-19690584",
+      "posted_on": "2026-11-17T21:01:59Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-17-13609-bundle-missing.md",
+      "facts": "docs/copy/facts/2026-11-17-three-replies.md",
+      "cites": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json",
+        "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal.",
+      "contains_project_link": true
+    },
+    {
+      "thread": 13374,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13374",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13374#discussioncomment-19690589",
+      "posted_on": "2026-11-17T21:02:11Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-17-13374-registration-dropped.md",
+      "facts": "docs/copy/facts/2026-11-17-three-replies.md",
+      "cites": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json",
+        "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal."
+    },
+    {
+      "thread": 13292,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13292",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13292#discussioncomment-19690590",
+      "posted_on": "2026-11-17T21:02:12Z",
+      "language": "zh",
+      "draft": "docs/copy/drafts/2026-11-17-13292-pinned-peers.md",
+      "facts": "docs/copy/facts/2026-11-17-three-replies.md",
+      "cites": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json",
+        "data/results/upgrade-declarations-2026-10-29T07-05-00.000Z.json",
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal."
     }
   ],
   "read_not_posted": [
