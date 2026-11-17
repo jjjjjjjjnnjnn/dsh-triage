@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R116 (2026-11-17)",
+  "stand": "R117 (2026-11-17)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16975,6 +16975,29 @@
         "licence": "PASS：只读公开 API 与 `gh api`（仓库所有者 token），不写任何第三方系统。",
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把 1,416 次 clone 读成「有人关注」。同一份产物里 views 只有 47，clone/view = 30.13；脚本的 `limits` 明写「a clone is not a reader」。"
+      }
+    },
+    {
+      "id": "R117-S1",
+      "batch": "R117",
+      "step": "D-1 备稿：把 admission 拒绝后的归因缺口写成事实包与英文草稿（只备不发，发布由 HUMAN 决定）",
+      "changed": [
+        "docs/copy/facts/2026-11-17-d1-attribution.md",
+        "docs/copy/drafts/2026-11-17-d1-attribution.md",
+        "docs/11-d-path.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 995 --stamp <UTC> ; node --test tests/governance/copy-channel.test.ts",
+        "outcome": "listing 17/17（11 份文档 / 版本 0.3.11 / 22 条证据路径全部带 .sha256）；copy-channel 3/3（事实包引用的产物都存在且带哈希，草稿带 facts 指针、paste 块与边界句）。",
+        "artifact": "data/results/listing-2026-11-17T13-58-20.849Z.json",
+        "sha256": "a35147842897c9eba3987df1648555e5ae5efd09cdaf80b690e27332e4233a9c"
+      },
+      "review": {
+        "correctness": "PASS：845 / 345（40.83%）/ 242（70.14%）取自讨论产物的 fetched / pain_threads / unanswered_share；没有改用 cluster 求和 —— 求和是 417，与产物自带的 345 打架，那会把一个数写成两个家。",
+        "reproducibility": "PASS：事实包里每个 data/results 引用都有 .sha256，copy-channel 逐条复算；草稿里的数字在文末「自检」表逐行对回产物。",
+        "licence": "PASS：正文不含安装命令、不含自荐包名、不复制第三方文本；issue #1 用公开链接与时间戳，不当成数字。",
+        "ssot": "PASS：listing-2026-11-17T13-58-20.849Z.json 由 scripts/check_listing.mjs 产出并带 .sha256，落在 data/results/。",
+        "adversary": "反例一：copy-channel 只证明「引用的产物存在且带哈希」，不证明正文数字等于产物数字 —— 那一步靠人工自检表。反例二：草稿未发布，所以它不产生任何外部证据；把「备稿完成」读成「D-1 已交付」就是把准备当结果。"
       }
     }
   ]

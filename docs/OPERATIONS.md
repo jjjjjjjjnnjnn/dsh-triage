@@ -44,7 +44,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 发布 | **0.3.11**，`npm latest=0.3.11`；`v0.3.11` GitHub Release 已打；npm 页面 = 仓内 `packages/plugin/README.md`（逐字节） |
 | 公开仓 | `ebdf333`，tree 与容器 `HEAD:dsh-triage` 逐字节相同；CI 6/6 绿 |
 | 仓库设置 | `homepage = https://www.npmjs.com/package/dsh-triage`；topics 5 个；无 Discussions |
-| 市场 | `awesome-dsh-plugin` 有条目（`0.3.10` 滞后、无 `icon`）；`dsh.so` **L5 passed**（`0.3.10` 滞后）；`dsh-pluginmarket` PR **#9368** 已生成、check 通过、等维护者合并 |
+| 市场 | `awesome-dsh-plugin` 有条目（`0.3.10` 滞后、**icon 已进仓**（`docs/market/icon.png`，180×180，R117），等 PR 合并后 `icon` 才会出现在卡片上）；`dsh.so` **L5 passed**（`0.3.10` 滞后）；`dsh-pluginmarket` PR **#9368** 已生成、check 通过、等维护者合并 |
 | 外部互动 | issue **#1**（`CyrusCCSY`，真 bug）已跟进 0.3.11；1 star / 0 fork / 0 watch |
 | 流量基线 | 14 天 **47 浏览 / 19 唯一**；**1,416 clone / 327 唯一**（30×）；npm 31 天 **2,996**；第三方引用 **0** |
 | 门禁 | **995 测试 / 10 门 / 10-10**；**646 份 SSOT / 695 步台账 / 75 条盲区** |
@@ -56,7 +56,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 
 | # | 动作 | 产物 | 谁发 |
 |---|---|---|---|
-| 1 | **D-1 上游 Discussion**：admission 拒绝时缺归因，用 issue #1 做真实案例 | `docs/copy/facts/2026-11-17-d1-attribution.md` + `docs/copy/drafts/<thread>-d1.md` + `docs/distribution/T-810/registry.json` 登记 | **HUMAN** |
+| 1 | **D-1 上游 Discussion**：admission 拒绝时缺归因，用 issue #1 做真实案例 | ✅ **R117 已备稿**：`docs/copy/facts/2026-11-17-d1-attribution.md` + `docs/copy/drafts/2026-11-17-d1-attribution.md`（`copy-channel` 3/3 · `check_listing` 17/17） | **HUMAN** |
 | 2 | **5 条上游故障帖回复**：插件消失 / 升级后起不来 | 每篇一个事实包 + 草稿；命令输出用 `docs/distribution/answer-kit.md` 的模板；**只在命令本身是答案时提工具** | **HUMAN** |
 | 3 | **一篇透明数据帖**：「19 个访客、1 个 star、1,416 次 clone」 | 事实包 + 草稿；引用 `traffic-*` 与 `d5-evidence-*` | **HUMAN** |
 
