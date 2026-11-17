@@ -116,6 +116,8 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
 
 6b. **知名度（R116）**：读数与计划在 `docs/research/2026-11-17-traffic-audit.md`，快照 `data/results/traffic-2026-11-17T13-04-28-424Z.json`。P0 的 **tag + GitHub Release 要 HUMAN 签**（`T-848`：未签不打 tag）；homepage、市场 `icon`、`dsh-pluginmarket/metadata` 按该文验收逐条做。**不要把 clone 或下载读成人数**。
 
+6c. **运营交接（R116 → 下一会话）**：入口 `docs/OPERATIONS.md`。先跑它 §2 的五条命令确认稳定，再按 §4 写三类草稿（D-1 / 5 条回复 / 数据帖），**发不发由 HUMAN 定**。当前在途：`dsh-pluginmarket` **PR #9368**（check 已过，等维护者合并）、issue #1 的 0.3.11 跟进（等回复）。**不要把 clone 或下载读成人数。**
+
 7. **不要做的**：为了绿而放宽阈值 / 删掉 `client-serve` 的两条同源断言 / 把沙盒改成 `nodeLinker: hoisted` 让两边都看不见树 / 在 `#65` 再发第二句催促 /
    为了过 `version-matches-manifest` 删掉 dsh.so 记录里那条真实事实 / 把渠道 PR 记成 `github-discussion`（它是 `github-pull`，混成一条会让「开个 PR」看起来像「发个帖」）/
    **把已归档的批次行留在 §2**（R106 建了归档文件与台账行，却没删行，`handover_check` 只数「恰好 10 行」所以没红 —— R107 补删；「归档文件存在」不等于「这一行真的搬走了」）。
