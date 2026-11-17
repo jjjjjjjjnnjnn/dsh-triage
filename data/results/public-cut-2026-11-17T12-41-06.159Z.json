@@ -1,26 +1,26 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/record_public_cut.mjs",
-  "generated_at": "2026-11-17T12:39:45.628Z",
+  "generated_at": "2026-11-17T12:41:06.159Z",
   "question": "is the public repository exactly the container's subtree, re-rooted?",
   "container": {
     "branch": "main",
     "prefix": "dsh-triage",
-    "head": "0d808805c85f127578767ea2ab17593b5e045e73",
-    "subtree_tree": "5c981d3e7a59ad29920bff81f1a45a897e119768",
-    "root_tree": "d862d13419aba8fb982884665b1c263eea9611c8",
-    "commits_touching_subtree": 107
+    "head": "4e4d09d3ee7b3a174b05402f3cf818c79f0936ab",
+    "subtree_tree": "2e19a1125fafda05517146e236fbb05e3104be2a",
+    "root_tree": "9413cbfbd4d7e4bee3e0e40a670ba190d1f35c24",
+    "commits_touching_subtree": 108
   },
   "public": {
     "remote": "origin",
     "ref": "main",
-    "head": "4e67e1a8c6bfc4be26c6e8220e490dff6c543418",
-    "tree": "5c981d3e7a59ad29920bff81f1a45a897e119768"
+    "head": "a80e3a315b43e9073c4796e2755f7f0ad3f16e47",
+    "tree": "2e19a1125fafda05517146e236fbb05e3104be2a"
   },
   "comparison": {
     "trees_equal": true,
     "public_equals_container_root": false,
-    "matching_container_commit": "0d808805c85f127578767ea2ab17593b5e045e73",
+    "matching_container_commit": "4e4d09d3ee7b3a174b05402f3cf818c79f0936ab",
     "commits_behind": 0
   },
   "status": "in-sync",

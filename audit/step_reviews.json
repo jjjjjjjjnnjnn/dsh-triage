@@ -16936,14 +16936,14 @@
       "batch": "R115",
       "step": "把含 0.3.11 的子树切到公开仓，并复读它是同一棵树",
       "changed": [
-        "data/results/public-cut-2026-11-17T12-39-45.628Z.json",
-        "data/results/public-cut-2026-11-17T12-39-45.628Z.json.sha256"
+        "data/results/public-cut-2026-11-17T12-41-06.159Z.json",
+        "data/results/public-cut-2026-11-17T12-41-06.159Z.json.sha256"
       ],
       "real_test": {
         "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main → git push ; node scripts/record_public_cut.mjs",
-        "outcome": "`in-sync` / `trees-equal true` / `cut at 0d80880` / `behind 0`（public `4e67e1a`）。切面按定义比「装着这份文档的提交」早一步：切完立刻复读是 `behind 0`，下一轮提交之后又会变成非零，那是构造，不是漂移。",
-        "artifact": "data/results/public-cut-2026-11-17T12-39-45.628Z.json",
-        "sha256": "5011909a2f7630c49a7b4d69f8f9b812da54852c2c8e08a298f6ce4fa0f1604d"
+        "outcome": "`in-sync` / `trees-equal true` / `cut at 4e4d09d` / `behind 0`（public `a80e3a3`），读取时刻即切完那一刻。**这是本轮最后一次切**：记录切面本身要写一个产物、产物要提交，于是切面立刻又老一步 —— `behind` 是构造，下一轮的复读会写 `behind 1`，那不是漂移。",
+        "artifact": "data/results/public-cut-2026-11-17T12-41-06.159Z.json",
+        "sha256": "277ce80de487f15e665549681691338297d301e7a1e3addfca9bb26901546340"
       },
       "review": {
         "correctness": "PASS：子树取自发布后提交的 `HEAD:dsh-triage`，父提交是当时的 `origin/main`。",
