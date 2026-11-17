@@ -16930,6 +16930,28 @@
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把「切完之后 `behind 1`」读成切错了。切面按定义比「装着这份文档的提交」早一步；脚本输出里明确写了「Nothing is wrong with the public repo; it is simply older than the container」。"
       }
+    },
+    {
+      "id": "R115-S2",
+      "batch": "R115",
+      "step": "把含 0.3.11 的子树切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-17T12-32-34.616Z.json",
+        "data/results/public-cut-2026-11-17T12-32-34.616Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main → git push ; node scripts/record_public_cut.mjs",
+        "outcome": "`in-sync` / `trees-equal true` / `cut at d94efea` / `behind 0`（public `a128ba3`）。",
+        "artifact": "data/results/public-cut-2026-11-17T12-32-34.616Z.json",
+        "sha256": "e4c4e06c920c87e0685e8ec61d89a864c6fb3dc88aeb99f510ea77156c2221f0"
+      },
+      "review": {
+        "correctness": "PASS：子树取自发布后提交的 `HEAD:dsh-triage`，父提交是当时的 `origin/main`。",
+        "reproducibility": "PASS：切面由「容器提交 + 公开仓父提交」重算；`behind` 是构造。",
+        "licence": "PASS：只推 `dsh-triage/` 子树。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把「公开仓的 tree 哈希与容器子树相同」读成「历史也相同」。脚本自己写着它看不见 force-push 与公开仓独有的提交，这里只证明内容一致。"
+      }
     }
   ]
 }
