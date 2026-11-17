@@ -1,6 +1,6 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R62 (2026-11-02)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.11`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> **Stand**: R115 (2026-11-17)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.11`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
 > 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话

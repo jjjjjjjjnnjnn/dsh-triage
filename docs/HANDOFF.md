@@ -95,12 +95,12 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
    `docs/specs/M16-composition-source.md` §7（同源只在桌面壳成立的三条边界）· `audit/blind_spots.json` 的 **`BS-67` / `BS-69` / `BS-70` / `BS-71`** ·
    **`BS-72`**（写稿与审稿是同一个模型）· `audit/step_reviews.json` 的 **R104-S1** 与 **R105-S1/S2**（渠道 lane 与归档口径各自是怎么被检查器抓到的）。
 
-1. **D5 已判定：`fail`（R113，2026-11-16）；D 线已收口（R114，2026-11-17）**：窗口 `2026-11-01T20:24:37Z` → `2026-11-15T20:24:37Z` 已关；reactions **0/10** · 外部引用 **0/1** · 周下载 **1212**（`steady`，过 20）。证据 `data/results/d5-evidence-2026-11-16T07-05-00-000Z.json`（离线复算逐项 SAME）。D-2（作品集 = 新首屏 + 证据折叠区）与 D-3（维护模式 + BACKLOG 四条 ⛔）已在 `docs/11-d-path.md` 标完成。**这不是「再加一个功能」能改的**：`docs/11-d-path.md` 只允许四类维护动作（安全修复 / 上游适配 / CI / 回归 smoke）。**下一件该做的事**：R115（仅文案的 0.3.11，让 npm 页面变成新首屏）→ 按 `docs/11-d-path.md` D-1 写上游讨论草稿（发不发由 HUMAN 定）。
+1. **D5 已判定：`fail`（R113，2026-11-16）；D 线已收口（R114，2026-11-17）**：窗口 `2026-11-01T20:24:37Z` → `2026-11-15T20:24:37Z` 已关；reactions **0/10** · 外部引用 **0/1** · 周下载 **1212**（`steady`，过 20）。证据 `data/results/d5-evidence-2026-11-16T07-05-00-000Z.json`（离线复算逐项 SAME）。D-2（作品集 = 新首屏 + 证据折叠区）与 D-3（维护模式 + BACKLOG 四条 ⛔）已在 `docs/11-d-path.md` 标完成。**这不是「再加一个功能」能改的**：`docs/11-d-path.md` 只允许四类维护动作（安全修复 / 上游适配 / CI / 回归 smoke）。**R115（2026-11-17）已完成**：0.3.11 发布，npm 页面现在就是 R114 的新首屏（`npm view` 与 `npm pack` 两条路径都逐字节比过）。**下一件该做的事**：按 `docs/11-d-path.md` D-1 写上游讨论草稿（**发不发由 HUMAN 定**）。
 
 2. **`awesome-dsh-plugin` 已收录，站点也已上线（R114 复读 2026-11-17）**：PR #14880 于 2026-11-13T17:46:06Z 合并（merge `e68d7bc`）；`/plugins.json` 里有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`，`version 0.3.10`），两个详情页 200。短描述 PR #15458 也于 2026-11-15T17:38:07Z 合并。**维护义务（`T-871`）**：描述与代码一致，见 `docs/distribution/awesome-dsh-plugin.md` §4 五条。
 
 3. **公开仓切面（`behind N` 是构造；数字以脚本为准，别记）**：
-   - 最新切在 `4e4d09d`（R115 收口）→ public `a80e3a3`，`record_public_cut` 记 `in-sync` / `behind 0`（`public-cut-2026-11-17T12-41-06.159Z.json`）。**切面按定义比「装着这份文档的提交」早一步**，别为了 `behind 0` 反复切。
+   - **这行不写哈希，也不写 behind 的数字**：读仓库里最新一份 `public-cut-*.json`，或直接跑 `node scripts/record_public_cut.mjs`。**切面按定义比「装着这份文档的提交」早一步**，所以 `behind` 从 0 变 1 是构造；**别为了 `behind 0` 反复切**（记录切面本身要写一个产物、产物要提交，于是切面立刻又老一步）。
    - 要不要再切、要不要推，是 **HUMAN 的决定**。切法：`git rev-parse main:dsh-triage` → `commit-tree`（父 = `origin/main`）→ push → 重跑 `node scripts/record_public_cut.mjs`。
 
 4. **渠道只剩 `#140`**：`walkinglabs/awesome-deepseek-harness-plugins` `OPEN / MERGEABLE / CLEAN`、零 review、自 2026-10-29 起未变。**不要再推、不要 force push**。`#65`（2026-11-15）、`#193`（2026-11-04）、`#14880`（2026-11-13）、`#15458`（2026-11-15）全部已合并。

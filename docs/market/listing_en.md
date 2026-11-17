@@ -1,6 +1,6 @@
 # Listing copy (English, ready to paste)
 
-> **Stand**: R62 (2026-11-02). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
+> **Stand**: R115 (2026-11-17). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
 > against the repo (version, DSH range, evidence paths, and the README upgrade card). Chinese counterpart: `docs/market/listing_zh.md`.
 > Channel status lives in `docs/market/submissions/README.md`; long-form posts in `docs/posts/`.
 
