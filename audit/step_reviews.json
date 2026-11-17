@@ -16936,14 +16936,14 @@
       "batch": "R115",
       "step": "把含 0.3.11 的子树切到公开仓，并复读它是同一棵树",
       "changed": [
-        "data/results/public-cut-2026-11-17T12-36-24.600Z.json",
-        "data/results/public-cut-2026-11-17T12-36-24.600Z.json.sha256"
+        "data/results/public-cut-2026-11-17T12-39-45.628Z.json",
+        "data/results/public-cut-2026-11-17T12-39-45.628Z.json.sha256"
       ],
       "real_test": {
         "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main → git push ; node scripts/record_public_cut.mjs",
-        "outcome": "`in-sync` / `trees-equal true` / `cut at 97ac22c` / `behind 0`（public `07c77db`）。同一轮还有一份 `12-35-50` 的 `behind 3`：那不是漂移，是切面比「装着这份文档的提交」晚一步；切完复读即 `in-sync`，那份早读的产物已删。",
-        "artifact": "data/results/public-cut-2026-11-17T12-36-24.600Z.json",
-        "sha256": "88b761e66eb6c59d7cf8eeed1bf050602a54644992cadb90bb9bb0d52715f42f"
+        "outcome": "`in-sync` / `trees-equal true` / `cut at 0d80880` / `behind 0`（public `4e67e1a`）。切面按定义比「装着这份文档的提交」早一步：切完立刻复读是 `behind 0`，下一轮提交之后又会变成非零，那是构造，不是漂移。",
+        "artifact": "data/results/public-cut-2026-11-17T12-39-45.628Z.json",
+        "sha256": "5011909a2f7630c49a7b4d69f8f9b812da54852c2c8e08a298f6ce4fa0f1604d"
       },
       "review": {
         "correctness": "PASS：子树取自发布后提交的 `HEAD:dsh-triage`，父提交是当时的 `origin/main`。",
