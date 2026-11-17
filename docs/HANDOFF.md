@@ -100,7 +100,7 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
 2. **`awesome-dsh-plugin` 已收录，站点也已上线（R114 复读 2026-11-17）**：PR #14880 于 2026-11-13T17:46:06Z 合并（merge `e68d7bc`）；`/plugins.json` 里有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`，`version 0.3.10`），两个详情页 200。短描述 PR #15458 也于 2026-11-15T17:38:07Z 合并。**维护义务（`T-871`）**：描述与代码一致，见 `docs/distribution/awesome-dsh-plugin.md` §4 五条。
 
 3. **公开仓切面（`behind N` 是构造；数字以脚本为准，别记）**：
-   - 最新切在 `96f07e1`（R113 判定提交）→ public `f7d43a2`，`record_public_cut` 记 `in-sync` / `behind 0`。容器 HEAD 比它晚一个取证提交，所以现在算 `behind 1` 是构造。**切面按定义比「装着这份文档的提交」早一步**，别为了 `behind 0` 反复切。
+   - 最新切在 `97ac22c`（R115 收口）→ public `07c77db`，`record_public_cut` 记 `in-sync` / `behind 0`（`public-cut-2026-11-17T12-36-24.600Z.json`）。**切面按定义比「装着这份文档的提交」早一步**，别为了 `behind 0` 反复切。
    - 要不要再切、要不要推，是 **HUMAN 的决定**。切法：`git rev-parse main:dsh-triage` → `commit-tree`（父 = `origin/main`）→ push → 重跑 `node scripts/record_public_cut.mjs`。
 
 4. **渠道只剩 `#140`**：`walkinglabs/awesome-deepseek-harness-plugins` `OPEN / MERGEABLE / CLEAN`、零 review、自 2026-10-29 起未变。**不要再推、不要 force push**。`#65`（2026-11-15）、`#193`（2026-11-04）、`#14880`（2026-11-13）、`#15458`（2026-11-15）全部已合并。
