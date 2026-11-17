@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R115 (2026-11-17)",
+  "stand": "R116 (2026-11-17)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16951,6 +16951,30 @@
         "licence": "PASS：只推 `dsh-triage/` 子树。",
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把「公开仓的 tree 哈希与容器子树相同」读成「历史也相同」。脚本自己写着它看不见 force-push 与公开仓独有的提交，这里只证明内容一致。"
+      }
+    },
+    {
+      "id": "R116-S1",
+      "batch": "R116",
+      "step": "流量审计：把 GitHub 14 天、npm 31 天与两个第三方条目的读数写成一份快照",
+      "changed": [
+        "scripts/record_traffic.mjs",
+        "docs/research/2026-11-17-traffic-audit.md",
+        "data/results/traffic-2026-11-17T13-04-28-424Z.json",
+        "data/results/traffic-2026-11-17T13-04-28-424Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_traffic.mjs --stamp 2026-11-17T13:04:28.424Z",
+        "outcome": "**views 47 / 19 unique · clones 1,416 / 327 · npm 31d 2,996 · stars 1**。四包下载、referrers（github 13 / npm 3 / t.co 2 / reddit 1）、paths（overview 16 / issues 11 / issue #1 3）、`awesome-dsh-plugin`（0.3.10 / 2,953 / 1 star / 无 icon）与 `dsh.so`（L5 passed / 0 critical / 2 info）都在同一份产物里。",
+        "artifact": "data/results/traffic-2026-11-17T13-04-28-424Z.json",
+        "sha256": "39be65ff7d79d131e5f3c39487b2b792d85c19c3be6c303e34b3e38cf6ef65c2"
+      },
+      "review": {
+        "correctness": "PASS：每个数字来自 GitHub API、npm downloads API 或第三方公开 JSON；`unmeasured` 为空，说明没有把「读不到」写成 0。",
+        "reproducibility": "PASS：同一条命令可重放；GitHub traffic 是 14 天滚动窗口，所以每份产物的 `inputs.github_traffic_window` 写了起止日。",
+        "licence": "PASS：只读公开 API 与 `gh api`（仓库所有者 token），不写任何第三方系统。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把 1,416 次 clone 读成「有人关注」。同一份产物里 views 只有 47，clone/view = 30.13；脚本的 `limits` 明写「a clone is not a reader」。"
       }
     }
   ]

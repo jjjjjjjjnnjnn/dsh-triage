@@ -1,0 +1,1002 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_traffic.mjs",
+  "generated_at": "2026-11-17T13:04:28.424Z",
+  "question": "where does anyone actually see this repository, and how much of that is a human?",
+  "inputs": {
+    "repo": "jjjjjjjjnnjnn/dsh-triage",
+    "npm": "dsh-triage",
+    "npm_range": "2026-10-18:2026-11-17",
+    "github_traffic_window": {
+      "since": "2026-11-03T00:00:00Z",
+      "until": "2026-11-16T00:00:00Z",
+      "days": 14
+    }
+  },
+  "github": {
+    "repo": {
+      "description": "分诊台 / Triage — the judgment layer for DeepSeek Harness plugins: why a plugin silently disappeared, and whether a candidate survives your exact environment.",
+      "homepage": null,
+      "topics": [
+        "compatibility",
+        "deepseek-harness",
+        "diagnostics",
+        "dsh",
+        "dsh-plugin"
+      ],
+      "stars": 1,
+      "forks": 0,
+      "watchers": 0,
+      "open_issues": 1,
+      "created_at": "2026-10-26T11:09:15Z",
+      "pushed_at": "2026-11-17T12:52:38Z"
+    },
+    "views": {
+      "count": 47,
+      "uniques": 19,
+      "views": [
+        {
+          "timestamp": "2026-11-03T00:00:00Z",
+          "count": 2,
+          "uniques": 2
+        },
+        {
+          "timestamp": "2026-11-04T00:00:00Z",
+          "count": 1,
+          "uniques": 1
+        },
+        {
+          "timestamp": "2026-11-05T00:00:00Z",
+          "count": 11,
+          "uniques": 10
+        },
+        {
+          "timestamp": "2026-11-06T00:00:00Z",
+          "count": 5,
+          "uniques": 1
+        },
+        {
+          "timestamp": "2026-11-07T00:00:00Z",
+          "count": 0,
+          "uniques": 0
+        },
+        {
+          "timestamp": "2026-11-08T00:00:00Z",
+          "count": 6,
+          "uniques": 2
+        },
+        {
+          "timestamp": "2026-11-09T00:00:00Z",
+          "count": 11,
+          "uniques": 2
+        },
+        {
+          "timestamp": "2026-11-10T00:00:00Z",
+          "count": 3,
+          "uniques": 2
+        },
+        {
+          "timestamp": "2026-11-11T00:00:00Z",
+          "count": 2,
+          "uniques": 2
+        },
+        {
+          "timestamp": "2026-11-12T00:00:00Z",
+          "count": 0,
+          "uniques": 0
+        },
+        {
+          "timestamp": "2026-11-13T00:00:00Z",
+          "count": 1,
+          "uniques": 1
+        },
+        {
+          "timestamp": "2026-11-14T00:00:00Z",
+          "count": 0,
+          "uniques": 0
+        },
+        {
+          "timestamp": "2026-11-15T00:00:00Z",
+          "count": 1,
+          "uniques": 1
+        },
+        {
+          "timestamp": "2026-11-16T00:00:00Z",
+          "count": 4,
+          "uniques": 1
+        }
+      ]
+    },
+    "clones": {
+      "count": 1416,
+      "uniques": 327,
+      "clones": [
+        {
+          "timestamp": "2026-11-03T00:00:00Z",
+          "count": 164,
+          "uniques": 46
+        },
+        {
+          "timestamp": "2026-11-04T00:00:00Z",
+          "count": 134,
+          "uniques": 56
+        },
+        {
+          "timestamp": "2026-11-05T00:00:00Z",
+          "count": 252,
+          "uniques": 50
+        },
+        {
+          "timestamp": "2026-11-06T00:00:00Z",
+          "count": 140,
+          "uniques": 49
+        },
+        {
+          "timestamp": "2026-11-07T00:00:00Z",
+          "count": 24,
+          "uniques": 11
+        },
+        {
+          "timestamp": "2026-11-08T00:00:00Z",
+          "count": 7,
+          "uniques": 3
+        },
+        {
+          "timestamp": "2026-11-09T00:00:00Z",
+          "count": 52,
+          "uniques": 13
+        },
+        {
+          "timestamp": "2026-11-10T00:00:00Z",
+          "count": 94,
+          "uniques": 23
+        },
+        {
+          "timestamp": "2026-11-11T00:00:00Z",
+          "count": 146,
+          "uniques": 42
+        },
+        {
+          "timestamp": "2026-11-12T00:00:00Z",
+          "count": 93,
+          "uniques": 37
+        },
+        {
+          "timestamp": "2026-11-13T00:00:00Z",
+          "count": 119,
+          "uniques": 35
+        },
+        {
+          "timestamp": "2026-11-14T00:00:00Z",
+          "count": 76,
+          "uniques": 22
+        },
+        {
+          "timestamp": "2026-11-15T00:00:00Z",
+          "count": 75,
+          "uniques": 26
+        },
+        {
+          "timestamp": "2026-11-16T00:00:00Z",
+          "count": 40,
+          "uniques": 18
+        }
+      ]
+    },
+    "referrers": [
+      {
+        "referrer": "github.com",
+        "count": 13,
+        "uniques": 5
+      },
+      {
+        "referrer": "npmjs.com",
+        "count": 3,
+        "uniques": 1
+      },
+      {
+        "referrer": "t.co",
+        "count": 2,
+        "uniques": 1
+      },
+      {
+        "referrer": "com.reddit.frontpage",
+        "count": 1,
+        "uniques": 1
+      }
+    ],
+    "paths": [
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage",
+        "title": "Overview",
+        "count": 16,
+        "uniques": 5
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/issues",
+        "title": "/issues",
+        "count": 11,
+        "uniques": 2
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/discussion-triage-2026-11-05T08-01-22-614Z.json",
+        "title": "/blob/main/data/results/discussion-triage-2026-11-05T08-01-22-614Z.json",
+        "count": 3,
+        "uniques": 3
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/issues/1",
+        "title": "/issues/1",
+        "count": 3,
+        "uniques": 2
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/remedy-probe-2026-11-05T08-01-23-093Z.json",
+        "title": "/blob/main/data/results/remedy-probe-2026-11-05T08-01-23-093Z.json",
+        "count": 2,
+        "uniques": 2
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/blob/main/data/results/remedy-probe-2026-11-05T08-06-24-136Z.json",
+        "title": "/blob/main/data/results/remedy-probe-2026-11-05T08-06-24-136Z.json",
+        "count": 2,
+        "uniques": 2
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/issues/new",
+        "title": "/issues/new",
+        "count": 2,
+        "uniques": 1
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/actions/runs/43437794176",
+        "title": "/actions/runs/43437794176",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/blob/main/PROJECT_RULES.md",
+        "title": "/blob/main/PROJECT_RULES.md",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "path": "/jjjjjjjjnnjnn/dsh-triage/blob/main/README.zh-CN.md",
+        "title": "/blob/main/README.zh-CN.md",
+        "count": 1,
+        "uniques": 1
+      }
+    ],
+    "releases": [],
+    "tags": [
+      {
+        "name": "v0.1.0-skeleton",
+        "zipball_url": "https://api.github.com/repos/jjjjjjjjnnjnn/dsh-triage/zipball/refs/tags/v0.1.0-skeleton",
+        "tarball_url": "https://api.github.com/repos/jjjjjjjjnnjnn/dsh-triage/tarball/refs/tags/v0.1.0-skeleton",
+        "commit": {
+          "sha": "d75c60ad8a1c7889a0206b6847e0c7dc8575bc12",
+          "url": "https://api.github.com/repos/jjjjjjjjnnjnn/dsh-triage/commits/d75c60ad8a1c7889a0206b6847e0c7dc8575bc12"
+        },
+        "node_id": "REF_kwDOVX02V7lyZWZzL3RhZ3MvdjAuMS4wLXNrZWxldG9u"
+      }
+    ]
+  },
+  "npm": {
+    "dsh-triage": {
+      "range": "2026-10-18:2026-11-17",
+      "total": 2996,
+      "last7": 1042,
+      "peak": {
+        "downloads": 634,
+        "day": "2026-10-29"
+      },
+      "days": [
+        {
+          "downloads": 0,
+          "day": "2026-10-18"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-19"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-20"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-21"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-22"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 634,
+          "day": "2026-10-29"
+        },
+        {
+          "downloads": 192,
+          "day": "2026-10-30"
+        },
+        {
+          "downloads": 17,
+          "day": "2026-10-31"
+        },
+        {
+          "downloads": 192,
+          "day": "2026-11-01"
+        },
+        {
+          "downloads": 357,
+          "day": "2026-11-02"
+        },
+        {
+          "downloads": 172,
+          "day": "2026-11-03"
+        },
+        {
+          "downloads": 34,
+          "day": "2026-11-04"
+        },
+        {
+          "downloads": 40,
+          "day": "2026-11-05"
+        },
+        {
+          "downloads": 31,
+          "day": "2026-11-06"
+        },
+        {
+          "downloads": 57,
+          "day": "2026-11-07"
+        },
+        {
+          "downloads": 15,
+          "day": "2026-11-08"
+        },
+        {
+          "downloads": 183,
+          "day": "2026-11-09"
+        },
+        {
+          "downloads": 30,
+          "day": "2026-11-10"
+        },
+        {
+          "downloads": 319,
+          "day": "2026-11-11"
+        },
+        {
+          "downloads": 346,
+          "day": "2026-11-12"
+        },
+        {
+          "downloads": 57,
+          "day": "2026-11-13"
+        },
+        {
+          "downloads": 46,
+          "day": "2026-11-14"
+        },
+        {
+          "downloads": 231,
+          "day": "2026-11-15"
+        },
+        {
+          "downloads": 43,
+          "day": "2026-11-16"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-11-17"
+        }
+      ]
+    },
+    "@dsh-triage/core": {
+      "range": "2026-10-18:2026-11-17",
+      "total": 3086,
+      "last7": 1091,
+      "peak": {
+        "downloads": 493,
+        "day": "2026-10-29"
+      },
+      "days": [
+        {
+          "downloads": 0,
+          "day": "2026-10-18"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-19"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-20"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-21"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-22"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 493,
+          "day": "2026-10-29"
+        },
+        {
+          "downloads": 232,
+          "day": "2026-10-30"
+        },
+        {
+          "downloads": 13,
+          "day": "2026-10-31"
+        },
+        {
+          "downloads": 206,
+          "day": "2026-11-01"
+        },
+        {
+          "downloads": 427,
+          "day": "2026-11-02"
+        },
+        {
+          "downloads": 208,
+          "day": "2026-11-03"
+        },
+        {
+          "downloads": 39,
+          "day": "2026-11-04"
+        },
+        {
+          "downloads": 44,
+          "day": "2026-11-05"
+        },
+        {
+          "downloads": 23,
+          "day": "2026-11-06"
+        },
+        {
+          "downloads": 78,
+          "day": "2026-11-07"
+        },
+        {
+          "downloads": 10,
+          "day": "2026-11-08"
+        },
+        {
+          "downloads": 194,
+          "day": "2026-11-09"
+        },
+        {
+          "downloads": 28,
+          "day": "2026-11-10"
+        },
+        {
+          "downloads": 357,
+          "day": "2026-11-11"
+        },
+        {
+          "downloads": 400,
+          "day": "2026-11-12"
+        },
+        {
+          "downloads": 66,
+          "day": "2026-11-13"
+        },
+        {
+          "downloads": 34,
+          "day": "2026-11-14"
+        },
+        {
+          "downloads": 215,
+          "day": "2026-11-15"
+        },
+        {
+          "downloads": 19,
+          "day": "2026-11-16"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-11-17"
+        }
+      ]
+    },
+    "@dsh-triage/signals": {
+      "range": "2026-10-18:2026-11-17",
+      "total": 2743,
+      "last7": 1027,
+      "peak": {
+        "downloads": 429,
+        "day": "2026-10-29"
+      },
+      "days": [
+        {
+          "downloads": 0,
+          "day": "2026-10-18"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-19"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-20"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-21"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-22"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 429,
+          "day": "2026-10-29"
+        },
+        {
+          "downloads": 220,
+          "day": "2026-10-30"
+        },
+        {
+          "downloads": 15,
+          "day": "2026-10-31"
+        },
+        {
+          "downloads": 188,
+          "day": "2026-11-01"
+        },
+        {
+          "downloads": 327,
+          "day": "2026-11-02"
+        },
+        {
+          "downloads": 173,
+          "day": "2026-11-03"
+        },
+        {
+          "downloads": 30,
+          "day": "2026-11-04"
+        },
+        {
+          "downloads": 43,
+          "day": "2026-11-05"
+        },
+        {
+          "downloads": 22,
+          "day": "2026-11-06"
+        },
+        {
+          "downloads": 63,
+          "day": "2026-11-07"
+        },
+        {
+          "downloads": 6,
+          "day": "2026-11-08"
+        },
+        {
+          "downloads": 176,
+          "day": "2026-11-09"
+        },
+        {
+          "downloads": 24,
+          "day": "2026-11-10"
+        },
+        {
+          "downloads": 327,
+          "day": "2026-11-11"
+        },
+        {
+          "downloads": 374,
+          "day": "2026-11-12"
+        },
+        {
+          "downloads": 59,
+          "day": "2026-11-13"
+        },
+        {
+          "downloads": 33,
+          "day": "2026-11-14"
+        },
+        {
+          "downloads": 213,
+          "day": "2026-11-15"
+        },
+        {
+          "downloads": 21,
+          "day": "2026-11-16"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-11-17"
+        }
+      ]
+    },
+    "@dsh-triage/probe": {
+      "range": "2026-10-18:2026-11-17",
+      "total": 2806,
+      "last7": 1016,
+      "peak": {
+        "downloads": 436,
+        "day": "2026-10-29"
+      },
+      "days": [
+        {
+          "downloads": 0,
+          "day": "2026-10-18"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-19"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-20"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-21"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-22"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-23"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-24"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-25"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-26"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-27"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-10-28"
+        },
+        {
+          "downloads": 436,
+          "day": "2026-10-29"
+        },
+        {
+          "downloads": 216,
+          "day": "2026-10-30"
+        },
+        {
+          "downloads": 15,
+          "day": "2026-10-31"
+        },
+        {
+          "downloads": 196,
+          "day": "2026-11-01"
+        },
+        {
+          "downloads": 399,
+          "day": "2026-11-02"
+        },
+        {
+          "downloads": 177,
+          "day": "2026-11-03"
+        },
+        {
+          "downloads": 31,
+          "day": "2026-11-04"
+        },
+        {
+          "downloads": 40,
+          "day": "2026-11-05"
+        },
+        {
+          "downloads": 22,
+          "day": "2026-11-06"
+        },
+        {
+          "downloads": 58,
+          "day": "2026-11-07"
+        },
+        {
+          "downloads": 7,
+          "day": "2026-11-08"
+        },
+        {
+          "downloads": 167,
+          "day": "2026-11-09"
+        },
+        {
+          "downloads": 26,
+          "day": "2026-11-10"
+        },
+        {
+          "downloads": 327,
+          "day": "2026-11-11"
+        },
+        {
+          "downloads": 373,
+          "day": "2026-11-12"
+        },
+        {
+          "downloads": 51,
+          "day": "2026-11-13"
+        },
+        {
+          "downloads": 34,
+          "day": "2026-11-14"
+        },
+        {
+          "downloads": 207,
+          "day": "2026-11-15"
+        },
+        {
+          "downloads": 24,
+          "day": "2026-11-16"
+        },
+        {
+          "downloads": 0,
+          "day": "2026-11-17"
+        }
+      ]
+    }
+  },
+  "surfaces": {
+    "awesome-dsh-plugin": {
+      "name": "dsh-triage#dsh-triage",
+      "owner": "jjjjjjjjnnjnn",
+      "url": "https://github.com/jjjjjjjjnnjnn/dsh-triage/tree/main/packages/plugin",
+      "page": "https://awesome-dsh-plugin.com/p/jjjjjjjjnnjnn/dsh-triage--packages-plugin/",
+      "category": "dev",
+      "description": {
+        "en": "Judges one DSH profile: why a plugin was refused or silently disappeared, what an upgrade would break, and a candidate measured in a throwaway DSH_HOME. Read-only by default; --apply backs up first and --undo restores the bytes.",
+        "zh": "给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 DSH_HOME 里实测。默认只读，`--apply` 先备份，`--undo` 逐字节还原。"
+      },
+      "npm": "dsh-triage",
+      "version": "0.3.10",
+      "stars": 1,
+      "starsCheckedAt": "2026-11-17T03:24:30.361Z",
+      "downloads": 2953,
+      "downloadsStart": "2026-10-18",
+      "downloadsEnd": "2026-11-16",
+      "downloadsCheckedAt": "2026-11-17",
+      "install": "dsh plugin --profile web add dsh-triage",
+      "added": "2026-11-13"
+    },
+    "dsh.so": {
+      "artifact": {
+        "id": "dsh-triage",
+        "badge": {
+          "state": "passed",
+          "level": "passed",
+          "detailUrl": "https://www.dsh.so/artifact/dsh-triage/"
+        },
+        "commitSha": "f7d43a271060aba067397ceb1cba46858a5d54d3",
+        "latestCommitSha": "f7d43a271060aba067397ceb1cba46858a5d54d3",
+        "pkgVersion": "0.3.10",
+        "pkgDsh": true,
+        "latestReleaseTag": null,
+        "counts": {
+          "critical": 0,
+          "warning": 0,
+          "info": 2
+        },
+        "criticalByCategory": {},
+        "filesScanned": 3,
+        "scannedAt": "2026-11-16T21:11:35.843Z",
+        "scannerVersion": "dsh-static:73b7d4a8",
+        "rulesChecked": 31,
+        "dynamicAudit": null,
+        "dynamicOverride": null,
+        "dynamicEscalated": false,
+        "findings": [],
+        "plugin": {
+          "name": "@jjjjjjjjnnjnn/dsh-triage",
+          "repository": "https://github.com/jjjjjjjjnnjnn/dsh-triage"
+        },
+        "asOf": {
+          "date": "2026-11-16",
+          "sources": [
+            "registry",
+            "scan"
+          ]
+        },
+        "faq": [
+          {
+            "id": "what-is",
+            "question": "What is @jjjjjjjjnnjnn/dsh-triage?",
+            "answer": "@jjjjjjjjnnjnn/dsh-triage is a DeepSeek Harness (dsh) plugin listed on dsh.so — an independent community registry that indexes public source repositories and publishes automated security-scan and install-verification results for each entry."
+          },
+          {
+            "id": "is-official",
+            "question": "Is dsh.so or this plugin page official?",
+            "answer": "dsh.so is an independent community registry and is not affiliated with, endorsed by, or sponsored by DeepSeek AI."
+          },
+          {
+            "id": "install",
+            "question": "How do I install @jjjjjjjjnnjnn/dsh-triage?",
+            "answer": "Run dsh plugin --profile web add dsh-triage@0.3.10 in a DeepSeek Harness (dsh) environment. That exact command passed a real install inside an isolated sandbox (L4) plus web smoke testing (L5)."
+          },
+          {
+            "id": "security",
+            "question": "How does the security scan relate to a manual audit?",
+            "answer": "Both layers are automated, not a manual audit. The static scan is heuristic analysis of the repository source, so it can produce false positives and miss context. The model-driven dynamic security audit only covers plugins static-flagged at warn or above, never executes plugin code, and its conclusion is authoritative when there is one (it may raise or lower the static tier); exemptions stay manual. Neither layer is an endorsement: review the repository and the permissions it asks for before installing, together with the verification level and health signals."
+          },
+          {
+            "id": "freshness",
+            "question": "How fresh is the data on this page?",
+            "answer": "The data on this page is as of 2026-11-16 (UTC) — the most recent valid timestamp among the registry refresh, install verification, security scan and dynamic audit. Build time is never used as a data date."
+          }
+        ],
+        "license": {
+          "data": "Derived from the dsh.so security scan record for this plugin.",
+          "reuse": "Free to reuse with attribution.",
+          "attribution": "dsh.so — DSH Plugin Registry (https://www.dsh.so)",
+          "spdx": "CC-BY-4.0",
+          "terms": [
+            "Attribution required: credit \"dsh.so — DSH Plugin Registry (https://www.dsh.so)\" in any redistribution or derivative work.",
+            "Preserve freshness markers (generatedAt / asOf / checkedAt) in any redistribution; do not re-serve this data as a live or real-time feed without the original timestamps.",
+            "Provided as-is, without warranty; not a substitute for your own security review."
+          ],
+          "citation": {
+            "perRecord": "Individual records may be cited and listed by any third party — including commercial directory, index and ad-supported sites — with attribution to dsh.so, a link back to the detail page, and preserved freshness markers (generatedAt / asOf / checkedAt).",
+            "bulk": "For bulk exports, full-dataset mirrors, resale, or redistribution as a standalone service, contact hello@dsh.so first so we can confirm terms."
+          }
+        }
+      },
+      "install": {
+        "schema": "https://cdn.dsh.so/data/install.schema.json",
+        "id": "dsh-triage",
+        "name": "@jjjjjjjjnnjnn/dsh-triage",
+        "installTest": {
+          "state": "passed",
+          "level": "L5",
+          "verdict": "passed",
+          "verified": true,
+          "channel": "npm",
+          "profileId": "l4-sandbox",
+          "checkedAt": "2026-11-15T16:09:09.962Z",
+          "sourceRecordId": "dsh-triage@0.3.9@dsh0.2.2-rc.3",
+          "environment": {
+            "dshVersion": "0.2.2-rc.3",
+            "dshCliVersion": "0.2.2-rc.3",
+            "os": "win32",
+            "arch": "x64",
+            "adapterId": "dsh-0.1-sandbox"
+          }
+        },
+        "links": {
+          "plugin": "https://www.dsh.so/artifact/dsh-triage/",
+          "badgeVersioned": {
+            "0.2.2-rc.3": "https://cdn.dsh.so/badge/install/dsh-triage@0.2.2-rc.3.svg",
+            "0.2.2-rc.1": "https://cdn.dsh.so/badge/install/dsh-triage@0.2.2-rc.1.svg",
+            "0.2.1-rc.5": "https://cdn.dsh.so/badge/install/dsh-triage@0.2.1-rc.5.svg"
+          },
+          "verificationLevels": "https://www.dsh.so/verification/"
+        },
+        "license": {
+          "data": "Derived from append-only sandbox verification records (spec v1.1).",
+          "reuse": "Free to reuse with attribution.",
+          "attribution": "dsh.so — DSH Plugin Registry (https://www.dsh.so)",
+          "spdx": "CC-BY-4.0",
+          "terms": [
+            "Attribution required: credit \"dsh.so — DSH Plugin Registry (https://www.dsh.so)\" in any redistribution or derivative work.",
+            "Preserve freshness markers (generatedAt / asOf / checkedAt) in any redistribution; do not re-serve this data as a live or real-time feed without the original timestamps.",
+            "Provided as-is, without warranty; not a substitute for your own security review."
+          ],
+          "citation": {
+            "perRecord": "Individual records may be cited and listed by any third party — including commercial directory, index and ad-supported sites — with attribution to dsh.so, a link back to the detail page, and preserved freshness markers (generatedAt / asOf / checkedAt).",
+            "bulk": "For bulk exports, full-dataset mirrors, resale, or redistribution as a standalone service, contact hello@dsh.so first so we can confirm terms."
+          }
+        }
+      }
+    }
+  },
+  "funnel": {
+    "repo_views_14d": 47,
+    "repo_uniques_14d": 19,
+    "repo_clones_14d": 1416,
+    "repo_unique_clones_14d": 327,
+    "clone_to_view_ratio": 30.13,
+    "npm_total_31d": 2996,
+    "npm_last7": 1042,
+    "npm_peak": {
+      "downloads": 634,
+      "day": "2026-10-29"
+    },
+    "stars": 1,
+    "forks": 0,
+    "watchers": 0,
+    "open_issues": 1
+  },
+  "unmeasured": [],
+  "limits": [
+    "GitHub traffic is a 14-day window and only the repository owner can read it",
+    "a clone is not a reader: CI, mirrors and scanners clone too",
+    "npm counts installs by package, not by person; a publish day produces a spike",
+    "the awesome-dsh-plugin and dsh.so numbers are their readings, on their refresh schedule",
+    "a unique is an IP, not a human"
+  ]
+}
