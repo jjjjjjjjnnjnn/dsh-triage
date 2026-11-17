@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/record_usability_smoke.mjs",
-  "generated_at": "2026-11-17T10:50:00.000Z",
+  "generated_at": "2026-11-17T12:16:21.062Z",
   "subject": {
     "package": "dsh-triage",
-    "version": "0.3.10",
+    "version": "0.3.11",
     "registry": "https://registry.npmjs.org",
     "anonymous": true
   },
@@ -17,7 +17,7 @@
     {
       "id": "install",
       "ok": true,
-      "detail": "npm install dsh-triage@0.3.10 exit 0"
+      "detail": "npm install dsh-triage@0.3.11 exit 0"
     },
     {
       "id": "cli-present",

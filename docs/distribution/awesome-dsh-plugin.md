@@ -7,7 +7,7 @@
 >
 > **两件不同的事（R114 复读 2026-11-17：**两件都已发生**）**：
 > ① **仓库收录**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 在 `main`（`c004b4c`），两份 README 由 `sync-readme` 生成。
-> ② **网站在线**：`https://awesome-dsh-plugin.com/plugins.json` 里已有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`，`version 0.3.10`，`downloads 2953`，`stars 1`），`/p/…` 与 `/zh/p/…` 两个详情页都 200。R109 那条「构建卡住」只在那几分钟里成立；同批的 `dsh-subor-startup` / `dsh-secret-guard` 后来也上线了。
+> ② **网站在线**：`https://awesome-dsh-plugin.com/plugins.json` 里已有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`，`version 0.3.11`，`downloads 2953`，`stars 1`），`/p/…` 与 `/zh/p/…` 两个详情页都 200。R109 那条「构建卡住」只在那几分钟里成立；同批的 `dsh-subor-startup` / `dsh-secret-guard` 后来也上线了。
 > ③ **描述改短 → 合并（PR #15458，2026-11-15T17:38:07Z）**：en 228 / zh 88 字符，纯功能、无钩子。第一次尝试 #15073 因「问句钩子」被 63 秒后回滚，教训保留在 §5。
 > ④ **维护义务（`T-871`）**：描述必须与代码一致；改命令、改默认行为、改能力边界，都要回头核这一行，并重生成 README（`node scripts/generate-readme.mjs --check` 必须绿）。
 
@@ -39,7 +39,7 @@ description:
 
 **为什么 `url` 指到子目录**：仓库是 monorepo，而 `dsh.bundle` 只在 `packages/plugin/package.json` 里（`ABI` 上，别人装的是那个包）。该表明确支持 monorepo 子包：`url` 指子目录、`name` 用 `owner/repo#subname`、文件名用 `owner__repo--packages-plugin.yml`。
 
-**为什么没有 `tarball:`**：已发布在 npm（`dsh-triage@0.3.10`），而 `repository.url` 指回本仓 → 列表会**自动**从 registry 解析 npm 映射（手写 `npm:` 字段反而会被校验拒绝）。`tarball:` 只在「不发 npm」时才需要。
+**为什么没有 `tarball:`**：已发布在 npm（`dsh-triage@0.3.11`），而 `repository.url` 指回本仓 → 列表会**自动**从 registry 解析 npm 映射（手写 `npm:` 字段反而会被校验拒绝）。`tarball:` 只在「不发 npm」时才需要。
 
 **为什么描述里没有数字**：该表把每句描述当作**对代码的声明**逐条核对；写「46 个工具、六大领域」就得真有。我们写了四件事，每件都能指到命令：`why`/`audit` 的行级归因、`upgrade --to` 的四桶、`probe` 的隔离实测、两个 `--apply` 的接缝与逐字节 `--undo`。
 

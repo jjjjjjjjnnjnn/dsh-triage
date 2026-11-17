@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R114 (2026-11-17)",
+  "stand": "R115 (2026-11-17)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16792,8 +16792,8 @@
       "batch": "R114",
       "step": "0.3.10 的可用性 smoke：匿名装已发布包，四条命令真跑",
       "changed": [
-        "data/results/usability-2026-11-17T10-50-00.000Z.json",
-        "data/results/usability-2026-11-17T10-50-00.000Z.json.sha256"
+        "data/results/usability-2026-11-17T12-16-21.062Z.json",
+        "data/results/usability-2026-11-17T12-16-21.062Z.json.sha256"
       ],
       "review": {
         "correctness": "PASS：装的是 registry 上的 0.3.10（不是仓内构建），四条命令与 README 首屏承诺的命令一致。",
@@ -16805,8 +16805,8 @@
       "real_test": {
         "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-17T10:50:00.000Z",
         "outcome": "**6/6**：`install` 装到 `dsh-triage@0.3.10`、`cli-present`、`help` exit 0、`status-no-arguments` 20 行、`audit-summary` 22 行、`upgrade-card` 有 boundary 与四桶。本机读到 `dsh 0.2.2-rc.3 (kernel-asar)` / profile `web` / `win32/x64`。",
-        "artifact": "data/results/usability-2026-11-17T10-50-00.000Z.json",
-        "sha256": "824fd9ee58f7a121525864f597298610f8d1684fce0fb0bf34a8f431f183fdd5"
+        "artifact": "data/results/usability-2026-11-17T12-16-21.062Z.json",
+        "sha256": "fc7e5c7de4c9f8c0ade45c3244a79ad93a0b2a2c436a777f9dab8488a2e94de5"
       }
     },
     {
@@ -16857,8 +16857,10 @@
         "_archive/ARCHIVE_MANIFEST.md",
         "backup/snapshots/snapshot-0.3.10-handoff-R114-final.json",
         "backup/snapshots/snapshot-0.3.10-handoff-R114-final.json.sha256",
-        "data/results/listing-2026-11-17T12-10-00.000Z.json",
-        "data/results/listing-2026-11-17T12-10-00.000Z.json.sha256"
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json",
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json.sha256",
+        "data/results/listing-2026-11-17T12-26-25.681Z.json",
+        "data/results/listing-2026-11-17T12-26-25.681Z.json.sha256"
       ],
       "review": {
         "correctness": "PASS：每处对外版本句改成 `latest=0.3.10` + `publish-2026-11-15T06-27-56.379Z.json`（18/18）；listing 删掉「0.3.10 adds the upgrade screen」。",
@@ -16870,8 +16872,63 @@
       "real_test": {
         "command": "node scripts/check_listing.mjs --stamp 2026-11-17T11:10:00.000Z --tests 995",
         "outcome": "**17/17**（终跑 `12-10-00`）：11 份受检文档、版本全部 0.3.10、DSH 区间 4 处一致、测试数 3 处 995、禁语 0、卡片四桶与产物逐项相同、问题覆盖率头条与复算件相同、渠道台账 5 条。**两张 0.3.10 的活动句也改准了**：listing 不再说这一版「加了功能」；`submissions/README.md` 的 `latest=0.3.10` 与 18/18 取证对上。中间绿跑（`11-10` / `12-00`）已被终跑取代并删除；**红产物一份未删**。",
-        "artifact": "data/results/listing-2026-11-17T12-10-00.000Z.json",
-        "sha256": "9fb23e2ed75eee7874636d556d1a11c420e8df017e538aee6910e67755db46e5"
+        "artifact": "data/results/listing-2026-11-17T12-26-25.681Z.json",
+        "sha256": "bcb9ecf25835e6e6d72524ce9bf88455f7ff4ea7f95d4d413e0953fcd30b40f8"
+      }
+    },
+    {
+      "id": "R115-S1",
+      "batch": "R115",
+      "step": "四包升 0.3.11（仅文档与文案），发布后取证 18/18，并做可用性 smoke",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "data/results/publish-2026-11-17T12-15-53.890Z.json",
+        "data/results/publish-2026-11-17T12-15-53.890Z.json.sha256",
+        "data/results/usability-2026-11-17T12-16-21.062Z.json",
+        "data/results/usability-2026-11-17T12-16-21.062Z.json.sha256",
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json",
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json.sha256",
+        "data/results/usability-2026-11-17T12-16-21.062Z.json",
+        "data/results/usability-2026-11-17T12-16-21.062Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "pnpm -r publish --no-git-checks ; node scripts/record_publish.mjs --stamp <ISO> ; node scripts/record_usability_smoke.mjs --stamp <ISO>",
+        "outcome": "`record_publish` **18/18**：四包 `latest=0.3.11`、`dist-tags-agree`、`anonymous-install` exit 0、`dependency:@dsh-triage/{core,signals,probe}@0.3.11`、`cli-runs` 16 行、`module-resolves`、`client-bundle` 39911B。`record_usability_smoke` **6/6**（装 0.3.11、CLI 存在、help / status / audit / upgrade 四条命令 exit 0）。**发布后的第一份取证曾因副本滞后 13–17 项红**：`@dsh-triage/signals` 与 `probe` 的 `latest` 仍是 0.3.10，但同一份里 `anonymous-install` 已 exit 0 —— 那是副本滞后，不是发布失败；红产物按规矩保留，几分钟后重跑即 18/18。",
+        "artifact": "data/results/publish-2026-11-17T12-15-53.890Z.json",
+        "sha256": "928fc5815357b54d12e77b2d6fc3e02ead48865a6af0896dcf4710a8288d9989"
+      },
+      "review": {
+        "correctness": "PASS：`release_preflight` 四项全绿（npm user / version 0.3.11 / workspace 5 dep(s) / registry 还没发过）；`packages/*/src` 未改，所以运行时行为与 0.3.10 相同。",
+        "reproducibility": "PASS：`record_publish` 与 `record_usability_smoke` 都从 registry 重新装、重跑同一条命令；`--stamp` 固定产物名。",
+        "licence": "PASS：只发布本仓四个包；匿名安装用空 userconfig，不读本机凭据；不触碰 `~/.dsh`。",
+        "ssot": "PASS：`data/results/` + `.sha256`；`gate_ssot` 由 `pnpm verify` 复算。",
+        "adversary": "反例：把「第一份取证红」读成「发布失败」。同一份产物里 `anonymous-install` 已 exit 0，且 `registry-visibility` 自己写着「9 次读之后才出现，141452ms」—— 读早了，不是没发上去。"
+      }
+    },
+    {
+      "id": "R114-S4",
+      "batch": "R114",
+      "step": "把 R114 的子树切到公开仓，并用记录器复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json",
+        "data/results/public-cut-2026-11-17T12-12-11.133Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"maintenance(R114): …\" → git push origin <commit>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "`in-sync` / `trees-equal true` / `cut at 378ac74` / `behind 0`（public `abd4be3`）。随后的脚本复读给出 `behind 1`（因为容器又提交了 0.3.11 的版本改动）—— 那是构造，不是漂移。",
+        "artifact": "data/results/public-cut-2026-11-17T12-12-11.133Z.json",
+        "sha256": "fb7b0e7a1e9d5ca415590d7080474b70b27b24f1b595d4c3b48e6d438bdd8207"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `HEAD:dsh-triage`，父提交是当时的 `origin/main`；`trees-equal` 由脚本比出。",
+        "reproducibility": "PASS：切面可用「容器提交 + 公开仓父提交」重算；`behind` 是构造出来的数。",
+        "licence": "PASS：只推 `dsh-triage/` 子树，`dsh-remedy/` 不在切面里。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把「切完之后 `behind 1`」读成切错了。切面按定义比「装着这份文档的提交」早一步；脚本输出里明确写了「Nothing is wrong with the public repo; it is simply older than the container」。"
       }
     }
   ]

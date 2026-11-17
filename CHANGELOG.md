@@ -6,6 +6,23 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.11] — 2026-11-17
+
+> **Documentation and copy only.** No source file under `packages/*/src` changed: no admission rule,
+> threshold, bucket, exit code or verdict changed. This release exists so the npm page and the market
+> listing carry the rewritten first screen instead of the one they had at 0.3.10.
+
+- **The first screen is rewritten for humans**: what it is (installed is not the same as working),
+  three concrete scenarios with the one command that answers each, one install line. The upgrade card,
+  the evidence table and the project status moved into collapsed sections, so a reader who only wants
+  the pitch never scrolls past a wall of numbers.
+- **The version line left the first screen.** The badge and the README still name the release, but the
+  hero no longer re-types it — so a future release does not need to touch the pitch again.
+- **Two public sentences were wrong and are now true**: the README said both `0.3.10` and
+  `latest=0.3.9` while npm already served 0.3.10, and the listing credited 0.3.10 with adding the
+  upgrade screen. 0.3.10 added tests and copy only; the screen shipped earlier. Both are corrected here
+  and in `packages/plugin/README.md`, which is the page npm renders.
+
 ## [0.3.10] — 2026-11-15
 
 > **Testing and copy only.** The runtime bytes a user runs are the same as 0.3.9: no admission rule,
