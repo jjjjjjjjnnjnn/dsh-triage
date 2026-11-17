@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R113 (2026-11-16)",
+  "stand": "R114 (2026-11-17)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -16764,6 +16764,114 @@
         "licence": "PASS：只读本仓已提交的基线产物与本地文件，不联网、不读凭据、不写任何外部路径。",
         "ssot": "PASS：`data/results/` + `.sha256`。",
         "adversary": "反例：把 `collect-now` 读成「判定还没完成」—— 判定用的是窗口内的三数，补采改变的是后续基线，不改变这一判。"
+      }
+    },
+    {
+      "id": "R113-S6",
+      "batch": "R113",
+      "step": "公开仓切到含 D5 判定与 D 线的提交",
+      "changed": [
+        "data/results/public-cut-2026-11-16T07-18-48.929Z.json"
+      ],
+      "real_test": {
+        "command": "git rev-parse HEAD:dsh-triage → git commit-tree <tree> -p origin/main -m \"chore(release): …\" → git push origin <new>:main ; node scripts/record_public_cut.mjs",
+        "outcome": "**`in-sync` / `trees-equal true` / `cut at 96f07e1` / `behind 0`**（那一刻）。上一刀是 `a59f9b3`（R112，0.3.10）。",
+        "artifact": "data/results/public-cut-2026-11-16T07-18-48.929Z.json",
+        "sha256": "4919d3cc8503b93387359677b325563c02d329490903fa3278a4e4442553fccb"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `HEAD:dsh-triage`，parent = 当时的 `origin/main`；`trees-equal` 由脚本比出来。",
+        "reproducibility": "PASS：切面可按「容器提交 + 公开仓父提交」重算；`behind` 是构造。",
+        "licence": "PASS：只推本仓 dsh-triage 子树，不带 dsh-remedy。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把「公开仓写着 fail」当成「npm 包有缺陷」—— 判的是**需求**不是工具质量；两者在文案里必须分开说（这一轮的 §5 与 listing 就是这样写的）。"
+      }
+    },
+    {
+      "id": "R114-S1",
+      "batch": "R114",
+      "step": "0.3.10 的可用性 smoke：匿名装已发布包，四条命令真跑",
+      "changed": [
+        "data/results/usability-2026-11-17T10-50-00.000Z.json",
+        "data/results/usability-2026-11-17T10-50-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：装的是 registry 上的 0.3.10（不是仓内构建），四条命令与 README 首屏承诺的命令一致。",
+        "reproducibility": "PASS：`--stamp` 固定产物名；同版本重跑给出同一组 6 项。",
+        "licence": "PASS：匿名从 npm 安装到临时目录，不读凭据、不写 `~/.dsh`。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把「安装 exit 0」读成「工具能用」—— 这一步同时跑了 `status` / `audit` / `upgrade`，只装不跑会漏掉后三条。"
+      },
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-17T10:50:00.000Z",
+        "outcome": "**6/6**：`install` 装到 `dsh-triage@0.3.10`、`cli-present`、`help` exit 0、`status-no-arguments` 20 行、`audit-summary` 22 行、`upgrade-card` 有 boundary 与四桶。本机读到 `dsh 0.2.2-rc.3 (kernel-asar)` / profile `web` / `win32/x64`。",
+        "artifact": "data/results/usability-2026-11-17T10-50-00.000Z.json",
+        "sha256": "824fd9ee58f7a121525864f597298610f8d1684fce0fb0bf34a8f431f183fdd5"
+      }
+    },
+    {
+      "id": "R114-S2",
+      "batch": "R114",
+      "step": "渠道状态复读：四条 PR 的实时状态 + dsh.so 收录探针",
+      "changed": [
+        "data/results/market-channels-2026-11-17T11-00-00.000Z.json",
+        "data/results/market-channels-2026-11-17T11-00-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：PR 状态由 GitHub API 实时读，`merged_at` 与 `state: closed` 分开记。",
+        "reproducibility": "PASS：同一条命令带同样的 `--pr` 可重放；不带 `--pr` 的空 `submitted[]` 是已知形状，已写进文档。",
+        "licence": "PASS：只读 GitHub 公开 API 与 dsh.so 的公开 JSON。",
+        "ssot": "PASS：`data/results/` + `.sha256`。",
+        "adversary": "反例：把 `closed` 读成「被拒」—— 已合并的 PR 也是 `closed`，只有 `merged_at` 才是收录；本轮的文档按这个区分写。"
+      },
+      "real_test": {
+        "command": "node scripts/record_market_channels.mjs --stamp 2026-11-17T11:00:00.000Z --pr dsh-community-plugins=<#65> --pr awesome-deepseekharness=<#193> --pr walkinglabs=<#140> --pr awesome-dsh-plugin=<#14880> --pr awesome-dsh-plugin-copy=<#15458> --site \"dsh.so=human (2026-11-02)\"",
+        "outcome": "`ready 3 · live 1 · site_submitted 1 · listed 1`；`#65` / `#193` / `#14880` / `#15458` 全 `closed` 且有 `merged_at`，`#140` 仍 `open` / `clean`；dsh.so 三个 per-plugin 端点 200。**第一次跑忘了带 `--pr`，得到 `live 0`** —— 那是「没问」，不是「PR 全没了」，红产物已删、按真 URL 重跑。",
+        "artifact": "data/results/market-channels-2026-11-17T11-00-00.000Z.json",
+        "sha256": "51417d392176c7e442a4e5be812ee022663e9d092d6a108a53e21f504644b377"
+      }
+    },
+    {
+      "id": "R114-S3",
+      "batch": "R114",
+      "step": "对外首屏重写 + 三处公开版本假话 + D 线收口，`check_listing` 复算",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/market/listing_en.md",
+        "docs/market/listing_zh.md",
+        "docs/market/submissions/README.md",
+        "docs/market/submissions/awesome-lists.md",
+        "docs/distribution/pr-65-status.md",
+        "docs/distribution/awesome-dsh-plugin.md",
+        "docs/11-d-path.md",
+        "docs/BACKLOG.md",
+        "docs/HANDOFF.md",
+        "docs/ROADMAP.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "audit/step_reviews.json",
+        "audit/blind_spots.json",
+        "_archive/2026-11-17_HANDOFF-batch-rows-R101.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "backup/snapshots/snapshot-0.3.10-handoff-R114-final.json",
+        "backup/snapshots/snapshot-0.3.10-handoff-R114-final.json.sha256",
+        "data/results/listing-2026-11-17T12-10-00.000Z.json",
+        "data/results/listing-2026-11-17T12-10-00.000Z.json.sha256"
+      ],
+      "review": {
+        "correctness": "PASS：每处对外版本句改成 `latest=0.3.10` + `publish-2026-11-15T06-27-56.379Z.json`（18/18）；listing 删掉「0.3.10 adds the upgrade screen」。",
+        "reproducibility": "PASS：同一条命令可重放；受检集合是脚本里的 `DOCUMENTS`，不是手挑的。",
+        "licence": "PASS：只读仓内文档与产物。",
+        "ssot": "PASS：`data/results/` + `.sha256`；文档里的每个 `data/results/*.json` 指针都带哈希。",
+        "adversary": "反例：把 `check_listing 17/17` 读成「文案全对」—— 它只验可机械复算的声明；`latest=0.3.9` 曾是它的盲区（`version-matches-manifest` 只认 `dsh-triage@`），本轮靠人眼抓到，补断言留给 R115。"
+      },
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-17T11:10:00.000Z --tests 995",
+        "outcome": "**17/17**（终跑 `12-10-00`）：11 份受检文档、版本全部 0.3.10、DSH 区间 4 处一致、测试数 3 处 995、禁语 0、卡片四桶与产物逐项相同、问题覆盖率头条与复算件相同、渠道台账 5 条。**两张 0.3.10 的活动句也改准了**：listing 不再说这一版「加了功能」；`submissions/README.md` 的 `latest=0.3.10` 与 18/18 取证对上。中间绿跑（`11-10` / `12-00`）已被终跑取代并删除；**红产物一份未删**。",
+        "artifact": "data/results/listing-2026-11-17T12-10-00.000Z.json",
+        "sha256": "9fb23e2ed75eee7874636d556d1a11c420e8df017e538aee6910e67755db46e5"
       }
     }
   ]

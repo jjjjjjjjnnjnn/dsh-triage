@@ -5,25 +5,11 @@
 > **状态**：**`MERGED`（2026-11-13T17:46:06Z，merge commit `e68d7bc`）** / `+6-0` / `changed_files 1` / **0 reviews**（维护者直接合了，没有留 review）。合并前是 `open` / `MERGEABLE` / `CLEAN` / 两个 check 全绿（R104 记载）
 > **渠道台账**：`docs/distribution/channels.json` 的 `awesome-dsh-plugin-14880`（`d5_counts: false`）
 >
-> **两件不同的事（R109 实测 18:55Z；R110 复读 19:05Z：第二件也发生了）**：
-> ① **仓库收录 = 已发生**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 在 `main`（`c004b4c`），`README.md` / `README.zh.md` 都有这一条（17:50Z 由 `sync-readme` 重生成）。
-> ② **网站在线 = 还没发生**：`https://awesome-dsh-plugin.com/plugins.json`（10,778 条）里**没有**这一条；最近一次 `github-pages` 部署是 `4bf5ca5`（**17:44:13Z**，早于合并），而 `Build site from README` 的 `workflow_run`（**run 43477377365**，17:54:17Z）一直 `pending`、**0 job**。
-> ③ **不是我们这一条的问题**：同一批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）在 `/plugins.json` 里**同样缺席**，而更早合并的 `ai-terminal-pet` 在 —— 说明是构建卡住，不是条目被拒。
-> ④ **已留言**：#14880 的 [issuecomment-6861985619](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880#issuecomment-6861985619)（一条，只报构建状态，并给出 `workflow_dispatch` + `skip_probes: true` 的捷径）。**对方不 dispatch 就只能等** —— 我们没有任何能触发它构建的权限。
-
-> ⑤ **R110 复读（同日 19:05Z）：站点已上线** —— `/plugins.json` 里已经有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`），`/p/…` 与 `/zh/p/…` 两个详情页都 200。R109 那条「还没发生」只在那几分钟里成立。
-> ⑥ **「详情页没有 README」不是缺陷**：README 由 `probe-readmes.mjs` 在**夜间 `PROBE_ALL`** 里抓（`MAX_BYTES 48KB`，monorepo 取子目录的 README → 我们的是 `packages/plugin/README.md`，5.8KB），push 构建只部署、不探针；同批 17:50 合并的三条当时都没有 README 面板，02:23 那次跑完才补。
-> ⑦ **描述改短（PR #15073）→ 63 秒后被回滚，如实记**：#15073 `2026-11-13T23:19:07Z` 合并（en 253 / zh 101 字符），**23:20:10Z** 维护者用 `155f3cee`「Keep functional descriptions for remedy, triage and ai-terminal-pet」把三条（我们 / dsh-remedy / ai-terminal-pet）一起改回原文。**现在的线上文案仍是那四句长文**。
-> 为什么被回滚：他们把「一句话」理解为**功能陈述**，问句钩子（「下次 DSH 升级，你的插件还活着吗？」）被当成营销；`contributing.md` 的原话是「Descriptions state what the plugin does — no superlatives or marketing」。**再提只能提「更短的功能句」，不能有钩子。**
-> ⑧ **已提再一版（纯功能、无钩子）：PR #15458** —— en 228 / zh 88 字符，四条事实一条不减，README 由脚本重生成、`--check` 绿。原文：`en: Judges one DSH profile: why a plugin was refused or silently disappeared, what an upgrade would break, and a candidate measured in a throwaway DSH_HOME. Read-only by default; --apply backs up first and --undo restores the bytes.` / `zh: 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 DSH_HOME 里实测。默认只读，--apply 先备份，--undo 逐字节还原。` —— 纯功能、无钩子、比原文短约一半。：`contributing.md` 要求「一行、以句号结尾」，而我们的条目写了四句。现在的中英各一句（en 253 / zh 101 字符），事实一条不减。**这一行是维护义务（`T-871`）**：
->
-> ```yaml
-> description:
->   en: 'Will your plugins survive the next DSH upgrade? One command answers row by row — who gets refused, who silently disappears — and can boot a candidate in a throwaway DSH_HOME. Read-only by default; --apply writes after a backup, with a byte-exact --undo.'
->   zh: '下次 DSH 升级，你的插件还活着吗？一条命令逐行回答：谁会被拒、谁会悄悄消失，也能把候选装进一次性 DSH_HOME 真跑一遍。默认只读，`--apply` 才写，先备份、可逐字节 `--undo`。'
-> ```
->
-> 改命令、改默认行为、改能力边界，都要回头核这一行；对不上就再提一个只改这一条的 PR（README 用 `node scripts/generate-readme.mjs` 重生成，`--check` 必须绿）。
+> **两件不同的事（R114 复读 2026-11-17：**两件都已发生**）**：
+> ① **仓库收录**：`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` 在 `main`（`c004b4c`），两份 README 由 `sync-readme` 生成。
+> ② **网站在线**：`https://awesome-dsh-plugin.com/plugins.json` 里已有 `jjjjjjjjnnjnn/dsh-triage`（`added: 2026-11-13`，`version 0.3.10`，`downloads 2953`，`stars 1`），`/p/…` 与 `/zh/p/…` 两个详情页都 200。R109 那条「构建卡住」只在那几分钟里成立；同批的 `dsh-subor-startup` / `dsh-secret-guard` 后来也上线了。
+> ③ **描述改短 → 合并（PR #15458，2026-11-15T17:38:07Z）**：en 228 / zh 88 字符，纯功能、无钩子。第一次尝试 #15073 因「问句钩子」被 63 秒后回滚，教训保留在 §5。
+> ④ **维护义务（`T-871`）**：描述必须与代码一致；改命令、改默认行为、改能力边界，都要回头核这一行，并重生成 README（`node scripts/generate-readme.mjs --check` 必须绿）。
 
 ---
 
@@ -53,7 +39,7 @@ description:
 
 **为什么 `url` 指到子目录**：仓库是 monorepo，而 `dsh.bundle` 只在 `packages/plugin/package.json` 里（`ABI` 上，别人装的是那个包）。该表明确支持 monorepo 子包：`url` 指子目录、`name` 用 `owner/repo#subname`、文件名用 `owner__repo--packages-plugin.yml`。
 
-**为什么没有 `tarball:`**：已发布在 npm（`dsh-triage@0.3.9`），而 `repository.url` 指回本仓 → 列表会**自动**从 registry 解析 npm 映射（手写 `npm:` 字段反而会被校验拒绝）。`tarball:` 只在「不发 npm」时才需要。
+**为什么没有 `tarball:`**：已发布在 npm（`dsh-triage@0.3.10`），而 `repository.url` 指回本仓 → 列表会**自动**从 registry 解析 npm 映射（手写 `npm:` 字段反而会被校验拒绝）。`tarball:` 只在「不发 npm」时才需要。
 
 **为什么描述里没有数字**：该表把每句描述当作**对代码的声明**逐条核对；写「46 个工具、六大领域」就得真有。我们写了四件事，每件都能指到命令：`why`/`audit` 的行级归因、`upgrade --to` 的四桶、`probe` 的隔离实测、两个 `--apply` 的接缝与逐字节 `--undo`。
 
@@ -64,7 +50,7 @@ description:
 | `package.json` 声明 `dsh.bundle` | ✅ `packages/plugin/package.json` 有 `dsh.bundle.patch: ./cordis.patch.yml`，且同目录就有那个文件 |
 | 只声明 `dsh.client` 不行 | ✅ 我们两个都有（`client.platform: web`），因此可装 |
 | 仓库 ≥ 1 天 | ✅ 创建于 2026-10-26（远过门槛）；未归档、非 private |
-| 仓库有真实代码 | ✅ 4 个包 + 971 测试 |
+| 仓库有真实代码 | ✅ 4 个包 + 995 测试 |
 | `dsh-plugin` topic | ✅ 已在（`gh api .../topics` 复读：`compatibility, deepseek-harness, diagnostics, dsh, dsh-plugin`） |
 | 描述称职、无营销词 | ✅ 四条行为描述，零数字、零最高级 |
 | 一个 PR ≤ 3 条 | ✅ 1 条 |

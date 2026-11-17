@@ -1,11 +1,12 @@
 # awesome 列表 + dsh.so · 提交文案
 
-> **已提交（三条，`live: 3`）**：
-> `awesome-deepseekharness/awesome-deepseek-harness` → PR **#193**（`README.md` +1 / -0，已 APPROVED 未合并）
-> `walkinglabs/awesome-deepseek-harness-plugins` → PR **#140**（`README.md` +1 / -0，R45 新提）
-> `dsh-community-plugins` → PR **#65**（`community.json` +12 / -0，待审）
-> 实时状态见 `data/results/market-channels-2026-10-29T07-40-00.000Z.json` 的 `submitted[]`。
-> **未提交**：`dsh.so`（站点表单，人工动作；npm 已发布 0.2.0，不再是卡点）。
+> **状态（R114，2026-11-17 实测）**：
+> `awesome-deepseekharness/awesome-deepseek-harness` → PR **#193** **MERGED**（2026-11-04T01:00:47Z）
+> `walkinglabs/awesome-deepseek-harness-plugins` → PR **#140** **OPEN / CLEAN**（自 2026-10-29 起零 review；**不要再推**）
+> `dsh-community-plugins` → PR **#65** **MERGED**（2026-11-15T03:50:20Z）
+> `awesome-dsh-plugin/awesome-dsh-plugin` → PR **#14880** **MERGED**（2026-11-13T17:46:06Z），短描述 **#15458** 也已合并（2026-11-15T17:38:07Z），站点已上线
+> 实时状态见 `data/results/market-channels-2026-11-17T11-00-00.000Z.json` 的 `submitted[]`（**必须带 `--pr`**，否则那是「没问」，不是「PR 全没了」）。
+> **dsh.so**：**已收录（`listed`）**，三个 per-plugin 端点 200；不用再提交。
 
 ## 1. walkinglabs/awesome-deepseek-harness-plugins
 

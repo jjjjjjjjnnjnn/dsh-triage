@@ -75,7 +75,7 @@ dsh-triage env                     # 环境指纹
 
 ## 当前状态（提交前看一眼）
 
-`0.3.10` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage`，同一版本一起升；含设置页的「升级预检」四桶页签与 M12 的 `surface` 判据）。M0–M6 的**构建侧**已完成。**分发侧**（2026-11-16 复读）：`dsh-community-plugins` 索引 **#65 已合并**、`awesome-deepseek-harness` **#193 已合并**、`awesome-dsh-plugin` **#14880 已合并**（且 0.3.10 起条目文案与本仓一致）；只剩 `walkinglabs/awesome-deepseek-harness-plugins` **#140** 开着；dsh.so **已收录**（`L5 · Run tested`）。
+`0.3.10` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage` 同一版本一起升；**源码字节与 0.3.9 相同**——这一版只有测试与文案，CHANGELOG 首句写明）。M0–M6 的**构建侧**已完成。**分发侧**（2026-11-17 复读）：`dsh-community-plugins` 索引 **#65 已合并**、`awesome-deepseekharness` **#193 已合并**、`awesome-dsh-plugin` **#14880 已合并**（短描述 **#15458** 也已合并，站点已上线）；只剩 `walkinglabs/awesome-deepseek-harness-plugins` **#140** 开着；dsh.so **已收录**（`L5 · Run tested`）。
 
 **公开样本结果（2026-11-16）**：`#11813` 的 14 天窗口里 reactions **0/10**、外部引用 **0/1**，周下载 **1212**（`steady`，过 20 门槛）—— 按事先冻结的判据是 **`fail`**。也就是说：**这个产品形态没有被需要**。仓库转入 D 线（作品集 + 上游贡献），不再加功能（`docs/11-d-path.md`）。
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

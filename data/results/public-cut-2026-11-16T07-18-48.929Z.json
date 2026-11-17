@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_public_cut.mjs",
+  "generated_at": "2026-11-16T07:18:48.929Z",
+  "question": "is the public repository exactly the container's subtree, re-rooted?",
+  "container": {
+    "branch": "main",
+    "prefix": "dsh-triage",
+    "head": "96f07e134cc9fad5bed5d47c1cb40be824c8615f",
+    "subtree_tree": "75d82e83279cba18172ee8ffe823a0f7caddbb40",
+    "root_tree": "e6bef9cb2151ad5ac6e23dfe8e65136ede3e3085",
+    "commits_touching_subtree": 99
+  },
+  "public": {
+    "remote": "origin",
+    "ref": "main",
+    "head": "f7d43a271060aba067397ceb1cba46858a5d54d3",
+    "tree": "75d82e83279cba18172ee8ffe823a0f7caddbb40"
+  },
+  "comparison": {
+    "trees_equal": true,
+    "public_equals_container_root": false,
+    "matching_container_commit": "96f07e134cc9fad5bed5d47c1cb40be824c8615f",
+    "commits_behind": 0
+  },
+  "status": "in-sync",
+  "problems": [],
+  "limits": [
+    "a tree comparison says nothing about history: a force-push to a rewritten commit with the same content looks identical here",
+    "it cannot see commits the public repository has and the container does not (the public repo is cut from it, never merged back)",
+    "it is a statement about the moment the ref was last fetched on this machine, not about what GitHub serves now"
+  ]
+}

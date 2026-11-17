@@ -1,4 +1,12 @@
-# 三条渠道 PR 的现状（R107，2026-11-13 实测）
+# 三条渠道 PR 的现状（R114 收口，2026-11-17）
+
+> **R114 最新读数**（`data/results/market-channels-2026-11-17T11-00-00.000Z.json`）：`ready 3 · live 1 · site_submitted 1 · listed 1 · merged 4`。
+> **#65 `MERGED`（2026-11-15T03:50:20Z）** —— 维护者 `03:50:15Z` APPROVED、`03:50:20Z` 合入，merge `df77660`，+12-0；
+> **#193 `MERGED`**（2026-11-04T01:00:47Z）；**#14880 `MERGED`**（2026-11-13T17:46:06Z，站点已上线）；
+> **#15458 `MERGED`**（2026-11-15T17:38:07Z，短描述）。**只剩 #140** `OPEN / MERGEABLE / CLEAN`、零 review、自 2026-10-29 起未变。
+> **本页以下内容是过程记录（R93–R107）**；#65 的部分已不再是现状，保留是为了「为什么这么改」可追溯。
+
+## 历史：R107 的实测状态（2026-11-13）
 
 > **R107 最新读数**（`data/results/market-channels-2026-11-13T13-49-52.310Z.json`）：`validated 1 · ready 4 · live 3 · site_submitted 1 · listed 1`。
 > #65 `open` / `MERGEABLE` / 认证侧 `blocked` vs 匿名侧 `clean` / **`CHANGES_REQUESTED`** / **+12-0** / head **`139dd26`**；

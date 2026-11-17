@@ -1,26 +1,26 @@
 # 分发渠道 · 提交包（submissions）
 
-> **状态（R96，2026-11-11 实测）**：`validated 1` · `ready 3` · `live 2` · `site 1`（dsh.so 已收录 = `listed`）· `merged 1`。证据：`data/results/market-channels-2026-11-11T20-40-00.000Z.json`（`submitted[]` 是三条 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。**`live` 从 R53 的 3 变成 2 不是漂移**：`#193` 已于 2026-11-04T01:00:47Z 合并（merge commit `d944a40e`），OPEN 的只剩 `#65` 与 `#140` → `merged` 由 0 变 1、`live` 由 3 变 2，两个数要一起读。R53 的旧快照 `data/results/market-channels-2026-11-01T09-40-00.000Z.json`（当时是 `live 3 · merged 0`）与 R45 的 `data/results/market-channels-2026-10-29T10-00-00.000Z.json` 原样保留，**它们只是历史读数，不是现状**。
-> **npm**：`dsh-triage@0.3.10`（四包同版本，**已发布**，`latest=0.3.9`；匿名安装 + CLI + `import()` + `client.js` 四项取证见 `data/results/publish-2026-11-12T21-04-27.676Z.json`，**18/18**）。`0.3.8` 见 `publish-2026-11-12T10-54-31.143Z.json`（18/18），同轮 `publish-2026-11-12T10-51-49.455Z.json` 是**保留的红**（副本滞后）。`0.3.10` 这一轮也留了一份红：`publish-2026-11-12T20-57-27.649Z.json`（**3 红**，`registry-visibility` 记着「5 次读之后才出现，76343ms」）—— 七分钟后零代码改动即 18/18。上一版 `0.3.3` 的匿名安装 **21/21** 取证见 `data/results/publish-2026-11-02T15-54-38.303Z.json`（`git_dirty=false` / `head 0ad06c7`，含 `client-bundle`）；`0.3.2` 见 `data/results/publish-2026-11-02T14-24-39.944Z.json`（20/20）；`0.3.1` 见 `data/results/publish-2026-11-01T18-00-00.000Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
+> **状态（R114，2026-11-17 实测）**：`ready 3` · `live 1`（只有 `#140` 还开着）· `site 1`（dsh.so `listed`）· `merged 4`。证据：`data/results/market-channels-2026-11-17T11-00-00.000Z.json`（`submitted[]` 是已提 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。**`live` 从 R96 的 2 变成 1 不是漂移**：`#65` 已于 2026-11-15T03:50:20Z 合并，OPEN 的只剩 `#140`；`#193`（2026-11-04）与 `#14880`（2026-11-13）、`#15458`（2026-11-15，短描述）也已合并。旧快照 `data/results/market-channels-2026-11-15T05-50-56.095Z.json`（当时 `live 1 · merged 3`）与更早的 `market-channels-2026-11-01T09-40-00.000Z.json` 原样保留，**它们只是历史读数，不是现状**。
+> **npm**：`dsh-triage@0.3.10`（四包同版本，**已发布**，`latest=0.3.10`；匿名安装 + CLI + `import()` + `client.js` 四项取证见 `data/results/publish-2026-11-15T06-27-56.379Z.json`，**18/18**）。同轮 `publish-2026-11-15T06-18-55.194Z.json` 是**保留的红**（副本滞后，17/19）—— 九分钟后零代码改动即 18/18。`0.3.9` 见 `publish-2026-11-12T21-04-27.676Z.json`（18/18）；`0.3.3` 的匿名安装 **21/21** 见 `publish-2026-11-02T15-54-38.303Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
-## 已提交的三条（R93 实测：`live 2` · `merged 1`）
+## 已提交的四条（R114 实测：`live 1` · `merged 4`）
 
 | 渠道 | PR | 状态 | diff |
 |---|---|---|---|
-| **dsh-community-plugins**（dsh-market Workshop 的唯一真相源） | https://github.com/zhu1090093659/dsh-community-plugins/pull/65 | **OPEN · MERGEABLE**（`CHANGES_REQUESTED`，等 re-review；无冲突）｜`mergeable_state` 认证读 **`blocked`** / 匿名读 **`clean`**（vantage，见 R93 说明第 4 段） | `community.json` **+12 / -0**（**120 entries**；我方条目在 **idx 101**，prev `dsh-translate` / next `dsh-tui`；上游校验器在我们分支的字节上重跑：`community-index: OK (120 entries)` + `node --test` **10 pass / 0 fail**）。分支 = `main` + 1 条按 id 插入、**逐字节相同**（`index-sync-2026-11-10T17-30-00.000Z.json`，见下方 R93 说明） |
-| **awesome-deepseekharness/awesome-deepseek-harness** | https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 | **MERGED**（2026-11-04T01:00:47Z，merge commit `d944a40e`） | `README.md` + `README.zh.md`：`changed_files 2` · **+2 / -0**（R93 产物记 `review_decision: APPROVED`；补 `README.zh.md` 同位置一行的经过见 `docs/distribution/pr-65-status.md` §7） |
-| **walkinglabs/awesome-deepseek-harness-plugins**（R45 新提） | https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 | **OPEN · MERGEABLE · CLEAN**（无 review，`review_decision: null`；读数来自 R93 产物） | `README.md` **+1 / -0**（Developer Tooling 段，字母序 `dsh-tool-approval` → `dsh-triage` → `dsh-verify`） |
+| **dsh-community-plugins**（dsh-market Workshop 的唯一真相源） | https://github.com/zhu1090093659/dsh-community-plugins/pull/65 | **MERGED**（2026-11-15T03:50:20Z；维护者 `03:50:15Z` APPROVED，merge `df77660`） | `community.json` **+12 / -0**；条目在 idx 101（prev `dsh-translate` / next `dsh-tui`） |
+| **awesome-deepseekharness/awesome-deepseek-harness** | https://github.com/awesome-deepseekharness/awesome-deepseek-harness/pull/193 | **MERGED**（2026-11-04T01:00:47Z，merge `d944a40e`） | `README.md` + `README.zh.md` 各 +1 / -0（`changed_files 2`） |
+| **walkinglabs/awesome-deepseek-harness-plugins**（R45 新提） | https://github.com/walkinglabs/awesome-deepseek-harness-plugins/pull/140 | **OPEN · MERGEABLE · CLEAN**（`review_decision: null`，自 2026-10-29 起零 review） | `README.md` **+1 / -0**（Developer Tooling 段，字母序 `dsh-tool-approval` → `dsh-triage` → `dsh-verify`） |
+| **awesome-dsh-plugin/awesome-dsh-plugin**（R104 新提） | https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880 | **MERGED**（2026-11-13T17:46:06Z，merge `e68d7bc`）；短描述 **#15458** 也已合并（2026-11-15T17:38:07Z） | `data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml` + 两份生成的 README；**站点已上线**（`/plugins.json` 有条目，`version 0.3.10`） |
 
-**R96 复读：`closed` 不等于「被拒」，而 `merged` 也不等于「已上线」。** GitHub 对已合并的 PR 回 `state: closed`（`merged_at` 才有意义），所以那一栏写的是 API 的字面值。真正要去问的是**条目有没有落到上游主干上**（2026-11-11 实测，`raw.githubusercontent.com` 的上游 `main`）：
+**R114 复读：`closed` 不等于「被拒」，而 `merged` 也不等于「已上线」。** GitHub 对已合并的 PR 回 `state: closed`（`merged_at` 才有意义），所以那一栏写的是 API 的字面值。真正要去问的是**条目有没有落到上游主干上**（2026-11-17 实测）：
 
 | 渠道 | 上游主干里有没有 `dsh-triage` | 结论 |
 |---|---|---|
-| `awesome-deepseekharness/awesome-deepseek-harness` | ✅ `README.md` 第 215 行有那一行（`README.zh.md` 同样有） | **已上线**，`#193` 的合并不是「关掉」 |
-| `zhu1090093659/dsh-community-plugins` | ❌ `community.json` 没有 `dsh-triage` | **未上线**，`#65` 仍在等 review |
+| `awesome-deepseekharness/awesome-deepseek-harness` | ✅ `README.md` 第 215 行有那一行（`README.zh.md` 同样有） | **已上线**（`#193` 合并） |
+| `zhu1090093659/dsh-community-plugins` | ✅ `community.json` 有 `dsh-triage`（`#65` 合并） | **已上线** |
+| `awesome-dsh-plugin/awesome-dsh-plugin` | ✅ `data/plugins/…yml` 在 `main`，`/plugins.json` 有条目 | **已上线**（仓库 + 站点） |
 | `walkinglabs/awesome-deepseek-harness-plugins` | ❌ `README.md` 没有 `dsh-triage` | **未上线**，`#140` 零 review |
-
-这次复读**不改任何渠道状态**（产物里的 `summary` 仍是 `live 2`），它只是把「PR 状态」翻译成「读者能不能在那边看到我们」。
 
 > **R60 已 rebase #65**：从 `upstream/main` 重建干净分支，只 cherry-pick 新增 `dsh-triage` 条目（**+12/-0**，别人的条目一个没动），丢掉一个纯逗号格式化的提交；上游 `community-index.cjs --check` **OK（151 entries）**、`node --test` **9/9**（这两条是 R60 当天的读数，**已被 R93 取代**，现行 120 entries / 10 条单测）；force-with-lease 推回后 PR 从 **`CONFLICTING/DIRTY`** 变成 **`MERGEABLE`**（当天的 `mergeable_state` 读数记的是 `blocked`——**R93 复算指出这个字段取决于「谁问」**：认证侧看到 ruleset 的 required check 才算 `blocked`、匿名侧算 `clean`，详见下方 R93 说明）；**不是冲突**；`merged: 0` 未变（合并仍由维护者决定）。
 >
@@ -77,12 +77,12 @@ raw URL 立刻可读（`docs/market/index.json` 2116B，与仓内副本逐字节
 2. fork 上游仓 → 建分支 → **文本插入**（不是 `JSON.stringify` 重排：第一版那样做会顺手改掉上游两处 `}\n,  {` 的旧格式，把一条插入变成 4 行无关删除，已重做）；
 3. 推之前再对**将要推送的字节**跑一次它们的 gate；
 4. 开 PR（正文见 `community-plugins-pr.md`）；
-5. `record_market_channels.mjs --pr <channel>=<url>` 把 PR 的实时状态写进产物——**不是**「命令退出 0 就算收录」。
+5. `record_market_channels.mjs --pr <channel>=<url>` 把 PR 的实时状态写进产物——**不是**「命令退出 0 就算收录」。**R114 更正**：不带 `--pr` 时 `submitted[]` 是空的、`summary.live = 0`，那是「没问」，不是「PR 全没了」；本文件的状态行只认带 `--pr` 的产物。
 
 ## 还需要 HUMAN 的两件（都不阻塞别人）
 
-1. **dsh.so**：**已收录**（R96 复读：三个端点 200，L5 against `0.2.2-rc.1` / low risk），不用再做任何提交动作；唯一会变的是它自己重新索引到 `0.3.7`。
-2. **等维护者**：#65 待 **re-review**（R93 实测 `MERGEABLE` / `CHANGES_REQUESTED`；`mergeable_state` 认证侧 `blocked`、匿名侧 `clean`——**是「谁问」的函数**，两侧都记在产物里；**无冲突、分支已逐字节同步、无需 push**）；#193 **已合并**（2026-11-04T01:00:47Z，merge commit `d944a40e`）；#140 `CLEAN` 无 review。`state=merged` 之后才算收录（等的是别人的 review/合并，不是我们的技术动作）。
+1. **dsh.so**：**已收录**（R114 复读：三个端点 200，L5，low risk），不用再做任何提交动作；唯一会变的是它自己重新索引到新版本。
+2. **等维护者**：只剩 **#140**（`walkinglabs`）`OPEN / MERGEABLE / CLEAN`、零 review、自 2026-10-29 起未变；**不要再推**（它的 CONTRIBUTING 没有要求 bump，重复 ping 只会制造噪声）。`#65` / `#193` / `#14880` / `#15458` 全部已合并。
 
 （历史：R40 之前的唯一卡点是 npm 未发布；发布链的四条命令、`workspace:*` 与 org/OTP 的坑已写进 `docs/HANDOFF.md` §3/§4，别再按旧命令发。）
 

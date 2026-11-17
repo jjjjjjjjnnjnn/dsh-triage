@@ -1,49 +1,45 @@
-# dsh-triage · 本地插件兼容分诊台
+# dsh-triage
 
-**面向 DeepSeek Harness 的本地插件诊断与升级预检工具**
+**DSH 插件：装得上，不等于跑得对。**
+
+升级前跑一条命令，看清你这套插件会坏哪几个；插件装完就消失时，逐行指出被哪条准入规则拦住。
 
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
-[![dsh compatibility](https://img.shields.io/badge/dsh->=0.2.0--rc.1%20<0.3.0--0-blue.svg)](packages/plugin/package.json)
 [![tests: 995 passed](https://img.shields.io/badge/tests-995%20passed-success.svg)](scripts/gate.mjs)
 
-[English Overview](#english-overview) | [English README](README.md) | [安全模型 (Security)](docs/SECURITY.md) | [贡献指南 (Contributing)](CONTRIBUTING.md) | [交接说明 (Handoff)](docs/HANDOFF.md)
+[English](#english) | [安全模型](docs/SECURITY.md) | [贡献指南](CONTRIBUTING.md) | [交接说明](docs/HANDOFF.md)
 
----
+```bash
+npm i -g dsh-triage
+dsh-triage upgrade --to next --card
+```
 
-DSH 负责插件的下载与安装，但装好后会不会被准入规则拦截、升级后哪些插件会失效，原生日志往往不会直接给出归因。
+一张卡片，按**你本地已装的这套插件**推演：升到下一个 DSH 版本，哪些会被准入规则摘掉、哪些判不了、哪些会变好。每个被拦的条目都带原因和可直接执行的修复命令。
 
-`dsh-triage`（分诊台）用于解决以下常见问题：
-- **升级前预检**：DSH 发布新版本时，推演升上去当前已装插件哪些会被准入规则拦截；
-- **静默失效归因**：查明插件安装后为何在界面中消失、无报错却无法加载的具体原因；
-- **命名冲突排查**：定位多个插件争抢同一 Entry ID 或服务名的加载冲突。
+## 三个场景
 
-所有判定均在本地计算并绑定证据来源；信息不足时不作无根据的推测，直接标为 `unknown`（未明确）。默认只读：检查与预检都不写盘；只有你显式加 `--apply` 的 `fix` / `rescue` 会改一处接缝（`compatibility.json` 或 `dsh.profile.bundles`），且先备份、写 journal、可 `--undo` 逐字节还原。
+| 你遇到的问题 | 一条命令 | 它给出什么 |
+|---|---|---|
+| 升级 dsh 前，想知道会坏几个插件 | `dsh-triage upgrade --to next --card` | 四桶清单：会被拒 / 判不了 / 会变好 / 像没事 |
+| 插件装完在界面里消失了，日志没报错 | `dsh-triage why` | 逐行说明：哪一行、被哪条准入规则、缺哪个声明 |
+| 想装新插件，又怕和现有的撞车 | `dsh-triage check <包名>` | 装前判定：会被拒还是能进，冲突在哪 |
 
-npm 发布版本：`dsh-triage@0.3.10`（四包同版本，`latest=0.3.9`）· 包含独立 CLI 与 DSH 设置页插件 · 本地只读 · 仅在使用 registry 查询命令时发起必要网络请求。
+装进 DSH 设置页也是同一条数据：
 
----
+```bash
+dsh plugin --profile web add dsh-triage
+```
 
-## 效果预览
+设置页 →「分诊台」，一屏结论 + 最多 3 条要看的地方 + 修复命令。
 
-DSH 设置页内置可视化面板（数据来自本地只读接口，与终端 CLI 输出完全同源）：
-
-### 1. 异常排查视图（包含版本拦截、Entry ID 冲突与声明不足）
 ![异常排查面板](docs/market/screenshot-0.3.1-mixed.png)
 
-> **说明**：标出不满足准入的具体版本区间，并提供直接可用的修复命令；标明 Entry ID 冲突的具体插件；对没有声明版本区间的条目归入“未明确”，不作无证据假设。
+**默认只读。** `status` / `why` / `audit` / `upgrade` / `check` / `serve` 都不写盘。只有你显式加 `--apply` 的 `fix` / `rescue` 会改配置：`fix --apply` 只动 `<profile>/compatibility.json`，`rescue --apply` 只动 `dsh.profile.bundles`，都先备份、写 journal，`--undo` 逐字节还原。
 
-### 2. 正常配置视图（无阻断项）
-![真实体检面板](docs/market/screenshot-0.3.1-real.png)
-
-> **说明**：无版本阻断或冲突时的状态显示。
-
----
-
-## 升级日前瞻预检（Upgrade Day）
-
-上游 DSH 发布新候选版本时，提前推演：**当前这套已装插件升上去，会有哪些被拦截？**
+<details>
+<summary><b>看一张真实的升级卡片</b>（沙盒 profile，不是你的机器）</summary>
 
 <!-- upgrade-card: data/results/upgrade-card-2026-11-11T12-30-00.000Z.json -->
 ```console
@@ -64,34 +60,30 @@ $ dsh-triage upgrade --to latest
 ```
 <!-- /upgrade-card -->
 
-**公开样本结果（2026-11-16，判据事先冻结）**：`#11813` 的 14 天窗口里 reactions **0/10**、外部引用 **0/1**、周下载 **1212**（`steady`，过 20 门槛）—— 两个数为零，所以判定 **`fail`**。这说的是**这个产品形态**没有被需要，不是「工具坏了」。仓库从此按 D 线走：作品集 + 给上游提 issue/PR，**不再加功能**。证据 `data/results/d5-evidence-2026-11-16T07-05-00-000Z.json`（`counts_as_demand: false`），离线复算与现场逐项相同。
+数据来自仓内沙盒 profile `sandbox/upstream/0.2.1-rc.4`，目标 `0.2.2-rc.1`，**不是你的机器**；你本机实际装的配置才是输入。
+复算：`node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest`。
+卡片不承诺「升级后一定能跑」：`improved` 只表示**目标版本会放行**，放行不等于运行期实测通过。
 
-**当前实测（2026-11-13）**：本机桌面运行时已升到 `0.2.2-rc.3`（`next` 标签的值；`latest` 仍是 `0.2.2-rc.1`），`dsh-triage status` 读作 `0.2.2-rc.3 (kernel-asar)`，一屏是「0 项需要你处理；另有 93 项没写版本区间」。声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对 `0.2.2-rc.3` 判定为 **satisfied**。产物：`data/results/audit-2026-11-13T18-25-00.000Z.json`（246 行 / 93 条判定 / 0 错误）。
+</details>
 
-**数据出处**：上述卡片数据基于仓内沙盒 profile（`sandbox/upstream/0.2.1-rc.4`，目标版本 `0.2.2-rc.1`，即录制时 npm `latest` 标签解析出的版本）实跑所得，**不是你的机器**。用户本机的实际已装配置才是推演的输入源。复算验证命令：`node scripts/record_upgrade_card.mjs --stamp 2026-11-11T12:30:00.000Z --to latest`。
+<details>
+<summary><b>它凭什么判断</b>（证据与边界，全部可复算）</summary>
 
-- `--to next` / `--to latest` 从 npm `dist-tags` 实时获取目标版本；`--to <版本号>` 全程离线推演。
-- `--card --out card.md` 将 Markdown 格式卡片直接落盘，便于附在 GitHub Issue 或 Discussions 中交流。
-- 卡片不承诺“升级后一定能跑”：`improved` 的语义是**“目标版本会放行它”**，声明被准入放行不代表运行期动态实测一定通过。
+所有结论在本地计算，并绑定证据等级（`declared` / `scanned` / `measured-local` / `measured-registry` / `inferred`）；信息不足时直接给 `unknown` 并列出缺什么，不做无证据推测。
 
----
+| 它证明了什么 | 证据 |
+|---|---|
+| 准入语义与上游逐条对等（不是「我们觉得」） | `data/gold/admission-cases.json`（27 条人工签署金标） |
+| 真实故障上 9/10 给出可行动归因 | `data/results/d1-2026-10-26T12-00-00.000Z.json` |
+| 隔离沙盒里真装、真启动、真取页面 | `packages/probe/`、`data/results/d2-*` |
+| 发布包在干净环境装得上、四条命令都跑得通 | `data/results/publish-*.json`、`data/results/usability-*.json` |
+| 声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对本机 `0.2.2-rc.3` 实测 **satisfied** | `data/results/audit-2026-11-13T18-25-00.000Z.json` |
+| 上游 Q&A 1545 条里，声明层能答 74 条（4.8%）；`not-relevant` 950 条是**分类器没读到信号**，不等于「与我们无关」 | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json` |
+| 995 个测试 + 10 道零依赖门禁（含负对照） | `pnpm run verify`、`node scripts/gate.mjs --mutate` |
 
-## 为什么需要它（排查对照）
+**没证明什么**：它不是安全审计，不给任何「可以放心运行」的背书；它判的是声明层与已装集合，**不是**把所有插件都跑一遍的全网兼容矩阵；`unknown` 就是未知，不是「大概没事」。
 
-| 现象 | 常见误判 | 底层实际原因 |
-|---|---|---|
-| 插件安装成功，但界面中没有任何入口 | 插件代码有 Bug | 其 `package.json` 未声明 `dsh.bundle`，被作为普通依赖安装，未进入 Profile 加载层 |
-| MCP 工具在重启后静默消失 | 通信或环境不稳定 | Loader 在 **admission（准入评估）** 阶段判定版本不匹配，该行在启动初期被静默剔除 |
-| DSH 启动崩溃或无法加载 | 全局环境损坏 | 多个插件声明了相同的 Loader Entry ID 或服务名，命名冲突导致启动中断 |
-
-排查困难的核心原因：
-1. **准入评估按 Loader 条目逐行判定，而非按 Bundle 整体判定**：Bundle 安装成功，引入特定模块的条目仍可能被拒；
-2. **声明兼容的模块仍可能加载失败**：存在依赖版本覆盖、标签失步或构建阶段未完成等情况；
-3. **未显式声明不等于兼容**：未声明依赖区间的插件无法作确定性推演，必须如实标为“未明确”。
-
----
-
-## 上游问题里，这套判断层能覆盖多少
+### 上游问题覆盖率（完整表）
 
 <!-- question-coverage: data/results/question-coverage-2026-11-02T09-57-53-229Z.json -->
 **样本**：`deepseek-ai/deepseek-harness` 的 **Q&A 全量 1545 条**（2026-08-13 → 2026-11-02，截止 `#11857`），目标运行时 `0.2.1-rc.5`。**能给出声明层判定：74/1545 = 4.8%（Wilson 95% 3.8–6.0%）**。
@@ -113,59 +105,56 @@ $ dsh-triage upgrade --to latest
 复算：`node scripts/record_question_coverage.mjs --stamp 2026-11-02T10:05:00.000Z --recompute --fixtures data/fixtures/question-coverage/2026-11-02T09-57-53-229Z --target 0.2.1-rc.5`。产物：`data/results/question-coverage-recompute-2026-11-02T10-05-00-000Z.json`；抽检：`data/results/question-review-2026-11-02T10-10-00-000Z.json`；方法：`audit/RECON_2026-11-02_question-coverage.md`。
 <!-- /question-coverage -->
 
+</details>
+
+<details>
+<summary><b>项目状态（2026-11-16）</b></summary>
+
+公开样本判定 **`fail`**：`#11813` 的 14 天窗口里 reactions **0/10**、外部引用 **0/1**，周下载 **1212**（`steady`，过 20 门槛）—— 按事先冻结的判据，**这个交付形态没有被需要**。仓库转入维护模式：只做安全修复、上游适配、CI 与回归 smoke，**不再加功能**。证据 `data/results/d5-evidence-2026-11-16T07-05-00-000Z.json`。
+
+当前 npm 版本与发布取证：见 [npm](https://www.npmjs.com/package/dsh-triage) 与 `data/results/publish-*.json`。
+
+</details>
+
 ---
 
-## 安装与使用
-
-### 1. 独立 CLI 工具
+## 快速上手
 
 ```bash
-# 全局安装
-npm install -g dsh-triage
+# 只要 CLI
+npm i -g dsh-triage
 
-# 升级前预检：检查升到新版本会对当前已装插件有什么影响
-dsh-triage upgrade --to next --card
-
-# 查看当前状态（一屏概览）
-dsh-triage status
-
-# 查明未加载条目的准入原因
-dsh-triage why
-
-# 查看完整台账（已装包、槽位与服务）
-dsh-triage audit
-
-# 启动本地 Web 诊断面板
-dsh-triage serve
-```
-
-本地 Web 面板默认只响应 `127.0.0.1` / `localhost` / `[::1]`（`Host` 不匹配一律 **421**）。局域网访问需显式传入 `--host <IP>`（或 `--host 0.0.0.0 --allow-host <IP>`）；经 `ssh -L` 或反向代理访问时若端口改变，需指定 `--allow-host localhost:<端口>`。同一秒内重复刷新会直接复用前次扫描（响应标记 `reused: true`），作为调用速率上限。
-
-### 2. DSH 设置页集成
-
-```bash
-# 装入当前 DSH profile
+# 或装进 DSH 设置页（CLI 与面板同源）
 dsh plugin --profile web add dsh-triage
 ```
 
-安装后在 DSH **设置页 → 「分诊台」** 即可查看诊断视图与修复命令。
+最常用的五条：
+
+```console
+$ dsh-triage upgrade --to next --card   # 升级前预检，输出可粘贴的卡片
+$ dsh-triage status                     # 一屏结论（无参数时默认就是它）
+$ dsh-triage why                        # 逐行归因：为什么没加载
+$ dsh-triage check dsh-cost-meter       # 装前判断一个候选
+$ dsh-triage serve                      # 本地 Web 面板
+```
+
+`serve` 默认只响应 `127.0.0.1` / `localhost` / `[::1]`（`Host` 不匹配一律 **421**）。局域网访问需显式 `--host <IP>`；经 `ssh -L` 或反向代理改端口时，加 `--allow-host localhost:<端口>`。同一秒内重复刷新复用前次扫描（`reused: true`）。
 
 ---
 
-## 常用命令说明
+## 常用命令
 
-### 1. 查看环境指纹 (`env`)
+### `upgrade` · 升级日预检
+
 ```console
-$ dsh-triage env
-dsh        0.1.0-rc.6
-node       24.15.0 · win32/x64
-profile    web (~/.dsh/profiles/web)
-bundles    2
-  - @deepseek-ai/dsh-base
-  - @deepseek-ai/dsh-web-app
+$ dsh-triage upgrade --to next --card
+$ dsh-triage upgrade --to 0.2.2-rc.3
 ```
 
-### 2. 深入排查静默失效原因 (`why`)
+`--to next` / `--to latest` 从 npm `dist-tags` 解析目标；`--to <版本>` 全程离线。`--card --out card.md` 把摘要落盘，可直接贴进 Issue / Discussions。不带 `--to` 时只提示当前版本与可选目标，不作判定。
+
+### `why` · 静默失效归因
+
 ```console
 $ dsh-triage why
 scanned 2 bundles · 156 loader rows · 128 import targets · dsh 0.1.0-rc.6 · profile web
@@ -178,7 +167,8 @@ scanned 2 bundles · 156 loader rows · 128 import targets · dsh 0.1.0-rc.6 · 
   evidence declared:row, measured-local:runtime
 ```
 
-### 3. 安装前预检候选插件 (`check`)
+### `check` · 装前判断候选
+
 ```console
 $ dsh-triage check dsh-cost-meter
 [BLOCKED] dsh-cost-meter@1.9.44 — 不可用
@@ -190,102 +180,102 @@ $ dsh-triage check dsh-cost-meter
   evidence declared:admission, measured-local:runtime, measured-registry:registry-tags
 ```
 
-### 4. 隔离沙盒真机实测 (`probe`)
-在独立的临时 `DSH_HOME` 中执行安装、启动、HTTP 探活与无头浏览器页面挂载：
+### `probe` · 隔离沙盒实测
+
+在独立的临时 `DSH_HOME` 里安装、启动、HTTP 探活、无头浏览器验页面：
+
 ```console
 $ dsh-triage probe dsh-status-rotator --execute
 ```
-*注：默认模式为 `--dry-run` 仅输出方案；明确指定 `--execute` 才会拉起测试沙盒进程，退出时自动清理。*
+
+默认 `--dry-run` 只输出方案；`--execute` 才拉起沙盒进程，退出自动清理。
+
+### `env` / `audit` / `status`
+
+```console
+$ dsh-triage env
+dsh        0.1.0-rc.6
+node       24.15.0 · win32/x64
+profile    web (~/.dsh/profiles/web)
+bundles    2
+  - @deepseek-ai/dsh-base
+  - @deepseek-ai/dsh-web-app
+```
+
+`audit` 列全量台账（已装包、声明槽位、服务映射）；`status` 是一屏结论，也是不带参数时的默认命令。
 
 ---
 
-## 判定契约与证据等级
-
-诊断结论分为四类：
+## 判定契约
 
 | 结论 | 含义 |
 |---|---|
-| `go` | 静态声明与当前运行时匹配；或在 `probe` 实测中安装、启动、响应均正常且条目为 `active` |
-| `risky` | 基本可用，但存在明确标记的潜在限制条件 |
-| `blocked` | 存在确定性阻断项，无法正常加载；**必定提供至少一条可执行的修复命令** |
-| `unknown` | 现有声明或证据不足以推演；**必定明确列出缺失的具体信息** |
+| `go` | 静态声明与当前运行时匹配；或在 `probe` 实测中安装、启动、响应正常且条目为 `active` |
+| `risky` | 基本可用，但存在明确标记的潜在限制 |
+| `blocked` | 有确定性阻断项，无法正常加载；**必定给至少一条可执行修复** |
+| `unknown` | 声明或证据不足；**必定列出缺的具体信息** |
 
-### 证据等级制度（Evidence Tiers）
-每条结论均附带证据类型：
-- `declared`：插件作者在 `package.json` 等文件中发布的依赖声明；
-- `scanned`：对本机已安装文件的静态扫描分析；
-- `measured-local`：在当前机器环境下的真实执行观测；
-- `measured-registry`：来自官方 npm registry 的公开发布元数据；
-- `inferred`：逻辑推导（绝不单独作为输出结论的依据）。
+证据等级：`declared`（作者声明）· `scanned`（本机文件静态扫描）· `measured-local`（本机真实执行）· `measured-registry`（npm 公开元数据）· `inferred`（推导，不单独作结论）。
 
 ---
 
-## 工具边界（不做什么）
+## 边界
 
-1. **默认零写盘，写盘只在 `--apply` 且只碰一处接缝**：检查、预检、`why`、`audit`、`status`、`serve` 都不写盘；`fix --apply` 只改 `<profile>/compatibility.json`，`rescue --apply` 只改 `dsh.profile.bundles` 的那几行。两者都**先备份 → 原子写 → 回读校验 → 记 journal**，`--undo` 逐字节还原；备份之外不安装、不卸载、不回滚，也不碰 lockfile 与 `dependencies`。
-2. **不做集中式市场或排行榜**：仅输出针对当前机器环境的本地诊断结论，不做全网评分或排位。
-3. **不提供安全背书**：本工具不提供安全背书。分诊台聚焦于本地兼容性与启动加载可用性，不代表对插件源码的防恶意软件或供应链安全审计。
-4. **无证据不猜**：未显式声明依赖区间的插件严格归入 `unknown`，绝不盲目判定为正常。
-
----
-
-## 可复算的工程证据
-
-所有公开陈述与文档结论均有对应的工程脚本产物支持，全量存储于 `data/results/` 并配备 `.sha256` 校验：
-
-| 验证项 | 复现命令 / 证据源 | 说明 |
-|---|---|---|
-| 全套自动化验证 | `pnpm run verify` | 构建、类型检查、995 个测试、10 道零依赖门禁 |
-| 门禁对抗性负对照 | `node scripts/gate.mjs --mutate` | 校验 9 道门禁均具备真实的拦截捕获能力 |
-| 上游准入语义对等 | `data/gold/admission-cases.json` | 27 条人工签署的对等金标基准 |
-| 真实故障根因命中 | `node scripts/d1_report.mjs` | 真实案例采集中 9 命中、1 显式 `unknown`（`data/results/d1-*.json`） |
-| 发布包真机安装验证 | `data/results/publish-*.json` | 干净环境匿名安装、四包对齐一致性校验 |
+1. **默认零写盘**：`status` / `why` / `audit` / `upgrade` / `check` / `serve` 不写盘；只有显式 `--apply` 才改 `<profile>/compatibility.json`（`fix`）或 `dsh.profile.bundles`（`rescue`），先备份 → 原子写 → 回读 → journal，`--undo` 逐字节还原；不安装、不卸载、不回滚、不碰 lockfile。
+2. **不做市场或排行榜**：只给本机这套配置的结论，不做全网评分。
+3. **不提供安全背书**：本工具不提供安全背书；它不审计插件源码，也不对供应链安全负责。
+4. **无证据不猜**：没写依赖区间的插件一律 `unknown`，不判成正常。
 
 ---
 
-## 模块结构
+## English
+
+**dsh-triage** is the judgment layer for DeepSeek Harness (DSH) plugins.
+
+Installed is not the same as working. One command before every upgrade answers: **which of your installed plugins will break, why, and how to fix it** — and when a plugin silently disappears, it names the row and the admission rule that rejected it.
+
+```bash
+npm i -g dsh-triage
+dsh-triage upgrade --to next --card   # upgrade-day pre-flight
+dsh-triage why                        # why a plugin never loaded
+dsh-triage check <package>            # will this candidate fit?
+dsh-triage status                     # one-screen summary (also the default)
+```
+
+- **Upgrade-day impact** — four buckets computed against *your installed set*: would-be-denied, cannot-tell, improved, likely-fine. Every denial carries the reason and a runnable fix.
+- **Silent-failure attribution** — walks loader rows and names the exact admission rule or missing declaration.
+- **Collision detection** — two plugins fighting for the same Entry ID or service name.
+- **Isolated probe** — install, boot, HTTP and headless render inside a throwaway `DSH_HOME`, then clean up.
+- **Read-only by default** — analysis writes nothing. Only an explicit `--apply` touches `<profile>/compatibility.json` (`fix`) or `dsh.profile.bundles` (`rescue`), after a backup, with a journal and a byte-exact `--undo`. We do **not** provide security assurances.
+
+Install the settings-tab panel instead (same data as the CLI):
+
+```bash
+dsh plugin --profile web add dsh-triage
+```
+
+More: [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](docs/SECURITY.md) · [HANDOFF](docs/HANDOFF.md).
+
+---
+
+## 仓库结构
 
 ```
 packages/core/       判断引擎：准入语义、环境指纹、能力台账、Verdict 组装（纯函数、离线）
-packages/signals/    信号适配器：npm registry、dsh.so、本地证据适配
+packages/signals/    信号适配器：npm registry、本机外部证据
 packages/probe/      隔离实测：沙盒计划、执行器、无头浏览器 CDP 渲染判定
-packages/plugin/     分发入口：dsh-triage CLI、DSH 设置页前端面板、Agent 工具
-scripts/             9 道零外部依赖门禁脚本与自动化取证流水线
-data/gold/           准入规则人工签署金标基准
-data/results/        真实评测 JSON 数据与 .sha256 签名（SSOT）
+packages/plugin/     分发入口：CLI、DSH 设置页面板、Agent 工具
+scripts/             10 道零外部依赖门禁与自动化取证
+data/gold/           人工签署的准入金标
+data/results/        真实评测 JSON 与 .sha256（SSOT）
 ```
 
----
+## 参与贡献
 
-## English Overview
+- [贡献指南](CONTRIBUTING.md)
+- [交接文档](docs/HANDOFF.md)
+- [项目规则](PROJECT_RULES.md)
 
-**dsh-triage** is the diagnostic layer for DeepSeek Harness (DSH) plugins. It answers why plugins silently disappear after updates and pre-evaluates compatibility risks before upgrading.
+## 许可
 
-### Quick Start
-```bash
-npm install -g dsh-triage
-dsh-triage upgrade --to next --card
-dsh-triage status
-```
-
-### Safety & Integrity Boundaries
-- **Read-only by default**: Analysis, pre-flight and `status` write nothing. The only writes happen when you explicitly pass `--apply`: `fix --apply` touches `<profile>/compatibility.json`, `rescue --apply` touches the `dsh.profile.bundles` rows — both take a backup, write a journal and restore byte-for-byte with `--undo`.
-- **Explicit Unknowns**: Silence is not a pass. Undeclared ranges yield `unknown` instead of false positives.
-- **Security Boundary**: We do **not** provide security assurances — no verdict in this tool means "safe to run" (本工具不提供安全背书).
-
----
-
-## 参与贡献与交接
-
-欢迎参与完善分诊台！详细指南请参阅：
-- [参与贡献指南 (CONTRIBUTING.md)](CONTRIBUTING.md)
-- [快速上手与交接文档 (docs/HANDOFF.md)](docs/HANDOFF.md)
-- [项目规则与工程约束 (PROJECT_RULES.md)](PROJECT_RULES.md)
-
----
-
-## 开源许可
-
-本项目基于 [MIT License](LICENSE) 开源。`@dsh-triage/signals` 带有 dsh.so 适配器（`packages/signals/src/dshso.ts`），
-其数据接口遵循 CC BY 4.0，适配器会在显示该类记录时附带署名；**当前索引源与所有默认路径只读 npm registry 元数据**，
-因此没有任何界面显示 dsh.so 数据。
+MIT。`@dsh-triage/signals` 带一个 dsh.so 适配器（`packages/signals/src/dshso.ts`），其数据接口遵循 CC BY 4.0，适配器显示该类记录时附署名；**当前索引源与所有默认路径只读 npm registry 元数据**，因此没有界面显示 dsh.so 数据。
