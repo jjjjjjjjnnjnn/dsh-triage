@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R118 (2026-11-17)",
+  "stand": "R119 (2026-11-18)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17057,11 +17057,14 @@
         "docs/copy/outreach.json",
         "docs/copy/facts/2026-11-17-traffic-post.md",
         "docs/copy/drafts/2026-11-17-devto-launch-in-numbers.md",
-        "docs/copy/assets/2026-11-17-npm-downloads.png"
+        "docs/copy/assets/2026-11-17-npm-downloads.png",
+        "docs/copy/facts/2026-11-17-two-followups.md",
+        "docs/copy/drafts/2026-11-17-13627-shadowing.md",
+        "docs/copy/drafts/2026-11-17-13581-stale-junction.md"
       ],
       "real_test": {
         "command": "node scripts/check_listing.mjs --tests 995 --stamp <UTC> ; node --test tests/governance/copy-channel.test.ts ; gh api graphql addDiscussionComment ×3",
-        "outcome": "listing 17/17；copy-channel 3/3；三条回复已发（#13609 comment-19690584 / #13374 comment-19690589 / #13292 comment-19690590，2026-11-17T21:01:59Z–21:02:12Z），发帖前逐条确认 `comments.totalCount = 0`。发布是外部动作，不产生 SSOT 产物，记录在 `docs/copy/outreach.json`（三条 `d5_counts: false`）。 同一轮还备好了 dev.to 数据帖（事实包 `2026-11-17-traffic-post.md` + 正文 + 封面图 `docs/copy/assets/2026-11-17-npm-downloads.png`，图由 `traffic-*.json` 的日序列生成）；**没有发**，因为本机没有 dev.to 凭据。",
+        "outcome": "listing 17/17；copy-channel 3/3；三条回复已发（#13609 comment-19690584 / #13374 comment-19690589 / #13292 comment-19690590，2026-11-17T21:01:59Z–21:02:12Z），发帖前逐条确认 `comments.totalCount = 0`。发布是外部动作，不产生 SSOT 产物，记录在 `docs/copy/outreach.json`（三条 `d5_counts: false`）。 同一轮还备好了 dev.to 数据帖（事实包 `2026-11-17-traffic-post.md` + 正文 + 封面图 `docs/copy/assets/2026-11-17-npm-downloads.png`，图由 `traffic-*.json` 的日序列生成）；**没有发**，因为本机没有 dev.to 凭据。 第二批：原定的 `#13031` / `#12932` 因作者已自解决而放弃，改投 `#13627`（comment-19691283，profile 副本遮蔽内核包）与 `#13581`（comment-19691286，陈旧 junction 让「已卸载」的插件仍可解析），都是发文前 0 回复；`outreach.json` 累计 **5 条回复 + 1 篇文章**，链接额度用 2 条（`#13609` / `#13627`）。",
         "artifact": "data/results/listing-2026-11-17T21-05-00.000Z.json",
         "sha256": "8dd0d3d87aa1f9ae9b158d0dd3e37ce7a1d238432913aeb21027071588bab91c"
       },
@@ -17070,7 +17073,36 @@
         "reproducibility": "PASS：事实包引用的四份产物都带 `.sha256`，`copy-channel` 逐条复算；每条回复里的命令都是只读的 `node -e` / `npm view` / `ls`，读者可自证。",
         "licence": "PASS：没有复制原帖正文，只引用字段名；三条里只有一条带本仓链接（`#13609`），其余纯给方法。",
         "ssot": "PASS：`listing-2026-11-17T21-05-00.000Z.json` + `.sha256` 落 `data/results/`；帖子本身按外部动作记在 `outreach.json`。",
-        "adversary": "反例一：把「发出去了」读成「有人会回」。三条都是别人 0 回复的帖子，回不回、标不标 answered 都不由我们决定；本轮只证明「发了、可复算、没违规」。反例二：`#13292` 的作者已经自己修好并验证，我们的回复只补机制，**不能**被读成「我们帮他修好了」。"
+        "adversary": "反例一：把「发出去了」读成「有人会回」。三条都是别人 0 回复的帖子，回不回、标不标 answered 都不由我们决定；本轮只证明「发了、可复算、没违规」。反例二：`#13292` 的作者已经自己修好并验证，我们的回复只补机制，**不能**被读成「我们帮他修好了」。 反例三：把「回复条数」当成触达。五条里可能一条都不会被回；判据只到「发了、可复算、没违规」，下一轮要先看有没有人回，而不是先数我们发了多少。"
+      }
+    },
+    {
+      "id": "R119-S1",
+      "batch": "R119",
+      "step": "宣发流程落地：把 sibling 项目的 playbook 适配成此仓的流程、事实卡与资产，并用一条治理测试锁住事实卡",
+      "changed": [
+        "docs/distribution/promotion-playbook.md",
+        "docs/distribution/promotion.md",
+        "docs/market/social-preview-1280x640.png",
+        "tests/governance/promotion-fact-card.test.ts",
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/HANDOFF.md",
+        "docs/OPERATIONS.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 1002 --stamp <UTC> ; node --test tests/governance/promotion-fact-card.test.ts",
+        "outcome": "listing **17/17**（`--tests 1002`；改徽章时先跑出两次 `test-count-matches` 红，红产物已删——同一次改动的瞬时状态，不是发现）；promotion-fact-card **7/7**（版本 / 徽章 / 产物指针 / playbook 章节 / npm 缺口的负对照）。社交预览 1280×640 已通过 Settings 上传并取回校验（https://repository-images.githubusercontent.com/1434269271/c4ddf724-f4a8-4bed-9d8b-d4885ec26850，1280×640，与本地同字节数）。",
+        "artifact": "data/results/listing-2026-11-18T09-20-00.000Z.json",
+        "sha256": "a2ba8833d671a874402371dc4fdbc66176495728b79f53fd8875fffbaf80de0e"
+      },
+      "review": {
+        "correctness": "PASS：playbook 的渠道表按本仓实测重写（上游回答位 / 市场 / npm / dev.to / Reddit / HN 禁令），三条红线（下载不是人数、声明层不是运行期、不改判据）逐条对回 `docs/copy/README.md` §5 与 `docs/specs/D5-measurement.md`。",
+        "reproducibility": "PASS：事实卡的版本与测试数由 `promotion-fact-card.test.ts` 从 `package.json` 与 README 徽章复算；引用的 `traffic-*.json` 带 `.sha256`；社交预览由手写 SVG + 本机 Chrome 渲染，尺寸可复算。",
+        "licence": "PASS：playbook 的方法来自 sibling 项目（同作者），文字重写未逐句复制；图片自绘；没有引入第三方素材。",
+        "ssot": "PASS：`listing-2026-11-18T09-20-00.000Z.json` + `.sha256` 落 `data/results/`；文档与徽章同轮跟到 1002。",
+        "adversary": "反例一：把「流程文档写好了」读成「宣发做完了」。这一轮只交付流程、事实卡和一张图，**没有新发任何帖子**。反例二：`latest share` 是本轮唯一想搬但没有搬成的指标 —— npm 公开 API 不给按版本下载量（实测 404），playbook 里写明「不引用」，而不是造一个近似值。"
       }
     }
   ]

@@ -275,6 +275,61 @@
       ],
       "d5_counts": false,
       "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal."
+    },
+    {
+      "kind": "article",
+      "channel": "devto",
+      "article_id": 5060085,
+      "url": "https://dev.to/jjjjjjjjnnjnn/19-visitors-1-star-1416-clones-what-a-launch-actually-looked-like-43pi",
+      "status": "posted",
+      "posted_on": "2026-11-17T21:38:33Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-17-devto-launch-in-numbers.md",
+      "facts": "docs/copy/facts/2026-11-17-traffic-post.md",
+      "cites": [
+        "data/results/traffic-2026-11-17T13-04-28-424Z.json",
+        "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json",
+        "data/results/market-baseline-2026-11-16T07-00-00.000Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. An article we published ourselves is distribution, not a third-party signal."
+    },
+    {
+      "thread": 13627,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13627",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13627#discussioncomment-19691283",
+      "posted_on": "2026-11-17T21:42:07Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-17-13627-shadowing.md",
+      "facts": "docs/copy/facts/2026-11-17-two-followups.md",
+      "cites": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "data/results/desktop-panel-2026-11-12T22-20-00.000Z.json",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal.",
+      "contains_project_link": true
+    },
+    {
+      "thread": 13581,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13581",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13581#discussioncomment-19691286",
+      "posted_on": "2026-11-17T21:42:08Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-17-13581-stale-junction.md",
+      "facts": "docs/copy/facts/2026-11-17-two-followups.md",
+      "cites": [
+        "data/results/audit-2026-11-13T18-25-00.000Z.json",
+        "data/results/desktop-panel-2026-11-12T22-20-00.000Z.json",
+        "data/results/rescue-2026-11-05T09-32-00-752Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal."
     }
   ],
   "read_not_posted": [

@@ -1,7 +1,7 @@
 # dev.to · 19 visitors, 1 star, 1,416 clones — a launch in numbers
 
 > **渠道**：dev.to · **英文** · 新帖（不是回复）
-> **状态**：**draft —— 未发**（发布需要 HUMAN 的 dev.to 账号 / API key）
+> **状态**：**已发（2026-11-17）** —— https://dev.to/jjjjjjjjnnjnn/19-visitors-1-star-1416-clones-what-a-launch-actually-looked-like-43pi（dev.to article id 5060085）
 > **事实**：`docs/copy/facts/2026-11-17-traffic-post.md`
 
 <!-- facts: docs/copy/facts/2026-11-17-traffic-post.md -->
@@ -102,6 +102,8 @@ But it is the only channel where the audience is already assembled and already i
 3. **Check whether your only visitors are the one person who filed an issue.** Path-level data is small and unglamorous, and it told us more than the totals did.
 
 If you are building something for a small ecosystem, the ceiling may be lower than you think — not because the tool is bad, but because the number of people who have the problem is small. Measuring that early is cheaper than rewriting your landing page twice.
+
+If you want to check any of it, the repository and the evidence files this post cites are public: https://github.com/jjjjjjjjnnjnn/dsh-triage
 
 Boundary: these numbers describe published artifacts and public traffic, not your machine — and none of them is a user count.
 

@@ -24,7 +24,7 @@
 ```powershell
 git status --short                  # 预期：dsh-triage/ 干净
 pnpm install --frozen-lockfile
-pnpm run verify                     # 995 测试 / 10 门
+pnpm run verify                     # 1002 测试 / 10 门
 node scripts/gate.mjs --mutate      # 10/10
 node scripts/handover_check.mjs     # 10/10
 node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOString())")
@@ -45,10 +45,10 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 公开仓 | `ebdf333`，tree 与容器 `HEAD:dsh-triage` 逐字节相同；CI 6/6 绿 |
 | 仓库设置 | `homepage = https://www.npmjs.com/package/dsh-triage`；topics 5 个；无 Discussions |
 | 市场 | `awesome-dsh-plugin` 有条目（`0.3.10` 滞后）；**icon 已于 2026-11-17T17:08:43Z 合并并上线**（PR #16311，`/plugins.json` 里有 `icon`）；`dsh.so` **L5 passed**（`0.3.10` 滞后）；`dsh-pluginmarket` PR **#9368** 仍 open |
-| 上游回答 | **R118 已发 3 条**（`#13609` / `#13374` / `#13292`，`outreach.json` 有 URL 与时间）；`#13031` / `#12932` 隔 1–2 天再发 |
+| 上游回答 | **R118 已发 5 条**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`，`outreach.json` 有 URL 与时间）；`#13031` / `#12932` 因作者已自解决而放弃 |
 | 外部互动 | issue **#1**（`CyrusCCSY`，真 bug）已跟进 0.3.11；1 star / 0 fork / 0 watch |
 | 流量基线 | 14 天 **47 浏览 / 19 唯一**；**1,416 clone / 327 唯一**（30×）；npm 31 天 **2,996**；第三方引用 **0** |
-| 门禁 | **995 测试 / 10 门 / 10-10**；**646 份 SSOT / 695 步台账 / 75 条盲区** |
+| 门禁 | **1002 测试 / 10 门 / 10-10**；**646 份 SSOT / 695 步台账 / 75 条盲区** |
 | 交接快照 | `backup/snapshots/snapshot-0.3.11-handoff-R116-final.json` |
 
 ---
@@ -58,10 +58,10 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | # | 动作 | 产物 | 谁发 |
 |---|---|---|---|
 | 1 | **D-1 上游归因**：admission 拒绝时缺归因，用 issue #1 做真实案例 | ✅ **R117 已发**：`https://github.com/deepseek-ai/deepseek-harness/discussions/13608`（**Ideas**；上游 issue 已关）。事实包 `2026-11-17-d1-attribution.md`；回填 `outreach.json` | 等上游回应（不催） |
-| 2 | **上游故障帖回复**：插件消失 / 升级后起不来 | ✅ **R118 已发 3 条**（`#13609` / `#13374` / `#13292`）；剩 `#13031` / `#12932` 隔 1–2 天 | **HUMAN**（若要改口径） |
+| 2 | **上游故障帖回复**：插件消失 / 升级后起不来 | ✅ **R118 已发 5 条**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`） | **HUMAN**（若要改口径） |
 | 3 | **一篇透明数据帖**：「19 个访客、1 个 star、1,416 次 clone」 | 渠道已定 **dev.to**；正文与配图由 agent 出，**发布需要 human 的账号或 API key** | **HUMAN** |
 
-**验收**：草稿都带 `<!-- facts: -->` 与粘贴块；每个数字指到带 `.sha256` 的产物；`node scripts/check_listing.mjs --tests 995` 仍 17/17。发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
+**验收**：草稿都带 `<!-- facts: -->` 与粘贴块；每个数字指到带 `.sha256` 的产物；`node scripts/check_listing.mjs --tests 1002` 仍 17/17。发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
 
 ---
 
@@ -110,6 +110,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 流量分析与计划 | `docs/research/2026-11-17-traffic-audit.md` |
 | 流量记录器 | `scripts/record_traffic.mjs`；基线 `data/results/traffic-2026-11-17T13-04-28-424Z.json` |
 | 发帖规则 / 命令包 | `docs/distribution/posting-runbook.md`、`docs/distribution/answer-kit.md` |
+| **宣发流程（渠道矩阵 / 逐条验证 / 去 AI 化 / 24h·1w 测量）** | **`docs/distribution/promotion-playbook.md`**；本项目的事实卡、资产与渠道状态在 **`docs/distribution/promotion.md`**（数字由 `tests/governance/promotion-fact-card.test.ts` 复算） |
 | 文案通道 | `docs/copy/README.md`、`docs/copy/STYLE.md`、`docs/copy/facts/`、`docs/copy/drafts/` |
 | 市场与渠道状态 | `docs/distribution/awesome-dsh-plugin.md`、`docs/distribution/pr-65-status.md`、`docs/market/submissions/README.md` |
 | 维护模式四类事 | `docs/11-d-path.md` §D-3、`docs/HANDOFF.md` §3 5c |

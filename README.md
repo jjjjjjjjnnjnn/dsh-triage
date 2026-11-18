@@ -7,7 +7,7 @@
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node: >=22.19](https://img.shields.io/badge/node-%3E%3D22.19-brightgreen.svg)](https://nodejs.org)
-[![tests: 995 passed](https://img.shields.io/badge/tests-995%20passed-success.svg)](scripts/gate.mjs)
+[![tests: 1002 passed](https://img.shields.io/badge/tests-1002%20passed-success.svg)](scripts/gate.mjs)
 
 [English](#english) | [安全模型](docs/SECURITY.md) | [贡献指南](CONTRIBUTING.md) | [交接说明](docs/HANDOFF.md)
 
@@ -79,7 +79,7 @@ $ dsh-triage upgrade --to latest
 | 发布包在干净环境装得上、四条命令都跑得通 | `data/results/publish-*.json`、`data/results/usability-*.json` |
 | 声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对本机 `0.2.2-rc.3` 实测 **satisfied** | `data/results/audit-2026-11-13T18-25-00.000Z.json` |
 | 上游 Q&A 1545 条里，声明层能答 74 条（4.8%）；`not-relevant` 950 条是**分类器没读到信号**，不等于「与我们无关」 | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json` |
-| 995 个测试 + 10 道零依赖门禁（含负对照） | `pnpm run verify`、`node scripts/gate.mjs --mutate` |
+| 1002 个测试 + 10 道零依赖门禁（含负对照） | `pnpm run verify`、`node scripts/gate.mjs --mutate` |
 
 **没证明什么**：它不是安全审计，不给任何「可以放心运行」的背书；它判的是声明层与已装集合，**不是**把所有插件都跑一遍的全网兼容矩阵；`unknown` 就是未知，不是「大概没事」。
 

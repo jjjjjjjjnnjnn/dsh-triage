@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dsh-triage.svg)](https://www.npmjs.com/package/dsh-triage)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![tests: 995 passed](https://img.shields.io/badge/tests-995%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
+[![tests: 1002 passed](https://img.shields.io/badge/tests-1002%20passed-success.svg)](https://github.com/jjjjjjjjnnjnn/dsh-triage/blob/main/scripts/gate.mjs)
 
 ```bash
 npm i -g dsh-triage
