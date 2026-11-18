@@ -1,0 +1,6 @@
+# HANDOFF §2 批次行归档：R109
+
+> **逐行原文，未改一字。** 用脚本从 `docs/HANDOFF.md` 的表格里按行取原字节（不是重打）。
+> 归档理由：入口只保留最近十轮；R120 加进来之后，R109 出界。
+
+| **市场里没有我的项目？先看构建（R109，2026-11-13）** | **维护轮：`awesome-dsh-plugin` 已合并但网站没有这一条 —— 查清是他们的 `build-site` 卡住，不是条目被拒（判据/阈值一字未动）**。① **三个读数分开看**：仓库条目在（`data/plugins/jjjjjjjjnnjnn__dsh-triage--packages-plugin.yml`，`c004b4c`）；`README.md` / `README.zh.md` 都有这一行（17:50Z `sync-readme` 重生成）；网站 `/plugins.json`（10,778 条）里没有。② **卡点**：最近一次 `github-pages` 部署 `4bf5ca5`（**17:44:13Z**，早于 17:46 的合并），`Build site from README` 的 run **43477377365** 自 **17:54:17Z** 起 `pending`、**0 job**（一个多小时没动）。③ **排除了「我们这一条有问题」**：同批 17:50 合并的 `dsh-subor-startup`（#15040）与 `dsh-secret-guard`（#15036）在 `/plugins.json` 里同样缺席；更早合并的 `ai-terminal-pet` 在。而且 README 是由同一套 `entries.mjs` 校验后生成的 —— 条目合格。④ **处理**：#14880 留一条只报构建状态的评论（[issuecomment-6861985619](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/14880#issuecomment-6861985619)），并给出 `workflow_dispatch` + `skip_probes: true` 的捷径；本地把状态拆成「已合并」与「网站上已发布」，新增 `BS-75`。⑤ **边界**：部署由他们的 CI 决定，我们没有触发权限；这三个读数用 URL + 时间戳记录，**不写进 `data/results`**（别人的流水线，写下来就过期）。**判据/阈值一字未动**；**995 测试 / 10 门 / 10-10**。⑦ **R110 复读（同日几分钟后，如实改）**：站点**已上线** —— `/plugins.json` 有这一条（`added: 2026-11-13`）、en/zh 详情页都 200；「没有 README」是夜间 `probe-readmes` 的节奏（push 构建只部署不探针），不是缺陷。描述同时按要求砍成一句（PR #15073） |

@@ -236,7 +236,14 @@
       ],
       "d5_counts": false,
       "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal.",
-      "contains_project_link": true
+      "contains_project_link": true,
+      "corrections": [
+        {
+          "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13609#discussioncomment-19713540",
+          "posted_on": "2026-11-18T17:03:24Z",
+          "why": "#13581 refuted the sentence \"dependency present + name absent from bundles = never composed\""
+        }
+      ]
     },
     {
       "thread": 13374,
@@ -329,7 +336,50 @@
         "data/results/rescue-2026-11-05T09-32-00-752Z.json"
       ],
       "d5_counts": false,
+      "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal.",
+      "followups": [
+        {
+          "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13581#discussioncomment-19713539",
+          "posted_on": "2026-11-18T17:03:22Z",
+          "why": "the author posted a counter-example to our three-input model; this reply concedes it and adds the profile patch layer as a fourth input"
+        }
+      ],
+      "reply_received": {
+        "author": "Phoeky",
+        "at": "2026-11-18T06:36:47Z",
+        "correction": "their machine showed a linked plugin loading while never present in dsh.profile.bundles; our earlier \"installed but not composed\" claim was too narrow"
+      }
+    },
+    {
+      "thread": 13683,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13683",
+      "status": "posted",
+      "posted_kind": "reply",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13683#discussioncomment-19713543",
+      "posted_on": "2026-11-18T17:03:25Z",
+      "language": "en",
+      "draft": "docs/copy/drafts/2026-11-18-13683-declaration.md",
+      "facts": "docs/copy/facts/2026-11-18-followup-facts.md",
+      "cites": [
+        "data/results/remedy-probe-2026-11-05T08-01-23-093Z.json"
+      ],
+      "d5_counts": false,
       "why_not_counted": "D5 counts reactions on #11813 and third-party references to this project. A reply in someone else's thread is contact, not a measured signal."
+    },
+    {
+      "kind": "thread",
+      "channel": "x",
+      "url": "https://x.com/JJjj1955714/status/2123100339024883727",
+      "status": "posted",
+      "posted_on": "2026-11-18T18:05:00+01:00",
+      "language": "en",
+      "facts": "docs/copy/facts/2026-11-17-traffic-post.md",
+      "cites": [
+        "data/results/traffic-2026-11-17T13-04-28-424Z.json",
+        "data/results/d5-evidence-2026-11-16T07-05-00-000Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "Our own thread is distribution, not a third-party signal. It points at the dev.to article; the numbers all come from the two cited artifacts."
     }
   ],
   "read_not_posted": [

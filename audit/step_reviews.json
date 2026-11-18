@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R119 (2026-11-18)",
+  "stand": "R120 (2026-11-18)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17103,6 +17103,53 @@
         "licence": "PASS：playbook 的方法来自 sibling 项目（同作者），文字重写未逐句复制；图片自绘；没有引入第三方素材。",
         "ssot": "PASS：`listing-2026-11-18T09-20-00.000Z.json` + `.sha256` 落 `data/results/`；文档与徽章同轮跟到 1002。",
         "adversary": "反例一：把「流程文档写好了」读成「宣发做完了」。这一轮只交付流程、事实卡和一张图，**没有新发任何帖子**。反例二：`latest share` 是本轮唯一想搬但没有搬成的指标 —— npm 公开 API 不给按版本下载量（实测 404），playbook 里写明「不引用」，而不是造一个近似值。"
+      }
+    },
+    {
+      "id": "R119-S2",
+      "batch": "R119",
+      "step": "把含宣发流程与社交预览的子树切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-18T16-49-02.186Z.json",
+        "data/results/public-cut-2026-11-18T16-49-02.186Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at e915a41` / `behind 0`（public `655546b`）。社交预览已在 GitHub 侧上线（`repository-images.githubusercontent.com/1434269271/c4ddf724…`，1280×640）。",
+        "artifact": "data/results/public-cut-2026-11-18T16-49-02.186Z.json",
+        "sha256": "e065c9c55303306a0256c0f757bc2f96409a012f7e76687bbadb868b2ace283a"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`（e915a41），父提交是当时的 `origin/main`（348bb87）。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算；`behind 0` 是那一刻的读数。",
+        "licence": "PASS：只推 `dsh-triage/` 子树；图片为自绘，无第三方素材。",
+        "ssot": "PASS：data/results/public-cut-2026-11-18T16-49-02.186Z.json + .sha256 落在 data/results/，由脚本产出。",
+        "adversary": "反例：把「公开仓同步」读成「宣发生效」。同步只保证文件在线上；有没有人看见是下一步的读数，不是一个 push 能证明的。"
+      }
+    },
+    {
+      "id": "R120-S1",
+      "batch": "R120",
+      "step": "接住第一条第三方回应：承认反例、公开发更正，并再答一条仍在没人回的兼容报告；同时把 X 线程发出去",
+      "changed": [
+        "docs/copy/facts/2026-11-18-followup-facts.md",
+        "docs/copy/drafts/2026-11-18-13581-four-inputs.md",
+        "docs/copy/drafts/2026-11-18-13683-declaration.md",
+        "docs/copy/outreach.json",
+        "audit/blind_spots.json"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 1002 --stamp <UTC> ; gh api graphql addDiscussionComment ×3 ; browser (X composer)",
+        "outcome": "listing **17/17**；上游又发 3 条（`#13581` 跟进 comment-19713539、`#13609` 更正 comment-19713540、`#13683` comment-19713543），发完 `#13581` 有 2 条评论；X 线程根帖 + 3 条回复已发（`https://x.com/JJjj1955714/status/2123100339024883727`，dev.to 卡片自动展开）。`outreach.json` 累计 **18 条**（全部 `d5_counts: false`）。",
+        "artifact": "data/results/listing-2026-11-18T17-20-00.000Z.json",
+        "sha256": "370bf90010eb1df6768aa65cb7388c2990c5436fc0934a2a34853a938f56d3a6"
+      },
+      "review": {
+        "correctness": "PASS：`#13581` 的反例被接受并追到上游源码（`profile-boot` 的三段叠加、`cordis.patch.yml`、`allow-version`），模型从三输入改成四输入；`#13683` 的数字用本仓 `evaluateRange` 实算（0.2.1-rc.5 / 0.2.2-rc.1 / 0.2.2-rc.3 全 satisfied，0.3.0-rc.1 与 1.0.0 也 satisfied）。",
+        "reproducibility": "PASS：事实包引用的产物都带 `.sha256`；`#13683` 的读数读者可用 `npm view` 与任意 semver 求值复算；X 线程的每个数字都能回到 `traffic-*` 与 `d5-evidence-*`。",
+        "licence": "PASS：更正里没有引用原作者正文；X 线程是我们自己的文字；链接只有 dev.to 一篇自家文章。",
+        "ssot": "PASS：`listing-2026-11-18T17-20-00.000Z.json` + `.sha256` 落 `data/results/`；帖子与文章按外部动作记在 `outreach.json`。",
+        "adversary": "反例一：把「有人回了」读成「方法有效」。Phoeky 的回帖是**一个**数据点，而且它同时证明了我们的模型有错。反例二：把 X 的浏览数当触达 —— 发完那一刻是 6 次浏览，什么都不能说明；下一轮看 referrer，不看 impressions。"
       }
     }
   ]

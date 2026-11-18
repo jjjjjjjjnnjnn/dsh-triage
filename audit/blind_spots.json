@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R119 (2026-11-18)",
+  "stand": "R120 (2026-11-18)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -610,6 +610,13 @@
       "owner": "process + distribution",
       "what_would_show_it": "条目已合并、README 已重生成、`/plugins.json` 里仍然没有 —— 今天就是这样；反过来，部署成功但 `build-site` 的过滤把条目丢掉（例如分类不在 `CAT_IDS`）时，也只有第 ③ 项能看出来。",
       "opened_at": "2026-11-13"
+    },
+    {
+      "id": "BS-76",
+      "area": "组合模型的输入少了一个：profile 的 `cordis.patch.yml`（R120，由上游 #13581 的实际反例指出）",
+      "cannot_see": "我们对外与对内一直用「三件事」描述一个插件会不会被组合：依赖在不在、名字在不在 `dsh.profile.bundles`、包能不能解析。`#13581` 的作者给出了反例：一个用 `pnpm link` 装的插件**从来没出现在 `bundles` 里**，却实际生效；卸载之后 junction 仍在，harness 依旧能解析到它。上游 `profile-boot` 的模块注释写明组合是**三段叠加**：`dsh.profile.bundles` 的每一层 → profile 自己的 `cordis.patch.yml`（热重载的用户层）→ `--patch` overlays。所以「不在 `bundles`」本身**不是**错误状态；真正决定加载的是 patch 层里有没有那一行。我们读 `bundles` 与 `node_modules`，**不读那个 patch 文件**。",
+      "mitigation": "① 对外把模型改成四个输入（patch 行 / bundle 选中 / 能解析 / 拦截判据通过），并在 `#13609` 里公开发了更正；② 内部：任何「installed but not composed」的说法都必须先看 `<profile>/cordis.patch.yml`，没有它就不能下结论；③ 代码层仍未读该文件 —— 这是**已知缺口**，不是修复：下一步要么把 patch 行纳入扫描，要么在输出里明确「本判定没有读 patch 层」。",
+      "owner": "process + core (composition model)"
     }
   ]
 }
