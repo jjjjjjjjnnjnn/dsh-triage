@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R121 (2026-11-19)",
+  "stand": "R122 (2026-11-19)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17352,6 +17352,121 @@
         "licence": "PASS：只改我们自己的文档。",
         "ssot": "PASS：产物 + `.sha256`。",
         "adversary": "反例：把「徽章和规模行一致」当「数字是真的」—— 它们可以一起错（本轮就是两处一起停在 1002，而套件已经 1003）。一致性不等于正确性，只有套件跑出来才是。"
+      }
+    },
+    {
+      "id": "R121-S9",
+      "batch": "R121",
+      "step": "把交接文档与快照切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-19T06-40-18.676Z.json",
+        "data/results/public-cut-2026-11-19T06-40-18.676Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at e3e2f6b` / `behind 0`（public `a3ff3e0`）。",
+        "artifact": "data/results/public-cut-2026-11-19T06-40-18.676Z.json",
+        "sha256": "0c29a385219cd59d16d5b9fe47e72cf3540f33cb4182a836f2f8f2ec9199fb05"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`（e3e2f6b），父提交是当时的 `origin/main`（d70b934）。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算。",
+        "licence": "PASS：只推 `dsh-triage/` 子树。",
+        "ssot": "PASS：data/results/public-cut-2026-11-19T06-40-18.676Z.json + .sha256 落在 data/results/。",
+        "adversary": "反例：把「交接文档同步了」读成「下一任会照做」。文档只能减少歧义；做不到的事情（dev.to 登录、BS-76 签字）已经写明需要 HUMAN。"
+      }
+    },
+    {
+      "id": "R122-S1",
+      "batch": "R122",
+      "step": "把两份上报点名的 rc.3 构建在 0.2.2-rc.5 上过一遍同一个准入引擎",
+      "changed": [
+        "data/results/remedy-probe-2026-11-19T06-54-24-786Z.json",
+        "data/results/remedy-probe-2026-11-19T06-54-24-786Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --target 0.2.2-rc.5 --pins \"@deepseek-ai/dsh-session-query-sqlite@0.2.2-rc.3,@deepseek-ai/dsh-experimental-session-search@0.2.2-rc.3,@deepseek-ai/dsh-authorization@0.2.2-rc.3,@deepseek-ai/dsh-llm@0.2.2-rc.3\"",
+        "outcome": "三个 rc.3 构建 **denied**（未满足项是精确 peer：`dsh-session@0.2.2-rc.3` / `dsh-credentials@0.2.2-rc.3` / `dsh-error@0.2.2-rc.3`），而 `dsh-experimental-session-search@0.2.2-rc.3` 自身 **unconstrained** —— 与两份上报引用的 preflight 文本同形：被禁的是行，不是 bundle。",
+        "artifact": "data/results/remedy-probe-2026-11-19T06-54-24-786Z.json",
+        "sha256": "b904772c7b15d6bb7f4f0bc4385699c3a30230d76295436ba567fb60da087763"
+      },
+      "review": {
+        "correctness": "PASS：用的是仓内 `evaluateAdmission`（与 `check` / `why` / `upgrade` 同一条引擎），判的是上报自己点名的版本，不是 `latest`。",
+        "reproducibility": "PASS：live registry 读，产物同时记了 `dist_tags`；同一个 `--pins` 重跑得到同样四行（版本不可变）。",
+        "licence": "PASS：只读公开 manifest 元数据，不下载 tarball、不复制任何上游代码。",
+        "ssot": "PASS：data/results/remedy-probe-2026-11-19T06-54-24-786Z.json + `.sha256`，`produced_by` 指向 `scripts/record_remedy_probe.mjs`。",
+        "adversary": "反例一：把「我们的引擎也判 denied」读成「我们复现了他的故障」—— 我们判的是声明层，没有启动过他的 host。反例二：`unconstrained` 极容易被顺手写成 admitted；产物字段就是 `unconstrained`，事实包与回复也必须这么写。"
+      }
+    },
+    {
+      "id": "R122-S2",
+      "batch": "R122",
+      "step": "读安装件本身：先把 asar 里的 CLI 面读成读数，再决定评论写什么",
+      "changed": [
+        "data/results/updater-drift-2026-11-19T06-56-13-204Z.json",
+        "data/results/updater-drift-2026-11-19T06-56-13-204Z.json.sha256",
+        "scripts/record_updater_drift.mjs"
+      ],
+      "real_test": {
+        "command": "node scripts/record_updater_drift.mjs",
+        "outcome": "`336` 个内核包 / `dsh-desktop-host 0.2.2-rc.5`；`cli.js`（3,436 B）带 `manageDesktopProfile: true`；`rejectElectronProfile` 两个调用点 **boot 无条件 / plugin 由该标志放行**；`allow-version` / `revoke-version` / `version-exemptions` 全部在 `plugin-*.js`；本机 profile 19 依赖 / **0 官方 pin** / 22 bundle。",
+        "artifact": "data/results/updater-drift-2026-11-19T06-56-13-204Z.json",
+        "sha256": "445f1566c0ebbe68d9e4b969b2fab27781b4d517cf7d9fcff09ba79923d3b36c"
+      },
+      "review": {
+        "correctness": "PASS：`guarded` 由调用点前 90 字符里的 `if (!manageDesktopProfile)` 判定，匹配到的原文一并写进产物，任何一条都能人工复核。",
+        "reproducibility": "PASS：产物记了 `archive_sha256`（209,083,008 B）与 `chunks_scanned`；同一构建重跑逐字节同样。",
+        "licence": "PASS：读的是自己装的归档，只留不超过 200 字符的片段作证据，未 vendor 上游代码。",
+        "ssot": "PASS：data/results/updater-drift-2026-11-19T06-56-13-204Z.json + `.sha256`；本机 profile 只用计数字段，不含任何 home 绝对路径。",
+        "adversary": "反例一：硬编码 chunk 名（`plugin-DC80YBt4.js`）会在下个 rc 静默读成 absent —— 所以扫目录里所有 `*.js`。反例二：第一版把函数定义也当成调用点（多出一条 `guarded=false`），已按 `function ` 跳过。反例三：把「字符串在归档里」读成「命令能用」—— 产物 limits 与回复边界句都写明没执行。"
+      }
+    },
+    {
+      "id": "R122-S3",
+      "batch": "R122",
+      "step": "发前读三条线程的板块状态，并把 `answered: null` 被写成 `false` 的那句假话修掉",
+      "changed": [
+        "data/results/discussion-state-2026-11-19T06-58-07-519Z.json",
+        "data/results/discussion-state-2026-11-19T06-58-07-519Z.json.sha256",
+        "data/fixtures/discussions/state-2026-11-19T06-58-07-519Z.json",
+        "scripts/record_discussion_state.mjs",
+        "tests/unit/discussion-state.test.ts"
+      ],
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --ids 13730,13748,11554 ; node --test tests/unit/discussion-state.test.ts",
+        "outcome": "三条线程 `closed: false` / 0 评论 / `isAnswered: null`（General 与 Ideas 都没有该字段）→ gate 全 `unreadable`；产物现在同时记 `answerable: false`，`answered` 记成 `null` 而不是 `false`。单测 7 → **8**（新增一条钉住「不许把 null 映射成 open」）。",
+        "artifact": "data/results/discussion-state-2026-11-19T06-58-07-519Z.json",
+        "sha256": "46d9fd6c9b3f1f11dbee4bf58bf1f41149d0fc0d3b3e56bf282b9faa9e1c22b0"
+      },
+      "review": {
+        "correctness": "PASS：`isAnswered: null` + `isAnswerable: false` 仍判 `unreadable` —— 没有把「读不出」改成 `open`，`T-851` 明确禁止这一步。",
+        "reproducibility": "PASS：一次 GraphQL 读 + fixtures 落盘，`--fixtures` 可离线重判同一份快照。",
+        "licence": "PASS：只读公开讨论板的板块状态与评论计数。",
+        "ssot": "PASS：data/results/discussion-state-2026-11-19T06-58-07-519Z.json + `.sha256`；fixtures 单独落在 `data/fixtures/discussions/`。",
+        "adversary": "反例：这条修改很容易顺手扩成「让 General 变 open」—— 那会把「已有评论回答」读成「没人回」。所以 gate 一字未动，只改记录口径，并加测试把「map null→open」钉死在红的一侧。"
+      }
+    },
+    {
+      "id": "R122-S4",
+      "batch": "R122",
+      "step": "事实包 → 草稿 → 发出 → 逐字符读回；`#13748` 读完记入「不回」",
+      "changed": [
+        "docs/copy/facts/2026-11-19-updater-drift.md",
+        "docs/copy/drafts/2026-11-19-13730-reply.md",
+        "docs/copy/outreach.json"
+      ],
+      "real_test": {
+        "command": "gh api graphql -f query=addDiscussionComment（正文由草稿 paste 块字节抽取）→ 发后 `comments.nodes[0].body` 读回比对",
+        "outcome": "评论 `discussioncomment-19728094`（`2026-11-19T07:00:13Z`，作者 `jjjjjjjjnnjnn`），读回 **2,183 字符与草稿 paste 块逐字符相同**；`#13748` 读完全文后记入 `read_not_posted`（自足，回了只是同意）。",
+        "artifact": "data/results/discussion-state-2026-11-19T06-58-07-519Z.json",
+        "sha256": "46d9fd6c9b3f1f11dbee4bf58bf1f41149d0fc0d3b3e56bf282b9faa9e1c22b0"
+      },
+      "review": {
+        "correctness": "PASS：正文只讲三件事（入口存在 / 豁免有官方命令 / 那一行会不会消失要看他们的运行），并引 `#13748` 的现场结果，没有一句自称验证过 macOS。",
+        "reproducibility": "PASS：正文由草稿 paste 块按标记字节抽取；读回比对时先按 UTF-16LE 解（PowerShell 重定向），再判相等 —— 第一次的「不相等」是编码差异，不是内容差异，已如实排除。",
+        "licence": "PASS：无链接、无第三方代码、不提本仓任何东西。",
+        "ssot": "PASS：事实包与草稿各引三份带 `.sha256` 的产物；`outreach.json` 第 19 条记 URL + 带时区 instant + `d5_counts: false`。",
+        "adversary": "反例：把「发出去了」读成「有人会看」。`#13730` 的作者已经用豁免绕过，我们影响的只是后来者；下一轮该看有没有人回，而不是数我们发了多少。"
       }
     }
   ]

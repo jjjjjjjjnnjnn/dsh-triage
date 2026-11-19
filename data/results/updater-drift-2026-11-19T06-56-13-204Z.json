@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_updater_drift.mjs",
+  "generated_at": "2026-11-19T06:56:13.204Z",
+  "question": "when an app update moves the runtime but leaves a profile's exact @deepseek-ai/* pins behind, what does the installed build offer — and does this machine's profile have that shape?",
+  "installation": {
+    "state": "measured",
+    "archive_bytes": 209083008,
+    "archive_sha256": "5ec8acd9e72b93b6680c953c1be44a729fd3a5170e472e8025690a1713d20f69",
+    "kernel_packages": 336,
+    "desktop_host_version": "0.2.2-rc.5",
+    "chunks_scanned": 8,
+    "cli_entry": {
+      "present": true,
+      "bytes": 3436,
+      "manage_desktop_profile": true,
+      "verbatim": "tion runDesktopCli(supportDir) { await runCli({ manageDesktopProfile: true, packageManager: { command: process.execPath, args: [\"--expose-internals\", join(supportDir, \"primary-run"
+    },
+    "reserved_profile_refusal": {
+      "message_present": true,
+      "verbatim": "program.error(\"error: profile \\\"desktop\\\" is managed exclusively by the Electron application\")",
+      "call_sites": [
+        {
+          "program": "program",
+          "guarded_by_manage_desktop_profile": false,
+          "verbatim": " if (profile === \"\") program.error(\"error: --profile needs a name\");rejectElectronProfile(program, profile)"
+        },
+        {
+          "program": "plugin",
+          "guarded_by_manage_desktop_profile": true,
+          "verbatim": ".error(\"error: --profile needs a name\"); if (!manageDesktopProfile)rejectElectronProfile(plugin, options.profile)"
+        }
+      ],
+      "shape": {
+        "boot_refused_always": true,
+        "plugin_refused_unless_manage_desktop_profile": true
+      }
+    },
+    "plugin_surface": {
+      "allow_version": [
+        "plugin-DC80YBt4.js"
+      ],
+      "revoke_version": [
+        "plugin-DC80YBt4.js"
+      ],
+      "version_exemptions": [
+        "plugin-DC80YBt4.js"
+      ],
+      "set_profile_version_exemption": [
+        "plugin-DC80YBt4.js"
+      ],
+      "require_desktop_profile": [
+        "plugin-DC80YBt4.js"
+      ],
+      "pnpm_forwarded_verbatim": [
+        "bin-CwxESKe-.js"
+      ],
+      "help_line": "dsh plugin --profile <name> <pnpm-args...>\").description(\"dsh: boot a DeepSeek Harness profile — an ordered stack of plugin-bundle patch layers under your own overrides.\"",
+      "accept_risk_warning": "allowing incompatible plugin versions can break the application or corrupt data. Approval applies only to the exact package and DSH versions.\\n\"); const dir = resolvePr",
+      "remediation_hint": "to accept the risk, run: dsh plugin --profile ${profile} allow-version ${name}@${version} --dsh-version ${runtimeVersion} --accept-risk\\n`); if (result.exitCode !== 0) p"
+    }
+  },
+  "local_profile": {
+    "state": "measured",
+    "home_source": "default",
+    "profile": "desktop",
+    "profile_dir": "~/.dsh/profiles/desktop",
+    "dependencies": 19,
+    "official_pins": [],
+    "official_pin_count": 0,
+    "bundles": 22,
+    "official_bundles": 6,
+    "compatibility_json": false
+  },
+  "limits": [
+    "one build on one machine: the archive proves which surfaces ship, not that the command succeeds on another OS",
+    "the CLI is read, never executed — running `plugin` would write to a profile, and this recorder is read-only",
+    "local_profile is a negative control for this machine only; zero official pins is why the rc.3 → rc.5 update here produced no denial",
+    "markers are searched across every `dsh/lib/*.js` chunk because the build renames them per release; a marker hit means the string is in the shipped code, nothing about reachability"
+  ]
+}

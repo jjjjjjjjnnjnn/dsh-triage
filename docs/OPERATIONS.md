@@ -24,7 +24,7 @@
 ```powershell
 git status --short                  # 预期：dsh-triage/ 干净
 pnpm install --frozen-lockfile
-pnpm run verify                     # 1003 测试 / 10 门
+pnpm run verify                     # 1004 测试 / 10 门
 node scripts/gate.mjs --mutate      # 10/10
 node scripts/handover_check.mjs     # 10/10
 node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOString())")
@@ -48,7 +48,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 上游回答 | **R118 已发 5 条**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`，`outreach.json` 有 URL 与时间）；`#13031` / `#12932` 因作者已自解决而放弃 |
 | 外部互动 | issue **#1**（`CyrusCCSY`，真 bug）已跟进 0.3.11；1 star / 0 fork / 0 watch |
 | 流量基线 | 14 天 **47 浏览 / 19 唯一**；**1,416 clone / 327 唯一**（30×）；npm 31 天 **2,996**；第三方引用 **0** |
-| 门禁 | **1003 测试 / 10 门 / 10-10**；**646 份 SSOT / 695 步台账 / 75 条盲区** |
+| 门禁 | **1004 测试 / 10 门 / 10-10**；**646 份 SSOT / 695 步台账 / 75 条盲区** |
 | 交接快照 | `backup/snapshots/snapshot-0.3.11-handoff-R116-final.json` |
 
 ---
@@ -61,7 +61,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 2 | **上游故障帖回复**：插件消失 / 升级后起不来 | ✅ **R118 已发 5 条**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`） | **HUMAN**（若要改口径） |
 | 3 | **一篇透明数据帖**：「19 个访客、1 个 star、1,416 次 clone」 | 渠道已定 **dev.to**；正文与配图由 agent 出，**发布需要 human 的账号或 API key** | **HUMAN** |
 
-**验收**：草稿都带 `<!-- facts: -->` 与粘贴块；每个数字指到带 `.sha256` 的产物；`node scripts/check_listing.mjs --tests 1003` 仍 17/17。发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
+**验收**：草稿都带 `<!-- facts: -->` 与粘贴块；每个数字指到带 `.sha256` 的产物；`node scripts/check_listing.mjs --tests 1004` 仍 17/17。发完回填 `docs/copy/outreach.json`（`d5_counts: false`）。
 
 ---
 

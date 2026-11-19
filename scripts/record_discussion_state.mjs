@@ -67,7 +67,7 @@ function fetchThreads() {
   const fields = ids
     .map(
       (id) =>
-        `d${id}: discussion(number: ${id}) { number title url createdAt updatedAt isAnswered closed category { name } comments(last: 1) { totalCount nodes { createdAt author { login } } } answer { createdAt author { login } } }`,
+        `d${id}: discussion(number: ${id}) { number title url createdAt updatedAt isAnswered closed category { name isAnswerable } comments(last: 1) { totalCount nodes { createdAt author { login } } } answer { createdAt author { login } } }`,
     )
     .join('\n')
   const query = `query {\n  repository(owner: "${owner}", name: "${name}") {\n${fields}\n  }\n}`
@@ -135,7 +135,14 @@ const rows = [...threads]
     created_at: String(thread.createdAt ?? ''),
     updated_at: String(thread.updatedAt ?? ''),
     closed: thread.closed === true,
-    answered: thread.isAnswered === true,
+    /*
+     * Tri-state on purpose (R122). `thread.isAnswered === true` collapsed "this category has no accepted
+     * answer at all" (`null`, every General / Ideas thread) into `false`, so the row re-judged as `open`
+     * while the live gate said `unreadable` — a row that disagrees with the gate that produced it. The
+     * gate itself is unchanged: whether a non-answerable thread is "answered" is T-851's criteria round.
+     */
+    answered: thread.isAnswered === true ? true : thread.isAnswered === false ? false : null,
+    answerable: typeof thread.category?.isAnswerable === 'boolean' ? thread.category.isAnswerable : null,
     comments: Number(thread.comments?.totalCount ?? 0),
     last_comment: thread.comments?.nodes?.[0]?.createdAt
       ? { at: String(thread.comments.nodes[0].createdAt), author: thread.comments?.nodes?.[0]?.author?.login ?? null }

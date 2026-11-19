@@ -56,3 +56,17 @@ test('our own artifact rows round-trip through the same gate', () => {
 test('the gate names are the four the artifact counts, and nothing else', () => {
   assert.deepEqual([...REPLY_GATES].sort(), ['answered', 'closed', 'open', 'unreadable'])
 })
+
+test('a category with no accepted-answer mechanism is still not "open" (T-851)', () => {
+  // Live shape on 2026-11-19: General / Ideas threads answer `isAnswered: null` with
+  // `category.isAnswerable: false`. Reading that as "nobody answered" is what T-851 forbids until a
+  // comment-based definition exists — so the gate must keep saying `unreadable` and the pre-post check
+  // stays a human one (R80's precedent). This test exists to stop a well-meaning "just map null to open".
+  assert.equal(
+    judgeReplyGate({ closed: false, isAnswered: null, category: { name: 'General', isAnswerable: false } }),
+    'unreadable',
+  )
+  assert.equal(judgeReplyGate({ closed: false, isAnswered: null, answerable: false }), 'unreadable')
+  // The same thread in a Q&A category still needs the observed `false`, not a missing field.
+  assert.equal(judgeReplyGate({ closed: false, isAnswered: null, category: { name: 'Q&A', isAnswerable: true } }), 'unreadable')
+})
