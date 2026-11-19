@@ -17305,6 +17305,54 @@
         "ssot": "PASS：产物 + `.sha256`。",
         "adversary": "反例：把 `t.co` 的 1 个唯一当成「X 有效」。一个访客什么都不能证明；要看的是接下来一周它是否持续出现。"
       }
+    },
+    {
+      "id": "R121-S7",
+      "batch": "R121",
+      "step": "把 rc.5 升级日的文档与产物切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-19T06-32-21.955Z.json",
+        "data/results/public-cut-2026-11-19T06-32-21.955Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at 56fddd8` / `behind 0`（public `d70b934`）。",
+        "artifact": "data/results/public-cut-2026-11-19T06-32-21.955Z.json",
+        "sha256": "08d87d34bb43ef5f42d5adf2943cac554c88cd699f07de6bbf1205eee9760f6c"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`（56fddd8），父提交是当时的 `origin/main`（e619678）。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算。",
+        "licence": "PASS：只推 `dsh-triage/` 子树。",
+        "ssot": "PASS：data/results/public-cut-2026-11-19T06-32-21.955Z.json + .sha256 落在 data/results/。",
+        "adversary": "反例：把「公开仓同步」读成「用户已升级」。用户那边升不升由上游与用户决定；我们只保证文档说的是实测值。"
+      }
+    },
+    {
+      "id": "R121-S8",
+      "batch": "R121",
+      "step": "交接前把对外文档的一致性再跑一遍（1003 测试），并让事实卡与徽章对齐",
+      "changed": [
+        "README.md",
+        "README.zh-CN.md",
+        "packages/plugin/README.md",
+        "docs/distribution/promotion.md",
+        "docs/HANDOFF.md",
+        "docs/OPERATIONS.md"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --tests 1003 --stamp 2026-11-19T10:00:00.000Z",
+        "outcome": "**17/17**：版本 0.3.11、`--tests 1003`、22 条证据路径带 `.sha256`、5 个渠道 lane 一致。",
+        "artifact": "data/results/listing-2026-11-19T10-00-00.000Z.json",
+        "sha256": "9006d321de4d63c235e4afc391bdef0539f0104fc6edfe8e223ad58f7ad39e74"
+      },
+      "review": {
+        "correctness": "PASS：套件实际 1003（1002 + R121 新增的一条负对照），徽章 / 规模行 / 事实卡 / OPERATIONS 四处同轮改到 1003。",
+        "reproducibility": "PASS：`check_listing` 从文档与产物两边读，任一处不同即红；本轮先跑出过一次 `test-count-matches` 漂移才改。",
+        "licence": "PASS：只改我们自己的文档。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把「徽章和规模行一致」当「数字是真的」—— 它们可以一起错（本轮就是两处一起停在 1002，而套件已经 1003）。一致性不等于正确性，只有套件跑出来才是。"
+      }
     }
   ]
 }

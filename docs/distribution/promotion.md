@@ -12,7 +12,7 @@
 |---|---|---|
 | 是什么 | 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 `DSH_HOME` 里实测 | `packages/plugin/README.md` 首屏 |
 | 当前版本 | **0.3.11** | `packages/plugin/package.json` |
-| 测试 | **1002** | README 徽章 + `pnpm test` |
+| 测试 | **1003** | README 徽章 + `pnpm test` |
 | 装（插件） | `dsh plugin --profile web add dsh-triage` | 市场条目 `install` 字段 |
 | 装（CLI） | `npm i -g dsh-triage` | `packages/plugin/package.json` 的 `bin` |
 | 许可 | MIT | `LICENSE` |
@@ -78,5 +78,5 @@
 
 1. 写任何对外文案前，**只从 §1 取事实**；
 2. 发之前按 `promotion-playbook.md` §4 的验证命令逐条过；
-3. 发之后回填 `docs/copy/outreach.json`，再跑一次 `node scripts/check_listing.mjs --stamp <ISO> --tests 1002`；
+3. 发之后回填 `docs/copy/outreach.json`，再跑一次 `node scripts/check_listing.mjs --stamp <ISO> --tests 1003`；
 4. 改了版本 / 测试数 / 平台边界，**同一轮**回来改这一页（有测试会红）。

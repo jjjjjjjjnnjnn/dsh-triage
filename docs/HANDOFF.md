@@ -39,7 +39,7 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
 | 里程碑 | **M0 ✅** · **M1 金标对等 ✅（27 条）** · **M1 真实案例验收 ✅（D1：9/10）** · **M2-a P1+P2 ✅** · **M2-b 事实+差分 ✅（`BS-21`/`BS-22`）** · **M3 probe 执行器 ✅（R14）** · **M3 判据补全 ✅（R15/R16/R17）** · **D2 ✅（R18 首判 / R19 复算 / R29 新口径两批 12/12）** · **M3 稳定性分布 ✅（R31，36 次观测）** · **M4 形态 A ✅（`serve` v1）** · **M3 真实组合复制 ✅（T-304，R22）** · **M3 不可判等待收敛 ✅（`ADR-0008` E，R26）** · **M3 两阶段取样 ✅（T-312，R28）** · **M4-a ✅ 收口（R31 真机注册 / R33 可见性 + 同源结论）**；`namespace-diff`（T-303）仍缺（需 T-202a，`ADR-0009` 已签 A） · **M4-b ✅ 三件齐（R34 徽章 + 索引源；R36 `compat_verdict`）+ 索引源已托管（R38）** · **M5-a 本地半边 ✅（R41）**，上传/聚合待 `ADR-0012` · **M5-b ✅ 双边（R42 `upgrade --to`；R44 `improved` 真机 + registry 成功分支）**，`improved` 只有降级几何（`BS-42`） |
 | 仓库 | `https://github.com/jjjjjjjjnnjnn/dsh-triage`（**public**（R38 由 HUMAN 决定），`main`） |
 | CI | **6 job**：`verify (node 22)` · `verify (node 24)` · `verify (windows, node 24)` · `render controls (ubuntu, real browser)` · `gates can fail`（负对照 9/9）· `release readiness`（tag 触发） |
-| 规模 | **1002 测试** · **10 门禁** · **7 角色卡**（6 + `copywriter`） · **4 模板**（3 任务包 + `kickoff`） · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **660 份 SSOT 产物** · **709 步台账** · **76 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** + **R59 Question 覆盖率（Q&A 1545 / General 5786；头条 74/1545 = 4.8%；抽检 9/20 + HUMAN 5/5；`check_listing` 14/14，含 3 条定向负对照）** + **R60 分类器 v2 实验（开发集 20/20 / 互斥留出集 12/20，v1 7/20；未达 80%，不采用；生产仍 v1）** |
+| 规模 | **1003 测试** · **10 门禁** · **7 角色卡**（6 + `copywriter`） · **4 模板**（3 任务包 + `kickoff`） · **10 个真实案例（9 命中 / 1 显式 unknown）** · **27 条金标** · **662 份 SSOT 产物** · **711 步台账** · **76 条盲区** · **13 个真实插件候选（12 go / 1 装不上）** + **4 种组合复制形状（1 go / 3 unknown）** + **R44 混合组合四桶非空（3 改善）** + **R45 三篇案例帖 / 两份上架文案 / 文案检查器（12 条断言）** + **R47 市场基线 + 升级日卡片（真机 14/14）** + **R48 升级日入口四项（真机 26/26 + 离线复算 3/3 + README 首屏）** + **R49 一屏答案（`status` / `audit` 摘要 / 面板首屏；冒烟 17/17 + 复算 17/17 + 11 条对抗性）** + **R49 第二轮面板改版（搜索/筛选/排序/详情抽屉/主题/深链；冒烟 18/18）** + **R49 第三轮傻瓜模式（人话结论 + 一个按钮 + 简单/详细切换；发布预检查）** + **R49 第四轮自动修复（`fix` 计划/`--apply`/`--undo` + M7 判据）** + **R49 第五轮面板重做（独立 agent，去 AI 化）** + **R50 0.3.0 发布取证（20/20：registry 字节 = 本地 tarball / 匿名安装 / CLI / import）** + **R50 预检查三态化（+10 测试，含 `ENOENT` 红对照）** + **R51 DSH 设置页一屏答案（真机 10/10：`summary-visible` + 同源四计数；含两次自查出的红产物）** + **R52 D5 下载口径（形状纯函数 7 单测 + 端到端 4 测试；基线真跑 `failures: []` + 离线逐字节复算；rc.5 卡片 14/14；`T-810` 五篇草稿 + 第 9 条文案断言 12/12，含两条红产物与一条定向负对照）** + **R53 0.3.1 发版票（四包同升 + 文案 12/12 + 渠道复核 `listed 1` / `#65 DIRTY` + 设置页真机三跑 11/2、16/1、12/1；预检查如实报 `E401`）** + **R59 Question 覆盖率（Q&A 1545 / General 5786；头条 74/1545 = 4.8%；抽检 9/20 + HUMAN 5/5；`check_listing` 14/14，含 3 条定向负对照）** + **R60 分类器 v2 实验（开发集 20/20 / 互斥留出集 12/20，v1 7/20；未达 80%，不采用；生产仍 v1）** |
 | 证据（R60） | `data/results/classifier-v2-2026-11-02T11-20-00-000Z.json`（`3e357e063cfe…`：dev v1 **9/20** / v2 **20/20**；holdout v1 **7/20** / v2 **12/20**；`decision: not-adopted`）· 留出集标签 `data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/holdout-review.json`（种子 `20261103`，20 条，排除开发集）· 报告 `audit/RECON_2026-11-02_classifier-v2.md` · 盲区 `BS-53` |
 | 证据（R59） | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json`（`7354f39db3ab…`，8.1MB：Q&A 1545/1545 · General 5786/5786 · 头条 74/1545 = 4.8% · Wilson 3.8–6.0% · tier 47/27/89/164/90/178/950）· `question-coverage-recompute-2026-11-02T10-05-00-000Z.json`（`2d51b1666275…`，rows/counts/coverage 逐项相同）· `question-review-2026-11-02T10-10-00-000Z.json`（`285fc59e5ac5…`，agent 9/20 · HUMAN 5/5）· 快照 `data/fixtures/question-coverage/2026-11-02T09-57-53-229Z/`（qa 4.4MB 全文 / general 6.0MB 投影 / packuments 0.7MB / **1393 包**）· **三条红产物保留**：`listing-2026-11-02T10-10-00.000Z.json`（改数 47→48）· `listing-2026-11-02T10-20-00.000Z.json`（删「不是你的机器」）· `listing-2026-11-02T10-30-00.000Z.json`（把复算产物当测量指针）· 终跑 `listing-2026-11-02T10-40-00.000Z.json`（**14/14**）；外部文案复核后 `listing-2026-11-02T11-00-00.000Z.json` 仍 **14/14** · 报告 `audit/RECON_2026-11-02_question-coverage.md` |
 | 证据（R53） | `data/results/listing-2026-11-01T10-10-00.000Z.json`（`237e80c0…`，**12/12**，version 0.3.1 / tests 529）· **三条红产物各自保留**：`listing-…T09-00-00`（`e11d9403…`，`submissions/README.md` 把 0.3.0 引到 0.2.0 的产物）· `listing-…T09-50-00`（`e66b8c5e…`，**我自己新写的那句话**把旧版本号写回正文）· `release-preflight-2026-11-01T10-20-00.000Z.json`（`30a998d9…`，`not-logged-in` 真 `E401`：version/workspace 两项绿）· `market-channels-2026-11-01T09-40-00.000Z.json`（`f992a029…`，`live 3` + **`listed 1`**：dsh.so 端点 200 / L5 / low，`#65 = DIRTY`）· **真机三跑**：`client-serve-2026-11-01T11-00-00`（`a33c8082…`，11/2）· `…T11-20-00`（`504b61b8…`，16/1，含 `break-after-install` 与真鼠标 `clipboard-copy`）· `…T11-40-00`（`faa502bf…`，12/1，`english-screen`） |
@@ -83,11 +83,26 @@ node scripts/gate.mjs --mutate      # 必须输出 NEGATIVE CONTROL PASSED · 10
 node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（10 项，R105 起）
 ```
 
-**验收标准**：第二条输出 `ALL GREEN · 10 gates`（当前 **1002 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 10/10`。
+**验收标准**：第二条输出 `ALL GREEN · 10 gates`（当前 **1003 测试**）；第三条最后一行 `NEGATIVE CONTROL PASSED · 10/10`。
 
 > **交接时的基线是产物，不是记忆**：`data/results/gates-2026-11-13T13-51-35.259Z.json`（10 门全绿）与 `data/results/gates-mutate-2026-11-13T13-51-44.525Z.json`（10/10）。
 > 你跑出红的时候，先用这两份比一眼，再决定是「我弄坏了」还是「交接时就不一样」。
 不满足即环境不可信——**先修基线，不叠加新功能**。
+
+**当前状态（R121，2026-11-19 交接）**
+
+- **上游转正**：`latest` = `next` = **`0.2.2-rc.5`**（rc.1 → rc.5；两 tag 相同是**转正**，产物里写的是 `change_latest.state = promoted`）。**本机桌面已升到 `0.2.2-rc.5 (kernel-asar)`**：`status` 一屏 **0 项需要处理 · 79 项判不了**。
+- **当天实测**：隔离装 **10/10**（`sandbox/upstream/0.2.2-rc.5`）· 真机卡片 `--to latest` **14/14**（201 单元 → 0 拒 / 80 判不了 / 0 变好 / 121 像没事）· 准入探针里**只有精确钉到 rc.5** 的 `dsh-mcp-client` 被承认。
+- **外部读数**：**58 浏览 / 22 唯一**、npm 31 天 **3,179**、star 1；来源**第一次出现 `t.co`**（X 线程，2 次 / 1 唯一）与 `dsh.so` 1 次；市场条目已跟到 **0.3.11 + icon**；dev.to 文章 **2 reactions / 2 comments**。
+- **门禁**：**1003 测试 / 10 门 / 10-10**；661 产物 / 710 步 / 76 盲区。
+
+**下一位的第一件事，按顺序**
+
+1. **两条新帖，正好在我们判据上**（2026-11-19 新开、0 回复）：`#13730`「0.2.2-rc.5 自动更新把官方可选 bundle 留在 rc.3」与 `#13748`「应用内更新不升 profile 包，下次启动失败」。做法照 R118/R120：**先确认仍 0 回复 → 读全文 → 事实包 → 以只读命令开头 → 不贴无关链接**（本轮 GitHub 链接额度 2/2 已用完，这两条**不要带链接**）。我们手上有同一天的对照读数（同一台机器、同一个 rc.5、0 可动手 / 79 判不了），这是别人没有的。
+2. **dev.to 的两条评论回复**：草稿在 `docs/copy/drafts/2026-11-19-devto-replies.md`（一条给 `@sagereads`，一条给 `@amintacccp`）。**发不出去的原因**：公开 API 不回评论 id（`POST /api/comments` 404），网页回复要登录而浏览器没有 dev.to 会话。**需要 HUMAN 登录或手动粘贴。**
+3. **周度流量**：约 **2026-11-24** 跑 `node scripts/record_traffic.mjs --stamp <UTC>`，只看四数（唯一访客 / star / 第三方引用 / 外部 issue），以及 `t.co` 是否持续出现。
+4. **等 Phoeky**：`#13581` 他是唯一认真参与的第三方，**不催**；他再回时优先处理。
+5. **`BS-76` 需要签字**：代码至今**不读** `<profile>/cordis.patch.yml`，所以「没被组合」的结论可能漏掉 patch 行。改它属于改判据（会让某些行从「未组合」变成「被组合」），按仓规要判据轮 + HUMAN 签字，**不要顺手做**。
 
 **下一件事，按顺序（R105 留给下一轮的作业，不是建议）**
 
@@ -112,7 +127,7 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
 
 5. **发布不用问 OTP**：本机 npm token 配了 2FA bypass，`pnpm -r publish --no-git-checks` 直接发（容器仓 `dsh-remedy/` 的未提交改动让 `--no-git-checks` 成为必需，不是绕过检查）。发完 `node scripts/record_publish.mjs`；第一份若出现 `version:<pkg>` / `dist-tags-agree` 两条红，那是副本滞后，**红产物保留**、几分钟后重跑 18/18（R112 实测 60.8s 后才可见）。
 
-5b. **npm 页面现在是受检的那一份**：`dsh-triage@0.3.11` 的 README 与仓内 `packages/plugin/README.md` **逐字节相同**（徽章 **1002**，首屏是 R114 重写的那一版；`npm view` 与 `npm pack` 两条路径都验过）。R104–R105 那段「npm 写 971、仓内 972」是**发布快照**，0.3.10 起已经对齐；不要为了「一致」去改旧版本的数字。
+5b. **npm 页面现在是受检的那一份**：`dsh-triage@0.3.11` 的 README 与仓内 `packages/plugin/README.md` **逐字节相同**（徽章 **1003**，首屏是 R114 重写的那一版；`npm view` 与 `npm pack` 两条路径都验过）。R104–R105 那段「npm 写 971、仓内 972」是**发布快照**，0.3.10 起已经对齐；不要为了「一致」去改旧版本的数字。
 
 5c. **维护模式（D-3）**：D5 已判 `fail`，**不再加功能**。只做四类事：① 安全修复；② 上游换版本适配（`watch-upstream` → 卡片回归、`admission` 语义对等）；③ 依赖与 CI 修复；④ 已发布包的回归 smoke（`node scripts/record_usability_smoke.mjs --stamp <ISO>`）。新命令、新面板页、新判据都**不做**；`T-855` / `T-856` / `T-857` / `T-858` 已在 `BACKLOG.md` 标 ⛔。
 
@@ -136,7 +151,7 @@ node scripts/handover_check.mjs     # 本文件自己说的话是否还成立（
 
 **接手时的工作区预期**：**`dsh-triage/` 干净**；容器仓 `origin/main` 落后一整批（`git log --oneline origin/main..HEAD` 预期非空、且数字只会变大）。先跑 `node scripts/record_public_cut.mjs --stamp <ISO>`：最新那份 `public-cut-*.json` 就是「切在哪一刀」的答案，别信手记的 sha。**容器仓里 `dsh-remedy/` 有未提交改动是常态**（那是另一个项目），发布时必须 `--no-git-checks`。
 
-**R116 交接快照**：ackup/snapshots/snapshot-0.3.11-handoff-R116-final.json（**拿这份当作交接起点**：gates green · 10、**646 份 SSOT 产物 / 695 步台账**）。dirty: true 是构造使然（脚本先量 git status 再写文件），不是漏提交。更早的 snapshot-0.3.11-handoff-R115-final.json · R114 · R113 · R112 · R108 · R107 · R106 · R104 · R98 · R96* 同样是真的，别当漂移。
+**R121 交接快照**：`backup/snapshots/snapshot-0.3.11-handoff-R121-final.json`（**拿这份当作交接起点**：gates green · 10、**662 份 SSOT 产物 / 711 步台账**）。dirty: true 是构造使然（脚本先量 git status 再写文件），不是漏提交。更早的 `snapshot-0.3.11-handoff-R116-final.json` · R115 · R114 · R113 · R112 · R108 · R107 · R106 · R104 · R98 · R96* 同样是真的，别当漂移。
 
 **容器仓里的 `dsh-remedy` 仍未 push**，推不推是 HUMAN 的事；两个项目各自 `pnpm run verify`，不要混提交。
 
