@@ -77,7 +77,7 @@ $ dsh-triage upgrade --to latest
 | 真实故障上 9/10 给出可行动归因 | `data/results/d1-2026-10-26T12-00-00.000Z.json` |
 | 隔离沙盒里真装、真启动、真取页面 | `packages/probe/`、`data/results/d2-*` |
 | 发布包在干净环境装得上、四条命令都跑得通 | `data/results/publish-*.json`、`data/results/usability-*.json` |
-| 声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对本机 `0.2.2-rc.3` 实测 **satisfied** | `data/results/audit-2026-11-13T18-25-00.000Z.json` |
+| 声明区间 `>=0.2.0-rc.1 <0.3.0-0` 对本机 `0.2.2-rc.5` 实测 **satisfied** | `data/results/audit-2026-11-19T09-25-00.000Z.json` |
 | 上游 Q&A 1545 条里，声明层能答 74 条（4.8%）；`not-relevant` 950 条是**分类器没读到信号**，不等于「与我们无关」 | `data/results/question-coverage-2026-11-02T09-57-53-229Z.json` |
 | 1002 个测试 + 10 道零依赖门禁（含负对照） | `pnpm run verify`、`node scripts/gate.mjs --mutate` |
 
@@ -148,7 +148,7 @@ $ dsh-triage serve                      # 本地 Web 面板
 
 ```console
 $ dsh-triage upgrade --to next --card
-$ dsh-triage upgrade --to 0.2.2-rc.3
+$ dsh-triage upgrade --to 0.2.2-rc.5
 ```
 
 `--to next` / `--to latest` 从 npm `dist-tags` 解析目标；`--to <版本>` 全程离线。`--card --out card.md` 把摘要落盘，可直接贴进 Issue / Discussions。不带 `--to` 时只提示当前版本与可选目标，不作判定。

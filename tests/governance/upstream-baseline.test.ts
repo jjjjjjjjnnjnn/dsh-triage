@@ -66,13 +66,37 @@ const claimRegion = (file: string, marker: string): string => {
 
 test('every entry document repeats the upstream versions the newest artifact measured', () => {
   const expected = newestObservation()
-  assert.ok(expected.latest !== expected.next, `if upstream's tags agree (${expected.latest}) this test proves nothing — assert the pair elsewhere instead`)
+  /*
+   * R121: the two tags collapsed onto one build (0.2.5 → 0.2.2-rc.5 promotion). The old guard failed
+   * here on purpose, because a pair comparison cannot catch a swap when both sides are equal. Rather than
+   * drop the check, the equal case now demands the artifact say *why* they are equal: a `promoted` state
+   * with `agrees_with_next: true`. Documents still have to repeat the measured value for both claims.
+   */
+  if (expected.latest === expected.next) {
+    const payload = JSON.parse(read(`data/results/${expected.file}`)) as {
+      change_latest?: { state?: string, agrees_with_next?: boolean }
+    }
+    assert.equal(
+      payload.change_latest?.state,
+      'promoted',
+      `both tags name ${expected.latest}; the artifact must record that as a promotion, not as a coincidence`,
+    )
+    assert.equal(payload.change_latest?.agrees_with_next, true, 'the promotion record must say the tags now agree')
+  }
   const problems: string[] = []
   for (const { file, marker } of DOCUMENTS) {
     const verdict = judgeTagClaims({ line: claimRegion(file, marker), expected })
     if (!verdict.ok) problems.push(`${file}: ${verdict.detail}`)
   }
   assert.deepEqual(problems, [], `the documents disagree with ${expected.file} — ${problems.join(' · ')}`)
+})
+
+test('a document that still names the previous rc is red while the tags are equal', () => {
+  const expected = newestObservation()
+  const stale = `上游基线：\`latest\` = **0.2.2-rc.1** · \`next\` = **0.2.2-rc.3**`
+  const verdict = judgeTagClaims({ line: stale, expected })
+  assert.equal(verdict.ok, false, 'a document naming the pre-promotion pair must not pass')
+  assert.equal(verdict.claims.latest, '0.2.2-rc.1', 'the parser must read the stale latest claim')
 })
 
 test('a document that names the previous rc is red, not "close enough"', () => {

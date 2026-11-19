@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R120 (2026-11-18)",
+  "stand": "R121 (2026-11-19)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17150,6 +17150,160 @@
         "licence": "PASS：更正里没有引用原作者正文；X 线程是我们自己的文字；链接只有 dev.to 一篇自家文章。",
         "ssot": "PASS：`listing-2026-11-18T17-20-00.000Z.json` + `.sha256` 落 `data/results/`；帖子与文章按外部动作记在 `outreach.json`。",
         "adversary": "反例一：把「有人回了」读成「方法有效」。Phoeky 的回帖是**一个**数据点，而且它同时证明了我们的模型有错。反例二：把 X 的浏览数当触达 —— 发完那一刻是 6 次浏览，什么都不能说明；下一轮看 referrer，不看 impressions。"
+      }
+    },
+    {
+      "id": "R120-S2",
+      "batch": "R120",
+      "step": "把含更正文稿与 X 线程记录的子树切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-18T17-13-44.439Z.json",
+        "data/results/public-cut-2026-11-18T17-13-44.439Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "git rev-parse main:dsh-triage -> git commit-tree -p origin/main -> git push ; node scripts/record_public_cut.mjs --stamp <UTC>",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at 764f2ab` / `behind 0`（public `e619678`）。",
+        "artifact": "data/results/public-cut-2026-11-18T17-13-44.439Z.json",
+        "sha256": "f55c9c02627588e2e0723e3cc5260bc25af987d829580af45b18b77e9a9dcd62"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `main:dsh-triage`（764f2ab），父提交是当时的 `origin/main`（655546b）。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算；`behind 0` 是那一刻的读数。",
+        "licence": "PASS：只推 `dsh-triage/` 子树；没有把原作者的回帖正文复制进仓库。",
+        "ssot": "PASS：data/results/public-cut-2026-11-18T17-13-44.439Z.json + .sha256 落在 data/results/，由脚本产出。",
+        "adversary": "反例：把「公开仓同步」读成「更正被看见了」。X 与上游那边有没有人读到，要下一轮看 referrer 与评论，不看这个 push。"
+      }
+    },
+    {
+      "id": "R121-S1",
+      "batch": "R121",
+      "step": "上游转正：latest 与 next 合到 0.2.2-rc.5（升级日）",
+      "changed": [
+        "data/results/next-release-2026-11-19T08-30-00.000Z.json",
+        "data/results/next-release-2026-11-19T08-30-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/watch_next_release.mjs --stamp 2026-11-19T08:30:00.000Z",
+        "outcome": "`next` 0.2.2-rc.3 → 0.2.2-rc.5、`latest` 0.2.2-rc.1 → 0.2.2-rc.5；产物记 `change_latest.state = promoted` 与 `agrees_with_next: true` —— **两个 tag 相同是因为转正，不是因为没变**。",
+        "artifact": "data/results/next-release-2026-11-19T08-30-00.000Z.json",
+        "sha256": "bac1984db2ba8b93e8bf571cd82ea0077745a72eca9d778a876b4b8b476aaa09"
+      },
+      "review": {
+        "correctness": "PASS：`latest` 与 `next` 分别与 registry 的 dist-tags 逐字相同；转正由 `change_latest.state` 记录，不靠人读。",
+        "reproducibility": "PASS：记录器只读 registry；产物带 `previous_latest` 指针与时间。",
+        "licence": "PASS：只读公开 registry。",
+        "ssot": "PASS：产物 + `.sha256` 落 `data/results/`。",
+        "adversary": "反例：把「两个 tag 相同」读成「没变化」。这正是 R121 之前测试守卫会误判的形状；本轮把守卫改成要求产物说明「为什么相同」。"
+      }
+    },
+    {
+      "id": "R121-S2",
+      "batch": "R121",
+      "step": "在隔离沙盒里真装 0.2.2-rc.5，取 registry/install/版本/台账证据",
+      "changed": [
+        "data/results/upstream-0.2.2-rc.5-2026-11-19T09-00-00.000Z.json",
+        "data/results/upstream-0.2.2-rc.5-2026-11-19T09-00-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/bootstrap_upstream.mjs --version 0.2.2-rc.5 --with-profile-deps --stamp 2026-11-19T09:00:00.000Z",
+        "outcome": "**10/10**（registry / npm-install / installed-version / profile-deps / plugin-inventory / fiberPhase / `dsh --version` / 202 条 profile / mounted-ready），沙盒 `sandbox/upstream/0.2.2-rc.5`。",
+        "artifact": "data/results/upstream-0.2.2-rc.5-2026-11-19T09-00-00.000Z.json",
+        "sha256": "3d053779afebebace3ad5a205919094f2d846a6825c62cc76d2b3d91eddc0b77"
+      },
+      "review": {
+        "correctness": "PASS：`dsh --version` 与 `installed-version` 都是 0.2.2-rc.5。",
+        "reproducibility": "PASS：沙盒可删可重建；每一步有退出码。",
+        "licence": "PASS：只从公开 registry 取包。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把「装得上」当「跑得对」。这一步只证明包能装、版本对、台账可读；运行期是下一张卡片的范围。"
+      }
+    },
+    {
+      "id": "R121-S3",
+      "batch": "R121",
+      "step": "真机升级日卡片：这台机器升到 rc.5 会坏什么",
+      "changed": [
+        "data/results/upgrade-card-2026-11-19T09-10-00.000Z.json",
+        "data/results/upgrade-card-2026-11-19T09-10-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_upgrade_card.mjs --to latest --dsh-home <home> --profile web --stamp 2026-11-19T09:10:00.000Z",
+        "outcome": "**14/14**；201 单元（2 bundle + 199 行）→ **0 会被拒 · 80 判不了 · 0 会变好 · 121 像没事**；卡片标「目标等于当前」。",
+        "artifact": "data/results/upgrade-card-2026-11-19T09-10-00.000Z.json",
+        "sha256": "cc632d066233922beef2b6d9d2f4768a244f6d8b6e36e4f62b051d66ee467c03"
+      },
+      "review": {
+        "correctness": "PASS：四桶合计 201 = 读到的单元数；目标版本取自 registry 的 `latest`。",
+        "reproducibility": "PASS：卡片正文两次渲染同 sha256；产物里 `inputs.card_sha256` 与打印的 `card sha256=` 一致。",
+        "licence": "PASS：卡片里没有 home 绝对路径（`scrubCardText`）。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把「0 会被拒」读成「升级安全」。80 条判不了正是「没有声明区间」的那批；卡片必须同时显示这两个数。"
+      }
+    },
+    {
+      "id": "R121-S4",
+      "batch": "R121",
+      "step": "准入探针：五个 mcp-client 构建对 rc.5 的结论",
+      "changed": [
+        "data/results/remedy-probe-2026-11-19T09-20-00-000Z.json",
+        "data/results/remedy-probe-2026-11-19T09-20-00-000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_remedy_probe.mjs --target 0.2.2-rc.5 --pins <五个构建> --stamp 2026-11-19T09:20:00.000Z",
+        "outcome": "只有 `@0.2.2-rc.5` **admitted**（9 条 peer）；`0.2.2-rc.1/rc.3/rc.4` 与 `0.0.1-rc.1` 全部 denied —— 每跳 rc 都要重新钉。",
+        "artifact": "data/results/remedy-probe-2026-11-19T09-20-00-000Z.json",
+        "sha256": "e926db32071f052b29a7edde8771905d60395e58c4b8ae1322a1f87d08df3a76"
+      },
+      "review": {
+        "correctness": "PASS：五行的 `unmet` 与 peer 声明逐条对应。",
+        "reproducibility": "PASS：只读 registry，输入 pin 写在 `sample.pins`。",
+        "licence": "PASS：只读公开元数据。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把「rc.5 admitted」推广成「0.2.x 都行」。事实相反：只有精确钉到 rc.5 的那条通过。"
+      }
+    },
+    {
+      "id": "R121-S5",
+      "batch": "R121",
+      "step": "真机审计：rc.5 上的行数与判定",
+      "changed": [
+        "data/results/audit-2026-11-19T09-25-00.000Z.json",
+        "data/results/audit-2026-11-19T09-25-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_audit.mjs --stamp 2026-11-19T09:25:00.000Z --dsh-home <home> --profile web",
+        "outcome": "`audit-2026-11-19T09-25-00.000Z.json`；`status` 同轮读作 `dsh 0.2.2-rc.5 (kernel-asar)`、**0 项需要处理 · 79 项无法判定**。",
+        "artifact": "data/results/audit-2026-11-19T09-25-00.000Z.json",
+        "sha256": "b422401440711e1a7d7944c417024bb01fc29882fe40e9718c77a7b18df38c86"
+      },
+      "review": {
+        "correctness": "PASS：运行时版本来自 asar 读，不是共享缓存（`kernel-asar` 标签）。",
+        "reproducibility": "PASS：同一命令可重跑；行数与判定写进产物。",
+        "licence": "PASS：产物里的路径相对 home，可发布。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把「0 项需要处理」读成「一切正常」——79 项判不了是没写区间，不是通过（`BS-68`）。"
+      }
+    },
+    {
+      "id": "R121-S6",
+      "batch": "R121",
+      "step": "新一天的外部读数：GitHub 流量 / npm / 两个目录",
+      "changed": [
+        "data/results/traffic-2026-11-19T09-30-00-000Z.json",
+        "data/results/traffic-2026-11-19T09-30-00-000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_traffic.mjs --stamp 2026-11-19T09:30:00.000Z",
+        "outcome": "**58 浏览 / 22 唯一**、clone 1,363/312、npm 31 天 **3,179**、star 1；**来源里第一次出现 `t.co`**（2 次 / 1 唯一，来自 X 线程），`dsh.so` 1 次。",
+        "artifact": "data/results/traffic-2026-11-19T09-30-00-000Z.json",
+        "sha256": "e82cf96d9f2a985ad53447e52092a324439827f5bcda20bef6e22ffadf67e8fc"
+      },
+      "review": {
+        "correctness": "PASS：GitHub 14 天窗口与 npm 31 天分别读，不混算。",
+        "reproducibility": "PASS：同一脚本可重跑；窗口会滚动，所以读数带时间戳。",
+        "licence": "PASS：只读 GitHub 与 npm 的公开/自有端点。",
+        "ssot": "PASS：产物 + `.sha256`。",
+        "adversary": "反例：把 `t.co` 的 1 个唯一当成「X 有效」。一个访客什么都不能证明；要看的是接下来一周它是否持续出现。"
       }
     }
   ]
