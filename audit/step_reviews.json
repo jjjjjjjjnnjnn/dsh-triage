@@ -17468,6 +17468,28 @@
         "ssot": "PASS：事实包与草稿各引三份带 `.sha256` 的产物；`outreach.json` 第 19 条记 URL + 带时区 instant + `d5_counts: false`。",
         "adversary": "反例：把「发出去了」读成「有人会看」。`#13730` 的作者已经用豁免绕过，我们影响的只是后来者；下一轮该看有没有人回，而不是数我们发了多少。"
       }
+    },
+    {
+      "id": "R122-S5",
+      "batch": "R122",
+      "step": "把公开仓切到这一轮的提交，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-19T07-20-00.000Z.json",
+        "data/results/public-cut-2026-11-19T07-20-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "tree=$(git rev-parse HEAD:dsh-triage) -> git commit-tree $tree -p origin/main -> git push origin <new>:refs/heads/main ; node scripts/record_public_cut.mjs --stamp 2026-11-19T07:20:00.000Z",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at 57845f3` / `behind 0`（public `bcf069a`，`a3ff3e0..bcf069a` 快进推送，未 force push）",
+        "artifact": "data/results/public-cut-2026-11-19T07-20-00.000Z.json",
+        "sha256": "2f8ec4afb4be2e0b82cdced1ed2648821df76780ac9349634bb41641c3fd9a88"
+      },
+      "review": {
+        "correctness": "PASS：子树取自 `HEAD:dsh-triage`（快照提交 57845f3），父提交是推送前的 `origin/main`（a3ff3e0），推送结果是快进，没有改写历史。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算，`trees-equal true` 来自 tree sha 相等，不是比目录内容。",
+        "licence": "PASS：只推 `dsh-triage/` 子树；29 个文件变化全部落在项目内，无依赖目录、无凭据。",
+        "ssot": "PASS：data/results/public-cut-2026-11-19T07-20-00.000Z.json + `.sha256`。",
+        "adversary": "反例：这条记录一提交，公开仓就又落后 1 个提交 —— 切面装不下自己的记录。这是定义而不是缺陷；`behind` 在两次切之间非零是正常状态，不要为了归零再切。"
+      }
     }
   ]
 }

@@ -1,5 +1,8 @@
 # 宣发 playbook（dsh-triage 版）
 
+> **2026-11-19 起**：可执行流程以本地知识库 `Promotion/PLAYBOOK.md`（宣传总线）为准（`C:\Users\rongj\Desktop\本地知识库\知识库内容\Promotion\`）。
+> 本文件保留为方法参考与历史；渠道状态、排期与发布台账已迁到总线，这里不再新增。负责 Agent 的单一入口见 `docs/AGENT-WORKFLOW.md`。
+
 > **来源**：`ai-terminal-pet/docs/PROMOTION-PLAYBOOK.md`（2026-11-18 通读后适配）。保留的是**方法**：
 > 事实卡现取、渠道逐条验证、去 AI 化写作、24h/1w 测量。换掉的是**渠道与红线**——我们是插件生态里的判断层，
 > 不是桌面应用；而且 D5 已判 `fail`，**不能靠加功能换曝光**。

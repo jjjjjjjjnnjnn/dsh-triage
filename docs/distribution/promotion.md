@@ -1,5 +1,10 @@
 # 宣发事实卡与发布记录（dsh-triage）
 
+> **唯一宣传状态机在本地知识库 `Promotion/` 总线（Promotion Bus）**
+> （`C:\Users\rongj\Desktop\本地知识库\知识库内容\Promotion\`）：排期 `queue/`、台账 `ledger/`、事实卡 `facts/`、评论回收 `inbound/`、每日读数 `reach/` 都在那里，
+> 用 `kb promo status` / `kb promo plan dsh-triage` / `kb promo record` 统一查询与登记。
+> 本文件与 `docs/distribution/promotion-playbook.md` 只保留**事实卡与人读副本**；这里**不是渠道状态机**，与总线不一致时以总线为准并回来修正。
+
 > **流程**在 `docs/distribution/promotion-playbook.md`。这一页只放**本项目**的事实卡、资产清单、渠道状态与发布记录。
 > **事实卡必须现取**：下面的数字由 `tests/governance/promotion-fact-card.test.ts` 与仓内文件复算，改一处不改另一处会红。
 > **发布记录**的权威来源是 `docs/copy/outreach.json`（每条带 URL 与带时区的时间，全部 `d5_counts: false`）。
@@ -12,7 +17,7 @@
 |---|---|---|
 | 是什么 | 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 `DSH_HOME` 里实测 | `packages/plugin/README.md` 首屏 |
 | 当前版本 | **0.3.11** | `packages/plugin/package.json` |
-| 测试 | **1004** | README 徽章 + `pnpm test` |
+| 测试 | **1011** | README 徽章 + `pnpm test` |
 | 装（插件） | `dsh plugin --profile web add dsh-triage` | 市场条目 `install` 字段 |
 | 装（CLI） | `npm i -g dsh-triage` | `packages/plugin/package.json` 的 `bin` |
 | 许可 | MIT | `LICENSE` |
@@ -78,5 +83,6 @@
 
 1. 写任何对外文案前，**只从 §1 取事实**；
 2. 发之前按 `promotion-playbook.md` §4 的验证命令逐条过；
-3. 发之后回填 `docs/copy/outreach.json`，再跑一次 `node scripts/check_listing.mjs --stamp <ISO> --tests 1004`；
-4. 改了版本 / 测试数 / 平台边界，**同一轮**回来改这一页（有测试会红）。
+3. 发之后用 `kb promo record --project dsh-triage --channel <id> --url <url> --outcome <...> --method <...> --result <...>` 登记到总线，再回填 `docs/copy/outreach.json`（仓库侧审计副本）；
+4. 改完数字再跑一次 `node scripts/check_listing.mjs --stamp <ISO> --tests <当前数>`；单一入口见 `docs/AGENT-WORKFLOW.md`，流程以知识库 `Promotion/PLAYBOOK.md` 为准。
+5. 改了版本 / 测试数 / 平台边界，**同一轮**回来改这一页（有测试会红）。

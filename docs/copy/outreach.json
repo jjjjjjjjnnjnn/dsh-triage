@@ -397,6 +397,44 @@
       ],
       "d5_counts": false,
       "why_not_counted": "Same rule: only #11813 reactions and external references feed D5. A reply that corrects one sentence of someone else's workaround is contact, not a demand signal."
+    },
+    {
+      "thread": 13730,
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13730",
+      "status": "posted",
+      "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13730#discussioncomment-19728536",
+      "posted_on": "2026-11-19T07:21:31Z",
+      "language": "en",
+      "reply_to": "TheVicky1",
+      "draft": "docs/copy/drafts/2026-11-19-13730-followup.md",
+      "facts": "docs/copy/facts/2026-11-19-updater-drift.md",
+      "cites": [
+        "data/results/updater-drift-2026-11-19T06-56-13-204Z.json"
+      ],
+      "d5_counts": false,
+      "why_not_counted": "A clarification inside a thread we already joined: it corrects one conflation (`plugin add` re-resolves, `allow-version` admits) and adds no new reach. Replies are contact, not a demand signal."
+    }
+  ],
+  "posted_outside_channel": [
+    {
+      "platform": "devto",
+      "article": "https://dev.to/jjjjjjjjnnjnn/19-visitors-1-star-1416-clones-what-a-launch-actually-looked-like-43pi",
+      "comment_id": "3lj78",
+      "parent_node": "comment-node-1751016",
+      "parent_author": "sagereads",
+      "posted_on": "2026-11-19T06:42:34Z",
+      "note": "Posted from the browser about ten minutes before R122 opened, outside this channel: no draft, no fact pack, no artifact cited, and nothing in the ledger knew about it. Recorded anyway, because a public reply from our account that the ledger does not know about is exactly the drift this file exists to prevent.",
+      "d5_counts": false
+    },
+    {
+      "platform": "devto",
+      "article": "https://dev.to/jjjjjjjjnnjnn/19-visitors-1-star-1416-clones-what-a-launch-actually-looked-like-43pi",
+      "comment_id": "3lj79",
+      "parent_node": "comment-node-1750260",
+      "parent_author": "amintacccp",
+      "posted_on": "2026-11-19T06:44:15Z",
+      "note": "Posted from the browser about ten minutes before R122 opened, outside this channel: no draft, no fact pack, no artifact cited, and nothing in the ledger knew about it. Recorded anyway, because a public reply from our account that the ledger does not know about is exactly the drift this file exists to prevent.",
+      "d5_counts": false
     }
   ],
   "read_not_posted": [

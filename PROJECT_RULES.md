@@ -64,3 +64,15 @@
 
 **前三问任意两否 → 终止**；**第 4 问答案是「不用我们也能过」→ 必须换交付形态（进别人路径 / 换触发时刻），而不是加功能。**
 （依据：R47 实测诊断类目周下载天花板 **1,988** vs 市场类 **380,240**（R52 复测为 **3,074** vs **513,534**）；`dsh-triage` 的 634 次周下载是**单日爆发**，按 D5 读数规则**不算需求**（`BS-48`）。证据 `data/results/market-baseline-2026-10-31T06-40-00.000Z.json`。）
+
+
+---
+
+## 9. 工作流与需求入口（R122 续 接入宣传总线）
+
+1. **负责 Agent 的单一入口是** `docs/AGENT-WORKFLOW.md`：开工先看它，再看 HANDOFF；涉及宣传必须先跑 `kb promo status`。
+2. **宣传状态只在知识库 `Promotion/` 总线**：排期（`queue/`）、发布台账（`ledger/`）、事实卡（`facts/`）、评论回收（`inbound/`）、每日读数（`reach/`）都在那里；本仓 `docs/distribution/` 只是人读 signal，**不是第二份状态机**。与总线不一致时以总线为准，回来修正本仓副本。
+3. **项目对总线的唯一接口是只读快照** `node scripts/promo-snapshot.mjs`（`promotion-snapshot/v1`）：不联网、不写盘、stdout 只放 JSON；读不到写 `unreachable`，**不写 0**。
+4. **发布与回复必须登记**：`kb promo record --project dsh-triage ...`；跨项目 / 跨渠道协调用 `kb_dispatch`（宣传用 `agent-promotion`，**不用 `agent-tech`**）；不值得跟进的东西也要写明原因，不许静默丢弃。
+5. **人做的部分**：登录 / 2FA / 验证码、HN / V2EX 正文、发版 / 打 tag / 切公开仓由 HUMAN 决定；总线不代写平台明令禁止的 AI 文本。
+6. 本节只是工作流边界，**不改任何判据或阈值**。
