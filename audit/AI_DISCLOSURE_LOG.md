@@ -1297,3 +1297,12 @@
 - **对外文案四处**（两份 listing + 两份 README）：分发侧从「两条 PR 待审」改成「三条已合并、只剩 #140」；并明写这个形态没有被需要。
 - **三处自己抓到的旧账**：listing 的分发状态停在 #65 未合并；`00-vision` 的 D5 行仍是「正在计时」；`handover_check` 第 2 项与 `d5-window-deadline` 的两条断言仍要求「窗口开着 / 有截止日」—— 窗口一关，正确页面被判红。改法是**让断言跟着状态走**（关窗后要求「判定词 + 窗口时刻」仍在页面上），不是放宽。
 - **边界**：判据、阈值（10/1/20）、判定顺序、`admission.ts`、四桶、`data/gold/` 一字未动；`fail` 只说明**这一个形态**在这个生态里没被需要，不等于工具坏了。
+
+### 2026-11-19 R122 续｜宣传管线接入知识库 Promotion Bus 的另半边
+
+- **角色**：主会话 `opencode`（Hy4 flash Free），HUMAN「全部同意，继续」并明确授权浏览器与总线操作后由 agent 执行。SessionID：`ses_e0d753c9fffetr7vko3vp3u7bz`。只读研究了一个 subagent（dsh-remedy 的接法）；没有外部模型 CLI、没有跨项目写入。
+- **先读再接**：快照那半边早就在本机（`scripts/promo-snapshot.mjs`）但**从未入 git** —— 干净 checkout 无法回答总线。已随这一轮提交；总线侧 `projects/triage.yaml` / `facts/triage.yaml` 本来就是 verified。
+- **照搬而不是发明**：学 dsh-remedy 的 `docs/AGENT-WORKFLOW.md` 单一入口、`PROJECT_RULES.md` §9 硬边界、`tests/governance/promotion.test.ts` 的真跑快照断言，落成本仓 `docs/AGENT-WORKFLOW.md`、§9 与 `promotion-bus.test.ts` **7 条**（含 N1/N2 负对照）。总线仍是唯一状态机，本仓 `docs/distribution/` 只是人读副本。
+- **KB 侧**：`kb create reference` 建条目后补全内容，`kb promo record` 把今天四条回复（GitHub ×2 + dev.to ×2）落进台账；`kb promo collect dsh-triage` / `kb promo facts` 复读 v0.3.11、`kb validate` **1111/1111**、`kb governance` 无新增问题；`kb reindex` 后新条目可被搜索命中。
+- **一处被自己抓到的假话**：`record_discussion_state` 曾把 `isAnswered: null` 写成 `answered: false`（General 分类根本没有该字段），行重判 `open` 而同产物 gate 说 `unreadable`；改三态 + `answerable`，**gate 一字未动**（仍归 `T-851` 判据轮）。
+- **边界**：判据、阈值、`admission.ts`、四桶、`data/gold/` 一字未动；dev.to 两条回复本就存在（06:42 / 06:44，早于本轮），所以**没有**再发第二条，只在 `outreach.json` 的 `posted_outside_channel` 留痕并登记总线台账。**1011 测试 / 10 门 / 10-10**。

@@ -48,7 +48,7 @@ node scripts/record_traffic.mjs --stamp (node -e "console.log(new Date().toISOSt
 | 上游回答 | **R118 已发 5 条**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`，`outreach.json` 有 URL 与时间）；`#13031` / `#12932` 因作者已自解决而放弃 |
 | 外部互动 | issue **#1**（`CyrusCCSY`，真 bug）已跟进 0.3.11；1 star / 0 fork / 0 watch |
 | 流量基线 | 14 天 **47 浏览 / 19 唯一**；**1,416 clone / 327 唯一**（30×）；npm 31 天 **2,996**；第三方引用 **0** |
-| 门禁 | **1011 测试 / 10 门 / 10-10**；**667 份 SSOT / 717 步台账 / 77 条盲区** |
+| 门禁 | **1011 测试 / 10 门 / 10-10**；**668 份 SSOT / 718 步台账 / 77 条盲区** |
 | 交接快照 | `backup/snapshots/snapshot-0.3.11-handoff-R116-final.json` |
 
 ---

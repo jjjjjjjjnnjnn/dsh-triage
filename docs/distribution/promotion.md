@@ -5,7 +5,7 @@
 > 用 `kb promo status` / `kb promo plan dsh-triage` / `kb promo record` 统一查询与登记。
 > 本文件与 `docs/distribution/promotion-playbook.md` 只保留**事实卡与人读副本**；这里**不是渠道状态机**，与总线不一致时以总线为准并回来修正。
 
-> **流程**在 `docs/distribution/promotion-playbook.md`。这一页只放**本项目**的事实卡、资产清单、渠道状态与发布记录。
+> **流程**在 `docs/distribution/promotion-playbook.md`。这一页只放**本项目**的事实卡、资产清单与本机发布记录。
 > **事实卡必须现取**：下面的数字由 `tests/governance/promotion-fact-card.test.ts` 与仓内文件复算，改一处不改另一处会红。
 > **发布记录**的权威来源是 `docs/copy/outreach.json`（每条带 URL 与带时区的时间，全部 `d5_counts: false`）。
 
@@ -49,11 +49,11 @@
 
 ---
 
-## 3. 渠道状态（2026-11-18 复读）
+## 3. 渠道状态（2026-11-19 复读；机器可读状态以知识库总线为准）
 
 | 渠道 | 状态 | 下一步 |
 |---|---|---|
-| 上游 Discussions 回答 | ✅ **5 条已发**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581`） | 等回应；**不催、不重发** |
+| 上游 Discussions 回答 | ✅ **7 条已发**（`#13609` / `#13374` / `#13292` / `#13627` / `#13581` + `#13730` **两条**：主评论 + 对 `TheVicky1` 的嵌套回复） | 等回应；**不催、不重发** |
 | 上游 D-1 提案 | ✅ 已发（`#13608`，Ideas） | 等回应 |
 | 仓库页 | ✅ description / topics（5）/ homepage 已设 / **社交预览已上传** | — |
 | awesome-dsh-plugin | ✅ 已收录 + icon 已上线 | 维护义务 `T-871`：描述与代码一致 |
@@ -61,8 +61,9 @@
 | dsh-pluginmarket | 🟨 PR **#9368** open | 等维护者；不催 |
 | walkinglabs（`#140`） | 🟨 open、零 review | **不再 ping** |
 | npm | ✅ `latest=0.3.11` | npm 页 README = 仓内 `packages/plugin/README.md` |
-| dev.to | ✅ 1 篇（`19 visitors, 1 star, 1,416 clones`） | 观察 24h / 1w 读数 |
+| dev.to | ✅ 1 篇（`19 visitors, 1 star, 1,416 clones`）+ **2 条评论回复**（`3lj78` / `3lj79`） | 两条回复由浏览器发出、无草稿，已登记总线台账；不再补发 |
 | X / Reddit / HN / V2EX | ⏸ 未用 | HN / V2EX **禁 AI 文本**，只交事实卡；Reddit 需先读版规与 karma |
+| 宣传总线（知识库 `Promotion/`） | ✅ **唯一状态机**：dsh-triage v0.3.11 · fact verified | `kb promo status` / `kb promo plan dsh-triage` / `kb promo record`；本页只是人读副本 |
 
 ---
 
@@ -70,11 +71,14 @@
 
 | 类型 | 数量 | 去哪看 |
 |---|---|---|
-| 上游回复 | 5 | `docs/copy/outreach.json`（`posted_kind: "reply"`） |
+| 上游回复 | 7 | `docs/copy/outreach.json`（含 `#13730` 两条；全部 `d5_counts: false`） |
 | 上游提案 | 1 | 同上（`thread: 13608`） |
 | 文章 | 1 | 同上（`channel: "devto"`，`article_id: 5060085`） |
+| dev.to 评论回复 | 2 | 同上（`posted_outside_channel`，`3lj78` / `3lj79`）+ 总线台账 `pst-2026-11-19-019/020` |
 
-**读法**：这 7 条**没有一条**计入 D5。D5 只数 `#11813` 的 reactions 与第三方引用，
+**合计 11 条**（7 上游回复 + 1 提案 + 1 文章 + 2 评论回复）。
+
+**读法**：这 11 条**没有一条**计入 D5。D5 只数 `#11813` 的 reactions 与第三方引用，
 而一个我们自己开的帖 / 自己发的文，来源永远是我们自己。
 
 ---

@@ -83,7 +83,9 @@ node scripts/handover_check.mjs     # 交接文档自己说的话是否还成立
 
 ---
 
-## 6. 宣传流程（状态在总线，动作在本机）
+## 6. 宣传流程（状态与发帖都在总线，本仓库只供事实）
+
+> 发帖、回帖与 `kb promo record` 只由知识库 `agent-promotion` 执行；本仓库 Agent 不直接发帖、不写 `ledger/`。
 
 1. `kb promo plan dsh-triage` 决定**今天该发什么**；`done / post / wait / blocked / human / check` 里，
    `human` 只交事实卡，**不代写**；HN / V2EX 明文禁 AI 文本，本人写、本人发。

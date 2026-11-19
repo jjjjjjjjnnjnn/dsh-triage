@@ -41,6 +41,7 @@ test('the repo defers promotion status to the knowledge-base bus', () => {
     [play, '宣传总线'],
     [rules, '## 9. 工作流与需求入口'],
     [rules, '不是第二份状态机'],
+    [read('docs/AGENT-WORKFLOW.md'), 'agent-promotion'],
   ] as const) {
     assert.equal(boundaryProblem(text, needle), null, boundaryProblem(text, needle) ?? '')
   }
