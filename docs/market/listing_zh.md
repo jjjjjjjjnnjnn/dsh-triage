@@ -1,6 +1,6 @@
 # 上架文案（中文，直接可用）
 
-> **Stand**: R115 (2026-11-17)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.11`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
+> **Stand**: R127 (2026-11-21)｜**提交前只需确认两个链接活得起来**（仓库 public / npm 已发布 `0.3.11`）——其余数字都是实测，且由 `node scripts/check_listing.mjs` 校验。
 > 英文对应版见 `docs/market/listing_en.md`；提交包与渠道状态见 `docs/market/submissions/README.md`；长文见 `docs/posts/`。
 
 ## 一句话
@@ -75,7 +75,7 @@ dsh-triage env                     # 环境指纹
 
 ## 当前状态（提交前看一眼）
 
-`0.3.11` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage` 同一版本一起升；**`packages/*/src` 一个文件都没改**——这一版只有文档与文案，CHANGELOG 首句写明）。首屏在 0.3.11 换成「装得上 ≠ 跑得对」：一句钩子、三个场景、一条安装；卡片与证据折叠到下面。M0–M6 的**构建侧**已完成。**分发侧**（2026-11-17 复读）：`dsh-community-plugins` 索引 **#65 已合并**、`awesome-deepseekharness` **#193 已合并**、`awesome-dsh-plugin` **#14880 已合并**（短描述 **#15458** 也已合并，站点已上线）；只剩 `walkinglabs/awesome-deepseek-harness-plugins` **#140** 开着；dsh.so **已收录**（`L5 · Run tested`）。
+`0.3.12` 已发布到 npm（四包 `@dsh-triage/core` / `signals` / `probe` + `dsh-triage` 同一版本一起升；**`packages/*/src` 一个文件都没改**——这一版只有文档与证据，CHANGELOG 首句写明）。首屏在 0.3.11 换成「装得上 ≠ 跑得对」：一句钩子、三个场景、一条安装；卡片与证据折叠到下面。0.3.12 把徽章测试数更新到 1011，并把 R123–R126 的上游漂移核实与第三方印证证据指针带上 npm 页面。M0–M6 的**构建侧**已完成。**分发侧**（2026-11-17 复读）：`dsh-community-plugins` 索引 **#65 已合并**、`awesome-deepseekharness` **#193 已合并**、`awesome-dsh-plugin` **#14880 已合并**（短描述 **#15458** 也已合并，站点已上线）；只剩 `walkinglabs/awesome-deepseek-harness-plugins` **#140** 开着；dsh.so **已收录**（`L5 · Run tested`）。
 
 **公开样本结果（2026-11-16）**：`#11813` 的 14 天窗口里 reactions **0/10**、外部引用 **0/1**，周下载 **1212**（`steady`，过 20 门槛）—— 按事先冻结的判据是 **`fail`**。也就是说：**这个产品形态没有被需要**。仓库转入 D 线（作品集 + 上游贡献），不再加功能（`docs/11-d-path.md`）。
 - 徽章：`dsh-triage badge <包>` 生成 SVG（只读已有测量，没有测量就是 `not measured`，不做分数）

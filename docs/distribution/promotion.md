@@ -16,7 +16,7 @@
 | 项 | 值 | 谁能复算 |
 |---|---|---|
 | 是什么 | 给一个 DSH 组合做判断：插件为什么被拒或悄悄消失、升级会坏什么、候选在一次性 `DSH_HOME` 里实测 | `packages/plugin/README.md` 首屏 |
-| 当前版本 | **0.3.11** | `packages/plugin/package.json` |
+| 当前版本 | **0.3.12** | `packages/plugin/package.json` |
 | 测试 | **1011** | README 徽章 + `pnpm test` |
 | 装（插件） | `dsh plugin --profile web add dsh-triage` | 市场条目 `install` 字段 |
 | 装（CLI） | `npm i -g dsh-triage` | `packages/plugin/package.json` 的 `bin` |
@@ -60,12 +60,12 @@
 | dsh.so | ✅ `L5 · Run tested` | 版本滞后是它的排期 |
 | dsh-pluginmarket | 🟨 PR **#9368** open | 等维护者；不催 |
 | walkinglabs（`#140`） | 🟨 open、零 review | **不再 ping** |
-| npm | ✅ `latest=0.3.11` | npm 页 README = 仓内 `packages/plugin/README.md` |
+| npm | ✅ `latest=0.3.12` | npm 页 README = 仓内 `packages/plugin/README.md` |
 | dev.to | ✅ 1 篇（`19 visitors, 1 star, 1,416 clones`）+ **2 条评论回复**（`3lj78` / `3lj79`） | 两条回复由浏览器发出、无草稿，已登记总线台账；不再补发 |
 | X | ✅ 1 条线程（根帖 + 3 条回复，`2123100339024883727`） | 已发，不再补发；下一次必须记 `/status/<id>` |
 | Reddit | ✅ **1 次答问**（`2026-11-19T18:10Z`，`r/DeepSeekHarness`，[comment](https://www.reddit.com/r/DeepSeekHarness/comments/1xvzrrh/a_good_plugins_for_coding/19svsnh16ksg1/)）：对他人帖的回答，不是新投稿；`post_json` 读回 `removed_by_category` 为空、可见，未放链接、未求赞 | 权威记录是总线台账 `pst-2026-11-19-024`；跨项目 7 天警告对答问不适用，不据此再发新帖 |
 | HN / V2EX | ⏸ 未用 | **禁 AI 文本**，只交事实卡与提纲；正文由本人写、本人发 |
-| 宣传总线（知识库 `Promotion/`） | ✅ **唯一状态机**：dsh-triage v0.3.11 · fact verified | `kb promo status` / `kb promo plan dsh-triage` / `kb promo record`；本页只是人读副本 |
+| 宣传总线（知识库 `Promotion/`） | ✅ **唯一状态机**：dsh-triage v0.3.12 · fact verified | `kb promo status` / `kb promo plan dsh-triage` / `kb promo record`；本页只是人读副本 |
 
 ---
 

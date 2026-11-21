@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R124 (2026-11-21)",
+  "stand": "R127 (2026-11-21)",
   "why": "对抗性审核的常驻产物：每个盲区都必须有 mitigations 与 owner，禁只记不修",
   "blind_spots": [
     {
@@ -613,10 +613,12 @@
     },
     {
       "id": "BS-76",
-      "area": "组合模型的输入少了一个：profile 的 `cordis.patch.yml`（R120，由上游 #13581 的实际反例指出）",
-      "cannot_see": "我们对外与对内一直用「三件事」描述一个插件会不会被组合：依赖在不在、名字在不在 `dsh.profile.bundles`、包能不能解析。`#13581` 的作者给出了反例：一个用 `pnpm link` 装的插件**从来没出现在 `bundles` 里**，却实际生效；卸载之后 junction 仍在，harness 依旧能解析到它。上游 `profile-boot` 的模块注释写明组合是**三段叠加**：`dsh.profile.bundles` 的每一层 → profile 自己的 `cordis.patch.yml`（热重载的用户层）→ `--patch` overlays。所以「不在 `bundles`」本身**不是**错误状态；真正决定加载的是 patch 层里有没有那一行。我们读 `bundles` 与 `node_modules`，**不读那个 patch 文件**。",
-      "mitigation": "① 对外把模型改成四个输入（patch 行 / bundle 选中 / 能解析 / 拦截判据通过），并在 `#13609` 里公开发了更正；② 内部：任何「installed but not composed」的说法都必须先看 `<profile>/cordis.patch.yml`，没有它就不能下结论；③ 代码层仍未读该文件 —— 这是**已知缺口**，不是修复：下一步要么把 patch 行纳入扫描，要么在输出里明确「本判定没有读 patch 层」。",
-      "owner": "process + core (composition model)"
+      "area": "组合模型的输入少了一个：profile 的 `cordis.patch.yml`（R120 提出，R125 纠正：代码层从未缺这一输入）",
+      "cannot_see": "对外的「三输入」说法确实少了一个：上游 `profile-boot` 的组合是三段叠加 —— `dsh.profile.bundles` 的每一层 → profile 自己的 `cordis.patch.yml`（热重载用户层）→ `--patch` overlays。`#13581` 的反例（pnpm link 插件不在 bundles 却生效）证明「不在 bundles」本身不是错误状态；R120 已对外改成四输入（patch 行 / bundle 选中 / 能解析 / 拦截判据通过）并在 `#13609` 公开更正。真实残余只有第三段：`--patch overlays` 是启动参数、不在磁盘上，我们读不到它。",
+      "mitigation": "① 对外四输入模型已落地（`#13609`），不再说「三件事」；② 代码层**已经**读 `<profile>/cordis.patch.yml` 与 `$DSH_HOME/cordis.patch.yml`（`packages/plugin/src/load.ts#loadComposition` 的 `profilePatch` / `homePatch`），并经 `collectClaims()` 以 `patch:profile` / `patch:home` 进入 claims → `resolveRows()` → verdict 的 `source` 字段（`audit-data.ts:315-316`、`verdict.ts:231`）；③ R120 写本条时以为的「代码仍未读该文件」是错的：17 份产物含 `patch:profile` 行（例：`audit-2026-11-13T18-25-00.000Z.json` 的 `llm-deepseek → @deepseek-ai/dsh-llm-deepseek-api-key@0.2.2-rc.3`），单测 `composition-source` / `rows-origin` / `row-resolution` 逐条钉住；④ 读不到的第三段 `--patch overlays` 只能在产物 `limits` 里说明，不假装覆盖。",
+      "owner": "process + core (composition model)",
+      "status": "closed (R125): the 'code does not read the patch file' claim was wrong when written; profile/home patch rows have been part of claims and verdict sources since the container was created (c03c323, 2026-10-27). Residual: runtime --patch overlays is a launch argument, not on disk.",
+      "corrected_in": "R125 (2026-11-21)"
     },
     {
       "id": "BS-77",

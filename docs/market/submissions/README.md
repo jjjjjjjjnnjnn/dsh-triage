@@ -1,7 +1,7 @@
 # 分发渠道 · 提交包（submissions）
 
 > **状态（R114，2026-11-17 实测）**：`ready 3` · `live 1`（只有 `#140` 还开着）· `site 1`（dsh.so `listed`）· `merged 4`。证据：`data/results/market-channels-2026-11-17T11-00-00.000Z.json`（`submitted[]` 是已提 PR 的**实时**状态；`site_submissions[]` 是 dsh.so 的提交记录 + 收录探针）。**`live` 从 R96 的 2 变成 1 不是漂移**：`#65` 已于 2026-11-15T03:50:20Z 合并，OPEN 的只剩 `#140`；`#193`（2026-11-04）与 `#14880`（2026-11-13）、`#15458`（2026-11-15，短描述）也已合并。旧快照 `data/results/market-channels-2026-11-15T05-50-56.095Z.json`（当时 `live 1 · merged 3`）与更早的 `market-channels-2026-11-01T09-40-00.000Z.json` 原样保留，**它们只是历史读数，不是现状**。
-> **npm**：`dsh-triage@0.3.11`（四包同版本，**已发布**，`latest=0.3.11`；匿名安装 + CLI + `import()` + `client.js` 四项取证见 `data/results/publish-2026-11-15T06-27-56.379Z.json`，**18/18**）。同轮 `publish-2026-11-15T06-18-55.194Z.json` 是**保留的红**（副本滞后，17/19）—— 九分钟后零代码改动即 18/18。`0.3.9` 见 `publish-2026-11-12T21-04-27.676Z.json`（18/18）；`0.3.3` 的匿名安装 **21/21** 见 `publish-2026-11-02T15-54-38.303Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
+> **npm**：`dsh-triage@0.3.12`（四包同版本，**已发布**，`latest=0.3.12`；匿名安装 + CLI + `import()` + `client.js` 四项取证见本次发版的 `data/results/publish-*.json`，**18/18**）。上一版 `0.3.11` 的取证见 `data/results/publish-2026-11-17T12-15-53.890Z.json`（18/18）。同轮 `publish-2026-11-15T06-18-55.194Z.json` 是**保留的红**（副本滞后，17/19）—— 九分钟后零代码改动即 18/18。`0.3.9` 见 `publish-2026-11-12T21-04-27.676Z.json`（18/18）；`0.3.3` 的匿名安装 **21/21** 见 `publish-2026-11-02T15-54-38.303Z.json`。**发布链的一个真缺陷**：取证紧跟 publish 时会撞上 npm 读副本滞后（约 4.5 分钟），五分钟内产出三份假红 → 已改成带预算的等待（`scripts/lib/registry-wait.mjs`）。
 > **索引源已在真实公开 URL 上**：`data/results/index-hosting-2026-10-29T22-00-00.000Z.json`。
 
 ## 已提交的四条（R114 实测：`live 1` · `merged 4`）

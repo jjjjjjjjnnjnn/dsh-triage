@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R124 (2026-11-21)",
+  "stand": "R127 (2026-11-21)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17632,6 +17632,230 @@
         "licence": "PASS：只改本仓事实包、台账与人读副本；没有发帖、没有写总线台账（发布权归 agent-promotion）；没有复制第三方正文。",
         "ssot": "PASS：listing-2026-11-21T16-06-14.047Z.json + .sha256 落在 data/results/；规模行 673/723 与磁盘实算一致，stand 在四份入口与两份台账一致。",
         "adversary": "反例一：把「有人确认有效」读成「D5 翻案」——窗口 11-15 已关、线程不是 #11813，三个阈值一字未动。反例二：把「事实包写好了」读成「我们回应了」——本轮明确不回帖，第四方 durable fix 的讨论不由我们推进。"
+      }
+    },
+    {
+      "id": "R125-S1",
+      "batch": "R125",
+      "step": "切公开仓之前先读一次现状，把 behind 13 落成带哈希的读数",
+      "changed": [
+        "data/results/public-cut-2026-11-21T16-22-09.626Z.json",
+        "data/results/public-cut-2026-11-21T16-22-09.626Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_public_cut.mjs",
+        "outcome": "`behind 13`：public `6608b5b` 是容器 `fa5b061` 那一刀，而容器 HEAD 已到 R124 的 `07abbca`；`trees-equal false`，因为 R123/R124 的文档改动尚未送出。这份是切前读数，按惯例保留，不删。",
+        "artifact": "data/results/public-cut-2026-11-21T16-22-09.626Z.json",
+        "sha256": "618318031d02547422fa0ba68fab81338f83dd0259844ef6b5fa05f10d2cbd06"
+      },
+      "review": {
+        "correctness": "PASS：behind 由容器 HEAD:dsh-triage 与 origin/main 的提交差现算，不是手填；脚本明确写着「Nothing is wrong with the public repo; it is simply older」。",
+        "reproducibility": "PASS：同一命令可重放；产物带 produced_by / generated_at / .sha256，且记录 container head / public head / subtree tree 三个可核对字段。",
+        "licence": "PASS：只读本仓两棵 git 树，没有写第三方系统、没有 force push。",
+        "ssot": "PASS：产物落在 data/results/ 且带 .sha256；HANDOFF 规模行同步到 676 产物 / 726 步。",
+        "adversary": "反例：把 behind 13 读成「切错了」。按定义切面比「装着这份文档的提交」早一步，behind 非零是常态；不要为了归零反复切。"
+      }
+    },
+    {
+      "id": "R125-S2",
+      "batch": "R125",
+      "step": "把含 R123/R124 文档的子树切到公开仓，并复读它是同一棵树",
+      "changed": [
+        "data/results/public-cut-2026-11-21T16-23-50.812Z.json",
+        "data/results/public-cut-2026-11-21T16-23-50.812Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "tree=$(git rev-parse HEAD:dsh-triage) ; git commit-tree $tree -p origin/main -m 'chore: sync dsh-triage at R124 handover' ; git push origin <new>:refs/heads/main ; git fetch origin ; node scripts/record_public_cut.mjs --stamp 2026-11-21T16:23:50.812Z",
+        "outcome": "快进推送 `6608b5b..21e05c5`，零 force push；切后 `in-sync` / `trees-equal true` / `cut at 07abbca` / `behind 0`（public `21e05c5`）。公开仓现在带着 R123 的 rc.5 smoke 与 R124 的 #13730 第三方验证事实。",
+        "artifact": "data/results/public-cut-2026-11-21T16-23-50.812Z.json",
+        "sha256": "ea39bd33686ad243d937fbbe80c9476653635d3a46d570e8fd9f81a80ff46e6d"
+      },
+      "review": {
+        "correctness": "PASS：子树取 `HEAD:dsh-triage`，父提交是推送前的 `origin/main`（6608b5b），结果为快进；`trees-equal true` 由两棵 tree 的 sha 比出。",
+        "reproducibility": "PASS：`record_public_cut` 用容器提交与公开仓父提交重算；`behind 0` 是这一刻的读数，不是承诺。",
+        "licence": "PASS：只切 dsh-triage/ 子树；容器里 dsh-remedy 的未提交改动未参与、未推送。",
+        "ssot": "PASS：产物 + .sha256 落在 data/results/；HANDOFF 已写明「不为归零再切」。",
+        "adversary": "反例：这条记录一提交，公开仓又落后一个提交（切面装不下自己的账）。`behind` 在两次切之间非零是定义使然，不要为了归零反复切。"
+      }
+    },
+    {
+      "id": "R125-S3",
+      "batch": "R125",
+      "step": "纠正 BS-76 的错误描述，并把流量与三条外发线程的「不做」写死",
+      "changed": [
+        "audit/blind_spots.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "_archive/2026-11-21_HANDOFF-batch-rows-R115.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "data/results/listing-2026-11-21T16-26-23.449Z.json",
+        "data/results/listing-2026-11-21T16-26-23.449Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-21T16:26:23.449Z --tests 1011 ; node -e \"const j=require('./audit/blind_spots.json'); console.log(j.blind_spots.find(x=>x.id==='BS-76').status)\" ; pnpm run verify",
+        "outcome": "check_listing 17/17；BS-76 状态改为 `closed (R125)`，描述改为「代码自 c03c323 就读 profile/home patch，17 份产物含 patch:profile 来源，单测钉住；残余仅启动参数 --patch overlays」。证据：`load.ts#loadComposition`、`audit-data.ts:315-316`、`verdict.ts:231`、`audit-2026-11-13T18-25-00.000Z.json` 的 17 处 `patch:profile`。R115 批次行逐字节归档且已从 §2 删除，§2 仍恰好 10 行。",
+        "artifact": "data/results/listing-2026-11-21T16-26-23.449Z.json",
+        "sha256": "d475b635640bc7f546b1943c73e3f931c027dd738f7e97a7059a162f73a1419f"
+      },
+      "review": {
+        "correctness": "PASS：BS-76 的纠正逐条对回代码与产物，没有改 admission.ts / D5 阈值 / 四桶 / 金标；「不读 patch」是 R120 当时的误判，不是现在才修的行为变更。",
+        "reproducibility": "PASS：可沿 load.ts → collectClaims → verdict.source 复算，17 份产物可逐份打开；R115 行按原字节抽取且双向验证相等；check_listing 从文档与产物两侧读回。",
+        "licence": "PASS：只改本仓盲区台账与人读副本；没有发帖、没有写总线台账、没有复制第三方正文。",
+        "ssot": "PASS：listing-2026-11-21T16-26-23.449Z.json + .sha256 落在 data/results/；规模行 676/726 与磁盘实算一致，stand 在四份入口与两份台账一致。",
+        "adversary": "反例一：把「代码已读 patch」读成「四输入模型已端到端验证」——第三段 --patch overlays 是启动参数，我们仍读不到，limits 里如实写。反例二：把「今天不跑流量」读成「流量停了」——周度记录器按约 11-24 跑，总线已有 11-21 每日读数。"
+      }
+    },
+    {
+      "id": "R126-S1",
+      "batch": "R126",
+      "step": "核实两条 GitHub 通知的技术内核，写事实包并回写 AgentBus（本仓不回帖）",
+      "changed": [
+        "docs/copy/facts/2026-11-21-two-notices-technical-core.md",
+        "docs/copy/outreach.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "_archive/2026-11-21_HANDOFF-batch-rows-R116.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "audit/blind_spots.json",
+        "data/results/listing-2026-11-21T21-29-31.941Z.json",
+        "data/results/listing-2026-11-21T21-29-31.941Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-21T21:29:31.941Z --tests 1011 ; node --test tests/governance/copy-channel.test.ts ; kb bus record add（REC-018 / REC-019）→ kb validate → kb bus index",
+        "outcome": "check_listing 17/17（11 份文档 / 22 条证据路径带 sha256 / 版本 0.3.11 / 测试 1011）；copy-channel 3/3。核实结论：#13730 四桶卡预测成立（本机 201 单元 0 拒、79 verdict 全 unknown/0 denied、rc.3 pin 3 denied，差异由 0 pin vs rc.3 pin 解释）；#14013 takomitkm 方向对但「缺声明=被拒」与冻结语义冲突（缺声明判 unknown），答问必须纠正。AgentBus 回写 REC-018 / REC-019（默认 unverified，受众复核）；outreach.json 两条 read_not_posted 写死不回帖理由。R116 批次行逐字节归档，§2 仍恰好 10 行。",
+        "artifact": "data/results/listing-2026-11-21T21-29-31.941Z.json",
+        "sha256": "53b52dee102457ddc9daf8395e2671503d775fcc051dbf2931ba1e17c8fa0516"
+      },
+      "review": {
+        "correctness": "PASS：每条结论都指到带 .sha256 的产物并逐字段核对——79 全 unknown 是本机 audit 的实录、3 denied 全部带精确 peer 未满足、201/0/80/121 是 rc.5 卡的四桶；没有把 takomitkm 的上游猜测写成我们的实测。",
+        "reproducibility": "PASS：check_listing 从文档与产物两侧读回，任一处漂移即红；事实包列五份产物指针与复算命令；AgentBus 两条记录带 evidence URL 与产物路径，kb validate / bus index 已跑。",
+        "licence": "PASS：只读公开 GitHub 讨论与自有产物，没有复制他人正文进仓（事实包只写摘要与 URL），没有发帖（发帖归 agent-promotion）。",
+        "ssot": "PASS：listing-2026-11-21T21-29-31.941Z.json + .sha256 落在 data/results/；规模行 677/727 与磁盘实算一致，stand 在四份入口与两份台账一致；同轮中间绿产物 21-27-34 已删，权威只有终跑一份。",
+        "adversary": "反例一：把「方向一致」读成「判据一致」——takomitkm 说缺声明被拒，我们判 unknown，照抄会与冻结 admission 语义冲突，所以事实包明确写出纠正句。反例二：把「回写 AgentBus」读成「已经答复对方」——两条记录默认 unverified 待受众复核，本仓没发帖，澄清帖是浏览器代操作发的、答问节奏归 agent-promotion。"
+      }
+    },
+    {
+      "id": "R127-S1",
+      "batch": "R127",
+      "step": "发版前审核：四包版本对齐与对外文件一致性复算",
+      "changed": [
+        "packages/core/package.json",
+        "packages/signals/package.json",
+        "packages/probe/package.json",
+        "packages/plugin/package.json",
+        "CHANGELOG.md",
+        "docs/market/listing_zh.md",
+        "docs/market/listing_en.md",
+        "docs/market/submissions/README.md",
+        "docs/distribution/promotion.md",
+        "INDEX.md",
+        "AGENTS.md",
+        "data/results/listing-2026-11-21T22-11-22.210Z.json",
+        "data/results/listing-2026-11-21T22-11-22.210Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-21T22:11:22.210Z --tests 1011 ; node scripts/release_preflight.mjs ; pnpm run verify",
+        "outcome": "check_listing 17/17（版本 0.3.12 / 11 文档 / 22 证据路径 / 测试 1011）；release_preflight 五项全绿（0.3.12 未发过）；发版前 verify 10 门全绿、mutate 10/10、handover_check 10/10。四包版本 0.3.12、CHANGELOG/两份 listing/submissions/promotion/INDEX/AGENTS 全部对齐。",
+        "artifact": "data/results/listing-2026-11-21T22-11-22.210Z.json",
+        "sha256": "b980b7503e99fd1bce342e49a42de4533659a6763348786f2ba694513e67559e"
+      },
+      "review": {
+        "correctness": "PASS：四包版本逐字一致 0.3.12，check_listing 的 version-matches-manifest / test-count-matches 从文档与 manifest 两侧读回；历史产物指针原样保留。",
+        "reproducibility": "PASS：check_listing 从 11 份文档与 22 条带 sha256 的产物复算；preflight 五项由 registry 与本地 manifest 现算。",
+        "licence": "PASS：只改本仓版本字段与文档；未发布、未写第三方系统。",
+        "ssot": "PASS：listing-2026-11-21T22-11-22.210Z.json + .sha256 落 data/results/；规模行 678 产物 / 728 步与磁盘实算一致（发版后还会校准最终数）。",
+        "adversary": "反例：把「版本字段改了」读成「已经发布」——preflight 明确报 registry 还没发过 0.3.12，发布尚未发生；规模行会在 publish/usability/public-cut 落盘后再次校准，不能提前写死。"
+      }
+    },
+    {
+      "id": "R127-S2",
+      "batch": "R127",
+      "step": "发布四包到 registry 并取 18 项取证（首份红产物保留，重跑绿）",
+      "changed": [
+        "data/results/publish-2026-11-21T22-18-29.413Z.json",
+        "data/results/publish-2026-11-21T22-18-29.413Z.json.sha256",
+        "data/results/publish-2026-11-21T22-22-23.315Z.json",
+        "data/results/publish-2026-11-21T22-22-23.315Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "pnpm -r publish --no-git-checks ; node scripts/record_publish.mjs",
+        "outcome": "四包 @dsh-triage/core/probe/signals + dsh-triage 全部 0.3.12 发布成功。首份取证 22:18:29 因 anonymous-install exit 0xC0000409（Windows native 崩溃）+ 极长副本传播（packument 第 7 次读、107440ms 才出现）出红，红产物按规矩保留；独立验证 tarball manifest 正确（workspace:* 已重写为 0.3.12、exports./client 存在），干净 scratch 目录匿名装 exit 0、6 packages、cli 存在。重跑 22:22:23 取证 18/18 全绿（anonymous-install exit 0、四包 latest=0.3.12、dist-tags-agree、client-bundle 39911B）。",
+        "artifact": "data/results/publish-2026-11-21T22-22-23.315Z.json",
+        "sha256": "830186d48d6d7a66272a82f75b8d194e664d5fa16cdb1aaf1b12b88538880de4"
+      },
+      "review": {
+        "correctness": "PASS：18 项取证从 registry 独立读（version 文档 + tarball HEAD + dist-tags）+ 匿名安装 + CLI + import + client-bundle；红产物读成「副本滞后 + 本机 native 崩溃」而不是「发布失败」，由重跑绿与独立匿名装证成。",
+        "reproducibility": "PASS：record_publish 可重放；红绿两份产物都带 produced_by / generated_at / .sha256；registry manifest 由公开 registry 只读复核。",
+        "licence": "PASS：只发布本仓四包；匿名安装用空 userconfig、独立 scratch 目录、跑完即删；未读本机 token。",
+        "ssot": "PASS：两份 publish 产物 + .sha256 落 data/results/；红产物保留不删。",
+        "adversary": "反例：把首份 anonymous-install 的 exit 0xC0000409 读成「包坏了」——registry manifest 正确、独立匿名装 exit 0、重跑取证 18/18，说明是本机瞬时 native 崩溃；但仍保留红产物，不假装没发生。"
+      }
+    },
+    {
+      "id": "R127-S3",
+      "batch": "R127",
+      "step": "在已发布的 0.3.12 上真跑陌生人四条命令",
+      "changed": [
+        "data/results/usability-2026-11-21T22-22-39.437Z.json",
+        "data/results/usability-2026-11-21T22-22-39.437Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-21T22:22:39.437Z",
+        "outcome": "6/6：匿名装 dsh-triage@0.3.12 exit 0；dist/cli.js 存在；--help / 无参 status / audit / upgrade --to next --card 四条命令都 exit 0；status 与 audit 读作 dsh 0.2.2-rc.5 (kernel-asar)，升级卡带声明层边界与四桶。",
+        "artifact": "data/results/usability-2026-11-21T22-22-39.437Z.json",
+        "sha256": "0e024350d40b65637d00b4f1b6d4646b9997ee8ae49e7760a34267bcc4d8d6b7"
+      },
+      "review": {
+        "correctness": "PASS：四条命令的退出码与输出形状逐条断言；运行时标签来自已安装 CLI 实际读到的 asar，不是照抄交接文档。",
+        "reproducibility": "PASS：脚本用空 userconfig 从 registry 匿名安装，产物带 produced_by / generated_at / sha256；同一 stamp 重跑会拒绝覆盖。",
+        "licence": "PASS：只从公开 registry 取本仓发布的包，临时工程在 %TEMP% 且跑完即删；没有读任何第三方源码。",
+        "ssot": "PASS：usability-2026-11-21T22-22-39.437Z.json + .sha256 落在 data/results/。",
+        "adversary": "反例：把 6/6 读成「升级安全」——这一步只验四条命令能跑、输出形状对；卡片里的四桶描述的是这台机器的默认 profile，不是读者的组合，也不是运行期实测。"
+      }
+    },
+    {
+      "id": "R127-S4",
+      "batch": "R127",
+      "step": "验证 tarball 内 README 与仓内逐字节相同，并如实记录 packument README 的旧缓存差异",
+      "changed": [
+        "packages/plugin/README.md"
+      ],
+      "real_test": {
+        "command": "npm pack dsh-triage@0.3.12（独立 scratch）→ tar -xzf → 比对 package/README.md 与 packages/plugin/README.md",
+        "outcome": "tarball 内 README.md 与仓内逐字节相同（4190 字符、带 tests-1011 徽章）；registry packument 的 readme 字段比 tarball 旧、含一处 U+FFFD 替换字符（npm view … readme 读的是包级缓存 README，不是最新 tarball）——这正是 HANDOFF 记过的「npm 页面是发布快照」形状的镜像，如实记入盲区。用户 npm install / npm pack 实际拿到的是 tarball 内那份（正确）。",
+        "artifact": "data/results/publish-2026-11-21T22-22-23.315Z.json",
+        "sha256": "830186d48d6d7a66272a82f75b8d194e664d5fa16cdb1aaf1b12b88538880de4"
+      },
+      "review": {
+        "correctness": "PASS：tarball 由 npm pack 从 registry 取得，解包后 README 与仓内文件逐字节比对相等；packument readme 的差异单独标识，不混同。",
+        "reproducibility": "PASS：npm pack + tar 解包可重放；两份 README 都从文件系统直接读取比对。",
+        "licence": "PASS：只读公开 registry 与本仓文件；没有修改任何 README。",
+        "ssot": "PASS：比对依托已落盘的 publish-2026-11-21T22-22-23.315Z.json（18/18，含 client-bundle 39911B）；packument 差异写进 HANDOFF 与盲区，不伪造产物。",
+        "adversary": "反例：把「tarball README 正确」读成「npm 页面也逐字节相同」——packument 级 readme 有旧缓存差异，两者不是同一个字段；对外只说「tarball 与仓内逐字节相同」，不说「npm view readme 也相同」。"
+      }
+    },
+    {
+      "id": "R127-S5",
+      "batch": "R127",
+      "step": "保留首份发布取证的红产物，记录副本滞后与本机 native 崩溃的形状",
+      "changed": [
+        "data/results/publish-2026-11-21T22-18-29.413Z.json",
+        "data/results/publish-2026-11-21T22-18-29.413Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_publish.mjs（发布后首跑，保留红产物）",
+        "outcome": "首份 22:18:29 取证 ok=false：anonymous-install exit 0xC0000409（Windows native 崩溃）、4 次尝试 49 秒；registry-visibility 记 packument 第 7 次读、107440ms 后才出现版本。红产物按 R77/R98/R103 惯例保留，不删、不重解释。独立验证 registry manifest 正确（workspace:* → 0.3.12、exports./client 存在）+ 干净 scratch 匿名装 exit 0，再由 R127-S2 的重跑绿证成「不是发布失败」。",
+        "artifact": "data/results/publish-2026-11-21T22-18-29.413Z.json",
+        "sha256": "2bd0a99d5e3a13a284fa902ff0a0d82ee5ebe694a0b80c7094b9d96abc649027"
+      },
+      "review": {
+        "correctness": "PASS：红产物的每一项失败都写在产物里（anonymous-install code、registry-visibility 的 7 次读/107440ms），没有把红读成绿或把失败读成成功。",
+        "reproducibility": "PASS：同一 record_publish 命令可重放；红绿两份产物都带 produced_by / generated_at / .sha256。",
+        "licence": "PASS：只读 registry 与匿名安装；未写第三方系统。",
+        "ssot": "PASS：红产物 + .sha256 落 data/results/ 并有本步 real_test.artifact 引用，不 orphan。",
+        "adversary": "反例：把红产物删掉「保持绿色」——那会让下一轮重新学错「发布紧跟取证读到旧版本 = 发布失败」；R103/R98 的教训就是保留它并注明读早了。"
       }
     }
   ]

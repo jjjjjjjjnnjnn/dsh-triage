@@ -1,6 +1,6 @@
 # Listing copy (English, ready to paste)
 
-> **Stand**: R115 (2026-11-17). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
+> **Stand**: R127 (2026-11-21). Numbers are measured, and `node scripts/check_listing.mjs` re-checks them
 > against the repo (version, DSH range, evidence paths, and the README upgrade card). Chinese counterpart: `docs/market/listing_zh.md`.
 > Channel status lives in `docs/market/submissions/README.md`; long-form posts in `docs/posts/`.
 
@@ -89,7 +89,7 @@ including real npm declaration snapshots; every `probe` assertion has a negative
 
 ## Current status
 
-`0.3.11` is published on npm (four packages released together; **no file under `packages/*/src` changed** — documentation and copy only, as its CHANGELOG says). The first screen is now the pitch: *installed is not the same as working*, three scenarios, one install line, with the card and the evidence collapsed below. Build side covers M0–M6. Distribution, as of 2026-11-17: **merged** into `dsh-community-plugins` (#65), `awesome-deepseek-harness` (#193) and `awesome-dsh-plugin` (#14880, plus the shorter functional description #15458); only `walkinglabs/awesome-deepseek-harness-plugins` (#140) is still open; dsh.so lists it (`L5 · Run tested`).
+`0.3.12` is published on npm (four packages released together; **no file under `packages/*/src` changed** — documentation and evidence only, as its CHANGELOG says). It brings the test badge to 1011 and the R123–R126 upstream-drift and third-party-corroboration evidence pointers to the npm page; the runtime is byte-identical to 0.3.11. The first screen is now the pitch: *installed is not the same as working*, three scenarios, one install line, with the card and the evidence collapsed below. Build side covers M0–M6. Distribution, as of 2026-11-17: **merged** into `dsh-community-plugins` (#65), `awesome-deepseek-harness` (#193) and `awesome-dsh-plugin` (#14880, plus the shorter functional description #15458); only `walkinglabs/awesome-deepseek-harness-plugins` (#140) is still open; dsh.so lists it (`L5 · Run tested`).
 
 **The public sample failed (2026-11-16).** In the fourteen-day window `#11813` collected **0/10** reactions and **0/1** external references, with **1212** weekly downloads (`steady`, above the 20 floor) — so the frozen rule returns **`fail`**. The honest reading: this shape of the product was not wanted. The repository moves to the D line (portfolio plus upstream contributions) and stops adding features (`docs/11-d-path.md`).
 security tier `low` (0 critical / 0 warning), first indexed 2026-10-29. That L5 is dsh.so's own clean-sandbox run, not a promise about your

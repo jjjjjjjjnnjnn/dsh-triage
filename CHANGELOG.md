@@ -6,6 +6,23 @@ All notable public changes to `dsh-triage`. The project's internal round log liv
 Versions follow semver. `0.x` means the CLI flags and the verdict contract can still change;
 when they do, the change is written here with the reason, not just the diff.
 
+## [0.3.12] — 2026-11-21
+
+> **Documentation and evidence only.** No file under `packages/*/src` changed: no admission rule,
+> threshold, bucket, exit code or verdict changed. The runtime bytes a user runs are identical to
+> 0.3.11. This release exists so the npm page and the marketplace detail page carry the current test
+> count and the round R123–R126 evidence pointers (upstream drift verification, third-party
+> corroboration) instead of the 0.3.11 snapshot.
+
+- **The test badge is current**: 1011 tests and 10 gates, matching the repository and CI, not the
+  995 that the 0.3.11 tarball froze at publication time.
+- **The npm page now names the verified upstream state**: the published README points at the rc.5
+  usability smoke (`0.3.11` on `0.2.2-rc.5`, 6/6) and the verified drift evidence — the smoke that
+  R123 added and that the two upstream notices (R126) were checked against.
+- **No product claim changed**: the four-bucket card, the "installed is not the same as working"
+  pitch, the read-only boundary and the declaration-layer/runtime distinction are unchanged. The
+  new fact packs are engineering evidence, not new features.
+
 ## [0.3.11] — 2026-11-17
 
 > **Documentation and copy only.** No source file under `packages/*/src` changed: no admission rule,

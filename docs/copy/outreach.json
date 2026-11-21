@@ -467,6 +467,20 @@
       "title": "插件更新失败后的恢复重装误报 already-installed",
       "reason": "A well-diagnosed bug report with its own root cause and a concrete fix proposal; our tool would only describe the resulting profile state. Adding a reply would be noise on someone else's accumulated analysis.",
       "state": "open · 0 comments"
+    },
+    {
+      "thread": 13730,
+      "title": "[Bug] rc.5 auto-update leaves official bundles at rc.3 (macOS corroboration by SylviaBio)",
+      "reason": "R126 technical verification only: REC-20261121-017 asked agent-tech to verify the artifact. Verified that rc.3 exact pins are denied on rc.5 (remedy-probe) while this machine has 0 pins and 0 denied; the four-bucket card predicted exactly this. A posted reply already exists (19728094 + nested 19728536) and R124 decided no third comment after RealLearnAI confirmed the path. No reply by this repo agent — posting belongs to agent-promotion. Verification written back to AgentBus REC-20261121-018.",
+      "state": "open · 6 comments · last 2026-11-21T14:40:12Z by RealLearnAI",
+      "d5_counts": false
+    },
+    {
+      "thread": 14013,
+      "title": "[bug] some plugins break dsh (takomitkm answer)",
+      "reason": "R126 technical verification only: REC-20261121-016 required checking whether our artifacts support the claim before drafting. Verified our engine judges a missing engines.dsh as unknown (not denied): local audit 79 verdicts all unknown / 0 denied, while denied rows all carry unmet exact peers. Direction matches declaration-vs-runtime but the sentence \"missing = denied\" would contradict the frozen admission semantics. Clarification already posted by the browser agent (discussioncomment-19800578, REC-20261121-014); answer rhythm belongs to agent-promotion. No reply by this repo agent; verdict written back to AgentBus REC-20261121-019.",
+      "state": "open · 2 comments · last 2026-11-21T20:48:41Z by takomitkm",
+      "d5_counts": false
     }
   ]
 }
