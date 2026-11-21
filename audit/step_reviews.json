@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "stand": "R122 (2026-11-19)",
+  "stand": "R124 (2026-11-21)",
   "rule": "每一步有产出的改动完成后，必须①四轴审核（正确性/可复现/合规许可/SSOT 一致）+ 对抗性反例，②真跑一次并落可重算的产物。由 scripts/gate_step_review.mjs 重算 sha256；禁事后补写。",
   "axes": [
     "correctness",
@@ -17511,6 +17511,127 @@
         "licence": "PASS：只推 `dsh-triage/` 子树；没有依赖目录、凭据或生成物越界。",
         "ssot": "PASS：data/results/public-cut-2026-11-19T12-45-00.000Z.json + `.sha256`。",
         "adversary": "反例：这条记录一落地，公开仓又落后于容器一个提交（切面装不下自己的台账）。`behind` 在两次切之间非零是定义使然，不要为归零再切。"
+      }
+    },
+    {
+      "id": "R122-S7",
+      "batch": "R122",
+      "step": "切会话前把文档对齐后的工作树切到公开仓并复读",
+      "changed": [
+        "data/results/public-cut-2026-11-19T13-05-00.000Z.json",
+        "data/results/public-cut-2026-11-19T13-05-00.000Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "tree=$(git rev-parse HEAD:dsh-triage) -> git commit-tree $tree -p origin/main -> git push origin <new>:refs/heads/main ; node scripts/record_public_cut.mjs --stamp 2026-11-19T13:05:00.000Z",
+        "outcome": "public-cut `in-sync` / `trees-equal true` / `cut at fa5b061` / `behind 0`（public `6608b5b`，`b4f77dc..6608b5b` 快进，未 force push）",
+        "artifact": "data/results/public-cut-2026-11-19T13-05-00.000Z.json",
+        "sha256": "e971757e9b1a29cccc0c5e44f8bc8a9c5156bf6df8953dce4103ce227d13fe11"
+      },
+      "review": {
+        "correctness": "PASS：公开仓带上最后的文档对齐（AGENTS Stand R122/1011、HANDOFF §3 的 dev.to 与 #13730 更正、promotion.md 11 条发布、交接快照）。",
+        "reproducibility": "PASS：`record_public_cut` 由 container 与 public 的 tree sha 判定 `trees-equal true`。",
+        "licence": "PASS：只推 `dsh-triage/` 子树；无凭据、无依赖目录。",
+        "ssot": "PASS：data/results/public-cut-2026-11-19T13-05-00.000Z.json + `.sha256`。",
+        "adversary": "反例：台账一落地，公开仓就又落后一个提交（切面装不下自己）。`behind` 在两次切之间非零是构造，不要为了归零反复切。"
+      }
+    },
+    {
+      "id": "R123-S1",
+      "batch": "R123",
+      "step": "补一份 0.3.11 在 rc.5 上的匿名回归 smoke（D-3 维护模式第 4 类）",
+      "changed": [
+        "data/results/usability-2026-11-20T09-36-06.715Z.json",
+        "data/results/usability-2026-11-20T09-36-06.715Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_usability_smoke.mjs --stamp 2026-11-20T09:36:06.715Z",
+        "outcome": "6/6：匿名装 dsh-triage@0.3.11 exit 0；dist/cli.js 存在；--help / 无参 status / audit / upgrade --to next --card 四条命令都 exit 0；status 与 audit 读作 dsh 0.2.2-rc.5 (kernel-asar)，升级卡带声明层边界与四桶。上一份 11-17 的同类产物跑在 rc.3 上，本份补的是当前运行时。",
+        "artifact": "data/results/usability-2026-11-20T09-36-06.715Z.json",
+        "sha256": "ecacbb0a3f2585f0d3cd981709289c9bd9c16a04a227f4053eb13f038b7b9414"
+      },
+      "review": {
+        "correctness": "PASS：四条命令的退出码与输出形状逐条断言；运行时标签来自 installed CLI 实际读到的 asar，不是照抄交接文档的版本。",
+        "reproducibility": "PASS：脚本用空 userconfig 从 registry 匿名安装，产物带 produced_by / generated_at / sha256；同一 stamp 重跑会拒绝覆盖。",
+        "licence": "PASS：只从公开 registry 取本仓发布的包，临时工程在 %TEMP% 且跑完即删；没有读任何第三方源码。",
+        "ssot": "PASS：usability-2026-11-20T09-36-06.715Z.json 与 .sha256 落在 data/results/，由记录器写出；HANDOFF 规模行同步到 671 产物 / 721 步。",
+        "adversary": "反例：把 6/6 读成「升级安全」。这一步只验四条命令能跑、输出形状对；卡片里的四桶描述的是这台机器的默认 profile，不是读者的组合，也不是运行期实测。"
+      }
+    },
+    {
+      "id": "R123-S2",
+      "batch": "R123",
+      "step": "把宣传人读副本与总线的 Reddit 答问对齐，并重算对外文案与交接文档",
+      "changed": [
+        "docs/distribution/promotion.md",
+        "docs/HANDOFF.md",
+        "_archive/2026-11-20_HANDOFF-batch-rows-R113.md",
+        "data/results/listing-2026-11-20T09-36-43.314Z.json",
+        "data/results/listing-2026-11-20T09-36-43.314Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-20T09:36:43.314Z --tests 1011 ; node scripts/handover_check.mjs",
+        "outcome": "check_listing 17/17（11 份文档 / 22 条证据路径带 sha256 / 版本 0.3.11 / 测试 1011）；handover_check 10/10（§2 恰好 10 行、R113 已归档且登记 MANIFEST、规模行复算一致、npm latest = 0.3.11）。promotion.md 的 Reddit 行取自总线台账 pst-2026-11-19-024（visible / 无链接），§4 合计 11 → 12 条。",
+        "artifact": "data/results/listing-2026-11-20T09-36-43.314Z.json",
+        "sha256": "effb2997965d26a4c4fb8484ea0fd77177b963a812cce2073b53e3c75a62a81b"
+      },
+      "review": {
+        "correctness": "PASS：总线台账那条答问的 URL / 时间 / 可见性逐字段照抄，并明确「答问不是新投稿、无链接、未求赞」；人读副本只指向总线，不在本仓另建状态机。",
+        "reproducibility": "PASS：R113 批次行按 git HEAD 原字节抽取并与归档逐字节比对相等；check_listing 从文档与产物两侧读回，handover_check 从仓库复算十项。",
+        "licence": "PASS：只改本仓人读副本与归档，没有复制第三方正文、没有对外发帖、没有写总线台账（发布权归 agent-promotion）。",
+        "ssot": "PASS：listing-2026-11-20T09-36-43.314Z.json + .sha256 落在 data/results/；§2 十行、规模行 671/721 与磁盘实算一致。",
+        "adversary": "反例：把「人读副本改对了」读成「宣发奏效」。这一步只消除一处文档与总线不一致；Reddit 那条是答问而非根帖，跨项目 7 天警告按台账说明不适用，不据此再发新帖。"
+      }
+    },
+    {
+      "id": "R124-S1",
+      "batch": "R124",
+      "step": "把 #13730 的 11-21 新评论读成板块状态产物（采证，只读）",
+      "changed": [
+        "data/results/discussion-state-2026-11-21T16-04-50-189Z.json",
+        "data/results/discussion-state-2026-11-21T16-04-50-189Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/record_discussion_state.mjs --ids 13730 --stamp 2026-11-21T16:04:50.189Z ; gh api repos/deepseek-ai/deepseek-harness/discussions/13730/comments",
+        "outcome": "产物记 `updated_at 2026-11-21T14:40:12Z`、`last_comment.author RealLearnAI`、`comments 4`（GraphQL 顶层口径）、`gate unreadable`。REST 返回 6 条（含两条嵌套回复），最后一条 id 19796156 —— 两个口径的差别写进事实包，不把 4 读成「评论被删」。评论正文明确写我们的 CLI 路径 confirmed working on Windows。",
+        "artifact": "data/results/discussion-state-2026-11-21T16-04-50-189Z.json",
+        "sha256": "a3e2bb0d1d71946b8a01ae1869a7cbd1a132cb3bfd869526420f55104c235904"
+      },
+      "review": {
+        "correctness": "PASS：作者、时间、评论数都来自 GitHub 只读 API；`answerable: false` 使 gate 保持 unreadable，R122 的三态口径没有被顺手放宽成 open。",
+        "reproducibility": "PASS：同一 stamp 可重放；产物带 produced_by / generated_at / .sha256；REST 逐条评论可读回，comment id 19796156 可定位。",
+        "licence": "PASS：只读公开讨论板，没有发帖、没有复制他人正文进仓（事实包只写可核对摘要与 URL）。",
+        "ssot": "PASS：产物落在 data/results/ 且带 .sha256；HANDOFF 规模行同步到 673 产物 / 723 步。",
+        "adversary": "反例一：把 GraphQL 4 与 REST 6 的差读成「评论被删」——那是嵌套回复的口径差。反例二：把 `gate: unreadable` 读成「没人回」——General 分类没有 isAnswered 字段，T-851 仍禁止 map null→open。"
+      }
+    },
+    {
+      "id": "R124-S2",
+      "batch": "R124",
+      "step": "把第三方验证写成事实包与 outreach 回填，并重算对外文案与交接文档",
+      "changed": [
+        "docs/copy/facts/2026-11-21-13730-third-party-verification.md",
+        "docs/copy/outreach.json",
+        "docs/HANDOFF.md",
+        "INDEX.md",
+        "docs/ROADMAP.md",
+        "_archive/2026-11-21_HANDOFF-batch-rows-R114.md",
+        "_archive/ARCHIVE_MANIFEST.md",
+        "audit/blind_spots.json",
+        "data/results/listing-2026-11-21T16-06-14.047Z.json",
+        "data/results/listing-2026-11-21T16-06-14.047Z.json.sha256"
+      ],
+      "real_test": {
+        "command": "node scripts/check_listing.mjs --stamp 2026-11-21T16:06:14.047Z --tests 1011 ; node --test tests/governance/copy-channel.test.ts",
+        "outcome": "check_listing 17/17（11 份文档 / 22 条证据路径带 sha256 / 版本 0.3.11 / 测试 1011）；copy-channel 3/3（事实包引用的三份产物都存在且带哈希）。outreach.json 在 #13730 主评论条目回填 reply_received（independent-verification-on-windows / d5_counts false / 不回第三条的理由）；R114 批次行逐字节归档且已从 §2 删除，§2 仍恰好 10 行。",
+        "artifact": "data/results/listing-2026-11-21T16-06-14.047Z.json",
+        "sha256": "d4f63dc7447c164056c40aa5bb202c94ecb5de8d2bb6464081b04e0e5bf6183b"
+      },
+      "review": {
+        "correctness": "PASS：事实包逐字段抄评论（作者 / 时间 / comment id / rc.1 pin / crash log 原文），并写死四条边界：不翻 D5、不是我们实测、不是上游采纳、便利样本；与 D5-measurement 的冻结判据一致。",
+        "reproducibility": "PASS：R114 行按原字节抽取且双向验证相等；check_listing 与 copy-channel 从文档与产物两侧复算，任一处漂移即红。",
+        "licence": "PASS：只改本仓事实包、台账与人读副本；没有发帖、没有写总线台账（发布权归 agent-promotion）；没有复制第三方正文。",
+        "ssot": "PASS：listing-2026-11-21T16-06-14.047Z.json + .sha256 落在 data/results/；规模行 673/723 与磁盘实算一致，stand 在四份入口与两份台账一致。",
+        "adversary": "反例一：把「有人确认有效」读成「D5 翻案」——窗口 11-15 已关、线程不是 #11813，三个阈值一字未动。反例二：把「事实包写好了」读成「我们回应了」——本轮明确不回帖，第四方 durable fix 的讨论不由我们推进。"
       }
     }
   ]

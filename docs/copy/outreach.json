@@ -396,7 +396,19 @@
         "data/results/discussion-state-2026-11-19T06-58-07-519Z.json"
       ],
       "d5_counts": false,
-      "why_not_counted": "Same rule: only #11813 reactions and external references feed D5. A reply that corrects one sentence of someone else's workaround is contact, not a demand signal."
+      "why_not_counted": "Same rule: only #11813 reactions and external references feed D5. A reply that corrects one sentence of someone else's workaround is contact, not a demand signal.",
+      "reply_received": {
+        "comment_url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13730#discussioncomment-19796156",
+        "author": "RealLearnAI",
+        "received_at": "2026-11-21T14:40:12Z",
+        "outcome": "independent-verification-on-windows",
+        "summary": "Third-party Windows instance of the same drift at rc.1 pin (not rc.3), with host-side crash log; explicitly states the CLI path reported by @jjjjjjjjnnjnn was confirmed working on Windows. First time a third party cites and validates our output after D5 fail; no D5 effect (window closed, different thread).",
+        "facts_after_reply": [
+          "docs/copy/facts/2026-11-21-13730-third-party-verification.md"
+        ],
+        "no_follow_up": "No third comment: the reporter already confirmed the path works, and the durable updater fix is being discussed between the maintainer and other reporters. Replies are not demand evidence; posting by this repo agent is not permitted (agent-promotion owns posting).",
+        "d5_counts": false
+      }
     },
     {
       "thread": 13730,

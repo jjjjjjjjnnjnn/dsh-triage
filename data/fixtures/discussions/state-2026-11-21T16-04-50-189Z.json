@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "produced_by": "scripts/record_discussion_state.mjs",
+  "captured_at": "2026-11-21T16:04:50.189Z",
+  "threads": [
+    {
+      "number": 13730,
+      "title": "[Bug] 0.2.2-rc.5 desktop auto-update leaves official optional bundles at rc.3 — preflight disables session-query-sqlite, sessionController unavailable",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/13730",
+      "createdAt": "2026-11-19T01:33:50Z",
+      "updatedAt": "2026-11-21T14:40:12Z",
+      "isAnswered": null,
+      "closed": false,
+      "category": {
+        "name": "General",
+        "isAnswerable": false
+      },
+      "comments": {
+        "totalCount": 4,
+        "nodes": [
+          {
+            "createdAt": "2026-11-21T14:40:12Z",
+            "author": {
+              "login": "RealLearnAI"
+            }
+          }
+        ]
+      },
+      "answer": null
+    }
+  ]
+}
